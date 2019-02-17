@@ -5,8 +5,9 @@ DB Functions are an alternative to the Excel built-in MSQuery, which is integrat
 DB Functions also include the possibility for filling "data bound" controls (ComboBoxes and Listboxes) with data from queries. 
 Other useful functions for easier creation of queries and working with database data are included as well.
 
-DBAddin has been tested extensively (actually it's in production) only with Excel XP/2010/2016 and MS-SQLserver, other databases (MySQL, Oracle, PostgreSQL, DB2 and Sybase SQLserver) have just been tested with the associated Testworkbook "DBFuncsTest.xls".
+This is the successor to the COM based DBAddin (as found on [sourceforge](https://sourceforge.net/projects/dbaddin/)).
 
-To use that Testworkbook you'll need the pubs database, where I have scripts available for Oracle, Sybase, DB2, PostgreSQL and MySql [here](PUBS_database_scripts.zip) (the MS-SQLserver version can be downloaded [here](https://www.microsoft.com/en-us/download/details.aspx?id=23654)).  
+Testing for MS SQL Server and other databases (MySQL, Oracle, PostgreSQL, DB2 and Sybase SQLserver) can be done using the Testing Workbook "DBFuncsTest.xls".
+To use that Testing Workbook you'll need the pubs database, where I have scripts available for Oracle, Sybase, DB2, PostgreSQL and MySql [here](PUBS_database_scripts.zip) (the MS-SQLserver version can be downloaded [here](https://www.microsoft.com/en-us/download/details.aspx?id=23654)).  
 
 DBAddin is distributed under the [GNU Public License V3](http://www.gnu.org/copyleft/gpl.html).

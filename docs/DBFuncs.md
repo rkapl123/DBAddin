@@ -475,7 +475,7 @@ End Sub
 
 *   Listbox control selection shifts uncontrolled upwards when using mouse. This only occurs when the DBMakeControl is either dependent on calculation results that are themselves dependent on the control's target cell (kind of "circular dependency") or if there is a dependent DBListfetch in the same sheet with extendDataArea <> 0\. In this case Excel somehow always sets other cells to "dirty" status, thus enforcing a recalculation of the DBMakeControl. The workaround is to either use up/down keys after the initial click for precise selecting or place the DBMakeControl function in a different sheet than the DBListFetch's target area.  
 
-*   Listbox control selection is not visibly retained during refresh (context menu resfresh data or fullcalc (Ctrl-Alt-F9)), i.e. the data target is kept, but the entry's highlighting is gone. This is the case when the control is placed on the same sheet as the DBMakeControl function. Workaround: put DBMakeControl in a different sheet than the control itself.  
+*   Listbox control selection is not visibly retained during refresh (context menu resfresh data or full calc (Ctrl-Alt-F9)), i.e. the data target is kept, but the entry's highlighting is gone. This is the case when the control is placed on the same sheet as the DBMakeControl function. Workaround: put DBMakeControl in a different sheet than the control itself.  
 
 *   All DB getting functions (DBListfetch, DBRowFetch, etc....)
 
@@ -487,14 +487,14 @@ End Sub
 *   In Worksheets with names like Cell references (Letter + number + blank + something else, eg. 'C701 Country') this leads to a fundamental error with the names used for the data target. Avoid using those sheet names in conjunction with DBListFetch, i.e. do not use a blank between the 'cell reference' and the rest (eg. 'C701Country' instead of 'C701 Country').
 *   GUID Columns are not displayed when working with the standard data fetching method used by DBListFetch (using an opened recordset for adding a - temporary - querytable). A workaround has been built that circumvents this problem by adding the querytable the way that excel does (using the connection string and query directly when adding the querytable). This however implicitly opens another connection, so is more resource intensive. For details see [Connection String Special Settings](#Connection_String_Special_Settings)
 
-*   Query composition: Composing Queries (as these sometimes tends to be quite long) can become challenging, especially when handling parameters coming fromcells. There is a simple way to avoid lots of trouble by placing
+*   Query composition: Composing Queries (as these sometimes tends to be quite long) can become challenging, especially when handling parameters coming from cells. There is a simple way to avoid lots of trouble by placing
 *   When invoking an Excel Workbook from the commandline (from a cmd script or the task scheduler) Excel may register (call the connect method of the Add-in) the Add-in later than invoking the calculation which leads to an uninitialized host application object and therefore a non-functional dbfunctions (they all rely on the caller object of the Excel application to retrieve their calling cell's address). I'm still investigating into this.
 *   The Workbook containing the DB functions may not have any VBA Code with Compile Errors, or it will return an "Application defined Error". This relates to Excel not passing the Application.Caller object correctly to UDFs when having compile errors in VBA-Code.
 
 
 ## <a name="Mapper"></a>Mapper
 
-Mapper is an object that you can use to save Excel Range data to database table(s). The function that is used to do that is<span style="font-weight: bold;"> </span>
+Mapper is an object that you can use to save Excel Range data to database table(s). The function that is used to do that is
 
 #### saveRangeToDB
 
@@ -528,20 +528,7 @@ Example:
   mapper.saveRangeToDB Range("employee"), "employee", "emp_id", 1, 2, "MSSQLPUBSTest", True  
 End Sub</pre>
 
-Here the data in range `employee` are stored to the table `employee<span style="font-weight: bold;"> </span>`using primary key `emp_id`, which is located in column 1\. Data is starting in column 2, the connection information is stored in connection id "MSSQLPUBSTest" and any missing employees are inserted with a new emp_id key if it is missing.  
-
-Another Example using exceptions (fictional, there is no employeeCar table in the pubs database):  
-
-<pre lang="vb.net">Sub testdumpRangeToDB()  
-  Set mapper = CreateObject("DBAddin.Mapper")  
-  mapper.saveRangeToDB Range("employee"), "employee,employeeCar", "emp_id,empPet_id", "1,2", 3, "MSSQLPUBSTest", True, "4,3,12", _  
- "employee", "job_id", 0, Array("employee", "job_lvl", "VAL", 0), Array("employeeCar", "IssuanceDate", "COL", 6), _  
- Array("employeeCar", "type_id", "VAL", 0)  
-End Sub</pre>
-
-Here the data in range `employee` are stored to the tables `employee <span style="font-weight: bold;">and</span>``employeeCar<span style="font-weight: bold;"></span>`` <span style="font-weight: bold;"></span> `using primary keys `emp_id` and `empCar_id` which are located in column 1 and 2\. Data is starting in column 3, the connection information is stored in connection id "MSSQLPUBSTest" and any missing employees and employees Pets are inserted with a new emp_id key (resp. empPet_id) if it is missing. Data in columns 4, 3 and 12 are excluded from storage (supplementary calculations...)  
-
-A special exception has been implemented for the employees having errors or 0 in their job_id column, here the job_lvl is also set to 0 and their Car's data are set specially: Column 6, which contains the HireDate is used for filling the IssuanceDate of the Car, the car's type_id is also set to 0 (might be a "new employee" scenario).  
+Here the data in range `employee` are stored to the table `employee` using primary key `emp_id`, which is located in column 1. Data is starting in column 2, the connection information is stored in connection id "MSSQLPUBSTest" and any missing employees are inserted with a new emp_id key if it is missing.  
 
 An Example for the Mapper object/saveRangeToDB usage can also be found in the "_DBFuncsTest.xls_" Workbook, Sheet "MapperExamples".
 
