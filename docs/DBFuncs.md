@@ -126,11 +126,11 @@ headerInfo specifies if additionally the headings of query should be filled (def
 
 Following Example should clarify everything (carriage returns are here just for clarity of display, actually this is rowSep, resp. lastRowSep):  
 
-<pre lang="vb.net">header1 <colSep> header2 <colSep> header3 <colSep>... <colSep/lastColSep> headerN <rowSep>  
-value11 <colSep> value12 <colSep> value13 <colSep>... <colSep/lastColSep> value1N <rowSep>  
+<pre lang="vb.net">header1 (colSep) header2 (colSep) header3 (colSep)... (colSep/lastColSep) headerN (rowSep)  
+value11 (colSep) value12 (colSep) value13 (colSep)... (colSep/lastColSep) value1N (rowSep)  
 ...  
-v(M-1)1 <colSep> v(M-1)2 <colSep> v(M-1)3 ........ <colSep/lastColSep> v(M-1)N <rowSep/lastRowSep>  
-valueM1 <colSep> valueM2 <colSep> valueM3 <colSep>... <colSep/lastColSep> valueMN</pre>
+v(M-1)1 (colSep) v(M-1)2 (colSep) v(M-1)3 ........ (colSep/lastColSep) v(M-1)N (rowSep/lastRowSep)  
+valueM1 (colSep) valueM2 (colSep) valueM3 (colSep)... (colSep/lastColSep) valueMN</pre>
 
 <a name="DBMakeControl"></a>
 
