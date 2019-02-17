@@ -1,43 +1,28 @@
-## Introduction  
+## DB Functions
 
-DBAddin is a ExcelDNA based Automation Add-in for database querying by userdefined functions ([DBFuncs](#DBFuncs)). This is opposed to the Excel/Word integrated MS-Query, which is integrated statically into the worksheet and has some limitations in terms of querying possibilities and flexibility of constructing parameterized queries (MS-Query allows parameterized queries only in simple queries that can be displayed graphically). This also includes the possibility for filling "data bound" controls (ComboBoxes and Listboxes) with data from queries. Other useful functions for working with database data are included as well.
-
-DBAddin has been tested extensively (actually it's in production) only with Excel XP/2010/2016 and MS-SQLserver, other databases (MySQL, Oracle, PostgreSQL, DB2 and Sybase SQLserver) have just been tested with the associated Testworkbook "DBFuncsTest.xls".
-
-To use that Testworkbook you'll need the pubs database, where I have scripts available for Oracle, Sybase, DB2, PostgreSQL and MySql [<span style="text-decoration: underline;">here</span>](PUBS_database_scripts.zip) (the MS-SQLserver version can be downloaded [here](http://www.microsoft.com/downloads/details.aspx?FamilyId=06616212-0356-46A0-8DA2-EEBC53A68034&displaylang=en%20)).  
-
-DBAddin is distributed under the [GNU Public License V3](http://www.gnu.org/copyleft/gpl.html).
-
-This documentation is also available as a downloadable package [here](doc.zip), for integration into DBAddins Help/About dialog, please see [Installation](#Installation).
-
-* * *
-
-## <a name="DBFuncs"></a>DBFuncs
-
-There are four ways to query data with DBAddin in Excel and one in Word:
+There are four ways to query data with DBAddin:
 
 1.  A (fast) list-oriented way using `DBListFetch`.  
     Here the values are entered into a rectangular list starting from the TargetRange cell (similar to MS-Query, actually the `QueryTables` Object is used to fill the data into the Worksheet).
 2.  A record-oriented way using `DBRowFetch`  
-    Here the values are entered into several ranges given in the Parameter list "`TargetArray`". Each of these ranges is filled in order of appearance with the results of the query.
+    Here the values are entered into several ranges given in the Parameter list `TargetArray`. Each of these ranges is filled in order of appearance with the results of the query.
 3.  A "sentence" oriented way using `DBCellFetch`  
     Here the returned values are concatenated into one "sentence" by using specific column separators and row separators. Additionally "final" column separators and row separators can be defined to present data in a natural sentence way (e.g.: 10, 20, 30 and 25\. Here ", " is the column separator and " and " is the last row separator in a single column query.)
 4.  Loading data into userforms (Listbox and Dropdown) using `DBMakeControl`  
     This is required for selecting values from a database. Max. 10 columns (incl. the invisible key column) can be defined in the associated query.
-5.  In Word, the DBAddin supporting tool [QueryBuilder](#Supporting_Tool_Query_Builder) creates a DATABASE field function that updates a Word table when being refreshed.<span style="font-size: 12pt; font-family: &quot;Times New Roman&quot;;"></span>
 
 Three of those user-defined functions (`DBListFetch`, `DBRowFetch` and `DBMakeControl`) insert the queried data outside their calling cell context, which means that the target ranges can be put anywhere in the workbook (even outside of the workbook).
 
 Additionally, some helper functions are available:
 
-*   "`chainCells`", which concatenates the values in the given range together by using "," as separator, thus making the creation of the select field clause easier.
-*   "`concatCells`" simply concatenating cells (making the "&" operator obsolete)
-*   "`DBString`", building a quoted string from an open ended parameter list given in the argument. This can also be used to easily build wildcards into the String.
-*   "`DBinClause`", building an SQL in clause from an open ended parameter list given in the argument.
-*   "`DBDate`", building a quoted Date string (format YYYYMMDD) from the date value given in the argument.
-*   `"Plookup`", doing a <span lang="EN-GB">pattern weighted lookup of values</span> to retrieve the "best matching" lookup value. This is needed when working with incomplete input data.
+*   `chainCells`, which concatenates the values in the given range together by using "," as separator, thus making the creation of the select field clause easier.
+*   `concatCells` simply concatenating cells (making the "&" operator obsolete)
+*   `DBString`, building a quoted string from an open ended parameter list given in the argument. This can also be used to easily build wildcards into the String.
+*   `DBinClause`, building an SQL in clause from an open ended parameter list given in the argument.
+*   `DBDate`, building a quoted Date string (format YYYYMMDD) from the date value given in the argument.
+*   `Plookup`, doing a pattern weighted lookup of values to retrieve the "best matching" lookup value. This is needed when working with incomplete input data.
 
-There is also a supporting tool available for building queries and placing them into thefunctions (based on MS-Query) and a "jump" feature that allows to move the focus from the DB function's cell to the data area and from the data area back to the DB function's cell (useful in complex workbooks with lots of remote (not on same-sheet) target ranges)
+There is also a supporting tool available for building queries and placing them into the functions (based on MS-Query) and a "jump" feature that allows to move the focus from the DB function's cell to the data area and from the data area back to the DB function's cell (useful in complex workbooks with lots of remote (not on same-sheet) target ranges)
 
 ### Using the Functions
 
@@ -56,19 +41,19 @@ The query parameter can also be a Range, which means that the Query itself is ta
 
 The connection string is either given in the formula, or for standard configuration can be left out and is then set globally in the registry key `[HKEY_CURRENT_USER\Software\VB and VBA Program Settings\DBAddin\Settings\ConstConnString]  
 
-`The returned list values are written into the Range denoted by "TargetRange". This can be  
+The returned list values are written into the Range denoted by "TargetRange". This can be  
 
 *   just any range, resulting data being copied beginning with the left-uppermost cell
 *   a self-defined named range (of any size) as TargetRange, which resizes the named range to the output size. This named range can be defined (and set as function parameter) either before or after results have been queried.
 
-<span lang="EN-GB">There is an additional </span>`FormulaRange` <span lang="EN-GB">that can be specified to fill “associated” formulas (can be put anywhere (even in other workbooks), though it only allowed outside of the data area). This</span>`FormulaRange` <span lang="EN-GB">can be</span>
+There is an additional `FormulaRange` that can be specified to fill “associated” formulas (can be put anywhere (even in other workbooks), though it only allowed outside of the data area). This `FormulaRange` can be
 
-*   <span lang="EN-GB">either a one dimensional row-like range or a</span>
-*   <span style="font-family: Symbol;" lang="EN-GB"><span><span style="font-family: 'Times New Roman'; font-style: normal; font-variant: normal; font-weight: normal; font-size: 7pt; line-height: normal; font-size-adjust: none; font-stretch: normal;"></span></span></span><span lang="EN-GB">a self-defined named range (of any size extent, columns have to include all calculated/filled down cells) , which resizes the named range to the output size. This named range can be defined (and set as function parameter) either before or after results have been queried. Watch out when giving just one cell as the named range, this won't work as it's not possible in VBA to retrieve another assigned name of a cell and a hidden name us used to store the last extent of the formula range. The workaround is to assign at least two cells (columns or rows) to that name.</span>
+*   either a one dimensional row-like range or
+*   a self-defined named range (of any size extent, columns have to include all calculated/filled down cells), which resizes the named range to the output size. This named range can be defined (and set as function parameter) either before or after results have been queried. Watch out when giving just one cell as the named range, this won't work as it's not possible in VBA to retrieve another assigned name of a cell and a hidden name us used to store the last extent of the formula range. The workaround is to assign at least two cells (columns or rows) to that name.
 
 with formulas usually referring to cell-values fetched within the data area. All Formulas contained in this area are filled down to the bottom row of the `TargetRange`. In case the `FormulaRange` starts lower than the topmost row of `TargetRange`, then any formulas above are left untouched (e.g. enabling possibly different calculations from the rest of the data). If the `FormulaRange` starts above the `TargetRange`, then an error is given and no formulas are being refreshed down. If a `FormulaRange` is assigned within the data area, an error is given as well.
 
-<span lang="EN-GB">In case TargetRange is a named range and the FormulaRange is adjacent, the TargetRange is automatically extended to cover the FormulaRange as well. This is especially useful when using the compound TargetRange as a lookup reference (Vlookup).</span>
+In case TargetRange is a named range and the FormulaRange is adjacent, the TargetRange is automatically extended to cover the FormulaRange as well. This is especially useful when using the compound TargetRange as a lookup reference (Vlookup).
 
 The next parameter "`ExtendDataArea`" defines how DBListFetch should behave when the queried data extends or shortens:
 
@@ -88,7 +73,7 @@ The parameter ShowRowNums defines whether Row numbers should be displayed in the
 
 In case the "normal" connection string's driver (usually OLEDB) has problems in displaying data with DBListFetch and the problem is not existing in conventional MS-Query based query tables (using special ODBC connection strings that can't be used with DB functions), then following special connection string setting can be used:  
 
-<pre lang="vb.net"><Standard Connection String>;<special ODBC connection string></pre>
+<pre lang="vb.net">StandardConnectionString;SpecialODBCConnectionString</pre>
 
 Example:  
 
@@ -186,7 +171,7 @@ The DB bound control retain the selection during a refresh (e.g. saving/reopenin
 
 #### chainCells(Range)
 
-<pre lang="vb.net">chainCells(<span style="font-size: 10pt; font-family: 'Courier New';" lang="EN-GB"></span>ParameterList<span style="font-size: 10pt; font-family: 'Courier New';" lang="EN-GB"></span>)</pre>
+<pre lang="vb.net">chainCells(ParameterList)</pre>
 
 chainCells "chains" the values in the given range together by using "," as separator. It's use is mainly to facilitate the creation of the select field clause in the `Query` parameter, e.g.
 
@@ -199,7 +184,7 @@ Where cells E1:E4 contain job_desc, min_lvl, max_lvl, job_id respectively.
 
 #### concatCells
 
-<pre lang="vb.net">concatCells(<span style="font-size: 10pt; font-family: 'Courier New';" lang="EN-GB"></span>ParameterList<span style="font-size: 10pt; font-family: 'Courier New';" lang="EN-GB">)</span></pre>
+<pre lang="vb.net">concatCells(ParameterList)</pre>
 
 `concatCells` concatenates the values in the given range together. It's use is mainly to facilitate the building of very long and complex queries:
 
@@ -211,9 +196,9 @@ Where cells E1:E4 contain the constituents of the query respectively.
 
 #### concatCellsSep
 
-<pre lang="vb.net">concatCellsSep(<span style="font-size: 10pt; font-family: 'Courier New';" lang="EN-GB"></span>separator, ParameterList<span style="font-size: 10pt; font-family: 'Courier New';" lang="EN-GB">)</span></pre>
+<pre lang="vb.net">concatCellsSep(separator, ParameterList)</pre>
 
-`concatCellsSep `does the same as concatCells, however inserting a separator between the concatenated values. It's use is the building of long and complex queries, too:
+`concatCellsSep` does the same as concatCells, however inserting a separator between the concatenated values. It's use is the building of long and complex queries, too:
 
 <pre lang="vb.net">DBRowFetch(concatCellsSep(E1:E4),,A1,A8:A9,C8:D8)</pre>
 
@@ -221,21 +206,19 @@ Where cells E1:E4 contain the constituents of the query respectively.
 
 All three concatenation functions (chainCells, concatCells and concatCellsSep) work with matrix conditionals, i.e. matrix functions of the form: `{=chainCells(IF(C2:C65535="Value";A2:A65535;""))}` that only chain/concat values from column A if the respective cell in column C contains "Value".
 
-Both `concatCells `and`concatCellsSep `have a "Text" sibling that essentially does the same, except that it concats the <span style="font-style: italic;">displayed </span>Values, not the true Values. So if you want to concatenate what you see, then `concatCellsText` and`concatCellsSepText `are the functions you need.
+Both `concatCells` and `concatCellsSep` have a "Text" sibling that essentially does the same, except that it concats the displayed Values, not the true Values. So if you want to concatenate what you see, then `concatCellsText` and `concatCellsSepText` are the functions you need.
 
 <a name="DBinClause"></a>
 
 #### DBinClause
 
-<pre lang="vb.net"><span style="font-size: 10pt; font-family: 'Courier New';" lang="EN-GB">DBinClause(</span>ParameterList<span style="font-size: 10pt; font-family: 'Courier New';" lang="EN-GB">)</span></pre>
+<pre lang="vb.net">DBinClause(ParameterList)</pre>
 
-<span lang="EN-GB"></span>
+Creates an in clause from cell values, strings are created with quotation marks, dates are created with DBDate (see there for details, formatting is 0).
 
-<span lang="EN-GB">Creates an in clause from cell values, strings are created with quotation marks, dates are created with DBDate (see there for details, formatting is 0).</span>
+<pre lang="vb.net">DBinClause("ABC", 1, DateRange)</pre>
 
-<pre lang="vb.net"><span style="font-size: 10pt; font-family: 'Courier New';" lang="EN-GB">DBinClause("ABC", 1, DateRange)</span></pre>
-
-<span lang="EN-GB">Would return<span></span> </span>`<span style="font-size: 10pt; font-family: 'Courier New';" lang="EN-GB">”(‘ABC’,1,’20070115’)”</span>`<span lang="EN-GB">, if DateRange contained</span> <st1:date month="1" day="15" year="2007"><span lang="EN-GB">15/01/2007</span></st1:date> <span lang="EN-GB">as a date value.</span>  
+Would return `”('ABC',1,'20070115')”`, if DateRange contained `15/01/2007` as a date value.  
 <a name="DBString"></a>
 
 #### DBString
@@ -279,11 +262,11 @@ Of course you can also change the default setting for formatting by changing the
 
 <pre lang="vb.net">Plookup(inputRange, selectionRange, targetRange)</pre>
 
-<span lang="EN-GB">Does a pattern weighted lookup of values in range inputValues in pattern lookup area selectionRange, <span> </span>returns the values contained in found row of range targetRange (if entered as a matrix function).</span>
+Does a pattern weighted lookup of values in range inputValues in pattern lookup area selectionRange, returns the values contained in found row of range targetRange (if entered as a matrix function).
 
-<span lang="EN-GB">In case Plookup is not entered as a matrix function, Plookup returns the first column of the matching row of targetRange.If more than one row matches, always return values from first matching row.</span>
+In case Plookup is not entered as a matrix function, Plookup returns the first column of the matching row of targetRange.If more than one row matches, always return values from first matching row.
 
-<span lang="EN-GB">Example:</span>
+Example:
 
 <pre lang="vb.net">selection range | target range  
 1 * 3 4 5 | 11 12 13  
@@ -321,75 +304,12 @@ Example: The boolean custom property "DBFCCTable1!A1" would clear the contents o
 
 To prevent storing of the contents for all DBFunctions create a boolean Custom Property "DBFCC*" set to "Yes".  
 
-Excel however doesn't fill only contents when filling the data area, there's also formatting being filled along, which takes notable amounts of space (and saving time) in a workbook. So to really have a small/quick saving workbook, create a boolean custom property "DBFCA<DBFunctionSheet!DBFunctionAddress>" set to "Yes" (set to "No" to reenable storing). This clears <span style="font-weight: bold;">everything</span> in the the data area of the res  
+Excel however doesn't fill only contents when filling the data area, there's also formatting being filled along, which takes notable amounts of space (and saving time) in a workbook. So to really have a small/quick saving workbook, create a boolean custom property "DBFCA<DBFunctionSheet!DBFunctionAddress>" set to "Yes" (set to "No" to reenable storing). This clears everything in the the data area of the res  
 
-Example: The boolean custom property "DBFCATable1!A1" would clear <span style="font-weight: bold;">everything</span> from the data area for the DBFunction entered in Table1, cell "A1".  
+Example: The boolean custom property "DBFCATable1!A1" would clear everything from the data area for the DBFunction entered in Table1, cell "A1".  
 
-To prevent storing of <span style="font-weight: bold;">everything (incl. formats)</span> for all DBFunctions create a boolean Custom Property "DBFCA*" set to "Yes".  
+To prevent storing of everything (incl. formats) for all DBFunctions create a boolean Custom Property "DBFCA*" set to "Yes".  
 
-### <a name="Supporting_Tool_Query_Builder"></a>Supporting Tool Query Builder
-
-There is a supporting tool for building queries. This is - currently - reusing following visual query construction tools as a frontend to build the query:
-
-*   MSQuery
-*   or - in case it is installed on your machine - SQL-Excel, a cool visual query builder for Excel (and maybe in the future other Office applications). For details on SQL-Excel see [www.sqlexcel.net](http://www.sqlexcel.net/)
-
-The query builder is invoked by right clicking on any cell in an open excel worksheet and selecting "build DBfunc query". This either
-
-*   starts MSQuery (see associated documentation on using MSQuery to define queries), building the query either in the Query-Assistant or in MSQuery itself, the option "Back to Office" lets you insert the query into the active worksheet.
-*   or, in case it has been installed, starts SQL-Excel. Build your query in the visual query builder of SQL-Excel and then press "Get SQL" to return to Excel.
-
-The resulting query can be inserted as one of the following functions:
-
-*   a DBListFetch function
-*   a DBRowFetch function
-*   a DBCellFetch function
-*   a DBMakeControl function
-*   in case DBAddin is used within <span style="font-family: Verdana;">Word: as a</span>DATABASE field function
-
-In case you keep the SHIFT key pressed while right clicking, the visual query construction tool is skipped, leading directly to the following dialog. This is used for capturing queries from other sources (MS Query Analyzer or other editors, copy/pasting the query into the Worksheet) and just "wrapping" the DB functions around the inserted query.
-
-Following dialog is used to achieve this:
-
-![](DBAddin-Dateien/clip_image002.GIF)  
-
-First the DB function to be inserted has to be chosen by selecting in the "DB function" choice box. Then, depending on the above choice, the target cell for the function formula, resp. the target cells for the parameters of the function can be selected (similar to the RefEdit boxes in Excel you can select cells directly in the Worksheet, pressing F3 brings a list of Names defined in the Workbook you can insert):
-
-*   Function Target: The cell where the DB function (either `DBRowFetch` or `DBListFetch`) is being placed. Available only for `DBRowFetch` and `DBListFetch`.
-
-*   Data Target: For DB functions, the cell(s) where retrieved database data is going to be placed. For DB bound controls this corresponds to the "`LinkedCell`" property, which is the target cell where the chosen control value is put. Available for all DB items except `DBCellFetch` (here the data is passed as the function's value).
-
-*   Query Target: The cell or range where the query is placed in case it is bigger than 255 characters. Available for all DB functions. If this is explicitly set then the query is always placed there, regardless of it's size! Also the query is placed there if it contains quotation marks ("). In case the Query Target is a multi cell range all query text in those cells is concatenated together. If the visual query construction tool returns multi-line queries (as SQL-Excel does) then the multiple lines are spread over the available cells of that range (a warning message is given when insufficient cells are given, the query is placed then in the top cell).
-
-*   ConnDef Target: The cell where the connection definition is placed in case "use custom database setting" is chosen (used to override the standard connection definition in the registry key `[HKEY_CURRENT_USER\Software\VB and VBA Program Settings\DBAddin\Settings\ConstConnString]`) and the connection definition string is bigger than 255 characters. Available only for DBRowFetch and DBListFetch.
-
-*   Range Calc: The range where formulas that should be filled in along with data are going to be placed, Available only for `DBListFetch`.
-
-Other possible choices are:
-
-*   additional Data choice: The way additional Data should be treated in DBListFetch (see explanation there). Available only for DBListFetch.
-*   "include Header Info?": should Field Headers be included in `DBListFetch` (see explanation there). Available for `DBListFetch` `DBDropDown` and `DBListbox` .
-*   "automatic Column Fit?": should columns be autofitted for DBListFetch (see explanation there). Available only for `DBListFetch`.
-
-*   "automatic Format fill?": should 1st row formats be autofilled down for DBListFetch (see explanation there). Available only for `DBListFetch`..
-*   "show row numbers?": should row numbers be displayed in 1st column for DBListFetch? (see explanation there). Available only for `DBListFetch`..
-*   custom database setting: if a different database from the global standard connection definition (see `DBListFetch` function) is used, then this is activated. Available for all DB items. Also the ODBC provider "MSDASQL.1" is inserted automatically in front of the rest of the connection string.
-
-<div style="text-align: left;">For DBCellFetch the Dialog looks a bit different allowing for the entry of colSep, rowSep, lastColSep and lastRowSep:  
-
-![](DBAddin-Dateien/clip_image006.GIF)  
-
-For DBMakeControl, the control type and the Control Location can be additionally defined:  
-
-![](DBAddin-Dateien/clip_image007.GIF)  
-
-If the query builder is invoked on a cell containing a DB function, the query in the first argument is evaluated and directly taken to the visual query construction tool.  
-
-One major restriction concerning the use of the visual query construction tools with the query builder tool is the inability to build parameterized queries inside the visual query construction tool, this feature would however not be really useful as DB functions allow full SQL integration into worksheet formulas.  
-
-In case DBAddin is used within Word, a very spare dialog is shown, just allowing additional displaying header information:  
-
-<span style="font-size: 12pt; font-family: &quot;Times New Roman&quot;;">![](DBAddin-Dateien/clip_image002.jpg)</span></div>
 
 #### Global Connection Definition and Query Builder with MSQuery
 
@@ -537,7 +457,7 @@ Excel sometimes does additional calculations to take shortcuts and this makes th
 
 After every calculation event the working `calcContainers` are removed, if there are no more `calcContainers` left, then `allCalcContainers` is reset to "Nothing", being ready for changes in input data or function layout. Good resources for more details on the calculation order/backgrounds is Decision Model's Excel Pages, especially Calculation Secrets ([http://www.decisionmodels.com/calcsecretsc.htm](http://www.decisionmodels.com/calcsecretsc.htm)).
 
-<span lang="EN-GB">The </span><span lang="EN-GB">DBListFetch's target</span> <span lang="EN-GB">areas' extent is stored in hidden named ranges assigned both to the calling function cell (DBFsource<Key>) and the target.</span>
+The DBListFetch's target areas' extent is stored in hidden named ranges assigned both to the calling function cell (DBFsource<Key>) and the target.
 
 There is a procedure in the Functions module, which may be used to "purge" these hidden named ranges in case of any strange behaviour due to multiple name assignments to the same area. This behaviour usually arises, when redefining/adding dbfunctions that refer to the same target area as the original/other dbfunction. The procedure is called "purge" and may be invoked from the VBA IDE as follows:
 
@@ -568,7 +488,7 @@ End Sub
 *   GUID Columns are not displayed when working with the standard data fetching method used by DBListFetch (using an opened recordset for adding a - temporary - querytable). A workaround has been built that circumvents this problem by adding the querytable the way that excel does (using the connection string and query directly when adding the querytable). This however implicitly opens another connection, so is more resource intensive. For details see [Connection String Special Settings](#Connection_String_Special_Settings)
 
 *   Query composition: Composing Queries (as these sometimes tends to be quite long) can become challenging, especially when handling parameters coming fromcells. There is a simple way to avoid lots of trouble by placing
-*   When invoking an Excel Workbook from the commandline (from a cmd script or the task scheduler) Excel may register (call the connect method of the Add-in) the Add-in later than invoking the calculation which leads to an uninitialized host application object and therefore a non-functional dbfunctions (they all rely on the caller object of the Excel application to retrieve their calling cell's adress). I'm still investigating into this.
+*   When invoking an Excel Workbook from the commandline (from a cmd script or the task scheduler) Excel may register (call the connect method of the Add-in) the Add-in later than invoking the calculation which leads to an uninitialized host application object and therefore a non-functional dbfunctions (they all rely on the caller object of the Excel application to retrieve their calling cell's address). I'm still investigating into this.
 *   The Workbook containing the DB functions may not have any VBA Code with Compile Errors, or it will return an "Application defined Error". This relates to Excel not passing the Application.Caller object correctly to UDFs when having compile errors in VBA-Code.
 
 
@@ -625,57 +545,3 @@ A special exception has been implemented for the employees having errors or 0 in
 
 An Example for the Mapper object/saveRangeToDB usage can also be found in the "_DBFuncsTest.xls_" Workbook, Sheet "MapperExamples".
 
-## History
-
-*   2006: DBFuncs First versions using CopyFromRecordSet, Version 1.5 is the last one utilizing Range.CopyFromRecordSet for DBListFetch, as I found this function to be highly unreliable. From 2.0 on, I use QueryTables instead, which copies (at least until now) all data correctly into the sheet.
-*   31/01/2007: DBFuncs Version 2.0: Codeproject Article posted
-*   03/02/2007: DBFuncs Version 2.1: Separate autosized naming of FormulaRange is now possible
-*   27/02/2007: DBFuncs Version 2.2: Bugfix: Check for non-range parameters in DBRowFetch's parameter list, Bugfix: chainCells & concatCells now working with general parameters, Bugfix: remaining names from Querytables are deleted now, Bugfix: Autosizing names works now with single cells, too.
-*   28/02/2007: Initial post of DBSheets.xla to Codeproject.
-*   12/03/2007: DBFuncs Version 2.3:
-    *   Bugfixes:
-        *   Single cell naming the TargetRange now correctly resizes to full extent.
-        *   Autoformatting down works now also for formula cells
-        *   worked around the validation list bug (calculation couldn't be set to manual in the event procedure).
-        *   Format filling now works correctly also with headers.
-        *   removed a very subtile error with multiple resizing TargetRanges beneath one another lead to DBlistFetch losing track of the upper TargetRange.
-        *   Formatting didn't work correctly down to end of data areas.
-    *   Enhancements:
-        *   a named TargetRange extends to the FormulaRange if the FormulaRange is adjacent to the TargetRange.
-        *   Added DBinClause Function for creating bracketed in clauses from parameter arrays (ranges, etc.).
-*   15/03/2007 DBSheets Version 1.1: Bugfix: clearer error messages from Database when saving. Bugfix: loading Datasheet definitions now uses the correct connection, Enhancement: Added parameterized queries (having ? in the where clause), added "edit DBSheet parameters" context menu to top/leftmost cell menus, which allows creating range names whose values are used to fill the parameterized queries. Also allows the end-user to edit his presets for "don't show" and other useful settings (autoformat, freeze headers/primary columns,...)
-*   25/03/2007: DBFuncs Version 2.4:
-    *   Bugfixes:
-        *   Filtering now works correctly again.
-        *   verketteZellen didn't work with non-ranges.
-    *   Enhancements:
-        *   Added function help for all public functions.
-*   09/04/2007: DBFuncs Version 2.5:
-    *   Bugfixes:
-        *   Auto-Formatting works now for general formats (not only numerical)
-        *   error values (#NV!...) possible in formula range of DBListFetch.  
-
-    *   Enhancements:
-
-    *   Added Plookup function for weighted pattern lookup
-
-*   02/11/2007: DBAddin Version 1.0: Major redesign as COM/Automation Addin
-
-*   Enhancements:
-
-*   Complete Refactoring of DBSheet Codebase
-
-*   Merged DBFuncs with DBSheets
-
-*   MS Word Support (database table fields)
-*   DBCellFetch function for returning queries as single value results
-*   DB Control now realized as Functions as well (no need for additional VBA startup coding)
-*   FormulaRange can be separately named
-*   Easy function deployment with Save/Load Config feature (can be generally used for formulas/cell contents)
-*   Better Help (similar to built-in functions now)
-*   Event Log used to log errors.
-*   Progress feedback via Statusbar
-*   "Jump" feature for all DB functions except DBCellFetch to quickly select target data area from function cell and select function cell from target data are
-*   MSI-Installer based installation
-
-From now on, changes are tracked in: [ChangeLog.txt](ChangeLog.txt)
