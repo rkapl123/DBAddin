@@ -347,7 +347,7 @@ There is one registry setting and two registry setting groups to configure this 
 "<pathName>Separator"=""  
 "<pathName>FirstLetterLevel"="True"</pre>
 
-<samp></samp>If you add the (sub) foldername to "specialConfigStoreFolders" (colon separated list) then this subfolder is regarded as needing special grouping of object names. The separator ("_" or similar) can be given in  "<pathName>Separator", where <pathName> denotes the path name used above in "specialConfigStoreFolders". If this is not given then CamelCase is assumed to be the separating criterion.  
+If you add the (sub) foldername to "specialConfigStoreFolders" (colon separated list) then this subfolder is regarded as needing special grouping of object names. The separator ("_" or similar) can be given in  "<pathName>Separator", where <pathName> denotes the path name used above in "specialConfigStoreFolders". If this is not given then CamelCase is assumed to be the separating criterion.  
 
 The maximum depth of the sub menus can be stated in "<pathName>MaxDepth", which denotes the depth of hierarchies below the uppermost in the <pathName> folder (default value is 10000, so practically infinite depth).  
 
