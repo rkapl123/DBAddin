@@ -1,9 +1,7 @@
 Imports Microsoft.Office.Interop.Excel
 Imports ADODB
 
-''
-'  Contains the public callable Mapper functions for storing/updating tabular excel data
-
+''' <summary>Contains the public callable Mapper function for storing/updating tabular excel data</summary>
 Public Enum checkTypeFld
     checkIsNumericFld = 0
     checkIsDateFld = 1
@@ -11,26 +9,31 @@ Public Enum checkTypeFld
     checkIsStringFld = 3
 End Enum
 
-Class Mapper
+Public Class Mapper
+    ''' <summary>main db connection For mapper</summary>
+    Public dbcnn As ADODB.Connection
+    ''' <summary>should the Mapper instance be used interactively, thus giving error messages to the user
+    ''' or used in automation mode (invoked by VBA, needs to be explicitly set), collecting error messages for later retrieval</summary>
     Public isInteractive As Boolean
+    ''' <summary>if Mapper instance is not interactive, Log procedures store all messages here...</summary>
     Public returnedErrorMessages As String
 
-    ''
-    ' dump data given in dataRange to a database table specified by tableName and connID
-    ' this database table can have multiple primary columns specified by primKeysStr
-    ' assumption: layout of dataRange is
-    ' primKey1Val,primKey2Val,..,primKeyNVal,DataCol1Val,DataCol2Val,..,DataColNVal
-    '
-    ' @param DataRange..Excel Range, where Data is taken from
-    ' @param tableName..Database Table, where Data is to be stored
-    ' @param primKeysStr..String containing primary Key names for updating table data, commaseparated
-    ' @param connid..connection ID specified in DBConns.xml (entry in DBSheets config)
-    ' @param insertIfMissing..then insert row into table if primary key is missing there. Default = False (only update)
-    '
-    ' @return True if successful, false in case of errors.
-    Public Function saveRangeToDBSingle(DataRange As Range,
+    ''' <summary>dump data given in dataRange to a database table specified by tableName and connID
+    ''' this database table can have multiple primary columns specified by primKeysStr
+    ''' assumption: layout of dataRange is
+    ''' primKey1Val,primKey2Val,..,primKeyNVal,DataCol1Val,DataCol2Val,..,DataColNVal</summary>
+    ''' <param name="DataRange">Excel Range, where Data is taken from</param>
+    ''' <param name="tableName">Database Table, where Data is to be stored</param>
+    ''' <param name="primKeysStr">String containing primary Key names for updating table data, comma separated</param>
+    ''' <param name="database">Database to replace D</param>
+    ''' <param name="env">Environment where connection id should be taken from</param>
+    ''' <param name="insertIfMissing">then insert row into table if primary key is missing there. Default = False (only update)</param>
+    ''' <param name="executeAdditionalProc">additional stored procedure to be executed after saving</param>
+    ''' <returns>True if successful, false in case of errors.</returns>
+    Public Function saveRangeToDB(DataRange As Range,
                                     tableName As String,
                                     primKeysStr As String,
+                                    database As String,
                                     Optional env As Integer = 1,
                                     Optional insertIfMissing As Boolean = False,
                                     Optional executeAdditionalProc As String = vbNullString) As Boolean
@@ -42,21 +45,19 @@ Class Mapper
         Dim rowNum As Long, colNum As Long
 
         ' set up parameters
-        On Error GoTo saveRangeToDBSingle_Err
-        AutomationMode = Not isInteractive
-
-        If AutomationMode Then
+        On Error GoTo saveRangeToDB_Err
+        If Not isInteractive Then
             automatedMapper = Me
             Me.returnedErrorMessages = vbNullString
         End If
-        saveRangeToDBSingle = False
+        saveRangeToDB = False
         primKeys = Split(primKeysStr, ",")
 
         ' first, create/get a connection (dbcnn)
-        LogInfo("saveRangeToDBSingle Mapper: open connection...")
+        LogInfo("saveRangeToDB Mapper: open connection...")
 
         'now create/get a connection (dbcnn) for env(ironment)
-        If Not openConnection(env) Then Exit Function
+        If Not openConnection(env, database) Then Exit Function
 
         'checkrst is opened to get information about table schema (field types)
         checkrst = New ADODB.Recordset
@@ -88,7 +89,7 @@ Class Mapper
         headerRow = 1
         rowNum = headerRow + 1
         dbcnn.CursorLocation = CursorLocationEnum.adUseServer
-        On Error GoTo saveRangeToDBSingle_Err
+        On Error GoTo saveRangeToDB_Err
 
         Dim finishLoop As Boolean
         ' walk through rows
@@ -111,7 +112,7 @@ Class Mapper
                     GoTo nextRow
                 End If
             Next
-            theHostApp.StatusBar = "Iinserting/Updating data, " & primKeyCompound & " in table " & tableName
+            theHostApp.StatusBar = "Inserting/Updating data, " & primKeyCompound & " in table " & tableName
 
             On Error Resume Next
             rst.Open("SELECT * FROM " & tableName & primKeyCompound, dbcnn, CursorTypeEnum.adOpenDynamic, LockTypeEnum.adLockOptimistic)
@@ -123,7 +124,7 @@ Class Mapper
 
             If rst.EOF Then
                 If insertIfMissing Then
-                    On Error GoTo saveRangeToDBSingle_Err
+                    On Error GoTo saveRangeToDB_Err
                     rst.AddNew()
 
                     For i = 0 To UBound(primKeys)
@@ -137,7 +138,7 @@ Class Mapper
                 End If
             End If
 
-            On Error GoTo saveRangeToDBSingle_Err
+            On Error GoTo saveRangeToDB_Err
 
             ' walk through columns and fill fields
             colNum = UBound(primKeys) + 1
@@ -153,7 +154,7 @@ Class Mapper
                     LogWarn("Table: " & tableName & ", Field: " & fieldname & ", Error: " & Err.Description & " in sheet " & DataRange.Parent.name & ", & row " & rowNum & ", col: " & colNum)
                     GoTo cleanup
                 End If
-                On Error GoTo saveRangeToDBSingle_Err
+                On Error GoTo saveRangeToDB_Err
 nextColumn:
                 colNum = colNum + 1
             Loop Until colNum > DataRange.Columns.Count
@@ -189,11 +190,11 @@ nextRow:
                 GoTo cleanup
             End If
         End If
-        saveRangeToDBSingle = True
+        saveRangeToDB = True
         GoTo cleanup
 
-saveRangeToDBSingle_Err:
-        LogError("Internal Error: " & Err.Description & ", line " & Erl() & " in Mapper.saveRangeToDBSingle" & " in sheet " & DataRange.Parent.name)
+saveRangeToDB_Err:
+        LogError("Internal Error: " & Err.Description & ", line " & Erl() & " in Mapper.saveRangeToDB in sheet " & DataRange.Parent.name)
         On Error Resume Next
         rst.CancelBatch()
         rst.Close()
@@ -205,12 +206,10 @@ cleanup:
     End Function
 
 
-    ''
-    ' check whether key with name "tblName" is contained in collection tblColl
-    ' @param tblName
-    ' @param tblColl
-    ' @return if name was found in collection
-    ' @remarks
+    ''' <summary>check whether key with name "tblName" is contained in collection tblColl</summary>
+    ''' <param name="tblName"></param>
+    ''' <param name="tblColl"></param>
+    ''' <returns>if name was found in collection</returns>
     Private Function existsInCollection(tblName As String, tblColl As Collection) As Boolean
         Dim dummy As Integer
 
@@ -223,13 +222,10 @@ err1:
         existsInCollection = False
     End Function
 
-    ''
-    ' formats theVal to fit the type of column theHead having data type dataType
-    ' @param theVal
-    ' @param theHead
-    ' @param dataType
-    ' @return the formatted value
-    ' @remarks
+    ''' <summary>formats theVal to fit the type of column theHead having data type dataType</summary>
+    ''' <param name="theVal"></param>
+    ''' <param name="dataType"></param>
+    ''' <returns>the formatted value</returns>
     Private Function dbFormatType(ByVal theVal As Object, dataType As checkTypeFld) As String
         ' build where clause criteria..
         If dataType = checkTypeFld.checkIsNumericFld Then
@@ -250,26 +246,26 @@ err1:
         End If
     End Function
 
+    ''' <summary>new Mapper instances are always interactive by default. If you want automation mode, set isInteractive to false before calling saveRangeToDB</summary>
     Public Sub New()
         isInteractive = True
     End Sub
 
-    ''
-    ' opens a database connection
-    ' @param resetDB
-    ' @param theDatabase
-    ' @return True on success
-    Public Function openConnection(env As Integer) As Boolean
+    ''' <summary>opens a database connection</summary>
+    ''' <param name="env">number of the environment as given in the settings</param>
+    ''' <param name="database">database to replace database selection parameter in connection string of environment</param>
+    ''' <returns>True on success</returns>
+    Public Function openConnection(env As Integer, database As String) As Boolean
         Dim theConnString As String = fetchSetting("ConstConnString" & env, vbNullString)
 
         On Error GoTo openConnection_Err
         openConnection = False
         If Not dbcnn Is Nothing Then
-            If dbcnn.State = ADODB.ObjectStateEnum.adStateClosed Then dbcnn = Nothing
+            If dbcnn.State = ObjectStateEnum.adStateClosed Then dbcnn = Nothing
         End If
         If dbcnn Is Nothing Then
-            dbcnn = New ADODB.Connection
-            dbcnn.ConnectionString = theConnString
+            dbcnn = New Connection
+            dbcnn.ConnectionString = Change(theConnString, fetchSetting("dbspecifier", "database="), database, ";")
             dbcnn.ConnectionTimeout = CnnTimeout
             dbcnn.CommandTimeout = CmdTimeout
             theHostApp.StatusBar = "Trying " & CnnTimeout & " sec. with connstring: " & theConnString
@@ -291,4 +287,5 @@ err1:
 openConnection_Err:
         LogError("Error: " & Err.Description & ", line " & Erl() & " in Mapper.openConnection")
     End Function
+
 End Class

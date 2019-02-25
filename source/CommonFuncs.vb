@@ -2,22 +2,20 @@ Imports Microsoft.Office.Interop.Excel
 Imports ExcelDna.Integration
 Imports ADODB
 
-''
-'  various functions used in most parts of DBAddin
-Module CommonFuncs
-    ''
-    ' splits theString into tokens delimited by delimiter, ignoring delimiters inside quotes and brackets
-    ' @param theString As String
-    ' @param delimiter As String
-    ' @param quote As String
-    ' @param startStr As String
-    ' @param openBracket As String
-    ' @param closeBracket As String
-    ' @return the list of tokens
-    ' @remarks
-    ' theString is split starting from startStr up to the first balancing closing Bracket (as defined by openBracket and closeBracket)
-    ' startStr, openBracket and closeBracket are case insensitive for comparing with theString.
-    ' @remarks the tokens are not blank trimmed !!
+''' <summary>various functions used in most parts of DBAddin</summary>
+Public Module CommonFuncs
+
+    ''' <summary>splits theString into tokens delimited by delimiter, ignoring delimiters inside quotes and brackets</summary>
+    ''' <param name="theString"></param>
+    ''' <param name="delimiter"></param>
+    ''' <param name="quote"></param>
+    ''' <param name="startStr"></param>
+    ''' <param name="openBracket"></param>
+    ''' <param name="closeBracket"></param>
+    ''' <returns>the list of tokens</returns>
+    ''' <remarks>theString is split starting from startStr up to the first balancing closing Bracket (as defined by openBracket and closeBracket)
+    ''' startStr, openBracket and closeBracket are case insensitive for comparing with theString.
+    ''' the tokens are not blank trimmed !!</remarks>
     Public Function functionSplit(ByVal theString As String, delimiter As String, quote As String, startStr As String, openBracket As String, closeBracket As String) As Object
         Dim tempString As String
         Dim finalResult
@@ -91,19 +89,17 @@ err1:
         Debug.Print("")
     End Sub
 
-    ''
-    ' returns the minimal bracket balancing string contained in theString, opening bracket defined in openBracket, closing bracket defined in closeBracket
-    ' regarding quoted areas inside quote (optional
-    ' @param theString
-    ' @param openBracket As String
-    ' @param closeBracket As String
-    ' @param quote
-    ' @return the balanced string
-    ' @remarks
+    ''' <summary>returns the minimal bracket balancing string contained in theString, opening bracket defined in openBracket, closing bracket defined in closeBracket
+    ''' disregarding quoted areas inside optionally given quote charachter/string</summary>
+    ''' <param name="theString"></param>
+    ''' <param name="openBracket"></param>
+    ''' <param name="closeBracket"></param>
+    ''' <param name="quote"></param>
+    ''' <returns>the balanced string</returns>
     Private Function balancedString(theString As String, openBracket As String, closeBracket As String, Optional quote As String = vbNullString) As String
         Dim startBalance As Long, endBalance As Long, i As Long, countOpen As Long, countClose As Long
 
-        Dim quoteMode As Boolean : quoteMode = False
+        Dim quoteMode As Boolean = False
         On Error GoTo err1
         startBalance = 0
         For i = 1 To Len(theString)
@@ -143,16 +139,14 @@ err1:
         Debug.Print(balancedString("""(ignored"",(start,""ignore '(' , but include"",(go on, the end)),this should (all) be excluded", "(", ")", """") = "start,""ignore '(' , but include"",(go on, the end)")
     End Sub
 
-    ''
-    ' replaces the delimiter (delimiter) inside theString with specialSep, regarding both quoted areas inside quote and bracketed areas (inside openBracket/closeBracket)
-    ' @param theString
-    ' @param delimiter As String
-    ' @param quote As String
-    ' @param openBracket As String
-    ' @param closeBracket As String
-    ' @param specialSep As String
-    ' @return replaced string
-    ' @remarks
+    ''' <summary>replaces the delimiter (delimiter) inside theString with specialSep, regarding both quoted areas inside quote and bracketed areas (inside openBracket/closeBracket)</summary>
+    ''' <param name="theString"></param>
+    ''' <param name="delimiter"></param>
+    ''' <param name="quote"></param>
+    ''' <param name="openBracket"></param>
+    ''' <param name="closeBracket"></param>
+    ''' <param name="specialSep"></param>
+    ''' <returns>replaced string</returns>
     Private Function replaceDelimsWithSpecialSep(theString As String, delimiter As String, quote As String, openBracket As String, closeBracket As String, specialSep As String) As String
         Dim openedBrackets As Long, quoteMode As Boolean
         replaceDelimsWithSpecialSep = vbNullString
@@ -163,7 +157,7 @@ err1:
             If Left$(Mid$(theString, i), Len(quote)) = quote And quote.Length > 0 And Not quoteMode Then
                 quoteMode = True
             Else
-                If quoteMode And Left$(Mid$(theString, i), Len(quote)) = quote And quote.Length> 0 Then quoteMode = False
+                If quoteMode And Left$(Mid$(theString, i), Len(quote)) = quote And quote.Length > 0 Then quoteMode = False
             End If
 
             If Left$(Mid$(theString, i), Len(openBracket)) = openBracket And openBracket.Length > 0 And Not quoteMode Then
@@ -190,14 +184,12 @@ err1:
     End Function
 
 
-    ''
-    ' changes theString by replacing substring starting after keystr and ending with separator with changed, case insensitive !!
-    ' @param theString
-    ' @param keystr
-    ' @param changed
-    ' @param separator
-    ' @return the changed string
-    ' @remarks
+    ''' <summary>changes theString by replacing substring starting after keystr and ending with separator with changed, case insensitive !!</summary>
+    ''' <param name="theString"></param>
+    ''' <param name="keystr"></param>
+    ''' <param name="changed"></param>
+    ''' <param name="separator"></param>
+    ''' <returns>the changed string</returns>
     Public Function Change(ByVal theString As String, ByVal keystr As String, ByVal changed As String, ByVal separator As String) As String
         Dim replaceBeg As Integer, replaceEnd As Integer
 
@@ -212,14 +204,12 @@ err1:
     End Function
 
 
-    ''
-    ' fetches substring starting after keystr and ending with separator from theString, case insensitive !!
-    ' if separator is "" then fetch to end of string
-    ' @param theString
-    ' @param  keystr As String
-    ' @param  separator As String
-    ' @return the fetched substring
-    ' @remarks
+    ''' <summary>fetches substring starting after keystr and ending with separator from theString, case insensitive !!
+    ''' if separator is "" then fetch to end of string</summary>
+    ''' <param name="theString"></param>
+    ''' <param name="keystr"></param>
+    ''' <param name="separator"></param>
+    ''' <returns>the fetched substring</returns>
     Public Function fetch(ByVal theString As String, ByVal keystr As String, ByVal separator As String) As String
         Dim fetchBeg As Integer, fetchEnd As Integer
 
@@ -231,11 +221,9 @@ err1:
     End Function
 
 
-    ''
-    ' saves the filter settings in the given worksheet for retrieval after data refresh (this destroys filter settings)
-    ' @param ws Worksheet with filter settings
-    ' @return array of filter settings
-    ' @remarks
+    ''' <summary>saves the filter settings in the given worksheet for retrieval after data refresh (this destroys filter settings)</summary>
+    ''' <param name="ws">Worksheet with filter settings</param>
+    ''' <returns>array of filter settings</returns>
     Public Function saveFilterSettings(ws As Worksheet) As Object
         Dim filterArray As Object
         Dim DecSep As String, checkNum As String
@@ -298,13 +286,10 @@ err1:
         Err.Clear()
     End Function
 
-
-    ''
-    ' restores filter settings for the given header range from the stored filterArray after data refresh
-    ' @param filteredRange
-    ' @param filterArray As Object
-    ' @return success = TRUE, failure = FALSE
-    ' @remarks
+    ''' <summary>restores filter settings for the given header range from the stored filterArray after data refresh</summary>
+    ''' <param name="filteredRange"></param>
+    ''' <param name="filterArray"></param>
+    ''' <returns>success = TRUE, failure = FALSE</returns>
     Public Function restoreFilterSettings(filteredRange As Object, filterArray As Object) As Boolean
         On Error GoTo err1
         ' enable autofilter even if no filter is set, so restoreFilterSettings is false ....
@@ -327,56 +312,9 @@ err1:
         Err.Clear()
     End Function
 
-
-    ''
-    ' corrects field names of nonnullable fields prepended with specialNonNullableChar (e.g. "*")
-    ' back to the real name
-    ' @param name
-    ' @return the corrected string
-    ' @remarks
-    Public Function correctNonNull(name As String) As String
-        correctNonNull = IIf(Left$(name, 1) = specialNonNullableChar, Right$(name, Len(name) - 1), name)
-    End Function
-
-
-    ''
-    ' replaces tblPlaceHolder with changed in theString, quote aware (keystr is not replaced within quotes) !!
-    ' @param theString
-    ' @param changed
-    ' @return the replaced string
-    ' @remarks
-    Public Function quotedReplace(ByVal theString As String, ByVal changed As String) As String
-        Dim teststr
-        Dim subresult As String
-        quotedReplace = vbNullString
-
-        teststr = Split(theString, "'")
-        ' walk through quote1 splitted parts and replace keystr in even ones
-        Dim i As Long
-        For i = 0 To UBound(teststr)
-            If i Mod 2 = 0 Then
-                subresult = Replace(teststr(i), tblPlaceHolder, changed)
-            Else
-                subresult = teststr(i)
-            End If
-            quotedReplace = quotedReplace & subresult & IIf(i < UBound(teststr), "'", vbNullString)
-        Next
-    End Function
-
-    Private Sub testquotedReplace()
-        Debug.Print(quotedReplace("'asdasd!T!asdf'cvxcv", "T2") = "'asdasd" & tblPlaceHolder & "asdf'cvxcv")
-        Debug.Print(quotedReplace("wwe!T!rwer'asdasd!T!asdf'cvxcv", "T2") = "wweT2rwer'asdasd" & tblPlaceHolder & "asdf'cvxcv")
-        Debug.Print(quotedReplace("wwe!T!rwer'asdasd!T!asdf'cvx!T!cv", "T2") = "wweT2rwer'asdasd" & tblPlaceHolder & "asdf'cvxT2cv")
-        Debug.Print(quotedReplace("wwe""!T!""rwer'asdasd!T!asdf'cvx!T!cv", "T2") = "wwe""T2""rwer'asdasd" & tblPlaceHolder & "asdf'cvxT2cv")
-        Debug.Print(quotedReplace("wwwer'asdasd!T!asdf'cvx!T!cv'!T!dsfsd!T!'!T!", "T2") = "wwwer'asdasd" & tblPlaceHolder & "asdf'cvxT2cv'" & tblPlaceHolder & "dsfsd" & tblPlaceHolder & "'T2")
-    End Sub
-
-
-    ''
-    ' checks whether worksheet called theName exists
-    ' @param theName
-    ' @return True if sheet exists
-    ' @remarks
+    ''' <summary>checks whether worksheet called theName exists</summary>
+    ''' <param name="theName"></param>
+    ''' <returns>True if sheet exists</returns>
     Public Function existsSheet(ByRef theName As String) As Boolean
         Dim dummy As String
 
@@ -387,12 +325,9 @@ err1:
         If Err.Number <> 0 Then existsSheet = False
     End Function
 
-
-    ''
-    ' checks whether ADO type theType is a date or time type
-    ' @param theType
-    ' @return True if DateTime
-    ' @remarks
+    ''' <summary>checks whether ADO type theType is a date or time type</summary>
+    ''' <param name="theType"></param>
+    ''' <returns>True if DateTime</returns>
     Public Function checkIsDateTime(theType As ADODB.DataTypeEnum) As Boolean
         If theType = ADODB.DataTypeEnum.adDate Or theType = ADODB.DataTypeEnum.adDBDate Or theType = ADODB.DataTypeEnum.adDBTime Or theType = ADODB.DataTypeEnum.adDBTimeStamp Then
             checkIsDateTime = True
@@ -401,12 +336,9 @@ err1:
         End If
     End Function
 
-
-    ''
-    ' checks whether ADO type theType is a date type
-    ' @param theType
-    ' @return True if Date
-    ' @remarks
+    ''' <summary>checks whether ADO type theType is a date type</summary>
+    ''' <param name="theType"></param>
+    ''' <returns>True if Date</returns>
     Public Function checkIsDate(theType As ADODB.DataTypeEnum) As Boolean
         If theType = ADODB.DataTypeEnum.adDate Or theType = ADODB.DataTypeEnum.adDBDate Then
             checkIsDate = True
@@ -415,14 +347,9 @@ err1:
         End If
     End Function
 
-
-    ''
-    ' @param'   theType As ADODB.DataTypeEnum
-    ' @return
-    '    Boolean - is Time
-    '  checks whether ADO type theType is a time type
-    ' @remarks
-
+    ''' <summary>checks whether ADO type theType is a time type</summary>
+    ''' <param name="theType"></param>
+    ''' <returns>True if Time</returns>
     Public Function checkIsTime(theType As ADODB.DataTypeEnum) As Boolean
         If theType = ADODB.DataTypeEnum.adDBTime Or theType = ADODB.DataTypeEnum.adDBTimeStamp Then
             checkIsTime = True
@@ -431,12 +358,9 @@ err1:
         End If
     End Function
 
-
-    ''
-    ' checks whether ADO type theType is a numeric type
-    ' @param theType
-    ' @return True if numeric
-    ' @remarks
+    ''' <summary>checks whether ADO type theType is a numeric type</summary>
+    ''' <param name="theType"></param>
+    ''' <returns>True if numeric</returns>
     Public Function checkIsNumeric(theType As ADODB.DataTypeEnum) As Boolean
         If theType = ADODB.DataTypeEnum.adNumeric Or theType = ADODB.DataTypeEnum.adInteger Or theType = ADODB.DataTypeEnum.adTinyInt Or theType = ADODB.DataTypeEnum.adSmallInt Or theType = ADODB.DataTypeEnum.adBigInt Or theType = ADODB.DataTypeEnum.adUnsignedInt Or theType = ADODB.DataTypeEnum.adUnsignedTinyInt Or theType = ADODB.DataTypeEnum.adUnsignedSmallInt Or theType = ADODB.DataTypeEnum.adDouble Or theType = ADODB.DataTypeEnum.adSingle Or theType = ADODB.DataTypeEnum.adCurrency Or theType = ADODB.DataTypeEnum.adUnsignedBigInt Then
             checkIsNumeric = True
@@ -445,12 +369,9 @@ err1:
         End If
     End Function
 
-
-    ''
-    ' gets first underlying Name that contains DBtarget or DBsource in theRange in theWb
-    ' @param theRange
-    ' @return the retrieved name
-    ' @remarks
+    ''' <summary>gets first underlying Name that contains DBtarget or DBsource in theRange in theWb</summary>
+    ''' <param name="theRange"></param>
+    ''' <returns>the retrieved name</returns>
     Public Function getDBRangeName(theRange As Range) As Name
         Dim nm As Name
         Dim rng As Range
@@ -462,7 +383,7 @@ err1:
             On Error Resume Next
             rng = nm.RefersToRange
             On Error GoTo err1
-            If Not rng Is Nothing And Not (nm.name Like "*ExterneDaten*" Or nm.name Like "*_FilterDatabase") Then
+            If Not rng Is Nothing And Not (nm.Name Like "*ExterneDaten*" Or nm.Name Like "*_FilterDatabase") Then
                 On Error Resume Next
                 testRng = theHostApp.Intersect(theRange, rng)
                 If Err.Number = 0 And Not testRng Is Nothing And (InStr(1, nm.Name, "DBFtarget") >= 1 Or InStr(1, nm.Name, "DBFsource") >= 1) Then
@@ -480,11 +401,9 @@ err1:
         LogToEventViewer("Error: " & Err.Description & " in CommonFuncs.getRangeName in " & Erl(), EventLogEntryType.Error, 1)
     End Function
 
-    ''
-    ' only recalc full if we have DBFuncs in the workbook somewhere
-    ' @param Wb
-    ' @param ignoreCalcMode
-    ' @remarks
+    ''' <summary>only recalc full if we have DBFuncs in the workbook somewhere</summary>
+    ''' <param name="Wb"></param>
+    ''' <param name="ignoreCalcMode"></param>
     Public Sub refreshDBFunctions(Wb As Workbook, Optional ignoreCalcMode As Boolean = False)
         Dim searchCells As Range
         Dim ws As Worksheet
@@ -524,13 +443,11 @@ err_1:
         LogToEventViewer("Error: " & Err.Description & " in CommonFuncs.refreshDBFunctions in " & Erl() & ", " & Wb.Path & "\" & Wb.Name, EventLogEntryType.Error, 1)
     End Sub
 
-    ''
-    ' formats theVal to fit the type of column theHead in recordset checkrst
-    ' @param theVal
-    ' @param theHead
-    ' @param checkrst
-    ' @return formatted value
-    ' @remarks
+    ''' <summary>formats theVal to fit the type of column theHead in recordset checkrst</summary>
+    ''' <param name="theVal"></param>
+    ''' <param name="theHead"></param>
+    ''' <param name="checkrst"></param>
+    ''' <returns>formatted value</returns>
     Public Function dbformat(ByVal theVal As Object, ByVal theHead As String, checkrst As Recordset) As String
         ' build where clause criteria..
         If checkIsNumeric(checkrst.Fields(theHead).Type) Then

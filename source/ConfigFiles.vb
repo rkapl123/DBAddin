@@ -2,7 +2,7 @@ Imports Microsoft.Office.Interop
 Imports ExcelDna.Integration
 ''
 '  procedures used for loading config files (storing DBFuncs and general sheet content)
-Module ConfigFiles
+Public Module ConfigFiles
     Public referenceCell As Excel.Range
 
     ''
@@ -13,11 +13,8 @@ Module ConfigFiles
         Return referenceCell.Parent
     End Function
 
-    'TODO: replace VBA style file reading
-    ''
-    ' if theFileName not given, displays file dialog for loading several cells to a configuration file (.XCL)
-    ' @param theFileName
-    ' @remarks
+    ''' <summary>loads config from file given in theFileName; if theFileName not given, displays file dialog for loading several cells to a configuration file (.XCL)</summary>
+    ''' <param name="theFileName">the File name of the config file</param>
     Public Sub loadConfig(theFileName As String)
         Dim ItemLine As String
         Dim retval As Integer
@@ -32,7 +29,7 @@ Module ConfigFiles
         Do
             ItemLine = fileReader.ReadLine()
             ' now insert the parsed information
-            createDBFunc(theHostApp.ActiveCell, Split(ItemLine, vbTab))
+            createFunctionsInCells(theHostApp.ActiveCell, Split(ItemLine, vbTab))
         Loop Until EOF(1)
         fileReader.Close()
         Exit Sub
@@ -43,12 +40,10 @@ err1:
     End Sub
 
 
-    ''
-    '  create a functions in target cells (relative to currently active cell) as defined
-    '             in ItemLineDef (pairwise containing relative cell addresses and the cell content there)
-    ' @param ItemLineDef
-    ' @remarks
-    Public Sub createDBFunc(referenceCell As Excel.Range, ByRef ItemLineDef As Object)
+    ''' <summary>creates functions in target cells (relative to referenceCell) as defined in ItemLineDef</summary>
+    ''' <param name="referenceCell">reference Cell where all functions relative addresses are related to</param>
+    ''' <param name="ItemLineDef">String array, pairwise containing relative cell addresses and the functions in those cells (= cell content)</param>
+    Public Sub createFunctionsInCells(referenceCell As Excel.Range, ByRef ItemLineDef As Object)
         On Error GoTo err1
 
         Dim cellToBeStoredAddress As String, cellToBeStoredContent As String
@@ -106,17 +101,13 @@ cleanup:
         theHostApp.Calculation = calcMode
         Exit Sub
 err1:
-        If VBDEBUG Then Debug.Print("Error (" & Err.Description & ") in DBFuncBuilder.createDBFunc") : Stop : Resume
-        LogError(Err.Description & " in DBFuncBuilder.createDBFunc" & Erl(), , , 1)
+        If VBDEBUG Then Debug.Print("Error (" & Err.Description & ") in ConfigFiles.createFunctionsInCells") : Stop : Resume
+        LogError(Err.Description & " in ConfigFiles.createFunctionsInCells" & Erl(), , , 1)
     End Sub
 
-    ''
-    '  converts the two string specified addresses in DBMakeControl (controlLocation and dataTargetRange)
-    '             from relative to absolute Address (convertMode = "toAbsolute") or
-    '             from absolute to relative Address (convertMode = "toRelative")
-    ' @param cellToBeStoredContent
-    ' @param convertMode
-    ' @remarks
+    ''' <summary>converts the two string specified addresses in DBMakeControl (controlLocation and dataTargetRange)</summary>
+    ''' <param name="cellToBeStoredContent">content of cell containing dbmakecontrol function</param>
+    ''' <param name="convertMode">from relative to absolute Address: toAbsolute"; from absolute to relative Address: toRelative</param>
     Public Sub convertAddressOfDBMakeControl(ByRef cellToBeStoredContent As String, convertMode As String)
         Dim cellToBeStoredAddr As String, argumentDesc As String, alreadyConverted As String = vbNullString
         Dim cellToBeStored As Excel.Range = Nothing
@@ -150,26 +141,24 @@ err1:
                     alreadyConverted = getRelAddress(cellToBeStored, referenceCell)
                     cellToBeStoredContent = Replace(cellToBeStoredContent, cellToBeStoredAddr & """", alreadyConverted & """")
                 Else
-                    Err.Raise(10000, , "invalid convertMode '" & convertMode & "' in procedure convertAddressOfDBMakeControl !!")
+                    Err.Raise(10000, , "invalid convertMode '" & convertMode & "' in ConfigFiles.convertAddressOfDBMakeControl !!")
                 End If
             End If
         Next
         Exit Sub
 err1:
-        If VBDEBUG Then Debug.Print("Error (" & Err.Description & ") in DBFuncBuilder.convertAddressOfDBMakeControl") : Stop : Resume
-        LogError(Err.Description & ":" & cellToBeStoredContent & ":" & "  in DBFuncBuilder.convertAddressOfDBMakeControl" & Erl(), , , 1)
+        If VBDEBUG Then Debug.Print("Error (" & Err.Description & ") in ConfigFiles.convertAddressOfDBMakeControl") : Stop : Resume
+        LogError(Err.Description & ":" & cellToBeStoredContent & ":" & "  in ConfigFiles.convertAddressOfDBMakeControl" & Erl(), , , 1)
     End Sub
 
-    ''
-    ' creates a sheet if theTarget is specifying to be in a different worksheet (thetarget starts with '<sheetname>'! )
-    ' @param thetarget
-    ' @remarks
-    Private Sub createSheetForTarget(ByVal thetarget As String)
+    ''' <summary>creates a sheet if theTarget is specifying to be in a different worksheet (theTarget starts with '(sheetname)'! )</summary>
+    ''' <param name="theTarget"></param>
+    Private Sub createSheetForTarget(ByVal theTarget As String)
         Dim theSheetName As String
         Dim testSheetExist As String
 
-        If InStr(1, thetarget, "!") = 0 Then Exit Sub
-        theSheetName = Replace(Mid$(thetarget, 1, InStr(1, thetarget, "!") - 1), "'", vbNullString)
+        If InStr(1, theTarget, "!") = 0 Then Exit Sub
+        theSheetName = Replace(Mid$(theTarget, 1, InStr(1, theTarget, "!") - 1), "'", vbNullString)
         On Error Resume Next
         testSheetExist = theHostApp.Worksheets(theSheetName).name
         If Err.Number <> 0 Then
@@ -180,18 +169,16 @@ err1:
         End If
     End Sub
 
-    ''
-    ' gets range in relation to another (originRange)
-    ' @param originRange the origin to be related to
-    ' @param relAddress the relative address of the target
-    ' @param theTargetRange the returned range
-    ' @return True if no errors, false otherwise.
-    ' @remarks
+    ''' <summary>gets range in relation to another (originRange)</summary>
+    ''' <param name="originRange">the origin to be related to</param>
+    ''' <param name="relAddress">the relative address of the target</param>
+    ''' <param name="theTargetRange">the returned range</param>
+    ''' <returns>True if no errors, false otherwise</returns>
     Private Function getRangeFromRelative(originRange As Excel.Range, ByVal relAddress As String, ByRef theTargetRange As Excel.Range) As Boolean
         Dim theSheetName As String
 
         If InStr(1, relAddress, "!") = 0 Then
-            theSheetName = referenceSheet().name
+            theSheetName = referenceSheet().Name
         Else
             theSheetName = Replace(Mid$(relAddress, 1, InStr(1, relAddress, "!") - 1), "'", vbNullString)
         End If
@@ -217,13 +204,11 @@ err1:
         End If
     End Function
 
-    ''
-    ' parse row or column out of RC style reference adresses
-    ' @param relAddr RC style reference adresses
-    ' @param getRow get the row (true) or column (false)
-    ' @param getBottomRight if we have a multi cell range (<topleft>:<bottomright>) then get the row or column from the bottomright part
-    ' @return parsed row (getRow = true) or column (getRow = false) from address
-    ' @remarks
+    ''' <summary>parse row or column out of RC style reference adresses</summary>
+    ''' <param name="relAddr">RC style reference adresses</param>
+    ''' <param name="getRow">get the row (true) or column (false)</param>
+    ''' <param name="getBottomRight">if we have a multi cell range ((topleftAddress):(bottomrightAddress)) then get the row or column from the bottomright part</param>
+    ''' <returns>parsed row (getRow = true) or column (getRow = false) from address</returns>
     Function getRowOrCol(relAddr As String, getRow As Boolean, Optional getBottomRight As Boolean = False) As Long
         Dim beg As String, srchSubStr As String, srchBeg As Integer
 
@@ -244,13 +229,11 @@ err1:
         End If
     End Function
 
-    ''
-    ' get Nth last token from searchStr, separated by separator
-    ' @param searchStr
-    ' @param separator
-    ' @param n
-    ' @return token string
-    ' @remarks
+    ''' <summary>get Nth last token from searchStr, separated by separator</summary>
+    ''' <param name="searchStr">string to be searched for tokens</param>
+    ''' <param name="separator">separator of tokens</param>
+    ''' <param name="n">position of token to be returned</param>
+    ''' <returns>token string</returns>
     Private Function fetchNthFromLast(searchStr As String, separator As String, n As Integer) As String
         Dim cCount As Long
         Dim curpos As Long, lastPos As Long
@@ -274,17 +257,15 @@ err1:
         End If
     End Function
 
-    ''
-    '  provides either the range from the target cell given in cellAddress
-    '           or the range of the default target cell in case cellAddress is not given
-    '           default target cells are defined by defaultRow and defaultCol,
-    '           which are the default offsets from originCell (the function's target cell)
-    ' @param cellAddress
-    ' @param defaultRow
-    ' @param defaultCol
-    ' @param originCell
-    ' @return the target range
-    ' @remarks
+    ''' <summary>provides either the range from the target cell given in cellAddress
+    '''           or the range of the default target cell in case cellAddress is not given
+    '''           default target cells are defined by defaultRow and defaultCol,
+    '''           which are the default offsets from originCell (the function's target cell)</summary>
+    ''' <param name="cellAddress"></param>
+    ''' <param name="defaultRow"></param>
+    ''' <param name="defaultCol"></param>
+    ''' <param name="originCell"></param>
+    ''' <returns>the target range</returns>
     Public Function getRangeFromAbsolute(ByVal cellAddress As String, Optional ByVal defaultRow As Long = 0, Optional ByVal defaultCol As Long = 0, Optional originCell As Excel.Range = Nothing) As Excel.Range
         Dim getRangeFromAbsoluteStr As String
 
@@ -302,13 +283,11 @@ err1:
         End If
     End Function
 
-    ''
-    ' retrieve cell-address from theTargetCell as R1C1 relative style relative to relativeToCell
-    '             (including potential prepended worksheet if theTargetCell's Parentsheet Is Not referenceSheet)
-    ' @param theTargetCell
-    ' @param relativeToCell
-    ' @return the relative cell-address
-    ' @remarks
+    ''' <summary>retrieve cell-address from theTargetCell as R1C1 relative style relative to relativeToCell
+    '''             (including potential prepended worksheet if theTargetCell's Parentsheet Is Not referenceSheet)</summary>
+    ''' <param name="theTargetCell"></param>
+    ''' <param name="relativeToCell"></param>
+    ''' <returns>the relative cell-address</returns>
     Public Function getRelAddress(theTargetCell As Excel.Range, relativeToCell As Excel.Range) As String
         Dim theRelAddress As String
         theRelAddress = theTargetCell.Address(ReferenceStyle:=Excel.XlReferenceStyle.xlR1C1, RowAbsolute:=False, ColumnAbsolute:=False, RelativeTo:=relativeToCell)
@@ -319,12 +298,10 @@ err1:
         End If
     End Function
 
-    ''
-    '  provides either the worksheet part within the target cell value given in cellAddress
-    '             or the worksheet of the default target cell in case target Cell in cellAddress is not given
-    ' @param cellAddress
-    ' @return target sheet name
-    ' @remarks
+    ''' <summary>provides either the worksheet part within the target cell value given in cellAddress
+    '''             or the worksheet of the default target cell in case target Cell in cellAddress is not given</summary>
+    ''' <param name="cellAddress"></param>
+    ''' <returns>target sheet name</returns>
     Private Function getTargetWS(ByVal cellAddress As String) As String
         If cellAddress.Length > 0 Then
             getTargetWS = cellAddress

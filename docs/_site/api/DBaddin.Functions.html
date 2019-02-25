@@ -1,0 +1,1063 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Class Functions
+   </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Class Functions
+   ">
+    <meta name="generator" content="docfx 2.40.11.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="DBaddin.Functions">
+  
+  
+  <h1 id="DBaddin_Functions" data-uid="DBaddin.Functions" class="text-break">Class Functions
+  </h1>
+  <div class="markdown level0 summary"><p>Contains the public callable DB functions and some helper functions</p>
+</div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="inheritance">
+    <h5>Inheritance</h5>
+    <div class="level0"><span class="xref">Functions</span></div>
+  </div>
+  <h6><strong>Namespace</strong>: <a class="xref" href="DBaddin.html">DBaddin</a></h6>
+  <h6><strong>Assembly</strong>: DBaddin.dll</h6>
+  <h5 id="DBaddin_Functions_syntax">Syntax</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public class Functions</code></pre>
+  </div>
+  <h3 id="methods">Methods
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_chainCells_System_Object___.md&amp;value=---%0Auid%3A%20DBaddin.Functions.chainCells(System.Object%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L260">View Source</a>
+  </span>
+  <a id="DBaddin_Functions_chainCells_" data-uid="DBaddin.Functions.chainCells*"></a>
+  <h4 id="DBaddin_Functions_chainCells_System_Object___" data-uid="DBaddin.Functions.chainCells(System.Object[])">chainCells(Object[])</h4>
+  <div class="markdown level1 summary"><p>chains values contained in thetarget together with commas, mainly used for creating select header</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static string chainCells(params object[] thetarget)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Object</span>[]</td>
+        <td><span class="parametername">thetarget</span></td>
+        <td><p>range where values should be chained</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><p>chained String</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_concatCells_System_Object___.md&amp;value=---%0Auid%3A%20DBaddin.Functions.concatCells(System.Object%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L159">View Source</a>
+  </span>
+  <a id="DBaddin_Functions_concatCells_" data-uid="DBaddin.Functions.concatCells*"></a>
+  <h4 id="DBaddin_Functions_concatCells_System_Object___" data-uid="DBaddin.Functions.concatCells(System.Object[])">concatCells(Object[])</h4>
+  <div class="markdown level1 summary"><p>concatenates values contained in thetarget together (using .value attribute for cells)</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static string concatCells(params object[] thetarget)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Object</span>[]</td>
+        <td><span class="parametername">thetarget</span></td>
+        <td><p>all cells/values which should be concatenated</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><p>concatenated String</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_concatCellsSep_System_String_System_Object___.md&amp;value=---%0Auid%3A%20DBaddin.Functions.concatCellsSep(System.String%2CSystem.Object%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L223">View Source</a>
+  </span>
+  <a id="DBaddin_Functions_concatCellsSep_" data-uid="DBaddin.Functions.concatCellsSep*"></a>
+  <h4 id="DBaddin_Functions_concatCellsSep_System_String_System_Object___" data-uid="DBaddin.Functions.concatCellsSep(System.String,System.Object[])">concatCellsSep(String, Object[])</h4>
+  <div class="markdown level1 summary"><p>concatenates values contained in thetarget (using .value for cells) using a separator</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static string concatCellsSep(string separator, params object[] thetarget)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">separator</span></td>
+        <td><p>the separator</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Object</span>[]</td>
+        <td><span class="parametername">thetarget</span></td>
+        <td><p>all cells/values which should be concatenated</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><p>concatenated String</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_concatCellsSepText_System_String_System_Object___.md&amp;value=---%0Auid%3A%20DBaddin.Functions.concatCellsSepText(System.String%2CSystem.Object%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L236">View Source</a>
+  </span>
+  <a id="DBaddin_Functions_concatCellsSepText_" data-uid="DBaddin.Functions.concatCellsSepText*"></a>
+  <h4 id="DBaddin_Functions_concatCellsSepText_System_String_System_Object___" data-uid="DBaddin.Functions.concatCellsSepText(System.String,System.Object[])">concatCellsSepText(String, Object[])</h4>
+  <div class="markdown level1 summary"><p>concatenates values contained in thetarget using a separator using cells text property instead of the value (displayed)</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static string concatCellsSepText(string separator, params object[] thetarget)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">separator</span></td>
+        <td><p>the separator</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Object</span>[]</td>
+        <td><span class="parametername">thetarget</span></td>
+        <td><p>all cells/values which should be concatenated</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><p>concatenated String</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_concatCellsText_System_Object___.md&amp;value=---%0Auid%3A%20DBaddin.Functions.concatCellsText(System.Object%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L170">View Source</a>
+  </span>
+  <a id="DBaddin_Functions_concatCellsText_" data-uid="DBaddin.Functions.concatCellsText*"></a>
+  <h4 id="DBaddin_Functions_concatCellsText_System_Object___" data-uid="DBaddin.Functions.concatCellsText(System.Object[])">concatCellsText(Object[])</h4>
+  <div class="markdown level1 summary"><p>concatenates values contained in thetarget together (using .text for cells)</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static string concatCellsText(params object[] thetarget)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Object</span>[]</td>
+        <td><span class="parametername">thetarget</span></td>
+        <td><p>all cells/values which should be concatenated</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><p>concatenated String</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_DBAddinEnvironment.md&amp;value=---%0Auid%3A%20DBaddin.Functions.DBAddinEnvironment%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L679">View Source</a>
+  </span>
+  <a id="DBaddin_Functions_DBAddinEnvironment_" data-uid="DBaddin.Functions.DBAddinEnvironment*"></a>
+  <h4 id="DBaddin_Functions_DBAddinEnvironment" data-uid="DBaddin.Functions.DBAddinEnvironment">DBAddinEnvironment()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static string DBAddinEnvironment()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_DBAddinServerSetting.md&amp;value=---%0Auid%3A%20DBaddin.Functions.DBAddinServerSetting%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L685">View Source</a>
+  </span>
+  <a id="DBaddin_Functions_DBAddinServerSetting_" data-uid="DBaddin.Functions.DBAddinServerSetting*"></a>
+  <h4 id="DBaddin_Functions_DBAddinServerSetting" data-uid="DBaddin.Functions.DBAddinServerSetting">DBAddinServerSetting()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static string DBAddinServerSetting()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_DBCellFetch_System_Object_System_Object_System_Boolean_System_String_System_String_System_String_System_String_System_Boolean_System_String_.md&amp;value=---%0Auid%3A%20DBaddin.Functions.DBCellFetch(System.Object%2CSystem.Object%2CSystem.Boolean%2CSystem.String%2CSystem.String%2CSystem.String%2CSystem.String%2CSystem.Boolean%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L635">View Source</a>
+  </span>
+  <a id="DBaddin_Functions_DBCellFetch_" data-uid="DBaddin.Functions.DBCellFetch*"></a>
+  <h4 id="DBaddin_Functions_DBCellFetch_System_Object_System_Object_System_Boolean_System_String_System_String_System_String_System_String_System_Boolean_System_String_" data-uid="DBaddin.Functions.DBCellFetch(System.Object,System.Object,System.Boolean,System.String,System.String,System.String,System.String,System.Boolean,System.String)">DBCellFetch(Object, Object, Boolean, String, String, String, String, Boolean, String)</h4>
+  <div class="markdown level1 summary"><p>Fetches results of a query (defined in query) from DB (optionally defined in ConnString)
+            into current cell. Columns are separated by colSeparator, rows by rowSeparator</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static string DBCellFetch(object Query, object ConnString = null, bool HeaderInfo = false, string colSep = &quot;,&quot;, string rowSep = &quot;\n&quot;, string lastColSep = null, string lastRowSep = null, bool InterleaveHeader = false, string subscribeTo = null)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Object</span></td>
+        <td><span class="parametername">Query</span></td>
+        <td><p>query for getting data</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Object</span></td>
+        <td><span class="parametername">ConnString</span></td>
+        <td><p>connection string defining DB, user, etc...</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">HeaderInfo</span></td>
+        <td><p>additionally fill headings of query</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">colSep</span></td>
+        <td><p>usual column separator</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">rowSep</span></td>
+        <td><p>usual row separator</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">lastColSep</span></td>
+        <td><p>if given, last column is separated from others with that one</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">lastRowSep</span></td>
+        <td><p>if given, last row is separated from others with that one</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">InterleaveHeader</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">subscribeTo</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><p>query result</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 id="DBaddin_Functions_DBCellFetch_System_Object_System_Object_System_Boolean_System_String_System_String_System_String_System_String_System_Boolean_System_String__remarks">Remarks</h5>
+  <div class="markdown level1 remarks"><p>layout of value is as follows (carriage returns are here just for clarity of display, actually this is rowSep, resp. lastRowSep):
+header1 (colSep) header2 (colSep) header3 (colSep)... (colSep/lastColSep) headerN (rowSep)
+value11 (colSep) value12 (colSep) value13 (colSep)... (colSep/lastColSep) value1N (rowSep)
+...
+value(M-1)1 (colSep) value(M-1)2 (colSep) value(M-1)3 (colSep)... (colSep/lastColSep) value(M-1)N (rowSep/lastRowSep)
+valueM1 (colSep) valueM2 (colSep) valueM3 (colSep)... (colSep/lastColSep) valueMN</p>
+</div>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_DBDate_System_DateTime_System_Int32_.md&amp;value=---%0Auid%3A%20DBaddin.Functions.DBDate(System.DateTime%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L18">View Source</a>
+  </span>
+  <a id="DBaddin_Functions_DBDate_" data-uid="DBaddin.Functions.DBDate*"></a>
+  <h4 id="DBaddin_Functions_DBDate_System_DateTime_System_Int32_" data-uid="DBaddin.Functions.DBDate(System.DateTime,System.Int32)">DBDate(DateTime, Int32)</h4>
+  <div class="markdown level1 summary"><p>Create database compliant date, time or datetime string from excel datetype value</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static string DBDate(DateTime datVal, int formatting = 99)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.DateTime</span></td>
+        <td><span class="parametername">datVal</span></td>
+        <td><p>date/time/datetime</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">formatting</span></td>
+        <td><p>see remarks</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><p>the DB compliant formatted date/time/datetime</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 id="DBaddin_Functions_DBDate_System_DateTime_System_Int32__remarks">Remarks</h5>
+  <div class="markdown level1 remarks"><p>formatting = 0: A simple datestring (format &apos;YYYYMMDD&apos;), datetime values are converted to &apos;YYYYMMDD HH:MM:SS&apos; and time values are converted to &apos;HH:MM:SS&apos;.
+formatting = 1: An ANSI compliant Date string (format date &apos;YYYY-MM-DD&apos;), datetime values are converted to timestamp &apos;YYYY-MM-DD HH:MM:SS&apos; and time values are converted to time time &apos;HH:MM:SS&apos;.
+formatting = 2: An ODBC compliant Date string (format {d &apos;YYYY-MM-DD&apos;}), datetime values are converted to {ts &apos;YYYY-MM-DD HH:MM:SS&apos;} and time values are converted to {t &apos;HH:MM:SS&apos;}.
+formatting = 99 (default value): take the formatting option from setting DefaultDBDateFormatting (0 if not given)</p>
+</div>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_DBinClause_System_Object___.md&amp;value=---%0Auid%3A%20DBaddin.Functions.DBinClause(System.Object%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L83">View Source</a>
+  </span>
+  <a id="DBaddin_Functions_DBinClause_" data-uid="DBaddin.Functions.DBinClause*"></a>
+  <h4 id="DBaddin_Functions_DBinClause_System_Object___" data-uid="DBaddin.Functions.DBinClause(System.Object[])">DBinClause(Object[])</h4>
+  <div class="markdown level1 summary"><p>Create an in clause from cell values, strings are created with quotation marks,
+            dates are created with DBDate (see below)</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static string DBinClause(params object[] inPart)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Object</span>[]</td>
+        <td><span class="parametername">inPart</span></td>
+        <td><p>array of values or ranges containing values</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><p>database compliant in-clause string</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_DBListFetch_System_Object_System_Object_Microsoft_Office_Interop_Excel_Range_System_Object_System_Int32_System_Boolean_System_Boolean_System_Boolean_System_Boolean_System_String_.md&amp;value=---%0Auid%3A%20DBaddin.Functions.DBListFetch(System.Object%2CSystem.Object%2CMicrosoft.Office.Interop.Excel.Range%2CSystem.Object%2CSystem.Int32%2CSystem.Boolean%2CSystem.Boolean%2CSystem.Boolean%2CSystem.Boolean%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L428">View Source</a>
+  </span>
+  <a id="DBaddin_Functions_DBListFetch_" data-uid="DBaddin.Functions.DBListFetch*"></a>
+  <h4 id="DBaddin_Functions_DBListFetch_System_Object_System_Object_Microsoft_Office_Interop_Excel_Range_System_Object_System_Int32_System_Boolean_System_Boolean_System_Boolean_System_Boolean_System_String_" data-uid="DBaddin.Functions.DBListFetch(System.Object,System.Object,Microsoft.Office.Interop.Excel.Range,System.Object,System.Int32,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.String)">DBListFetch(Object, Object, Range, Object, Int32, Boolean, Boolean, Boolean, Boolean, String)</h4>
+  <div class="markdown level1 summary"><p>Fetches a list of data defined by query into TargetRange.
+Optionally copy formulas contained in FormulaRange, extend list depending on ExtendDataArea (0(default) = overwrite, 1=insert Cells, 2=insert Rows)
+and add field headers if HeaderInfo = TRUE</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static string DBListFetch(object Query, object ConnString, Range targetRange = null, object formulaRange = null, int extendDataArea = 0, bool HeaderInfo = false, bool AutoFit = false, bool autoformat = false, bool ShowRowNums = false, string subscribeTo = null)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Object</span></td>
+        <td><span class="parametername">Query</span></td>
+        <td><p>query for getting data</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Object</span></td>
+        <td><span class="parametername">ConnString</span></td>
+        <td><p>connection string defining DB, user, etc...</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">Microsoft.Office.Interop.Excel.Range</span></td>
+        <td><span class="parametername">targetRange</span></td>
+        <td><p>Range to put the data into</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Object</span></td>
+        <td><span class="parametername">formulaRange</span></td>
+        <td><p>Range to copy formulas down from</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">extendDataArea</span></td>
+        <td><p>how to deal with extending List Area</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">HeaderInfo</span></td>
+        <td><p>should headers be included in list</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">AutoFit</span></td>
+        <td><p>should columns be autofitted ?</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">autoformat</span></td>
+        <td><p>should 1st row formats be autofilled down?</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">ShowRowNums</span></td>
+        <td><p>should row numbers be displayed in 1st column?</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">subscribeTo</span></td>
+        <td><p>not yet implemented</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><p>Status Message, data values are returned outside of function cell (@see DBFuncEventHandler)</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_DBMakeControl_System_Object_System_Object_System_Int32_System_Boolean_System_Boolean_System_String_System_String_System_String_System_String_.md&amp;value=---%0Auid%3A%20DBaddin.Functions.DBMakeControl(System.Object%2CSystem.Object%2CSystem.Int32%2CSystem.Boolean%2CSystem.Boolean%2CSystem.String%2CSystem.String%2CSystem.String%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L300">View Source</a>
+  </span>
+  <a id="DBaddin_Functions_DBMakeControl_" data-uid="DBaddin.Functions.DBMakeControl*"></a>
+  <h4 id="DBaddin_Functions_DBMakeControl_System_Object_System_Object_System_Int32_System_Boolean_System_Boolean_System_String_System_String_System_String_System_String_" data-uid="DBaddin.Functions.DBMakeControl(System.Object,System.Object,System.Int32,System.Boolean,System.Boolean,System.String,System.String,System.String,System.String)">DBMakeControl(Object, Object, Int32, Boolean, Boolean, String, String, String, String)</h4>
+  <div class="markdown level1 summary"><p>creates a Listbox or Dropdown filled with data defined by query</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static string DBMakeControl(object Query, object ConnString, int controlType = 0, bool HeaderInfo = false, bool autoArrange = false, string ControlName = null, string dataTargetRange = null, string controlLocation = null, string subscribeTo = null)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Object</span></td>
+        <td><span class="parametername">Query</span></td>
+        <td><p>query for getting data</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Object</span></td>
+        <td><span class="parametername">ConnString</span></td>
+        <td><p>connection string defining DB, user, etc...</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">controlType</span></td>
+        <td><p>type of control to be inserted (0 = Listbox, 1 = Dropdown)</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">HeaderInfo</span></td>
+        <td><p>should header label be included in list</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">autoArrange</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">ControlName</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">dataTargetRange</span></td>
+        <td><p>Range (String) to put the selection into (default = left cell from function address)</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">controlLocation</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">subscribeTo</span></td>
+        <td><p>Range (String), where control/header should be placed (default = function address)</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><p>Status Message</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_DBRowFetch_System_Object_System_Object_System_Object___.md&amp;value=---%0Auid%3A%20DBaddin.Functions.DBRowFetch(System.Object%2CSystem.Object%2CSystem.Object%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L524">View Source</a>
+  </span>
+  <a id="DBaddin_Functions_DBRowFetch_" data-uid="DBaddin.Functions.DBRowFetch*"></a>
+  <h4 id="DBaddin_Functions_DBRowFetch_System_Object_System_Object_System_Object___" data-uid="DBaddin.Functions.DBRowFetch(System.Object,System.Object,System.Object[])">DBRowFetch(Object, Object, Object[])</h4>
+  <div class="markdown level1 summary"><p>Fetches a row (single record) queried (defined in query) from DB (defined in ConnString) into targetArray</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static string DBRowFetch(object Query, object ConnString, params object[] targetArray)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Object</span></td>
+        <td><span class="parametername">Query</span></td>
+        <td><p>query for getting data</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Object</span></td>
+        <td><span class="parametername">ConnString</span></td>
+        <td><p>connection string defining DB, user, etc...</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Object</span>[]</td>
+        <td><span class="parametername">targetArray</span></td>
+        <td><p>Range to put the data into</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><p>Status Message, data values are returned outside of function cell (@see DBFuncEventHandler)</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_DBSetQuery_System_Object_System_Object_Microsoft_Office_Interop_Excel_Range_.md&amp;value=---%0Auid%3A%20DBaddin.Functions.DBSetQuery(System.Object%2CSystem.Object%2CMicrosoft.Office.Interop.Excel.Range)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L355">View Source</a>
+  </span>
+  <a id="DBaddin_Functions_DBSetQuery_" data-uid="DBaddin.Functions.DBSetQuery*"></a>
+  <h4 id="DBaddin_Functions_DBSetQuery_System_Object_System_Object_Microsoft_Office_Interop_Excel_Range_" data-uid="DBaddin.Functions.DBSetQuery(System.Object,System.Object,Microsoft.Office.Interop.Excel.Range)">DBSetQuery(Object, Object, Range)</h4>
+  <div class="markdown level1 summary"><p>Stores a query into an Object defined in targetRange (an embedded MS Query/Listobject, Pivot table, etc.)</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static string DBSetQuery(object Query, object ConnString, Range targetRange)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Object</span></td>
+        <td><span class="parametername">Query</span></td>
+        <td><p>query for getting data</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Object</span></td>
+        <td><span class="parametername">ConnString</span></td>
+        <td><p>connection string defining DB, user, etc...</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">Microsoft.Office.Interop.Excel.Range</span></td>
+        <td><span class="parametername">targetRange</span></td>
+        <td><p>Range with Object beneath to put the Query/ConnString into</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><p>Status Message</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_DBString_System_Object___.md&amp;value=---%0Auid%3A%20DBaddin.Functions.DBString(System.Object%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L56">View Source</a>
+  </span>
+  <a id="DBaddin_Functions_DBString_" data-uid="DBaddin.Functions.DBString*"></a>
+  <h4 id="DBaddin_Functions_DBString_System_Object___" data-uid="DBaddin.Functions.DBString(System.Object[])">DBString(Object[])</h4>
+  <div class="markdown level1 summary"><p>Create a database compliant string from cell values, potentially concatenating with other parts for easy inclusion of wildcards (%,_)</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static string DBString(params object[] StringPart)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Object</span>[]</td>
+        <td><span class="parametername">StringPart</span></td>
+        <td><p>array of strings/wildcards or ranges containing strings/wildcards</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><p>database compliant string</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_purge.md&amp;value=---%0Auid%3A%20DBaddin.Functions.purge%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L877">View Source</a>
+  </span>
+  <a id="DBaddin_Functions_purge_" data-uid="DBaddin.Functions.purge*"></a>
+  <h4 id="DBaddin_Functions_purge" data-uid="DBaddin.Functions.purge">purge()</h4>
+  <div class="markdown level1 summary"><p>maintenance procedure to purge names used for dbfunctions from workbook</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static void purge()</code></pre>
+  </div>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                  <li>
+                    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions.md&amp;value=---%0Auid%3A%20DBaddin.Functions%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
+                  </li>
+                  <li>
+                    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L6" class="contribution-link">View Source</a>
+                  </li>
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>

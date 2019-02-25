@@ -1,222 +1,19 @@
 Imports Microsoft.Office.Interop.Excel
 Imports ExcelDna.Integration
+Imports ExcelDna.Integration.XlCall
 
 ''' <summary>Contains the public callable DB functions and some helper functions</summary>
-Class Functions
-    ''' <summary>inter/extrapoliere linear den Wert für Tage in range Tabelle_Kurse, zugehörige Stützpunkte aus range Tabelle_Tage</summary>
-    ''' <param name="Tage">Laufzeit für die zu interpolieren ist</param>
-    ''' <param name="Tabelle_Tage">Liste mit Laufzeitstützpunkten</param>
-    ''' <param name="Tabelle_Kurse">Liste mit zugehörigen Wertstützpunkten</param>
-    ''' <returns>inter/extrapolierter Wert</returns>
-    Public Function Interpolieren(Tage As Object, Tabelle_Tage As Range, Tabelle_Kurse As Range) As Object ' needs to be variant to return err msgs
-        Dim retval As Double
-        Dim tempTage As Range, tempRates As Range
-        Dim KurzTag As Long, LangTag As Long
-        Dim layoutVertical As Boolean
-
-        On Error Resume Next
-        If TypeName(Tabelle_Tage) = "Error" Then
-            Interpolieren = "Invalid Range given in Tabelle_Tage"
-            Exit Function
-        End If
-        If TypeName(Tabelle_Kurse) = "Error" Then
-            Interpolieren = "Invalid Range given in Tabelle_Kurse"
-            Exit Function
-        End If
-
-        If Tabelle_Tage.Columns.Count = 1 Then
-            layoutVertical = True
-            If Tabelle_Tage.Rows.Count <> Tabelle_Kurse.Rows.Count Then
-                Interpolieren = "Invalid Ranges given, Tabelle_Tage not same size as Tabelle_Kurse"
-                Exit Function
-            End If
-        ElseIf Tabelle_Tage.Rows.Count = 1 Then
-            layoutVertical = False
-            If Tabelle_Tage.Columns.Count <> Tabelle_Kurse.Columns.Count Then
-                Interpolieren = "Invalid Ranges given, Tabelle_Tage not same size as Tabelle_Kurse"
-                Exit Function
-            End If
-        Else
-            Interpolieren = "Invalid Range (more than one row for row data or more than one column for column data) given in Tabelle_Tage !"
-            Exit Function
-        End If
-
-        If Tage < theHostApp.WorksheetFunction.Min(Tabelle_Tage) Then
-            KurzTag = 1
-        ElseIf Tage >= theHostApp.WorksheetFunction.Max(Tabelle_Tage) Then
-            KurzTag = IIf(layoutVertical, Tabelle_Tage.Rows.Count - 1, Tabelle_Tage.Columns.Count - 1)
-        Else
-            KurzTag = theHostApp.WorksheetFunction.Match(Tage, Tabelle_Tage, 1)
-        End If
-
-        If layoutVertical Then
-            While (Not IsNumeric(Tabelle_Kurse.Cells(KurzTag, 1).Value) Or Tabelle_Kurse.Cells(KurzTag, 1) Is ExcelEmpty.Value) And KurzTag > 1
-                KurzTag = KurzTag - 1
-            End While
-            ' if going down didn't help, try going up ...
-            If KurzTag = 1 And (Not IsNumeric(Tabelle_Kurse.Cells(KurzTag, 1).Value) Or Tabelle_Kurse.Cells(KurzTag, 1).Value Is ExcelEmpty.Value) Then
-                KurzTag = theHostApp.WorksheetFunction.Match(Tage, Tabelle_Tage, 1)
-                While (Not IsNumeric(Tabelle_Kurse.Cells(KurzTag, 1).Value) Or Tabelle_Kurse.Cells(KurzTag, 1).Value Is ExcelEmpty.Value) And KurzTag < Tabelle_Tage.Rows.Count
-                    KurzTag = KurzTag + 1
-                End While
-            End If
-
-            If KurzTag < Tabelle_Tage.Rows.Count Then
-                LangTag = KurzTag + 1
-                While (Not IsNumeric(Tabelle_Kurse.Cells(LangTag, 1).Value) Or Tabelle_Kurse.Cells(LangTag, 1).Value Is ExcelEmpty.Value) And LangTag < Tabelle_Tage.Rows.Count
-                    LangTag = LangTag + 1
-                End While
-                If (Not IsNumeric(Tabelle_Kurse.Cells(LangTag, 1).Value) Or Tabelle_Kurse.Cells(LangTag, 1).Value Is ExcelEmpty.Value) Then
-                    KurzTag = KurzTag - 1
-                    While (Not IsNumeric(Tabelle_Kurse.Cells(KurzTag, 1).Value) Or Tabelle_Kurse.Cells(KurzTag, 1).Value Is ExcelEmpty.Value) And KurzTag > 1
-                        KurzTag = KurzTag - 1
-                    End While
-                    If KurzTag = 1 And (Not IsNumeric(Tabelle_Kurse.Cells(KurzTag, 1).Value) Or Tabelle_Kurse.Cells(KurzTag, 1).Value Is ExcelEmpty.Value) Then
-                        Interpolieren = "Invalid Range (insufficient data) given in Tabelle_Kurse !"
-                        Exit Function
-                    End If
-                    LangTag = KurzTag + 1
-                    While (Not IsNumeric(Tabelle_Kurse.Cells(LangTag, 1).Value) Or Tabelle_Kurse.Cells(LangTag, 1).Value Is ExcelEmpty.Value) And LangTag < Tabelle_Tage.Rows.Count
-                        LangTag = LangTag + 1
-                    End While
-                End If
-            Else
-                Interpolieren = "Invalid Range (insufficient data) given in Tabelle_Kurse !"
-                Exit Function
-            End If
-            tempTage = Tabelle_Tage.Range(Tabelle_Tage.Parent.Cells(KurzTag, 1), Tabelle_Tage.Parent.Cells(LangTag, 1))
-            tempRates = Tabelle_Kurse.Range(Tabelle_Kurse.Parent.Cells(KurzTag, 1), Tabelle_Kurse.Parent.Cells(LangTag, 1))
-        Else
-            While (Not IsNumeric(Tabelle_Kurse.Cells(1, KurzTag).Value) Or Tabelle_Kurse.Cells(1, KurzTag).Value Is ExcelEmpty.Value) And KurzTag > 1
-                KurzTag = KurzTag - 1
-            End While
-            ' if going down didn't help, try going up ...
-            If KurzTag = 1 And (Not IsNumeric(Tabelle_Kurse.Cells(1, KurzTag).Value) Or Tabelle_Kurse.Cells(1, KurzTag).Value Is ExcelEmpty.Value) Then
-                KurzTag = theHostApp.WorksheetFunction.Match(Tage, Tabelle_Tage, 1)
-                While (Not IsNumeric(Tabelle_Kurse.Cells(1, KurzTag).Value) Or Tabelle_Kurse.Cells(1, KurzTag).Value Is ExcelEmpty.Value) And KurzTag < Tabelle_Tage.Rows.Count
-                    KurzTag = KurzTag + 1
-                End While
-            End If
-
-            If KurzTag < Tabelle_Tage.Columns.Count Then
-                LangTag = KurzTag + 1
-                While (Not IsNumeric(Tabelle_Kurse.Cells(1, LangTag).Value) Or Tabelle_Kurse.Cells(1, LangTag).Value Is ExcelEmpty.Value) And LangTag < Tabelle_Tage.Columns.Count
-                    LangTag = LangTag + 1
-                End While
-                If (Not IsNumeric(Tabelle_Kurse.Cells(1, LangTag).Value) Or Tabelle_Kurse.Cells(1, LangTag).Value Is ExcelEmpty.Value) Then
-                    KurzTag = KurzTag - 1
-                    While (Not IsNumeric(Tabelle_Kurse.Cells(1, KurzTag).Value) Or Tabelle_Kurse.Cells(1, KurzTag).Value Is ExcelEmpty.Value) And KurzTag > 1
-                        KurzTag = KurzTag - 1
-                    End While
-                    If KurzTag = 1 And (Not IsNumeric(Tabelle_Kurse.Cells(1, KurzTag).Value) Or Tabelle_Kurse.Cells(1, KurzTag).Value Is ExcelEmpty.Value) Then
-                        Interpolieren = "Invalid Range (insufficient data) given in Tabelle_Kurse !"
-                        Exit Function
-                    End If
-                    LangTag = KurzTag + 1
-                    While (Not IsNumeric(Tabelle_Kurse.Cells(1, LangTag).Value) Or Tabelle_Kurse.Cells(1, LangTag).Value Is ExcelEmpty.Value) And LangTag < Tabelle_Tage.Columns.Count
-                        LangTag = LangTag + 1
-                    End While
-                End If
-            Else
-                Interpolieren = "Invalid Range (insufficient data) given in Tabelle_Kurse !"
-                Exit Function
-            End If
-            tempTage = Tabelle_Tage.Range(Tabelle_Tage.Parent.Cells(1, KurzTag), Tabelle_Tage.Parent.Cells(1, LangTag))
-            tempRates = Tabelle_Kurse.Range(Tabelle_Kurse.Parent.Cells(1, KurzTag), Tabelle_Kurse.Parent.Cells(1, LangTag))
-        End If
-
-        Err.Clear()
-        retval = theHostApp.WorksheetFunction.Forecast(Tage, tempRates, tempTage)
-        If Err.Number <> 0 Then
-            Interpolieren = "Invalid Range (contains errors or insufficient data) given in Tabelle_Kurse or Tabelle_Tage !"
-        Else
-            Interpolieren = retval
-        End If
-    End Function
-
-    ''' <summary>Does a pattern weighted lookup of values in range inputValues in pattern lookup area selectionRange,
-    '''             returns the values contained in found row of range targetRange
-    '''             If more than one row matches, always returns values from the first found row</summary>
-    ''' <param name="inputValues"></param>
-    ''' <param name="selectionRange"></param>
-    ''' <param name="targetRange"></param>
-    ''' <returns>values contained in found row of range targetRange</returns>
-    ''' <remarks>
-    ''' Results are returned as a column or row vector, depending on chosen return range.
-    ''' Only single column or single row ranges are allowed !!
-    ''' Example:
-    ''' selection range | target range
-    ''' 1 * 3 4 5       | 11  12  13
-    ''' * 2 3 * 5       | 21  22  23
-    ''' * * 3 * 5       | 31  32  33
-    ''' 1 2 3 4 *       | 41  42  43
-    ''' 1 2 3 4 5       | 51  52  53
-    '''
-    ''' input: 1 2 3 4 x > matches 4th row -> returns 41  42  43
-    ''' input: 1 2 3 4 5 > matches 5th row -> returns 51  52  53
-    ''' input: x y 3 z 5 > matches 3rd row -> returns 31  32  33
-    ''' input: x 2 3 z 5 > matches both 2nd and 3rd row -> returns 21  22  23 because row 2 is more precise
-    ''' </remarks>
-    Public Function Plookup(inputValues As Range, selectionRange As Range, targetRange As Range) As Object
-        Const sepChar = vbTab  ' sepChar is used to join the values and match parts for the pattern lookup
-        Dim inputVal As String, checkPattern As String
-        Dim selRow As Range
-        Dim curChoice As Long, bestChoice As Long, bestwcCount As Long, wcCount As Long
-
-        On Error GoTo err1
-        If inputValues.Cells.Count <> selectionRange.Rows(1).Cells.Count Then
-            Plookup = ExcelError.ExcelErrorRef
-            Exit Function
-        End If
-        ' only vector (column or row style) forms are allowed...
-        If theHostApp.caller.CurrentArray.Columns.Count > 1 And theHostApp.caller.CurrentArray.Rows.Count > 1 Then
-            Plookup = ExcelError.ExcelErrorRef
-            Exit Function
-        End If
-        If inputValues.Columns.Count = 1 Then
-            ' only need to transpose once, if already in column vector form...
-            inputVal = Join(theHostApp.Transpose(inputValues), sepChar)
-        Else
-            inputVal = Join(theHostApp.Transpose(theHostApp.Transpose(inputValues)), sepChar)
-        End If
-        ' join selections and weight results
-        bestChoice = 0 : curChoice = 1 : bestwcCount = 99999999
-        For Each selRow In selectionRange.Rows
-            checkPattern = Join(theHostApp.Transpose(theHostApp.Transpose(selRow)), sepChar)
-            ' do lookup and check
-            If inputVal Like checkPattern Then
-                wcCount = theHostApp.WorksheetFunction.CountIf(selRow, "~*")
-                If wcCount < bestwcCount Then
-                    bestwcCount = wcCount
-                    bestChoice = curChoice
-                End If
-            End If
-            curChoice = curChoice + 1
-        Next
-        If bestChoice = 0 Then
-            Plookup = ExcelError.ExcelErrorNA
-        Else
-            If theHostApp.caller.CurrentArray.Columns.Count = 1 Then
-                Plookup = theHostApp.Transpose(targetRange.Rows(bestChoice))
-            Else
-                Plookup = targetRange.Rows(bestChoice)
-            End If
-        End If
-        Exit Function
-err1:
-        If VBDEBUG Then Debug.Print("Error (" & Err.Description & ") in Plookup") : Stop : Resume
-        LogToEventViewer("Error (" & Err.Description & ") in Functions.Plookup, in " & Erl(), EventLogEntryType.Error, 1)
-        Plookup = Err.Description
-    End Function
+Public Module Functions
 
     ''' <summary>Create database compliant date, time or datetime string from excel datetype value</summary>
     ''' <param name="datVal">date/time/datetime</param>
     ''' <param name="formatting">see remarks</param>
     ''' <returns>the DB compliant formatted date/time/datetime</returns>
     ''' <remarks>
-    ''' formatting = 0: (default) A simple datestring (format 'YYYYMMDD'), datetime values are converted to 'YYYYMMDD HH:MM:SS' and time values are converted to 'HH:MM:SS'.
+    ''' formatting = 0: A simple datestring (format 'YYYYMMDD'), datetime values are converted to 'YYYYMMDD HH:MM:SS' and time values are converted to 'HH:MM:SS'.
     ''' formatting = 1: An ANSI compliant Date string (format date 'YYYY-MM-DD'), datetime values are converted to timestamp 'YYYY-MM-DD HH:MM:SS' and time values are converted to time time 'HH:MM:SS'.
     ''' formatting = 2: An ODBC compliant Date string (format {d 'YYYY-MM-DD'}), datetime values are converted to {ts 'YYYY-MM-DD HH:MM:SS'} and time values are converted to {t 'HH:MM:SS'}.
+    ''' formatting = 99 (default value): take the formatting option from setting DefaultDBDateFormatting (0 if not given)
     ''' </remarks>
     Public Function DBDate(ByVal datVal As Date, Optional formatting As Integer = 99) As String
         On Error GoTo DBDate_Error
@@ -485,7 +282,7 @@ DoConcatCellsSep_Error:
         Exit Function
 chainCells_Error:
         If VBDEBUG Then Debug.Print("Error (" & Err.Description & ") in chainCells ") : Stop : Resume
-        LogToEventViewer("Error (" & Err.Description & ") in Functions.chainCells, in " & Erl(), EventLogEntryType.Error, 1)
+        'LogToEventViewer("Error (" & Err.Description & ") in Functions.chainCells, in " & Erl(), EventLogEntryType.Error, 1)
         chainCells = "Error (" & Err.Description & ") in chainCells "
     End Function
 
@@ -1097,4 +894,4 @@ err1:
 err1:
         LogError("purge error: " & Err.Description & ", in " & Erl(), , , 1)
     End Sub
-End Class
+End Module

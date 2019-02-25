@@ -3,34 +3,24 @@ Imports ExcelDna.Integration
 Imports ADODB
 Imports System.Timers
 
-''
-'  main calculation event handling and Data retrieving
-Class DBFuncEventHandler
-    ''
-    ' connection string is changed for calls with different connection strings
+''' <summary>main calculation event handling and Data retrieving</summary>
+Public Class DBFuncEventHandler
+
+    ''' <summary>connection string can be changed for calls with different connection strings</summary>
     Public CurrConnString As String
-
-    Public loadedConfigFile As Object
-    ''
-    ' to work around silly Excel bug with Dirty Method we have to select the sheet with the "dirtied" cell.
-    ' to return to the target, need the original worksheet here.
+    ''' <summary>to work around a silly Excel bug with Dirty Method we have to select the sheet with the "dirtied" cell to actually do the dirtification.
+    ''' to return to the target, need the original worksheet here.</summary>
     Public origWS As Worksheet
-
-    ''
-    ' cnn object always the same (only open/close)
+    ''' <summary>cnn object always the same (only open/close)</summary>
     Public cnn As ADODB.Connection
-    ''
-    ' the app object needed for excel event handling (most of this class is decdicated to that)
+    ''' <summary>the app object needed for excel event handling (most of this class is decdicated to that)</summary>
     Private WithEvents theXlApp As Application
 
-    ''
-    ' which error occurred?
+    ''' <summary>which error occurred?</summary>
     Private errorReason As String
 
     Private ODBCconnString As String
-
-    ''
-    ' query cache for avoiding unnecessary recalculations/data retrievals
+    ''' <summary>query cache for avoiding unnecessary recalculations/data retrievals</summary>
     Public queryCache As Collection
 
     Public Sub New()
@@ -48,14 +38,15 @@ Class DBFuncEventHandler
         LogInfo("theXlApp_WorkbookDeactivate: " & Wb.Path & "\" & Wb.Name)
     End Sub
 
+    ''' <summary>necessary to asynchronously start refresh of db functions after save event</summary>
     Private aTimer As System.Timers.Timer
-    'TODO: Ontime functionality
+
     Private Sub theXlApp_WorkbookOpen(ByVal Wb As Workbook)
         LogInfo("theXlApp_WorkbookOpen: " & Wb.Path & "\" & Wb.Name)
         If Not Wb.IsAddin Then
             Dim refreshDBFuncs As Boolean
-            ' when opening, force recalculation of DB functions in workbook
-            ' this is required as there is not calculation if no dependencies changed
+            ' when opening, force recalculation of DB functions in workbook.
+            ' this is required as there is no recalculation if no dependencies have changed (usually when opening workbooks)
             ' however the most important dependency for DB functions is the database data....
             On Error Resume Next
             refreshDBFuncs = Not Wb.CustomDocumentProperties("DBFskip")
@@ -65,12 +56,11 @@ Class DBFuncEventHandler
         End If
     End Sub
 
-    ''
-    ' catch the save event, used to remove contents of DBListfunction results (data safety/space consumption)
-    ' choosing functions for removal of target data is done with custom docproperties
-    ' @param Wb
-    ' @param SaveAsUI
-    ' @param Cancel
+    ''' <summary>catch the save event, used to remove contents of DBListfunction results (data safety/space consumption)
+    ''' choosing functions for removal of target data is done with custom docproperties</summary>
+    ''' <param name="Wb"></param>
+    ''' <param name="SaveAsUI"></param>
+    ''' <param name="Cancel"></param>
     Private Sub theXlApp_WorkbookBeforeSave(ByVal Wb As Workbook, ByVal SaveAsUI As Boolean, Cancel As Boolean)
         Dim refreshDBFuncs As Boolean
         Dim docproperty
@@ -132,7 +122,6 @@ Class DBFuncEventHandler
         searchCell = Nothing
         searchCell = lastWs.Cells.Find(What:="", After:=lastWs.Range("A1"), LookIn:=XlFindLookIn.xlFormulas, LookAt:=XlLookAt.xlPart, SearchOrder:=XlSearchOrder.xlByRows, SearchDirection:=XlSearchDirection.xlNext, MatchCase:=False)
         lastWs = Nothing
-        'TODO: Ontime functionality
         ' refresh after save event
         If refreshDBFuncs And (DBFCContentColl.Count > 0 Or DBFCAllColl.Count > 0) Then
             aTimer = New Timers.Timer(100)
@@ -146,11 +135,9 @@ theXlApp_WorkbookBeforeSave_Err:
         LogToEventViewer("DBFuncEventHandler.theXlApp_WorkbookBeforeSave Error: " & Wb.Name & Err.Description & ", in line " & Erl(), EventLogEntryType.Error, 1)
     End Sub
 
-    ''
-    ' "OnTime" event to "escape" workbook_save -> event procedure to refetch DB functions results after saving
-    ' @param sender the sending object (ourselves)
-    ' @param e Data for the Timer.Elapsed event
-    ' @remarks
+    ''' <summary>"OnTime" event function to "escape" workbook_save: event procedure to refetch DB functions results after saving</summary>
+    ''' <param name="sender">the sending object (ourselves)</param>
+    ''' <param name="e">Data for the Timer.Elapsed event</param>
     Shared Sub refreshDBFuncLater(ByVal sender As Object, ByVal e As ElapsedEventArgs)
         Dim previouslySaved As Boolean
 
@@ -160,9 +147,10 @@ theXlApp_WorkbookBeforeSave_Err:
             theHostApp.ActiveWorkbook.Saved = previouslySaved
         End If
     End Sub
-    ''
-    ' catch the calculation event
-    ' @param Sh the invoking Sheet
+
+
+    ''' <summary>catch the calculation event: this is the technical basis to separate actions not usually allowed in UDFs</summary>
+    ''' <param name="Sh">the invoking Sheet</param>
     Private Sub theXlApp_SheetCalculate(ByVal Sh As Object)
         Dim calcCont As ContainerCalcMsgs
         Dim statusCont As ContainerStatusMsgs
@@ -326,10 +314,9 @@ nextCalcCont:
         End If
     End Sub
 
-    ''
-    ' set Query parameters (query text and connection string) of Query List or pivot table (incl. chart)
-    ' @param calcCont @see ContainerCalcMsgs
-    ' @param statusCont @see ContainerStatusMsgs
+    ''' <summary>set Query parameters (query text and connection string) of Query List or pivot table (incl. chart)</summary>
+    ''' <param name="calcCont"><see cref="ContainerCalcMsgs"/></param>
+    ''' <param name="statusCont"><see cref="ContainerStatusMsgs"/></param>
     Public Sub DBSetQueryParams(calcCont As ContainerCalcMsgs, statusCont As ContainerStatusMsgs)
         Dim TargetCell As Range
         Dim targetSH As Worksheet
@@ -401,10 +388,9 @@ DBSetQueryParams_Error:
         allCalcContainers(callID).callsheet.Range(allCalcContainers(callID).caller.Address).Dirty
     End Sub
 
-    ''
-    ' create and initialize DB control (listbox or combobox) defined in DBMakeControl function
-    ' @param calcCont @see ContainerCalcMsgs
-    ' @param statusCont @see ContainerStatusMsgs
+    ''' <summary>create and initialize DB control (listbox or combobox) defined in DBMakeControl function</summary>
+    ''' <param name="calcCont"><see cref="ContainerCalcMsgs"/></param>
+    ''' <param name="statusCont"><see cref="ContainerStatusMsgs"/></param>
     Public Sub DBControlQuery(calcCont As ContainerCalcMsgs, statusCont As ContainerStatusMsgs)
         Dim tableRst As ADODB.Recordset
         Dim theForm As Object, theHeadForm As Object
@@ -506,7 +492,7 @@ DBSetQueryParams_Error:
         ' retrieve or unique name of db control via source connector...
         On Error Resume Next
         Dim srcConnect As String, uniqueName As String
-        srcConnect = calcCont.caller.name.name
+        srcConnect = calcCont.caller.Name.name
         If Err.Number <> 0 Then
             Err.Clear()
             If ControlName.Length > 0 Then
@@ -516,7 +502,7 @@ DBSetQueryParams_Error:
                 ' new generic name !!
                 srcConnect = "DBFsource" & Replace(Replace(CDbl(Now.ToOADate()), ",", vbNullString), ".", vbNullString)
             End If
-            calcCont.caller.name = srcConnect
+            calcCont.caller.Name = srcConnect
             calcCont.callsheet.Parent.Names(srcConnect).Visible = False
             If Err.Number <> 0 Then
                 errMsg = "Error in setting srcConnect name (probably used invalid characters in controlName '" & ControlName & "'): " & Err.Description & ", control in " & formTargetSheet.Name
@@ -549,7 +535,7 @@ DBSetQueryParams_Error:
                 ' in case someone deleted the form to give it a new name, replace existing given control name with a new generic name !!
                 srcConnect = "DBFsource" & Replace(Replace(CDbl(Now.ToOADate()), ",", vbNullString), ".", vbNullString)
             End If
-            calcCont.caller.name = srcConnect
+            calcCont.caller.Name = srcConnect
             calcCont.callsheet.Parent.Names(srcConnect).Visible = False
             If Err.Number <> 0 Then
                 errMsg = "Error in setting srcConnect name (probably used invalid characters in controlName '" & ControlName & "'): " & Err.Description & ", control in " & formTargetSheet.Name
@@ -812,11 +798,10 @@ DBControlQuery_Error:
         allCalcContainers(callID).errOccured = True
     End Sub
 
-    ''
-    ' Query list of data delimited by maxRows and maxCols, write it into targetCells
-    '             additionally copy formulas contained in formulaRange and extend list depending on extendArea
-    ' @param calcCont @see ContainerCalcMsgs
-    ' @param statusCont @see ContainerStatusMsgs
+    ''' <summary>Query list of data delimited by maxRows and maxCols, write it into targetCells
+    '''             additionally copy formulas contained in formulaRange and extend list depending on extendArea</summary>
+    ''' <param name="calcCont"><see cref="ContainerCalcMsgs"/></param>
+    ''' <param name="statusCont"><see cref="ContainerStatusMsgs"/></param>
     Public Sub DBListQuery(calcCont As ContainerCalcMsgs, statusCont As ContainerStatusMsgs)
         Dim tableRst As ADODB.Recordset
         Dim targetCells As Range, formulaRange As Range, formulaFilledRange As Range = Nothing
@@ -852,11 +837,11 @@ DBControlQuery_Error:
 
         Dim srcExtentConnect As String, targetExtent As String, targetExtentF As String
         On Error Resume Next
-        srcExtentConnect = calcCont.caller.name.name
+        srcExtentConnect = calcCont.caller.Name.name
         If Err.Number <> 0 Or InStr(1, srcExtentConnect, "DBFsource") = 0 Then
             Err.Clear()
             srcExtentConnect = "DBFsource" & Replace(Replace(CDbl(Now.ToOADate()), ",", vbNullString), ".", vbNullString)
-            calcCont.caller.name = srcExtentConnect
+            calcCont.caller.Name = srcExtentConnect
             calcCont.callsheet.Parent.Names(srcExtentConnect).Visible = False
             If Err.Number <> 0 Then
                 errMsg = "Error in setting srcExtentConnect name: " & Err.Description & " in query: " & Query
@@ -1279,10 +1264,9 @@ err_0:
         allCalcContainers(callID).errOccured = True
     End Sub
 
-    ''
-    ' Query (assumed) one row of data, write it into targetCells
-    ' @param calcCont @see ContainerCalcMsgs
-    ' @param statusCont @see ContainerStatusMsgs
+    ''' <summary>Query (assumed) one row of data, write it into targetCells</summary>
+    ''' <param name="calcCont"><see cref="ContainerCalcMsgs"/></param>
+    ''' <param name="statusCont"><see cref="ContainerStatusMsgs"/></param>
     Public Sub DBRowQuery(calcCont As ContainerCalcMsgs, statusCont As ContainerStatusMsgs)
         Dim tableRst As ADODB.Recordset = Nothing
         Dim targetCells As Object
@@ -1313,11 +1297,11 @@ err_0:
 
         Dim srcExtentConnect As String, targetExtent As String
         On Error Resume Next
-        srcExtentConnect = calcCont.caller.name.name
+        srcExtentConnect = calcCont.caller.Name.name
         If Err.Number <> 0 Or InStr(1, UCase$(srcExtentConnect), "DBFSOURCE") = 0 Then
             Err.Clear()
             srcExtentConnect = "DBFsource" & Replace(Replace(CDbl(Now().ToOADate), ",", vbNullString), ".", vbNullString)
-            calcCont.caller.name = srcExtentConnect
+            calcCont.caller.Name = srcExtentConnect
             calcCont.callsheet.Parent.Names(srcExtentConnect).Visible = False
             If Err.Number <> 0 Then
                 errMsg = "Error in setting srcExtentConnect name: " & Err.Description & " in query: " & Query
@@ -1436,10 +1420,9 @@ err_1:
         allCalcContainers(callID).errOccured = True
     End Sub
 
-    ''
-    ' Query (assumed) rows of data, returning it via statusMsg (needed there for DBCellFetch)
-    ' @param calcCont @see ContainerCalcMsgs
-    ' @param statusCont @see ContainerStatusMsgs
+    ''' <summary>Query 1 to many rows of data, returning it via statusMsg (needed there for DBCellFetch)</summary>
+    ''' <param name="calcCont"><see cref="ContainerCalcMsgs"/></param>
+    ''' <param name="statusCont"><see cref="ContainerStatusMsgs"/></param>
     Public Sub DBCellQuery(calcCont As ContainerCalcMsgs, statusCont As ContainerStatusMsgs)
         Dim tableRst As ADODB.Recordset
         Dim theField As ADODB.Field
@@ -1548,10 +1531,9 @@ err_1:
         allCalcContainers(callID).errOccured = True
     End Sub
 
-    ''
-    ' check if target range filter backup is there
-    ' @param theName name of target range filter
-    ' @return target range filter backup is there (true)
+    ''' <summary>check if target range filter backup is there</summary>
+    ''' <param name="theName">name of target range filter</param>
+    ''' <returns>target range filter backup is there (true)</returns>
     Private Function existsTfilt(ByRef theName As String) As Boolean
         Dim dummy() As Object
 
@@ -1564,10 +1546,9 @@ err_1:
         existsTfilt = False
     End Function
 
-    ''
-    ' check whether a statusMsgContainer exists in allStatusContainers or not
-    ' @param theName name of statusMsgContainer
-    ' @return exists in allStatusContainers or not
+    ''' <summary>check whether a statusMsgContainer exists in allStatusContainers or not</summary>
+    ''' <param name="theName">name of statusMsgContainer</param>
+    ''' <returns>exists in allStatusContainers or not</returns>
     Private Function existsStatusColl(ByRef theName As String) As Boolean
         Dim dummy As String
 
@@ -1580,10 +1561,9 @@ err_1:
         existsStatusColl = False
     End Function
 
-    ''
-    ' check whether a dbfunction query for callID exists in queryCache or not
-    ' @param callID of dbfunction in queryCache
-    ' @return exists in queryCache or not
+    ''' <summary>check whether a dbfunction query for callID exists in queryCache or not</summary>
+    ''' <param name="callID">callID of dbfunction in queryCache</param>
+    ''' <returns>exists in queryCache or not</returns>
     Private Function existsQueryCache(ByRef callID As String) As Boolean
         Dim dummy As String
 
@@ -1596,11 +1576,10 @@ err_1:
         existsQueryCache = False
     End Function
 
-    ''
-    ' remove RangeNames and store them into list storedNames
-    ' @param Target
-    ' @param theName
-    ' @return the removed names as a strimg list
+    ''' <summary>RangeNames and store them into list storedNames</summary>
+    ''' <param name="Target"></param>
+    ''' <param name="theName"></param>
+    ''' <returns>the removed names as a strimg list</returns>
     Private Function removeRangeName(Target As Range, theName As String) As String()
         Dim storedNames() As String
         Dim i As Long
@@ -1623,10 +1602,9 @@ err_1:
         removeRangeName = storedNames
     End Function
 
-    ''
-    ' restore the stored RangeNames
-    ' @param Target
-    ' @param storedNames
+    ''' <summary>restore the stored RangeNames</summary>
+    ''' <param name="Target"></param>
+    ''' <param name="storedNames"></param>
     Private Sub restoreRangeNames(Target As Range, storedNames() As String)
         Dim theName
         If UBound(storedNames) > 0 Then

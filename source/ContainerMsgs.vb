@@ -1,7 +1,7 @@
 Imports Microsoft.Office.Interop
 
 ''' <summary>Provides a data structure for transporting information from the calling function to calculation event procedure in DBFuncEventHandler the key for the calc msg container</summary>
-Class ContainerCalcMsgs
+Public Class ContainerCalcMsgs
     ' used in all DB functions:
     ''' <summary>the query used for the calling function</summary>
     Public Query As String
@@ -68,7 +68,7 @@ Class ContainerCalcMsgs
 End Class
 
 ''' <summary>Provides a data structure for transporting information back from the calculation event procedure in DBFuncEventHandler to the calling function</summary>
-Class ContainerStatusMsgs
+Public Class ContainerStatusMsgs
     ''' <summary>any status msg used for displaying in the result of function</summary>
     Public statusMsg As String
 End Class

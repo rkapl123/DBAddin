@@ -6,7 +6,7 @@ Imports System.IO
 ''
 '  handles all Menu related aspects (context menu for building/refreshing,
 '             "DBAddin"/"Load Config" tree menu for retrieving stored configuration files
-Class MenuHandler
+Public Class MenuHandler
 
     Public disableBar As Boolean
     Private WithEvents mRefreshButton As CommandBarButton
@@ -22,9 +22,9 @@ Class MenuHandler
     Public Sub New()
         addDBFuncContextMenus()
         createCommandBar()
-        mJumpButton = theHostApp.CommandBars.FindControl(Tag:=gsJUMP_TAG)
-        mRefreshButton = theHostApp.CommandBars.FindControl(Tag:=gsREFRESH_TAG)
-        mPreparedItemLoadButton = theHostApp.CommandBars.FindControl(Tag:=gsITEMLOADCONFIG_TAG)
+        'mJumpButton = theHostApp.CommandBars.FindControl(Tag:=gsJUMP_TAG)
+        ' mRefreshButton = theHostApp.CommandBars.FindControl(Tag:=gsREFRESH_TAG)
+        'mPreparedItemLoadButton = theHostApp.CommandBars.FindControl(Tag:=gsITEMLOADCONFIG_TAG)
     End Sub
 
     Private Sub Class_Terminate()
@@ -34,7 +34,7 @@ Class MenuHandler
 
     'TODO: convert to ribbon
     ''
-    ' Choose environment (configured in registry with ConfigName<N>, ConstConnString<N>, DBSheetDefinitions<N>, DBConnFileName<N>, ConfigStoreFolder<N>
+    ' Choose environment (configured in registry with ConfigName<N>, ConstConnString<N>, ConfigStoreFolder<N>)
     ' @param barEnabled whether bar parts should be enabled or not
     Private Sub mEvironSelButton_Click(ByVal Ctrl As CommandBarButton, CancelDefault As Boolean)
         Dim constConnSels, constConnSel
@@ -45,8 +45,6 @@ Class MenuHandler
             Exit Sub
         End If
         storeSetting("ConstConnString", fetchSetting("ConstConnString" & env, vbNullString))
-        storeSetting("DBSheetDefinitions", fetchSetting("DBSheetDefinitions" & env, vbNullString))
-        storeSetting("DBConnFileName", fetchSetting("DBConnFileName" & env, vbNullString))
         storeSetting("ConfigStoreFolder", fetchSetting("ConfigStoreFolder" & env, vbNullString))
         storeSetting("ConfigName", fetchSetting("ConfigName" & env, vbNullString))
 
@@ -57,7 +55,7 @@ Class MenuHandler
 
         initSettings()
         dontTryConnection = False  ' provide a chance to reconnect when switching environment...
-        MsgBox("ConstConnString:" & ConstConnString & vbCrLf & "DBSheetDefinitionsFolder:" & DBSheetDefinitionsFolder & vbCrLf & "DBConnFileName:" & DBConnFileName & vbCrLf & "ConfigStoreFolder:" & ConfigStoreFolder & vbCrLf & vbCrLf & "Please refresh DBSheets or DBFuncs to see effects...", vbOKOnly, "set defaults to: ")
+        MsgBox("ConstConnString:" & ConstConnString & vbCrLf & "ConfigStoreFolder:" & ConfigStoreFolder & vbCrLf & vbCrLf & "Please refresh DBSheets or DBFuncs to see effects...", vbOKOnly, "set defaults to: ")
         theHostApp.CommandBars.FindControl(Tag:=gsCONSTCONN_TAG).caption = "Env: " & fetchSetting("ConfigName" & env, vbNullString)
     End Sub
 

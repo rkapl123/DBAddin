@@ -1,0 +1,306 @@
+{
+  "homepages": [],
+  "source_base_path": "C:/dev/DBAddin.NET/source",
+  "xrefmap": "xrefmap.yml",
+  "files": [
+    {
+      "type": "Conceptual",
+      "source_relative_path": "api/index.md",
+      "output": {
+        ".html": {
+          "relative_path": "api/index.html",
+          "hash": "7A3cX/2G8bpB1I/psO9eoA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "articles/intro.md",
+      "output": {
+        ".html": {
+          "relative_path": "articles/intro.html",
+          "hash": "hq2jP5v/m3+WrLkatSP73g=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "Toc",
+      "source_relative_path": "articles/toc.md",
+      "output": {
+        ".html": {
+          "relative_path": "articles/toc.html",
+          "hash": "t7iiFrmuYmrKWisdq+lN6Q=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "index.md",
+      "output": {
+        ".html": {
+          "relative_path": "index.html",
+          "hash": "Ntu9K2ZdtV5ThUCDu3l10w=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/DBaddin.AddInEvents.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DBaddin.AddInEvents.html",
+          "hash": "JpYCW/mHouRdZKdDgZyCpg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/DBaddin.CommonFuncs.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DBaddin.CommonFuncs.html",
+          "hash": "DheABsWDT8e9rdjYU2k4Ew=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/DBaddin.ConfigFiles.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DBaddin.ConfigFiles.html",
+          "hash": "aVk8rSXaBmH2aBo6GNjabA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/DBaddin.ContainerCalcMsgs.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DBaddin.ContainerCalcMsgs.html",
+          "hash": "eGtWzSlp6v31hzGCFUQlFg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/DBaddin.ContainerStatusMsgs.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DBaddin.ContainerStatusMsgs.html",
+          "hash": "jeLdVjnE4E8zkPTS/fApLQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/DBaddin.DBFuncEventHandler.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DBaddin.DBFuncEventHandler.html",
+          "hash": "biawraPUDarC90zt6dJYEg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/DBaddin.Functions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DBaddin.Functions.html",
+          "hash": "wqcjdyt9N4Y+tymvRaYH6Q=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/DBaddin.Globals.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DBaddin.Globals.html",
+          "hash": "kLMB4mmqE7kyoTD8LyJKIA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/DBaddin.Mapper.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DBaddin.Mapper.html",
+          "hash": "f6SyhCH9Kxyv5ESPMBT1FQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/DBaddin.MenuHandler.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DBaddin.MenuHandler.html",
+          "hash": "Ibb2fu22rBdgWLJNszlMiA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/DBaddin.MyRibbon.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DBaddin.MyRibbon.html",
+          "hash": "KPH/Vgb2XtkPoB8maVt2Lg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/DBaddin.checkTypeFld.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DBaddin.checkTypeFld.html",
+          "hash": "pzpEYMrieVze3E1j7HDrvg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/DBaddin.dbsheetErrReason.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DBaddin.dbsheetErrReason.html",
+          "hash": "7xlWnhM0c5O0ZEWXg70Jfw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/DBaddin.tDBFunc.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DBaddin.tDBFunc.html",
+          "hash": "kD7rkBovkWXZCGmrt8CfFA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/DBaddin.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DBaddin.html",
+          "hash": "Ci2IHvmEQtg5Ee3XtgIpfQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "Toc",
+      "source_relative_path": "obj/api/toc.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/toc.html",
+          "hash": "ETVj6C2Gf6LUHcYyHkkhJg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "Toc",
+      "source_relative_path": "toc.yml",
+      "output": {
+        ".html": {
+          "relative_path": "toc.html",
+          "hash": "Sg+nKmnHP++YKMT39ruhpw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    }
+  ],
+  "incremental_info": [
+    {
+      "status": {
+        "can_incremental": true,
+        "incrementalPhase": "build",
+        "total_file_count": 0,
+        "skipped_file_count": 0
+      },
+      "processors": {
+        "ManagedReferenceDocumentProcessor": {
+          "can_incremental": true,
+          "incrementalPhase": "build",
+          "total_file_count": 15,
+          "skipped_file_count": 15
+        },
+        "ConceptualDocumentProcessor": {
+          "can_incremental": true,
+          "incrementalPhase": "build",
+          "total_file_count": 3,
+          "skipped_file_count": 3
+        },
+        "TocDocumentProcessor": {
+          "can_incremental": false,
+          "details": "Processor TocDocumentProcessor cannot support incremental build because the processor doesn't implement ISupportIncrementalDocumentProcessor interface.",
+          "incrementalPhase": "build",
+          "total_file_count": 0,
+          "skipped_file_count": 0
+        }
+      }
+    },
+    {
+      "status": {
+        "can_incremental": true,
+        "details": "Can support incremental post processing.",
+        "incrementalPhase": "postProcessing",
+        "total_file_count": 0,
+        "skipped_file_count": 0
+      },
+      "processors": {}
+    }
+  ],
+  "version_info": {},
+  "groups": [
+    {
+      "xrefmap": "xrefmap.yml"
+    }
+  ]
+}
