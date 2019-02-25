@@ -1,6 +1,6 @@
 ## DB Functions
 
-There are four ways to query data with DBAddin:
+There are five ways to query data with DBAddin:
 
 1.  A (fast) list-oriented way using `DBListFetch`.  
     Here the values are entered into a rectangular list starting from the TargetRange cell (similar to MS-Query, actually the `QueryTables` Object is used to fill the data into the Worksheet).
@@ -10,6 +10,8 @@ There are four ways to query data with DBAddin:
     Here the returned values are concatenated into one "sentence" by using specific column separators and row separators. Additionally "final" column separators and row separators can be defined to present data in a natural sentence way (e.g.: 10, 20, 30 and 25\. Here ", " is the column separator and " and " is the last row separator in a single column query.)
 4.  Loading data into userforms (Listbox and Dropdown) using `DBMakeControl`  
     This is required for selecting values from a database. Max. 10 columns (incl. the invisible key column) can be defined in the associated query.
+5.  Setting the Query of a ListObject (new since Excel 2007) or a PivotTable to a defined query using `DBSetQuery`  
+    This requires an existing object (e.g. a DataList created from a DB query/connection or a pivot table) and sets the target's queryobject to the desired one.
 
 Three of those user-defined functions (`DBListFetch`, `DBRowFetch` and `DBMakeControl`) insert the queried data outside their calling cell context, which means that the target ranges can be put anywhere in the workbook (even outside of the workbook).
 
@@ -20,13 +22,10 @@ Additionally, some helper functions are available:
 *   `DBString`, building a quoted string from an open ended parameter list given in the argument. This can also be used to easily build wildcards into the String.
 *   `DBinClause`, building an SQL in clause from an open ended parameter list given in the argument.
 *   `DBDate`, building a quoted Date string (format YYYYMMDD) from the date value given in the argument.
-*   `Plookup`, doing a pattern weighted lookup of values to retrieve the "best matching" lookup value. This is needed when working with incomplete input data.
 
 There is also a supporting tool available for building queries and placing them into the functions (based on MS-Query) and a "jump" feature that allows to move the focus from the DB function's cell to the data area and from the data area back to the DB function's cell (useful in complex workbooks with lots of remote (not on same-sheet) target ranges)
 
 ### Using the Functions
-
-<a name="DBListFetch"></a>
 
 #### DBListFetch
 
@@ -81,8 +80,6 @@ Example:
 
 This works around the issue with displaying GUID columns in SQL-Server.  
 
-#### <a name="DBRowFetch"></a>
-
 #### DBRowFetch
 
 <pre lang="vb.net">DBRowFetch (Query, ConnectionString(optional),   
@@ -114,7 +111,6 @@ For example:
 would fill the same data as above (including a header), however column-wise. Typically this first range is used as a header range in conjunction with the headerInfo parameter.  
 
 Beware that filling of data is much slower than with DBlistFetch, so use DBRowFetch only with smaller data-sets.  
-<a name="DBCellFetch"></a>
 
 #### DBCellFetch
 
@@ -131,8 +127,6 @@ value11 (colSep) value12 (colSep) value13 (colSep)... (colSep/lastColSep) value1
 ...  
 v(M-1)1 (colSep) v(M-1)2 (colSep) v(M-1)3 ........ (colSep/lastColSep) v(M-1)N (rowSep/lastRowSep)  
 valueM1 (colSep) valueM2 (colSep) valueM3 (colSep)... (colSep/lastColSep) valueMN</pre>
-
-<a name="DBMakeControl"></a>
 
 #### DBMakeControl
 
@@ -167,7 +161,15 @@ Combobox:
 ![](DBAddin-Dateien/clip_image004.jpg)  
 
 The DB bound control retain the selection during a refresh (e.g. saving/reopening the workbook).  
-<a name="HelperFuncs"></a><a name="chainCells"></a>
+
+#### DBSetQuery
+
+<pre lang="vb.net">DBSetQuery (Query, ConnectionString(optional), TargetRange)</pre>
+ 
+Stores a query into an Object defined in TargetRange (an embedded MS Query/Listobject, Pivot table, etc.)
+
+
+### Additional Helper Functions
 
 #### chainCells(Range)
 
@@ -180,8 +182,6 @@ chainCells "chains" the values in the given range together by using "," as separ
 
 Where cells E1:E4 contain job_desc, min_lvl, max_lvl, job_id respectively.
 
-<a name="concatCells"></a>
-
 #### concatCells
 
 <pre lang="vb.net">concatCells(ParameterList)</pre>
@@ -191,8 +191,6 @@ Where cells E1:E4 contain job_desc, min_lvl, max_lvl, job_id respectively.
 <pre lang="vb.net">DBRowFetch(concatCells(E1:E4),,A1,A8:A9,C8:D8)</pre>
 
 Where cells E1:E4 contain the constituents of the query respectively.  
-
-<a name="concatCellsSep"></a>
 
 #### concatCellsSep
 
@@ -208,8 +206,6 @@ All three concatenation functions (chainCells, concatCells and concatCellsSep) w
 
 Both `concatCells` and `concatCellsSep` have a "Text" sibling that essentially does the same, except that it concats the displayed Values, not the true Values. So if you want to concatenate what you see, then `concatCellsText` and `concatCellsSepText` are the functions you need.
 
-<a name="DBinClause"></a>
-
 #### DBinClause
 
 <pre lang="vb.net">DBinClause(ParameterList)</pre>
@@ -219,7 +215,6 @@ Creates an in clause from cell values, strings are created with quotation marks,
 <pre lang="vb.net">DBinClause("ABC", 1, DateRange)</pre>
 
 Would return `”('ABC',1,'20070115')”`, if DateRange contained `15/01/2007` as a date value.  
-<a name="DBString"></a>
 
 #### DBString
 
@@ -230,8 +225,6 @@ This builds a Database compliant string (quoted) from the open ended parameter l
 <pre lang="vb.net">DBString("_",E1,"%")</pre>
 
 When E1 contains "test", this results in '_test%', thus matching in a like clause the strings 'stestString', 'atestAnotherString', etc.
-
-<a name="DBDate"></a>
 
 #### DBDate
 
@@ -256,32 +249,7 @@ Of course you can also change the default setting for formatting by changing the
 <pre lang="vb.net">"DefaultDBDateFormatting"="0"  
 </pre>
 
-<a name="Plookup"></a>
-
-#### Plookup
-
-<pre lang="vb.net">Plookup(inputRange, selectionRange, targetRange)</pre>
-
-Does a pattern weighted lookup of values in range inputValues in pattern lookup area selectionRange, returns the values contained in found row of range targetRange (if entered as a matrix function).
-
-In case Plookup is not entered as a matrix function, Plookup returns the first column of the matching row of targetRange.If more than one row matches, always return values from first matching row.
-
-Example:
-
-<pre lang="vb.net">selection range | target range  
-1 * 3 4 5 | 11 12 13  
-* 2 3 * 5 | 21 22 23  
-* * 3 * 5 | 31 32 33  
-1 2 3 4 * | 41 42 43  
-1 2 3 4 5 | 51 52 53  
-
-input: 1 2 3 4 x > matches 4th row -> returns 41 42 43  
-input: 1 2 3 4 5 > matches 5th row -> returns 51 52 53  
-input: x y 3 z 5 > matches 3rd row -> returns 31 32 33  
-input: x 2 3 z 5 > matches both 2nd and 3rd row -> returns 21 22 23 because row 2 is more precise  
-</pre>
-
-### <a name="ModificationsDBFuncBehaviour"></a>Modifications of DBFunc Behaviour
+### Modifications of DBFunc Behaviour
 
 There are some options to modify  
 
@@ -298,13 +266,13 @@ To disable refreshing of DBFunctions when opening the workbook create a boolean 
 
 #### Prevent Storing of retrieved Data in the Workbook
 
-To prevent storing of the contents of a DBListFetch or DBRowFetch when saving the workbook create a boolean custom property "DBFCC<DBFunctionSheet!DBFunctionAddress>" set to "Yes" (set to "No" to reenable storing). This clears the data area of the respective DB function before storing and refreshes it afterwards (Note: If the custom property "DBFSkip" is set to "Yes", then this refreshing is skipped like when opening the Workbook)  
+To prevent storing of the contents of a DBListFetch or DBRowFetch when saving the workbook create a boolean custom property "DBFCC(DBFunctionSheet!DBFunctionAddress)" set to "Yes" (set to "No" to reenable storing). This clears the data area of the respective DB function before storing and refreshes it afterwards (Note: If the custom property "DBFSkip" is set to "Yes", then this refreshing is skipped like when opening the Workbook)  
 
 Example: The boolean custom property "DBFCCTable1!A1" would clear the contents of the data area for the DBFunction entered in Table1, cell "A1".  
 
 To prevent storing of the contents for all DBFunctions create a boolean Custom Property "DBFCC*" set to "Yes".  
 
-Excel however doesn't fill only contents when filling the data area, there's also formatting being filled along, which takes notable amounts of space (and saving time) in a workbook. So to really have a small/quick saving workbook, create a boolean custom property "DBFCA<DBFunctionSheet!DBFunctionAddress>" set to "Yes" (set to "No" to reenable storing). This clears everything in the the data area of the res  
+Excel however doesn't fill only contents when filling the data area, there's also formatting being filled along, which takes notable amounts of space (and saving time) in a workbook. So to really have a small/quick saving workbook, create a boolean custom property "DBFCA(DBFunctionSheet!DBFunctionAddress)" set to "Yes" (set to "No" to reenable storing). This clears everything in the the data area of the res  
 
 Example: The boolean custom property "DBFCATable1!A1" would clear everything from the data area for the DBFunction entered in Table1, cell "A1".  
 
@@ -323,7 +291,7 @@ The DBidentifierCCS is used to identify the database within the standard default
 
 Additionally the timeout (CnnTimeout, which can't be given in the functions) is also defined in the standard settings.
 
-### <a name="Cell_Config_Deployment"></a>Supporting Tool Cell Config Deployment
+### Supporting Tool Cell Config Deployment
 
 To easen the distribution of complex DB functions (resp. queries), there is a special deployment mechanism in the DBAddin Commandbar: Saving of DB function configurations can be done with the button "Save Config", whereas for loading there are two possibilities: The button "Load Config" (displaying a simple load file dialog) and a tree-dropdown menu below "DBConfigs" that displays the file hierarchy beneath ConfigStoreFolder for easy retrieval of the configs.  
 
@@ -373,9 +341,7 @@ To save time when starting up DBAddin/Excel, the previously used way of refreshi
 
 This refreshing also restores "theDBSheetAppHandler" object as a side effect, which re-enables DBSheet treatment after sporadic invalidation of this object (needed until the reason for this has been found out).  
 
-<a name="Installation1"></a>
-
-### <a name="Installation"></a>Installation
+### Installation
 
 #### Dependencies
 
@@ -400,26 +366,8 @@ After installation you'd want to adapt the standard default connection string (C
 "DBidentifierODBC"="Database="  
 "CnnTimeout"="15"  
 "DefaultDBDateFormatting"="0"  
-"ConfigStoreFolder"="\\\\Oebfacoat\\dfs\\SOFTWARE\\Datenbank\\ConfigStore"  
-"LocalHelp"="\\\\Oebfacoat\\dfs\\SOFTWARE\\VB\\DBAddin\\documentation\\HelpFrameset.htm"  
-
-"enforceRefresh"="True"  
-"specialNonNullableChar"="*"  
-"tblPlaceHolder"="!T!"  
-"maxRowsToFetch"="1000"  
-"testHeaderColor"="45"  
-"prodHeaderColor"="0"  
-"internalErrColor"="45"  
-"dataErrColor"="3"  
-"reqFieldsColor"="15"  
-"primColFieldsColor"="15"  
-"calcColFieldsColor"="41"  
-"conflictColor"="8"  
-"closeMsg1"="Sollen Ihre Änderungen in '"  
-"closeMsg2"="' gespeichert werden?"  
-"TrueFalseSelection"="WAHR;FALSCH"  
-"DBSheetDefinitions"="\\\\Oebfacoat\\dfs\\SOFTWARE\\Datenbank\\DBSheets\\DBSheetDefinitions"  
-"DBConnFileName"="\\\\Oebfacoat\\dfs\\SOFTWARE\\VB\\DBAddin\\DBConns.xml"  
+"ConfigStoreFolder"="(YourPathToTheConfigStore)\\ConfigStore"  
+"LocalHelp"="(YourPathToTheDocumentation)\\HelpFrameset.htm"  
 </pre>
 
 The other settings:
@@ -438,8 +386,6 @@ When starting the Testworkbook, after waiting for the – probable – connectio
 ![](DBAddin-Dateien/clip_image005.jpg)
 
 Several connection strings for "_DBFuncsTest.xls_" are placed to the right of the black line, the actual connection is then selected by choosing the appropriate shortname (dropdown) in the yellow input field. After the connection has been changed don't forget to refresh the queries/DBforms by right clicking and selecting "refresh data".
-
-<a name="Points of Interest"></a>
 
 ### Points of Interest
 
@@ -467,8 +413,6 @@ There is a procedure in the Functions module, which may be used to "purge" these
 End Sub  
 </pre>
 
-<a name="Known Issues / Limitations1"></a>
-
 ### Known Issues / Limitations
 
 *   DBMakeControl
@@ -492,7 +436,7 @@ End Sub
 *   The Workbook containing the DB functions may not have any VBA Code with Compile Errors, or it will return an "Application defined Error". This relates to Excel not passing the Application.Caller object correctly to UDFs when having compile errors in VBA-Code.
 
 
-## <a name="Mapper"></a>Mapper
+## Mapper
 
 Mapper is an object that you can use to save Excel Range data to database table(s). The function that is used to do that is
 
