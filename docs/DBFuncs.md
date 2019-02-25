@@ -342,10 +342,10 @@ There is one registry setting and two registry setting groups to configure this 
 <pre lang="vb.net">Windows Registry Editor Version 5.00  
 
 [HKEY_CURRENT_USER\Software\VB and VBA Program Settings\DBAddin\Settings]  
-"specialConfigStoreFolders"="<pathName>:.pubs:.Northwind"  
-"<pathName>MaxDepth"="1"  
-"<pathName>Separator"=""  
-"<pathName>FirstLetterLevel"="True"</pre>
+"specialConfigStoreFolders"="(pathName):.pubs:.Northwind"  
+"(pathName)MaxDepth"="1"  
+"(pathName)Separator"=""  
+"(pathName)FirstLetterLevel"="True"</pre>
 
 If you add the (sub) foldername to "specialConfigStoreFolders" (colon separated list) then this subfolder is regarded as needing special grouping of object names. The separator ("_" or similar) can be given in  "<pathName>Separator", where <pathName> denotes the path name used above in "specialConfigStoreFolders". If this is not given then CamelCase is assumed to be the separating criterion.  
 
