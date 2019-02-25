@@ -347,15 +347,15 @@ There is one registry setting and two registry setting groups to configure this 
 "(pathName)Separator"=""  
 "(pathName)FirstLetterLevel"="True"</pre>
 
-If you add the (sub) foldername to "specialConfigStoreFolders" (colon separated list) then this subfolder is regarded as needing special grouping of object names. The separator ("_" or similar) can be given in  "<pathName>Separator", where <pathName> denotes the path name used above in "specialConfigStoreFolders". If this is not given then CamelCase is assumed to be the separating criterion.  
+If you add the (sub) foldername to "specialConfigStoreFolders" (colon separated list) then this subfolder is regarded as needing special grouping of object names. The separator ("_" or similar) can be given in  "(pathName)Separator", where (pathName) denotes the path name used above in "specialConfigStoreFolders". If this is not given then CamelCase is assumed to be the separating criterion.  
 
-The maximum depth of the sub menus can be stated in "<pathName>MaxDepth", which denotes the depth of hierarchies below the uppermost in the <pathName> folder (default value is 10000, so practically infinite depth).  
+The maximum depth of the sub menus can be stated in "(pathName)MaxDepth", which denotes the depth of hierarchies below the uppermost in the (pathName) folder (default value is 10000, so practically infinite depth).  
 
-You can add another hierarchy layer by setting "<pathName>FirstLetterLevel" to "True", which adds the first letter as the top level hierarchy.  
+You can add another hierarchy layer by setting "(pathName)FirstLetterLevel" to "True", which adds the first letter as the top level hierarchy.  
 
-You can decide for each subfolder whether it's contents should be hierarchically organized by entering the relative path from ConfigStoreFolder for each subfolder in "specialConfigStoreFolders", or you can decide for all subfolders of that folder by just entering the topmost folder in "specialConfigStoreFolders". Beware that the backslash (path separator) in <pathName> needs to be entered quoted (two "\" !) to be recognized when importing the registry key files!  
+You can decide for each subfolder whether it's contents should be hierarchically organized by entering the relative path from ConfigStoreFolder for each subfolder in "specialConfigStoreFolders", or you can decide for all subfolders of that folder by just entering the topmost folder in "specialConfigStoreFolders". Beware that the backslash (path separator) in (pathName) needs to be entered quoted (two "\" !) to be recognized when importing the registry key files!  
 
-In some instances the Windows API doesn't return the directories/filenames in alphabetical order (e.g. in my SAMBA network), so you'd need to set the following registry setting to "True", which does a sort on the config folder's content before putting it into the tree dropwdown:  
+In some instances the Windows API doesn't return the directories/filenames in alphabetical order (e.g. in some SAMBA networks), so you'd need to set the following registry setting to "True", which does a sort on the config folder's content before putting it into the tree dropwdown:  
 
 <pre lang="vb.net">"sortConfigStoreFolders"="False"</pre>
 
@@ -386,7 +386,7 @@ This refreshing also restores "theDBSheetAppHandler" object as a side effect, wh
 
 If any of these is missing, please install yourself before starting DBAddin.
 
-Installation is done by the installer (you need to have administrative rights, if you want to install from your account without switching to the admin account you can do `runas /user:administrator "msiexec.exe /i <Path_Of_DBAddinSetup.msi>"` to install or `runas /user:administrator "msiexec.exe /x <Path_Of_DBAddinSetup.msi>"` to uninstall), during the process of installation, you're asked whether to start addDBAddinToAutomationAddins.xls, which adds the Functions to Excel's Addin List.
+Installation is done by the installer (you need to have administrative rights, if you want to install from your account without switching to the admin account you can do `runas /user:administrator "msiexec.exe /i (Path_Of_DBAddinSetup.msi)"` to install or `runas /user:administrator "msiexec.exe /x (Path_Of_DBAddinSetup.msi)"` to uninstall), during the process of installation, you're asked whether to start addDBAddinToAutomationAddins.xls, which adds the Functions to Excel's Addin List.
 
 If you prefer not to start Excel/add the functions that point, please add the Automation Addin manually in Excel: This is done by calling Tools/Add-Ins... and then clicking Automation. Here you're presented with all registered Automation Servers that could be connected to Excel (most don't make sense of course). Search for "DBAddin.Functions" and add by clicking "OK".
 
@@ -457,7 +457,7 @@ Excel sometimes does additional calculations to take shortcuts and this makes th
 
 After every calculation event the working `calcContainers` are removed, if there are no more `calcContainers` left, then `allCalcContainers` is reset to "Nothing", being ready for changes in input data or function layout. Good resources for more details on the calculation order/backgrounds is Decision Model's Excel Pages, especially Calculation Secrets ([http://www.decisionmodels.com/calcsecretsc.htm](http://www.decisionmodels.com/calcsecretsc.htm)).
 
-The DBListFetch's target areas' extent is stored in hidden named ranges assigned both to the calling function cell (DBFsource<Key>) and the target.
+The DBListFetch's target areas' extent is stored in hidden named ranges assigned both to the calling function cell (DBFsource(Key)) and the target.
 
 There is a procedure in the Functions module, which may be used to "purge" these hidden named ranges in case of any strange behaviour due to multiple name assignments to the same area. This behaviour usually arises, when redefining/adding dbfunctions that refer to the same target area as the original/other dbfunction. The procedure is called "purge" and may be invoked from the VBA IDE as follows:
 
@@ -473,7 +473,7 @@ End Sub
 
 *   DBMakeControl
 
-*   Listbox control selection shifts uncontrolled upwards when using mouse. This only occurs when the DBMakeControl is either dependent on calculation results that are themselves dependent on the control's target cell (kind of "circular dependency") or if there is a dependent DBListfetch in the same sheet with extendDataArea <> 0\. In this case Excel somehow always sets other cells to "dirty" status, thus enforcing a recalculation of the DBMakeControl. The workaround is to either use up/down keys after the initial click for precise selecting or place the DBMakeControl function in a different sheet than the DBListFetch's target area.  
+*   Listbox control selection shifts uncontrolled upwards when using mouse. This only occurs when the DBMakeControl is either dependent on calculation results that are themselves dependent on the control's target cell (kind of "circular dependency") or if there is a dependent DBListfetch in the same sheet with extendDataArea != 0\. In this case Excel somehow always sets other cells to "dirty" status, thus enforcing a recalculation of the DBMakeControl. The workaround is to either use up/down keys after the initial click for precise selecting or place the DBMakeControl function in a different sheet than the DBListFetch's target area.  
 
 *   Listbox control selection is not visibly retained during refresh (context menu resfresh data or full calc (Ctrl-Alt-F9)), i.e. the data target is kept, but the entry's highlighting is gone. This is the case when the control is placed on the same sheet as the DBMakeControl function. Workaround: put DBMakeControl in a different sheet than the control itself.  
 
