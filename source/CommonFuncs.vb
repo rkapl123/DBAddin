@@ -37,7 +37,7 @@ err0:
         Exit Function
 err1:
         If VBDEBUG Then Debug.Print("functionSplit: " & Err.Description) : Stop : Resume
-        LogToEventViewer("Error: " & Err.Description & " in CommonFuncs.functionSplit in " & Erl(), EventLogEntryType.Error, 1)
+        LogToEventViewer("Error: " & Err.Description & " in CommonFuncs.functionSplit in " & Erl(), EventLogEntryType.Error)
         functionSplit = Nothing
     End Function
 
@@ -130,7 +130,7 @@ err1:
         Exit Function
 err1:
         If VBDEBUG Then Debug.Print("balancedString: " & Err.Description) : Stop : Resume
-        LogToEventViewer("Error: " & Err.Description & " in CommonFuncs.balancedString in " & Erl(), EventLogEntryType.Error, 1)
+        LogToEventViewer("Error: " & Err.Description & " in CommonFuncs.balancedString in " & Erl(), EventLogEntryType.Error)
     End Function
 
 
@@ -180,7 +180,7 @@ err1:
         Exit Function
 err1:
         If VBDEBUG Then Debug.Print("replaceDelimsWithSpecialSep: " & Err.Description) : Stop : Resume
-        LogToEventViewer("Error: " & Err.Description & " in CommonFuncs.replaceDelimsWithSpecialSep in " & Erl(), EventLogEntryType.Error, 1)
+        LogToEventViewer("Error: " & Err.Description & " in CommonFuncs.replaceDelimsWithSpecialSep in " & Erl(), EventLogEntryType.Error)
     End Function
 
 
@@ -282,7 +282,7 @@ err1:
         Exit Function
 err1:
         If VBDEBUG Then Debug.Print("getRangeName: " & Err.Description) : Stop : Resume
-        LogToEventViewer("Error: " & Err.Description & " in CommonFuncs.saveFilterSettings in " & Erl(), EventLogEntryType.Error, 1)
+        LogToEventViewer("Error: " & Err.Description & " in CommonFuncs.saveFilterSettings in " & Erl(), EventLogEntryType.Error)
         Err.Clear()
     End Function
 
@@ -307,7 +307,7 @@ err1:
         restoreFilterSettings = True
         Exit Function
 err1:
-        LogToEventViewer("Error: " & Err.Description & " in Commonfuncs.restoreFilterSettings in " & Erl(), EventLogEntryType.Error, 1)
+        LogToEventViewer("Error: " & Err.Description & " in Commonfuncs.restoreFilterSettings in " & Erl(), EventLogEntryType.Error)
         restoreFilterSettings = False
         Err.Clear()
     End Function
@@ -398,7 +398,7 @@ err1:
         Exit Function
 err1:
         If VBDEBUG Then Debug.Print("getRangeName: " & Err.Description) : Stop : Resume
-        LogToEventViewer("Error: " & Err.Description & " in CommonFuncs.getRangeName in " & Erl(), EventLogEntryType.Error, 1)
+        LogToEventViewer("Error: " & Err.Description & " in CommonFuncs.getRangeName in " & Erl(), EventLogEntryType.Error)
     End Function
 
     ''' <summary>only recalc full if we have DBFuncs in the workbook somewhere</summary>
@@ -411,7 +411,7 @@ err1:
         Dim theFunc
 
         If TypeName(theHostApp.Calculation) = "Error" Then
-            LogToEventViewer("refreshDBFunctions: theHostApp.Calculation = Error, " & Wb.Path & "\" & Wb.Name, EventLogEntryType.Information, 0)
+            LogToEventViewer("refreshDBFunctions: theHostApp.Calculation = Error, " & Wb.Path & "\" & Wb.Name, EventLogEntryType.Information)
             Exit Sub
         End If
         On Error GoTo err_1
@@ -434,13 +434,13 @@ err1:
 
 done:
         If needRecalc And (theHostApp.Calculation <> XlCalculation.xlCalculationManual Or ignoreCalcMode) Then
-            LogToEventViewer("refreshDBFunctions: theHostApp.CalculateFull called" & Wb.Path & "\" & Wb.Name, EventLogEntryType.Error, 0)
+            LogToEventViewer("refreshDBFunctions: theHostApp.CalculateFull called" & Wb.Path & "\" & Wb.Name, EventLogEntryType.Error)
             theHostApp.CalculateFull
         End If
         Exit Sub
 err_1:
         Debug.Print("refreshDBFunctions: " & Err.Description)
-        LogToEventViewer("Error: " & Err.Description & " in CommonFuncs.refreshDBFunctions in " & Erl() & ", " & Wb.Path & "\" & Wb.Name, EventLogEntryType.Error, 1)
+        LogToEventViewer("Error: " & Err.Description & " in CommonFuncs.refreshDBFunctions in " & Erl() & ", " & Wb.Path & "\" & Wb.Name, EventLogEntryType.Error)
     End Sub
 
     ''' <summary>formats theVal to fit the type of column theHead in recordset checkrst</summary>

@@ -1,5 +1,5 @@
 <DnaLibrary Name="Database Add-In" RuntimeVersion="v4.0">
-  <ExternalLibrary Path="DBAddin.dll" LoadFromBytes="true" Pack="true" />
+  <ExternalLibrary Path="DBAddin.dll" ExplicitRegistration="true" LoadFromBytes="true" Pack="true" />
   <!-- 
        The RuntimeVersion attribute above allows two settings:
        * RuntimeVersion="v2.0" - for .NET 2.0, 3.0 and 3.5

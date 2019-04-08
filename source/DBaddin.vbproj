@@ -63,6 +63,10 @@
       <HintPath>packages\ExcelDna.Integration.0.34.6\lib\ExcelDna.Integration.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="ExcelDna.Registration, Version=0.34.6455.41786, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\ExcelDna.Registration.0.34.7\lib\net40\ExcelDna.Registration.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="ExcelDna.RibbonFluent, Version=1.0.2.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\ExcelDna.RibbonFluent.1.0.2\lib\net40\ExcelDna.RibbonFluent.dll</HintPath>
       <Private>True</Private>

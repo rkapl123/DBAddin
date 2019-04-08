@@ -15,65 +15,76 @@ Public Module Functions
     ''' formatting = 2: An ODBC compliant Date string (format {d 'YYYY-MM-DD'}), datetime values are converted to {ts 'YYYY-MM-DD HH:MM:SS'} and time values are converted to {t 'HH:MM:SS'}.
     ''' formatting = 99 (default value): take the formatting option from setting DefaultDBDateFormatting (0 if not given)
     ''' </remarks>
-    Public Function DBDate(ByVal datVal As Date, Optional formatting As Integer = 99) As String
+    <ExcelFunction(Description:="Create database compliant date, time or datetime string from excel datetype value")>
+    Public Function DBDate(<ExcelArgument(Description:="date/time/datetime")> ByVal datVal As Date,
+                           <ExcelArgument(Description:="formatting option")> Optional formatting As Integer = 99) As String
         On Error GoTo DBDate_Error
         If formatting = 99 Then formatting = DefaultDBDateFormatting
-        If Int(datVal) = datVal Then
+        If Int(datVal.ToOADate()) = datVal.ToOADate() Then
             If formatting = 0 Then
-                DBDate = "'" & Format$(datVal, "YYYYMMDD") & "'"
+                DBDate = "'" & Format$(datVal, "yyyyMMdd") & "'"
             ElseIf formatting = 1 Then
-                DBDate = "date '" & Format$(datVal, "YYYY-MM-DD") & "'"
+                DBDate = "date '" & Format$(datVal, "yyyy-MM-dd") & "'"
             ElseIf formatting = 2 Then
-                DBDate = "{d '" & Format$(datVal, "YYYY-MM-DD") & "'}"
+                DBDate = "{d '" & Format$(datVal, "yyyy-MM-dd") & "'}"
             End If
         ElseIf CInt(datVal.ToOADate()) > 1 Then
             If formatting = 0 Then
-                DBDate = "'" & Format$(datVal, "YYYYMMDD HH:MM:SS") & "'"
+                DBDate = "'" & Format$(datVal, "yyyyMMdd hh:mm:ss") & "'"
             ElseIf formatting = 1 Then
-                DBDate = "timestamp '" & Format$(datVal, "YYYY-MM-DD HH:MM:SS") & "'"
+                DBDate = "timestamp '" & Format$(datVal, "yyyy-MM-dd hh:mm:ss") & "'"
             ElseIf formatting = 2 Then
-                DBDate = "{ts '" & Format$(datVal, "YYYY-MM-DD HH:MM:SS") & "'}"
+                DBDate = "{ts '" & Format$(datVal, "yyyy-MM-dd hh:mm:ss") & "'}"
             End If
         Else
             If formatting = 0 Then
-                DBDate = "'" & Format$(datVal, "HH:MM:SS") & "'"
+                DBDate = "'" & Format$(datVal, "hh:mm:ss") & "'"
             ElseIf formatting = 1 Then
-                DBDate = "time '" & Format$(datVal, "HH:MM:SS") & "'"
+                DBDate = "time '" & Format$(datVal, "hh:mm:ss") & "'"
             ElseIf formatting = 2 Then
-                DBDate = "{t '" & Format$(datVal, "HH:MM:SS") & "'}"
+                DBDate = "{t '" & Format$(datVal, "hh:mm:ss") & "'}"
             End If
         End If
         Exit Function
+
 DBDate_Error:
-        If VBDEBUG Then Debug.Print("Error (" & Err.Description & ") in DBDate") : Stop : Resume
-        LogToEventViewer("Error (" & Err.Description & ") in Functions.DBDate, in " & Erl(), EventLogEntryType.Error, 1)
-        DBDate = "Error (" & Err.Description & ") in function DBDate"
+        Dim ErrDesc As String = Err.Description
+        LogToEventViewer("Error (" & ErrDesc & ") in Functions.DBDate, in " & Erl(), EventLogEntryType.Error)
+        DBDate = "Error (" & ErrDesc & ") in function DBDate"
     End Function
 
     ''' <summary>Create a database compliant string from cell values, potentially concatenating with other parts for easy inclusion of wildcards (%,_)</summary>
     ''' <param name="StringPart">array of strings/wildcards or ranges containing strings/wildcards</param>
     ''' <returns>database compliant string</returns>
-    Public Function DBString(ParamArray StringPart() As Object) As String
+    <ExcelFunction(Description:="Create a database compliant string from cell values, potentially concatenating with other parts for easy inclusion of wildcards (%,_)")>
+    Public Function DBString(<ExcelArgument(Description:="array of strings/wildcards or ranges containing strings/wildcards")> ParamArray StringPart() As Object) As String
         Dim myRange
-        Dim Cell As Range
+        Dim myCell
         Dim retval As String = vbNullString
 
         On Error GoTo DBString_Error
         For Each myRange In StringPart
-            If TypeName(myRange) = "Range" Then
-                For Each Cell In myRange
-                    retval = retval & Cell.Value
+            If TypeName(myRange) = "Object(,)" Then
+                For Each myCell In myRange
+                    If TypeName(myCell) = "ExcelEmpty" Then
+                        ' do nothing here
+                    Else
+                        retval = retval & myCell.ToString()
+                    End If
                 Next
+            ElseIf TypeName(myRange) = "ExcelEmpty" Then
+                ' do nothing here
             Else
-                retval = retval & myRange
+                retval = retval & myRange.ToString()
             End If
         Next
         DBString = "'" & retval & "'"
         Exit Function
+
 DBString_Error:
-        If VBDEBUG Then Debug.Print("Error (" & Err.Description & ") in DBString") : Stop : Resume
-        LogToEventViewer("Error (" & Err.Description & ") in Functions.DBString, in " & Erl(), EventLogEntryType.Error, 1)
-        DBString = "Error (" & Err.Description & ") in DBString"
+        Dim ErrDesc As String = Err.Description
+        LogToEventViewer("Error (" & ErrDesc & ") in Functions.DBString, in " & Erl(), EventLogEntryType.Error)
+        DBString = "Error (" & ErrDesc & ") in DBString"
     End Function
 
     ''' <summary>Create an in clause from cell values, strings are created with quotation marks,
@@ -113,7 +124,7 @@ DBString_Error:
         Exit Function
 DBinClause_Error:
         If VBDEBUG Then Debug.Print("Error (" & Err.Description & ") in DBinClause") : Stop : Resume
-        LogToEventViewer("Error (" & Err.Description & ") in Functions.DBinClause, in " & Erl(), EventLogEntryType.Error, 1)
+        LogToEventViewer("Error (" & Err.Description & ") in Functions.DBinClause, in " & Erl(), EventLogEntryType.Error)
         DBinClause = "Error (" & Err.Description & ") in DBinClause"
     End Function
 
@@ -149,7 +160,7 @@ DBinClause_Error:
 
 DoConcatCells_Error:
         If VBDEBUG Then Debug.Print("Error (" & Err.Description & ") in DoConcatCells ") : Stop : Resume
-        LogToEventViewer("Error (" & Err.Description & ") in Functions.DoConcatCells, in " & Erl(), EventLogEntryType.Error, 1)
+        LogToEventViewer("Error (" & Err.Description & ") in Functions.DoConcatCells, in " & Erl(), EventLogEntryType.Error)
         DoConcatCells = "Error (" & Err.Description & ") !"
     End Function
 
@@ -212,7 +223,7 @@ DoConcatCells_Error:
 
 DoConcatCellsSep_Error:
         If VBDEBUG Then Debug.Print("Error (" & Err.Description & ") in DoConcatCellsSep ") : Stop : Resume
-        LogToEventViewer("Error (" & Err.Description & ") in Functions.DoConcatCellsSep, in " & Erl(), EventLogEntryType.Error, 1)
+        LogToEventViewer("Error (" & Err.Description & ") in Functions.DoConcatCellsSep, in " & Erl(), EventLogEntryType.Error)
         DoConcatCellsSep = "Error (" & Err.Description & ") !"
     End Function
 
@@ -342,7 +353,7 @@ chainCells_Error:
 
 DBMakeControl_Error:
         If VBDEBUG Then Debug.Print("Error (" & Err.Description & ") in DBMakeControl, callID : " & callID) : Stop : Resume
-        LogToEventViewer("Error (" & Err.Description & ") in Functions.DBMakeControl, callID : " & callID & ", in " & Erl(), EventLogEntryType.Error, 1)
+        LogToEventViewer("Error (" & Err.Description & ") in Functions.DBMakeControl, callID : " & callID & ", in " & Erl(), EventLogEntryType.Error)
         DBMakeControl = "Env:" & setEnv & ", Error (" & Err.Description & ") in DBMakeControl, callID : " & callID
         theHostApp.EnableEvents = True
     End Function
@@ -404,7 +415,7 @@ DBMakeControl_Error:
         Exit Function
 
 DBSetQuery_Error:
-        LogToEventViewer("Error (" & Err.Description & ") in Functions.DBSetQuery, callID : " & callID & ", in " & Erl(), EventLogEntryType.Error, 1)
+        LogToEventViewer("Error (" & Err.Description & ") in Functions.DBSetQuery, callID : " & callID & ", in " & Erl(), EventLogEntryType.Error)
         DBSetQuery = "Env:" & setEnv & ", Error (" & Err.Description & ") in DBSetQuery, callID : " & callID
         theHostApp.EnableEvents = True
     End Function
@@ -511,7 +522,7 @@ DBSetQuery_Error:
 
 DBListFetch_Error:
         If VBDEBUG Then Debug.Print("Error (" & Err.Description & ") in DBListFetch, callID : " & callID) : Stop : Resume
-        LogToEventViewer("Error (" & Err.Description & ") in Functions.DBListFetch, callID : " & callID & ", in " & Erl(), EventLogEntryType.Error, 1)
+        LogToEventViewer("Error (" & Err.Description & ") in Functions.DBListFetch, callID : " & callID & ", in " & Erl(), EventLogEntryType.Error)
         DBListFetch = "Env:" & setEnv & ", Error (" & Err.Description & ") in DBListFetch, callID : " & callID
         theHostApp.EnableEvents = True
     End Function
@@ -608,7 +619,7 @@ DBListFetch_Error:
         Exit Function
 DBRowFetch_Error:
         If VBDEBUG Then Debug.Print("Error (" & Err.Description & ") in DBRowFetch, callID : " & callID) : Stop : Resume
-        LogToEventViewer("Error (" & Err.Description & ") in DBRowFetch, callID : " & callID & ", in " & Erl(), EventLogEntryType.Error, 1)
+        LogToEventViewer("Error (" & Err.Description & ") in DBRowFetch, callID : " & callID & ", in " & Erl(), EventLogEntryType.Error)
         DBRowFetch = "Env:" & setEnv & ", Error (" & Err.Description & ") in Functions.DBRowFetch, callID : " & callID
         theHostApp.EnableEvents = True
     End Function
@@ -671,7 +682,7 @@ DBRowFetch_Error:
 
 DBCellFetch_Error:
         If VBDEBUG Then Debug.Print("Error (" & Err.Description & ") in DBCellFetch") : Stop : Resume
-        LogToEventViewer("Error (" & Err.Description & ") in Functions.DBCellFetch, in " & Erl(), EventLogEntryType.Error, 1)
+        LogToEventViewer("Error (" & Err.Description & ") in Functions.DBCellFetch, in " & Erl(), EventLogEntryType.Error)
         DBCellFetch = "Env:" & setEnv & ", Error (" & Err.Description & ") in DBCellFetch"
         theHostApp.EnableEvents = True
     End Function
@@ -807,7 +818,7 @@ DBCellFetch_Error:
 makeCalcMsgContainer_Error:
         If Err.Number <> 457 Then
             If VBDEBUG Then Debug.Print("Error (" & Err.Description & ") in makeCalcMsgContainer, callID: " & callID) : Stop : Resume
-            LogToEventViewer("Error (" & Err.Description & ") in Functions.makeCalcMsgContainer, callID: " & callID & ", in " & Erl(), EventLogEntryType.Error, 1)
+            LogToEventViewer("Error (" & Err.Description & ") in Functions.makeCalcMsgContainer, callID: " & callID & ", in " & Erl(), EventLogEntryType.Error)
         End If
     End Sub
 

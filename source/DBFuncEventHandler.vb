@@ -132,7 +132,7 @@ Public Class DBFuncEventHandler
 
 theXlApp_WorkbookBeforeSave_Err:
         If VBDEBUG Then Debug.Print("DBFuncEventHandler.theXlApp_WorkbookBeforeSave: " & Err.Description) : Stop : Resume
-        LogToEventViewer("DBFuncEventHandler.theXlApp_WorkbookBeforeSave Error: " & Wb.Name & Err.Description & ", in line " & Erl(), EventLogEntryType.Error, 1)
+        LogToEventViewer("DBFuncEventHandler.theXlApp_WorkbookBeforeSave Error: " & Wb.Name & Err.Description & ", in line " & Erl(), EventLogEntryType.Error)
     End Sub
 
     ''' <summary>"OnTime" event function to "escape" workbook_save: event procedure to refetch DB functions results after saving</summary>
@@ -379,7 +379,7 @@ nextCalcCont:
 DBSetQueryParams_Error:
         errMsg = Err.Description & " in query: " & Query
         'If VBDEBUG Then Debug.Print "DBSetQueryParams Error: " & Erl & errMsg & ", caller: " & callID: Stop: Resume
-        LogToEventViewer("DBFuncEventHandler.DBSetQueryParams Error: " & errMsg & ", caller: " & callID, EventLogEntryType.Error, 1)
+        LogToEventViewer("DBFuncEventHandler.DBSetQueryParams Error: " & errMsg & ", caller: " & callID, EventLogEntryType.Error)
 
         statusCont.statusMsg = errMsg
         ' need to mark calc container here as excel won't return to main event proc in case of error
@@ -789,7 +789,7 @@ DBControlQuery_Error:
         If VBDEBUG Then Debug.Print("DBControlQuery Error: " & errMsg & ", caller: " & callID) : Stop : Resume
         theHostApp.ScreenUpdating = True
         curWs.Select()
-        LogToEventViewer("DBFuncEventHandler.DBControlQuery Error: " & errMsg & ", caller: " & callID & ", in line " & Erl(), severity, 1)
+        LogToEventViewer("DBFuncEventHandler.DBControlQuery Error: " & errMsg & ", caller: " & callID & ", in line " & Erl(), severity)
         Err.Clear()
         tableRst = Nothing
         statusCont.statusMsg = errMsg
@@ -1256,7 +1256,7 @@ err_0:
         ' which recalcs in case of errors there, leading to endless calc loops !!
         If severity = Nothing Then severity = EventLogEntryType.Warning
         If VBDEBUG Then Debug.Print("DBListQuery Error: " & Erl() & errMsg & ", caller: " & callID) : Stop : Resume
-        LogToEventViewer("DBFuncEventHandler.DBListQuery Error: " & errMsg & ", caller: " & callID, severity, 1)
+        LogToEventViewer("DBFuncEventHandler.DBListQuery Error: " & errMsg & ", caller: " & callID, severity)
 
         statusCont.statusMsg = errMsg
         ' need to mark calc container here as excel won't return to main event proc in case of error
@@ -1413,7 +1413,7 @@ err_1:
         If severity = Nothing Then severity = EventLogEntryType.Warning
         If VBDEBUG Then Debug.Print("DBRowQuery Error: " & errMsg & ", caller: " & callID) : Stop : Resume
         If tableRst.State <> 0 Then tableRst.Close()
-        LogToEventViewer("DBFuncEventHandler.DBRowQuery Error: " & errMsg & ", caller: " & callID & ", in line " & Erl(), severity, 1)
+        LogToEventViewer("DBFuncEventHandler.DBRowQuery Error: " & errMsg & ", caller: " & callID & ", in line " & Erl(), severity)
         statusCont.statusMsg = errMsg
         ' need to mark calc container here as excel won't return to main event proc in case of error
         ' calc container is then removed in calling function
@@ -1523,7 +1523,7 @@ err_1:
         End If
         If VBDEBUG Then Debug.Print("DBCellQuery Error: " & errMsg & ", caller: " & callID) : Stop : Resume
         If tableRst.State <> 0 Then tableRst.Close()
-        LogToEventViewer("DBFuncEventHandler.DBCellQuery Error: " & errMsg & ", caller: " & callID, severity, 1)
+        LogToEventViewer("DBFuncEventHandler.DBCellQuery Error: " & errMsg & ", caller: " & callID, severity)
         Err.Clear()
         statusCont.statusMsg = errMsg
         ' need to mark calc container here as excel won't return to main event proc in case of error

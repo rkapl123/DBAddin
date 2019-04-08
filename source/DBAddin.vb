@@ -2,20 +2,8 @@
 Imports ExcelDna.Integration
 Imports System.Runtime.InteropServices
 Imports ExcelDna.Integration.CustomUI
-
-''' <summary>type of DBFunc created with DBFuncBuilder insertForm</summary>
-Public Enum tDBFunc
-    DBList = 0
-    DBRow = 1
-    DBCell = 2
-    DBCtrl = 3
-End Enum
-''' <summary>type for failure in reading DBsheet data</summary>
-Public Enum dbsheetErrReason
-    dbDataError = 1
-    dbOK = 2
-    dbInternalError = 3
-End Enum
+Imports ExcelDna.Registration
+Imports System.IO ' needed for logfile
 
 ''' <summary>All global Variables for DBFuncBuilder and Functions and some global accessible functions</summary>
 Public Module Globals
@@ -25,6 +13,8 @@ Public Module Globals
     Public myEventlog As EventLog
     ''' <summary>in case of Automation, use this to communicate collected logged Warnings and Errors back</summary>
     Public automatedMapper As Mapper
+    ''' <summary>logfile for messages</summary>
+    Public logfile As StreamWriter
 
     ''' <summary>encapsulates setting fetching (currently registry)</summary>
     ''' <param name="Key"></param>
@@ -56,14 +46,13 @@ Public Module Globals
         DefaultDBDateFormatting = CInt(fetchSetting("DefaultDBDateFormatting", "0"))
     End Sub
 
-    ''' <summary>Logs sErrMsg of eEventType in eCategory to EventLog</summary>
+    ''' <summary>Logs sErrMsg of eEventType to Logfile</summary>
     ''' <param name="sErrMsg"></param>
     ''' <param name="eEventType"></param>
-    ''' <param name="eCategory"></param>
     ''' <returns></returns>
-    Public Function LogToEventViewer(sErrMsg As String, eEventType As EventLogEntryType, eCategory As Short) As Boolean
+    Public Function LogToEventViewer(sErrMsg As String, eEventType As EventLogEntryType) As Boolean
         Try
-            myEventlog.WriteEntry(sErrMsg, eEventType, 0, eCategory)
+            logfile.WriteLine(Now().ToString() & vbTab & IIf(eEventType = EventLogEntryType.Error, "ERROR:", IIf(eEventType = EventLogEntryType.Information, "INFO:", "WARNING:")) & vbTab & sErrMsg)
         Catch ex As Exception
             Return False
         End Try
@@ -78,7 +67,7 @@ Public Module Globals
     Public Sub LogError(LogMessage As String, Optional includeMsg As Boolean = True, Optional ByRef exitMe As Boolean = False, Optional category As Long = 2)
         Dim retval As Integer
 
-        LogToEventViewer(LogMessage, EventLogEntryType.Error, category)
+        LogToEventViewer(LogMessage, EventLogEntryType.Error)
         If Not automatedMapper Is Nothing Then automatedMapper.returnedErrorMessages = automatedMapper.returnedErrorMessages & LogMessage & vbCrLf
         If includeMsg And automatedMapper Is Nothing Then retval = MsgBox(LogMessage, vbCritical + IIf(exitMe, vbOKCancel, vbOKOnly), "DBAddin: Internal Error !! ")
         If retval = vbCancel Then
@@ -96,7 +85,7 @@ Public Module Globals
     Public Sub LogWarn(LogMessage As String, Optional ByRef exitMe As Boolean = False, Optional category As Long = 2, Optional includeMsg As Boolean = True)
         Dim retval As Integer
 
-        LogToEventViewer(LogMessage, EventLogEntryType.Warning, category)
+        LogToEventViewer(LogMessage, EventLogEntryType.Warning)
         If Not automatedMapper Is Nothing Then automatedMapper.returnedErrorMessages = automatedMapper.returnedErrorMessages & LogMessage & vbCrLf
         If includeMsg And automatedMapper Is Nothing Then retval = MsgBox(LogMessage, vbCritical + IIf(exitMe, vbOKCancel, vbOKOnly), "DBAddin Error")
         If retval = vbCancel Then
@@ -110,7 +99,7 @@ Public Module Globals
     ''' <param name="LogMessage"></param>
     ''' <param name="category"></param>
     Public Sub LogInfo(LogMessage As String, Optional category As Long = 2)
-        If DEBUGME Then LogToEventViewer(LogMessage, EventLogEntryType.Information, category)
+        If DEBUGME Then LogToEventViewer(LogMessage, EventLogEntryType.Information)
     End Sub
 
     ''' <summary>
@@ -199,8 +188,15 @@ Public Class AddInEvents
 
     ''' <summary>connect to Excel when opening Addin</summary>
     Public Sub AutoOpen() Implements IExcelAddIn.AutoOpen
+        ExcelRegistration.GetExcelFunctions().ProcessParamsRegistrations().RegisterFunctions()
         theHostApp = ExcelDnaUtil.Application
-        myEventlog = New EventLog("Application")
+        Try
+            MkDir("C:\temp")
+            logfile = New StreamWriter("C:\\temp\\DBAddin.log", False, System.Text.Encoding.GetEncoding(1252))
+        Catch ex As Exception
+            MsgBox("Exception occured when trying to create logfile C:\temp\DBAddin.log: " + ex.Message)
+        End Try
+        logfile.WriteLine("starting DBAddin")
         initSettings()
         theMenuHandler = New MenuHandler
         theDBFuncEventHandler = New DBFuncEventHandler

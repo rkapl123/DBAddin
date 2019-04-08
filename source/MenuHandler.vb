@@ -159,8 +159,8 @@ Public Class MenuHandler
 addDBFuncContextMenus_Err:
 
         If VBDEBUG Then Debug.Print(Err.Description()) : Stop : Resume
-        LogToEventViewer("Error (" & Err.Description & ") in MenuHandler.addDBFuncContextMenus in " & Erl(), EventLogEntryType.Error, 1)
-        LogToEventViewer("In case Error is concerned with 'Subscript out of range, line 136' (or any other line), you might consider resetting the 'cell' commandbar (Commandbars(""Cell"").Reset) ! ", EventLogEntryType.Error, 1)
+        LogToEventViewer("Error (" & Err.Description & ") in MenuHandler.addDBFuncContextMenus in " & Erl(), EventLogEntryType.Error)
+        LogToEventViewer("In case Error is concerned with 'Subscript out of range, line 136' (or any other line), you might consider resetting the 'cell' commandbar (Commandbars(""Cell"").Reset) ! ", EventLogEntryType.Error)
     End Sub
 
     ''
@@ -555,7 +555,7 @@ err1:
 
 err1:
         If VBDEBUG Then Debug.Print("Error (" & Err.Description & ") in MenuHandler.doRefresh") : Stop : Resume
-        LogToEventViewer("Error (" & Err.Description & ") in MenuHandler.doRefresh in " & Erl(), EventLogEntryType.Error, 1)
+        LogToEventViewer("Error (" & Err.Description & ") in MenuHandler.doRefresh in " & Erl(), EventLogEntryType.Error)
     End Sub
 
     ''

@@ -36,7 +36,7 @@ Public Module ConfigFiles
 
 err1:
         If VBDEBUG Then Debug.Print("Error (" & Err.Description & ") in ConfigFiles.loadConfig") : Stop : Resume
-        LogToEventViewer("Error (" & Err.Description & ") using filename '" & theFileName & "' in ConfigFiles.loadConfig" & " in " & Erl(), EventLogEntryType.Error, 1)
+        LogToEventViewer("Error (" & Err.Description & ") using filename '" & theFileName & "' in ConfigFiles.loadConfig" & " in " & Erl(), EventLogEntryType.Error)
     End Sub
 
 
