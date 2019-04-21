@@ -1,9 +1,18 @@
 Imports Microsoft.Office.Interop.Excel
 Imports ExcelDna.Integration
-Imports ExcelDna.Integration.XlCall
 
 ''' <summary>Contains the public callable DB functions and some helper functions</summary>
 Public Module Functions
+
+    Private Function ToRange(reference As ExcelReference) As Range
+        Dim xlApp As Application = ExcelDnaUtil.Application
+        Dim item As String = XlCall.Excel(XlCall.xlSheetNm, reference)
+        Dim index As Integer = item.LastIndexOf("]")
+        item = item.Substring(index + 1)
+        Dim ws As Worksheet = xlApp.Sheets(item)
+        Dim target As Range = xlApp.Range(ws.Cells(reference.RowFirst + 1, reference.ColumnFirst + 1), ws.Cells(reference.RowLast + 1, reference.ColumnLast + 1))
+        Return target
+    End Function
 
     ''' <summary>Create database compliant date, time or datetime string from excel datetype value</summary>
     ''' <param name="datVal">date/time/datetime</param>
@@ -17,14 +26,14 @@ Public Module Functions
     ''' </remarks>
     <ExcelFunction(Description:="Create database compliant date, time or datetime string from excel datetype value")>
     Public Function DBDate(<ExcelArgument(Description:="date/time/datetime")> ByVal datVal As Date,
-                           <ExcelArgument(Description:="formatting option")> Optional formatting As Integer = 99) As String
+                           <ExcelArgument(Description:="formatting option, 0: simple datestring (format 'YYYYMMDD'), 1: ANSI compliant Date string (format date 'YYYY-MM-DD'), 2: ODBC compliant Date string (format {d 'YYYY-MM-DD'})")> Optional formatting As Integer = 99) As String
         On Error GoTo DBDate_Error
         If formatting = 99 Then formatting = DefaultDBDateFormatting
         If Int(datVal.ToOADate()) = datVal.ToOADate() Then
             If formatting = 0 Then
                 DBDate = "'" & Format$(datVal, "yyyyMMdd") & "'"
             ElseIf formatting = 1 Then
-                DBDate = "date '" & Format$(datVal, "yyyy-MM-dd") & "'"
+                DBDate = "DATE '" & Format$(datVal, "yyyy-MM-dd") & "'"
             ElseIf formatting = 2 Then
                 DBDate = "{d '" & Format$(datVal, "yyyy-MM-dd") & "'}"
             End If
@@ -88,169 +97,95 @@ DBString_Error:
     End Function
 
     ''' <summary>Create an in clause from cell values, strings are created with quotation marks,
-    '''             dates are created with DBDate (see below)</summary>
+    '''             dates are created with DBDate</summary>
     ''' <param name="inPart">array of values or ranges containing values</param>
     ''' <returns>database compliant in-clause string</returns>
-    Public Function DBinClause(ParamArray inPart() As Object) As String
-        Dim myRange
-        Dim Cell As Range = Nothing
-        Dim inlist As String = vbNullString
-
-        On Error GoTo DBinClause_Error
-        For Each myRange In inPart
-            If TypeName(myRange) = "Range" Then
-                For Each Cell In myRange
-                    If Cell Is ExcelEmpty.Value Then
-                    ElseIf IsNumeric(Cell) Then
-                        inlist = inlist & "," & Cell.Value
-                    ElseIf IsDate(Cell.Value2) Then
-                        inlist = inlist & "," & DBDate(Cell.Value2)
-                    Else
-                        inlist = inlist & ",'" & Cell.Value & "'"
-                    End If
-                Next
-            Else
-                If myRange Is ExcelEmpty.Value Then
-                ElseIf IsNumeric(myRange) Then
-                    inlist = inlist & "," & myRange
-                ElseIf IsDate(myRange) Then
-                    inlist = inlist & "," & DBDate(myRange)
-                Else
-                    inlist = inlist & ",'" & myRange & "'"
-                End If
-            End If
-        Next
-        DBinClause = "in (" & Mid$(inlist, 2) & ")"
-        Exit Function
-DBinClause_Error:
-        If VBDEBUG Then Debug.Print("Error (" & Err.Description & ") in DBinClause") : Stop : Resume
-        LogToEventViewer("Error (" & Err.Description & ") in Functions.DBinClause, in " & Erl(), EventLogEntryType.Error)
-        DBinClause = "Error (" & Err.Description & ") in DBinClause"
-    End Function
-
-    ''' <summary>private function that actually concatenates values contained in Object array myRange together (either using .text or .value for cells in myrange)</summary>
-    ''' <param name="asText">should cell values be taken as displayed (.text attribute) or their value (.value attribute)</param>
-    ''' <param name="myRange">Object array, whose values should be concatenated</param>
-    ''' <returns>concatenated String</returns>
-    Private Function DoConcatCells(asText As Boolean, myRange As Object) As String
-        Dim Cell As Range
-        Dim retval As String = vbNullString
-
-        On Error GoTo DoConcatCells_Error
-        If TypeName(myRange) = "Range" Then
-            For Each Cell In myRange
-                If Cell.ToString().Length > 0 Then
-                    retval = retval & CStr(IIf(asText, Cell.Text, Cell.Value))
-                End If
-            Next
-            ' this happens when functions are called in matrix context
-        ElseIf TypeName(myRange) = "Variant()" Then
-            Dim cellValue
-            For Each cellValue In myRange
-                If TypeName(cellValue) = "Boolean" Then cellValue = IIf(cellValue, cellValue, vbNullString)
-                If cellValue.ToString().Length > 0 Then
-                    retval = retval & CStr(cellValue)
-                End If
-            Next
-        Else
-            retval = retval & CStr(myRange)
-        End If
-        DoConcatCells = retval
-        Exit Function
-
-DoConcatCells_Error:
-        If VBDEBUG Then Debug.Print("Error (" & Err.Description & ") in DoConcatCells ") : Stop : Resume
-        LogToEventViewer("Error (" & Err.Description & ") in Functions.DoConcatCells, in " & Erl(), EventLogEntryType.Error)
-        DoConcatCells = "Error (" & Err.Description & ") !"
+    <ExcelFunction(Description:="Create an in clause from cell values, strings are created with quotation marks, dates are created with DBDate")>
+    Public Function DBinClause(<ExcelArgument(AllowReference:=True, Description:="array of values or ranges containing values")> ParamArray inPart As Object()) As String
+        DBinClause = "in (" & DoConcatCellsSep(False, ",", True, inPart) & ")"
     End Function
 
     ''' <summary>concatenates values contained in thetarget together (using .value attribute for cells)</summary>
     ''' <param name="thetarget">all cells/values which should be concatenated</param>
     ''' <returns>concatenated String</returns>
-    Public Function concatCells(ParamArray thetarget() As Object) As String
-        Dim myRange
-        concatCells = vbNullString
-        For Each myRange In thetarget
-            concatCells = concatCells & DoConcatCells(False, myRange)
-        Next
+    <ExcelFunction(Description:="concatenates values contained in thetarget together (using .value attribute for cells)")>
+    Public Function concatCells(<ExcelArgument(AllowReference:=True, Description:="all cells/values which should be concatenated")> ParamArray thetarget As Object()) As String
+        concatCells = DoConcatCellsSep(False, vbNullString, False, thetarget)
     End Function
 
     ''' <summary>concatenates values contained in thetarget together (using .text for cells)</summary>
     ''' <param name="thetarget">all cells/values which should be concatenated</param>
     ''' <returns>concatenated String</returns>
-    Public Function concatCellsText(ParamArray thetarget() As Object) As String
-        Dim myRange
-        concatCellsText = vbNullString
-        For Each myRange In thetarget
-            concatCellsText = concatCellsText & DoConcatCells(True, myRange)
-        Next
-    End Function
-
-    ''' <summary>private function that actually concatenates values contained in Object array myRange together (either using .text or .value for cells in myrange) using a separator</summary>
-    ''' <param name="asText">should cell values be taken as displayed (.text attribute) or their value (.value attribute)</param>
-    ''' <param name="separator">the separator-string that is filled between values</param>
-    ''' <param name="myRange">Object array, whose values should be concatenated</param>
-    ''' <returns>concatenated String</returns>
-    Private Function DoConcatCellsSep(asText As Boolean, separator As String, myRange As Object) As String
-        Dim Cell As Range
-        Dim retval As String = vbNullString
-        Dim cellValueStr As String
-
-        On Error GoTo DoConcatCellsSep_Error
-        If TypeName(myRange) = "Range" Then
-            For Each Cell In myRange
-                If Not ((TypeName(Cell) = "Boolean" And Cell.Value2 = False) Or Cell.ToString().Length = 0) Then
-                    On Error Resume Next
-                    cellValueStr = CStr(IIf(asText, Cell.Text, Cell.Value))
-                    If Err.Number <> 0 Then cellValueStr = CStr(Cell.Value)
-                    On Error GoTo DoConcatCellsSep_Error
-                    retval = retval & cellValueStr & separator
-                End If
-            Next
-        ElseIf TypeName(myRange) = "Variant()" Then
-            Dim cellValue
-            For Each cellValue In myRange
-                If TypeName(cellValue) = "Boolean" Then cellValue = IIf(cellValue, cellValue, vbNullString)
-                If cellValue.ToString().Length > 0 Then
-                    retval = retval & CStr(cellValue) & separator
-                End If
-            Next
-        Else
-            retval = retval & CStr(myRange) & separator
-        End If
-        DoConcatCellsSep = retval
-        Exit Function
-
-DoConcatCellsSep_Error:
-        If VBDEBUG Then Debug.Print("Error (" & Err.Description & ") in DoConcatCellsSep ") : Stop : Resume
-        LogToEventViewer("Error (" & Err.Description & ") in Functions.DoConcatCellsSep, in " & Erl(), EventLogEntryType.Error)
-        DoConcatCellsSep = "Error (" & Err.Description & ") !"
+    <ExcelFunction(Description:="concatenates values contained in thetarget together (using .text for cells)")>
+    Public Function concatCellsText(<ExcelArgument(AllowReference:=True, Description:="all cells/values which should be concatenated")> ParamArray thetarget As Object()) As String
+        concatCellsText = DoConcatCellsSep(True, vbNullString, False, thetarget)
     End Function
 
     ''' <summary>concatenates values contained in thetarget (using .value for cells) using a separator</summary>
     ''' <param name="separator">the separator</param>
     ''' <param name="thetarget">all cells/values which should be concatenated</param>
     ''' <returns>concatenated String</returns>
-    Public Function concatCellsSep(separator As String, ParamArray thetarget() As Object) As String
-        Dim myRange
-        concatCellsSep = vbNullString
-        For Each myRange In thetarget
-            concatCellsSep = concatCellsSep & DoConcatCellsSep(False, separator, myRange)
-        Next
-        concatCellsSep = getRidOfLastSep(separator, concatCellsSep)
+    <ExcelFunction(Description:="concatenates values contained in thetarget (using .value for cells) using a separator")>
+    Public Function concatCellsSep(<ExcelArgument(AllowReference:=True, Description:="the separator")> separator As String, <ExcelArgument(AllowReference:=True, Description:="all cells/values which should be concatenated")> ParamArray thetarget As Object()) As String
+        concatCellsSep = DoConcatCellsSep(False, separator, False, thetarget)
     End Function
 
     ''' <summary>concatenates values contained in thetarget using a separator using cells text property instead of the value (displayed)</summary>
     ''' <param name="separator">the separator</param>
     ''' <param name="thetarget">all cells/values which should be concatenated</param>
     ''' <returns>concatenated String</returns>
-    Public Function concatCellsSepText(separator As String, ParamArray thetarget() As Object) As String
-        Dim myRange
-        concatCellsSepText = vbNullString
-        For Each myRange In thetarget
-            concatCellsSepText = concatCellsSepText & DoConcatCellsSep(True, separator, myRange)
+    <ExcelFunction(Description:="concatenates values contained in thetarget using a separator using cells text property instead of the value (displayed)")>
+    Public Function concatCellsSepText(<ExcelArgument(AllowReference:=True, Description:="the separator")> separator As String, <ExcelArgument(AllowReference:=True, Description:="all cells/values which should be concatenated")> ParamArray thetarget As Object()) As String
+        concatCellsSepText = DoConcatCellsSep(True, separator, False, thetarget)
+    End Function
+
+    ''' <summary>private function that actually concatenates values contained in Object array myRange together (either using .text or .value for cells in myrange) using a separator</summary>
+    ''' <param name="asText">should cell values be taken as displayed (.text attribute) or their value (.value attribute)</param>
+    ''' <param name="concatParts">Object array, whose values should be concatenated</param>
+    ''' <param name="separator">the separator-string that is filled between values</param>
+    ''' <returns>concatenated String</returns>
+    Private Function DoConcatCellsSep(asText As Boolean, separator As String, DBcompliant As Boolean, ParamArray concatParts As Object()) As String
+        Dim retval As String = vbNullString
+        Dim myRef
+        Dim myRange As Range
+        Dim myCell As Range
+
+        On Error GoTo DoConcatCellsSep_Error
+        For Each myRef In concatParts
+            If TypeName(myRef) = "ExcelReference" Then
+                myRange = ToRange(myRef)
+                For Each myCell In myRange
+                    If myCell.Value Is Nothing Then
+                        ' do nothing here
+                    ElseIf asText Then
+                        retval = retval & separator & myCell.Text
+                    ElseIf IsNumeric(myCell.Value) Then
+                        retval = retval & separator & Convert.ToString(myCell.Value, System.Globalization.CultureInfo.InvariantCulture)
+                    ElseIf IsDate(myCell.Value) Then
+                        retval = retval & separator & IIf(DBcompliant, DBDate(myCell.Value), IIf(Int(myCell.Value.ToOADate()) = myCell.Value.ToOADate(), Format$(myCell.Value, "yyyyMMdd"), IIf(CInt(myCell.Value.ToOADate()) > 1, Format$(myCell.Value, "yyyyMMdd hh:mm:ss"), Format$(myCell.Value, "hh:mm:ss"))))
+                    Else
+                        retval = retval & separator & IIf(DBcompliant, "'", "") & myCell.Value.ToString() & IIf(DBcompliant, "'", "")
+                    End If
+                Next
+            Else
+                If TypeName(myRef) = "ExcelEmpty" Then
+                    ' do nothing here
+                ElseIf IsNumeric(myRef) Then
+                    retval = retval & separator & Convert.ToString(myRef, System.Globalization.CultureInfo.InvariantCulture)
+                ElseIf IsDate(myRef) Then
+                    retval = retval & separator & IIf(DBcompliant, DBDate(myRef), IIf(Int(myRef.ToOADate()) = myRef.ToOADate(), Format$(myRef, "yyyyMMdd"), IIf(CInt(myRef.ToOADate()) > 1, Format$(myRef, "yyyyMMdd hh:mm:ss"), Format$(myRef, "hh:mm:ss"))))
+                Else
+                    retval = retval & separator & IIf(DBcompliant, "'", "") & myRef.ToString() & IIf(DBcompliant, "'", "")
+                End If
+            End If
         Next
-        concatCellsSepText = getRidOfLastSep(separator, concatCellsSepText)
+        DoConcatCellsSep = Mid$(retval, Len(separator) + 1) ' skip first separator
+        Exit Function
+
+DoConcatCellsSep_Error:
+        Dim ErrDesc As String = Err.Description
+        LogToEventViewer("Error (" & ErrDesc & ") in Functions.DoConcatCellsSep, in " & Erl(), EventLogEntryType.Error)
+        DoConcatCellsSep = "Error (" & ErrDesc & ") !"
     End Function
 
     ''' <summary>gets rid of separator at end of totalString</summary>
@@ -291,10 +226,11 @@ DoConcatCellsSep_Error:
             chainCells = vbNullString
         End If
         Exit Function
+
 chainCells_Error:
-        If VBDEBUG Then Debug.Print("Error (" & Err.Description & ") in chainCells ") : Stop : Resume
-        'LogToEventViewer("Error (" & Err.Description & ") in Functions.chainCells, in " & Erl(), EventLogEntryType.Error, 1)
-        chainCells = "Error (" & Err.Description & ") in chainCells "
+        Dim ErrDesc As String = Err.Description
+        LogToEventViewer("Error (" & ErrDesc & ") in Functions.chainCells, in " & Erl(), EventLogEntryType.Error)
+        chainCells = "Error (" & ErrDesc & ") in chainCells "
     End Function
 
     ''' <summary>creates a Listbox or Dropdown filled with data defined by query</summary>

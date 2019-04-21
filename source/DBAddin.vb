@@ -52,7 +52,7 @@ Public Module Globals
     ''' <returns></returns>
     Public Function LogToEventViewer(sErrMsg As String, eEventType As EventLogEntryType) As Boolean
         Try
-            logfile.WriteLine(Now().ToString() & vbTab & IIf(eEventType = EventLogEntryType.Error, "ERROR:", IIf(eEventType = EventLogEntryType.Information, "INFO:", "WARNING:")) & vbTab & sErrMsg)
+            logfile.WriteLine(Now().ToString() & vbTab & IIf(eEventType = EventLogEntryType.Error, "ERROR", IIf(eEventType = EventLogEntryType.Information, "INFO", "WARNING")) & vbTab & sErrMsg)
         Catch ex As Exception
             Return False
         End Try
@@ -189,14 +189,17 @@ Public Class AddInEvents
     ''' <summary>connect to Excel when opening Addin</summary>
     Public Sub AutoOpen() Implements IExcelAddIn.AutoOpen
         ExcelRegistration.GetExcelFunctions().ProcessParamsRegistrations().RegisterFunctions()
+
         theHostApp = ExcelDnaUtil.Application
+        Dim logfilename As String = "C:\\DBAddinlogs\\" + DateTime.Today.ToString("yyyyMMdd") + ".log"
+        If Not Directory.Exists("C:\\DBAddinlogs") Then MkDir("C:\\DBAddinlogs")
         Try
-            MkDir("C:\temp")
-            logfile = New StreamWriter("C:\\temp\\DBAddin.log", False, System.Text.Encoding.GetEncoding(1252))
+            logfile = New StreamWriter(logfilename, True, System.Text.Encoding.GetEncoding(1252))
+            logfile.AutoFlush = True
         Catch ex As Exception
-            MsgBox("Exception occured when trying to create logfile C:\temp\DBAddin.log: " + ex.Message)
+            MsgBox("Exception occured when trying to create logfile " + logfilename + ": " + ex.Message)
         End Try
-        logfile.WriteLine("starting DBAddin")
+        LogToEventViewer("starting DBAddin", EventLogEntryType.Information)
         initSettings()
         theMenuHandler = New MenuHandler
         theDBFuncEventHandler = New DBFuncEventHandler
