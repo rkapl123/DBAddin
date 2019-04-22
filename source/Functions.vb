@@ -4,16 +4,6 @@ Imports ExcelDna.Integration
 ''' <summary>Contains the public callable DB functions and some helper functions</summary>
 Public Module Functions
 
-    Private Function ToRange(reference As ExcelReference) As Range
-        Dim xlApp As Application = ExcelDnaUtil.Application
-        Dim item As String = XlCall.Excel(XlCall.xlSheetNm, reference)
-        Dim index As Integer = item.LastIndexOf("]")
-        item = item.Substring(index + 1)
-        Dim ws As Worksheet = xlApp.Sheets(item)
-        Dim target As Range = xlApp.Range(ws.Cells(reference.RowFirst + 1, reference.ColumnFirst + 1), ws.Cells(reference.RowLast + 1, reference.ColumnLast + 1))
-        Return target
-    End Function
-
     ''' <summary>Create database compliant date, time or datetime string from excel datetype value</summary>
     ''' <param name="datVal">date/time/datetime</param>
     ''' <param name="formatting">see remarks</param>
@@ -188,110 +178,12 @@ DoConcatCellsSep_Error:
         DoConcatCellsSep = "Error (" & ErrDesc & ") !"
     End Function
 
-    ''' <summary>gets rid of separator at end of totalString</summary>
-    ''' <param name="separator">the separator</param>
-    ''' <param name="totalString">the string to be modified</param>
-    ''' <returns>modified String</returns>
-    Private Function getRidOfLastSep(separator As String, totalString As String) As String
-        If Len(totalString) > Len(separator) Then
-            getRidOfLastSep = Left$(totalString, Len(totalString) - Len(separator))
-        Else
-            getRidOfLastSep = vbNullString
-        End If
-    End Function
-
     ''' <summary>chains values contained in thetarget together with commas, mainly used for creating select header</summary>
     ''' <param name="thetarget">range where values should be chained</param>
     ''' <returns>chained String</returns>
-    Public Function chainCells(ParamArray thetarget() As Object) As String
-        Dim myRange
-        Dim Cell As Range
-        Dim retval As String = vbNullString
-
-        On Error GoTo chainCells_Error
-        For Each myRange In thetarget
-            If TypeName(myRange) = "Range" Then
-                For Each Cell In myRange
-                    If Cell.ToString().Length > 0 Then
-                        retval = retval & Cell.ToString() & ","
-                    End If
-                Next
-            Else
-                retval = retval & CStr(myRange) & ","
-            End If
-        Next
-        If Len(retval) > 1 Then
-            chainCells = Left$(retval, Len(retval) - 1)
-        Else
-            chainCells = vbNullString
-        End If
-        Exit Function
-
-chainCells_Error:
-        Dim ErrDesc As String = Err.Description
-        LogToEventViewer("Error (" & ErrDesc & ") in Functions.chainCells, in " & Erl(), EventLogEntryType.Error)
-        chainCells = "Error (" & ErrDesc & ") in chainCells "
-    End Function
-
-    ''' <summary>creates a Listbox or Dropdown filled with data defined by query</summary>
-    ''' <param name="Query">query for getting data</param>
-    ''' <param name="ConnString">connection string defining DB, user, etc...</param>
-    ''' <param name="controlType">type of control to be inserted (0 = Listbox, 1 = Dropdown)</param>
-    ''' <param name="HeaderInfo">should header label be included in list</param>
-    ''' <param name="autoArrange"></param>
-    ''' <param name="ControlName"></param>
-    ''' <param name="dataTargetRange">Range (String) to put the selection into (default = left cell from function address)</param>
-    ''' <param name="controlLocation"></param>
-    ''' <param name="subscribeTo">Range (String), where control/header should be placed (default = function address)</param>
-    ''' <returns>Status Message</returns>
-    Public Function DBMakeControl(Query As Object, ConnString As Object, Optional controlType As Integer = 0, Optional HeaderInfo As Boolean = False, Optional autoArrange As Boolean = False, Optional ControlName As String = vbNullString, Optional dataTargetRange As String = vbNullString, Optional controlLocation As String = vbNullString, Optional subscribeTo As String = vbNullString) As String
-        Dim callID As String
-        Dim setEnv As String
-
-        On Error GoTo DBMakeControl_Error
-        setEnv = fetchSetting("ConfigName", vbNullString)
-        ' calcContainers are identified by wbname + Sheetname + function caller cell Address
-        callID = "[" & theHostApp.caller.Parent.Parent.name & "]" & theHostApp.caller.Parent.name & "!" & theHostApp.caller.Address
-        If TypeName(ConnString) = "Error" Then ConnString = vbNullString
-        If TypeName(ConnString) = "Range" Then ConnString = ConnString.Value
-        ' in case of number as connection string, take the stored Connection string .. 1 usually prod, 2 .. usually test, 3.. development)
-        If TypeName(ConnString) = "Integer" Or TypeName(ConnString) = "Long" Or TypeName(ConnString) = "Double" Or TypeName(ConnString) = "Short" Then
-            setEnv = fetchSetting("ConfigName" & ConnString, vbNullString)
-            ConnString = fetchSetting("ConstConnString" & ConnString, vbNullString)
-        End If
-
-        DBMakeControl = checkParams(Query)
-        If DBMakeControl.Length > 0 Then
-            DBMakeControl = "Env:" & setEnv & ", " & DBMakeControl
-            Exit Function
-        End If
-        If existsCalcCont(callID) Then
-            If allCalcContainers(callID).errOccured Then
-#If DEBUGME = 1 Then
-              LogToEventViewer "DBControlQuery returned Error, removing container with callID = " & callID, LogInf, 0
-#End If
-                ' commented this to prevent endless loops !!
-                'allCalcContainers.Remove callID
-                ' special case for intermediate invocation in function wizard
-            ElseIf Not allCalcContainers(callID).working Then
-                allCalcContainers.Remove(callID)
-                makeCalcMsgContainer(callID, CStr(Query), theHostApp.caller, Nothing, Nothing, CStr(ConnString), Nothing, 0, HeaderInfo, autoArrange, False, False, controlType, dataTargetRange, controlLocation, ControlName, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, False)
-            End If
-        Else
-            ' reset status messages when starting new query...
-            If existsStatusCont(callID) Then allStatusContainers(callID).statusMsg = vbNullString
-            ' add transportation info for event proc
-            makeCalcMsgContainer(callID, CStr(Query), theHostApp.caller, Nothing, Nothing, CStr(ConnString), Nothing, 0, HeaderInfo, autoArrange, False, False, controlType, dataTargetRange, controlLocation, ControlName, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, False)
-        End If
-        If existsStatusCont(callID) Then DBMakeControl = "Env:" & setEnv & ", " & allStatusContainers(callID).statusMsg
-        theHostApp.EnableEvents = True
-        Exit Function
-
-DBMakeControl_Error:
-        If VBDEBUG Then Debug.Print("Error (" & Err.Description & ") in DBMakeControl, callID : " & callID) : Stop : Resume
-        LogToEventViewer("Error (" & Err.Description & ") in Functions.DBMakeControl, callID : " & callID & ", in " & Erl(), EventLogEntryType.Error)
-        DBMakeControl = "Env:" & setEnv & ", Error (" & Err.Description & ") in DBMakeControl, callID : " & callID
-        theHostApp.EnableEvents = True
+    <ExcelFunction(Description:="chains values contained in thetarget together with commas, mainly used for creating select header")>
+    Public Function chainCells(<ExcelArgument(AllowReference:=True, Description:="range where values should be chained")> ParamArray thetarget As Object()) As String
+        chainCells = DoConcatCellsSep(False, ",", False, thetarget)
     End Function
 
     ''' <summary>Stores a query into an Object defined in targetRange (an embedded MS Query/Listobject, Pivot table, etc.)</summary>
@@ -623,6 +515,67 @@ DBCellFetch_Error:
         theHostApp.EnableEvents = True
     End Function
 
+    ''' <summary>creates a Listbox or Dropdown filled with data defined by query</summary>
+    ''' <param name="Query">query for getting data</param>
+    ''' <param name="ConnString">connection string defining DB, user, etc...</param>
+    ''' <param name="controlType">type of control to be inserted (0 = Listbox, 1 = Dropdown)</param>
+    ''' <param name="HeaderInfo">should header label be included in list</param>
+    ''' <param name="autoArrange"></param>
+    ''' <param name="ControlName"></param>
+    ''' <param name="dataTargetRange">Range (String) to put the selection into (default = left cell from function address)</param>
+    ''' <param name="controlLocation"></param>
+    ''' <param name="subscribeTo">Range (String), where control/header should be placed (default = function address)</param>
+    ''' <returns>Status Message</returns>
+    Public Function DBMakeControl(Query As Object, ConnString As Object, Optional controlType As Integer = 0, Optional HeaderInfo As Boolean = False, Optional autoArrange As Boolean = False, Optional ControlName As String = vbNullString, Optional dataTargetRange As String = vbNullString, Optional controlLocation As String = vbNullString, Optional subscribeTo As String = vbNullString) As String
+        Dim callID As String
+        Dim setEnv As String
+
+        On Error GoTo DBMakeControl_Error
+        setEnv = fetchSetting("ConfigName", vbNullString)
+        ' calcContainers are identified by wbname + Sheetname + function caller cell Address
+        callID = "[" & theHostApp.caller.Parent.Parent.name & "]" & theHostApp.caller.Parent.name & "!" & theHostApp.caller.Address
+        If TypeName(ConnString) = "Error" Then ConnString = vbNullString
+        If TypeName(ConnString) = "Range" Then ConnString = ConnString.Value
+        ' in case of number as connection string, take the stored Connection string .. 1 usually prod, 2 .. usually test, 3.. development)
+        If TypeName(ConnString) = "Integer" Or TypeName(ConnString) = "Long" Or TypeName(ConnString) = "Double" Or TypeName(ConnString) = "Short" Then
+            setEnv = fetchSetting("ConfigName" & ConnString, vbNullString)
+            ConnString = fetchSetting("ConstConnString" & ConnString, vbNullString)
+        End If
+
+        DBMakeControl = checkParams(Query)
+        If DBMakeControl.Length > 0 Then
+            DBMakeControl = "Env:" & setEnv & ", " & DBMakeControl
+            Exit Function
+        End If
+        If existsCalcCont(callID) Then
+            If allCalcContainers(callID).errOccured Then
+#If DEBUGME = 1 Then
+              LogToEventViewer "DBControlQuery returned Error, removing container with callID = " & callID, LogInf, 0
+#End If
+                ' commented this to prevent endless loops !!
+                'allCalcContainers.Remove callID
+                ' special case for intermediate invocation in function wizard
+            ElseIf Not allCalcContainers(callID).working Then
+                allCalcContainers.Remove(callID)
+                makeCalcMsgContainer(callID, CStr(Query), theHostApp.caller, Nothing, Nothing, CStr(ConnString), Nothing, 0, HeaderInfo, autoArrange, False, False, controlType, dataTargetRange, controlLocation, ControlName, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, False)
+            End If
+        Else
+            ' reset status messages when starting new query...
+            If existsStatusCont(callID) Then allStatusContainers(callID).statusMsg = vbNullString
+            ' add transportation info for event proc
+            makeCalcMsgContainer(callID, CStr(Query), theHostApp.caller, Nothing, Nothing, CStr(ConnString), Nothing, 0, HeaderInfo, autoArrange, False, False, controlType, dataTargetRange, controlLocation, ControlName, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, False)
+        End If
+        If existsStatusCont(callID) Then DBMakeControl = "Env:" & setEnv & ", " & allStatusContainers(callID).statusMsg
+        theHostApp.EnableEvents = True
+        Exit Function
+
+DBMakeControl_Error:
+        If VBDEBUG Then Debug.Print("Error (" & Err.Description & ") in DBMakeControl, callID : " & callID) : Stop : Resume
+        LogToEventViewer("Error (" & Err.Description & ") in Functions.DBMakeControl, callID : " & callID & ", in " & Erl(), EventLogEntryType.Error)
+        DBMakeControl = "Env:" & setEnv & ", Error (" & Err.Description & ") in DBMakeControl, callID : " & callID
+        theHostApp.EnableEvents = True
+    End Function
+
     Public Function DBAddinEnvironment() As String
         theHostApp.Volatile
         DBAddinEnvironment = fetchSetting("ConfigName", vbNullString)
@@ -802,6 +755,19 @@ err1:
 err1:
         Err.Clear()
         existsNameInWb = False
+    End Function
+
+    ''' <summary>converts ExcelDna (C API) reference to excel (COM Based) Range</summary>
+    ''' <param name="reference">reference to be converted</param>
+    ''' <returns>range for passed reference</returns>
+    Private Function ToRange(reference As ExcelReference) As Range
+        Dim xlApp As Application = ExcelDnaUtil.Application
+        Dim item As String = XlCall.Excel(XlCall.xlSheetNm, reference)
+        Dim index As Integer = item.LastIndexOf("]")
+        item = item.Substring(index + 1)
+        Dim ws As Worksheet = xlApp.Sheets(item)
+        Dim target As Range = xlApp.Range(ws.Cells(reference.RowFirst + 1, reference.ColumnFirst + 1), ws.Cells(reference.RowLast + 1, reference.ColumnLast + 1))
+        Return target
     End Function
 
     ''' <summary>checks whether theName exists as a name in Worksheet theWs</summary>
