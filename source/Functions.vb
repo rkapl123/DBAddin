@@ -116,7 +116,8 @@ DBString_Error:
     ''' <param name="thetarget">all cells/values which should be concatenated</param>
     ''' <returns>concatenated String</returns>
     <ExcelFunction(Description:="concatenates values contained in thetarget (using .value for cells) using a separator")>
-    Public Function concatCellsSep(<ExcelArgument(AllowReference:=True, Description:="the separator")> separator As String, <ExcelArgument(AllowReference:=True, Description:="all cells/values which should be concatenated")> ParamArray thetarget As Object()) As String
+    Public Function concatCellsSep(<ExcelArgument(AllowReference:=True, Description:="the separator")> separator As String,
+                                   <ExcelArgument(AllowReference:=True, Description:="all cells/values which should be concatenated")> ParamArray thetarget As Object()) As String
         concatCellsSep = DoConcatCellsSep(False, separator, False, thetarget)
     End Function
 
@@ -125,8 +126,17 @@ DBString_Error:
     ''' <param name="thetarget">all cells/values which should be concatenated</param>
     ''' <returns>concatenated String</returns>
     <ExcelFunction(Description:="concatenates values contained in thetarget using a separator using cells text property instead of the value (displayed)")>
-    Public Function concatCellsSepText(<ExcelArgument(AllowReference:=True, Description:="the separator")> separator As String, <ExcelArgument(AllowReference:=True, Description:="all cells/values which should be concatenated")> ParamArray thetarget As Object()) As String
+    Public Function concatCellsSepText(<ExcelArgument(AllowReference:=True, Description:="the separator")> separator As String,
+                                       <ExcelArgument(AllowReference:=True, Description:="all cells/values which should be concatenated")> ParamArray thetarget As Object()) As String
         concatCellsSepText = DoConcatCellsSep(True, separator, False, thetarget)
+    End Function
+
+    ''' <summary>chains values contained in thetarget together with commas, mainly used for creating select header</summary>
+    ''' <param name="thetarget">range where values should be chained</param>
+    ''' <returns>chained String</returns>
+    <ExcelFunction(Description:="chains values contained in thetarget together with commas, mainly used for creating select header")>
+    Public Function chainCells(<ExcelArgument(AllowReference:=True, Description:="range where values should be chained")> ParamArray thetarget As Object()) As String
+        chainCells = DoConcatCellsSep(False, ",", False, thetarget)
     End Function
 
     ''' <summary>private function that actually concatenates values contained in Object array myRange together (either using .text or .value for cells in myrange) using a separator</summary>
@@ -178,20 +188,15 @@ DoConcatCellsSep_Error:
         DoConcatCellsSep = "Error (" & ErrDesc & ") !"
     End Function
 
-    ''' <summary>chains values contained in thetarget together with commas, mainly used for creating select header</summary>
-    ''' <param name="thetarget">range where values should be chained</param>
-    ''' <returns>chained String</returns>
-    <ExcelFunction(Description:="chains values contained in thetarget together with commas, mainly used for creating select header")>
-    Public Function chainCells(<ExcelArgument(AllowReference:=True, Description:="range where values should be chained")> ParamArray thetarget As Object()) As String
-        chainCells = DoConcatCellsSep(False, ",", False, thetarget)
-    End Function
-
     ''' <summary>Stores a query into an Object defined in targetRange (an embedded MS Query/Listobject, Pivot table, etc.)</summary>
     ''' <param name="Query">query for getting data</param>
     ''' <param name="ConnString">connection string defining DB, user, etc...</param>
     ''' <param name="targetRange">Range with Object beneath to put the Query/ConnString into</param>
     ''' <returns>Status Message</returns>
-    Public Function DBSetQuery(Query As Object, ConnString As Object, targetRange As Range) As String
+    <ExcelFunction(Description:="Stores a query into an Object defined in targetRange (an embedded MS Query/Listobject, Pivot table, etc.)")>
+    Public Function DBSetQuery(<ExcelArgument(Description:="query for getting data")> Query As Object,
+                               <ExcelArgument(Description:="connection string defining DB, user, etc...")> ConnString As Object,
+                               <ExcelArgument(Description:="Range with Object beneath to put the Query/ConnString into", AllowReference:=True)> targetRange As Object) As String
         Dim callID As String
         Dim setEnv As String
 
@@ -226,13 +231,13 @@ DoConcatCellsSep_Error:
                 ' special case for invocations from function wizard
             ElseIf Not allCalcContainers(callID).working Then
                 allCalcContainers.Remove(callID)
-                makeCalcMsgContainer(callID, CStr(Query), theHostApp.caller, Nothing, targetRange, CStr(ConnString), Nothing, 0, False, False, False, False, 0, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, False)
+                makeCalcMsgContainer(callID, CStr(Query), theHostApp.caller, Nothing, ToRange(targetRange), CStr(ConnString), Nothing, 0, False, False, False, False, 0, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, False)
             End If
         Else
             ' reset status messages when starting new query...
             If existsStatusCont(callID) Then allStatusContainers(callID).statusMsg = vbNullString
             ' add transportation info for event proc
-            makeCalcMsgContainer(callID, CStr(Query), theHostApp.caller, Nothing, targetRange, CStr(ConnString), Nothing, 0, False, False, False, False, 0, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, False)
+            makeCalcMsgContainer(callID, CStr(Query), theHostApp.caller, Nothing, ToRange(targetRange), CStr(ConnString), Nothing, 0, False, False, False, False, 0, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, False)
         End If
         If existsStatusCont(callID) Then
             DBSetQuery = "Env:" & setEnv & ", statusMsg: " & allStatusContainers(callID).statusMsg
@@ -243,8 +248,9 @@ DoConcatCellsSep_Error:
         Exit Function
 
 DBSetQuery_Error:
-        LogToEventViewer("Error (" & Err.Description & ") in Functions.DBSetQuery, callID : " & callID & ", in " & Erl(), EventLogEntryType.Error)
-        DBSetQuery = "Env:" & setEnv & ", Error (" & Err.Description & ") in DBSetQuery, callID : " & callID
+        Dim ErrDesc As String = Err.Description
+        LogToEventViewer("Error (" & ErrDesc & ") in Functions.DBSetQuery, callID : " & callID & ", in " & Erl(), EventLogEntryType.Error)
+        DBSetQuery = "Env:" & setEnv & ", Error (" & ErrDesc & ") in DBSetQuery, callID : " & callID
         theHostApp.EnableEvents = True
     End Function
 
@@ -264,13 +270,27 @@ DBSetQuery_Error:
     ''' <param name="ShowRowNums">should row numbers be displayed in 1st column?</param>
     ''' <param name="subscribeTo">not yet implemented</param>
     ''' <returns>Status Message, data values are returned outside of function cell (@see DBFuncEventHandler)</returns>
-    Public Function DBListFetch(Query As Object, ConnString As Object, Optional targetRange As Range = Nothing, Optional formulaRange As Object = Nothing, Optional extendDataArea As Integer = 0, Optional HeaderInfo As Boolean = False, Optional AutoFit As Boolean = False, Optional autoformat As Boolean = False, Optional ShowRowNums As Boolean = False, Optional subscribeTo As String = vbNullString) As String
+    <ExcelFunction(Description:="Fetches a list of data defined by query into TargetRange. Optionally copy formulas contained in FormulaRange, extend list depending on ExtendDataArea (0(default) = overwrite, 1=insert Cells, 2=insert Rows) and add field headers if HeaderInfo = TRUE")>
+    Public Function DBListFetch(<ExcelArgument(Description:="query for getting data")> Query As Object,
+                                <ExcelArgument(Description:="connection string defining DB, user, etc...")> ConnString As Object,
+                                <ExcelArgument(Description:="Range to put the data into", AllowReference:=True)> targetRange As Object,
+                                <ExcelArgument(Description:="Range to copy formulas down from", AllowReference:=True)> Optional formulaRange As Object = Nothing,
+                                <ExcelArgument(Description:="how to deal with extending List Area")> Optional extendDataArea As Integer = 0,
+                                <ExcelArgument(Description:="should headers be included in list")> Optional HeaderInfo As Boolean = False,
+                                <ExcelArgument(Description:="should columns be autofitted ?")> Optional AutoFit As Boolean = False,
+                                <ExcelArgument(Description:="should 1st row formats be autofilled down?")> Optional autoformat As Boolean = False,
+                                <ExcelArgument(Description:="should row numbers be displayed in 1st column?")> Optional ShowRowNums As Boolean = False,
+                                <ExcelArgument(Description:="not yet implemented (for push updates from database=")> Optional subscribeTo As String = vbNullString) As String
         Dim callID As String
         Dim setEnv As String
 
         setEnv = fetchSetting("ConfigName", vbNullString)
         If dontCalcWhileClearing Then
             DBListFetch = "Env:" & setEnv & ", dontCalcWhileClearing = True !"
+            Exit Function
+        End If
+        If TypeName(targetRange) <> "ExcelReference" Then
+            DBListFetch = "Env:" & setEnv & ", Invalid targetRange or range name doesn't exist!"
             Exit Function
         End If
         On Error GoTo DBListFetch_Error
@@ -284,19 +304,11 @@ DBSetQuery_Error:
             setEnv = fetchSetting("ConfigName" & ConnString, vbNullString)
             ConnString = fetchSetting("ConstConnString" & ConnString, vbNullString)
         End If
-        If TypeName(targetRange) <> "Range" Then
-            DBListFetch = "Env:" & setEnv & ", Target range not given, is no valid range or range name doesn't exist!"
+
+        If TypeName(formulaRange) <> "ExcelEmpty" And TypeName(formulaRange) <> "ExcelReference" Then
+            DBListFetch = "Env:" & setEnv & ", Invalid FormulaRange or range name doesn't exist!"
             Exit Function
         End If
-        ' can't check for nothing with error handler enabled
-        On Error Resume Next
-        If Not formulaRange Is Nothing Then
-            If TypeName(formulaRange) <> "Range" Then
-                DBListFetch = "Env:" & setEnv & ", Invalid FormulaRange or range name doesn't exist!"
-                Exit Function
-            End If
-        End If
-        On Error GoTo DBListFetch_Error
 
         ' get target range name ...
         Dim functionArgs : functionArgs = functionSplit(theHostApp.caller.Formula, ",", """", "DBListFetch", "(", ")")
@@ -332,13 +344,13 @@ DBSetQuery_Error:
                 ' special case for invocations from function wizard
             ElseIf Not allCalcContainers(callID).working Then
                 allCalcContainers.Remove(callID)
-                makeCalcMsgContainer(callID, CStr(Query), theHostApp.caller, Nothing, targetRange, CStr(ConnString), formulaRange, extendDataArea, HeaderInfo, AutoFit, autoformat, ShowRowNums, 0, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, targetRangeName, formulaRangeName, False)
+                makeCalcMsgContainer(callID, CStr(Query), theHostApp.caller, Nothing, ToRange(targetRange), CStr(ConnString), ToRange(formulaRange), extendDataArea, HeaderInfo, AutoFit, autoformat, ShowRowNums, 0, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, targetRangeName, formulaRangeName, False)
             End If
         Else
             ' reset status messages when starting new query...
             If existsStatusCont(callID) Then allStatusContainers(callID).statusMsg = vbNullString
             ' add transportation info for event proc
-            makeCalcMsgContainer(callID, CStr(Query), theHostApp.caller, Nothing, targetRange, CStr(ConnString), formulaRange, extendDataArea, HeaderInfo, AutoFit, autoformat, ShowRowNums, 0, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, targetRangeName, formulaRangeName, False)
+            makeCalcMsgContainer(callID, CStr(Query), theHostApp.caller, Nothing, ToRange(targetRange), CStr(ConnString), ToRange(formulaRange), extendDataArea, HeaderInfo, AutoFit, autoformat, ShowRowNums, 0, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, targetRangeName, formulaRangeName, False)
         End If
         If existsStatusCont(callID) Then
             DBListFetch = "Env:" & setEnv & ", " & allStatusContainers(callID).statusMsg
@@ -349,9 +361,9 @@ DBSetQuery_Error:
         Exit Function
 
 DBListFetch_Error:
-        If VBDEBUG Then Debug.Print("Error (" & Err.Description & ") in DBListFetch, callID : " & callID) : Stop : Resume
-        LogToEventViewer("Error (" & Err.Description & ") in Functions.DBListFetch, callID : " & callID & ", in " & Erl(), EventLogEntryType.Error)
-        DBListFetch = "Env:" & setEnv & ", Error (" & Err.Description & ") in DBListFetch, callID : " & callID
+        Dim ErrDesc As String = Err.Description
+        LogToEventViewer("Error (" & ErrDesc & ") in Functions.DBListFetch, callID : " & callID & ", in " & Erl(), EventLogEntryType.Error)
+        DBListFetch = "Env:" & setEnv & ", Error (" & ErrDesc & ") in DBListFetch, callID : " & callID
         theHostApp.EnableEvents = True
     End Function
 
@@ -761,6 +773,7 @@ err1:
     ''' <param name="reference">reference to be converted</param>
     ''' <returns>range for passed reference</returns>
     Private Function ToRange(reference As ExcelReference) As Range
+        If reference Is Nothing Then Return Nothing
         Dim xlApp As Application = ExcelDnaUtil.Application
         Dim item As String = XlCall.Excel(XlCall.xlSheetNm, reference)
         Dim index As Integer = item.LastIndexOf("]")

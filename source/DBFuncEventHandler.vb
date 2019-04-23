@@ -810,8 +810,7 @@ DBControlQuery_Error:
         Dim headingOffset As Long, rowDataStart As Long, startRow As Long, startCol As Long, arrayCols As Long, arrayRows As Long, copyDown As Long
         Dim oldRows As Long, oldCols As Long, oldFRows As Long, oldFCols As Long, retrievedRows As Long, targetColumns As Long, formulaStart As Long
         Dim callID As String, Query As String, warning As String, errMsg As String, targetRangeName As String, formulaRangeName As String, tmpname As String
-        Dim extendArea As Integer, headingsPresent As Boolean, ShowRowNumbers As Boolean, targetSHhasFilter As Boolean, formulaSHhasFilter As Boolean
-        Dim targetFilter As Object = Nothing, formulaFilter As Object = Nothing
+        Dim extendArea As Integer, headingsPresent As Boolean, ShowRowNumbers As Boolean
         Dim storedNames() As String
 
         theHostApp.Calculation = XlCalculation.xlCalculationManual
@@ -865,40 +864,6 @@ DBControlQuery_Error:
         If Err.Number <> 0 Then
             errMsg = "Error in setting startRow/startCol: " & Err.Description & " in query: " & Query
             GoTo err_0
-        End If
-
-        'resolve problem with filters !!!
-        targetSHhasFilter = False
-        If Not targetSH.AutoFilter Is Nothing Or existsTfilt(callID) Then
-            targetSHhasFilter = True
-            ' target range filter backup restore (in case of no data excel forgets the filter)
-            If existsTfilt(callID) Then
-                'override with stored filters...
-                targetFilter = targetFilterCont(callID)
-            Else
-                targetFilter = saveFilterSettings(targetSH)
-            End If
-        Else
-            ' delete forgotten _filterDatabase names...
-            If InStr(1, targetRangeName, "_FilterDatabase") Then
-                targetCells.Cells.Name.Delete
-            End If
-        End If
-
-        Err.Clear()
-        If Not formulaRange Is Nothing Then
-            'resolve problem with dismissed filters !!!
-            formulaSHhasFilter = False
-            Dim dummy As AutoFilter
-            dummy = formulaSH.AutoFilter
-            Dim FormulaSHAutoFilter As Boolean
-            FormulaSHAutoFilter = True
-            If Err.Number <> 0 Or dummy Is Nothing Then FormulaSHAutoFilter = False
-            Err.Clear()
-            If FormulaSHAutoFilter And Not formulaSH Is targetSH Then
-                formulaSHhasFilter = True
-                formulaFilter = saveFilterSettings(formulaSH)
-            End If
         End If
 
         oldRows = 0 : oldCols = 0 : oldFRows = 0 : oldFCols = 0
@@ -1116,10 +1081,6 @@ DBControlQuery_Error:
                     formulaFilledRange = formulaSH.Range(formulaSH.Cells(.Row, .Column), formulaSH.Cells(copyDown, .Column + .Columns.Count - 1))
                     formulaFilledRange.Calculate()
 
-                    If formulaSHhasFilter Then
-                        Dim dontNeedBackupHere As Boolean
-                        dontNeedBackupHere = restoreFilterSettings(formulaRange.Offset(-1, 0), formulaFilter)
-                    End If
                     ' reassign internal name to changed formula area
                     ' delete the name to have a "clean" name area (otherwise visible = false setting wont work for dataTargetRange)
                     storedNames = removeRangeName(formulaFilledRange, targetExtentF)
@@ -1172,16 +1133,6 @@ DBControlQuery_Error:
             GoTo err_0
         End If
 
-        '''' restore filters in targetSheet
-        If targetSHhasFilter Then
-            ' target range filter backup (in case of no data excel forgets the filter)
-            If Not restoreFilterSettings(targetCells, targetFilter) Then
-                targetFilterCont.Add(targetFilter, callID)
-            Else
-                targetFilterCont.Remove(callID)
-                Err.Clear()
-            End If
-        End If
         '''' any warnings, errors ?
         If warning.Length > 0 Then
             If InStr(1, warning, "Error:") = 0 And InStr(1, warning, "No Data") = 0 Then
@@ -1219,7 +1170,7 @@ DBControlQuery_Error:
             GoTo err_0
         End If
 
-        'auto fit columns AFTER autoformat so we don't trample our formats...
+        'auto fit columns AFTER autoformat so we don't have problems with applied formats visibility ...
         If calcCont.AutoFit Then
             newTargetRange.Columns.AutoFit()
             newTargetRange.Rows.AutoFit()
@@ -1531,21 +1482,6 @@ err_1:
         allCalcContainers(callID).errOccured = True
     End Sub
 
-    ''' <summary>check if target range filter backup is there</summary>
-    ''' <param name="theName">name of target range filter</param>
-    ''' <returns>target range filter backup is there (true)</returns>
-    Private Function existsTfilt(ByRef theName As String) As Boolean
-        Dim dummy() As Object
-
-        On Error GoTo err_1
-        existsTfilt = True
-        dummy = targetFilterCont(theName)
-        Exit Function
-err_1:
-        Err.Clear()
-        existsTfilt = False
-    End Function
-
     ''' <summary>check whether a statusMsgContainer exists in allStatusContainers or not</summary>
     ''' <param name="theName">name of statusMsgContainer</param>
     ''' <returns>exists in allStatusContainers or not</returns>
@@ -1576,10 +1512,10 @@ err_1:
         existsQueryCache = False
     End Function
 
-    ''' <summary>RangeNames and store them into list storedNames</summary>
+    ''' <summary>remove alle names from Range Target except and store them into list storedNames (except theName)</summary>
     ''' <param name="Target"></param>
     ''' <param name="theName"></param>
-    ''' <returns>the removed names as a strimg list</returns>
+    ''' <returns>the removed names as a string list</returns>
     Private Function removeRangeName(Target As Range, theName As String) As String()
         Dim storedNames() As String
         Dim i As Long
@@ -1602,7 +1538,7 @@ err_1:
         removeRangeName = storedNames
     End Function
 
-    ''' <summary>restore the stored RangeNames</summary>
+    ''' <summary>restore the stored names into Range Target</summary>
     ''' <param name="Target"></param>
     ''' <param name="storedNames"></param>
     Private Sub restoreRangeNames(Target As Range, storedNames() As String)

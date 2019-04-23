@@ -13,17 +13,20 @@ There are five ways to query data with DBAddin:
 5.  Setting the Query of a ListObject (new since Excel 2007) or a PivotTable to a defined query using `DBSetQuery`  
     This requires an existing object (e.g. a DataList created from a DB query/connection or a pivot table) and sets the target's queryobject to the desired one.
 
-Three of those user-defined functions (`DBListFetch`, `DBRowFetch` and `DBMakeControl`) insert the queried data outside their calling cell context, which means that the target ranges can be put anywhere in the workbook (even outside of the workbook).
+Four of those user-defined functions (`DBListFetch`, `DBRowFetch`, `DBSetQuery` and `DBMakeControl`) insert the queried data outside their calling cell context, which means that the target ranges can be put anywhere in the workbook (even outside of the workbook).
 
 Additionally, some helper functions are available:
 
 *   `chainCells`, which concatenates the values in the given range together by using "," as separator, thus making the creation of the select field clause easier.
 *   `concatCells` simply concatenating cells (making the "&" operator obsolete)
+*   `concatCellsText` above Function using the Text property of the cells, therefore getting the displayed values.
+*   `concatCellsSep` concatenating cells with given separator.
+*   `concatCellsSepText` above Function using the Text property of the cells, therefore getting the displayed values.
 *   `DBString`, building a quoted string from an open ended parameter list given in the argument. This can also be used to easily build wildcards into the String.
 *   `DBinClause`, building an SQL in clause from an open ended parameter list given in the argument.
 *   `DBDate`, building a quoted Date string (format YYYYMMDD) from the date value given in the argument.
 
-There is also a supporting tool available for building queries and placing them into the functions (based on MS-Query) and a "jump" feature that allows to move the focus from the DB function's cell to the data area and from the data area back to the DB function's cell (useful in complex workbooks with lots of remote (not on same-sheet) target ranges)
+There is also a "jump" feature that allows to move the focus from the DB function's cell to the data area and from the data area back to the DB function's cell (useful in complex workbooks with lots of remote (not on same-sheet) target ranges)
 
 ### Using the Functions
 
@@ -34,11 +37,11 @@ There is also a supporting tool available for building queries and placing them 
  HeaderInfo(optional), AutoFit(optional),   
  AutoFormat(optional), ShowRowNum(optional))</pre>
 
-The select statement for querying the values is given as a text string in parameter "Query". This text string can be a dynamic formula, i.e. parameters are easily given by concatenating the query together from other cells, e.g. `"select * from TestTable where TestName = "&A1`
+The select statement for querying the values is given as a text string in parameter "Query". This text string can be a dynamic formula, i.e. parameters are easily given by concatenating the query together from other cells, e.g. `"select * from TestTable where TestID = "&A1`
 
 The query parameter can also be a Range, which means that the Query itself is taken as a concatenation of all cells comprising that Range, separating the single cells with blanks. This is useful to avoid the problems associated with packing a large (parameterized) Query in one cell, leading to "Formula is too long" errors. German readers might be interested in [XLimits](http://www.xlam.ch/xlimits/xllimit4.htm), describing lots (if not all) the limits Excel faces.  
 
-The connection string is either given in the formula, or for standard configuration can be left out and is then set globally in the registry key `[HKEY_CURRENT_USER\Software\VB and VBA Program Settings\DBAddin\Settings\ConstConnString]  
+The connection string is either given in the formula, or for standard configuration can be left out and is then set globally in the registry key `[HKEY_CURRENT_USER\Software\VB and VBA Program Settings\DBAddin\Settings\ConstConnString]`
 
 The returned list values are written into the Range denoted by "TargetRange". This can be  
 
@@ -76,7 +79,7 @@ In case the "normal" connection string's driver (usually OLEDB) has problems in 
 
 Example:  
 
-<pre lang="vb.net">provider=SQLOLEDB;Server=MULTIMEDIAPC;Trusted_Connection=Yes;Database=pubs;ODBC;DRIVER=SQL Server;SERVER=MULTIMEDIAPC;DATABASE=OEBFA;Trusted_Connection=Yes</pre>
+<pre lang="vb.net">provider=SQLOLEDB;Server=LENOVO-PC;Trusted_Connection=Yes;Database=pubs;ODBC;DRIVER=SQL Server;SERVER=LENOVO-PC;DATABASE=pubs;Trusted_Connection=Yes</pre>
 
 This works around the issue with displaying GUID columns in SQL-Server.  
 
@@ -89,24 +92,21 @@ For the query and the connection string the same applies as mentioned for "DBLis
 The value targets are given in an open ended parameter array after the query, the connection string and an optional headerInfo parameter. These parameter arguments contain ranges (either single cells or larger ranges) that are filled sequentially in order of appearance with the result of the query.  
 For example:  
 
-<pre lang="vb.net">DBRowFetch("select job_desc, min_lvl, max_lvl, job_id from jobs " &_  
- "where job_id = 1",,A1,A8:A9,C8:D8)</pre>
+<pre lang="vb.net">DBRowFetch("select job_desc, min_lvl, max_lvl, job_id from jobs " & "where job_id = 1",,A1,A8:A9,C8:D8)</pre>
 
 would insert the first returned field (job_desc) of the given query into A1, then min_lvl, max_lvl into A8 and A9 and finally job_id into C8.  
 
 The optional headerInfo parameter (after the query and the connection string) defines, whether field headers should be filled into the target areas before data is being filled.  
 For example:  
 
-<pre lang="vb.net">DBRowFetch("select job_desc, min_lvl, max_lvl, job_id from jobs",_  
- ,TRUE,B8:E8, B9:E20)</pre>
+<pre lang="vb.net">DBRowFetch("select job_desc, min_lvl, max_lvl, job_id from jobs","",TRUE,B8:E8, B9:E20)</pre>
 
-would insert the the headers (`job_desc`, `min_lvl`, `max_lvl,` `job_id`) of the given query into B8:E8, then the data into B9:E20, row by row.  
+would insert the the headers (`job_desc`, `min_lvl`, `max_lvl`, `job_id`) of the given query into B8:E8, then the data into B9:E20, row by row.  
 
 The orientation of the filled rows is always determined by the first range within the `TargetRange` parameter array: if this range has more columns than rows, data is filled by rows, else data is filled by columns.  
 For example:  
 
-<pre>DBRowFetch("select job_desc, min_lvl, max_lvl, job_id from jobs",_  
- ,TRUE,A5:A8, B5:I8)</pre>
+<pre>DBRowFetch("select job_desc, min_lvl, max_lvl, job_id from jobs","",TRUE,A5:A8,B5:I8)</pre>
 
 would fill the same data as above (including a header), however column-wise. Typically this first range is used as a header range in conjunction with the headerInfo parameter.  
 
@@ -158,14 +158,14 @@ Combobox:
 	employee";activeConnString;1;TRUE)  
 </pre>
 
-![](DBAddin-Dateien/clip_image004.jpg)  
+![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/DBAddin-Dateien/clip_image004.jpg)  
 
 The DB bound control retain the selection during a refresh (e.g. saving/reopening the workbook).  
 
 #### DBSetQuery
 
 <pre lang="vb.net">DBSetQuery (Query, ConnectionString(optional), TargetRange)</pre>
- 
+
 Stores a query into an Object defined in TargetRange (an embedded MS Query/Listobject, Pivot table, etc.)
 
 
@@ -177,8 +177,7 @@ Stores a query into an Object defined in TargetRange (an embedded MS Query/Listo
 
 chainCells "chains" the values in the given range together by using "," as separator. It's use is mainly to facilitate the creation of the select field clause in the `Query` parameter, e.g.
 
-<pre lang="vb.net">DBRowFetch("select " & chainCells(E1:E4) & " from jobs where job_id = 1",_  
- ,A1,A8:A9,C8:D8)</pre>
+<pre lang="vb.net">DBRowFetch("select " & chainCells(E1:E4) & " from jobs where job_id = 1","",A1,A8:A9,C8:D8)</pre>
 
 Where cells E1:E4 contain job_desc, min_lvl, max_lvl, job_id respectively.
 
@@ -188,7 +187,7 @@ Where cells E1:E4 contain job_desc, min_lvl, max_lvl, job_id respectively.
 
 `concatCells` concatenates the values in the given range together. It's use is mainly to facilitate the building of very long and complex queries:
 
-<pre lang="vb.net">DBRowFetch(concatCells(E1:E4),,A1,A8:A9,C8:D8)</pre>
+<pre lang="vb.net">DBRowFetch(concatCells(E1:E4),"",A1,A8:A9,C8:D8)</pre>
 
 Where cells E1:E4 contain the constituents of the query respectively.  
 
@@ -198,7 +197,7 @@ Where cells E1:E4 contain the constituents of the query respectively.
 
 `concatCellsSep` does the same as concatCells, however inserting a separator between the concatenated values. It's use is the building of long and complex queries, too:
 
-<pre lang="vb.net">DBRowFetch(concatCellsSep(E1:E4),,A1,A8:A9,C8:D8)</pre>
+<pre lang="vb.net">DBRowFetch(concatCellsSep(E1:E4),"",A1,A8:A9,C8:D8)</pre>
 
 Where cells E1:E4 contain the constituents of the query respectively.
 
@@ -222,9 +221,9 @@ Would return `”('ABC',1,'20070115')”`, if DateRange contained `15/01/2007` a
 
 This builds a Database compliant string (quoted) from the open ended parameter list given in the argument. This can also be used to easily build wildcards into the String, like
 
-<pre lang="vb.net">DBString("_",E1,"%")</pre>
+<pre lang="vb.net">DBString("\_",E1,"%")</pre>
 
-When E1 contains "test", this results in '_test%', thus matching in a like clause the strings 'stestString', 'atestAnotherString', etc.
+When E1 contains "test", this results in '\_test%', thus matching in a like clause the strings 'stestString', 'atestAnotherString', etc.
 
 #### DBDate
 
@@ -246,8 +245,7 @@ An Example is give below:
 
 Of course you can also change the default setting for formatting by changing the setting "`DefaultDBDateFormatting`" in the global settings
 
-<pre lang="vb.net">"DefaultDBDateFormatting"="0"  
-</pre>
+<pre lang="vb.net">"DefaultDBDateFormatting"="0"</pre>
 
 ### Modifications of DBFunc Behaviour
 
@@ -303,19 +301,19 @@ Other users can simply look up those config files either with "Load Config" or t
 
 There is a helping script ("createTableViewConfigs.vbs") to create a DBListFetch with a "select TOP 10000 * from ..." for all tables and views in a given database (In order for that script to work, the ADO driver has to support the "OpenSchema" method of the connection object). The working of that script is quite simple: It takes the name of the folder it is located in, derives from that the database name by excluding the first character and opens the schema information of that database to retrieve all view and table names from that. These names are used to build the Excel and Word config files (XCL/WRD).  
 
-DBAddin has a convenient feature to hierarchically order those config files furthermore, if they are consistently named. For this to work, there either has to be a separation character between "grouping" prefixes (like "_" in "Customer_Customers", "Customer_Addresses", "Customer_Pets", etc.) for grouping similar objects (tables, views) together or "CamelCase" Notation is used for that purpose (e.g. "CustomerCustomers", "CustomerAddresses", "CustomerPets").  
+DBAddin has a convenient feature to hierarchically order those config files furthermore, if they are consistently named. For this to work, there either has to be a separation character between "grouping" prefixes (like "\_" in "Customer_Customers", "Customer_Addresses", "Customer_Pets", etc.) for grouping similar objects (tables, views) together or "CamelCase" Notation is used for that purpose (e.g. "CustomerCustomers", "CustomerAddresses", "CustomerPets").  
 
 There is one registry setting and two registry setting groups to configure this further hierarchical ordering:  
 
 <pre lang="vb.net">Windows Registry Editor Version 5.00  
 
-[HKEY_CURRENT_USER\Software\VB and VBA Program Settings\DBAddin\Settings]  
+[HKEY_CURRENT_USER\\Software\\VB and VBA Program Settings\\DBAddin\\Settings]  
 "specialConfigStoreFolders"="(pathName):.pubs:.Northwind"  
 "(pathName)MaxDepth"="1"  
 "(pathName)Separator"=""  
 "(pathName)FirstLetterLevel"="True"</pre>
 
-If you add the (sub) foldername to "specialConfigStoreFolders" (colon separated list) then this subfolder is regarded as needing special grouping of object names. The separator ("_" or similar) can be given in  "(pathName)Separator", where (pathName) denotes the path name used above in "specialConfigStoreFolders". If this is not given then CamelCase is assumed to be the separating criterion.  
+If you add the (sub) foldername to "specialConfigStoreFolders" (colon separated list) then this subfolder is regarded as needing special grouping of object names. The separator ("\_" or similar) can be given in  "(pathName)Separator", where (pathName) denotes the path name used above in "specialConfigStoreFolders". If this is not given then CamelCase is assumed to be the separating criterion.  
 
 The maximum depth of the sub menus can be stated in "(pathName)MaxDepth", which denotes the depth of hierarchies below the uppermost in the (pathName) folder (default value is 10000, so practically infinite depth).  
 
@@ -345,23 +343,17 @@ This refreshing also restores "theDBSheetAppHandler" object as a side effect, wh
 
 #### Dependencies
 
-*   TABCTL32.OCX (distributed and installed with DBAddin)
-*   MSCOMCTL.OCX (should be available on all Windows XP/Vista installations)
-*   Office, Word and Excel Object Libraries (well, as it is an Office Addin, this should be expected on the target system)
-*   ADO 2.5 or higher (distributed in Windows XP/Vista)
+*   Office and Excel Object Libraries (well, as it is an Excel Addin, this should be expected on the target system)
+*   ADO 2.5 or higher (usually distributed with Windows)
 
 If any of these is missing, please install yourself before starting DBAddin.
-
-Installation is done by the installer (you need to have administrative rights, if you want to install from your account without switching to the admin account you can do `runas /user:administrator "msiexec.exe /i (Path_Of_DBAddinSetup.msi)"` to install or `runas /user:administrator "msiexec.exe /x (Path_Of_DBAddinSetup.msi)"` to uninstall), during the process of installation, you're asked whether to start addDBAddinToAutomationAddins.xls, which adds the Functions to Excel's Addin List.
-
-If you prefer not to start Excel/add the functions that point, please add the Automation Addin manually in Excel: This is done by calling Tools/Add-Ins... and then clicking Automation. Here you're presented with all registered Automation Servers that could be connected to Excel (most don't make sense of course). Search for "DBAddin.Functions" and add by clicking "OK".
 
 After installation you'd want to adapt the standard default connection string (ConstConnString) that is globally applied if no function-specific connection string is given. This can be done by modifying and importing DBAddinSettings.reg into your registry.
 
 <pre lang="vb.net">Windows Registry Editor Version 5.00  
 
-[HKEY_CURRENT_USER\Software\VB and VBA Program Settings\DBAddin\Settings]  
-"ConstConnString"="provider=SQLOLEDB;Server=OEBFASRV02;Trusted_Connection=Yes;Database=InfoDB;Packet Size=32767"  
+[HKEY_CURRENT_USER\\Software\\VB and VBA Program Settings\\DBAddin\\Settings]  
+"ConstConnString"="provider=SQLOLEDB;Server=LENOVO_PC;Trusted_Connection=Yes;Database=InfoDB;Packet Size=32767"  
 "DBidentifierCCS"="Database="  
 "DBidentifierODBC"="Database="  
 "CnnTimeout"="15"  
@@ -379,13 +371,11 @@ The other settings:
 *   `ConfigStoreFolder: `all config files (xcl/wrd) under this folder are shown in a hierarchical manner in "load config"
 *   `LocalHelp: `the path to the local help files downloadable [here](doc.zip). To include it into the standard installation, put the contained documentation folder into the DBAddin Application folder (e.g. C:\Program Files\RK\DBAddin)
 
-The remaining settings belong to DBSheets and are explained [there.](#Installation2)
-
 When starting the Testworkbook, after waiting for the – probable – connection error, you have to change the connection string(s) to suit your needs (see below for explanations).
 
-![](DBAddin-Dateien/clip_image005.jpg)
+![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/DBAddin-Dateien/clip_image005.jpg)
 
-Several connection strings for "_DBFuncsTest.xls_" are placed to the right of the black line, the actual connection is then selected by choosing the appropriate shortname (dropdown) in the yellow input field. After the connection has been changed don't forget to refresh the queries/DBforms by right clicking and selecting "refresh data".
+Several connection strings for "DBFuncsTest.xls" are placed to the right of the black line, the actual connection is then selected by choosing the appropriate shortname (dropdown) in the yellow input field. After the connection has been changed don't forget to refresh the queries/DBforms by right clicking and selecting "refresh data".
 
 ### Points of Interest
 
@@ -395,7 +385,7 @@ There is lots of information to be carried between the function call and the eve
 
 Below diagram should clarify the process:
 
-![](DBAddin-Dateien/clip_image001.gif)  
+![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/DBAddin-Dateien/clip_image001.gif)  
 
 The real trick is to find out when resp. where to get rid of the calc containers, considering Excel's intricate way of invoking functions and the calc event handler (the above diagram is simplifying matters a bit as the chain of invocation is by no way linear in the calculations in the dependency tree).
 
@@ -474,5 +464,4 @@ End Sub</pre>
 
 Here the data in range `employee` are stored to the table `employee` using primary key `emp_id`, which is located in column 1. Data is starting in column 2, the connection information is stored in connection id "MSSQLPUBSTest" and any missing employees are inserted with a new emp_id key if it is missing.  
 
-An Example for the Mapper object/saveRangeToDB usage can also be found in the "_DBFuncsTest.xls_" Workbook, Sheet "MapperExamples".
-
+An Example for the Mapper object/saveRangeToDB usage can also be found in the DBFuncsTest.xls Workbook, Sheet "MapperExamples".
