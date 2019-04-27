@@ -109,7 +109,7 @@ err1:
     ''' <param name="cellToBeStoredContent">content of cell containing dbmakecontrol function</param>
     ''' <param name="convertMode">from relative to absolute Address: toAbsolute"; from absolute to relative Address: toRelative</param>
     Public Sub convertAddressOfDBMakeControl(ByRef cellToBeStoredContent As String, convertMode As String)
-        Dim cellToBeStoredAddr As String, argumentDesc As String, alreadyConverted As String = vbNullString
+        Dim cellToBeStoredAddr As String, argumentDesc As String, alreadyConverted As String = String.Empty
         Dim cellToBeStored As Excel.Range = Nothing
         Dim argPosFromLast As Integer, argCount As Integer
 
@@ -117,7 +117,7 @@ err1:
         ' controlLocation and dataTargetRange are always at last position !!
         argCount = UBound(functionSplit(cellToBeStoredContent, ",", """", "DBMAKECONTROL", "(", ")"))
         For argPosFromLast = IIf(argCount = 9, 2, 1) To IIf(argCount = 9, 3, 2)
-            cellToBeStoredAddr = Replace(fetchNthFromLast(cellToBeStoredContent, ",", argPosFromLast), """", vbNullString)
+            cellToBeStoredAddr = Replace(fetchNthFromLast(cellToBeStoredContent, ",", argPosFromLast), """", String.Empty)
             If InStr(1, cellToBeStoredAddr, "!") > 0 Then
                 cellToBeStoredAddr = Mid$(cellToBeStoredAddr, InStr(1, cellToBeStoredAddr, "!") + 1)
             End If
@@ -131,7 +131,7 @@ err1:
                         If Not getRangeFromRelative(referenceCell, cellToBeStoredAddr, cellToBeStored) Then
                             argumentDesc = IIf(argPosFromLast = 1, "control location", "data target")
                             LogWarn("Excel Borders would be violated by placing " & argumentDesc & " (relative address:" & cellToBeStoredAddr & ")" & vbLf & "Please select different cell !!", 1)
-                            cellToBeStoredContent = vbNullString : Exit Sub
+                            cellToBeStoredContent = String.Empty : Exit Sub
                         End If
                         alreadyConverted = cellToBeStored.Address
                         cellToBeStoredContent = Replace(cellToBeStoredContent, cellToBeStoredAddr & """", alreadyConverted & """")
@@ -158,7 +158,7 @@ err1:
         Dim testSheetExist As String
 
         If InStr(1, theTarget, "!") = 0 Then Exit Sub
-        theSheetName = Replace(Mid$(theTarget, 1, InStr(1, theTarget, "!") - 1), "'", vbNullString)
+        theSheetName = Replace(Mid$(theTarget, 1, InStr(1, theTarget, "!") - 1), "'", String.Empty)
         On Error Resume Next
         testSheetExist = theHostApp.Worksheets(theSheetName).name
         If Err.Number <> 0 Then
@@ -180,7 +180,7 @@ err1:
         If InStr(1, relAddress, "!") = 0 Then
             theSheetName = referenceSheet().Name
         Else
-            theSheetName = Replace(Mid$(relAddress, 1, InStr(1, relAddress, "!") - 1), "'", vbNullString)
+            theSheetName = Replace(Mid$(relAddress, 1, InStr(1, relAddress, "!") - 1), "'", String.Empty)
         End If
         Dim startRow As Long, startCol As Long
         startRow = getRowOrCol(relAddress, True)
@@ -253,7 +253,7 @@ err1:
         If cCount = n Then
             fetchNthFromLast = Mid$(searchStr, curpos + 2, lastPos - curpos - 1)
         Else
-            fetchNthFromLast = vbNullString
+            fetchNthFromLast = String.Empty
         End If
     End Function
 
@@ -307,7 +307,7 @@ err1:
             getTargetWS = cellAddress
             If InStr(1, getTargetWS, "!") > 0 Then
                 getTargetWS = Left$(cellAddress, InStr(1, cellAddress, "!") - 1)
-                getTargetWS = Replace(getTargetWS, "'", vbNullString)
+                getTargetWS = Replace(getTargetWS, "'", String.Empty)
             Else
                 getTargetWS = referenceSheet().Name
             End If

@@ -27,6 +27,31 @@
           </tab>
         </tabs>
       </ribbon>
+      <contextMenus>
+        <contextMenu idMso="ContextMenuCell">
+          <button id="refreshData" label="refresh data (CTL-e)" imageMso="Refresh" insertBeforeMso="Cut" onAction='refreshData'/>
+          <button id="gotoDBFunc" label="goto DBFunc/target" imageMso="ConvertTextToTable" insertBeforeMso="Cut" onAction='jumpButton'/>
+          <menuSeparator insertBeforeMso="Cut" id="separator" />
+        </contextMenu>
+      </contextMenus>
+    </customUI>
+    <customUI>
+      <commandBars xmlns='http://schemas.excel-dna.net/office/2003/01/commandbars' >
+        <commandBar name='Worksheet Menu Bar'>
+          <!-- Here we add a top-level menu to the main Excel Worksheet menu -->
+          <popup caption='My Excel-Dna Menu' height='19'  >
+            <button caption='Say Hello' onAction='ShowHelloMessage' image='M' beginGroup='true'></button>
+            <button caption='Another Item...' enabled='false' tooltipText='In the tooltip?' />
+            <popup caption='My sub-menu' >
+              <button helpFile='xyz.hlp' faceId='123' helpContextId='134' caption='SubMenu Button' onAction='ShowHelloMessage'/>
+            </popup>
+          </popup>
+        </commandBar>
+        <commandBar name='Cell'>
+          <!-- Here we add a menu to the Excel context menu -->
+          <button caption='New context item' enabled='true' ShortcutText='CTRL+A'/>
+        </commandBar>
+      </commandBars>
     </customUI>
   </CustomUI>
 </DnaLibrary>

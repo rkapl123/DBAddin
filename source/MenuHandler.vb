@@ -2,34 +2,138 @@ Imports Microsoft.Office.Interop
 Imports ExcelDna.Integration
 Imports ExcelDna.Integration.CustomUI
 Imports System.IO
+Imports System.Runtime.InteropServices
 
 ''
 '  handles all Menu related aspects (context menu for building/refreshing,
 '             "DBAddin"/"Load Config" tree menu for retrieving stored configuration files
+<ComVisible(True)>
 Public Class MenuHandler
-
-    Public disableBar As Boolean
-    Private WithEvents mRefreshButton As CommandBarButton
-    Private WithEvents mJumpButton As CommandBarButton
-    Private WithEvents mPreparedItemLoadButton As CommandBarButton
-    Private WithEvents mPreparedItemSaveButton As CommandBarButton
-    Private WithEvents mDBConfigPreparedButton As CommandBarButton
-    Private WithEvents mDBConfigRefreshButton As CommandBarButton
-    Private WithEvents mEvironSelButton As CommandBarButton
+    Inherits ExcelRibbon
 
     Private specialConfigFoldersTempColl As Collection
 
-    Public Sub New()
-        addDBFuncContextMenus()
-        createCommandBar()
-        'mJumpButton = theHostApp.CommandBars.FindControl(Tag:=gsJUMP_TAG)
-        ' mRefreshButton = theHostApp.CommandBars.FindControl(Tag:=gsREFRESH_TAG)
-        'mPreparedItemLoadButton = theHostApp.CommandBars.FindControl(Tag:=gsITEMLOADCONFIG_TAG)
+    Public Sub ribbonLoaded(myribbon As ExcelDna.Integration.CustomUI.IRibbonUI)
+        Globals.theRibbon = myribbon
     End Sub
 
-    Private Sub Class_Terminate()
+    '  context menu "refresh data" was clicked, do a refresh of db functions (shortcut CTRL-e)
+    <ExcelCommand(ShortCut:="^e")>
+    Public Sub refreshData(control As IRibbonControl)
+        initSettings()
+
+        ' enable events in case there were some problems in procedure with EnableEvents = false
         On Error Resume Next
-        removeDBFuncMenus()
+        theHostApp.EnableEvents = True
+        If Err.Number <> 0 Then
+            LogError("Can't refresh data while lookup dropdown is open !!")
+            Exit Sub
+        End If
+
+        ' also reset the database connection in case of errors...
+        theDBFuncEventHandler.cnn.Close()
+        theDBFuncEventHandler.cnn = Nothing
+
+        dontTryConnection = False
+        On Error GoTo err1
+
+        ' now for DBListfetch/DBRowfetch resetting
+        allCalcContainers = Nothing
+        Dim underlyingName As Excel.Name
+        underlyingName = getDBRangeName(theHostApp.ActiveCell)
+        theHostApp.ScreenUpdating = True
+        If underlyingName Is Nothing Then
+            ' reset query cache, so we really get new data !
+            theDBFuncEventHandler.queryCache = New Collection
+            refreshDBFunctions(theHostApp.ActiveWorkbook)
+            ' general refresh: also refresh all embedded queries and pivot tables..
+            'On Error Resume Next
+            'Dim ws     As Excel.Worksheet
+            'Dim qrytbl As Excel.QueryTable
+            'Dim pivottbl As Excel.PivotTable
+
+            'For Each ws In theHostApp.ActiveWorkbook.Worksheets
+            '    For Each qrytbl In ws.QueryTables
+            '       qrytbl.Refresh
+            '    Next
+            '    For Each pivottbl In ws.PivotTables
+            '        pivottbl.PivotCache.Refresh
+            '    Next
+            'Next
+            'On Error GoTo err1
+        Else
+            ' reset query cache, so we really get new data !
+            theDBFuncEventHandler.queryCache = New Collection
+
+            Dim jumpName As String
+            jumpName = underlyingName.Name
+            ' because of a stupid excel behaviour (Range.Dirty only works if the parent sheet of Range is active)
+            ' we have to jump to the sheet containing the dbfunction and then activate back...
+            theDBFuncEventHandler.origWS = Nothing
+            ' this is switched back in DBFuncEventHandler.Calculate event,
+            ' where we also select back the original active worksheet
+
+            ' we're being called on a target (addtional) functions area
+            If Left$(jumpName, 10) = "DBFtargetF" Then
+                jumpName = Replace(jumpName, "DBFtargetF", "DBFsource", 1, , vbTextCompare)
+
+                If Not theHostApp.Range(jumpName).Parent Is theHostApp.ActiveSheet Then
+                    theHostApp.ScreenUpdating = False
+                    theDBFuncEventHandler.origWS = theHostApp.ActiveSheet
+                    On Error Resume Next
+                    theHostApp.Range(jumpName).Parent.Select
+                    On Error GoTo err1
+                End If
+                theHostApp.Range(jumpName).Dirty
+                ' we're being called on a target area
+            ElseIf Left$(jumpName, 9) = "DBFtarget" Then
+                jumpName = Replace(jumpName, "DBFtarget", "DBFsource", 1, , vbTextCompare)
+
+                If Not theHostApp.Range(jumpName).Parent Is theHostApp.ActiveSheet Then
+                    theHostApp.ScreenUpdating = False
+                    theDBFuncEventHandler.origWS = theHostApp.ActiveSheet
+                    On Error Resume Next
+                    theHostApp.Range(jumpName).Parent.Select
+                    On Error GoTo err1
+                End If
+                theHostApp.Range(jumpName).Dirty
+                ' we're being called on a source (invoking function) cell
+            ElseIf Left$(jumpName, 9) = "DBFsource" Then
+                On Error Resume Next
+                theHostApp.Range(jumpName).Dirty
+                On Error GoTo err1
+            Else
+                refreshDBFunctions(theHostApp.ActiveWorkbook)
+            End If
+        End If
+
+        Exit Sub
+
+err1:
+        LogToEventViewer("Error (" & Err.Description & ") in MenuHandler.refreshData in " & Erl(), EventLogEntryType.Error)
+    End Sub
+
+    ''
+    '  jumps from DB function to data area and back
+    Public Sub jumpButton(control As IRibbonControl)
+        Dim underlyingName As Excel.Name
+        underlyingName = getDBRangeName(theHostApp.ActiveCell)
+
+        If underlyingName Is Nothing Then Exit Sub
+        Dim jumpName As String
+        jumpName = underlyingName.Name
+        If Left$(jumpName, 10) = "DBFtargetF" Then
+            jumpName = Replace(jumpName, "DBFtargetF", "DBFsource", 1, , vbTextCompare)
+        ElseIf Left$(jumpName, 9) = "DBFtarget" Then
+            jumpName = Replace(jumpName, "DBFtarget", "DBFsource", 1, , vbTextCompare)
+        Else
+            jumpName = Replace(jumpName, "DBFsource", "DBFtarget", 1, , vbTextCompare)
+        End If
+        On Error Resume Next
+        theHostApp.Range(jumpName).Parent.Select
+        theHostApp.Range(jumpName).Select
+        If Err.Number <> 0 Then LogWarn("Can't jump to target/source, corresponding workbook open? " & Err.Description, 1)
+        Err.Clear()
     End Sub
 
     'TODO: convert to ribbon
@@ -40,13 +144,13 @@ Public Class MenuHandler
         Dim constConnSels, constConnSel
         Dim env As String = "1"
 
-        If GetSetting("DBAddin", "Settings", "DontChangeEnvironment", vbNullString) = "Y" Then
+        If GetSetting("DBAddin", "Settings", "DontChangeEnvironment", String.Empty) = "Y" Then
             MsgBox("Setting DontChangeEnvironment is set to Y, therefore changing the Environment is prevented !")
             Exit Sub
         End If
-        storeSetting("ConstConnString", fetchSetting("ConstConnString" & env, vbNullString))
-        storeSetting("ConfigStoreFolder", fetchSetting("ConfigStoreFolder" & env, vbNullString))
-        storeSetting("ConfigName", fetchSetting("ConfigName" & env, vbNullString))
+        storeSetting("ConstConnString", fetchSetting("ConstConnString" & env, String.Empty))
+        storeSetting("ConfigStoreFolder", fetchSetting("ConfigStoreFolder" & env, String.Empty))
+        storeSetting("ConfigName", fetchSetting("ConfigName" & env, String.Empty))
 
         constConnSels = theHostApp.CommandBars.FindControl(Tag:=gsCONSTCONN_TAG).Controls
         For Each constConnSel In constConnSels
@@ -56,7 +160,7 @@ Public Class MenuHandler
         initSettings()
         dontTryConnection = False  ' provide a chance to reconnect when switching environment...
         MsgBox("ConstConnString:" & ConstConnString & vbCrLf & "ConfigStoreFolder:" & ConfigStoreFolder & vbCrLf & vbCrLf & "Please refresh DBSheets or DBFuncs to see effects...", vbOKOnly, "set defaults to: ")
-        theHostApp.CommandBars.FindControl(Tag:=gsCONSTCONN_TAG).caption = "Env: " & fetchSetting("ConfigName" & env, vbNullString)
+        theHostApp.CommandBars.FindControl(Tag:=gsCONSTCONN_TAG).caption = "Env: " & fetchSetting("ConfigName" & env, String.Empty)
     End Sub
 
     'TODO: convert to ribbon
@@ -79,113 +183,6 @@ Public Class MenuHandler
         MsgBox("refreshed ConfigTreeMenu and restarted theDBSheetAppHandler", vbInformation + vbOKOnly, "DBAddin: refresh Config tree...")
     End Sub
 
-    ''
-    '  context menu "refresh data" was clicked
-    ' @param Ctrl
-    ' @param CancelDefault
-    Private Sub mRefreshButton_Click(ByVal Ctrl As CommandBarButton, CancelDefault As Boolean)
-        doRefresh()
-    End Sub
-
-    ''
-    '  jumps from DB function to data area and back
-    ' @param Ctrl
-    ' @param CancelDefault
-    Private Sub mJumpButton_Click(ByVal Ctrl As CommandBarButton, CancelDefault As Boolean)
-        Dim underlyingName As Excel.Name
-        underlyingName = getDBRangeName(theHostApp.ActiveCell)
-
-        If underlyingName Is Nothing Then Exit Sub
-        Dim jumpName As String
-        jumpName = underlyingName.Name
-        If Left$(jumpName, 10) = "DBFtargetF" Then
-            jumpName = Replace(jumpName, "DBFtargetF", "DBFsource", 1, , vbTextCompare)
-        ElseIf Left$(jumpName, 9) = "DBFtarget" Then
-            jumpName = Replace(jumpName, "DBFtarget", "DBFsource", 1, , vbTextCompare)
-        Else
-            jumpName = Replace(jumpName, "DBFsource", "DBFtarget", 1, , vbTextCompare)
-        End If
-        On Error Resume Next
-        theHostApp.Range(jumpName).Parent.Select
-        theHostApp.Range(jumpName).Select
-        If Err.Number <> 0 Then LogWarn("Can't jump to target/source, corresponding workbook open? " & Err.Description, 1)
-        Err.Clear()
-    End Sub
-
-    ''
-    '  to add the "build DBfunc query", "refresh data" context menu
-    Private Sub addDBFuncContextMenus()
-        On Error GoTo addDBFuncContextMenus_Err
-        Dim builtin As String
-
-        ' add context menus
-        For Each builtin In {"Cell", "Row", "Column"}
-            With theHostApp.CommandBars(builtin).Controls.Add(Type:=ExcelDna.Integration.CustomUI.MsoControlType.msoControlButton, Before:=1, Temporary:=True)
-                .caption = "goto DBFunc/target"
-                .FaceId = 991
-                .Tag = gsJUMP_TAG
-            End With
-            With theHostApp.CommandBars(builtin).Controls.Add(Type:=ExcelDna.Integration.CustomUI.MsoControlType.msoControlButton, Before:=1, Temporary:=True)
-                .caption = "refresh data (CTL-e)"
-                .FaceId = 1952
-                .Tag = gsREFRESH_TAG
-            End With
-            theHostApp.CommandBars(builtin).Controls(3).BeginGroup = True
-        Next
-
-        ' shitty workaround because Excel doesn't differentiate the name of preview context menus and normal ones,
-        ' so we need the index directly, by using its relative position to the normal context menus (this is also not always the same)...
-        Dim cmdbarInd As Long : Dim cmdbarBase As Long : cmdbarBase = theHostApp.CommandBars("Cell").index + 3
-        For cmdbarInd = cmdbarBase To cmdbarBase + 2
-            With theHostApp.CommandBars(cmdbarInd).Controls.Add(Type:=ExcelDna.Integration.CustomUI.MsoControlType.msoControlButton, Before:=1, Temporary:=True)
-                .caption = "goto DBFunc/target"
-                .FaceId = 991
-                .Tag = gsJUMP_TAG
-            End With
-            With theHostApp.CommandBars(cmdbarInd).Controls.Add(Type:=ExcelDna.Integration.CustomUI.MsoControlType.msoControlButton, Before:=1, Temporary:=True)
-                .caption = "refresh data (CTL-e)"
-                .FaceId = 1952
-                .Tag = gsREFRESH_TAG
-            End With
-            With theHostApp.CommandBars(cmdbarInd).Controls.Add(Type:=ExcelDna.Integration.CustomUI.MsoControlType.msoControlButton, Before:=1, Temporary:=True)
-                .caption = "build DBFunc query"
-                .FaceId = 2054
-                .Tag = gsBUILDDB_TAG
-            End With
-            theHostApp.CommandBars(cmdbarInd).Controls(4).BeginGroup = True
-        Next
-        Exit Sub
-
-addDBFuncContextMenus_Err:
-
-        If VBDEBUG Then Debug.Print(Err.Description()) : Stop : Resume
-        LogToEventViewer("Error (" & Err.Description & ") in MenuHandler.addDBFuncContextMenus in " & Erl(), EventLogEntryType.Error)
-        LogToEventViewer("In case Error is concerned with 'Subscript out of range, line 136' (or any other line), you might consider resetting the 'cell' commandbar (Commandbars(""Cell"").Reset) ! ", EventLogEntryType.Error)
-    End Sub
-
-    ''
-    '  removes all created menus
-    Private Sub removeDBFuncMenus()
-        Dim cont, builtin As String
-
-        On Error Resume Next
-        For Each builtin In {"Cell", "Row", "Column"}
-            For Each cont In {"refresh data (CTL-e)", "build DBfunc query"}
-                theHostApp.CommandBars(builtin).Controls(cont).Delete
-            Next
-        Next
-    End Sub
-
-    Private Function existsCommandBar() As Boolean
-        Dim check As Integer
-
-        existsCommandBar = True
-        On Error GoTo err1
-        check = theHostApp.CommandBars("DBAddin").index
-        Exit Function
-err1:
-        existsCommandBar = False
-    End Function
 
     'TODO: convert to ribbon
     ''
@@ -227,7 +224,7 @@ err1:
         '        Dim i As Long, ConfigName As String
         '        i = 1
         '        Do
-        '            ConfigName = fetchSetting("ConfigName" & i, vbNullString)
+        '            ConfigName = fetchSetting("ConfigName" & i, String.Empty)
         '            If ConfigName.Length > 0 Then
         '                With connBtn.Controls.Add(controlType:=MsoControlType.msoControlButton)
         '                    .Caption = ConfigName & " - " & i
@@ -235,7 +232,7 @@ err1:
         '                    .Parameter = i
         '                    .Tag = gsCONSTCONNACTION_TAG
 
-        '                    If fetchSetting("ConstConnString" & i, vbNullString) = ConstConnString Then
+        '                    If fetchSetting("ConstConnString" & i, String.Empty) = ConstConnString Then
         '                        .State = -1
         '                        connBtn.Caption = "Env: " & ConfigName
         '                        storeSetting("ConfigName", ConfigName)
@@ -293,7 +290,7 @@ err1:
         '            specialConfigFoldersTempColl = New Collection
         '            If Not disableBar Then readAllFiles(ConfigStoreFolder, DBConfigB)
         '            specialConfigFoldersTempColl = Nothing
-        '            theHostApp.StatusBar = vbNullString
+        '            theHostApp.StatusBar = String.Empty
         '        End If
         '        mDBConfigPreparedButton = theHostApp.CommandBars.FindControl(Tag:=gsITEMLOADPREPARED_TAG)
         '        mDBConfigRefreshButton = theHostApp.CommandBars.FindControl(Tag:=gsDBConfigRefreshB_TAG)
@@ -342,7 +339,7 @@ err1:
         '            If sortConfigStoreFolders Then QuickSort(fileList, LBound(fileList), UBound(fileList))
 
         '            ' for special folders split further into camelcase (or other) separated names
-        '            Dim aFolder : Dim spclFolder As String : spclFolder = vbNullString
+        '            Dim aFolder : Dim spclFolder As String : spclFolder = String.Empty
         '            Dim theFolder As String
         '            theFolder = Mid$(rootPath, InStrRev(rootPath, "\") + 1)
         '            For Each aFolder In specialConfigStoreFolders
@@ -356,20 +353,20 @@ err1:
         '                Dim firstCharLevel As Boolean
         '                firstCharLevel = CBool(fetchSetting(spclFolder & "FirstLetterLevel", "False"))
         '                specialFolderMaxDepth = fetchSetting(spclFolder & "MaxDepth", 10000)
-        '                specialConfigStoreSeparator = fetchSetting(spclFolder & "Separator", vbNullString)
+        '                specialConfigStoreSeparator = fetchSetting(spclFolder & "Separator", String.Empty)
         '                For i = 0 To UBound(fileList)
         '                    ' is current entry contained in next entry then revert order to allow for containment in next entry's hierarchy..
         '                    If i < UBound(fileList) Then
         '                        If InStr(1, Left$(fileList(i + 1), Len(fileList(i + 1)) - 4), Left$(fileList(i), Len(fileList(i)) - 4)) > 0 Then
-        '                            buildFileSepMenuCtrl(stringParts(IIf(firstCharLevel, Left$(fileList(i + 1), 1) & " ", vbNullString) &
+        '                            buildFileSepMenuCtrl(stringParts(IIf(firstCharLevel, Left$(fileList(i + 1), 1) & " ", String.Empty) &
         '                                                            Left$(fileList(i + 1), Len(fileList(i + 1)) - 4), specialConfigStoreSeparator), currentBar, rootPath & "\" & fileList(i + 1), spclFolder, specialFolderMaxDepth)
-        '                            buildFileSepMenuCtrl(stringParts(IIf(firstCharLevel, Left$(fileList(i), 1) & " ", vbNullString) &
+        '                            buildFileSepMenuCtrl(stringParts(IIf(firstCharLevel, Left$(fileList(i), 1) & " ", String.Empty) &
         '                                                            Left$(fileList(i), Len(fileList(i)) - 4), specialConfigStoreSeparator), currentBar, rootPath & "\" & fileList(i), spclFolder, specialFolderMaxDepth)
         '                            i = i + 2
         '                            If i > UBound(fileList) Then Exit For
         '                        End If
         '                    End If
-        '                    buildFileSepMenuCtrl(stringParts(IIf(firstCharLevel, Left$(fileList(i), 1) & " ", vbNullString) &
+        '                    buildFileSepMenuCtrl(stringParts(IIf(firstCharLevel, Left$(fileList(i), 1) & " ", String.Empty) &
         '                            Left$(fileList(i), Len(fileList(i)) - 4), specialConfigStoreSeparator), currentBar, rootPath & "\" & fileList(i), spclFolder, specialFolderMaxDepth)
         '                Next
         '                ' normal case: just follow the path and enter all
@@ -461,102 +458,7 @@ err1:
         '        LogToEventViewer("Error (" & Err.Description & ") in MenuHandler.buildFileSepMenuCtrl in " & Erl(), EventLogEntryType.Error, 1)
     End Sub
 
-    ''
-    ' actually do the data refresh
-    Private Sub doRefresh()
-        initSettings()
 
-        ' enable events in case there were some problems in procedure with EnableEvents = false
-        On Error Resume Next
-        theHostApp.EnableEvents = True
-        If Err.Number <> 0 Then
-            LogError("Can't refresh data while lookup dropdown is open !!")
-            Exit Sub
-        End If
-
-        ' also reset the database connection in case of errors...
-        theDBFuncEventHandler.cnn.Close()
-        theDBFuncEventHandler.cnn = Nothing
-
-        dontTryConnection = False
-        On Error GoTo err1
-
-        ' now for DBListfetch/DBRowfetch resetting
-        allCalcContainers = Nothing
-        Dim underlyingName As Excel.Name
-        underlyingName = getDBRangeName(theHostApp.ActiveCell)
-        theHostApp.ScreenUpdating = True
-        If underlyingName Is Nothing Then
-            ' reset query cache, so we really get new data !
-            theDBFuncEventHandler.queryCache = New Collection
-            refreshDBFunctions(theHostApp.ActiveWorkbook)
-            ' general refresh: also refresh all embedded queries and pivot tables..
-            'On Error Resume Next
-            'Dim ws     As Excel.Worksheet
-            'Dim qrytbl As Excel.QueryTable
-            'Dim pivottbl As Excel.PivotTable
-
-            'For Each ws In theHostApp.ActiveWorkbook.Worksheets
-            '    For Each qrytbl In ws.QueryTables
-            '       qrytbl.Refresh
-            '    Next
-            '    For Each pivottbl In ws.PivotTables
-            '        pivottbl.PivotCache.Refresh
-            '    Next
-            'Next
-            'On Error GoTo err1
-        Else
-            ' reset query cache, so we really get new data !
-            theDBFuncEventHandler.queryCache = New Collection
-
-            Dim jumpName As String
-            jumpName = underlyingName.Name
-            ' because of a stupid excel behaviour (Range.Dirty only works if the parent sheet of Range is active)
-            ' we have to jump to the sheet containing the dbfunction and then activate back...
-            theDBFuncEventHandler.origWS = Nothing
-            ' this is switched back in DBFuncEventHandler.Calculate event,
-            ' where we also select back the original active worksheet
-
-            ' we're being called on a target (addtional) functions area
-            If Left$(jumpName, 10) = "DBFtargetF" Then
-                jumpName = Replace(jumpName, "DBFtargetF", "DBFsource", 1, , vbTextCompare)
-
-                If Not theHostApp.Range(jumpName).Parent Is theHostApp.ActiveSheet Then
-                    theHostApp.ScreenUpdating = False
-                    theDBFuncEventHandler.origWS = theHostApp.ActiveSheet
-                    On Error Resume Next
-                    theHostApp.Range(jumpName).Parent.Select
-                    On Error GoTo err1
-                End If
-                theHostApp.Range(jumpName).Dirty
-                ' we're being called on a target area
-            ElseIf Left$(jumpName, 9) = "DBFtarget" Then
-                jumpName = Replace(jumpName, "DBFtarget", "DBFsource", 1, , vbTextCompare)
-
-                If Not theHostApp.Range(jumpName).Parent Is theHostApp.ActiveSheet Then
-                    theHostApp.ScreenUpdating = False
-                    theDBFuncEventHandler.origWS = theHostApp.ActiveSheet
-                    On Error Resume Next
-                    theHostApp.Range(jumpName).Parent.Select
-                    On Error GoTo err1
-                End If
-                theHostApp.Range(jumpName).Dirty
-                ' we're being called on a source (invoking function) cell
-            ElseIf Left$(jumpName, 9) = "DBFsource" Then
-                On Error Resume Next
-                theHostApp.Range(jumpName).Dirty
-                On Error GoTo err1
-            Else
-                refreshDBFunctions(theHostApp.ActiveWorkbook)
-            End If
-        End If
-
-        Exit Sub
-
-err1:
-        If VBDEBUG Then Debug.Print("Error (" & Err.Description & ") in MenuHandler.doRefresh") : Stop : Resume
-        LogToEventViewer("Error (" & Err.Description & ") in MenuHandler.doRefresh in " & Erl(), EventLogEntryType.Error)
-    End Sub
 
     ''
     ' return parts of a CamelCase string
@@ -567,7 +469,7 @@ err1:
         Dim charAsc As Integer
         Dim pre As Integer
 
-        stringParts = vbNullString
+        stringParts = String.Empty
         If specialConfigStoreSeparator.Length > 0 Then
             stringParts = Join(Split(theString, specialConfigStoreSeparator), " ")
         Else

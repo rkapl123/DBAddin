@@ -36,7 +36,7 @@ Public Class Mapper
                                     database As String,
                                     Optional env As Integer = 1,
                                     Optional insertIfMissing As Boolean = False,
-                                    Optional executeAdditionalProc As String = vbNullString) As Boolean
+                                    Optional executeAdditionalProc As String = "") As Boolean
         Dim rst As ADODB.Recordset
         Dim checkrst As ADODB.Recordset
         Dim checkTypes() As checkTypeFld = Nothing
@@ -48,7 +48,7 @@ Public Class Mapper
         On Error GoTo saveRangeToDB_Err
         If Not isInteractive Then
             automatedMapper = Me
-            Me.returnedErrorMessages = vbNullString
+            Me.returnedErrorMessages = String.Empty
         End If
         saveRangeToDB = False
         primKeys = Split(primKeysStr, ",")
@@ -242,7 +242,7 @@ err1:
             dbFormatType = "'" & theVal & "'"
         Else
             LogError("Error: unknown data type '" & dataType & "' given in Mapper.dbFormatType !!")
-            dbFormatType = vbNullString
+            dbFormatType = String.Empty
         End If
     End Function
 
@@ -256,7 +256,7 @@ err1:
     ''' <param name="database">database to replace database selection parameter in connection string of environment</param>
     ''' <returns>True on success</returns>
     Public Function openConnection(env As Integer, database As String) As Boolean
-        Dim theConnString As String = fetchSetting("ConstConnString" & env, vbNullString)
+        Dim theConnString As String = fetchSetting("ConstConnString" & env, String.Empty)
 
         On Error GoTo openConnection_Err
         openConnection = False
@@ -271,7 +271,7 @@ err1:
             theHostApp.StatusBar = "Trying " & CnnTimeout & " sec. with connstring: " & theConnString
             On Error Resume Next
             dbcnn.Open()
-            theHostApp.StatusBar = vbNullString
+            theHostApp.StatusBar = String.Empty
             If Err.Number <> 0 Then
                 On Error GoTo openConnection_Err
                 Dim exitMe As Boolean : exitMe = True

@@ -36,8 +36,8 @@ err0:
         On Error Resume Next
         Exit Function
 err1:
-        If VBDEBUG Then Debug.Print("functionSplit: " & Err.Description) : Stop : Resume
-        LogToEventViewer("Error: " & Err.Description & " in CommonFuncs.functionSplit in " & Erl(), EventLogEntryType.Error)
+        Dim errDesc As String = Err.Description
+        LogToEventViewer("Error: " & errDesc & " in CommonFuncs.functionSplit in " & Erl(), EventLogEntryType.Error)
         functionSplit = Nothing
     End Function
 
@@ -96,7 +96,7 @@ err1:
     ''' <param name="closeBracket"></param>
     ''' <param name="quote"></param>
     ''' <returns>the balanced string</returns>
-    Private Function balancedString(theString As String, openBracket As String, closeBracket As String, Optional quote As String = vbNullString) As String
+    Private Function balancedString(theString As String, openBracket As String, closeBracket As String, Optional quote As String = "") As String
         Dim startBalance As Long, endBalance As Long, i As Long, countOpen As Long, countClose As Long
 
         Dim quoteMode As Boolean = False
@@ -123,7 +123,7 @@ err1:
             End If
         Next
         If endBalance = 0 Then
-            balancedString = vbNullString
+            balancedString = String.Empty
         Else
             balancedString = Mid$(theString, startBalance + 1, endBalance - startBalance)
         End If
@@ -149,7 +149,7 @@ err1:
     ''' <returns>replaced string</returns>
     Private Function replaceDelimsWithSpecialSep(theString As String, delimiter As String, quote As String, openBracket As String, closeBracket As String, specialSep As String) As String
         Dim openedBrackets As Long, quoteMode As Boolean
-        replaceDelimsWithSpecialSep = vbNullString
+        replaceDelimsWithSpecialSep = String.Empty
 
         Dim i As Long
         On Error GoTo err1
@@ -195,7 +195,7 @@ err1:
 
         replaceBeg = InStr(1, UCase$(theString), UCase$(keystr))
         If replaceBeg = 0 Then
-            Change = vbNullString
+            Change = String.Empty
             Exit Function
         End If
         replaceEnd = InStr(replaceBeg, UCase$(theString), UCase$(separator))
@@ -214,7 +214,7 @@ err1:
         Dim fetchBeg As Integer, fetchEnd As Integer
 
         fetchBeg = InStr(1, UCase$(theString), UCase$(keystr))
-        If fetchBeg = 0 Then Return vbNullString
+        If fetchBeg = 0 Then Return String.Empty
         fetchEnd = InStr(fetchBeg + Len(keystr), UCase$(theString), UCase$(separator))
         If fetchEnd = 0 Or separator.Length = 0 Then fetchEnd = Len(theString) + 1
         fetch = Mid$(theString, fetchBeg + Len(keystr), fetchEnd - (fetchBeg + Len(keystr)))
@@ -347,7 +347,6 @@ done:
         End If
         Exit Sub
 err_1:
-        Debug.Print("refreshDBFunctions: " & Err.Description)
         LogToEventViewer("Error: " & Err.Description & " in CommonFuncs.refreshDBFunctions in " & Erl() & ", " & Wb.Path & "\" & Wb.Name, EventLogEntryType.Error)
     End Sub
 

@@ -14,7 +14,7 @@ Public Class DBFuncEventHandler
     ''' <summary>cnn object always the same (only open/close)</summary>
     Public cnn As ADODB.Connection
     ''' <summary>the app object needed for excel event handling (most of this class is decdicated to that)</summary>
-    Private WithEvents theXlApp As Application
+    Private WithEvents Application As Application
 
     ''' <summary>which error occurred?</summary>
     Private errorReason As String
@@ -24,25 +24,14 @@ Public Class DBFuncEventHandler
     Public queryCache As Collection
 
     Public Sub New()
-        theXlApp = theHostApp
+        Application = ExcelDnaUtil.Application
         queryCache = New Collection
-    End Sub
-
-    Private Sub theXlApp_WorkbookActivate(ByVal Wb As Workbook)
-        On Error Resume Next
-        LogInfo("theXlApp_WorkbookActivate: " & Wb.Path & "\" & Wb.Name)
-    End Sub
-
-    Private Sub theXlApp_WorkbookDeactivate(ByVal Wb As Workbook)
-        On Error Resume Next
-        LogInfo("theXlApp_WorkbookDeactivate: " & Wb.Path & "\" & Wb.Name)
     End Sub
 
     ''' <summary>necessary to asynchronously start refresh of db functions after save event</summary>
     Private aTimer As System.Timers.Timer
 
-    Private Sub theXlApp_WorkbookOpen(ByVal Wb As Workbook)
-        LogInfo("theXlApp_WorkbookOpen: " & Wb.Path & "\" & Wb.Name)
+    Private Sub App_WorkbookOpen(ByVal Wb As Workbook) Handles Application.WorkbookOpen
         If Not Wb.IsAddin Then
             Dim refreshDBFuncs As Boolean
             ' when opening, force recalculation of DB functions in workbook.
@@ -61,7 +50,7 @@ Public Class DBFuncEventHandler
     ''' <param name="Wb"></param>
     ''' <param name="SaveAsUI"></param>
     ''' <param name="Cancel"></param>
-    Private Sub theXlApp_WorkbookBeforeSave(ByVal Wb As Workbook, ByVal SaveAsUI As Boolean, Cancel As Boolean)
+    Private Sub App_WorkbookBeforeSave(ByVal Wb As Workbook, SaveAsUI As Boolean, ByRef Cancel As Boolean) Handles Application.WorkbookBeforeSave
         Dim refreshDBFuncs As Boolean
         Dim docproperty
         Dim DBFCContentColl As Collection, DBFCAllColl As Collection
@@ -70,8 +59,7 @@ Public Class DBFuncEventHandler
         Dim searchCell As Range
         Dim firstAddress As String
 
-        On Error GoTo theXlApp_WorkbookBeforeSave_Err
-        LogInfo("theXlApp_WorkbookSave: " & Wb.Path & "\" & Wb.Name)
+        On Error GoTo App_WorkbookBeforeSave_Err
         DBFCContentColl = New Collection
         DBFCAllColl = New Collection
         refreshDBFuncs = True
@@ -96,20 +84,20 @@ Public Class DBFuncEventHandler
                         DBFCC = False : DBFCA = False
                         On Error Resume Next
                         DBFCC = DBFCContentColl("*")
-                        DBFCC = DBFCContentColl(searchCell.Parent.name & "!" & Replace(searchCell.Address, "$", vbNullString)) Or DBFCC
+                        DBFCC = DBFCContentColl(searchCell.Parent.name & "!" & Replace(searchCell.Address, "$", String.Empty)) Or DBFCC
                         DBFCA = DBFCAllColl("*")
-                        DBFCA = DBFCAllColl(searchCell.Parent.name & "!" & Replace(searchCell.Address, "$", vbNullString)) Or DBFCA
+                        DBFCA = DBFCAllColl(searchCell.Parent.name & "!" & Replace(searchCell.Address, "$", String.Empty)) Or DBFCA
                         Err.Clear()
                         Dim theTargetRange As Range
-                        theTargetRange = theXlApp.Range(targetName)
+                        theTargetRange = theHostApp.Range(targetName)
                         If DBFCC Then
                             theTargetRange.Parent.Range(theTargetRange.Parent.Cells(theTargetRange.Row, theTargetRange.Column), theTargetRange.Parent.Cells(theTargetRange.Row + theTargetRange.Rows.Count - 1, theTargetRange.Column + theTargetRange.Columns.Count - 1)).ClearContents
-                            LogInfo("theXlApp_WorkbookSave/DBFCC cleared")
+                            LogInfo("App_WorkbookSave/DBFCC cleared")
                         End If
                         If DBFCA Then
                             theTargetRange.Parent.Range(theTargetRange.Parent.Cells(theTargetRange.Row + 2, theTargetRange.Column), theTargetRange.Parent.Cells(theTargetRange.Row + theTargetRange.Rows.Count - 1, theTargetRange.Column + theTargetRange.Columns.Count - 1)).Clear
                             theTargetRange.Parent.Range(theTargetRange.Parent.Cells(theTargetRange.Row, theTargetRange.Column), theTargetRange.Parent.Cells(theTargetRange.Row + 2, theTargetRange.Column + theTargetRange.Columns.Count - 1)).ClearContents
-                            LogInfo("theXlApp_WorkbookSave/DBFCA cleared")
+                            LogInfo("App_WorkbookSave/DBFCA cleared")
                         End If
                         searchCell = ws.Cells.FindNext(searchCell)
                     Loop While Not searchCell Is Nothing And searchCell.Address <> firstAddress
@@ -130,9 +118,9 @@ Public Class DBFuncEventHandler
         End If
         Exit Sub
 
-theXlApp_WorkbookBeforeSave_Err:
-        If VBDEBUG Then Debug.Print("DBFuncEventHandler.theXlApp_WorkbookBeforeSave: " & Err.Description) : Stop : Resume
-        LogToEventViewer("DBFuncEventHandler.theXlApp_WorkbookBeforeSave Error: " & Wb.Name & Err.Description & ", in line " & Erl(), EventLogEntryType.Error)
+App_WorkbookBeforeSave_Err:
+        If VBDEBUG Then Debug.Print("DBFuncEventHandler.App_WorkbookBeforeSave: " & Err.Description) : Stop : Resume
+        LogToEventViewer("DBFuncEventHandler.App_WorkbookBeforeSave Error: " & Wb.Name & Err.Description & ", in line " & Erl(), EventLogEntryType.Error)
     End Sub
 
     ''' <summary>"OnTime" event function to "escape" workbook_save: event procedure to refetch DB functions results after saving</summary>
@@ -151,7 +139,7 @@ theXlApp_WorkbookBeforeSave_Err:
 
     ''' <summary>catch the calculation event: this is the technical basis to separate actions not usually allowed in UDFs</summary>
     ''' <param name="Sh">the invoking Sheet</param>
-    Private Sub theXlApp_SheetCalculate(ByVal Sh As Object)
+    Private Sub App_SheetCalculate(ByVal Sh As Object) Handles Application.SheetCalculate
         Dim calcCont As ContainerCalcMsgs
         Dim statusCont As ContainerStatusMsgs
         Dim callID As String, callerText As String
@@ -200,14 +188,14 @@ theXlApp_WorkbookBeforeSave_Err:
                             callerText = .caller.Formula
 
                             If Err.Number <> 0 Then
-                                Debug.Print("theXlApp_SheetCalculate: ERROR with retrieving .caller.Formula: " & Err.Description)
-                                errorReason = "theXlApp_SheetCalculate: ERROR with .caller.Formula: " & Err.Description
+                                Debug.Print("App_SheetCalculate: ERROR with retrieving .caller.Formula: " & Err.Description)
+                                errorReason = "App_SheetCalculate: ERROR with .caller.Formula: " & Err.Description
                                 allCalcContainers(callID).errOccured = True
                             End If
 
                             ' create/reconnect database connection, except for setting query/connstring with DBSETQUERY !
                             If InStr(1, UCase$(callerText), "DBSETQUERY(") = 0 Then
-                                ODBCconnString = vbNullString
+                                ODBCconnString = String.Empty
 
                                 If InStr(1, UCase$(.ConnString), ";ODBC;") Then
                                     ODBCconnString = Mid$(.ConnString, InStr(1, UCase$(.ConnString), ";ODBC;") + 1)
@@ -226,7 +214,7 @@ theXlApp_WorkbookBeforeSave_Err:
                                     cnn.Open(.ConnString)
 
                                     If Err.Number <> 0 Then
-                                        Debug.Print("theXlApp_SheetCalculate Connection error: " & Err.Description)
+                                        Debug.Print("App_SheetCalculate Connection error: " & Err.Description)
                                         ' prevent multiple reconnecting if connection errors present...
                                         dontTryConnection = True
                                         LogError("Connection Error: " & Err.Description, , , 1)
@@ -340,7 +328,7 @@ nextCalcCont:
         TargetCell = calcCont.targetRange
         Query = calcCont.Query
         ConnString = calcCont.ConnString
-        warning = vbNullString
+        warning = String.Empty
 
         On Error Resume Next
         thePivotTable = TargetCell.PivotTable
@@ -430,7 +418,7 @@ DBSetQueryParams_Error:
             ' different worksheet for DB form...
             If InStr(1, controlLocation, "!") > 0 Then
                 controlLocationWS = Left$(controlLocation, InStr(1, controlLocation, "!") - 1)
-                controlLocationWS = Replace(controlLocationWS, "'", vbNullString)
+                controlLocationWS = Replace(controlLocationWS, "'", String.Empty)
                 On Error Resume Next
                 formTargetSheet = calcCont.callsheet.Parent.Worksheets(controlLocationWS)
                 If Err.Number <> 0 Then
@@ -448,7 +436,7 @@ DBSetQueryParams_Error:
             ' different worksheet for DB form...
             If InStr(1, dataTargetAddr, "!") > 0 Then
                 dataTargetWS = Left$(dataTargetAddr, InStr(1, dataTargetAddr, "!") - 1)
-                dataTargetWS = Replace(dataTargetWS, "'", vbNullString)
+                dataTargetWS = Replace(dataTargetWS, "'", String.Empty)
                 ' set theTargetCell's sheet to data target sheet if no controlLocation given..
                 If calcCont.controlLocation.Length = 0 Then
                     formTargetSheet = calcCont.callsheet.Parent.Worksheets(dataTargetWS)
@@ -500,7 +488,7 @@ DBSetQueryParams_Error:
                 srcConnect = "DBFsource" & ControlName
             Else
                 ' new generic name !!
-                srcConnect = "DBFsource" & Replace(Replace(CDbl(Now.ToOADate()), ",", vbNullString), ".", vbNullString)
+                srcConnect = "DBFsource" & Replace(Replace(CDbl(Now.ToOADate()), ",", String.Empty), ".", String.Empty)
             End If
             calcCont.caller.Name = srcConnect
             calcCont.callsheet.Parent.Names(srcConnect).Visible = False
@@ -510,7 +498,7 @@ DBSetQueryParams_Error:
             End If
         End If
         ' this is the unique name we store as the control (and controls header) name (DB_<uniqueName> and DBH_<uniqueName>)
-        uniqueName = Replace(srcConnect, "DBFsource", vbNullString)
+        uniqueName = Replace(srcConnect, "DBFsource", String.Empty)
 
         ' remember former value for restoring after any changes
         formerValue = dataTargetRange.Value
@@ -533,7 +521,7 @@ DBSetQueryParams_Error:
                 srcConnect = "DBFsource" & ControlName
             Else
                 ' in case someone deleted the form to give it a new name, replace existing given control name with a new generic name !!
-                srcConnect = "DBFsource" & Replace(Replace(CDbl(Now.ToOADate()), ",", vbNullString), ".", vbNullString)
+                srcConnect = "DBFsource" & Replace(Replace(CDbl(Now.ToOADate()), ",", String.Empty), ".", String.Empty)
             End If
             calcCont.caller.Name = srcConnect
             calcCont.callsheet.Parent.Names(srcConnect).Visible = False
@@ -541,7 +529,7 @@ DBSetQueryParams_Error:
                 errMsg = "Error in setting srcConnect name (probably used invalid characters in controlName '" & ControlName & "'): " & Err.Description & ", control in " & formTargetSheet.Name
                 GoTo DBControlQuery_Error
             End If
-            uniqueName = Replace(srcConnect, "DBFsource", vbNullString)
+            uniqueName = Replace(srcConnect, "DBFsource", String.Empty)
         Else
             ' now check whether db control type has changed, in that case, delete and create form anew
             Dim oldControlType As Integer
@@ -581,7 +569,7 @@ DBSetQueryParams_Error:
         On Error GoTo DBControlQuery_Error
         tableRst = New ADODB.Recordset
         tableRst.Open(Query, cnn, CursorTypeEnum.adOpenStatic, LockTypeEnum.adLockReadOnly, CommandTypeEnum.adCmdText)
-        Dim dberr As String = vbNullString
+        Dim dberr As String = String.Empty
         If cnn.Errors.Count > 0 Then
             Dim errcount As Integer
             For errcount = 0 To cnn.Errors.Count - 1
@@ -648,11 +636,11 @@ DBSetQueryParams_Error:
         Dim colHeading As String, colField As String
         Dim padLen As Long, theWidth As Long
         Dim totalWidth As Double, formerHeight As Double, formerWidth As Double
-        colHeading = vbNullString : colWidthStr = "0;"
+        colHeading = String.Empty : colWidthStr = "0;"
         For i = 1 To NumColumnsExId
             ' create and autofit the column headings to the maximum width of the values in the column (pad with spaces if necessary)
             padLen = IIf(maxColLengths(i) <= Len(tableRst.Fields(i).Name), 0, maxColLengths(i) - Len(tableRst.Fields(i).Name) - 1)
-            colField = tableRst.Fields(i).Name & Space$(padLen) & IIf(i = 1, "  ", vbNullString) & IIf(i < NumColumnsExId, "|", vbNullString)
+            colField = tableRst.Fields(i).Name & Space$(padLen) & IIf(i = 1, "  ", String.Empty) & IIf(i < NumColumnsExId, "|", String.Empty)
             ' add column to the headings
             colHeading = colHeading & colField
             ' calculate column width (in points): special treatment for first column as we have a "selection margin" in listboxes, which can't be removed (as in dropdowns)...
@@ -692,12 +680,12 @@ DBSetQueryParams_Error:
                 GoTo DBControlQuery_Error
             End If
             ' This is needed to be able to set value property in forms...
-            theForm.object.list(j, 0) = IIf(dataSet(0)(j) = vbNull, vbNullString, dataSet(0)(j))
+            theForm.object.list(j, 0) = IIf(dataSet(0)(j) = vbNull, String.Empty, dataSet(0)(j))
             ' This is needed to be able to set text property in forms...
-            theForm.object.list(j, 1) = IIf(dataSet(1)(j) = vbNull, vbNullString, dataSet(1)(j))
+            theForm.object.list(j, 1) = IIf(dataSet(1)(j) = vbNull, String.Empty, dataSet(1)(j))
             ' need this to display floats...
             For i = 0 To UBound(isDisplayProblem) - 1
-                theForm.object.list(j, isDisplayProblem(i)) = IIf(dataSet(isDisplayProblem(i))(j) = vbNull, vbNullString, dataSet(isDisplayProblem(i))(j))
+                theForm.object.list(j, isDisplayProblem(i)) = IIf(dataSet(isDisplayProblem(i))(j) = vbNull, String.Empty, dataSet(isDisplayProblem(i))(j))
             Next
         Next
 
@@ -770,7 +758,7 @@ DBSetQueryParams_Error:
         dataTargetRange.Name.Visible = False
         restoreRangeNames(dataTargetRange, storedNames)
 
-        statusCont.statusMsg = "Retrieved " & retrievedRows & " record" & IIf(retrievedRows > 1, "s", vbNullString) & " from: " & Query
+        statusCont.statusMsg = "Retrieved " & retrievedRows & " record" & IIf(retrievedRows > 1, "s", String.Empty) & " from: " & Query
         theHostApp.ScreenUpdating = True
         curWs.Select()
 
@@ -832,14 +820,14 @@ DBControlQuery_Error:
         headingsPresent = calcCont.HeaderInfo
         targetRangeName = calcCont.targetRangeName
         formulaRangeName = calcCont.formulaRangeName
-        warning = vbNullString
+        warning = String.Empty
 
         Dim srcExtentConnect As String, targetExtent As String, targetExtentF As String
         On Error Resume Next
         srcExtentConnect = calcCont.caller.Name.name
         If Err.Number <> 0 Or InStr(1, srcExtentConnect, "DBFsource") = 0 Then
             Err.Clear()
-            srcExtentConnect = "DBFsource" & Replace(Replace(CDbl(Now.ToOADate()), ",", vbNullString), ".", vbNullString)
+            srcExtentConnect = "DBFsource" & Replace(Replace(CDbl(Now.ToOADate()), ",", String.Empty), ".", String.Empty)
             calcCont.caller.Name = srcExtentConnect
             calcCont.callsheet.Parent.Names(srcExtentConnect).Visible = False
             If Err.Number <> 0 Then
@@ -899,7 +887,7 @@ DBControlQuery_Error:
         theHostApp.StatusBar = "Retrieving data for DBList: " & IIf(targetRangeName.Length > 0, targetRangeName, targetSH.Name & "!" & targetCells.Address)
         tableRst = New ADODB.Recordset
         tableRst.Open(Query, cnn, CursorTypeEnum.adOpenForwardOnly, LockTypeEnum.adLockReadOnly, CommandTypeEnum.adCmdText)
-        Dim dberr As String = vbNullString
+        Dim dberr As String = String.Empty
         If cnn.Errors.Count > 0 Then
             Dim errcount As Integer
             For errcount = 0 To cnn.Errors.Count - 1
@@ -1139,12 +1127,12 @@ DBControlQuery_Error:
                 If Left$(warning, 1) = "," Then
                     warning = Right$(warning, Len(warning) - 2)
                 End If
-                statusCont.statusMsg = "Retrieved " & retrievedRows & " record" & IIf(retrievedRows > 1, "s", vbNullString) & ", Warning: " & warning
+                statusCont.statusMsg = "Retrieved " & retrievedRows & " record" & IIf(retrievedRows > 1, "s", String.Empty) & ", Warning: " & warning
             Else
                 statusCont.statusMsg = warning
             End If
         Else
-            statusCont.statusMsg = "Retrieved " & retrievedRows & " record" & IIf(retrievedRows > 1, "s", vbNullString) & " from: " & Query
+            statusCont.statusMsg = "Retrieved " & retrievedRows & " record" & IIf(retrievedRows > 1, "s", String.Empty) & " from: " & Query
         End If
 
         ' autoformat: restore format of 1st row...
@@ -1203,7 +1191,7 @@ err_0:
             errMsg = Err.Description & " in query: " & Query
             severity = EventLogEntryType.Error
         End If
-        'Err.Clear ' this is important as otherwise the error propagates to theXlApp_SheetCalculate,
+        'Err.Clear ' this is important as otherwise the error propagates to App_SheetCalculate,
         ' which recalcs in case of errors there, leading to endless calc loops !!
         If severity = Nothing Then severity = EventLogEntryType.Warning
         If VBDEBUG Then Debug.Print("DBListQuery Error: " & Erl() & errMsg & ", caller: " & callID) : Stop : Resume
@@ -1251,7 +1239,7 @@ err_0:
         srcExtentConnect = calcCont.caller.Name.name
         If Err.Number <> 0 Or InStr(1, UCase$(srcExtentConnect), "DBFSOURCE") = 0 Then
             Err.Clear()
-            srcExtentConnect = "DBFsource" & Replace(Replace(CDbl(Now().ToOADate), ",", vbNullString), ".", vbNullString)
+            srcExtentConnect = "DBFsource" & Replace(Replace(CDbl(Now().ToOADate), ",", String.Empty), ".", String.Empty)
             calcCont.caller.Name = srcExtentConnect
             calcCont.callsheet.Parent.Names(srcExtentConnect).Visible = False
             If Err.Number <> 0 Then
@@ -1266,7 +1254,7 @@ err_0:
         tableRst = New ADODB.Recordset
         tableRst.Open(Query, cnn, CursorTypeEnum.adOpenStatic, LockTypeEnum.adLockReadOnly, CommandTypeEnum.adCmdText)
         On Error Resume Next
-        Dim dberr As String = vbNullString
+        Dim dberr As String = String.Empty
         If cnn.Errors.Count > 0 Then
             Dim errcount As Integer
             For errcount = 0 To cnn.Errors.Count - 1
@@ -1309,12 +1297,12 @@ err_0:
                 End If
                 For Each theCell In targetSlice.Cells
                     If tableRst.EOF Then
-                        theCell.Value = vbNullString
+                        theCell.Value = String.Empty
                     Else
                         If Not headerFilled Then
                             theCell.Value = tableRst.Fields.Item(fieldIter).Name
                         ElseIf Delete Then
-                            theCell.Value = vbNullString
+                            theCell.Value = String.Empty
                         Else
                             On Error Resume Next
                             theCell.Value = tableRst.Fields.Item(fieldIter).Value
@@ -1346,7 +1334,7 @@ err_0:
         restoreRangeNames(refCollector, storedNames)
 
         tableRst.Close()
-        If statusCont.statusMsg.Length = 0 Then statusCont.statusMsg = "Retrieved " & returnedRows & " record" & IIf(returnedRows > 1, "s", vbNullString) & " from: " & Query
+        If statusCont.statusMsg.Length = 0 Then statusCont.statusMsg = "Retrieved " & returnedRows & " record" & IIf(returnedRows > 1, "s", String.Empty) & " from: " & Query
 
 #If DEBUGME = 1 Then
      LogToEventViewer "Leaving DBRowQuery, caller: " & callID, LogInf, 0
@@ -1359,7 +1347,7 @@ err_1:
             errMsg = Err.Description & " in query: " & Query
             severity = EventLogEntryType.Error
         End If
-        'Err.Clear ' this is important as otherwise the error propagates to theXlApp_SheetCalculate,
+        'Err.Clear ' this is important as otherwise the error propagates to App_SheetCalculate,
         ' which recalcs in case of errors there, leading to endless calc loops !!
         If severity = Nothing Then severity = EventLogEntryType.Warning
         If VBDEBUG Then Debug.Print("DBRowQuery Error: " & errMsg & ", caller: " & callID) : Stop : Resume
@@ -1377,7 +1365,7 @@ err_1:
     Public Sub DBCellQuery(calcCont As ContainerCalcMsgs, statusCont As ContainerStatusMsgs)
         Dim tableRst As ADODB.Recordset
         Dim theField As ADODB.Field
-        Dim colSep As String, rowSep As String, lastColSep As String, lastRowSep As String, theResult As String = vbNullString, Query As String, callID As String, errMsg As String
+        Dim colSep As String, rowSep As String, lastColSep As String, lastRowSep As String, theResult As String = String.Empty, Query As String, callID As String, errMsg As String
         Dim headingsPresent As Boolean, InterleaveHeader As Boolean
         Dim returnedRows As Long
 
@@ -1403,7 +1391,7 @@ err_1:
         theHostApp.StatusBar = "Retrieving data for DBCell: " & callID
         tableRst = New ADODB.Recordset
         tableRst.Open(Query, cnn, CursorTypeEnum.adOpenStatic, LockTypeEnum.adLockReadOnly, CommandTypeEnum.adCmdText)
-        Dim dberr As String = vbNullString
+        Dim dberr As String = String.Empty
         If cnn.Errors.Count > 0 Then
             Dim errcount As Integer
             For errcount = 0 To cnn.Errors.Count - 1
@@ -1445,7 +1433,7 @@ err_1:
                 i = 0
                 For Each theField In tableRst.Fields
                     i = i + 1
-                    theResult = theResult & IIf(InterleaveHeader And theField.Name <> " ", theField.Name, vbNullString) & theField.Value & IIf(i < tableRst.Fields.Count, IIf((i = tableRst.Fields.Count - 1 And lastColSep.Length > 0), lastColSep, colSep), IIf((r = returnedRows - 1 And lastRowSep.Length > 0), lastRowSep, rowSep))
+                    theResult = theResult & IIf(InterleaveHeader And theField.Name <> "", theField.Name, String.Empty) & theField.Value & IIf(i < tableRst.Fields.Count, IIf((i = tableRst.Fields.Count - 1 And lastColSep.Length > 0), lastColSep, colSep), IIf((r = returnedRows - 1 And lastRowSep.Length > 0), lastRowSep, rowSep))
                 Next
                 theHostApp.StatusBar = "Displaying data for DBCell: " & callID & ", record " & r & "/" & returnedRows
                 tableRst.MoveNext()

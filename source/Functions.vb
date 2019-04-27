@@ -1,5 +1,6 @@
 Imports Microsoft.Office.Interop.Excel
 Imports ExcelDna.Integration
+Imports ProductionStackTrace
 
 ''' <summary>Contains the public callable DB functions and some helper functions</summary>
 Public Module Functions
@@ -59,7 +60,7 @@ DBDate_Error:
     Public Function DBString(<ExcelArgument(Description:="array of strings/wildcards or ranges containing strings/wildcards")> ParamArray StringPart() As Object) As String
         Dim myRange
         Dim myCell
-        Dim retval As String = vbNullString
+        Dim retval As String = String.Empty
 
         On Error GoTo DBString_Error
         For Each myRange In StringPart
@@ -100,7 +101,7 @@ DBString_Error:
     ''' <returns>concatenated String</returns>
     <ExcelFunction(Description:="concatenates values contained in thetarget together (using .value attribute for cells)")>
     Public Function concatCells(<ExcelArgument(AllowReference:=True, Description:="all cells/values which should be concatenated")> ParamArray thetarget As Object()) As String
-        concatCells = DoConcatCellsSep(False, vbNullString, False, thetarget)
+        concatCells = DoConcatCellsSep(False, String.Empty, False, thetarget)
     End Function
 
     ''' <summary>concatenates values contained in thetarget together (using .text for cells)</summary>
@@ -108,7 +109,7 @@ DBString_Error:
     ''' <returns>concatenated String</returns>
     <ExcelFunction(Description:="concatenates values contained in thetarget together (using .text for cells)")>
     Public Function concatCellsText(<ExcelArgument(AllowReference:=True, Description:="all cells/values which should be concatenated")> ParamArray thetarget As Object()) As String
-        concatCellsText = DoConcatCellsSep(True, vbNullString, False, thetarget)
+        concatCellsText = DoConcatCellsSep(True, String.Empty, False, thetarget)
     End Function
 
     ''' <summary>concatenates values contained in thetarget (using .value for cells) using a separator</summary>
@@ -145,7 +146,7 @@ DBString_Error:
     ''' <param name="separator">the separator-string that is filled between values</param>
     ''' <returns>concatenated String</returns>
     Private Function DoConcatCellsSep(asText As Boolean, separator As String, DBcompliant As Boolean, ParamArray concatParts As Object()) As String
-        Dim retval As String = vbNullString
+        Dim retval As String = String.Empty
         Dim myRef
         Dim myRange As Range
         Dim myCell As Range
@@ -199,18 +200,19 @@ DoConcatCellsSep_Error:
                                <ExcelArgument(Description:="Range with Object beneath to put the Query/ConnString into", AllowReference:=True)> targetRange As Object) As String
         Dim callID As String
         Dim setEnv As String
+        Dim caller As Range = ToRange(XlCall.Excel(XlCall.xlfCaller))
 
         On Error GoTo DBSetQuery_Error
-        setEnv = fetchSetting("ConfigName", vbNullString)
+        setEnv = fetchSetting("ConfigName", String.Empty)
         ' calcContainers are identified by wbname + Sheetname + function caller cell Address
         'If Not IsObject(theHostApp.caller) Then Exit Function
-        callID = "[" & theHostApp.caller.Parent.Parent.name & "]" & theHostApp.caller.Parent.name & "!" & theHostApp.caller.Address
-        If TypeName(ConnString) = "Error" Then ConnString = vbNullString
+        callID = "[" & caller.Parent.Parent.name & "]" & caller.Parent.name & "!" & caller.Address
+        If TypeName(ConnString) = "Error" Then ConnString = String.Empty
         If TypeName(ConnString) = "Range" Then ConnString = ConnString.Value
         ' in case of number as connection string, take the stored Connection string .. 1 usually prod, 2 .. usually test, 3.. development)
         If TypeName(ConnString) = "Integer" Or TypeName(ConnString) = "Long" Or TypeName(ConnString) = "Double" Or TypeName(ConnString) = "Short" Then
-            setEnv = fetchSetting("ConfigName" & ConnString, vbNullString)
-            ConnString = fetchSetting("ConstConnString" & ConnString, vbNullString)
+            setEnv = fetchSetting("ConfigName" & ConnString, String.Empty)
+            ConnString = fetchSetting("ConstConnString" & ConnString, String.Empty)
         End If
         ' check query, also converts query to string (if it is a range)
         DBSetQuery = checkParams(Query)
@@ -223,21 +225,18 @@ DoConcatCellsSep_Error:
         ' second call (we're being set to dirty in calc event handler)
         If existsCalcCont(callID) Then
             If allCalcContainers(callID).errOccured Then
-#If DEBUGME = 1 Then
-              LogToEventViewer "Env:" & setEnv & ", DBSetQuery returned Error, NOT removing container with callID = " & callID, LogInf, 0
-#End If
                 ' commented this to prevent endless loops !!
                 'allCalcContainers.Remove callID
                 ' special case for invocations from function wizard
             ElseIf Not allCalcContainers(callID).working Then
                 allCalcContainers.Remove(callID)
-                makeCalcMsgContainer(callID, CStr(Query), theHostApp.caller, Nothing, ToRange(targetRange), CStr(ConnString), Nothing, 0, False, False, False, False, 0, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, False)
+                makeCalcMsgContainer(callID, CStr(Query), caller, Nothing, ToRange(targetRange), CStr(ConnString), Nothing, 0, False, False, False, False, 0, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, False)
             End If
         Else
             ' reset status messages when starting new query...
-            If existsStatusCont(callID) Then allStatusContainers(callID).statusMsg = vbNullString
+            If existsStatusCont(callID) Then allStatusContainers(callID).statusMsg = String.Empty
             ' add transportation info for event proc
-            makeCalcMsgContainer(callID, CStr(Query), theHostApp.caller, Nothing, ToRange(targetRange), CStr(ConnString), Nothing, 0, False, False, False, False, 0, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, False)
+            makeCalcMsgContainer(callID, CStr(Query), caller, Nothing, ToRange(targetRange), CStr(ConnString), Nothing, 0, False, False, False, False, 0, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, False)
         End If
         If existsStatusCont(callID) Then
             DBSetQuery = "Env:" & setEnv & ", statusMsg: " & allStatusContainers(callID).statusMsg
@@ -280,82 +279,79 @@ DBSetQuery_Error:
                                 <ExcelArgument(Description:="should columns be autofitted ?")> Optional AutoFit As Boolean = False,
                                 <ExcelArgument(Description:="should 1st row formats be autofilled down?")> Optional autoformat As Boolean = False,
                                 <ExcelArgument(Description:="should row numbers be displayed in 1st column?")> Optional ShowRowNums As Boolean = False,
-                                <ExcelArgument(Description:="not yet implemented (for push updates from database=")> Optional subscribeTo As String = vbNullString) As String
+                                <ExcelArgument(Description:="not yet implemented (for push updates from database)")> Optional subscribeTo As String = "") As String
         Dim callID As String
         Dim setEnv As String
+        Dim caller As Range = ToRange(XlCall.Excel(XlCall.xlfCaller))
 
-        setEnv = fetchSetting("ConfigName", vbNullString)
-        If dontCalcWhileClearing Then
-            DBListFetch = "Env:" & setEnv & ", dontCalcWhileClearing = True !"
+1:      setEnv = fetchSetting("ConfigName", String.Empty)
+2:      If dontCalcWhileClearing Then
+3:          DBListFetch = "Env:" & setEnv & ", dontCalcWhileClearing = True !"
             Exit Function
         End If
-        If TypeName(targetRange) <> "ExcelReference" Then
-            DBListFetch = "Env:" & setEnv & ", Invalid targetRange or range name doesn't exist!"
+4:      If TypeName(targetRange) <> "ExcelReference" Then
+5:          DBListFetch = "Env:" & setEnv & ", Invalid targetRange or range name doesn't exist!"
             Exit Function
         End If
         On Error GoTo DBListFetch_Error
         ' calcContainers are identified by wbname + Sheetname + function caller cell Address
-        'If Not IsObject(theHostApp.caller) Then Exit Function
-        callID = "[" & theHostApp.caller.Parent.Parent.name & "]" & theHostApp.caller.Parent.name & "!" & theHostApp.caller.Address
-        If TypeName(ConnString) = "Error" Then ConnString = vbNullString
-        If TypeName(ConnString) = "Range" Then ConnString = ConnString.Value
+6:      callID = "[" & caller.Parent.Parent.name & "]" & caller.Parent.name & "!" & caller.Address
+7:      If TypeName(ConnString) = "Error" Then ConnString = String.Empty
+8:      If TypeName(ConnString) = "Range" Then ConnString = ConnString.Value
         ' in case of number as connection string, take the stored Connection string .. 1 usually prod, 2 .. usually test, 3.. development)
-        If TypeName(ConnString) = "Integer" Or TypeName(ConnString) = "Long" Or TypeName(ConnString) = "Double" Or TypeName(ConnString) = "Short" Then
-            setEnv = fetchSetting("ConfigName" & ConnString, vbNullString)
-            ConnString = fetchSetting("ConstConnString" & ConnString, vbNullString)
+9:      If TypeName(ConnString) = "Integer" Or TypeName(ConnString) = "Long" Or TypeName(ConnString) = "Double" Or TypeName(ConnString) = "Short" Then
+10:         setEnv = fetchSetting("ConfigName" & ConnString, String.Empty)
+11:         ConnString = fetchSetting("ConstConnString" & ConnString, String.Empty)
         End If
 
-        If TypeName(formulaRange) <> "ExcelEmpty" And TypeName(formulaRange) <> "ExcelReference" Then
-            DBListFetch = "Env:" & setEnv & ", Invalid FormulaRange or range name doesn't exist!"
+12:     If TypeName(formulaRange) <> "ExcelMissing" And TypeName(formulaRange) <> "ExcelReference" Then
+13:         DBListFetch = "Env:" & setEnv & ", Invalid FormulaRange or range name doesn't exist!"
             Exit Function
         End If
 
         ' get target range name ...
-        Dim functionArgs : functionArgs = functionSplit(theHostApp.caller.Formula, ",", """", "DBListFetch", "(", ")")
-        Dim targetRangeName As String : targetRangeName = functionArgs(2)
+14:     Dim functionArgs : functionArgs = functionSplit(caller.Formula, ",", """", "DBListFetch", "(", ")")
+15:     Dim targetRangeName As String : targetRangeName = functionArgs(2)
         ' check if fetched argument targetRangeName is really a name or just a plain range address
-        If Not existsNameInWb(targetRangeName, theHostApp.caller.Parent.Parent) And Not existsNameInSheet(targetRangeName, theHostApp.caller.Parent) Then targetRangeName = vbNullString
+16:     If Not existsNameInWb(targetRangeName, caller.Parent.Parent) And Not existsNameInSheet(targetRangeName, caller.Parent) Then targetRangeName = String.Empty
 
         ' get formula range name ...
         Dim formulaRangeName As String
-        If UBound(functionArgs) > 2 Then
-            formulaRangeName = functionArgs(3)
-            If Not existsNameInWb(formulaRangeName, theHostApp.caller.Parent.Parent) And Not existsNameInSheet(formulaRangeName, theHostApp.caller.Parent) Then formulaRangeName = vbNullString
+17:     If UBound(functionArgs) > 2 Then
+18:         formulaRangeName = functionArgs(3)
+19:         If Not existsNameInWb(formulaRangeName, caller.Parent.Parent) And Not existsNameInSheet(formulaRangeName, caller.Parent) Then formulaRangeName = String.Empty
         Else
-            formulaRangeName = vbNullString
+            formulaRangeName = String.Empty
         End If
 
         ' check query, also converts query to string (if it is a range)
-        DBListFetch = checkParams(Query)
+20:     DBListFetch = checkParams(Query)
         ' error message is returned from checkParams, if OK then returns nothing
-        If DBListFetch.Length > 0 Then
-            DBListFetch = "Env:" & setEnv & ", " & DBListFetch
+21:     If DBListFetch.Length > 0 Then
+22:         DBListFetch = "Env:" & setEnv & ", " & DBListFetch
             Exit Function
         End If
 
         ' second call (we're being set to dirty in calc event handler)
-        If existsCalcCont(callID) Then
-            If allCalcContainers(callID).errOccured Then
-#If DEBUGME = 1 Then
-              LogToEventViewer "Env:" & setEnv & ", DBListQuery returned Error, removing container with callID = " & callID, LogInf, 0
-#End If
+23:     If existsCalcCont(callID) Then
+24:         If allCalcContainers(callID).errOccured Then
                 ' commented this to prevent endless loops !!
                 'allCalcContainers.Remove callID
                 ' special case for invocations from function wizard
-            ElseIf Not allCalcContainers(callID).working Then
-                allCalcContainers.Remove(callID)
-                makeCalcMsgContainer(callID, CStr(Query), theHostApp.caller, Nothing, ToRange(targetRange), CStr(ConnString), ToRange(formulaRange), extendDataArea, HeaderInfo, AutoFit, autoformat, ShowRowNums, 0, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, targetRangeName, formulaRangeName, False)
+25:         ElseIf Not allCalcContainers(callID).working Then
+26:             allCalcContainers.Remove(callID)
+27:             makeCalcMsgContainer(callID, CStr(Query), caller, Nothing, ToRange(targetRange), CStr(ConnString), ToRange(formulaRange), extendDataArea, HeaderInfo, AutoFit, autoformat, ShowRowNums, 0, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, targetRangeName, formulaRangeName, False)
             End If
         Else
             ' reset status messages when starting new query...
-            If existsStatusCont(callID) Then allStatusContainers(callID).statusMsg = vbNullString
+28:         If existsStatusCont(callID) Then allStatusContainers(callID).statusMsg = String.Empty
             ' add transportation info for event proc
-            makeCalcMsgContainer(callID, CStr(Query), theHostApp.caller, Nothing, ToRange(targetRange), CStr(ConnString), ToRange(formulaRange), extendDataArea, HeaderInfo, AutoFit, autoformat, ShowRowNums, 0, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, targetRangeName, formulaRangeName, False)
+29:         makeCalcMsgContainer(callID, CStr(Query), caller, Nothing, ToRange(targetRange), CStr(ConnString), ToRange(formulaRange), extendDataArea, HeaderInfo, AutoFit, autoformat, ShowRowNums, 0, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, targetRangeName, formulaRangeName, False)
         End If
-        If existsStatusCont(callID) Then
-            DBListFetch = "Env:" & setEnv & ", " & allStatusContainers(callID).statusMsg
+30:     If existsStatusCont(callID) Then
+31:         DBListFetch = "Env:" & setEnv & ", " & allStatusContainers(callID).statusMsg
         Else
-            DBListFetch = "Env:" & setEnv & ", no recalculation done for unchanged query..."
+32:         DBListFetch = "Env:" & setEnv & ", no recalculation done for unchanged query..."
         End If
         theHostApp.EnableEvents = True
         Exit Function
@@ -363,7 +359,7 @@ DBSetQuery_Error:
 DBListFetch_Error:
         Dim ErrDesc As String = Err.Description
         LogToEventViewer("Error (" & ErrDesc & ") in Functions.DBListFetch, callID : " & callID & ", in " & Erl(), EventLogEntryType.Error)
-        DBListFetch = "Env:" & setEnv & ", Error (" & ErrDesc & ") in DBListFetch, callID : " & callID
+        DBListFetch = "Env:" & setEnv & ", Error (" & ErrDesc & ") in DBListFetch, callID : " & callID & ", in " & Erl()
         theHostApp.EnableEvents = True
     End Function
 
@@ -372,95 +368,74 @@ DBListFetch_Error:
     ''' <param name="ConnString">connection string defining DB, user, etc...</param>
     ''' <param name="targetArray">Range to put the data into</param>
     ''' <returns>Status Message, data values are returned outside of function cell (@see DBFuncEventHandler)</returns>
-    Public Function DBRowFetch(Query As Object, ConnString As Object, ParamArray targetArray() As Object) As String
+    <ExcelFunction(Description:="Fetches a row (single record) queried (defined in query) from DB (defined in ConnString) into targetArray")>
+    Public Function DBRowFetch(<ExcelArgument(Description:="query for getting data")> Query As Object,
+                               <ExcelArgument(Description:="connection string defining DB, user, etc...")> ConnString As Object,
+                               <ExcelArgument(Description:="Range to put the data into", AllowReference:=True)> ParamArray targetArray() As Object) As String
         Dim tempArray() As Range = Nothing ' final target array that is passed to makeCalcMsgContainer (after removing header flag)
         Dim callID As String
         Dim HeaderInfo As Boolean
         Dim subscribeTo As String
         Dim setEnv As String
+        Dim caller As Range = ToRange(XlCall.Excel(XlCall.xlfCaller))
 
         On Error GoTo DBRowFetch_Error
-        setEnv = fetchSetting("ConfigName", vbNullString)
+        setEnv = fetchSetting("ConfigName", String.Empty)
         ' calcContainers are identified by wbname + Sheetname + function caller cell Address
-        callID = "[" & theHostApp.caller.Parent.Parent.name & "]" & theHostApp.caller.Parent.name & "!" & theHostApp.caller.Address
+        callID = "[" & caller.Parent.Parent.name & "]" & caller.Parent.name & "!" & caller.Address
         DBRowFetch = checkParams(Query)
         If DBRowFetch.Length > 0 Then
             DBRowFetch = "Env:" & setEnv & ", " & DBRowFetch
             Exit Function
         End If
         ' add transportation info for event proc
-        If TypeName(ConnString) = "Error" Then ConnString = vbNullString
+        If TypeName(ConnString) = "Error" Then ConnString = String.Empty
         If TypeName(ConnString) = "Range" Then ConnString = ConnString.Value
         ' in case of number as connection string, take the stored Connection string .. 1 usually prod, 2 .. usually test, 3.. development)
         If TypeName(ConnString) = "Integer" Or TypeName(ConnString) = "Long" Or TypeName(ConnString) = "Double" Or TypeName(ConnString) = "Short" Then
-            setEnv = fetchSetting("ConfigName" & ConnString, vbNullString)
-            ConnString = fetchSetting("ConstConnString" & ConnString, vbNullString)
+            setEnv = fetchSetting("ConfigName" & ConnString, String.Empty)
+            ConnString = fetchSetting("ConstConnString" & ConnString, String.Empty)
         End If
 
         Dim i As Long
         If TypeName(targetArray(0)) = "Boolean" Then
             HeaderInfo = targetArray(0)
-            If TypeName(targetArray(1)) = "String" Then
-                subscribeTo = targetArray(1)
-                For i = 2 To UBound(targetArray)
-                    ReDim Preserve tempArray(i - 2)
-                    tempArray(i - 2) = targetArray(i)
-                Next
-            Else
-                For i = 1 To UBound(targetArray)
-                    ReDim Preserve tempArray(i - 1)
-                    tempArray(i - 1) = targetArray(i)
-                Next
-            End If
-        ElseIf TypeName(targetArray(0)) = "String" Then
-            subscribeTo = targetArray(0)
-            If TypeName(targetArray(1)) = "Boolean" Then
-                HeaderInfo = targetArray(1)
-                For i = 2 To UBound(targetArray)
-                    ReDim Preserve tempArray(i - 2)
-                    tempArray(i - 2) = targetArray(i)
-                Next
-            Else
-                For i = 1 To UBound(targetArray)
-                    ReDim Preserve tempArray(i - 1)
-                    tempArray(i - 1) = targetArray(i)
-                Next
-            End If
+            For i = 1 To UBound(targetArray)
+                ReDim Preserve tempArray(i - 1)
+                tempArray(i - 1) = ToRange(targetArray(i))
+            Next
         ElseIf TypeName(targetArray(0)) = "Error" Then
             DBRowFetch = "Env:" & setEnv & ", Error: First argument empty or error !"
             Exit Function
         Else
             For i = 0 To UBound(targetArray)
                 ReDim Preserve tempArray(i)
-                tempArray(i) = targetArray(i)
+                tempArray(i) = ToRange(targetArray(i))
             Next
         End If
         If existsCalcCont(callID) Then
             If allCalcContainers(callID).errOccured Then
-#If DEBUGME = 1 Then
-              LogToEventViewer "DBRowQuery returned Error, removing container with callID = " & callID, LogInf, 0
-#End If
                 ' commented this to prevent endless loops !!
                 'allCalcContainers.Remove callID
                 ' special case for intermediate invocation in function wizard
             ElseIf Not allCalcContainers(callID).working Then
                 allCalcContainers.Remove(callID)
-                makeCalcMsgContainer(callID, CStr(Query), theHostApp.caller, tempArray, Nothing, CStr(ConnString), Nothing, 0, HeaderInfo, False, False, False, 0, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, False)
+                makeCalcMsgContainer(callID, CStr(Query), caller, tempArray, Nothing, CStr(ConnString), Nothing, 0, HeaderInfo, False, False, False, 0, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, False)
             End If
         Else
             ' reset status messages when starting new query...
-            If existsStatusCont(callID) Then allStatusContainers(callID).statusMsg = vbNullString
+            If existsStatusCont(callID) Then allStatusContainers(callID).statusMsg = String.Empty
             ' add transportation info for event proc
-            makeCalcMsgContainer(callID, CStr(Query), theHostApp.caller, tempArray, Nothing, CStr(ConnString), Nothing, 0, HeaderInfo, False, False, False, 0, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, False)
+            makeCalcMsgContainer(callID, CStr(Query), caller, tempArray, Nothing, CStr(ConnString), Nothing, 0, HeaderInfo, False, False, False, 0, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, False)
         End If
         If existsStatusCont(callID) Then DBRowFetch = "Env:" & setEnv & ", " & allStatusContainers(callID).statusMsg
         theHostApp.EnableEvents = True
 
         Exit Function
 DBRowFetch_Error:
-        If VBDEBUG Then Debug.Print("Error (" & Err.Description & ") in DBRowFetch, callID : " & callID) : Stop : Resume
-        LogToEventViewer("Error (" & Err.Description & ") in DBRowFetch, callID : " & callID & ", in " & Erl(), EventLogEntryType.Error)
-        DBRowFetch = "Env:" & setEnv & ", Error (" & Err.Description & ") in Functions.DBRowFetch, callID : " & callID
+        Dim ErrDesc As String = Err.Description
+        LogToEventViewer("Error (" & ErrDesc & ") in DBRowFetch, callID : " & callID & ", in " & Erl(), EventLogEntryType.Error)
+        DBRowFetch = "Env:" & setEnv & ", Error (" & ErrDesc & ") in Functions.DBRowFetch, callID : " & callID
         theHostApp.EnableEvents = True
     End Function
 
@@ -483,14 +458,24 @@ DBRowFetch_Error:
     ''' value(M-1)1 (colSep) value(M-1)2 (colSep) value(M-1)3 (colSep)... (colSep/lastColSep) value(M-1)N (rowSep/lastRowSep)
     ''' valueM1 (colSep) valueM2 (colSep) valueM3 (colSep)... (colSep/lastColSep) valueMN
     '''</remarks>
-    Public Function DBCellFetch(Query As Object, Optional ConnString As Object = vbNullString, Optional HeaderInfo As Boolean = False, Optional colSep As String = ",", Optional rowSep As String = vbLf, Optional lastColSep As String = vbNullString, Optional lastRowSep As String = vbNullString, Optional InterleaveHeader As Boolean = False, Optional subscribeTo As String = vbNullString) As String
+    <ExcelFunction(Description:="Fetches results of a query (defined in query) from DB (optionally defined in ConnString) into current cell. Columns are separated by colSeparator, rows by rowSeparator")>
+    Public Function DBCellFetch(<ExcelArgument(Description:="query for getting data")> Query As Object,
+                                <ExcelArgument(Description:="connection string defining DB, user, etc...")> Optional ConnString As Object = "",
+                                <ExcelArgument(Description:="additionally fill headings of query")> Optional HeaderInfo As Boolean = False,
+                                <ExcelArgument(Description:="usual column separator")> Optional colSep As String = ",",
+                                <ExcelArgument(Description:="usual row separator")> Optional rowSep As String = vbLf,
+                                <ExcelArgument(Description:="if given, last column is separated from others with that one")> Optional lastColSep As String = "",
+                                <ExcelArgument(Description:="if given, last row is separated from others with that one")> Optional lastRowSep As String = "",
+                                <ExcelArgument(Description:="if true, interleave field names (headers) with values, like field1val1|field2val2..")> Optional InterleaveHeader As Boolean = False,
+                                <ExcelArgument(Description:="not yet implemented (for push updates from database)")> Optional subscribeTo As String = "") As String
         Dim callID As String
         Dim setEnv As String
+        Dim caller As Range = ToRange(XlCall.Excel(XlCall.xlfCaller))
 
         On Error GoTo DBCellFetch_Error
-        setEnv = fetchSetting("ConfigName", vbNullString)
+        setEnv = fetchSetting("ConfigName", String.Empty)
         ' calcContainers are identified by wbname + Sheetname + function caller cell Address
-        callID = "[" & theHostApp.caller.Parent.Parent.name & "]" & theHostApp.caller.Parent.name & "!" & theHostApp.caller.Address
+        callID = "[" & caller.Parent.Parent.name & "]" & caller.Parent.name & "!" & caller.Address
         ' check for errors in query parameter and convert query to string
         DBCellFetch = checkParams(Query)
         If DBCellFetch.Length > 0 Then
@@ -498,32 +483,32 @@ DBRowFetch_Error:
             Exit Function
         End If
         ' add transportation info for event proc
-        If TypeName(ConnString) = "Error" Then ConnString = vbNullString
+        If TypeName(ConnString) = "Error" Then ConnString = String.Empty
         If TypeName(ConnString) = "Range" Then ConnString = ConnString.Value
         ' in case of number as connection string, take the stored Connection string .. 1 usually prod, 2 .. usually test, 3.. development)
         If TypeName(ConnString) = "Integer" Or TypeName(ConnString) = "Long" Or TypeName(ConnString) = "Double" Or TypeName(ConnString) = "Short" Then
-            setEnv = fetchSetting("ConfigName" & ConnString, vbNullString)
-            ConnString = fetchSetting("ConstConnString" & ConnString, vbNullString)
+            setEnv = fetchSetting("ConfigName" & ConnString, String.Empty)
+            ConnString = fetchSetting("ConstConnString" & ConnString, String.Empty)
         End If
         If existsCalcCont(callID) Then
             If Not allCalcContainers(callID).working Then
                 allCalcContainers.Remove(callID)
-                makeCalcMsgContainer(callID, CStr(Query), theHostApp.caller, Nothing, Nothing, CStr(ConnString), Nothing, 0, HeaderInfo, False, False, False, 0, vbNullString, vbNullString, vbNullString, colSep, rowSep, lastColSep, lastRowSep, vbNullString, vbNullString, InterleaveHeader)
+                makeCalcMsgContainer(callID, CStr(Query), caller, Nothing, Nothing, CStr(ConnString), Nothing, 0, HeaderInfo, False, False, False, 0, String.Empty, String.Empty, String.Empty, colSep, rowSep, lastColSep, lastRowSep, String.Empty, String.Empty, InterleaveHeader)
             End If
         Else
             ' reset status messages when starting new query...
-            If existsStatusCont(callID) Then allStatusContainers(callID).statusMsg = vbNullString
+            If existsStatusCont(callID) Then allStatusContainers(callID).statusMsg = String.Empty
             ' add transportation info for event proc
-            makeCalcMsgContainer(callID, CStr(Query), theHostApp.caller, Nothing, Nothing, CStr(ConnString), Nothing, 0, HeaderInfo, False, False, False, 0, vbNullString, vbNullString, vbNullString, colSep, rowSep, lastColSep, lastRowSep, vbNullString, vbNullString, InterleaveHeader)
+            makeCalcMsgContainer(callID, CStr(Query), caller, Nothing, Nothing, CStr(ConnString), Nothing, 0, HeaderInfo, False, False, False, 0, String.Empty, String.Empty, String.Empty, colSep, rowSep, lastColSep, lastRowSep, String.Empty, String.Empty, InterleaveHeader)
         End If
         If existsStatusCont(callID) Then DBCellFetch = "Env:" & setEnv & ", " & allStatusContainers(callID).statusMsg
         theHostApp.EnableEvents = True
         Exit Function
 
 DBCellFetch_Error:
-        If VBDEBUG Then Debug.Print("Error (" & Err.Description & ") in DBCellFetch") : Stop : Resume
-        LogToEventViewer("Error (" & Err.Description & ") in Functions.DBCellFetch, in " & Erl(), EventLogEntryType.Error)
-        DBCellFetch = "Env:" & setEnv & ", Error (" & Err.Description & ") in DBCellFetch"
+        Dim ErrDesc As String = Err.Description
+        LogToEventViewer("Error (" & ErrDesc & ") in Functions.DBCellFetch, in " & Erl(), EventLogEntryType.Error)
+        DBCellFetch = "Env:" & setEnv & ", Error (" & ErrDesc & ") in DBCellFetch"
         theHostApp.EnableEvents = True
     End Function
 
@@ -538,20 +523,21 @@ DBCellFetch_Error:
     ''' <param name="controlLocation"></param>
     ''' <param name="subscribeTo">Range (String), where control/header should be placed (default = function address)</param>
     ''' <returns>Status Message</returns>
-    Public Function DBMakeControl(Query As Object, ConnString As Object, Optional controlType As Integer = 0, Optional HeaderInfo As Boolean = False, Optional autoArrange As Boolean = False, Optional ControlName As String = vbNullString, Optional dataTargetRange As String = vbNullString, Optional controlLocation As String = vbNullString, Optional subscribeTo As String = vbNullString) As String
+    Public Function DBMakeControl(Query As Object, ConnString As Object, Optional controlType As Integer = 0, Optional HeaderInfo As Boolean = False, Optional autoArrange As Boolean = False, Optional ControlName As String = "", Optional dataTargetRange As String = "", Optional controlLocation As String = "", Optional subscribeTo As String = "") As String
         Dim callID As String
         Dim setEnv As String
+        Dim caller As Range = ToRange(XlCall.Excel(XlCall.xlfCaller))
 
         On Error GoTo DBMakeControl_Error
-        setEnv = fetchSetting("ConfigName", vbNullString)
+        setEnv = fetchSetting("ConfigName", String.Empty)
         ' calcContainers are identified by wbname + Sheetname + function caller cell Address
-        callID = "[" & theHostApp.caller.Parent.Parent.name & "]" & theHostApp.caller.Parent.name & "!" & theHostApp.caller.Address
-        If TypeName(ConnString) = "Error" Then ConnString = vbNullString
+        callID = "[" & caller.Parent.Parent.name & "]" & caller.Parent.name & "!" & caller.Address
+        If TypeName(ConnString) = "Error" Then ConnString = String.Empty
         If TypeName(ConnString) = "Range" Then ConnString = ConnString.Value
         ' in case of number as connection string, take the stored Connection string .. 1 usually prod, 2 .. usually test, 3.. development)
         If TypeName(ConnString) = "Integer" Or TypeName(ConnString) = "Long" Or TypeName(ConnString) = "Double" Or TypeName(ConnString) = "Short" Then
-            setEnv = fetchSetting("ConfigName" & ConnString, vbNullString)
-            ConnString = fetchSetting("ConstConnString" & ConnString, vbNullString)
+            setEnv = fetchSetting("ConfigName" & ConnString, String.Empty)
+            ConnString = fetchSetting("ConstConnString" & ConnString, String.Empty)
         End If
 
         DBMakeControl = checkParams(Query)
@@ -561,36 +547,33 @@ DBCellFetch_Error:
         End If
         If existsCalcCont(callID) Then
             If allCalcContainers(callID).errOccured Then
-#If DEBUGME = 1 Then
-              LogToEventViewer "DBControlQuery returned Error, removing container with callID = " & callID, LogInf, 0
-#End If
                 ' commented this to prevent endless loops !!
                 'allCalcContainers.Remove callID
                 ' special case for intermediate invocation in function wizard
             ElseIf Not allCalcContainers(callID).working Then
                 allCalcContainers.Remove(callID)
-                makeCalcMsgContainer(callID, CStr(Query), theHostApp.caller, Nothing, Nothing, CStr(ConnString), Nothing, 0, HeaderInfo, autoArrange, False, False, controlType, dataTargetRange, controlLocation, ControlName, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, False)
+                makeCalcMsgContainer(callID, CStr(Query), caller, Nothing, Nothing, CStr(ConnString), Nothing, 0, HeaderInfo, autoArrange, False, False, controlType, dataTargetRange, controlLocation, ControlName, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, False)
             End If
         Else
             ' reset status messages when starting new query...
-            If existsStatusCont(callID) Then allStatusContainers(callID).statusMsg = vbNullString
+            If existsStatusCont(callID) Then allStatusContainers(callID).statusMsg = String.Empty
             ' add transportation info for event proc
-            makeCalcMsgContainer(callID, CStr(Query), theHostApp.caller, Nothing, Nothing, CStr(ConnString), Nothing, 0, HeaderInfo, autoArrange, False, False, controlType, dataTargetRange, controlLocation, ControlName, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, vbNullString, False)
+            makeCalcMsgContainer(callID, CStr(Query), caller, Nothing, Nothing, CStr(ConnString), Nothing, 0, HeaderInfo, autoArrange, False, False, controlType, dataTargetRange, controlLocation, ControlName, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, False)
         End If
         If existsStatusCont(callID) Then DBMakeControl = "Env:" & setEnv & ", " & allStatusContainers(callID).statusMsg
         theHostApp.EnableEvents = True
         Exit Function
 
 DBMakeControl_Error:
-        If VBDEBUG Then Debug.Print("Error (" & Err.Description & ") in DBMakeControl, callID : " & callID) : Stop : Resume
-        LogToEventViewer("Error (" & Err.Description & ") in Functions.DBMakeControl, callID : " & callID & ", in " & Erl(), EventLogEntryType.Error)
-        DBMakeControl = "Env:" & setEnv & ", Error (" & Err.Description & ") in DBMakeControl, callID : " & callID
+        Dim ErrDesc As String = Err.Description
+        LogToEventViewer("Error (" & ErrDesc & ") in Functions.DBMakeControl, callID : " & callID & ", in " & Erl(), EventLogEntryType.Error)
+        DBMakeControl = "Env:" & setEnv & ", Error (" & ErrDesc & ") in DBMakeControl, callID : " & callID
         theHostApp.EnableEvents = True
     End Function
 
     Public Function DBAddinEnvironment() As String
         theHostApp.Volatile
-        DBAddinEnvironment = fetchSetting("ConfigName", vbNullString)
+        DBAddinEnvironment = fetchSetting("ConfigName", String.Empty)
         If theHostApp.Calculation = XlCalculation.xlCalculationManual Then DBAddinEnvironment = "calc Mode is manual, please press F9 to get current DBAddin environment !"
     End Function
 
@@ -600,7 +583,7 @@ DBMakeControl_Error:
 
         theHostApp.Volatile
         On Error Resume Next
-        theConnString = fetchSetting("ConstConnString", vbNullString)
+        theConnString = fetchSetting("ConstConnString", String.Empty)
         keywordstart = InStr(1, theConnString, "Server=") + Len("Server=")
         DBAddinServerSetting = Mid$(theConnString, keywordstart, InStr(keywordstart, theConnString, ";") - keywordstart)
         If theHostApp.Calculation = XlCalculation.xlCalculationManual Then DBAddinServerSetting = "calc Mode is manual, please press F9 to get current DBAddin server setting !"
@@ -611,9 +594,9 @@ DBMakeControl_Error:
     ''' <param name="Query"></param>
     ''' <returns>Error String (empty if OK)</returns>
     Private Function checkParams(ByRef Query As Object) As String
-        Dim errval As String, AddInfo As String = vbNullString
+        Dim errval As String, AddInfo As String = String.Empty
 
-        checkParams = vbNullString
+        checkParams = String.Empty
         If theHostApp.Calculation = XlCalculation.xlCalculationManual Then
             checkParams = "calc Mode is manual, please press F9 to trigger data fetching !"
         Else
@@ -711,9 +694,6 @@ DBMakeControl_Error:
         myCalcCont.working = False
         'add to global collection of all calc containers
         allCalcContainers.Add(myCalcCont, callID)
-#If DEBUGME = 1 Then
-      LogToEventViewer "Leaving makeCalcMsgContainer, caller: " & callID, LogInf, 0
-#End If
 
         Exit Sub
 makeCalcMsgContainer_Error:
@@ -772,8 +752,9 @@ err1:
     ''' <summary>converts ExcelDna (C API) reference to excel (COM Based) Range</summary>
     ''' <param name="reference">reference to be converted</param>
     ''' <returns>range for passed reference</returns>
-    Private Function ToRange(reference As ExcelReference) As Range
-        If reference Is Nothing Then Return Nothing
+    Private Function ToRange(reference As Object) As Range
+        If TypeName(reference) <> "ExcelReference" Then Return Nothing
+        ' always get the xlApp directly from ExcleDna here, other instances crash excel...
         Dim xlApp As Application = ExcelDnaUtil.Application
         Dim item As String = XlCall.Excel(XlCall.xlSheetNm, reference)
         Dim index As Integer = item.LastIndexOf("]")

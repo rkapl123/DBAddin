@@ -35,13 +35,13 @@ Public Module Globals
 
     ''' <summary>initializes global configuration variables from registry</summary>
     Public Sub initSettings()
-        ConstConnString = fetchSetting("ConstConnString", vbNullString)
+        ConstConnString = fetchSetting("ConstConnString", String.Empty)
         DBidentifierCCS = fetchSetting("DBidentifierCCS", "Database=")
         DBidentifierODBC = fetchSetting("DBidentifierODBC", "Database=")
         CnnTimeout = CInt(fetchSetting("CnnTimeout", "15"))
         CmdTimeout = CInt(fetchSetting("CmdTimeout", "60"))
-        ConfigStoreFolder = fetchSetting("ConfigStoreFolder", vbNullString)
-        specialConfigStoreFolders = Split(fetchSetting("specialConfigStoreFolders", vbNullString), ":")
+        ConfigStoreFolder = fetchSetting("ConfigStoreFolder", String.Empty)
+        specialConfigStoreFolders = Split(fetchSetting("specialConfigStoreFolders", String.Empty), ":")
         sortConfigStoreFolders = fetchSetting("sortConfigStoreFolders", True)
         DefaultDBDateFormatting = CInt(fetchSetting("DefaultDBDateFormatting", "0"))
     End Sub
@@ -102,9 +102,7 @@ Public Module Globals
         If DEBUGME Then LogToEventViewer(LogMessage, EventLogEntryType.Information)
     End Sub
 
-    ''' <summary>
-    ''' 
-    ''' </summary>
+    ''' <summary>avoid entering dblistfetch function during clearing of listfetch areas (before saving)</summary>
     Public dontCalcWhileClearing As Boolean
 
     ' general Global objects/variables
@@ -116,7 +114,7 @@ Public Module Globals
     Public Interrupted As Boolean
     ''' <summary>if we're running in the IDE, show errmsgs in immediate window and stop:resume on uncaught errors..</summary>
     Public VBDEBUG As Boolean
-    ''' <summary>the environment (for Mapper special cases "Test", "Development" or vbNullString (prod))</summary>
+    ''' <summary>the environment (for Mapper special cases "Test", "Development" or String.Empty (prod))</summary>
     Public env As String
     ''' <summary>reference object for the Addins ribbon</summary>
     Public theRibbon As ExcelDna.Integration.CustomUI.IRibbonUI
@@ -180,7 +178,7 @@ Public Module Globals
     Public allStatusContainers As Collection
 End Module
 
-''' <summary>Events from Excel (Workbook_Save ...)</summary>
+''' <summary>Connection class handling basic Events from Excel (Open, Close)</summary>
 Public Class AddInEvents
     Implements IExcelAddIn
 
@@ -188,6 +186,7 @@ Public Class AddInEvents
 
     ''' <summary>connect to Excel when opening Addin</summary>
     Public Sub AutoOpen() Implements IExcelAddIn.AutoOpen
+        ' necessary for ExplicitRegistration of param arrays (https://groups.google.com/forum/#!topic/exceldna/kf76nqAqDUo)
         ExcelRegistration.GetExcelFunctions().ProcessParamsRegistrations().RegisterFunctions()
 
         theHostApp = ExcelDnaUtil.Application
@@ -217,22 +216,11 @@ Public Class AddInEvents
     End Sub
 
     Private Sub Workbook_Open(Wb As Workbook) Handles Application.WorkbookOpen
-        ' is being treated in Workbook_Activate...
+        ' ribbon invalidation is being treated in WorkbookActivate...
     End Sub
 
     Private Sub Workbook_Activate(Wb As Workbook) Handles Application.WorkbookActivate
         Globals.theRibbon.Invalidate()
-    End Sub
-
-End Class
-
-''' <summary>Events from Ribbon</summary>
-<ComVisible(True)>
-Public Class MyRibbon
-    Inherits ExcelRibbon
-
-    Public Sub ribbonLoaded(myribbon As ExcelDna.Integration.CustomUI.IRibbonUI)
-        Globals.theRibbon = myribbon
     End Sub
 
 End Class
