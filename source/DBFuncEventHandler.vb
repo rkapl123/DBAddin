@@ -1505,19 +1505,18 @@ err_1:
     ''' <param name="theName"></param>
     ''' <returns>the removed names as a string list</returns>
     Private Function removeRangeName(Target As Range, theName As String) As String()
-        Dim storedNames() As String
+        Dim storedNames() As String = {}
         Dim i As Long
         Dim nextName As String
 
         i = 0
-        ReDim Preserve storedNames(i)
         On Error Resume Next
         nextName = Target.Name.name
         Do
-            i = i + 1
             If Err.Number = 0 And nextName <> theName Then
                 ReDim Preserve storedNames(i)
                 storedNames(i) = nextName
+                i = i + 1
             End If
             Target.Name.Delete
             nextName = Target.Name.name
@@ -1533,7 +1532,7 @@ err_1:
         Dim theName
         If UBound(storedNames) > 0 Then
             For Each theName In storedNames
-                If theName.ToString.Length > 0 Then Target.Name = theName
+                If theName.Length > 0 Then Target.Name = theName
             Next
         End If
     End Sub

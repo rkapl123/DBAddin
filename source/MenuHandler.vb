@@ -13,8 +13,8 @@ Public Class MenuHandler
 
     Private specialConfigFoldersTempColl As Collection
 
-    Public Sub ribbonLoaded(myribbon As ExcelDna.Integration.CustomUI.IRibbonUI)
-        Globals.theRibbon = myribbon
+    Public Sub ribbonLoaded(theRibbon As ExcelDna.Integration.CustomUI.IRibbonUI)
+        Globals.theRibbon = theRibbon
     End Sub
 
     '  context menu "refresh data" was clicked, do a refresh of db functions (shortcut CTRL-e)
@@ -108,7 +108,6 @@ Public Class MenuHandler
         End If
 
         Exit Sub
-
 err1:
         LogToEventViewer("Error (" & Err.Description & ") in MenuHandler.refreshData in " & Erl(), EventLogEntryType.Error)
     End Sub

@@ -616,9 +616,9 @@ DBMakeControl_Error:
                 ' if query is range then get the query string out of it..
                 Query = concatCellsSep(vbLf, Query)
                 If TypeName(Query) <> "String" Then checkParams = "query parameter invalid (not a string) !"
-                If Query.ToString.Length = 0 Then checkParams = "empty query provided !"
+                If Query.ToString().Length = 0 Then checkParams = "empty query provided !"
             ElseIf TypeName(Query) = "String" Then
-                If Query.ToString.Length = 0 Then checkParams = "empty query provided !"
+                If Query.ToString().Length = 0 Then checkParams = "empty query provided !"
             Else
                 checkParams = "query parameter invalid (not a range and not a string) !"
             End If

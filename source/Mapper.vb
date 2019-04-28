@@ -128,7 +128,7 @@ Public Class Mapper
                     rst.AddNew()
 
                     For i = 0 To UBound(primKeys)
-                        rst.Fields(primKeys(i)).Value = IIf(DataRange.Cells(rowNum, i + 1).ToString.Length = 0, vbNull, DataRange.Cells(rowNum, i + 1).Value)
+                        rst.Fields(primKeys(i)).Value = IIf(DataRange.Cells(rowNum, i + 1).ToString().Length = 0, vbNull, DataRange.Cells(rowNum, i + 1).Value)
                     Next
                 Else
                     DataRange.Parent.Activate
@@ -146,7 +146,7 @@ Public Class Mapper
                 Dim fieldname As String
                 fieldname = DataRange.Cells(headerRow, colNum).Value
                 On Error Resume Next
-                rst.Fields(fieldname).Value = IIf(DataRange.Cells(rowNum, colNum).ToString.Length = 0, vbNull, DataRange.Cells(rowNum, colNum).Value)
+                rst.Fields(fieldname).Value = IIf(DataRange.Cells(rowNum, colNum).ToString().Length = 0, vbNull, DataRange.Cells(rowNum, colNum).Value)
 
                 If Err.Number <> 0 Then
                     DataRange.Parent.Activate
@@ -172,7 +172,7 @@ nextColumn:
             rst.Close()
 nextRow:
             On Error Resume Next
-            finishLoop = IIf(DataRange.Cells(rowNum + 1, 1).ToString.Length = 0, True, False)
+            finishLoop = IIf(DataRange.Cells(rowNum + 1, 1).ToString().Length = 0, True, False)
 
             If Err.Number <> 0 Then
                 LogError("Error in primary column: Cells(" & rowNum + 1 & ",1)" & Err.Description)
