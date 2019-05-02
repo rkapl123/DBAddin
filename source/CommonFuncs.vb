@@ -342,7 +342,7 @@ err1:
 
 done:
         If needRecalc And (theHostApp.Calculation <> XlCalculation.xlCalculationManual Or ignoreCalcMode) Then
-            LogToEventViewer("refreshDBFunctions: theHostApp.CalculateFull called" & Wb.Path & "\" & Wb.Name, EventLogEntryType.Error)
+            LogToEventViewer("refreshDBFunctions: theHostApp.CalculateFull called" & Wb.Path & "\" & Wb.Name, EventLogEntryType.Information)
             theHostApp.CalculateFull
         End If
         Exit Sub

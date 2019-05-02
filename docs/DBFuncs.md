@@ -1,19 +1,15 @@
 ## DB Functions
 
-There are five ways to query data with DBAddin:
+There are three ways to query data with DBAddin:
 
 1.  A (fast) list-oriented way using `DBListFetch`.  
     Here the values are entered into a rectangular list starting from the TargetRange cell (similar to MS-Query, actually the `QueryTables` Object is used to fill the data into the Worksheet).
 2.  A record-oriented way using `DBRowFetch`  
     Here the values are entered into several ranges given in the Parameter list `TargetArray`. Each of these ranges is filled in order of appearance with the results of the query.
-3.  A "sentence" oriented way using `DBCellFetch`  
-    Here the returned values are concatenated into one "sentence" by using specific column separators and row separators. Additionally "final" column separators and row separators can be defined to present data in a natural sentence way (e.g.: 10, 20, 30 and 25\. Here ", " is the column separator and " and " is the last row separator in a single column query.)
-4.  Loading data into userforms (Listbox and Dropdown) using `DBMakeControl`  
-    This is required for selecting values from a database. Max. 10 columns (incl. the invisible key column) can be defined in the associated query.
-5.  Setting the Query of a ListObject (new since Excel 2007) or a PivotTable to a defined query using `DBSetQuery`  
+3.  Setting the Query of a ListObject (new since Excel 2007) or a PivotTable to a defined query using `DBSetQuery`  
     This requires an existing object (e.g. a DataList created from a DB query/connection or a pivot table) and sets the target's queryobject to the desired one.
 
-Four of those user-defined functions (`DBListFetch`, `DBRowFetch`, `DBSetQuery` and `DBMakeControl`) insert the queried data outside their calling cell context, which means that the target ranges can be put anywhere in the workbook (even outside of the workbook).
+All these functions insert the queried data outside their calling cell context, which means that the target ranges can be put anywhere in the workbook (even outside of the workbook).
 
 Additionally, some helper functions are available:
 
@@ -111,56 +107,6 @@ For example:
 would fill the same data as above (including a header), however column-wise. Typically this first range is used as a header range in conjunction with the headerInfo parameter.  
 
 Beware that filling of data is much slower than with DBlistFetch, so use DBRowFetch only with smaller data-sets.  
-
-#### DBCellFetch
-
-<pre lang="vb.net">DBCellFetch (Query, ConnectionString (optional),   
- headerInfo(optional), colSep(optional), rowSep(optional), lastColSep(optional), lastRowSep(optional))</pre>
-
-For the query and the connection string the same applies as mentioned for "DBListFetch".  
-headerInfo specifies if additionally the headings of query should be filled (default = none). colSep is the usual column separator (default: ","); rowSep is the usual row separator (default CR); lastColSep (if given) specifies how the last column is differently separated from others; and finally lastRowSep how the last row is differently separated from others. lastColSep and lastRowSep are replaced by colSep and rowSep resp. if not given.  
-
-Following Example should clarify everything (carriage returns are here just for clarity of display, actually this is rowSep, resp. lastRowSep):  
-
-<pre lang="vb.net">header1 (colSep) header2 (colSep) header3 (colSep)... (colSep/lastColSep) headerN (rowSep)  
-value11 (colSep) value12 (colSep) value13 (colSep)... (colSep/lastColSep) value1N (rowSep)  
-...  
-v(M-1)1 (colSep) v(M-1)2 (colSep) v(M-1)3 ........ (colSep/lastColSep) v(M-1)N (rowSep/lastRowSep)  
-valueM1 (colSep) valueM2 (colSep) valueM3 (colSep)... (colSep/lastColSep) valueMN</pre>
-
-#### DBMakeControl
-
-<pre lang="vb.net">DBMakeControl (Query, ConnectionString(optional),   
- controlType(optional), headerInfo(optional), autoArrange(optional),  
- controlName(optional), dataTargetRange(optional), controlLocation(optional))</pre>
-
-DBMakeControl creates DB bound Listboxes and Comboboxes (aka. Dropdowns). This is specified in the parameter controlType (0(default) is the Listbox and 1 the Combobox).
-
-headerInfo (default = True) additionally creates a gray textbox above the Listbox/Combobox with header information. Removing headers is only possible by setting headerInfo to False, if they are simply deleted they will be recreated as long as headerInfo is True.
-
-autoArrange (default = False) resizes the field widths and total width automatically each time a recalc is done (This requires the use of a special font and font size, so setting autoArrange to True will override most of your customizations of the control).
-
-Setting the controlName enables you to give a special Name (which has to be unique in the workbook however) during creation of the control. This is useful, if you further want to use the control in VBA (event) procedures. This is only regarded when creating the control with the first call of the function, any subsequent changes will not yield anything. If you want to "rename" an existing control, just delete the existing control (incl. the header), the next function call will create a control having the given controlName.
-
-For DB bound controls the dataTargetRange corresponds to the `LinkedCell` of the control, here the selection value of the control is placed. The dataTargetRange must be given as a String literal, as using a range would lead to a direct circular dependency (indirect circular dependencies are allowed, there are some quirks with Listboxes however - see Known Issues). The dataTargetRange can also specify a different sheet using "<Tablename>!<CellAddress>".
-
-controlLocation finally specifies similar to above the placement of the control. This also has to be a String literal, additionally it has to be the same sheet as dataTargetRange (requirement of MS forms).
-
-Following is an example of a dropdown and a listbox created with following functions respectively:  
-
-<pre lang="vb.net">Listbox:  
-=DBMakeControl("SELECT pub_id, pub_name, city, state, country FROM publishers";  
-	activeConnString;;TRUE;TRUE)  
-
-Combobox:  
-=DBMakeControl("SELECT emp_id, fname, minit, lname, job_id,  
-	convert(varchar(10),job_lvl) job_lvl, pub_id, hire_date FROM  
-	employee";activeConnString;1;TRUE)  
-</pre>
-
-![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/DBAddin-Dateien/clip_image004.jpg)  
-
-The DB bound control retain the selection during a refresh (e.g. saving/reopening the workbook).  
 
 #### DBSetQuery
 

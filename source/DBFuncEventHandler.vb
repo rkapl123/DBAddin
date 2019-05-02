@@ -237,10 +237,6 @@ App_WorkbookBeforeSave_Err:
                                     DBListQuery(calcCont, statusCont)
                                 ElseIf InStr(1, UCase$(callerText), "DBROWFETCH(") > 0 Then
                                     DBRowQuery(calcCont, statusCont)
-                                ElseIf InStr(1, UCase$(callerText), "DBMAKECONTROL(") > 0 Then
-                                    DBControlQuery(calcCont, statusCont)
-                                ElseIf InStr(1, UCase$(callerText), "DBCELLFETCH(") > 0 Then
-                                    DBCellQuery(calcCont, statusCont)
                                 ElseIf InStr(1, UCase$(callerText), "DBSETQUERY(") > 0 Then
                                     DBSetQueryParams(calcCont, statusCont)
                                 End If
@@ -261,18 +257,6 @@ App_WorkbookBeforeSave_Err:
                                 origWS.Select()
                                 origWS = Nothing
                                 theHostApp.ScreenUpdating = True
-                            End If
-
-                            ' for non-parameter changing functions (DBMAKECONTROL and DBCELLFETCH) need to trigger recalc of cell containing DBListFetch to return statusCont.statusMsg to calling excel function
-                            If Not (InStr(1, UCase$(callerText), "DBSETQUERY(") > 0 Or InStr(1, UCase$(callerText), "DBLISTFETCH(") > 0 Or InStr(1, UCase$(callerText), "DBROWFETCH(") > 0) Or Err.Number <> 0 Then
-
-                                ' avoid the dirty method bug !
-                                If allCalcContainers(callID).callsheet Is theHostApp.ActiveSheet Then
-                                    allCalcContainers(callID).callsheet.Range(allCalcContainers(callID).caller.Address).Dirty
-                                Else
-                                    allCalcContainers(callID).callsheet.Range(allCalcContainers(callID).caller.Address).Formula = CStr(allCalcContainers(callID).callsheet.Range(allCalcContainers(callID).caller.Address).Formula)
-                                End If
-                                Err.Clear()
                             End If
                             theHostApp.Calculation = xlcalcmode
 
@@ -320,9 +304,6 @@ nextCalcCont:
         If theHostApp.Calculation <> XlCalculation.xlCalculationManual Then Exit Sub
 
         callID = calcCont.callID
-#If DEBUGME = 1 Then
-     LogToEventViewer "Entering DBSetQueryParams, caller: " & callID, LogInf, 0
-#End If
         targetSH = calcCont.targetRange.Parent
         targetWB = calcCont.targetRange.Parent.Parent
         TargetCell = calcCont.targetRange
@@ -366,7 +347,6 @@ nextCalcCont:
 
 DBSetQueryParams_Error:
         errMsg = Err.Description & " in query: " & Query
-        'If VBDEBUG Then Debug.Print "DBSetQueryParams Error: " & Erl & errMsg & ", caller: " & callID: Stop: Resume
         LogToEventViewer("DBFuncEventHandler.DBSetQueryParams Error: " & errMsg & ", caller: " & callID, EventLogEntryType.Error)
 
         statusCont.statusMsg = errMsg
@@ -374,416 +354,6 @@ DBSetQueryParams_Error:
         ' calc container is then removed in calling function
         allCalcContainers(callID).errOccured = True
         allCalcContainers(callID).callsheet.Range(allCalcContainers(callID).caller.Address).Dirty
-    End Sub
-
-    ''' <summary>create and initialize DB control (listbox or combobox) defined in DBMakeControl function</summary>
-    ''' <param name="calcCont"><see cref="ContainerCalcMsgs"/></param>
-    ''' <param name="statusCont"><see cref="ContainerStatusMsgs"/></param>
-    Public Sub DBControlQuery(calcCont As ContainerCalcMsgs, statusCont As ContainerStatusMsgs)
-        Dim tableRst As ADODB.Recordset
-        Dim theForm As Object, theHeadForm As Object
-        Dim theTargetCell As Range, dataTargetRange As Range
-        Dim curWs As Worksheet
-        Dim formTargetSheet As Worksheet
-        Dim callID As String, Query As String, errMsg As String, ControlName As String
-        Dim controlType As Integer
-        Dim headingsPresent As Boolean, autoArrange As Boolean
-        Dim retrievedRows As Long
-        Dim formerValue
-
-        theHostApp.Calculation = XlCalculation.xlCalculationManual
-        ' this works around the data validation input bug
-        ' when selecting a value from a list of validated field, excel won't react to
-        ' Application.Calculation changes, so just leave here...
-        If theHostApp.Calculation <> XlCalculation.xlCalculationManual Then Exit Sub
-
-        curWs = theHostApp.ActiveSheet
-        callID = calcCont.callID
-        Query = calcCont.Query
-        controlType = calcCont.controlType
-        headingsPresent = calcCont.HeaderInfo
-        ControlName = calcCont.ControlName
-        autoArrange = calcCont.AutoFit
-
-        ' default target sheet for db form (and data target) is calling sheet
-        formTargetSheet = calcCont.callsheet
-        On Error GoTo DBControlQuery_Error
-        '' set control location
-        ' default location for db form is above calling cell
-        If calcCont.controlLocation.Length = 0 Then
-            theTargetCell = formTargetSheet.Range(calcCont.caller.Address)
-        Else
-            Dim controlLocation As String, controlLocationWS As String
-            controlLocation = calcCont.controlLocation
-            ' different worksheet for DB form...
-            If InStr(1, controlLocation, "!") > 0 Then
-                controlLocationWS = Left$(controlLocation, InStr(1, controlLocation, "!") - 1)
-                controlLocationWS = Replace(controlLocationWS, "'", String.Empty)
-                On Error Resume Next
-                formTargetSheet = calcCont.callsheet.Parent.Worksheets(controlLocationWS)
-                If Err.Number <> 0 Then
-                    errMsg = "Error in setting control location worksheet: " & Err.Description
-                    GoTo DBControlQuery_Error
-                End If
-            End If
-            theTargetCell = formTargetSheet.Range(Mid$(calcCont.controlLocation, InStr(1, calcCont.controlLocation, "!") + 1))
-        End If
-
-        '' set data target
-        Dim dataTargetAddr As String, dataTargetWS As String
-        If calcCont.dataTargetRange.Length > 0 Then
-            dataTargetAddr = calcCont.dataTargetRange
-            ' different worksheet for DB form...
-            If InStr(1, dataTargetAddr, "!") > 0 Then
-                dataTargetWS = Left$(dataTargetAddr, InStr(1, dataTargetAddr, "!") - 1)
-                dataTargetWS = Replace(dataTargetWS, "'", String.Empty)
-                ' set theTargetCell's sheet to data target sheet if no controlLocation given..
-                If calcCont.controlLocation.Length = 0 Then
-                    formTargetSheet = calcCont.callsheet.Parent.Worksheets(dataTargetWS)
-                Else
-                    If dataTargetWS <> formTargetSheet.Name Then
-                        errMsg = "Error: control location sheet is different from data target sheet !!"
-                        GoTo DBControlQuery_Error
-                    End If
-                End If
-            End If
-        End If
-
-        ' calculate default offset for data target cell in case no data target is given
-        Dim colOffset As Long, rowOffset As Long
-        ' prevent range errors in case of default target range setting
-        If theTargetCell.Column = 1 Then
-            colOffset = 0
-            If theTargetCell.Row < formTargetSheet.Rows.Count Then
-                rowOffset = 1
-            Else
-                rowOffset = -1
-            End If
-        Else
-            colOffset = -1
-            rowOffset = 0
-        End If
-
-        ' set the data target cell of control form
-        If calcCont.dataTargetRange.Length = 0 Then
-            dataTargetRange = theTargetCell.Offset(rowOffset, colOffset)
-        Else
-            dataTargetRange = formTargetSheet.Range(Mid$(calcCont.dataTargetRange, InStr(1, calcCont.dataTargetRange, "!") + 1))
-            If Err.Number <> 0 Then
-                errMsg = "Error in setting dataTargetRange: " & Err.Description & " (maybe named target range doesn't exist), control in " & formTargetSheet.Name
-                GoTo DBControlQuery_Error
-            End If
-        End If
-        ' final default location for control is above the data target...
-        If calcCont.controlLocation.Length = 0 Then theTargetCell = dataTargetRange
-
-        ' retrieve or unique name of db control via source connector...
-        On Error Resume Next
-        Dim srcConnect As String, uniqueName As String
-        srcConnect = calcCont.caller.Name.name
-        If Err.Number <> 0 Then
-            Err.Clear()
-            If ControlName.Length > 0 Then
-                ' new given control name !!
-                srcConnect = "DBFsource" & ControlName
-            Else
-                ' new generic name !!
-                srcConnect = "DBFsource" & Replace(Replace(CDbl(Now.ToOADate()), ",", String.Empty), ".", String.Empty)
-            End If
-            calcCont.caller.Name = srcConnect
-            calcCont.callsheet.Parent.Names(srcConnect).Visible = False
-            If Err.Number <> 0 Then
-                errMsg = "Error in setting srcConnect name (probably used invalid characters in controlName '" & ControlName & "'): " & Err.Description & ", control in " & formTargetSheet.Name
-                GoTo DBControlQuery_Error
-            End If
-        End If
-        ' this is the unique name we store as the control (and controls header) name (DB_<uniqueName> and DBH_<uniqueName>)
-        uniqueName = Replace(srcConnect, "DBFsource", String.Empty)
-
-        ' remember former value for restoring after any changes
-        formerValue = dataTargetRange.Value
-        ' determine whether to create a new DB form or not
-        Dim createTheForm As Boolean : createTheForm = False
-        Err.Clear()
-        theForm = formTargetSheet.Shapes("DB_" & uniqueName).OLEFormat.object
-        If Err.Number = -2147024809 Then    ' Form doesn't exist, create new
-            Err.Clear()
-            createTheForm = True
-            ' remove any existing source name...
-            calcCont.callsheet.Parent.Names(srcConnect).Delete
-            ' if someone just deleted the form, remove a possible header to avoid duplicate headers...
-            formTargetSheet.Select()
-            On Error Resume Next
-            formTargetSheet.Shapes("DBH_" & uniqueName).Delete
-            Err.Clear()
-            If ControlName.Length > 0 Then
-                ' in case someone deleted the form to give it a new name, replace existing control name with the new given control name !!
-                srcConnect = "DBFsource" & ControlName
-            Else
-                ' in case someone deleted the form to give it a new name, replace existing given control name with a new generic name !!
-                srcConnect = "DBFsource" & Replace(Replace(CDbl(Now.ToOADate()), ",", String.Empty), ".", String.Empty)
-            End If
-            calcCont.caller.Name = srcConnect
-            calcCont.callsheet.Parent.Names(srcConnect).Visible = False
-            If Err.Number <> 0 Then
-                errMsg = "Error in setting srcConnect name (probably used invalid characters in controlName '" & ControlName & "'): " & Err.Description & ", control in " & formTargetSheet.Name
-                GoTo DBControlQuery_Error
-            End If
-            uniqueName = Replace(srcConnect, "DBFsource", String.Empty)
-        Else
-            ' now check whether db control type has changed, in that case, delete and create form anew
-            Dim oldControlType As Integer
-            Err.Clear()
-            ' when opening a workbook theForm.ProgId is sometimes not set, so exit here if it's empty !
-            Dim tempProgID As String
-            tempProgID = theForm.ProgId
-            If tempProgID.Length = 0 Then Exit Sub
-            If InStr(1, UCase$(tempProgID), "COMBOBOX") > 0 Then
-                oldControlType = 1
-            ElseIf InStr(1, UCase$(tempProgID), "LISTBOX") > 0 Then
-                oldControlType = 0
-            End If
-            If oldControlType <> controlType Then
-                createTheForm = True
-                ' need to select sheet, otherwise the form can't be deleted
-                formTargetSheet.Select()
-                formTargetSheet.Shapes("DB_" & uniqueName).Delete
-            End If
-        End If
-
-        theHostApp.ScreenUpdating = False
-        ' remove former instances of form and header that come into existing when changing the controlLocation worksheet
-        Dim ws As Worksheet
-        For Each ws In formTargetSheet.Parent.Worksheets
-            If Not ws Is formTargetSheet Then
-                ' need to select ws, otherwise the form can't be deleted
-                ws.Select()
-                ws.Shapes("DBH_" & uniqueName).Delete
-                ws.Shapes("DB_" & uniqueName).Delete
-            End If
-        Next
-        curWs.Select()
-
-        ' now get the data from recordset
-        theHostApp.StatusBar = "Retrieving data for DBControl: " & "DB_" & uniqueName
-        On Error GoTo DBControlQuery_Error
-        tableRst = New ADODB.Recordset
-        tableRst.Open(Query, cnn, CursorTypeEnum.adOpenStatic, LockTypeEnum.adLockReadOnly, CommandTypeEnum.adCmdText)
-        Dim dberr As String = String.Empty
-        If cnn.Errors.Count > 0 Then
-            Dim errcount As Integer
-            For errcount = 0 To cnn.Errors.Count - 1
-                If cnn.Errors.Item(errcount).Description <> Err.Description Then _
-                   dberr = dberr & ";" & cnn.Errors.Item(errcount).Description
-            Next
-            If dberr.Length > 0 Then dberr = " (" & dberr & ")"
-        End If
-        If Err.Number <> 0 Then
-            errMsg = "Error in retrieving data: " & Err.Description & dberr & " in query: " & Query & ", control in " & formTargetSheet.Name
-            GoTo DBControlQuery_Error
-        End If
-        ' this fails in case of known issue with OLEDB driver...
-        retrievedRows = tableRst.RecordCount
-        If Err.Number <> 0 Then
-            errMsg = "Error in retrieving data: " & Err.Description & dberr & " in query: " & Query & ", control in " & formTargetSheet.Name
-            GoTo DBControlQuery_Error
-        End If        ' this fails in case of known issue with OLEDB driver...
-
-        theHostApp.StatusBar = "Displaying data for DBControl: " & "DB_" & uniqueName
-
-        '''' insert query information into DBform
-        Dim maxColLengths() As Integer
-        Dim colWidthStr As String
-        Dim NumColumnsExId As Integer
-        NumColumnsExId = tableRst.Fields.Count - 1
-        ReDim maxColLengths(NumColumnsExId)
-        If NumColumnsExId > 9 Then
-            errMsg = "Error: Query must not return more than 10 fields for db controls! "
-            GoTo DBControlQuery_Error
-        End If
-
-        ' pull data from recordset and determine max widths of single columns...
-        Dim dataSet() As Object
-        Dim isDisplayProblem() As Long
-        ReDim isDisplayProblem(0)
-        Dim theLen As Long, i As Long, j As Long, newSize As Integer
-        dataSet = tableRst.GetRows()
-        For i = 1 To NumColumnsExId
-            Dim theType As ADODB.DataTypeEnum
-            theType = tableRst.Fields(i).Type
-            If theType = ADODB.DataTypeEnum.adNumeric Or theType = ADODB.DataTypeEnum.adInteger Or theType = ADODB.DataTypeEnum.adTinyInt Or theType = ADODB.DataTypeEnum.adSmallInt Or theType = ADODB.DataTypeEnum.adBigInt Or theType = ADODB.DataTypeEnum.adUnsignedInt Or theType = ADODB.DataTypeEnum.adUnsignedTinyInt Or theType = ADODB.DataTypeEnum.adUnsignedSmallInt Or theType = ADODB.DataTypeEnum.adDouble Or theType = ADODB.DataTypeEnum.adSingle Or theType = ADODB.DataTypeEnum.adCurrency Or theType = ADODB.DataTypeEnum.adUnsignedBigInt Then
-                isDisplayProblem(newSize) = i
-                newSize = newSize + 1
-                ReDim Preserve isDisplayProblem(newSize)
-            End If
-            For j = 0 To retrievedRows - 1
-                If IsDate(dataSet(i)(j)) Then
-                    If CDbl(dataSet(i)(j)) = CLng(dataSet(i)(j)) Then
-                        theLen = Len(Format$(dataSet(i)(j), "DD.MM.YYYY")) + 1.5
-                    Else
-                        theLen = Len(Format$(dataSet(i)(j), "DD.MM.YYYY HH:MM:SS")) + 1
-                    End If
-                ElseIf IsNumeric(dataSet(i)(j)) Then
-                    theLen = IIf(dataSet(i)(j) = vbNull, 0, Len(dataSet(i)(j)) + 2)
-                Else
-                    theLen = IIf(dataSet(i)(j) = vbNull, 0, Len(dataSet(i)(j)))
-                End If
-                maxColLengths(i) = IIf(maxColLengths(i) < theLen, theLen, maxColLengths(i))
-            Next
-        Next
-
-        ' determine heading fields and width of header/db form...
-        Dim colHeading As String, colField As String
-        Dim padLen As Long, theWidth As Long
-        Dim totalWidth As Double, formerHeight As Double, formerWidth As Double
-        colHeading = String.Empty : colWidthStr = "0;"
-        For i = 1 To NumColumnsExId
-            ' create and autofit the column headings to the maximum width of the values in the column (pad with spaces if necessary)
-            padLen = IIf(maxColLengths(i) <= Len(tableRst.Fields(i).Name), 0, maxColLengths(i) - Len(tableRst.Fields(i).Name) - 1)
-            colField = tableRst.Fields(i).Name & Space$(padLen) & IIf(i = 1, "  ", String.Empty) & IIf(i < NumColumnsExId, "|", String.Empty)
-            ' add column to the headings
-            colHeading = colHeading & colField
-            ' calculate column width (in points): special treatment for first column as we have a "selection margin" in listboxes, which can't be removed (as in dropdowns)...
-            theWidth = Len(colField) - IIf(i = 1, 1.5, 0)
-            ' set the columns for the form
-            colWidthStr = colWidthStr & CStr(theWidth * 6) & ";"
-            ' calculate the total width for the header
-            totalWidth = totalWidth + theWidth * 6
-        Next
-        tableRst.Close()
-
-        ' if needed, create the form now...
-        If createTheForm Then
-            Select Case controlType
-                Case 0
-                    theForm = formTargetSheet.OLEObjects.Add(ClassType:="Forms.ListBox.1", DisplayAsIcon:=False, Width:=200, Height:=117)
-                Case 1
-                    theForm = formTargetSheet.OLEObjects.Add(ClassType:="Forms.ComboBox.1", DisplayAsIcon:=False, Width:=200, Height:=18)
-            End Select
-            theForm.name = "DB_" & uniqueName
-        Else
-            formerHeight = theForm.Height
-            formerWidth = theForm.Width
-        End If
-        ' place the control only if auto arrange set or in creation mode
-        If autoArrange Or createTheForm Then
-            theForm.Left = theTargetCell.Left
-            theForm.Top = theTargetCell.Top
-        End If
-
-        ' now fill the form with data (this is really fast !!)
-        theForm.object.Column = dataSet
-        theHostApp.ScreenUpdating = False    ' need that here as above assignment sets it to true !!!
-        For j = 0 To retrievedRows - 1
-            If Interrupted Then
-                errMsg = "data fetching interrupted by user !"
-                GoTo DBControlQuery_Error
-            End If
-            ' This is needed to be able to set value property in forms...
-            theForm.object.list(j, 0) = IIf(dataSet(0)(j) = vbNull, String.Empty, dataSet(0)(j))
-            ' This is needed to be able to set text property in forms...
-            theForm.object.list(j, 1) = IIf(dataSet(1)(j) = vbNull, String.Empty, dataSet(1)(j))
-            ' need this to display floats...
-            For i = 0 To UBound(isDisplayProblem) - 1
-                theForm.object.list(j, isDisplayProblem(i)) = IIf(dataSet(isDisplayProblem(i))(j) = vbNull, String.Empty, dataSet(isDisplayProblem(i))(j))
-            Next
-        Next
-
-        ' set data target cell
-        On Error Resume Next  'if linked cell is filled, excel displays an error but still fills the LinkedCell Prop...
-        theForm.LinkedCell = dataTargetRange.Address
-        On Error GoTo DBControlQuery_Error
-
-        ' if needed, set/create header now...
-        If headingsPresent And theTargetCell.Row > 1 Then     ' avoid header form in first row !
-            Dim recreateTheHeader As Boolean
-            On Error Resume Next
-            theHeadForm = formTargetSheet.Shapes("DBH_" & uniqueName).OLEFormat.object
-            ' only create header if it doesn't exist
-            If Err.Number <> 0 Then
-                theHeadForm = formTargetSheet.OLEObjects.Add(ClassType:="Forms.Label.1", Link:=False, DisplayAsIcon:=False, Width:=200, Height:=18)
-                theHeadForm.object.BackColor = -2147483644
-                theHeadForm.object.BorderStyle = 1
-                theHeadForm.name = "DBH_" & uniqueName
-                recreateTheHeader = True
-            End If
-            On Error GoTo DBControlQuery_Error
-            ' place/arrange the control header only if auto arrange set or in creation mode
-            If autoArrange Or createTheForm Or recreateTheHeader Then
-                theHeadForm.Left = theForm.Left
-                ' special case for upper area, display header visibly by placing it on top of screen !!
-                If theForm.Top < theHeadForm.Height Then
-                    theHeadForm.Top = 0
-                Else
-                    theHeadForm.Top = theForm.Top - theHeadForm.Height
-                End If
-
-                theHeadForm.object.FontName = "Courier New"
-                theHeadForm.object.Font.Size = 10
-                theHeadForm.object.WordWrap = False
-                theHeadForm.object.AutoSize = True
-                theHeadForm.object.caption = colHeading
-                ' add space to allow for scrollbar in listboxes
-                theForm.Width = theHeadForm.Width + 14
-            End If
-        Else
-            ' remove a possible existing header...
-            On Error Resume Next
-            formTargetSheet.Shapes("DBH_" & uniqueName).Delete
-            On Error GoTo DBControlQuery_Error
-            ' arrange the control only if auto arrange set or in creation mode
-            If autoArrange Or createTheForm Then theForm.Width = totalWidth + 14 ' add space to allow for scrollbar in listboxes
-        End If
-
-        If autoArrange Or createTheForm Then
-            theForm.object.FontName = "Courier New"
-            theForm.object.Font.Size = 10
-        End If
-        ' if we refill an existing form, excel increases the height, so reset to original here..
-        If Not createTheForm Then theForm.Height = formerHeight
-        ' set this after setting the width, as comboboxes don't like it the other way round...
-        theForm.object.ColumnCount = NumColumnsExId + 1
-        If autoArrange Or createTheForm Then
-            theForm.object.ColumnWidths = colWidthStr
-        Else
-            theForm.Width = formerWidth
-        End If
-        On Error Resume Next
-        theForm.object.Value = formerValue
-
-        ' delete the name to have a "clean" name area (otherwise visible = false setting wont work for dataTargetRange)
-        Dim storedNames() As String
-        storedNames = removeRangeName(dataTargetRange, "DBFtarget" & uniqueName)
-        dataTargetRange.Name = "DBFtarget" & uniqueName
-        dataTargetRange.Name.Visible = False
-        restoreRangeNames(dataTargetRange, storedNames)
-
-        statusCont.statusMsg = "Retrieved " & retrievedRows & " record" & IIf(retrievedRows > 1, "s", String.Empty) & " from: " & Query
-        theHostApp.ScreenUpdating = True
-        curWs.Select()
-
-#If DEBUGME = 1 Then
-     LogToEventViewer "Leaving DBControlQuery, caller: " & callID, LogInf, 0
-#End If
-        Exit Sub
-
-DBControlQuery_Error:
-        Dim severity As EventLogEntryType
-        severity = EventLogEntryType.Warning
-        If errMsg.Length = 0 Then
-            errMsg = "Error in DBControlQuery: " & Err.Description & ", form in sheet: " & formTargetSheet.Name
-            severity = EventLogEntryType.Error
-        End If
-        If VBDEBUG Then Debug.Print("DBControlQuery Error: " & errMsg & ", caller: " & callID) : Stop : Resume
-        theHostApp.ScreenUpdating = True
-        curWs.Select()
-        LogToEventViewer("DBFuncEventHandler.DBControlQuery Error: " & errMsg & ", caller: " & callID & ", in line " & Erl(), severity)
-        Err.Clear()
-        tableRst = Nothing
-        statusCont.statusMsg = errMsg
-        ' need to mark calc container here as excel won't return to main event proc in case of error
-        ' calc container is then removed in DBListFetch
-        allCalcContainers(callID).errOccured = True
     End Sub
 
     ''' <summary>Query list of data delimited by maxRows and maxCols, write it into targetCells
@@ -808,9 +378,6 @@ DBControlQuery_Error:
         If theHostApp.Calculation <> XlCalculation.xlCalculationManual Then Exit Sub
 
         callID = calcCont.callID
-#If DEBUGME = 1 Then
-     LogToEventViewer "Entering DBListQuery, caller: " & callID, LogInf, 0
-#End If
         formulaRange = calcCont.formulaRange
         targetSH = calcCont.targetRange.Parent
         targetCells = calcCont.targetRange
@@ -837,9 +404,6 @@ DBControlQuery_Error:
         End If
         targetExtent = Replace(srcExtentConnect, "DBFsource", "DBFtarget")
         targetExtentF = Replace(srcExtentConnect, "DBFsource", "DBFtargetF")
-#If DEBUGME = 1 Then
-     LogToEventViewer "targetExtent: " & targetExtent & ", targetExtentF: " & targetExtentF, LogInf, 0
-#End If
 
         If Not formulaRange Is Nothing Then
             formulaSH = formulaRange.Parent
@@ -1174,10 +738,6 @@ DBControlQuery_Error:
             errMsg = "Error in autofitting: " & Err.Description & " in query: " & Query
             GoTo err_0
         End If
-
-#If DEBUGME = 1 Then
-     LogToEventViewer "Leaving DBListQuery, caller: " & callID, LogInf, 1
-#End If
         Exit Sub
 
 err_2:
@@ -1194,7 +754,6 @@ err_0:
         'Err.Clear ' this is important as otherwise the error propagates to App_SheetCalculate,
         ' which recalcs in case of errors there, leading to endless calc loops !!
         If severity = Nothing Then severity = EventLogEntryType.Warning
-        If VBDEBUG Then Debug.Print("DBListQuery Error: " & Erl() & errMsg & ", caller: " & callID) : Stop : Resume
         LogToEventViewer("DBFuncEventHandler.DBListQuery Error: " & errMsg & ", caller: " & callID, severity)
 
         statusCont.statusMsg = errMsg
@@ -1226,11 +785,6 @@ err_0:
         headingsPresent = calcCont.HeaderInfo
         callID = calcCont.callID
         targetSH = targetCells(0).Parent
-
-#If DEBUGME = 1 Then
-     LogToEventViewer "Entering DBRowQuery, caller: " & callID, LogInf, 0
-#End If
-
         On Error GoTo err_1
         theHostApp.StatusBar = "Retrieving data for DBRows: " & targetSH.Name & "!" & targetCells(0).Address
 
@@ -1335,10 +889,6 @@ err_0:
 
         tableRst.Close()
         If statusCont.statusMsg.Length = 0 Then statusCont.statusMsg = "Retrieved " & returnedRows & " record" & IIf(returnedRows > 1, "s", String.Empty) & " from: " & Query
-
-#If DEBUGME = 1 Then
-     LogToEventViewer "Leaving DBRowQuery, caller: " & callID, LogInf, 0
-#End If
         Exit Sub
 
 err_1:
@@ -1350,123 +900,11 @@ err_1:
         'Err.Clear ' this is important as otherwise the error propagates to App_SheetCalculate,
         ' which recalcs in case of errors there, leading to endless calc loops !!
         If severity = Nothing Then severity = EventLogEntryType.Warning
-        If VBDEBUG Then Debug.Print("DBRowQuery Error: " & errMsg & ", caller: " & callID) : Stop : Resume
         If tableRst.State <> 0 Then tableRst.Close()
         LogToEventViewer("DBFuncEventHandler.DBRowQuery Error: " & errMsg & ", caller: " & callID & ", in line " & Erl(), severity)
         statusCont.statusMsg = errMsg
         ' need to mark calc container here as excel won't return to main event proc in case of error
         ' calc container is then removed in calling function
-        allCalcContainers(callID).errOccured = True
-    End Sub
-
-    ''' <summary>Query 1 to many rows of data, returning it via statusMsg (needed there for DBCellFetch)</summary>
-    ''' <param name="calcCont"><see cref="ContainerCalcMsgs"/></param>
-    ''' <param name="statusCont"><see cref="ContainerStatusMsgs"/></param>
-    Public Sub DBCellQuery(calcCont As ContainerCalcMsgs, statusCont As ContainerStatusMsgs)
-        Dim tableRst As ADODB.Recordset
-        Dim theField As ADODB.Field
-        Dim colSep As String, rowSep As String, lastColSep As String, lastRowSep As String, theResult As String = String.Empty, Query As String, callID As String, errMsg As String
-        Dim headingsPresent As Boolean, InterleaveHeader As Boolean
-        Dim returnedRows As Long
-
-        theHostApp.Calculation = XlCalculation.xlCalculationManual
-        ' this works around the data validation input bug
-        ' when selecting a value from a list of validated field, excel won't react to
-        ' Application.Calculation changes, so just leave here...
-        If theHostApp.Calculation <> XlCalculation.xlCalculationManual Then Exit Sub
-
-        callID = calcCont.callID
-#If DEBUGME = 1 Then
-     LogToEventViewer "Entering DBCellQuery, caller: " & callID, LogInf, 0
-#End If
-        Query = calcCont.Query
-        headingsPresent = calcCont.HeaderInfo
-        colSep = calcCont.colSep
-        rowSep = calcCont.rowSep
-        lastColSep = calcCont.lastColSep
-        lastRowSep = calcCont.lastRowSep
-        InterleaveHeader = calcCont.InterleaveHeader
-
-        On Error GoTo err_1
-        theHostApp.StatusBar = "Retrieving data for DBCell: " & callID
-        tableRst = New ADODB.Recordset
-        tableRst.Open(Query, cnn, CursorTypeEnum.adOpenStatic, LockTypeEnum.adLockReadOnly, CommandTypeEnum.adCmdText)
-        Dim dberr As String = String.Empty
-        If cnn.Errors.Count > 0 Then
-            Dim errcount As Integer
-            For errcount = 0 To cnn.Errors.Count - 1
-                If cnn.Errors.Item(errcount).Description <> Err.Description Then _
-                   dberr = dberr & ";" & cnn.Errors.Item(errcount).Description
-            Next
-            If dberr.Length > 0 Then dberr = " (" & dberr & ")"
-        End If
-        If Err.Number <> 0 Then
-            errMsg = "Error in retrieving data: " & Err.Description & dberr & " in query: " & Query
-            GoTo err_1
-        End If
-        ' this fails in case of known issue with OLEDB driver...
-        returnedRows = tableRst.RecordCount
-        If Err.Number <> 0 Then
-            errMsg = "Error in opening recordset: " & Err.Description & dberr & " in query: " & Query
-            GoTo err_1
-        End If
-        ' check whether anything retrieved?
-        If tableRst.EOF Then
-            theResult = "Warning: No Data returned in query: " & Query
-        Else
-            Dim i As Long
-            Dim r As Long
-            If headingsPresent And Not InterleaveHeader Then
-                i = 0
-                For Each theField In tableRst.Fields
-                    i = i + 1
-                    theResult = theResult & theField.Name & IIf(i < tableRst.Fields.Count, IIf((i = tableRst.Fields.Count - 1 And lastColSep.Length > 0), lastColSep, colSep), rowSep)
-                Next
-            End If
-            r = 0
-            Do
-                If Interrupted Then
-                    errMsg = "data fetching interrupted by user !"
-                    GoTo err_1
-                End If
-                r = r + 1
-                i = 0
-                For Each theField In tableRst.Fields
-                    i = i + 1
-                    theResult = theResult & IIf(InterleaveHeader And theField.Name <> "", theField.Name, String.Empty) & theField.Value & IIf(i < tableRst.Fields.Count, IIf((i = tableRst.Fields.Count - 1 And lastColSep.Length > 0), lastColSep, colSep), IIf((r = returnedRows - 1 And lastRowSep.Length > 0), lastRowSep, rowSep))
-                Next
-                theHostApp.StatusBar = "Displaying data for DBCell: " & callID & ", record " & r & "/" & returnedRows
-                tableRst.MoveNext()
-
-                If Len(theResult) > 32767 Then
-                    errMsg = "DBCellFetch would return more than 32767 characters, this is too much for a cell !!"
-                    GoTo err_1
-                End If
-            Loop Until tableRst.EOF
-            theResult = Left$(theResult, Len(theResult) - Len(rowSep))
-        End If
-        tableRst.Close()
-
-        statusCont.statusMsg = theResult
-#If DEBUGME = 1 Then
-     LogToEventViewer "Leaving DBCellQuery, caller: " & callID, LogInf, 0
-#End If
-        Exit Sub
-
-err_1:
-        Dim severity As EventLogEntryType
-        severity = EventLogEntryType.Warning
-        If errMsg.Length = 0 Then
-            errMsg = "Error in DBCellQuery: " & Err.Description & " in query: " & Query
-            severity = EventLogEntryType.Error
-        End If
-        If VBDEBUG Then Debug.Print("DBCellQuery Error: " & errMsg & ", caller: " & callID) : Stop : Resume
-        If tableRst.State <> 0 Then tableRst.Close()
-        LogToEventViewer("DBFuncEventHandler.DBCellQuery Error: " & errMsg & ", caller: " & callID, severity)
-        Err.Clear()
-        statusCont.statusMsg = errMsg
-        ' need to mark calc container here as excel won't return to main event proc in case of error
-        ' calc container is then removed in DBListFetch
         allCalcContainers(callID).errOccured = True
     End Sub
 
@@ -1500,10 +938,10 @@ err_1:
         existsQueryCache = False
     End Function
 
-    ''' <summary>remove alle names from Range Target except and store them into list storedNames (except theName)</summary>
+    ''' <summary>remove alle names from Range Target except the passed name (theName) and store them into list storedNames</summary>
     ''' <param name="Target"></param>
     ''' <param name="theName"></param>
-    ''' <returns>the removed names as a string list</returns>
+    ''' <returns>the removed names as a string list for restoring them later (see restoreRangeNames)</returns>
     Private Function removeRangeName(Target As Range, theName As String) As String()
         Dim storedNames() As String = {}
         Dim i As Long
@@ -1525,7 +963,7 @@ err_1:
         removeRangeName = storedNames
     End Function
 
-    ''' <summary>restore the stored names into Range Target</summary>
+    ''' <summary>restore the passed storedNames into Range Target</summary>
     ''' <param name="Target"></param>
     ''' <param name="storedNames"></param>
     Private Sub restoreRangeNames(Target As Range, storedNames() As String)
