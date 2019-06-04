@@ -1,4 +1,3 @@
-Imports Microsoft.Office.Interop.Excel
 Imports ADODB
 
 ''' <summary>Contains the public callable Mapper function for storing/updating tabular excel data</summary>
@@ -9,7 +8,7 @@ Public Enum checkTypeFld
     checkIsStringFld = 3
 End Enum
 
-Public Class Mapper
+Public Module Mapper
     ''' <summary>main db connection For mapper</summary>
     Public dbcnn As ADODB.Connection
     ''' <summary>should the Mapper instance be used interactively, thus giving error messages to the user
@@ -30,13 +29,13 @@ Public Class Mapper
     ''' <param name="insertIfMissing">then insert row into table if primary key is missing there. Default = False (only update)</param>
     ''' <param name="executeAdditionalProc">additional stored procedure to be executed after saving</param>
     ''' <returns>True if successful, false in case of errors.</returns>
-    Public Function saveRangeToDB(DataRange As Range,
-                                    tableName As String,
-                                    primKeysStr As String,
-                                    database As String,
-                                    Optional env As Integer = 1,
-                                    Optional insertIfMissing As Boolean = False,
-                                    Optional executeAdditionalProc As String = "") As Boolean
+    Public Function saveRangeToDB(DataRange As Object,
+                                tableName As String,
+                                primKeysStr As String,
+                                database As String,
+                                Optional env As Integer = 1,
+                                Optional insertIfMissing As Boolean = False,
+                                Optional executeAdditionalProc As String = "") As Boolean
         Dim rst As ADODB.Recordset
         Dim checkrst As ADODB.Recordset
         Dim checkTypes() As checkTypeFld = Nothing
@@ -47,8 +46,7 @@ Public Class Mapper
         ' set up parameters
         On Error GoTo saveRangeToDB_Err
         If Not isInteractive Then
-            automatedMapper = Me
-            Me.returnedErrorMessages = String.Empty
+            returnedErrorMessages = String.Empty
         End If
         saveRangeToDB = False
         primKeys = Split(primKeysStr, ",")
@@ -246,11 +244,6 @@ err1:
         End If
     End Function
 
-    ''' <summary>new Mapper instances are always interactive by default. If you want automation mode, set isInteractive to false before calling saveRangeToDB</summary>
-    Public Sub New()
-        isInteractive = True
-    End Sub
-
     ''' <summary>opens a database connection</summary>
     ''' <param name="env">number of the environment as given in the settings</param>
     ''' <param name="database">database to replace database selection parameter in connection string of environment</param>
@@ -288,4 +281,4 @@ openConnection_Err:
         LogError("Error: " & Err.Description & ", line " & Erl() & " in Mapper.openConnection")
     End Function
 
-End Class
+End Module

@@ -1,6 +1,5 @@
 Imports Microsoft.Office.Interop.Excel
 Imports ExcelDna.Integration
-Imports ProductionStackTrace
 
 ''' <summary>Contains the public callable DB functions and some helper functions</summary>
 Public Module Functions
