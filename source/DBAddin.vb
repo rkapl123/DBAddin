@@ -11,8 +11,6 @@ Public Module Globals
     Public DEBUGME As Boolean
     ''' <summary>the eventlog for the addin session</summary>
     Public myEventlog As EventLog
-    ''' <summary>in case of Automation, use this to communicate collected logged Warnings and Errors back</summary>
-    Public automatedMapper As Mapper
     ''' <summary>logfile for messages</summary>
     Public logfile As StreamWriter
 
@@ -68,8 +66,8 @@ Public Module Globals
         Dim retval As Integer
 
         LogToEventViewer(LogMessage, EventLogEntryType.Error)
-        If Not automatedMapper Is Nothing Then automatedMapper.returnedErrorMessages = automatedMapper.returnedErrorMessages & LogMessage & vbCrLf
-        If includeMsg And automatedMapper Is Nothing Then retval = MsgBox(LogMessage, vbCritical + IIf(exitMe, vbOKCancel, vbOKOnly), "DBAddin: Internal Error !! ")
+        'If Not automatedMapper Is Nothing Then automatedMapper.returnedErrorMessages = automatedMapper.returnedErrorMessages & LogMessage & vbCrLf
+        'If includeMsg And automatedMapper Is Nothing Then retval = MsgBox(LogMessage, vbCritical + IIf(exitMe, vbOKCancel, vbOKOnly), "DBAddin: Internal Error !! ")
         If retval = vbCancel Then
             exitMe = True
         Else
@@ -86,8 +84,8 @@ Public Module Globals
         Dim retval As Integer
 
         LogToEventViewer(LogMessage, EventLogEntryType.Warning)
-        If Not automatedMapper Is Nothing Then automatedMapper.returnedErrorMessages = automatedMapper.returnedErrorMessages & LogMessage & vbCrLf
-        If includeMsg And automatedMapper Is Nothing Then retval = MsgBox(LogMessage, vbCritical + IIf(exitMe, vbOKCancel, vbOKOnly), "DBAddin Error")
+        'If Not automatedMapper Is Nothing Then automatedMapper.returnedErrorMessages = automatedMapper.returnedErrorMessages & LogMessage & vbCrLf
+        'If includeMsg And automatedMapper Is Nothing Then retval = MsgBox(LogMessage, vbCritical + IIf(exitMe, vbOKCancel, vbOKOnly), "DBAddin Error")
         If retval = vbCancel Then
             exitMe = True
         Else

@@ -1,6 +1,7 @@
 Imports Microsoft.Office.Interop.Excel
 Imports ExcelDna.Integration
 Imports ADODB
+Imports Microsoft.Office.Interop
 
 ''' <summary>various functions used in most parts of DBAddin</summary>
 Public Module CommonFuncs
@@ -349,27 +350,5 @@ done:
 err_1:
         LogToEventViewer("Error: " & Err.Description & " in CommonFuncs.refreshDBFunctions in " & Erl() & ", " & Wb.Path & "\" & Wb.Name, EventLogEntryType.Error)
     End Sub
-
-    ''' <summary>formats theVal to fit the type of column theHead in recordset checkrst</summary>
-    ''' <param name="theVal"></param>
-    ''' <param name="theHead"></param>
-    ''' <param name="checkrst"></param>
-    ''' <returns>formatted value</returns>
-    Public Function dbformat(ByVal theVal As Object, ByVal theHead As String, checkrst As Recordset) As String
-        ' build where clause criteria..
-        If checkIsNumeric(checkrst.Fields(theHead).Type) Then
-            dbformat = Replace(CStr(theVal), ",", ".")
-        ElseIf checkIsDate(checkrst.Fields(theHead).Type) Then
-            dbformat = "'" & Format$(theVal, "YYYYMMDD") & "'"
-        ElseIf checkIsTime(checkrst.Fields(theHead).Type) Then
-            dbformat = "'" & Format$(theVal, "YYYYMMDD HH:MM:SS") & "'"
-        ElseIf TypeName(theVal) = "Boolean" Then
-            dbformat = IIf(theVal, 1, 0)
-        Else
-            ' quote strings
-            theVal = Replace(theVal, "'", "''")
-            dbformat = "'" & theVal & "'"
-        End If
-    End Function
 
 End Module

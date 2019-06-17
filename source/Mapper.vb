@@ -22,20 +22,15 @@ Public Module Mapper
     ''' assumption: layout of dataRange is
     ''' primKey1Val,primKey2Val,..,primKeyNVal,DataCol1Val,DataCol2Val,..,DataColNVal</summary>
     ''' <param name="DataRange">Excel Range, where Data is taken from</param>
-    ''' <param name="tableName">Database Table, where Data is to be stored</param>
-    ''' <param name="primKeysStr">String containing primary Key names for updating table data, comma separated</param>
-    ''' <param name="database">Database to replace D</param>
-    ''' <param name="env">Environment where connection id should be taken from</param>
-    ''' <param name="insertIfMissing">then insert row into table if primary key is missing there. Default = False (only update)</param>
-    ''' <param name="executeAdditionalProc">additional stored procedure to be executed after saving</param>
     ''' <returns>True if successful, false in case of errors.</returns>
-    Public Function saveRangeToDB(DataRange As Object,
-                                tableName As String,
-                                primKeysStr As String,
-                                database As String,
-                                Optional env As Integer = 1,
-                                Optional insertIfMissing As Boolean = False,
-                                Optional executeAdditionalProc As String = "") As Boolean
+    Public Function saveRangeToDB(DataRange As Object) As Boolean
+        Dim tableName As String ' Database Table, where Data is to be stored
+        Dim primKeysStr As String ' String containing primary Key names for updating table data, comma separated
+        Dim database As String ' Database to store to
+        Dim env As String = fetchSetting("ConfigName", "1") ' Environment where connection id should be taken from (if not existing, take from setting), always fall back to environment 1 if not set
+        Dim insertIfMissing As Boolean = False ' if set, then insert row into table if primary key is missing there. Default = False (only update)
+        Dim executeAdditionalProc As String = "" 'additional stored procedure to be executed after saving
+
         Dim rst As ADODB.Recordset
         Dim checkrst As ADODB.Recordset
         Dim checkTypes() As checkTypeFld = Nothing
@@ -43,11 +38,15 @@ Public Module Mapper
         Dim i As Integer, headerRow As Integer
         Dim rowNum As Long, colNum As Long
 
+        Dim SaveParams = functionSplit(DataRange.Cells(1, 1).Comment.Text, ",", """", "saveRangeToDB", "", "")
+        tableName = SaveParams(0)
+        primKeysStr = SaveParams(1)
+        database = SaveParams(2)
+        If SaveParams(3) <> "" Then env = SaveParams(3)
+        If SaveParams(4) <> "" Then insertIfMissing = SaveParams(4)
+        If SaveParams(5) <> "" Then executeAdditionalProc = SaveParams(5)
         ' set up parameters
         On Error GoTo saveRangeToDB_Err
-        If Not isInteractive Then
-            returnedErrorMessages = String.Empty
-        End If
         saveRangeToDB = False
         primKeys = Split(primKeysStr, ",")
 

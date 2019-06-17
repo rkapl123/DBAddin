@@ -13,7 +13,7 @@ Public Module ConfigFiles
         Return referenceCell.Parent
     End Function
 
-    ''' <summary>loads config from file given in theFileName; if theFileName not given, displays file dialog for loading several cells to a configuration file (.XCL)</summary>
+    ''' <summary>loads config from file given in theFileName</summary>
     ''' <param name="theFileName">the File name of the config file</param>
     Public Sub loadConfig(theFileName As String)
         Dim ItemLine As String
@@ -63,13 +63,6 @@ err1:
                 createSheetForTarget(cellToBeStoredAddress)
                 Err.Clear()
 
-                ' revert addresses of DBMakecontrol function to absolute address
-                If InStr(1, UCase$(cellToBeStoredContent), "DBMAKECONTROL(") > 0 Then
-                    convertAddressOfDBMakeControl(cellToBeStoredContent, "toAbsolute")
-
-                    ' in case of any conversion errors, resulting cellToBeStoredContent is set to blank
-                    If cellToBeStoredContent.Length = 0 Then GoTo cleanup
-                End If
                 ' finally fill function target cell with function text (relative cell references) or value
                 Dim TargetCell As Excel.Range
                 TargetCell = Nothing
@@ -105,51 +98,6 @@ err1:
         LogError(Err.Description & " in ConfigFiles.createFunctionsInCells" & Erl(), , , 1)
     End Sub
 
-    ''' <summary>converts the two string specified addresses in DBMakeControl (controlLocation and dataTargetRange)</summary>
-    ''' <param name="cellToBeStoredContent">content of cell containing dbmakecontrol function</param>
-    ''' <param name="convertMode">from relative to absolute Address: toAbsolute"; from absolute to relative Address: toRelative</param>
-    Public Sub convertAddressOfDBMakeControl(ByRef cellToBeStoredContent As String, convertMode As String)
-        Dim cellToBeStoredAddr As String, argumentDesc As String, alreadyConverted As String = String.Empty
-        Dim cellToBeStored As Excel.Range = Nothing
-        Dim argPosFromLast As Integer, argCount As Integer
-
-        On Error GoTo err1
-        ' controlLocation and dataTargetRange are always at last position !!
-        argCount = UBound(functionSplit(cellToBeStoredContent, ",", """", "DBMAKECONTROL", "(", ")"))
-        For argPosFromLast = IIf(argCount = 9, 2, 1) To IIf(argCount = 9, 3, 2)
-            cellToBeStoredAddr = Replace(fetchNthFromLast(cellToBeStoredContent, ",", argPosFromLast), """", String.Empty)
-            If InStr(1, cellToBeStoredAddr, "!") > 0 Then
-                cellToBeStoredAddr = Mid$(cellToBeStoredAddr, InStr(1, cellToBeStoredAddr, "!") + 1)
-            End If
-            ' need this shit, because replace doesn't allow to replace starting from end of string
-            If alreadyConverted = cellToBeStoredAddr And cellToBeStoredAddr.Length > 0 Then Exit Sub
-
-            If cellToBeStoredAddr.Length > 0 Then
-                If UCase$(convertMode) = "TOABSOLUTE" Then
-                    ' only try to convert the locations of controlLocation and dataTargetRange if they are given in relative mode (Strings set by user of function !!)
-                    If InStr(1, cellToBeStoredAddr, "[") > 0 Then
-                        If Not getRangeFromRelative(referenceCell, cellToBeStoredAddr, cellToBeStored) Then
-                            argumentDesc = IIf(argPosFromLast = 1, "control location", "data target")
-                            LogWarn("Excel Borders would be violated by placing " & argumentDesc & " (relative address:" & cellToBeStoredAddr & ")" & vbLf & "Please select different cell !!", 1)
-                            cellToBeStoredContent = String.Empty : Exit Sub
-                        End If
-                        alreadyConverted = cellToBeStored.Address
-                        cellToBeStoredContent = Replace(cellToBeStoredContent, cellToBeStoredAddr & """", alreadyConverted & """")
-                    End If
-                ElseIf UCase$(convertMode) = "TORELATIVE" Then
-                    cellToBeStored = getRangeFromAbsolute(cellToBeStoredAddr)
-                    alreadyConverted = getRelAddress(cellToBeStored, referenceCell)
-                    cellToBeStoredContent = Replace(cellToBeStoredContent, cellToBeStoredAddr & """", alreadyConverted & """")
-                Else
-                    Err.Raise(10000, , "invalid convertMode '" & convertMode & "' in ConfigFiles.convertAddressOfDBMakeControl !!")
-                End If
-            End If
-        Next
-        Exit Sub
-err1:
-        If VBDEBUG Then Debug.Print("Error (" & Err.Description & ") in ConfigFiles.convertAddressOfDBMakeControl") : Stop : Resume
-        LogError(Err.Description & ":" & cellToBeStoredContent & ":" & "  in ConfigFiles.convertAddressOfDBMakeControl" & Erl(), , , 1)
-    End Sub
 
     ''' <summary>creates a sheet if theTarget is specifying to be in a different worksheet (theTarget starts with '(sheetname)'! )</summary>
     ''' <param name="theTarget"></param>
@@ -229,90 +177,4 @@ err1:
         End If
     End Function
 
-    ''' <summary>get Nth last token from searchStr, separated by separator</summary>
-    ''' <param name="searchStr">string to be searched for tokens</param>
-    ''' <param name="separator">separator of tokens</param>
-    ''' <param name="n">position of token to be returned</param>
-    ''' <returns>token string</returns>
-    Private Function fetchNthFromLast(searchStr As String, separator As String, n As Integer) As String
-        Dim cCount As Long
-        Dim curpos As Long, lastPos As Long
-
-        curpos = -1
-        Do
-            lastPos = curpos
-            curpos = InStrRev(searchStr, separator, curpos)
-            If curpos > 0 Then
-                curpos = curpos - 1
-                cCount = cCount + 1
-            Else
-                Exit Do
-            End If
-        Loop Until cCount = n
-        lastPos = IIf(lastPos = -1, InStrRev(searchStr, ")") - 1, lastPos)
-        If cCount = n Then
-            fetchNthFromLast = Mid$(searchStr, curpos + 2, lastPos - curpos - 1)
-        Else
-            fetchNthFromLast = String.Empty
-        End If
-    End Function
-
-    ''' <summary>provides either the range from the target cell given in cellAddress
-    '''           or the range of the default target cell in case cellAddress is not given
-    '''           default target cells are defined by defaultRow and defaultCol,
-    '''           which are the default offsets from originCell (the function's target cell)</summary>
-    ''' <param name="cellAddress"></param>
-    ''' <param name="defaultRow"></param>
-    ''' <param name="defaultCol"></param>
-    ''' <param name="originCell"></param>
-    ''' <returns>the target range</returns>
-    Public Function getRangeFromAbsolute(ByVal cellAddress As String, Optional ByVal defaultRow As Long = 0, Optional ByVal defaultCol As Long = 0, Optional originCell As Excel.Range = Nothing) As Excel.Range
-        Dim getRangeFromAbsoluteStr As String
-
-        If originCell Is Nothing Then originCell = referenceCell
-
-        If cellAddress.Length > 0 Then
-            getRangeFromAbsoluteStr = Mid$(cellAddress, InStr(1, cellAddress, "!") + 1)
-            If InStr(1, cellAddress, "!") > 0 Then
-                getRangeFromAbsolute = theHostApp.Worksheets(getTargetWS(cellAddress)).Range(getRangeFromAbsoluteStr)
-            Else
-                getRangeFromAbsolute = referenceSheet.Range(getRangeFromAbsoluteStr)
-            End If
-        Else
-            getRangeFromAbsolute = originCell.Offset(defaultRow, defaultCol)
-        End If
-    End Function
-
-    ''' <summary>retrieve cell-address from theTargetCell as R1C1 relative style relative to relativeToCell
-    '''             (including potential prepended worksheet if theTargetCell's Parentsheet Is Not referenceSheet)</summary>
-    ''' <param name="theTargetCell"></param>
-    ''' <param name="relativeToCell"></param>
-    ''' <returns>the relative cell-address</returns>
-    Public Function getRelAddress(theTargetCell As Excel.Range, relativeToCell As Excel.Range) As String
-        Dim theRelAddress As String
-        theRelAddress = theTargetCell.Address(ReferenceStyle:=Excel.XlReferenceStyle.xlR1C1, RowAbsolute:=False, ColumnAbsolute:=False, RelativeTo:=relativeToCell)
-        If Not theTargetCell.Parent Is referenceSheet() Then
-            getRelAddress = theTargetCell.Parent.name & "!" & theRelAddress
-        Else
-            getRelAddress = theRelAddress
-        End If
-    End Function
-
-    ''' <summary>provides either the worksheet part within the target cell value given in cellAddress
-    '''             or the worksheet of the default target cell in case target Cell in cellAddress is not given</summary>
-    ''' <param name="cellAddress"></param>
-    ''' <returns>target sheet name</returns>
-    Private Function getTargetWS(ByVal cellAddress As String) As String
-        If cellAddress.Length > 0 Then
-            getTargetWS = cellAddress
-            If InStr(1, getTargetWS, "!") > 0 Then
-                getTargetWS = Left$(cellAddress, InStr(1, cellAddress, "!") - 1)
-                getTargetWS = Replace(getTargetWS, "'", String.Empty)
-            Else
-                getTargetWS = referenceSheet().Name
-            End If
-        Else
-            getTargetWS = referenceSheet().Name
-        End If
-    End Function
 End Module

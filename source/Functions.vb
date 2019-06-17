@@ -12,11 +12,12 @@ Public Module Functions
     ''' formatting = 0: A simple datestring (format 'YYYYMMDD'), datetime values are converted to 'YYYYMMDD HH:MM:SS' and time values are converted to 'HH:MM:SS'.
     ''' formatting = 1: An ANSI compliant Date string (format date 'YYYY-MM-DD'), datetime values are converted to timestamp 'YYYY-MM-DD HH:MM:SS' and time values are converted to time time 'HH:MM:SS'.
     ''' formatting = 2: An ODBC compliant Date string (format {d 'YYYY-MM-DD'}), datetime values are converted to {ts 'YYYY-MM-DD HH:MM:SS'} and time values are converted to {t 'HH:MM:SS'}.
+    ''' formatting = 3: An Access/JetDB compliant Date string (format #YYYY-MM-DD#), datetime values are converted to #YYYY-MM-DD HH:MM:SS# and time values are converted to #HH:MM:SS#.
     ''' formatting = 99 (default value): take the formatting option from setting DefaultDBDateFormatting (0 if not given)
     ''' </remarks>
     <ExcelFunction(Description:="Create database compliant date, time or datetime string from excel datetype value")>
     Public Function DBDate(<ExcelArgument(Description:="date/time/datetime")> ByVal datVal As Date,
-                           <ExcelArgument(Description:="formatting option, 0: simple datestring (format 'YYYYMMDD'), 1: ANSI compliant Date string (format date 'YYYY-MM-DD'), 2: ODBC compliant Date string (format {d 'YYYY-MM-DD'})")> Optional formatting As Integer = 99) As String
+                           <ExcelArgument(Description:="formatting option, 0: simple datestring (format 'YYYYMMDD'), 1: ANSI compliant Date string (format date 'YYYY-MM-DD'), 2: ODBC compliant Date string (format {d 'YYYY-MM-DD'}),3: Access/JetDB compliant Date string (format #DD/MM/YYYY#)")> Optional formatting As Integer = 99) As String
         On Error GoTo DBDate_Error
         If formatting = 99 Then formatting = DefaultDBDateFormatting
         If Int(datVal.ToOADate()) = datVal.ToOADate() Then
@@ -26,6 +27,8 @@ Public Module Functions
                 DBDate = "DATE '" & Format$(datVal, "yyyy-MM-dd") & "'"
             ElseIf formatting = 2 Then
                 DBDate = "{d '" & Format$(datVal, "yyyy-MM-dd") & "'}"
+            ElseIf formatting = 3 Then
+                DBDate = "#" & Format$(datVal, "yyyy-MM-dd") & "#"
             End If
         ElseIf CInt(datVal.ToOADate()) > 1 Then
             If formatting = 0 Then
@@ -34,6 +37,8 @@ Public Module Functions
                 DBDate = "timestamp '" & Format$(datVal, "yyyy-MM-dd hh:mm:ss") & "'"
             ElseIf formatting = 2 Then
                 DBDate = "{ts '" & Format$(datVal, "yyyy-MM-dd hh:mm:ss") & "'}"
+            ElseIf formatting = 3 Then
+                DBDate = "#" & Format$(datVal, "yyyy-MM-dd hh:mm:ss") & "#"
             End If
         Else
             If formatting = 0 Then
@@ -42,6 +47,8 @@ Public Module Functions
                 DBDate = "time '" & Format$(datVal, "hh:mm:ss") & "'"
             ElseIf formatting = 2 Then
                 DBDate = "{t '" & Format$(datVal, "hh:mm:ss") & "'}"
+            ElseIf formatting = 3 Then
+                DBDate = "#" & Format$(datVal, "hh:mm:ss") & "#"
             End If
         End If
         Exit Function

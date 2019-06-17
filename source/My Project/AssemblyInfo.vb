@@ -8,11 +8,11 @@ Imports System.Runtime.InteropServices
 
 ' Review the values of the assembly attributes
 
-<Assembly: AssemblyTitle("")>
-<Assembly: AssemblyDescription("")>
-<Assembly: AssemblyCompany("")>
+<Assembly: AssemblyTitle("DB Addin")>
+<Assembly: AssemblyDescription("DBAddin is a ExcelDNA based Add-in for Database interoperability (DB Functions for database querying and a mapping to save data to DB Tables are provided).")>
+<Assembly: AssemblyCompany("https://rkapl123.github.io/DBAddin/")>
 <Assembly: AssemblyProduct("")>
-<Assembly: AssemblyCopyright("Copyright ©  2019")>
+<Assembly: AssemblyCopyright("Copyright ©  2019, GNU GPL v3.0")>
 <Assembly: AssemblyTrademark("")>
 
 <Assembly: ComVisible(True)>
