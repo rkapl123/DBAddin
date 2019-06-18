@@ -119,7 +119,6 @@ Public Class DBFuncEventHandler
         Exit Sub
 
 App_WorkbookBeforeSave_Err:
-        If VBDEBUG Then Debug.Print("DBFuncEventHandler.App_WorkbookBeforeSave: " & Err.Description) : Stop : Resume
         LogToEventViewer("DBFuncEventHandler.App_WorkbookBeforeSave Error: " & Wb.Name & Err.Description & ", in line " & Erl(), EventLogEntryType.Error)
     End Sub
 

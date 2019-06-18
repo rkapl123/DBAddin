@@ -19,16 +19,15 @@ Public Module Globals
     ''' <param name="defaultValue"></param>
     ''' <param name="DBSheetSetting"></param>
     ''' <returns>the setting value</returns>
-    Public Function fetchSetting(Key As String, defaultValue As Object, Optional DBSheetSetting As Boolean = False) As Object
-        fetchSetting = GetSetting("DBAddin", IIf(DBSheetSetting, "DBSheetSettings", "Settings"), Key, defaultValue)
+    Public Function fetchSetting(Key As String, defaultValue As Object) As Object
+        fetchSetting = GetSetting("DBAddin", "Settings", Key, defaultValue)
     End Function
 
     ''' <summary>encapsulates setting storing (currently registry)</summary>
     ''' <param name="Key"></param>
     ''' <param name="Value"></param>
-    ''' <param name="DBSheetSetting"></param>
-    Public Sub storeSetting(Key As String, Value As Object, Optional DBSheetSetting As Boolean = False)
-        SaveSetting("DBAddin", IIf(DBSheetSetting, "DBSheetSettings", "Settings"), Key, Value)
+    Public Sub storeSetting(Key As String, Value As Object)
+        SaveSetting("DBAddin", "Settings", Key, Value)
     End Sub
 
     ''' <summary>initializes global configuration variables from registry</summary>
@@ -110,12 +109,9 @@ Public Module Globals
     Public theMenuHandler As MenuHandler
     ''' <summary>for interrupting long running operations with Ctl-Break</summary>
     Public Interrupted As Boolean
-    ''' <summary>if we're running in the IDE, show errmsgs in immediate window and stop:resume on uncaught errors..</summary>
-    Public VBDEBUG As Boolean
+
     ''' <summary>the environment (for Mapper special cases "Test", "Development" or String.Empty (prod))</summary>
     Public env As String
-    ''' <summary>reference object for the Addins ribbon</summary>
-    Public theRibbon As ExcelDna.Integration.CustomUI.IRibbonUI
 
     ' Global settings
     ''' <summary>Default ConnectionString, if no connection string is given by user....</summary>
@@ -218,7 +214,9 @@ Public Class AddInEvents
     End Sub
 
     Private Sub Workbook_Activate(Wb As Workbook) Handles Application.WorkbookActivate
-        Globals.theRibbon.Invalidate()
+        ' load DBMapper definitions
+        getDBMapperNames()
+        MenuCommands.theRibbon.Invalidate()
     End Sub
 
 End Class

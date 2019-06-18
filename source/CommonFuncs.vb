@@ -130,7 +130,6 @@ err1:
         End If
         Exit Function
 err1:
-        If VBDEBUG Then Debug.Print("balancedString: " & Err.Description) : Stop : Resume
         LogToEventViewer("Error: " & Err.Description & " in CommonFuncs.balancedString in " & Erl(), EventLogEntryType.Error)
     End Function
 
@@ -180,7 +179,6 @@ err1:
         Next
         Exit Function
 err1:
-        If VBDEBUG Then Debug.Print("replaceDelimsWithSpecialSep: " & Err.Description) : Stop : Resume
         LogToEventViewer("Error: " & Err.Description & " in CommonFuncs.replaceDelimsWithSpecialSep in " & Erl(), EventLogEntryType.Error)
     End Function
 
@@ -306,7 +304,6 @@ err1:
         getDBRangeName = Nothing
         Exit Function
 err1:
-        If VBDEBUG Then Debug.Print("getRangeName: " & Err.Description) : Stop : Resume
         LogToEventViewer("Error: " & Err.Description & " in CommonFuncs.getRangeName in " & Erl(), EventLogEntryType.Error)
     End Function
 

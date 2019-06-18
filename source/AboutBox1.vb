@@ -13,7 +13,7 @@
         Me.LabelProductName.Text = My.Application.Info.ProductName
         Me.LabelVersion.Text = String.Format("Version {0} Buildtime {1}", My.Application.Info.Version.ToString, sModuleInfo)
         Me.LabelCopyright.Text = My.Application.Info.Copyright
-        Me.LabelCompanyName.Text = "Help and Sources on: " + My.Application.Info.CompanyName
+        Me.LabelCompanyName.Text = "Information: " + My.Application.Info.CompanyName
         Me.TextBoxDescription.Text = My.Application.Info.Description
     End Sub
 

@@ -6,6 +6,8 @@ set source=bin\Release
 copy /Y %source%\DBaddin-AddIn64-packed.xll "%appdata%\Microsoft\AddIns"
 copy /Y %source%\DBaddin.pdb "%appdata%\Microsoft\AddIns"
 copy /Y %source%\DBaddin.dll.config "%appdata%\Microsoft\AddIns\DBaddin-AddIn64-packed.xll.config"
+pause
+exit 0
 REM Create .tlb file
 REM Setting up environment vairables
 call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86

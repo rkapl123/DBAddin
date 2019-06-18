@@ -35,7 +35,6 @@ Public Module ConfigFiles
         Exit Sub
 
 err1:
-        If VBDEBUG Then Debug.Print("Error (" & Err.Description & ") in ConfigFiles.loadConfig") : Stop : Resume
         LogToEventViewer("Error (" & Err.Description & ") using filename '" & theFileName & "' in ConfigFiles.loadConfig" & " in " & Erl(), EventLogEntryType.Error)
     End Sub
 
@@ -94,7 +93,6 @@ cleanup:
         theHostApp.Calculation = calcMode
         Exit Sub
 err1:
-        If VBDEBUG Then Debug.Print("Error (" & Err.Description & ") in ConfigFiles.createFunctionsInCells") : Stop : Resume
         LogError(Err.Description & " in ConfigFiles.createFunctionsInCells" & Erl(), , , 1)
     End Sub
 

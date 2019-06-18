@@ -572,7 +572,6 @@ DBRowFetch_Error:
         Exit Sub
 makeCalcMsgContainer_Error:
         If Err.Number <> 457 Then
-            If VBDEBUG Then Debug.Print("Error (" & Err.Description & ") in makeCalcMsgContainer, callID: " & callID) : Stop : Resume
             LogToEventViewer("Error (" & Err.Description & ") in Functions.makeCalcMsgContainer, callID: " & callID & ", in " & Erl(), EventLogEntryType.Error)
         End If
     End Sub

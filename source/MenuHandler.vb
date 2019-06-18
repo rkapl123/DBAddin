@@ -7,13 +7,18 @@ Imports Microsoft.Office.Interop.Excel
 
 Public Module MenuCommands
 
+    ''' <summary>reference object for the Addins ribbon</summary>
+    Public theRibbon As ExcelDna.Integration.CustomUI.IRibbonUI
+    ''' <summary>Application object used for referencing objects</summary>
+    Public hostApp As Object
+
     Public defnames As String() = {}
     Public defsheetMap As Dictionary(Of String, String)
     Public defsheetColl As Dictionary(Of String, Dictionary(Of String, Range))
 
     <ExcelCommand(Name:="saveRangeToDB", ShortCut:="^S")>
     Public Sub saveRangeToDBClick()
-        If saveRangeToDB(theHostApp.ActiveCell) Then MsgBox("hooray!")
+        If saveRangeToDB(hostApp.ActiveCell) Then MsgBox("hooray!")
     End Sub
 
     Public Sub saveAllWSheetRangesToDBClick()
@@ -31,7 +36,7 @@ Public Module MenuCommands
 
         ' enable events in case there were some problems in procedure with EnableEvents = false
         On Error Resume Next
-        theHostApp.EnableEvents = True
+        hostApp.EnableEvents = True
         If Err.Number <> 0 Then
             LogError("Can't refresh data while lookup dropdown is open !!")
             Exit Sub
@@ -47,19 +52,19 @@ Public Module MenuCommands
         ' now for DBListfetch/DBRowfetch resetting
         allCalcContainers = Nothing
         Dim underlyingName As Excel.Name
-        underlyingName = getDBRangeName(theHostApp.ActiveCell)
-        theHostApp.ScreenUpdating = True
+        underlyingName = getDBRangeName(hostApp.ActiveCell)
+        hostApp.ScreenUpdating = True
         If underlyingName Is Nothing Then
             ' reset query cache, so we really get new data !
             theDBFuncEventHandler.queryCache = New Collection
-            refreshDBFunctions(theHostApp.ActiveWorkbook)
+            refreshDBFunctions(hostApp.ActiveWorkbook)
             ' general refresh: also refresh all embedded queries and pivot tables..
             'On Error Resume Next
             'Dim ws     As Excel.Worksheet
             'Dim qrytbl As Excel.QueryTable
             'Dim pivottbl As Excel.PivotTable
 
-            'For Each ws In theHostApp.ActiveWorkbook.Worksheets
+            'For Each ws In hostApp.ActiveWorkbook.Worksheets
             '    For Each qrytbl In ws.QueryTables
             '       qrytbl.Refresh
             '    Next
@@ -84,33 +89,33 @@ Public Module MenuCommands
             If Left$(jumpName, 10) = "DBFtargetF" Then
                 jumpName = Replace(jumpName, "DBFtargetF", "DBFsource", 1, , vbTextCompare)
 
-                If Not theHostApp.Range(jumpName).Parent Is theHostApp.ActiveSheet Then
-                    theHostApp.ScreenUpdating = False
-                    theDBFuncEventHandler.origWS = theHostApp.ActiveSheet
+                If Not hostApp.Range(jumpName).Parent Is hostApp.ActiveSheet Then
+                    hostApp.ScreenUpdating = False
+                    theDBFuncEventHandler.origWS = hostApp.ActiveSheet
                     On Error Resume Next
-                    theHostApp.Range(jumpName).Parent.Select
+                    hostApp.Range(jumpName).Parent.Select
                     On Error GoTo err1
                 End If
-                theHostApp.Range(jumpName).Dirty
+                hostApp.Range(jumpName).Dirty
                 ' we're being called on a target area
             ElseIf Left$(jumpName, 9) = "DBFtarget" Then
                 jumpName = Replace(jumpName, "DBFtarget", "DBFsource", 1, , vbTextCompare)
 
-                If Not theHostApp.Range(jumpName).Parent Is theHostApp.ActiveSheet Then
-                    theHostApp.ScreenUpdating = False
-                    theDBFuncEventHandler.origWS = theHostApp.ActiveSheet
+                If Not hostApp.Range(jumpName).Parent Is hostApp.ActiveSheet Then
+                    hostApp.ScreenUpdating = False
+                    theDBFuncEventHandler.origWS = hostApp.ActiveSheet
                     On Error Resume Next
-                    theHostApp.Range(jumpName).Parent.Select
+                    hostApp.Range(jumpName).Parent.Select
                     On Error GoTo err1
                 End If
-                theHostApp.Range(jumpName).Dirty
+                hostApp.Range(jumpName).Dirty
                 ' we're being called on a source (invoking function) cell
             ElseIf Left$(jumpName, 9) = "DBFsource" Then
                 On Error Resume Next
-                theHostApp.Range(jumpName).Dirty
+                hostApp.Range(jumpName).Dirty
                 On Error GoTo err1
             Else
-                refreshDBFunctions(theHostApp.ActiveWorkbook)
+                refreshDBFunctions(hostApp.ActiveWorkbook)
             End If
         End If
 
@@ -123,7 +128,7 @@ err1:
     '  jumps from DB function to data area and back
     Public Sub jumpButton()
         Dim underlyingName As Excel.Name
-        underlyingName = getDBRangeName(theHostApp.ActiveCell)
+        underlyingName = getDBRangeName(hostApp.ActiveCell)
 
         If underlyingName Is Nothing Then Exit Sub
         Dim jumpName As String
@@ -136,19 +141,19 @@ err1:
             jumpName = Replace(jumpName, "DBFsource", "DBFtarget", 1, , vbTextCompare)
         End If
         On Error Resume Next
-        theHostApp.Range(jumpName).Parent.Select
-        theHostApp.Range(jumpName).Select
+        hostApp.Range(jumpName).Parent.Select
+        hostApp.Range(jumpName).Select
         If Err.Number <> 0 Then LogWarn("Can't jump to target/source, corresponding workbook open? " & Err.Description, 1)
         Err.Clear()
     End Sub
 
     ' gets defined named ranges for DBMapper invocation in the current workbook 
-    Public Function getRNames() As String
+    Public Function getDBMapperNames() As String
         ReDim Preserve defnames(-1)
         defsheetColl = New Dictionary(Of String, Dictionary(Of String, Range))
         defsheetMap = New Dictionary(Of String, String)
         Dim i As Integer = 0
-        For Each namedrange As Name In theHostApp.ActiveWorkbook.Names
+        For Each namedrange As Name In hostApp.ActiveWorkbook.Names
             Dim cleanname As String = Replace(namedrange.Name, namedrange.Parent.Name & "!", "")
             If Left(cleanname, 8) = "DBMapper" Then
                 If InStr(namedrange.RefersTo, "#REF!") > 0 Then Return "DBMapper definitions range " + namedrange.Parent.name + "!" + namedrange.Name + " contains #REF!"
@@ -157,7 +162,7 @@ err1:
                 Dim nodeName As String = Replace(Replace(namedrange.Name, "DBMapper", ""), namedrange.Parent.Name & "!", "")
                 If nodeName = "" Then nodeName = "MainDBMapper"
                 If Not InStr(namedrange.Name, "!") > 0 Then
-                    finalname = theHostApp.ActiveWorkbook.Name + finalname
+                    finalname = hostApp.ActiveWorkbook.Name + finalname
                 End If
 
                 Dim defColl As Dictionary(Of String, Range)
@@ -187,8 +192,8 @@ err1:
         Dim cbar As CommandBar
 
         On Error GoTo err1
-        cbar = theHostApp.CommandBars("DBAddin")
-        DBConfigB = theHostApp.CommandBars.FindControl(Tag:=gsDBConfigB_TAG)
+        cbar = hostApp.CommandBars("DBAddin")
+        DBConfigB = hostApp.CommandBars.FindControl(Tag:=gsDBConfigB_TAG)
         If DBConfigB Is Nothing Then
             fillConfigTreeFirstRun = True
             DBConfigB = cbar.Controls.Add(controlType:=MsoControlType.msoControlPopup, Id:=2, Before:=1, Parameter:=1, Temporary:=False)
@@ -205,7 +210,7 @@ err1:
             specialConfigFoldersTempColl = New Collection
             readAllFiles(ConfigStoreFolder, DBConfigB)
             specialConfigFoldersTempColl = Nothing
-            theHostApp.StatusBar = String.Empty
+            hostApp.StatusBar = String.Empty
         End If
         Exit Sub
 
@@ -300,7 +305,7 @@ err1:
 
         ' recursively build branched menu structure from dirEntries
         For i = 0 To UBound(DirList)
-            theHostApp.StatusBar = "Filling DBConfigs Menu: " & rootPath & "\" & DirList(i)
+            hostApp.StatusBar = "Filling DBConfigs Menu: " & rootPath & "\" & DirList(i)
             'newBar = currentBar.Controls.Add(Type:=msoControlPopup)
             'newBar.Caption = DirList(i)
             'newBar.Tag = DirList(i)
@@ -399,33 +404,25 @@ buildFileSepMenuCtrl_Err:
     ''
     ' Do string Quicksort of array sortList
     Private Sub QuickSort(ByRef sortList As Object, ByVal LB As Long, ByVal UB As Long)
-        Dim P1 As Long, P2 As Long, Ref As String, temp As String
-
-        P1 = LB
-        P2 = UB
+        Dim P1 As Long = LB, P2 As Long = UB, Ref As String, temp As String
         Ref = sortList((P1 + P2) / 2)
-
         Do
             Do While (sortList(P1) < Ref)
                 P1 = P1 + 1
             Loop
-
             Do While (sortList(P2) > Ref)
                 P2 = P2 - 1
             Loop
-
             If P1 <= P2 Then
                 temp = sortList(P1)
                 sortList(P1) = sortList(P2)
                 sortList(P2) = temp
-
                 P1 = P1 + 1
                 P2 = P2 - 1
             End If
         Loop Until (P1 > P2)
-
-        If LB < P2 Then Call QuickSort(sortList, LB, P2)
-        If P1 < UB Then Call QuickSort(sortList, P1, UB)
+        If LB < P2 Then QuickSort(sortList, LB, P2)
+        If P1 < UB Then QuickSort(sortList, P1, UB)
     End Sub
 
 End Module
@@ -441,20 +438,23 @@ Public Class MenuHandler
     Private selectedEnvironment As Integer
 
     Public Sub ribbonLoaded(theRibbon As ExcelDna.Integration.CustomUI.IRibbonUI)
-        Globals.theRibbon = theRibbon
+        MenuCommands.theRibbon = theRibbon
+        hostApp = ExcelDnaUtil.Application
+        defsheetColl = New Dictionary(Of String, Dictionary(Of String, Range))
+        defsheetMap = New Dictionary(Of String, String)
+
         ' load environments
         Dim i As Integer = 1
         Dim ConfigName As String
         Do
-            ConfigName = fetchSetting("ConfigName" + i, vbNullString)
+            ConfigName = fetchSetting("ConstConnStringName" + i.ToString(), vbNullString)
             If Len(ConfigName) > 0 Then
                 ReDim Preserve defnames(defnames.Length)
                 defnames(defnames.Length - 1) = ConfigName + " - " + i.ToString()
             End If
             ' set selectedEnvironment
-            If fetchSetting("ConstConnString" & i, vbNullString) = ConstConnString Then
-                selectedEnvironment = i
-                storeSetting("ConfigName", ConfigName)
+            If fetchSetting("ConstConnString" + i.ToString(), vbNullString) = ConstConnString Then
+                selectedEnvironment = i - 1
             End If
             i = i + 1
         Loop Until Len(ConfigName) = 0
@@ -480,32 +480,33 @@ Public Class MenuHandler
     Public Function GetSelItem(control As IRibbonControl) As Integer
         Return selectedEnvironment
     End Function
-    ' Choose environment (configured in registry with ConfigName<N>, ConstConnString<N>, ConfigStoreFolder<N>)
+
+    ' Choose environment (configured in registry with ConstConnString<N>, ConfigStoreFolder<N>)
     Public Sub selectItem(control As IRibbonControl, id As String, index As Integer)
-        selectedEnvironment = index + 1
+        selectedEnvironment = index
+        Dim env As String = (index + 1).ToString()
 
         If GetSetting("DBAddin", "Settings", "DontChangeEnvironment", String.Empty) = "Y" Then
             MsgBox("Setting DontChangeEnvironment is set to Y, therefore changing the Environment is prevented !")
             Exit Sub
         End If
-        storeSetting("ConstConnString", fetchSetting("ConstConnString" & selectedEnvironment.ToString(), String.Empty))
-        storeSetting("ConfigStoreFolder", fetchSetting("ConfigStoreFolder" & selectedEnvironment.ToString(), String.Empty))
-        storeSetting("ConfigName", fetchSetting("ConfigName" & selectedEnvironment.ToString(), String.Empty))
+        storeSetting("ConstConnString", fetchSetting("ConstConnString" & env, String.Empty))
+        storeSetting("ConfigStoreFolder", fetchSetting("ConfigStoreFolder" & env, String.Empty))
 
         initSettings()
         dontTryConnection = False  ' provide a chance to reconnect when switching environment...
     End Sub
 
 
-    ' creates the Ribbon <buttonGroup id='buttonGroup'> <box id='box2' boxStyle='horizontal'>
+    ' creates the Ribbon
     Public Overrides Function GetCustomUI(RibbonID As String) As String
-        Dim customUIXml As String = "<customUI xmlns='http://schemas.microsoft.com/office/2006/01/customui' onLoad='ribbonLoaded' ><ribbon><tabs><tab id='RaddinTab' label='R Addin'>" +
+        Dim customUIXml As String = "<customUI xmlns='http://schemas.microsoft.com/office/2006/01/customui' onLoad='ribbonLoaded' ><ribbon><tabs><tab id='DBaddinTab' label='DB Addin'>" +
             "<group id='DBaddinGroup' label='General settings'>" +
               "<dropDown id='envDropDown' label='Environment:' sizeString='12345678901234567890' getSelectedItemIndex='GetSelItem' getItemCount='GetItemCount' getItemID='GetItemID' getItemLabel='GetItemLabel' onAction='selectItem'/>" +
               "" +
               "<dialogBoxLauncher><button id='dialog' label='About DBAddin' onAction='showAbout' tag='3' screentip='Show Aboutbox and refresh configs if wanted'/></dialogBoxLauncher></group>" +
               "<group id='RscriptsGroup' label='Store Data defined with saveRangeToDB'>"
-        For i As Integer = 0 To 3
+        For i As Integer = 0 To 10
             customUIXml = customUIXml + "<dynamicMenu id='ID" + i.ToString() + "' " +
                                             "size='normal' getLabel='getSheetLabel' imageMso='SignatureLineInsert' " +
                                             "screentip='Select script to run' " +
@@ -524,9 +525,12 @@ Public Class MenuHandler
     ' create the buttons in the WB/sheet dropdown
     Public Function getDynMenContent(control As IRibbonControl) As String
         Dim xmlString As String = "<menu xmlns='http://schemas.microsoft.com/office/2009/07/customui'>"
+
+        If Not defsheetMap.ContainsKey(control.Id) Then Return ""
+
         Dim currentSheet As String = defsheetMap(control.Id)
         For Each nodeName As String In defsheetColl(currentSheet).Keys
-            xmlString = xmlString + "<button id='" + nodeName + "' label='run " + nodeName + "' imageMso='SignatureLineInsert' onAction='startRprocess' tag ='" + currentSheet + "' screentip='store " + nodeName + "' supertip='stores data defined in " + nodeName + " Mapper range on sheet " + currentSheet + "' />"
+            xmlString = xmlString + "<button id='" + nodeName + "' label='store " + nodeName + "' imageMso='SignatureLineInsert' onAction='saveRangeToDBClick' tag ='" + currentSheet + "' screentip='store " + nodeName + "' supertip='stores data defined in " + nodeName + " Mapper range on sheet " + currentSheet + "' />"
         Next
         xmlString = xmlString + "</menu>"
         Return xmlString
@@ -546,76 +550,5 @@ Public Class MenuHandler
     Private Sub mDBConfigPreparedButton_Click(ByVal Ctrl As CommandBarButton, CancelDefault As Boolean)
         loadConfig(Ctrl.Tag)
     End Sub
-
-
-    'TODO: convert to ribbon
-    ''
-    '  sets up the "DBAddin" Cmd menu bar
-    Private Sub createCommandBar()
-        '        Dim cbar As CommandBar
-        '        Dim newBtn As CommandBarButton
-        '        Dim cbpop As CommandBarControl
-
-        '        On Error GoTo err1
-        '        disableBar = False
-        '        If existsCommandBar() Then
-        '            cbar = theHostApp.CommandBars("DBAddin")
-        '        Else
-        '            cbar = theHostApp.CommandBars.Add(name:="DBAddin")
-
-        '            With cbar
-        '                .Visible = True
-        '            End With
-        '        End If
-        '        If theHostApp.CommandBars.FindControl(Tag:=gsABOUT_TAG) Is Nothing Then
-        '            ' Create "About" control button on the main menu bar
-        '            newBtn = cbar.Controls.Add(controlType:=MsoControlType.msoControlButton,1,)
-        '            newBtn.Caption = "About"
-        '            newBtn.Tag = gsABOUT_TAG
-        '            newBtn.Style = MsoButtonStyle.msoButtonIconAndCaption
-        '            newBtn.FaceId = 984
-        '        End If
-        '        theHostApp.CommandBars.FindControl(Tag:=gsABOUT_TAG).ToolTipText = "General DBAddin Information/Help"
-
-        '        ' Create "Connections" control popup on the main menu bar
-        '        Dim connBtn As CommandBarPopup
-        '        On Error Resume Next
-        '        theHostApp.CommandBars.FindControl(Tag:=gsCONSTCONN_TAG).Delete
-        '        On Error GoTo err1
-        '        connBtn = cbar.Controls.Add(Type:=msoControlPopup)
-        '        connBtn.Tag = gsCONSTCONN_TAG
-        '        connBtn.ToolTipText = "Select Connection Definitions"
-        '        Dim i As Long, ConfigName As String
-        '        i = 1
-        '        Do
-        '            ConfigName = fetchSetting("ConfigName" & i, String.Empty)
-        '            If ConfigName.Length > 0 Then
-        '                With connBtn.Controls.Add(controlType:=MsoControlType.msoControlButton)
-        '                    .Caption = ConfigName & " - " & i
-        '                    .Style = msoButtonCaption
-        '                    .Parameter = i
-        '                    .Tag = gsCONSTCONNACTION_TAG
-
-        '                    If fetchSetting("ConstConnString" & i, String.Empty) = ConstConnString Then
-        '                        .State = -1
-        '                        connBtn.Caption = "Env: " & ConfigName
-        '                        storeSetting("ConfigName", ConfigName)
-        '                    Else
-        '                        .State = 0
-        '                    End If
-        '                End With
-        '            End If
-        '            i = i + 1
-        '        Loop Until ConfigName.Length = 0
-
-        '        mEvironSelButton = theHostApp.CommandBars.FindControl(Tag:=gsCONSTCONNACTION_TAG)
-        '        theHostApp.CommandBars.FindControl(Tag:=gsDBSheetParametersB_TAG).Enabled = False
-        '        createConfigTreeMenu()
-        '        Exit Sub
-
-        'err1:
-        '        LogToEventViewer("Error (" & Err.Description & ") in MenuHandler.createCommandBar in " & Erl(), EventLogEntryType.Error, 1)
-    End Sub
-
 
 End Class
