@@ -20,9 +20,10 @@ Public Module ConfigFiles
         Dim retval As Integer
 
         On Error GoTo err1
-        retval = MsgBox("Inserting contents configured in " & theFileName, vbInformation + vbOKCancel, "DBAddin: Inserting Configuration...") 'Ctrl.Parameter
+        retval = MsgBox("Inserting contents configured in " & theFileName, vbInformation + vbOKCancel, "DBAddin: Inserting Configuration...")
         If retval = vbCancel Then Exit Sub
         If theHostApp.ActiveWorkbook Is Nothing Then theHostApp.Workbooks.Add
+        ConfigFiles.referenceCell = theHostApp.ActiveCell
 
         ' open file for reading
         Dim fileReader As System.IO.StreamReader = My.Computer.FileSystem.OpenTextFileReader(theFileName)
@@ -30,7 +31,7 @@ Public Module ConfigFiles
             ItemLine = fileReader.ReadLine()
             ' now insert the parsed information
             createFunctionsInCells(theHostApp.ActiveCell, Split(ItemLine, vbTab))
-        Loop Until EOF(1)
+        Loop Until fileReader.EndOfStream
         fileReader.Close()
         Exit Sub
 

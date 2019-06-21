@@ -1,431 +1,8 @@
-Imports Microsoft.Office.Interop
 Imports ExcelDna.Integration
 Imports ExcelDna.Integration.CustomUI
-Imports System.IO
 Imports System.Runtime.InteropServices
 Imports Microsoft.Office.Interop.Excel
-
-Public Module MenuCommands
-
-    ''' <summary>reference object for the Addins ribbon</summary>
-    Public theRibbon As ExcelDna.Integration.CustomUI.IRibbonUI
-    ''' <summary>Application object used for referencing objects</summary>
-    Public hostApp As Object
-
-    Public defnames As String() = {}
-    Public defsheetMap As Dictionary(Of String, String)
-    Public defsheetColl As Dictionary(Of String, Dictionary(Of String, Range))
-
-    <ExcelCommand(Name:="saveRangeToDB", ShortCut:="^S")>
-    Public Sub saveRangeToDBClick()
-        If saveRangeToDB(hostApp.ActiveCell) Then MsgBox("hooray!")
-    End Sub
-
-    Public Sub saveAllWSheetRangesToDBClick()
-
-    End Sub
-
-    Public Sub saveAllWBookRangesToDBClick()
-
-    End Sub
-
-    '  context menu "refresh data" was clicked, do a refresh of db functions (shortcut CTRL-e)
-    <ExcelCommand(Name:="refreshData", ShortCut:="^e")>
-    Public Sub refreshData()
-        initSettings()
-
-        ' enable events in case there were some problems in procedure with EnableEvents = false
-        On Error Resume Next
-        hostApp.EnableEvents = True
-        If Err.Number <> 0 Then
-            LogError("Can't refresh data while lookup dropdown is open !!")
-            Exit Sub
-        End If
-
-        ' also reset the database connection in case of errors...
-        theDBFuncEventHandler.cnn.Close()
-        theDBFuncEventHandler.cnn = Nothing
-
-        dontTryConnection = False
-        On Error GoTo err1
-
-        ' now for DBListfetch/DBRowfetch resetting
-        allCalcContainers = Nothing
-        Dim underlyingName As Excel.Name
-        underlyingName = getDBRangeName(hostApp.ActiveCell)
-        hostApp.ScreenUpdating = True
-        If underlyingName Is Nothing Then
-            ' reset query cache, so we really get new data !
-            theDBFuncEventHandler.queryCache = New Collection
-            refreshDBFunctions(hostApp.ActiveWorkbook)
-            ' general refresh: also refresh all embedded queries and pivot tables..
-            'On Error Resume Next
-            'Dim ws     As Excel.Worksheet
-            'Dim qrytbl As Excel.QueryTable
-            'Dim pivottbl As Excel.PivotTable
-
-            'For Each ws In hostApp.ActiveWorkbook.Worksheets
-            '    For Each qrytbl In ws.QueryTables
-            '       qrytbl.Refresh
-            '    Next
-            '    For Each pivottbl In ws.PivotTables
-            '        pivottbl.PivotCache.Refresh
-            '    Next
-            'Next
-            'On Error GoTo err1
-        Else
-            ' reset query cache, so we really get new data !
-            theDBFuncEventHandler.queryCache = New Collection
-
-            Dim jumpName As String
-            jumpName = underlyingName.Name
-            ' because of a stupid excel behaviour (Range.Dirty only works if the parent sheet of Range is active)
-            ' we have to jump to the sheet containing the dbfunction and then activate back...
-            theDBFuncEventHandler.origWS = Nothing
-            ' this is switched back in DBFuncEventHandler.Calculate event,
-            ' where we also select back the original active worksheet
-
-            ' we're being called on a target (addtional) functions area
-            If Left$(jumpName, 10) = "DBFtargetF" Then
-                jumpName = Replace(jumpName, "DBFtargetF", "DBFsource", 1, , vbTextCompare)
-
-                If Not hostApp.Range(jumpName).Parent Is hostApp.ActiveSheet Then
-                    hostApp.ScreenUpdating = False
-                    theDBFuncEventHandler.origWS = hostApp.ActiveSheet
-                    On Error Resume Next
-                    hostApp.Range(jumpName).Parent.Select
-                    On Error GoTo err1
-                End If
-                hostApp.Range(jumpName).Dirty
-                ' we're being called on a target area
-            ElseIf Left$(jumpName, 9) = "DBFtarget" Then
-                jumpName = Replace(jumpName, "DBFtarget", "DBFsource", 1, , vbTextCompare)
-
-                If Not hostApp.Range(jumpName).Parent Is hostApp.ActiveSheet Then
-                    hostApp.ScreenUpdating = False
-                    theDBFuncEventHandler.origWS = hostApp.ActiveSheet
-                    On Error Resume Next
-                    hostApp.Range(jumpName).Parent.Select
-                    On Error GoTo err1
-                End If
-                hostApp.Range(jumpName).Dirty
-                ' we're being called on a source (invoking function) cell
-            ElseIf Left$(jumpName, 9) = "DBFsource" Then
-                On Error Resume Next
-                hostApp.Range(jumpName).Dirty
-                On Error GoTo err1
-            Else
-                refreshDBFunctions(hostApp.ActiveWorkbook)
-            End If
-        End If
-
-        Exit Sub
-err1:
-        LogToEventViewer("Error (" & Err.Description & ") in MenuHandler.refreshData in " & Erl(), EventLogEntryType.Error)
-    End Sub
-
-    ''
-    '  jumps from DB function to data area and back
-    Public Sub jumpButton()
-        Dim underlyingName As Excel.Name
-        underlyingName = getDBRangeName(hostApp.ActiveCell)
-
-        If underlyingName Is Nothing Then Exit Sub
-        Dim jumpName As String
-        jumpName = underlyingName.Name
-        If Left$(jumpName, 10) = "DBFtargetF" Then
-            jumpName = Replace(jumpName, "DBFtargetF", "DBFsource", 1, , vbTextCompare)
-        ElseIf Left$(jumpName, 9) = "DBFtarget" Then
-            jumpName = Replace(jumpName, "DBFtarget", "DBFsource", 1, , vbTextCompare)
-        Else
-            jumpName = Replace(jumpName, "DBFsource", "DBFtarget", 1, , vbTextCompare)
-        End If
-        On Error Resume Next
-        hostApp.Range(jumpName).Parent.Select
-        hostApp.Range(jumpName).Select
-        If Err.Number <> 0 Then LogWarn("Can't jump to target/source, corresponding workbook open? " & Err.Description, 1)
-        Err.Clear()
-    End Sub
-
-    ' gets defined named ranges for DBMapper invocation in the current workbook 
-    Public Function getDBMapperNames() As String
-        ReDim Preserve defnames(-1)
-        defsheetColl = New Dictionary(Of String, Dictionary(Of String, Range))
-        defsheetMap = New Dictionary(Of String, String)
-        Dim i As Integer = 0
-        For Each namedrange As Name In hostApp.ActiveWorkbook.Names
-            Dim cleanname As String = Replace(namedrange.Name, namedrange.Parent.Name & "!", "")
-            If Left(cleanname, 8) = "DBMapper" Then
-                If InStr(namedrange.RefersTo, "#REF!") > 0 Then Return "DBMapper definitions range " + namedrange.Parent.name + "!" + namedrange.Name + " contains #REF!"
-                ' final name of entry is without DBMapper and !
-                Dim finalname As String = Replace(Replace(namedrange.Name, "DBMapper", ""), "!", "")
-                Dim nodeName As String = Replace(Replace(namedrange.Name, "DBMapper", ""), namedrange.Parent.Name & "!", "")
-                If nodeName = "" Then nodeName = "MainDBMapper"
-                If Not InStr(namedrange.Name, "!") > 0 Then
-                    finalname = hostApp.ActiveWorkbook.Name + finalname
-                End If
-
-                Dim defColl As Dictionary(Of String, Range)
-                If Not defsheetColl.ContainsKey(namedrange.Parent.Name) Then
-                    ' add to new sheet "menu"
-                    defColl = New Dictionary(Of String, Range)
-                    defColl.Add(nodeName, namedrange.RefersToRange)
-                    defsheetColl.Add(namedrange.Parent.Name, defColl)
-                    defsheetMap.Add("ID" + i.ToString(), namedrange.Parent.Name)
-                    i = i + 1
-                Else
-                    ' add definition to existing sheet "menu"
-                    defColl = defsheetColl(namedrange.Parent.Name)
-                    defColl.Add(nodeName, namedrange.RefersToRange)
-                End If
-            End If
-        Next
-        Return vbNullString
-    End Function
-
-    Private specialConfigFoldersTempColl As Collection
-
-    ''
-    ' create the config tree menu
-    Public Sub createConfigTreeMenu(Optional fillConfigTreeFirstRun As Boolean = False)
-        Dim DBConfigB As CommandBarPopup
-        Dim cbar As CommandBar
-
-        On Error GoTo err1
-        cbar = hostApp.CommandBars("DBAddin")
-        DBConfigB = hostApp.CommandBars.FindControl(Tag:=gsDBConfigB_TAG)
-        If DBConfigB Is Nothing Then
-            fillConfigTreeFirstRun = True
-            DBConfigB = cbar.Controls.Add(controlType:=MsoControlType.msoControlPopup, Id:=2, Before:=1, Parameter:=1, Temporary:=False)
-            DBConfigB.Caption = "DBConfigs"
-            DBConfigB.Tag = gsDBConfigB_TAG
-        End If
-        DBConfigB.TooltipText = "DB Function Configuration Files quick access"
-        If fillConfigTreeFirstRun Then
-            If Not File.Exists(ConfigStoreFolder) Then
-                DBConfigB.Caption = "No Config Store !!"
-                DBConfigB.TooltipText = "Couldn't find predefined config store folder '" & ConfigStoreFolder & "', please check registry setting for config store folder location and refresh !"
-                Exit Sub
-            End If
-            specialConfigFoldersTempColl = New Collection
-            readAllFiles(ConfigStoreFolder, DBConfigB)
-            specialConfigFoldersTempColl = Nothing
-            hostApp.StatusBar = String.Empty
-        End If
-        Exit Sub
-
-err1:
-        LogToEventViewer("Error (" & Err.Description & ") in MenuHandler.createTreeMenu in " & Erl(), EventLogEntryType.Error)
-    End Sub
-
-    ''
-    ' reads all files contained in rootPath and its subfolders (recursively)
-    '             and adds them to currentBar and submenus (recursively)
-    ' @param rootPath
-    ' @param currentBar
-    Sub readAllFiles(rootPath As String, currentBar As CommandBarControl)
-        Dim newBar As CommandBarControl
-        Dim configType As String, entry As String
-        Dim i As Long
-        Dim DirList() As String, fileList() As String
-        Dim specialFolderMaxDepth As Integer
-        Dim specialConfigStoreSeparator As String
-
-        On Error GoTo err1
-        configType = "XCL"
-
-        ' read all leaf node entries (files) to create action menus
-        entry = Dir(rootPath & "\*." & configType, vbNormal)
-        i = 0 : ReDim fileList(i)
-        Do While entry.Length > 0
-            ReDim Preserve fileList(i)
-            fileList(i) = entry
-            i = i + 1
-            entry = Dir()
-        Loop
-
-        If i > 0 Then
-            If sortConfigStoreFolders Then QuickSort(fileList, LBound(fileList), UBound(fileList))
-
-            ' for special folders split further into camelcase (or other) separated names
-            Dim aFolder : Dim spclFolder As String : spclFolder = String.Empty
-            Dim theFolder As String
-            theFolder = Mid$(rootPath, InStrRev(rootPath, "\") + 1)
-            For Each aFolder In specialConfigStoreFolders
-                If UCase$(theFolder) = UCase$(aFolder) Then
-                    spclFolder = aFolder
-                    Exit For
-                End If
-            Next
-
-            If spclFolder.Length > 0 Then
-                Dim firstCharLevel As Boolean
-                firstCharLevel = CBool(fetchSetting(spclFolder & "FirstLetterLevel", "False"))
-                specialFolderMaxDepth = fetchSetting(spclFolder & "MaxDepth", 10000)
-                specialConfigStoreSeparator = fetchSetting(spclFolder & "Separator", String.Empty)
-                For i = 0 To UBound(fileList)
-                    ' is current entry contained in next entry then revert order to allow for containment in next entry's hierarchy..
-                    If i < UBound(fileList) Then
-                        If InStr(1, Left$(fileList(i + 1), Len(fileList(i + 1)) - 4), Left$(fileList(i), Len(fileList(i)) - 4)) > 0 Then
-                            buildFileSepMenuCtrl(stringParts(IIf(firstCharLevel, Left$(fileList(i + 1), 1) & " ", String.Empty) &
-                                                            Left$(fileList(i + 1), Len(fileList(i + 1)) - 4), specialConfigStoreSeparator), currentBar, rootPath & "\" & fileList(i + 1), spclFolder, specialFolderMaxDepth)
-                            buildFileSepMenuCtrl(stringParts(IIf(firstCharLevel, Left$(fileList(i), 1) & " ", String.Empty) &
-                                                            Left$(fileList(i), Len(fileList(i)) - 4), specialConfigStoreSeparator), currentBar, rootPath & "\" & fileList(i), spclFolder, specialFolderMaxDepth)
-                            i = i + 2
-                            If i > UBound(fileList) Then Exit For
-                        End If
-                    End If
-                    buildFileSepMenuCtrl(stringParts(IIf(firstCharLevel, Left$(fileList(i), 1) & " ", String.Empty) &
-                            Left$(fileList(i), Len(fileList(i)) - 4), specialConfigStoreSeparator), currentBar, rootPath & "\" & fileList(i), spclFolder, specialFolderMaxDepth)
-                Next
-                ' normal case: just follow the path and enter all
-            Else
-                For i = 0 To UBound(fileList)
-                    'newBar = currentBar.Controls.Add(Type:=msoControlButton)
-                    'newBar.Caption = Left$(fileList(i), Len(fileList(i)) - 4)
-                    'newBar.Parameter = rootPath & "\" & fileList(i)
-                    'newBar.Tag = gsITEMLOADPREPARED_TAG
-                Next
-            End If
-        End If
-
-        ' read all dir entries
-        entry = Dir(rootPath & "\", vbDirectory)
-        i = 0 : ReDim DirList(i)
-        Do While entry.Length > 0
-            If entry <> "." And entry <> ".." And (GetAttr(rootPath & "\" & entry) And vbDirectory) = vbDirectory Then
-                ReDim Preserve DirList(i)
-                DirList(i) = entry
-                i = i + 1
-            End If
-            entry = Dir()
-        Loop
-        If i = 0 Then Exit Sub
-        If sortConfigStoreFolders Then QuickSort(DirList, LBound(DirList), UBound(DirList))
-
-        ' recursively build branched menu structure from dirEntries
-        For i = 0 To UBound(DirList)
-            hostApp.StatusBar = "Filling DBConfigs Menu: " & rootPath & "\" & DirList(i)
-            'newBar = currentBar.Controls.Add(Type:=msoControlPopup)
-            'newBar.Caption = DirList(i)
-            'newBar.Tag = DirList(i)
-            'readAllFiles(rootPath & "\" & DirList(i), newBar)
-        Next
-        Exit Sub
-err1:
-        LogToEventViewer("Error (" & Err.Description & ") in MenuHandler.readAllFiles in " & Erl(), EventLogEntryType.Error)
-        Resume Next
-    End Sub
-
-    'TODO: convert to ribbon
-    ''
-    ' parses Substrings contained in nameParts (recursively)
-    '             and adds them to currentBar and submenus (recursively)
-    ' @param nameParts
-    ' @param currentBar
-    ' @param fullPathName
-    ' @param newRootName
-    ' @param specialFolderMaxDepth
-    Sub buildFileSepMenuCtrl(nameParts As String, currentBar As CommandBarControl, fullPathName As String, newRootName As String, specialFolderMaxDepth As Integer)
-        Dim newBar As CommandBarControl
-        Dim newSubBar As CommandBarControl
-        Static currentDepth As Integer
-
-        On Error GoTo buildFileSepMenuCtrl_Err
-        ' end node: add callable cmdbar entry
-        If InStr(1, nameParts, " ") = 0 Or currentDepth > specialFolderMaxDepth - 1 Then
-            On Error Resume Next
-            newBar = specialConfigFoldersTempColl(newRootName & nameParts)
-            If Err.Number <> 0 Then newSubBar = currentBar
-            Err.Clear()
-            'newBar = newSubBar.Controls.Add(Type:=msoControlButton)
-            Dim entryName : entryName = Mid$(fullPathName, InStrRev(fullPathName, "\") + 1)
-            newBar.Caption = Left$(entryName, Len(entryName) - 4)
-            'newBar.Parameter = fullPathName
-            newBar.Tag = gsITEMLOADPREPARED_TAG
-        Else  ' leaf node: add popup menu entry
-            Dim newName As String
-            newName = Left$(nameParts, InStr(1, nameParts, " ") - 1)
-            On Error Resume Next
-            newBar = specialConfigFoldersTempColl(newRootName & newName)
-            If Err.Number <> 0 Then
-                'newBar = currentBar.Controls.Add(Type:=msoControlPopup)
-                newBar.Caption = newName
-                specialConfigFoldersTempColl.Add(newBar, newRootName & newName)
-            End If
-            Err.Clear()
-            currentDepth = currentDepth + 1
-            buildFileSepMenuCtrl(Mid$(nameParts, InStr(1, nameParts, " ") + 1), newBar, fullPathName, newRootName & newName, specialFolderMaxDepth)
-            currentDepth = currentDepth - 1
-        End If
-        Exit Sub
-
-buildFileSepMenuCtrl_Err:
-        LogToEventViewer("Error (" & Err.Description & ") in MenuHandler.buildFileSepMenuCtrl in " & Erl(), EventLogEntryType.Error)
-    End Sub
-
-    ''
-    ' return parts of a CamelCase string
-    Private Function stringParts(theString As String, specialConfigStoreSeparator As String) As String
-        Dim CamelCaseStrLen As Integer
-        Dim i As Integer
-        Dim aChar As String
-        Dim charAsc As Integer
-        Dim pre As Integer
-
-        stringParts = String.Empty
-        If specialConfigStoreSeparator.Length > 0 Then
-            stringParts = Join(Split(theString, specialConfigStoreSeparator), " ")
-        Else
-            CamelCaseStrLen = Len(theString)
-            For i = 1 To CamelCaseStrLen
-                aChar = Mid$(theString, i, 1)
-                charAsc = Asc(aChar)
-
-                If i > 1 Then
-                    pre = Asc(Mid$(theString, i - 1, 1))
-                    If charAsc = 95 Then
-                        If Not (pre = 36 Or pre = 45 Or pre = 95) _
-                            Then stringParts = stringParts & " "
-                    End If
-                    If (charAsc >= 65 And charAsc <= 90) Then      'Uppercase characters
-                        If Not (pre >= 65 And pre <= 90) _
-                           And Not (pre = 36 Or pre = 45 Or pre = 95) _
-                           And Not (pre >= 48 And pre <= 57) _
-                           Then stringParts = stringParts & " "
-                    End If
-                End If
-                stringParts = stringParts & aChar
-            Next
-            stringParts = LTrim$(Replace(Replace(stringParts, "   ", " "), "  ", " "))
-        End If
-    End Function
-
-    ''
-    ' Do string Quicksort of array sortList
-    Private Sub QuickSort(ByRef sortList As Object, ByVal LB As Long, ByVal UB As Long)
-        Dim P1 As Long = LB, P2 As Long = UB, Ref As String, temp As String
-        Ref = sortList((P1 + P2) / 2)
-        Do
-            Do While (sortList(P1) < Ref)
-                P1 = P1 + 1
-            Loop
-            Do While (sortList(P2) > Ref)
-                P2 = P2 - 1
-            Loop
-            If P1 <= P2 Then
-                temp = sortList(P1)
-                sortList(P1) = sortList(P2)
-                sortList(P2) = temp
-                P1 = P1 + 1
-                P2 = P2 - 1
-            End If
-        Loop Until (P1 > P2)
-        If LB < P2 Then QuickSort(sortList, LB, P2)
-        If P1 < UB Then QuickSort(sortList, P1, UB)
-    End Sub
-
-End Module
+Imports System.IO
 
 ''
 '  handles all Menu related aspects (context menu for building/refreshing,
@@ -438,7 +15,7 @@ Public Class MenuHandler
     Private selectedEnvironment As Integer
 
     Public Sub ribbonLoaded(theRibbon As ExcelDna.Integration.CustomUI.IRibbonUI)
-        MenuCommands.theRibbon = theRibbon
+        DBAddin.theRibbon = theRibbon
         hostApp = ExcelDnaUtil.Application
         defsheetColl = New Dictionary(Of String, Dictionary(Of String, Range))
         defsheetMap = New Dictionary(Of String, String)
@@ -497,13 +74,19 @@ Public Class MenuHandler
         dontTryConnection = False  ' provide a chance to reconnect when switching environment...
     End Sub
 
+    Public Sub refreshDBConfigTree(control As IRibbonControl)
+        initSettings()
+        createConfigTreeMenu()
+        theRibbon.Invalidate()
+        MsgBox("refreshed DB Config Tree Menu", vbInformation + vbOKOnly, "DBAddin: refresh Config tree...")
+    End Sub
 
     ' creates the Ribbon
     Public Overrides Function GetCustomUI(RibbonID As String) As String
-        Dim customUIXml As String = "<customUI xmlns='http://schemas.microsoft.com/office/2006/01/customui' onLoad='ribbonLoaded' ><ribbon><tabs><tab id='DBaddinTab' label='DB Addin'>" +
+        Dim customUIXml As String = "<customUI xmlns='http://schemas.microsoft.com/office/2009/07/customui' onLoad='ribbonLoaded' ><ribbon><tabs><tab id='DBaddinTab' label='DB Addin'>" +
             "<group id='DBaddinGroup' label='General settings'>" +
               "<dropDown id='envDropDown' label='Environment:' sizeString='12345678901234567890' getSelectedItemIndex='GetSelItem' getItemCount='GetItemCount' getItemID='GetItemID' getItemLabel='GetItemLabel' onAction='selectItem'/>" +
-              "" +
+              "<dynamicMenu id='DBConfigs' size='normal' label='DB Configs' imageMso='Refresh' screentip='DB Function Configuration Files quick access' getContent='getDBConfigMenu'/>" +
               "<dialogBoxLauncher><button id='dialog' label='About DBAddin' onAction='showAbout' tag='3' screentip='Show Aboutbox and refresh configs if wanted'/></dialogBoxLauncher></group>" +
               "<group id='RscriptsGroup' label='Store Data defined with saveRangeToDB'>"
         For i As Integer = 0 To 10
@@ -512,8 +95,28 @@ Public Class MenuHandler
                                             "screentip='Select script to run' " +
                                             "getContent='getDynMenContent' getVisible='getDynMenVisible'/>"
         Next
-        customUIXml = customUIXml + "</group></tab></tabs></ribbon></customUI>"
+        customUIXml = customUIXml + "</group></tab></tabs></ribbon>" +
+         "<contextMenus><contextMenu idMso='ContextMenuCell'>" +
+         "<button id='refreshData' label='refresh data' imageMso='Refresh' onAction='refreshData' insertBeforeMso='Cut'/>" +
+         "<button id='gotoDBFunc' label='GoTo DBFunc/target' imageMso='ConvertTextToTable' onAction='jumpButton' insertBeforeMso='Cut'/>" +
+         "<menuSeparator id='MySeparator' insertBeforeMso='Cut'/>" +
+         "</contextMenu></contextMenus></customUI>"
         Return customUIXml
+    End Function
+
+    Public Function getDBConfigMenu(control As IRibbonControl) As String
+        If Not File.Exists(menufilename) Then
+            Return "<menu xmlns='http://schemas.microsoft.com/office/2009/07/customui'><button id='refreshConfig' label='refresh DBConfig Tree' imageMso='Refresh' onAction='refreshDBConfigTree'/></menu>"
+        End If
+
+        Dim menufile As StreamReader = Nothing
+        Try
+            menufile = New StreamReader(menufilename, System.Text.Encoding.GetEncoding(1252))
+        Catch ex As Exception
+            MsgBox("Exception occured When trying To open menufile " + menufilename + ": " + ex.Message)
+        End Try
+        getDBConfigMenu = menufile.ReadToEnd()
+        menufile.Close()
     End Function
 
     ' set the name of the WB/sheet dropdown to the sheet name (for the WB dropdown this is the WB name) 
@@ -541,14 +144,28 @@ Public Class MenuHandler
         Return defsheetMap.ContainsKey(control.Id)
     End Function
 
-
-    'TODO: convert to ribbon
-    ''
     ' load config if config tree menu has been activated (name stored in Ctrl.Parameter)
-    ' @param Ctrl
-    ' @param CancelDefault
-    Private Sub mDBConfigPreparedButton_Click(ByVal Ctrl As CommandBarButton, CancelDefault As Boolean)
-        loadConfig(Ctrl.Tag)
+    Public Sub getConfig(control As IRibbonControl)
+        loadConfig(control.Tag)
     End Sub
 
+    Public Sub refreshData(control As IRibbonControl)
+        doRefreshData()
+    End Sub
+
+    Public Sub jumpButton(control As IRibbonControl)
+        doJumpButton()
+    End Sub
+
+    Public Shared Sub saveRangeToDBClick(control As IRibbonControl)
+        If saveRangeToDB(hostApp.ActiveCell) Then MsgBox("hooray!")
+    End Sub
+
+    Public Sub saveAllWSheetRangesToDBClick(control As IRibbonControl)
+
+    End Sub
+
+    Public Sub saveAllWBookRangesToDBClick(control As IRibbonControl)
+
+    End Sub
 End Class

@@ -18,10 +18,6 @@
     End Sub
 
     Private Sub OKButton_Click(ByVal sender As Object, ByVal e As EventArgs) Handles OKButton.Click
-        Dim errStr As String = vbNullString
-        initSettings()
-        createConfigTreeMenu(True)
-        MsgBox("refreshed ConfigTreeMenu and restarted theDBSheetAppHandler", vbInformation + vbOKOnly, "DBAddin: refresh Config tree...")
         Me.Close()
     End Sub
 

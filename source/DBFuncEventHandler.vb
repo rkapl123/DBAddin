@@ -698,6 +698,7 @@ DBSetQueryParams_Error:
             statusCont.statusMsg = "Retrieved " & retrievedRows & " record" & IIf(retrievedRows > 1, "s", String.Empty) & " from: " & Query
         End If
 
+        'TODO: check why autoformat restoring fails !!
         ' autoformat: restore format of 1st row...
         If calcCont.autoformat Then
             For i = 0 To UBound(copyFormat)
