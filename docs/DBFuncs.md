@@ -180,6 +180,7 @@ This builds from the date/datetime/time value given in the argument based on par
 1.  (default formatting = DefaultDBDateFormatting Setting) A simple datestring (format `'YYYYMMDD``'`), datetime values are converted to `'YYYYMMDD` `HH:MM:SS'` and time values are converted to `'HH:MM:SS'`.
 2.  (formatting = 1) An ANSI compliant Date string (format `date 'YYYY-MM-DD'`), datetime values are converted to `timestamp` `'YYYY-MM-DD` `HH:MM:SS'` and time values are converted to time `time 'HH:MM:SS'`.
 3.  (formatting = 2) An ODBC compliant Date string (format `{d 'YYYY-MM-DD'}`), datetime values are converted to `{ts 'YYYY-MM-DD HH:MM:SS'}` and time values are converted to `{t 'HH:MM:SS'}`.
+4.  (formatting = 3) An Access/JetDB compliant Date string (format `#YYYY-MM-DD#`), datetime values are converted to `#YYYY-MM-DD HH:MM:SS#` and time values are converted to `#HH:MM:SS#`.
 
 An Example is give below:
 
@@ -267,10 +268,6 @@ You can add another hierarchy layer by setting "(pathName)FirstLetterLevel" to "
 
 You can decide for each subfolder whether it's contents should be hierarchically organized by entering the relative path from ConfigStoreFolder for each subfolder in "specialConfigStoreFolders", or you can decide for all subfolders of that folder by just entering the topmost folder in "specialConfigStoreFolders". Beware that the backslash (path separator) in (pathName) needs to be entered quoted (two "\" !) to be recognized when importing the registry key files!  
 
-In some instances the Windows API doesn't return the directories/filenames in alphabetical order (e.g. in some SAMBA networks), so you'd need to set the following registry setting to "True", which does a sort on the config folder's content before putting it into the tree dropwdown:  
-
-<pre lang="vb.net">"sortConfigStoreFolders"="False"</pre>
-
 #### Inserting configs
 
 If the user finds/loads the relevant configuration, a warning is shown and then the configured cells are entered into the active workbook as defined in the config, relative to the current selection. The reference cell during saving is always the left/uppermost cell (A1), so anything chosen in other cells will be placed relatively right/downward.  
@@ -281,9 +278,7 @@ Currently there are no checks (except for Excels sheet boundaries) as whether an
 
 #### Refreshing the config tree
 
-To save time when starting up DBAddin/Excel, the previously used way of refreshing the config tree (when starting up Excel/DBAddin) was abandoned in favour of a better one: now each user can decide when to refresh the config tree for himself with the button "refresh Configs" right below the menu button "DBConfigs".  
-
-This refreshing also restores "theDBSheetAppHandler" object as a side effect, which re-enables DBSheet treatment after sporadic invalidation of this object (needed until the reason for this has been found out).  
+To save time when starting up DBAddin/Excel, refreshing the config tree is only done when you open the AboutBox Window and click OK.  
 
 ### Installation
 
