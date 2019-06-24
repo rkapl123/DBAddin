@@ -6,7 +6,8 @@ Imports Microsoft.Office.Interop.Excel
 
 ''' <summary>Global variables and functions for DB Addin</summary>
 Public Module DBAddin
-
+    ''' <summary>currently selected environment for DB Functions</summary>
+    Public selectedEnvironment As Integer
     ''' <summary>reference object for the Addins ribbon</summary>
     Public theRibbon As ExcelDna.Integration.CustomUI.IRibbonUI
     ''' <summary>Application object used for referencing objects</summary>
@@ -17,7 +18,49 @@ Public Module DBAddin
     Public DBMapperDefMap As Dictionary(Of String, String)
     ''' <summary>DBMapper definition collections (for target ranges)</summary>
     Public DBMapperDefColl As Dictionary(Of String, Dictionary(Of String, Range))
+    ' general Global objects/variables
+    ''' <summary>Application object used for referencing objects</summary>
+    Public theHostApp As Object
+    ''' <summary>ribbon menu handler</summary>
+    Public theMenuHandler As MenuHandler
+    ''' <summary>for interrupting long running operations with Ctl-Break</summary>
+    Public Interrupted As Boolean
 
+    ''' <summary>the environment (for Mapper special cases "Test", "Development" or String.Empty (prod))</summary>
+    Public env As String
+
+    ' Global settings
+    Public DebugAddin As Boolean
+    ''' <summary>Default ConnectionString, if no connection string is given by user....</summary>
+    Public ConstConnString As String
+    ''' <summary>the folder used to store predefined DB item definitions</summary>
+    Public ConfigStoreFolder As String
+    ''' <summary>Array of special ConfigStoreFolders for non default treatment of Name Separation (Camelcase) and max depth</summary>
+    Public specialConfigStoreFolders() As String
+    ''' <summary>should config stores be sorted alphabetically</summary>
+    Public sortConfigStoreFolders As Boolean
+    ''' <summary>global connection timeout (can't be set in DB functions)</summary>
+    Public CnnTimeout As Integer
+    ''' <summary>global command timeout (can't be set in DB functions)</summary>
+    Public CmdTimeout As Integer
+    ''' <summary>default formatting style used in DBDate</summary>
+    Public DefaultDBDateFormatting As Integer
+
+    ' Global flags
+    ''' <summary>prevent multiple connection retries for each function in case of error</summary>
+    Public dontTryConnection As Boolean
+    ''' <summary>avoid entering dblistfetch function during clearing of listfetch areas (before saving)</summary>
+    Public dontCalcWhileClearing As Boolean
+
+    ' Global objects/variables for DBFuncs
+    ''' <summary>store target filter in case of empty data lists</summary>
+    Public targetFilterCont As Collection
+    ''' <summary>global event class, mainly for calc event procedure</summary>
+    Public theDBFuncEventHandler As DBFuncEventHandler
+    ''' <summary>global collection of information transport containers between function and calc event procedure</summary>
+    Public allCalcContainers As Collection
+    ''' <summary>global collection of information transport containers between function and calc event procedure</summary>
+    Public allStatusContainers As Collection
     ''' <summary>logfile for messages</summary>
     Public logfile As StreamWriter
 
@@ -40,13 +83,27 @@ Public Module DBAddin
     Public Sub initSettings()
         DebugAddin = fetchSetting("DebugAddin", False)
         ConstConnString = fetchSetting("ConstConnString", String.Empty)
-        DBidentifierCCS = fetchSetting("DBidentifierCCS", "Database=")
-        DBidentifierODBC = fetchSetting("DBidentifierODBC", "Database=")
         CnnTimeout = CInt(fetchSetting("CnnTimeout", "15"))
         CmdTimeout = CInt(fetchSetting("CmdTimeout", "60"))
         ConfigStoreFolder = fetchSetting("ConfigStoreFolder", String.Empty)
         specialConfigStoreFolders = Split(fetchSetting("specialConfigStoreFolders", String.Empty), ":")
         DefaultDBDateFormatting = CInt(fetchSetting("DefaultDBDateFormatting", "0"))
+        ' load environments
+        Dim i As Integer = 1
+        ReDim Preserve environdefs(-1)
+        Dim ConfigName As String
+        Do
+            ConfigName = fetchSetting("ConfigName" + i.ToString(), vbNullString)
+            If Len(ConfigName) > 0 Then
+                ReDim Preserve environdefs(environdefs.Length)
+                environdefs(environdefs.Length - 1) = ConfigName + " - " + i.ToString()
+            End If
+            ' set selectedEnvironment
+            If fetchSetting("ConstConnString" + i.ToString(), vbNullString) = ConstConnString Then
+                selectedEnvironment = i - 1
+            End If
+            i += 1
+        Loop Until Len(ConfigName) = 0
     End Sub
 
     ''' <summary>Logs sErrMsg of eEventType to Logfile</summary>
@@ -102,53 +159,121 @@ Public Module DBAddin
         If DebugAddin Then LogToEventViewer(LogMessage, EventLogEntryType.Information)
     End Sub
 
-    ' general Global objects/variables
-    ''' <summary>Application object used for referencing objects</summary>
-    Public theHostApp As Object
-    ''' <summary>ribbon menu handler</summary>
-    Public theMenuHandler As MenuHandler
-    ''' <summary>for interrupting long running operations with Ctl-Break</summary>
-    Public Interrupted As Boolean
+    <ExcelCommand(Name:="refreshData", ShortCut:="^R")>
+    Public Sub refreshData()
+        initSettings()
 
-    ''' <summary>the environment (for Mapper special cases "Test", "Development" or String.Empty (prod))</summary>
-    Public env As String
+        ' enable events in case there were some problems in procedure with EnableEvents = false
+        On Error Resume Next
+        hostApp.EnableEvents = True
+        If Err.Number <> 0 Then
+            LogError("Can't refresh data while lookup dropdown is open !!")
+            Exit Sub
+        End If
 
-    ' Global settings
-    Public DebugAddin As Boolean
-    ''' <summary>Default ConnectionString, if no connection string is given by user....</summary>
-    Public ConstConnString As String
-    ''' <summary>the tag used to identify the Database name within the ConstConnString</summary>
-    Public DBidentifierCCS As String
-    ''' <summary>the tag used to identify the Database name within the connection string returned by MSQuery</summary>
-    Public DBidentifierODBC As String
-    ''' <summary>the folder used to store predefined DB item definitions</summary>
-    Public ConfigStoreFolder As String
-    ''' <summary>Array of special ConfigStoreFolders for non default treatment of Name Separation (Camelcase) and max depth</summary>
-    Public specialConfigStoreFolders() As String
-    ''' <summary>should config stores be sorted alphabetically</summary>
-    Public sortConfigStoreFolders As Boolean
-    ''' <summary>global connection timeout (can't be set in DB functions)</summary>
-    Public CnnTimeout As Integer
-    ''' <summary>global command timeout (can't be set in DB functions)</summary>
-    Public CmdTimeout As Integer
-    ''' <summary>default formatting style used in DBDate</summary>
-    Public DefaultDBDateFormatting As Integer
+        ' also reset the database connection in case of errors...
+        theDBFuncEventHandler.cnn.Close()
+        theDBFuncEventHandler.cnn = Nothing
 
-    ' Global flags
-    ''' <summary>prevent multiple connection retries for each function in case of error</summary>
-    Public dontTryConnection As Boolean
-    ''' <summary>avoid entering dblistfetch function during clearing of listfetch areas (before saving)</summary>
-    Public dontCalcWhileClearing As Boolean
+        dontTryConnection = False
+        On Error GoTo err1
 
-    ' Global objects/variables for DBFuncs
-    ''' <summary>store target filter in case of empty data lists</summary>
-    Public targetFilterCont As Collection
-    ''' <summary>global event class, mainly for calc event procedure</summary>
-    Public theDBFuncEventHandler As DBFuncEventHandler
-    ''' <summary>global collection of information transport containers between function and calc event procedure</summary>
-    Public allCalcContainers As Collection
-    ''' <summary>global collection of information transport containers between function and calc event procedure</summary>
-    Public allStatusContainers As Collection
+        ' now for DBListfetch/DBRowfetch resetting
+        allCalcContainers = Nothing
+        Dim underlyingName As Excel.Name
+        underlyingName = getDBRangeName(hostApp.ActiveCell)
+        hostApp.ScreenUpdating = True
+        If underlyingName Is Nothing Then
+            ' reset query cache, so we really get new data !
+            theDBFuncEventHandler.queryCache = New Collection
+            refreshDBFunctions(hostApp.ActiveWorkbook)
+            ' general refresh: also refresh all embedded queries and pivot tables..
+            'On Error Resume Next
+            'Dim ws     As Excel.Worksheet
+            'Dim qrytbl As Excel.QueryTable
+            'Dim pivottbl As Excel.PivotTable
+
+            'For Each ws In hostApp.ActiveWorkbook.Worksheets
+            '    For Each qrytbl In ws.QueryTables
+            '       qrytbl.Refresh
+            '    Next
+            '    For Each pivottbl In ws.PivotTables
+            '        pivottbl.PivotCache.Refresh
+            '    Next
+            'Next
+            'On Error GoTo err1
+        Else
+            ' reset query cache, so we really get new data !
+            theDBFuncEventHandler.queryCache = New Collection
+
+            Dim jumpName As String
+            jumpName = underlyingName.Name
+            ' because of a stupid excel behaviour (Range.Dirty only works if the parent sheet of Range is active)
+            ' we have to jump to the sheet containing the dbfunction and then activate back...
+            theDBFuncEventHandler.origWS = Nothing
+            ' this is switched back in DBFuncEventHandler.Calculate event,
+            ' where we also select back the original active worksheet
+
+            ' we're being called on a target (addtional) functions area
+            If Left$(jumpName, 10) = "DBFtargetF" Then
+                jumpName = Replace(jumpName, "DBFtargetF", "DBFsource", 1, , vbTextCompare)
+
+                If Not hostApp.Range(jumpName).Parent Is hostApp.ActiveSheet Then
+                    hostApp.ScreenUpdating = False
+                    theDBFuncEventHandler.origWS = hostApp.ActiveSheet
+                    On Error Resume Next
+                    hostApp.Range(jumpName).Parent.Select
+                    On Error GoTo err1
+                End If
+                hostApp.Range(jumpName).Dirty
+                ' we're being called on a target area
+            ElseIf Left$(jumpName, 9) = "DBFtarget" Then
+                jumpName = Replace(jumpName, "DBFtarget", "DBFsource", 1, , vbTextCompare)
+
+                If Not hostApp.Range(jumpName).Parent Is hostApp.ActiveSheet Then
+                    hostApp.ScreenUpdating = False
+                    theDBFuncEventHandler.origWS = hostApp.ActiveSheet
+                    On Error Resume Next
+                    hostApp.Range(jumpName).Parent.Select
+                    On Error GoTo err1
+                End If
+                hostApp.Range(jumpName).Dirty
+                ' we're being called on a source (invoking function) cell
+            ElseIf Left$(jumpName, 9) = "DBFsource" Then
+                On Error Resume Next
+                hostApp.Range(jumpName).Dirty
+                On Error GoTo err1
+            Else
+                refreshDBFunctions(hostApp.ActiveWorkbook)
+            End If
+        End If
+
+        Exit Sub
+err1:
+        LogToEventViewer("Error (" & Err.Description & ") in MenuHandler.refreshData in " & Erl(), EventLogEntryType.Error)
+    End Sub
+
+    <ExcelCommand(Name:="jumpButton", ShortCut:="^J")>
+    Public Sub jumpButton()
+        Dim underlyingName As Excel.Name
+        underlyingName = getDBRangeName(hostApp.ActiveCell)
+
+        If underlyingName Is Nothing Then Exit Sub
+        Dim jumpName As String
+        jumpName = underlyingName.Name
+        If Left$(jumpName, 10) = "DBFtargetF" Then
+            jumpName = Replace(jumpName, "DBFtargetF", "DBFsource", 1, , vbTextCompare)
+        ElseIf Left$(jumpName, 9) = "DBFtarget" Then
+            jumpName = Replace(jumpName, "DBFtarget", "DBFsource", 1, , vbTextCompare)
+        Else
+            jumpName = Replace(jumpName, "DBFsource", "DBFtarget", 1, , vbTextCompare)
+        End If
+        On Error Resume Next
+        hostApp.Range(jumpName).Parent.Select
+        hostApp.Range(jumpName).Select
+        If Err.Number <> 0 Then LogWarn("Can't jump to target/source, corresponding workbook open? " & Err.Description, 1)
+        Err.Clear()
+    End Sub
 End Module
 
 ''' <summary>Connection class handling basic Events from Excel (Open, Close)</summary>
@@ -161,8 +286,11 @@ Public Class AddInEvents
     Public Sub AutoOpen() Implements IExcelAddIn.AutoOpen
         ' necessary for ExplicitRegistration of param arrays (https://groups.google.com/forum/#!topic/exceldna/kf76nqAqDUo)
         ExcelRegistration.GetExcelFunctions().ProcessParamsRegistrations().RegisterFunctions()
+        ExcelRegistration.GetExcelCommands().RegisterCommands()
         Application = ExcelDnaUtil.Application
         theHostApp = ExcelDnaUtil.Application
+        ' Register Ctrl+Shift+R to call refreshDB
+        'XlCall.Excel(XlCall.xlcOnKey, "^R", "refreshData")
         Dim logfilename As String = "C:\\DBAddinlogs\\" + DateTime.Today.ToString("yyyyMMdd") + ".log"
         If Not Directory.Exists("C:\\DBAddinlogs") Then MkDir("C:\\DBAddinlogs")
         Try
@@ -172,9 +300,9 @@ Public Class AddInEvents
             MsgBox("Exception occured when trying to create logfile " + logfilename + ": " + ex.Message)
         End Try
         LogToEventViewer("starting DBAddin", EventLogEntryType.Information)
-        initSettings()
         theMenuHandler = New MenuHandler
         theDBFuncEventHandler = New DBFuncEventHandler
+        initSettings()
     End Sub
 
     ''' <summary>AutoClose cleans up after finishing addin</summary>
@@ -183,6 +311,7 @@ Public Class AddInEvents
         theMenuHandler = Nothing
         theHostApp = Nothing
         theDBFuncEventHandler = Nothing
+        'XlCall.Excel(XlCall.xlcOnKey, "^R")
     End Sub
     Private Sub Workbook_Save(Wb As Excel.Workbook, ByVal SaveAsUI As Boolean, ByRef Cancel As Boolean) Handles Application.WorkbookBeforeSave
     End Sub

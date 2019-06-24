@@ -14,21 +14,6 @@ Public Class MenuHandler
     Public Sub ribbonLoaded(theRibbon As ExcelDna.Integration.CustomUI.IRibbonUI)
         DBAddin.theRibbon = theRibbon
         hostApp = ExcelDnaUtil.Application
-        ' load environments
-        Dim i As Integer = 1
-        Dim ConfigName As String
-        Do
-            ConfigName = fetchSetting("ConfigName" + i.ToString(), vbNullString)
-            If Len(ConfigName) > 0 Then
-                ReDim Preserve environdefs(environdefs.Length)
-                environdefs(environdefs.Length - 1) = ConfigName + " - " + i.ToString()
-            End If
-            ' set selectedEnvironment
-            If fetchSetting("ConstConnString" + i.ToString(), vbNullString) = ConstConnString Then
-                selectedEnvironment = i - 1
-            End If
-            i += 1
-        Loop Until Len(ConfigName) = 0
     End Sub
 
     ''' <summary>creates the Ribbon (only at startup). any changes to the ribbon can only be done via dynamic menus</summary>
@@ -47,15 +32,13 @@ Public Class MenuHandler
         Next
         customUIXml = customUIXml + "</group></tab></tabs></ribbon>" +
          "<contextMenus><contextMenu idMso='ContextMenuCell'>" +
-         "<button id='refreshData' label='refresh data' imageMso='Refresh' onAction='refreshData' insertBeforeMso='Cut'/>" +
-         "<button id='gotoDBFunc' label='GoTo DBFunc/target' imageMso='ConvertTextToTable' onAction='jumpButton' insertBeforeMso='Cut'/>" +
+         "<button id='refreshData' label='refresh data (Ctrl-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
+         "<button id='gotoDBFunc' label='jump to DBFunc/target (Ctrl-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
          "<menuSeparator id='MySeparator' insertBeforeMso='Cut'/>" +
          "</contextMenu></contextMenus></customUI>"
         Return customUIXml
     End Function
 
-    ''' <summary>currently selected environment</summary>
-    Private selectedEnvironment As Integer
     ''' <summary>for environment dropdown to get the total number of the entries</summary>
     Public Function GetItemCount(control As IRibbonControl) As Integer
         Return environdefs.Length
@@ -346,118 +329,13 @@ buildFileSepMenuCtrl_Err:
     End Sub
 
     ''' <summary>context menu entry refreshData: refresh Data in db function (if area or cell selected) or all db functions</summary>
-    Public Sub refreshData(control As IRibbonControl)
-        initSettings()
-
-        ' enable events in case there were some problems in procedure with EnableEvents = false
-        On Error Resume Next
-        hostApp.EnableEvents = True
-        If Err.Number <> 0 Then
-            LogError("Can't refresh data while lookup dropdown is open !!")
-            Exit Sub
-        End If
-
-        ' also reset the database connection in case of errors...
-        theDBFuncEventHandler.cnn.Close()
-        theDBFuncEventHandler.cnn = Nothing
-
-        dontTryConnection = False
-        On Error GoTo err1
-
-        ' now for DBListfetch/DBRowfetch resetting
-        allCalcContainers = Nothing
-        Dim underlyingName As Excel.Name
-        underlyingName = getDBRangeName(hostApp.ActiveCell)
-        hostApp.ScreenUpdating = True
-        If underlyingName Is Nothing Then
-            ' reset query cache, so we really get new data !
-            theDBFuncEventHandler.queryCache = New Collection
-            refreshDBFunctions(hostApp.ActiveWorkbook)
-            ' general refresh: also refresh all embedded queries and pivot tables..
-            'On Error Resume Next
-            'Dim ws     As Excel.Worksheet
-            'Dim qrytbl As Excel.QueryTable
-            'Dim pivottbl As Excel.PivotTable
-
-            'For Each ws In hostApp.ActiveWorkbook.Worksheets
-            '    For Each qrytbl In ws.QueryTables
-            '       qrytbl.Refresh
-            '    Next
-            '    For Each pivottbl In ws.PivotTables
-            '        pivottbl.PivotCache.Refresh
-            '    Next
-            'Next
-            'On Error GoTo err1
-        Else
-            ' reset query cache, so we really get new data !
-            theDBFuncEventHandler.queryCache = New Collection
-
-            Dim jumpName As String
-            jumpName = underlyingName.Name
-            ' because of a stupid excel behaviour (Range.Dirty only works if the parent sheet of Range is active)
-            ' we have to jump to the sheet containing the dbfunction and then activate back...
-            theDBFuncEventHandler.origWS = Nothing
-            ' this is switched back in DBFuncEventHandler.Calculate event,
-            ' where we also select back the original active worksheet
-
-            ' we're being called on a target (addtional) functions area
-            If Left$(jumpName, 10) = "DBFtargetF" Then
-                jumpName = Replace(jumpName, "DBFtargetF", "DBFsource", 1, , vbTextCompare)
-
-                If Not hostApp.Range(jumpName).Parent Is hostApp.ActiveSheet Then
-                    hostApp.ScreenUpdating = False
-                    theDBFuncEventHandler.origWS = hostApp.ActiveSheet
-                    On Error Resume Next
-                    hostApp.Range(jumpName).Parent.Select
-                    On Error GoTo err1
-                End If
-                hostApp.Range(jumpName).Dirty
-                ' we're being called on a target area
-            ElseIf Left$(jumpName, 9) = "DBFtarget" Then
-                jumpName = Replace(jumpName, "DBFtarget", "DBFsource", 1, , vbTextCompare)
-
-                If Not hostApp.Range(jumpName).Parent Is hostApp.ActiveSheet Then
-                    hostApp.ScreenUpdating = False
-                    theDBFuncEventHandler.origWS = hostApp.ActiveSheet
-                    On Error Resume Next
-                    hostApp.Range(jumpName).Parent.Select
-                    On Error GoTo err1
-                End If
-                hostApp.Range(jumpName).Dirty
-                ' we're being called on a source (invoking function) cell
-            ElseIf Left$(jumpName, 9) = "DBFsource" Then
-                On Error Resume Next
-                hostApp.Range(jumpName).Dirty
-                On Error GoTo err1
-            Else
-                refreshDBFunctions(hostApp.ActiveWorkbook)
-            End If
-        End If
-
-        Exit Sub
-err1:
-        LogToEventViewer("Error (" & Err.Description & ") in MenuHandler.refreshData in " & Erl(), EventLogEntryType.Error)
+    Public Sub clickrefreshData(control As IRibbonControl)
+        refreshData()
     End Sub
 
     ''' <summary>context menu entry gotoDBFunc: jumps from DB function to data area and back</summary>
-    Public Sub jumpButton(control As IRibbonControl)
-        Dim underlyingName As Excel.Name
-        underlyingName = getDBRangeName(hostApp.ActiveCell)
-
-        If underlyingName Is Nothing Then Exit Sub
-        Dim jumpName As String
-        jumpName = underlyingName.Name
-        If Left$(jumpName, 10) = "DBFtargetF" Then
-            jumpName = Replace(jumpName, "DBFtargetF", "DBFsource", 1, , vbTextCompare)
-        ElseIf Left$(jumpName, 9) = "DBFtarget" Then
-            jumpName = Replace(jumpName, "DBFtarget", "DBFsource", 1, , vbTextCompare)
-        Else
-            jumpName = Replace(jumpName, "DBFsource", "DBFtarget", 1, , vbTextCompare)
-        End If
-        On Error Resume Next
-        hostApp.Range(jumpName).Parent.Select
-        hostApp.Range(jumpName).Select
-        If Err.Number <> 0 Then LogWarn("Can't jump to target/source, corresponding workbook open? " & Err.Description, 1)
-        Err.Clear()
+    Public Sub clickjumpButton(control As IRibbonControl)
+        jumpButton()
     End Sub
+
 End Class
