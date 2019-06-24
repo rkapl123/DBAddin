@@ -6,6 +6,6 @@ set source=bin\Release
 copy /Y %source%\DBaddin-AddIn-packed.xll "%appdata%\Microsoft\AddIns"
 copy /Y %source%\DBaddin.pdb "%appdata%\Microsoft\AddIns"
 copy /Y %source%\DBaddin.dll.config "%appdata%\Microsoft\AddIns\DBaddin-AddIn-packed.xll.config"
-regsvr32.exe "%appdata%\Microsoft\DBaddin-AddIn-packed.xll"
+rem regsvr32.exe "%appdata%\Microsoft\DBaddin-AddIn-packed.xll"
 pause
 

@@ -66,13 +66,12 @@ Public Module DBAddin
     ''' <param name="LogMessage"></param>
     ''' <param name="includeMsg"></param>
     ''' <param name="exitMe"></param>
-    ''' <param name="category"></param>
-    Public Sub LogError(LogMessage As String, Optional includeMsg As Boolean = True, Optional ByRef exitMe As Boolean = False, Optional category As Long = 2)
+    Public Sub LogError(LogMessage As String, Optional ByRef exitMe As Boolean = False, Optional includeMsg As Boolean = True)
         Dim retval As Integer
 
         LogToEventViewer(LogMessage, EventLogEntryType.Error)
         'If Not automatedMapper Is Nothing Then automatedMapper.returnedErrorMessages = automatedMapper.returnedErrorMessages & LogMessage & vbCrLf
-        'If includeMsg And automatedMapper Is Nothing Then retval = MsgBox(LogMessage, vbCritical + IIf(exitMe, vbOKCancel, vbOKOnly), "DBAddin: Internal Error !! ")
+        If includeMsg Then retval = MsgBox(LogMessage, vbCritical + IIf(exitMe, vbOKCancel, vbOKOnly), "DBAddin: Internal Error !! ")
         If retval = vbCancel Then
             exitMe = True
         Else
@@ -83,14 +82,13 @@ Public Module DBAddin
     ''' <summary>Logs warning messages</summary>
     ''' <param name="LogMessage"></param>
     ''' <param name="exitMe"></param>
-    ''' <param name="category"></param>
     ''' <param name="includeMsg"></param>
-    Public Sub LogWarn(LogMessage As String, Optional ByRef exitMe As Boolean = False, Optional category As Long = 2, Optional includeMsg As Boolean = True)
+    Public Sub LogWarn(LogMessage As String, Optional ByRef exitMe As Boolean = False, Optional includeMsg As Boolean = True)
         Dim retval As Integer
 
         LogToEventViewer(LogMessage, EventLogEntryType.Warning)
         'If Not automatedMapper Is Nothing Then automatedMapper.returnedErrorMessages = automatedMapper.returnedErrorMessages & LogMessage & vbCrLf
-        'If includeMsg And automatedMapper Is Nothing Then retval = MsgBox(LogMessage, vbCritical + IIf(exitMe, vbOKCancel, vbOKOnly), "DBAddin Error")
+        If includeMsg Then retval = MsgBox(LogMessage, vbCritical + IIf(exitMe, vbOKCancel, vbOKOnly), "DBAddin Error")
         If retval = vbCancel Then
             exitMe = True
         Else
@@ -100,8 +98,7 @@ Public Module DBAddin
 
     ''' <summary>Logs informational messages</summary>
     ''' <param name="LogMessage"></param>
-    ''' <param name="category"></param>
-    Public Sub LogInfo(LogMessage As String, Optional category As Long = 2)
+    Public Sub LogInfo(LogMessage As String)
         If DebugAddin Then LogToEventViewer(LogMessage, EventLogEntryType.Information)
     End Sub
 
@@ -218,7 +215,7 @@ Public Class AddInEvents
                     defColl.Add(nodeName, namedrange.RefersToRange)
                     DBMapperDefColl.Add(namedrange.Parent.Name, defColl)
                     DBMapperDefMap.Add("ID" + i.ToString(), namedrange.Parent.Name)
-                    i = i + 1
+                    i += 1
                 Else
                     ' add definition to existing sheet "menu"
                     defColl = DBMapperDefColl(namedrange.Parent.Name)

@@ -18,7 +18,7 @@ Public Class MenuHandler
         Dim i As Integer = 1
         Dim ConfigName As String
         Do
-            ConfigName = fetchSetting("ConstConnStringName" + i.ToString(), vbNullString)
+            ConfigName = fetchSetting("ConfigName" + i.ToString(), vbNullString)
             If Len(ConfigName) > 0 Then
                 ReDim Preserve environdefs(environdefs.Length)
                 environdefs(environdefs.Length - 1) = ConfigName + " - " + i.ToString()
@@ -27,7 +27,7 @@ Public Class MenuHandler
             If fetchSetting("ConstConnString" + i.ToString(), vbNullString) = ConstConnString Then
                 selectedEnvironment = i - 1
             End If
-            i = i + 1
+            i += 1
         Loop Until Len(ConfigName) = 0
     End Sub
 
@@ -113,7 +113,7 @@ Public Class MenuHandler
     Private menuXML As String = vbNullString
     ''' <summary>max depth limitation by Ribbon: 5 levels: 1 top level, 1 folder level (Database foldername) -> 3 left</summary>
     Const specialFolderMaxDepth As Integer = 3
-    Private xnspace As XNamespace = "http://schemas.microsoft.com/office/2009/07/customui"
+    Private ReadOnly xnspace As XNamespace = "http://schemas.microsoft.com/office/2009/07/customui"
 
     ''' <summary>get DB Config Menu from File</summary>
     Public Function getDBConfigMenu(control As IRibbonControl) As String
@@ -184,7 +184,7 @@ Public Class MenuHandler
                             nameParts = stringParts(IIf(firstCharLevel, Left$(fileList(i).Name, 1) & " ", String.Empty) &
                                                             Left$(fileList(i).Name, Len(fileList(i).Name) - 4), specialConfigStoreSeparator)
                             buildFileSepMenuCtrl(nameParts, currentBar, rootPath & "\" & fileList(i).Name, spclFolder, specialFolderMaxDepth)
-                            i = i + 2
+                            i += 2
                             If i > UBound(fileList) Then Exit For
                         End If
                     End If
@@ -196,7 +196,7 @@ Public Class MenuHandler
             Else
                 For i = 0 To UBound(fileList)
                     newBar = New XElement(xnspace + "button")
-                    menuID = menuID + 1
+                    menuID += 1
                     newBar.SetAttributeValue("id", "m" + menuID.ToString())
                     newBar.SetAttributeValue("tag", rootPath + "\" & fileList(i).Name)
                     newBar.SetAttributeValue("label", Left$(fileList(i).Name, Len(fileList(i).Name) - 4))
@@ -213,7 +213,7 @@ Public Class MenuHandler
         For i = 0 To UBound(DirList)
             hostApp.StatusBar = "Filling DBConfigs Menu: " & rootPath & "\" & DirList(i).Name
             newBar = New XElement(xnspace + "menu")
-            menuID = menuID + 1
+            menuID += 1
             newBar.SetAttributeValue("id", "m" + menuID.ToString())
             newBar.SetAttributeValue("label", DirList(i).Name)
             currentBar.Add(newBar)
@@ -240,7 +240,7 @@ err1:
         If InStr(1, nameParts, " ") = 0 Or currentDepth > specialFolderMaxDepth - 1 Then
             Dim entryName As String = Mid$(fullPathName, InStrRev(fullPathName, "\") + 1)
             newBar = New XElement(xnspace + "button")
-            menuID = menuID + 1
+            menuID += 1
             newBar.SetAttributeValue("id", "m" + menuID.ToString())
             newBar.SetAttributeValue("label", Left$(entryName, Len(entryName) - 4))
             newBar.SetAttributeValue("tag", fullPathName)
@@ -252,15 +252,15 @@ err1:
                 newBar = specialConfigFoldersTempColl(newRootName & newName)
             Else
                 newBar = New XElement(xnspace + "menu")
-                menuID = menuID + 1
+                menuID += 1
                 newBar.SetAttributeValue("id", "m" + menuID.ToString())
                 newBar.SetAttributeValue("label", newName)
                 specialConfigFoldersTempColl.Add(newBar, newRootName & newName)
                 currentBar.Add(newBar)
             End If
-            currentDepth = currentDepth + 1
+            currentDepth += 1
             buildFileSepMenuCtrl(Mid$(nameParts, InStr(1, nameParts, " ") + 1), newBar, fullPathName, newRootName & newName, specialFolderMaxDepth)
-            currentDepth = currentDepth - 1
+            currentDepth -= 1
         End If
         Exit Sub
 
@@ -287,17 +287,17 @@ buildFileSepMenuCtrl_Err:
                     ' underscore also separates camelcase, except preceded by $, - or another underscore
                     If charAsc = 95 Then
                         If Not (pre = 36 Or pre = 45 Or pre = 95) _
-                            Then stringParts = stringParts & " "
+                            Then stringParts &= " "
                     End If
                     ' Uppercase characters separate unless the are preceding
                     If (charAsc >= 65 And charAsc <= 90) Then
                         If Not (pre >= 65 And pre <= 90) _
                            And Not (pre = 36 Or pre = 45 Or pre = 95) _
                            And Not (pre >= 48 And pre <= 57) _
-                           Then stringParts = stringParts & " "
+                           Then stringParts &= " "
                     End If
                 End If
-                stringParts = stringParts & aChar
+                stringParts &= aChar
             Next
             stringParts = LTrim$(Replace(Replace(stringParts, "   ", " "), "  ", " "))
         End If
@@ -324,7 +324,7 @@ buildFileSepMenuCtrl_Err:
         For Each nodeName As String In DBMapperDefColl(currentSheet).Keys
             xmlString = xmlString + "<button id='" + nodeName + "' label='store " + nodeName + "' imageMso='SignatureLineInsert' onAction='saveRangeToDBClick' tag ='" + currentSheet + "' screentip='store " + nodeName + "' supertip='stores data defined in " + nodeName + " Mapper range on sheet " + currentSheet + "' />"
         Next
-        xmlString = xmlString + "</menu>"
+        xmlString += "</menu>"
         Return xmlString
     End Function
 

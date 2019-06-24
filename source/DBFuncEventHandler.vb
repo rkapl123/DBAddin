@@ -216,7 +216,7 @@ App_WorkbookBeforeSave_Err:
                                         Debug.Print("App_SheetCalculate Connection error: " & Err.Description)
                                         ' prevent multiple reconnecting if connection errors present...
                                         dontTryConnection = True
-                                        LogError("Connection Error: " & Err.Description, , , 1)
+                                        LogError("Connection Error: " & Err.Description)
                                         errorReason = "Connection Error: " & Err.Description
                                         statusCont.statusMsg = errorReason
                                         allCalcContainers(callID).errOccured = True

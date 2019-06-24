@@ -1,7 +1,7 @@
 Imports ADODB
 
 ''' <summary>Contains the public callable Mapper function for storing/updating tabular excel data</summary>
-Public Enum checkTypeFld
+Public Enum CheckTypeFld
     checkIsNumericFld = 0
     checkIsDateFld = 1
     checkIsTimeFld = 2
@@ -33,7 +33,7 @@ Public Module Mapper
 
         Dim rst As ADODB.Recordset
         Dim checkrst As ADODB.Recordset
-        Dim checkTypes() As checkTypeFld = Nothing
+        Dim checkTypes() As CheckTypeFld = Nothing
         Dim primKeys() As String
         Dim i As Integer, headerRow As Integer
         Dim rowNum As Long, colNum As Long
@@ -71,13 +71,13 @@ Public Module Mapper
             ReDim Preserve checkTypes(i)
 
             If checkIsNumeric(checkrst.Fields(primKeys(i)).Type) Then
-                checkTypes(i) = checkTypeFld.checkIsNumericFld
+                checkTypes(i) = CheckTypeFld.checkIsNumericFld
             ElseIf checkIsDate(checkrst.Fields(primKeys(i)).Type) Then
-                checkTypes(i) = checkTypeFld.checkIsDateFld
+                checkTypes(i) = CheckTypeFld.checkIsDateFld
             ElseIf checkIsTime(checkrst.Fields(primKeys(i)).Type) Then
-                checkTypes(i) = checkTypeFld.checkIsTimeFld
+                checkTypes(i) = CheckTypeFld.checkIsTimeFld
             Else
-                checkTypes(i) = checkTypeFld.checkIsStringFld
+                checkTypes(i) = CheckTypeFld.checkIsStringFld
             End If
         Next
         checkrst.Close()
@@ -153,7 +153,7 @@ Public Module Mapper
                 End If
                 On Error GoTo saveRangeToDB_Err
 nextColumn:
-                colNum = colNum + 1
+                colNum += 1
             Loop Until colNum > DataRange.Columns.Count
 
             ' now do the update/insert in the DB
@@ -176,7 +176,7 @@ nextRow:
                 'finishLoop = True ' commented to allow erroneous data...
             End If
             Err.Clear()
-            rowNum = rowNum + 1
+            rowNum += 1
         Loop Until rowNum > DataRange.Rows.Count Or finishLoop
 
         If executeAdditionalProc.Length > 0 Then
@@ -223,17 +223,17 @@ err1:
     ''' <param name="theVal"></param>
     ''' <param name="dataType"></param>
     ''' <returns>the formatted value</returns>
-    Private Function dbFormatType(ByVal theVal As Object, dataType As checkTypeFld) As String
+    Private Function dbFormatType(ByVal theVal As Object, dataType As CheckTypeFld) As String
         ' build where clause criteria..
-        If dataType = checkTypeFld.checkIsNumericFld Then
+        If dataType = CheckTypeFld.checkIsNumericFld Then
             dbFormatType = Replace(CStr(theVal), ",", ".")
-        ElseIf dataType = checkTypeFld.checkIsDateFld Then
+        ElseIf dataType = CheckTypeFld.checkIsDateFld Then
             dbFormatType = "'" & Format$(theVal, "YYYYMMDD") & "'"
-        ElseIf dataType = checkTypeFld.checkIsTimeFld Then
+        ElseIf dataType = CheckTypeFld.checkIsTimeFld Then
             dbFormatType = "'" & Format$(theVal, "YYYYMMDD HH:MM:SS") & "'"
         ElseIf TypeName(theVal) = "Boolean" Then
             dbFormatType = IIf(theVal, 1, 0)
-        ElseIf dataType = checkTypeFld.checkIsStringFld Then
+        ElseIf dataType = CheckTypeFld.checkIsStringFld Then
             ' quote strings
             theVal = Replace(theVal, "'", "''")
             dbFormatType = "'" & theVal & "'"

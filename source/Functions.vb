@@ -672,6 +672,6 @@ err1:
         Next
         Exit Sub
 err1:
-        LogError("purge error: " & Err.Description & ", in " & Erl(), , , 1)
+        LogError("purge error: " & Err.Description & ", in " & Erl())
     End Sub
 End Module

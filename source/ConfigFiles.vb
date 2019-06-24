@@ -94,7 +94,7 @@ cleanup:
         theHostApp.Calculation = calcMode
         Exit Sub
 err1:
-        LogError(Err.Description & " in ConfigFiles.createFunctionsInCells" & Erl(), , , 1)
+        LogError(Err.Description & " in ConfigFiles.createFunctionsInCells" & Erl())
     End Sub
 
 
