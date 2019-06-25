@@ -75,13 +75,13 @@ DBDate_Error:
                     If TypeName(myCell) = "ExcelEmpty" Then
                         ' do nothing here
                     Else
-                        retval = retval & myCell.ToString()
+                        retval &= myCell.ToString()
                     End If
                 Next
             ElseIf TypeName(myRange) = "ExcelEmpty" Then
                 ' do nothing here
             Else
-                retval = retval & myRange.ToString()
+                retval &= myRange.ToString()
             End If
         Next
         DBString = "'" & retval & "'"
@@ -236,13 +236,13 @@ DoConcatCellsSep_Error:
                 ' special case for invocations from function wizard
             ElseIf Not allCalcContainers(callID).working Then
                 allCalcContainers.Remove(callID)
-                makeCalcMsgContainer(callID, CStr(Query), caller, Nothing, ToRange(targetRange), CStr(ConnString), Nothing, 0, False, False, False, False, 0, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, False)
+                makeCalcMsgContainer(callID, CStr(Query), caller, Nothing, ToRange(targetRange), CStr(ConnString), Nothing, 0, False, False, False, False, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, False)
             End If
         Else
             ' reset status messages when starting new query...
             If existsStatusCont(callID) Then allStatusContainers(callID).statusMsg = String.Empty
             ' add transportation info for event proc
-            makeCalcMsgContainer(callID, CStr(Query), caller, Nothing, ToRange(targetRange), CStr(ConnString), Nothing, 0, False, False, False, False, 0, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, False)
+            makeCalcMsgContainer(callID, CStr(Query), caller, Nothing, ToRange(targetRange), CStr(ConnString), Nothing, 0, False, False, False, False, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, False)
         End If
         If existsStatusCont(callID) Then
             DBSetQuery = "Env:" & setEnv & ", statusMsg: " & allStatusContainers(callID).statusMsg
@@ -346,13 +346,13 @@ DBSetQuery_Error:
                 ' special case for invocations from function wizard
 25:         ElseIf Not allCalcContainers(callID).working Then
 26:             allCalcContainers.Remove(callID)
-27:             makeCalcMsgContainer(callID, CStr(Query), caller, Nothing, ToRange(targetRange), CStr(ConnString), ToRange(formulaRange), extendDataArea, HeaderInfo, AutoFit, autoformat, ShowRowNums, 0, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, targetRangeName, formulaRangeName, False)
+27:             makeCalcMsgContainer(callID, CStr(Query), caller, Nothing, ToRange(targetRange), CStr(ConnString), ToRange(formulaRange), extendDataArea, HeaderInfo, AutoFit, autoformat, ShowRowNums, String.Empty, String.Empty, String.Empty, String.Empty, targetRangeName, formulaRangeName, False)
             End If
         Else
             ' reset status messages when starting new query...
 28:         If existsStatusCont(callID) Then allStatusContainers(callID).statusMsg = String.Empty
             ' add transportation info for event proc
-29:         makeCalcMsgContainer(callID, CStr(Query), caller, Nothing, ToRange(targetRange), CStr(ConnString), ToRange(formulaRange), extendDataArea, HeaderInfo, AutoFit, autoformat, ShowRowNums, 0, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, targetRangeName, formulaRangeName, False)
+29:         makeCalcMsgContainer(callID, CStr(Query), caller, Nothing, ToRange(targetRange), CStr(ConnString), ToRange(formulaRange), extendDataArea, HeaderInfo, AutoFit, autoformat, ShowRowNums, String.Empty, String.Empty, String.Empty, String.Empty, targetRangeName, formulaRangeName, False)
         End If
 30:     If existsStatusCont(callID) Then
 31:         DBListFetch = "Env:" & setEnv & ", " & allStatusContainers(callID).statusMsg
@@ -426,13 +426,13 @@ DBListFetch_Error:
                 ' special case for intermediate invocation in function wizard
             ElseIf Not allCalcContainers(callID).working Then
                 allCalcContainers.Remove(callID)
-                makeCalcMsgContainer(callID, CStr(Query), caller, tempArray, Nothing, CStr(ConnString), Nothing, 0, HeaderInfo, False, False, False, 0, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, False)
+                makeCalcMsgContainer(callID, CStr(Query), caller, tempArray, Nothing, CStr(ConnString), Nothing, 0, HeaderInfo, False, False, False, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, False)
             End If
         Else
             ' reset status messages when starting new query...
             If existsStatusCont(callID) Then allStatusContainers(callID).statusMsg = String.Empty
             ' add transportation info for event proc
-            makeCalcMsgContainer(callID, CStr(Query), caller, tempArray, Nothing, CStr(ConnString), Nothing, 0, HeaderInfo, False, False, False, 0, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, False)
+            makeCalcMsgContainer(callID, CStr(Query), caller, tempArray, Nothing, CStr(ConnString), Nothing, 0, HeaderInfo, False, False, False, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, False)
         End If
         If existsStatusCont(callID) Then DBRowFetch = "Env:" & setEnv & ", " & allStatusContainers(callID).statusMsg
         theHostApp.EnableEvents = True
@@ -512,10 +512,6 @@ DBRowFetch_Error:
     ''' <param name="AutoFit"></param>
     ''' <param name="autoformat"></param>
     ''' <param name="ShowRowNumbers"></param>
-    ''' <param name="controlType"></param>
-    ''' <param name="dataTargetRange"></param>
-    ''' <param name="controlLocation"></param>
-    ''' <param name="ControlName"></param>
     ''' <param name="colSep"></param>
     ''' <param name="rowSep"></param>
     ''' <param name="lastColSep"></param>
@@ -526,7 +522,7 @@ DBRowFetch_Error:
     ''' <remarks>
     ''' for all other parameters, <see cref="ContainerCalcMsgs"/>
     ''' </remarks>
-    Private Sub makeCalcMsgContainer(ByRef callID As String, ByRef Query As String, appCaller As Object, targetArray As Object, ByRef targetRange As Range, ByRef ConnString As String, ByRef formulaRange As Object, ByRef extendArea As Integer, ByRef HeaderInfo As Boolean, ByRef AutoFit As Boolean, ByRef autoformat As Boolean, ByRef ShowRowNumbers As Boolean, ByRef controlType As Integer, ByRef dataTargetRange As String, ByRef controlLocation As String, ByRef ControlName As String, ByRef colSep As String, ByRef rowSep As String, ByRef lastColSep As String, ByRef lastRowSep As String, ByRef targetRangeName As String, ByRef formulaRangeName As String, ByRef InterleaveHeader As Boolean)
+    Private Sub makeCalcMsgContainer(ByRef callID As String, ByRef Query As String, appCaller As Object, targetArray As Object, ByRef targetRange As Range, ByRef ConnString As String, ByRef formulaRange As Object, ByRef extendArea As Integer, ByRef HeaderInfo As Boolean, ByRef AutoFit As Boolean, ByRef autoformat As Boolean, ByRef ShowRowNumbers As Boolean, ByRef colSep As String, ByRef rowSep As String, ByRef lastColSep As String, ByRef lastRowSep As String, ByRef targetRangeName As String, ByRef formulaRangeName As String, ByRef InterleaveHeader As Boolean)
         Dim myCalcCont As ContainerCalcMsgs
 
         On Error GoTo makeCalcMsgContainer_Error
@@ -553,10 +549,6 @@ DBRowFetch_Error:
         myCalcCont.AutoFit = AutoFit
         myCalcCont.autoformat = autoformat
         myCalcCont.ShowRowNumbers = ShowRowNumbers
-        myCalcCont.controlType = controlType
-        myCalcCont.dataTargetRange = dataTargetRange
-        myCalcCont.controlLocation = controlLocation
-        myCalcCont.ControlName = ControlName
         myCalcCont.colSep = colSep
         myCalcCont.rowSep = rowSep
         myCalcCont.lastColSep = lastColSep

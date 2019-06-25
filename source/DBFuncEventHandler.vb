@@ -204,7 +204,7 @@ App_WorkbookBeforeSave_Err:
                                 If cnn Is Nothing Then cnn = New ADODB.Connection
                                 If CurrConnString <> .ConnString And cnn.State <> 0 Then cnn.Close()
 
-                                If cnn.State <> 1 And Not dontTryConnection Then
+                                If cnn.State <> ADODB.ObjectStateEnum.adStateOpen And Not dontTryConnection Then
                                     cnn.ConnectionTimeout = CnnTimeout
                                     cnn.CommandTimeout = CmdTimeout
                                     cnn.CursorLocation = CursorLocationEnum.adUseClient
@@ -477,7 +477,7 @@ DBSetQueryParams_Error:
         arrayCols = tableRst.Fields.Count
         arrayRows = retrievedRows
         ' need to shift down 1 row if headings are present
-        arrayRows = arrayRows + IIf(headingsPresent, 1, 0)
+        arrayRows += IIf(headingsPresent, 1, 0)
         rowDataStart = 1 + IIf(headingsPresent, 1, 0)
 
         ' check whether retrieved data exceeds excel's limits and limit output (arrayRows/arrayCols) in case ...
@@ -495,7 +495,7 @@ DBSetQueryParams_Error:
         ' autoformat: copy 1st rows formats range to reinsert them afterwards
         targetColumns = arrayCols - IIf(ShowRowNumbers, 0, 1)
         If calcCont.autoformat Then
-            arrayRows = arrayRows + IIf(headingsPresent And arrayRows = 1, 1, 0)  ' need special case for autoformat
+            arrayRows += IIf(headingsPresent And arrayRows = 1, 1, 0)  ' need special case for autoformat
             Dim i As Long
             For i = 0 To targetColumns
                 ReDim Preserve copyFormat(i)
@@ -512,7 +512,7 @@ DBSetQueryParams_Error:
         If arrayRows = 0 Then arrayRows = 1  ' sane behavior of named range in case no data retrieved...
 
         ' check if formulaRange and targetRange overlap !
-        Dim possibleIntersection As Range : possibleIntersection = Nothing
+        Dim possibleIntersection As Range = Nothing
         possibleIntersection = theHostApp.Intersect(formulaRange, targetSH.Range(targetCells.Cells(1, 1), targetCells.Cells(1, 1).Offset(0, arrayCols - 1)))
         Err.Clear()
         If Not possibleIntersection Is Nothing Then
@@ -698,7 +698,6 @@ DBSetQueryParams_Error:
             statusCont.statusMsg = "Retrieved " & retrievedRows & " record" & IIf(retrievedRows > 1, "s", String.Empty) & " from: " & Query
         End If
 
-        'TODO: check why autoformat restoring fails !!
         ' autoformat: restore format of 1st row...
         If calcCont.autoformat Then
             For i = 0 To UBound(copyFormat)
@@ -712,11 +711,15 @@ DBSetQueryParams_Error:
             End If
             'auto format 1st rows down...
             If arrayRows > rowDataStart Then
-                newTargetRange.Rows(rowDataStart).AutoFill(Destination:=newTargetRange.Rows(rowDataStart & ":" & arrayRows), Type:=XlAutoFillType.xlFillFormats)
-                If Not formulaRange Is Nothing Then _
-                   formulaSH.Range(formulaSH.Cells(targetCells.Row + rowDataStart - 1, formulaRange.Column), formulaSH.Cells(targetCells.Row + rowDataStart - 1, formulaRange.Column + formulaRange.Columns.Count - 1)).AutoFill(Destination:=formulaSH.Range(formulaSH.Cells(targetCells.Row + rowDataStart - 1, formulaRange.Column), formulaSH.Cells(targetCells.Row + arrayRows - 1, formulaRange.Column + formulaRange.Columns.Count - 1)), Type:=XlAutoFillType.xlFillFormats)
+                'This doesn't work anymore:
+                'newTargetRange.Rows(rowDataStart).AutoFill(Destination:=newTargetRange.Rows(rowDataStart & ":" & arrayRows), Type:=XlAutoFillType.xlFillFormats)
+                targetSH.Range(targetSH.Cells(targetCells.Row + rowDataStart - 1, newTargetRange.Column), targetSH.Cells(targetCells.Row + rowDataStart - 1, newTargetRange.Column + newTargetRange.Columns.Count - 1)).AutoFill(Destination:=targetSH.Range(targetSH.Cells(targetCells.Row + rowDataStart - 1, newTargetRange.Column), targetSH.Cells(targetCells.Row + arrayRows - 1, newTargetRange.Column + newTargetRange.Columns.Count - 1)), Type:=XlAutoFillType.xlFillFormats)
+                If Not formulaRange Is Nothing Then
+                    formulaSH.Range(formulaSH.Cells(targetCells.Row + rowDataStart - 1, formulaRange.Column), formulaSH.Cells(targetCells.Row + rowDataStart - 1, formulaRange.Column + formulaRange.Columns.Count - 1)).AutoFill(Destination:=formulaSH.Range(formulaSH.Cells(targetCells.Row + rowDataStart - 1, formulaRange.Column), formulaSH.Cells(targetCells.Row + arrayRows - 1, formulaRange.Column + formulaRange.Columns.Count - 1)), Type:=XlAutoFillType.xlFillFormats)
+                End If
             End If
         End If
+
         If Err.Number <> 0 Then
             errMsg = "Error in restoring formats: " & Err.Description & " in query: " & Query
             GoTo err_0
@@ -793,7 +796,7 @@ err_0:
         srcExtentConnect = calcCont.caller.Name.name
         If Err.Number <> 0 Or InStr(1, UCase$(srcExtentConnect), "DBFSOURCE") = 0 Then
             Err.Clear()
-            srcExtentConnect = "DBFsource" & Replace(Replace(CDbl(Now().ToOADate), ",", String.Empty), ".", String.Empty)
+            srcExtentConnect = "DBFsource" & Replace(Replace(CDbl(Now().ToOADate()), ",", String.Empty), ".", String.Empty)
             calcCont.caller.Name = srcExtentConnect
             calcCont.callsheet.Parent.Names(srcExtentConnect).Visible = False
             If Err.Number <> 0 Then
@@ -873,10 +876,10 @@ err_0:
                             fieldIter = -1
                         End If
                     End If
-                    fieldIter = fieldIter + 1
+                    fieldIter += 1
                 Next
             Next
-            rangeIter = rangeIter + 1
+            rangeIter += 1
             If Not rangeIter > UBound(targetCells) Then refCollector = theHostApp.Union(refCollector, targetCells(rangeIter))
         Loop Until rangeIter > UBound(targetCells)
 
@@ -954,7 +957,7 @@ err_1:
             If Err.Number = 0 And nextName <> theName Then
                 ReDim Preserve storedNames(i)
                 storedNames(i) = nextName
-                i = i + 1
+                i += 1
             End If
             Target.Name.Delete
             nextName = Target.Name.name

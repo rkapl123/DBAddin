@@ -20,16 +20,6 @@ Public Class ContainerCalcMsgs
     ''' <summary>should headers be added on top of list/records?</summary>
     Public HeaderInfo As Boolean
 
-    ' only used in DBMakeControl:
-    ''' <summary>for DBMakeControl: Range to put the data into</summary>
-    Public dataTargetRange As String
-    ''' <summary>for DBMakeControl:</summary>
-    Public controlLocation As String
-    ''' <summary>for DBMakeControl: control type to be filled with query data</summary>
-    Public controlType As Integer
-    ''' <summary>for DBMakeControl: override generic name (DB_(unique_timestamp)) with this</summary>
-    Public ControlName As String
-
     ' only used in DBCellFetch:
     ''' <summary>DBCellFetch: the usual column separator</summary>
     Public colSep As String
@@ -57,9 +47,7 @@ Public Class ContainerCalcMsgs
     Public targetRangeName As String
     ''' <summary>DBListFetch: the name of the target formula area as a string</summary>
     Public formulaRangeName As String
-
-    ' only used in DBListFetch and DBMakerControl
-    ''' <summary>DBListFetch and DBMakeControl: should columns/control be autofitted ?</summary>
+    ''' <summary>DBListFetch: should columns/control be autofitted ?</summary>
     Public AutoFit As Boolean
 
     ' only used in DBRowFetch

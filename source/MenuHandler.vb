@@ -70,8 +70,12 @@ Public Class MenuHandler
         End If
         storeSetting("ConstConnString", fetchSetting("ConstConnString" & env, String.Empty))
         storeSetting("ConfigStoreFolder", fetchSetting("ConfigStoreFolder" & env, String.Empty))
+        storeSetting("ConfigName", fetchSetting("ConfigName" & env, String.Empty))
         initSettings()
-        dontTryConnection = False  ' provide a chance to reconnect when switching environment...
+        MsgBox("ConstConnString:" & ConstConnString & vbCrLf & "ConfigStoreFolder:" & ConfigStoreFolder & vbCrLf & vbCrLf & "Please refresh DBSheets or DBFuncs to see effects...", vbOKOnly, "set defaults to: ")
+        ' provide a chance to reconnect when switching environment...
+        theDBFuncEventHandler.cnn = Nothing
+        dontTryConnection = False
     End Sub
 
     ''' <summary>dialogBoxLauncher of leftmost group: activate about box</summary>
@@ -219,7 +223,7 @@ err1:
         Static currentDepth As Integer
 
         On Error GoTo buildFileSepMenuCtrl_Err
-        ' end node: add callable entry
+        ' end node: add callable entry (= button)
         If InStr(1, nameParts, " ") = 0 Or currentDepth > specialFolderMaxDepth - 1 Then
             Dim entryName As String = Mid$(fullPathName, InStrRev(fullPathName, "\") + 1)
             newBar = New XElement(xnspace + "button")
@@ -227,6 +231,7 @@ err1:
             newBar.SetAttributeValue("id", "m" + menuID.ToString())
             newBar.SetAttributeValue("label", Left$(entryName, Len(entryName) - 4))
             newBar.SetAttributeValue("tag", fullPathName)
+            newBar.SetAttributeValue("onAction", "getConfig")
             currentBar.Add(newBar)
         Else  ' branch node: add new menu, recursively descend
             Dim newName As String = Left$(nameParts, InStr(1, nameParts, " ") - 1)
@@ -286,7 +291,7 @@ buildFileSepMenuCtrl_Err:
         End If
     End Function
 
-    ''' <summary>load config if config tree menu has been activated (name stored in Ctrl.Parameter)</summary>
+    ''' <summary>load config if config tree menu has been activated (path to config xcl file is in control.Tag)</summary>
     Public Sub getConfig(control As IRibbonControl)
         loadConfig(control.Tag)
     End Sub
