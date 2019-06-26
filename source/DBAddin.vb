@@ -328,7 +328,7 @@ Public Class AddInEvents
         For Each namedrange As Name In hostApp.ActiveWorkbook.Names
             Dim cleanname As String = Replace(namedrange.Name, namedrange.Parent.Name & "!", "")
             If Left(cleanname, 8) = "DBMapper" Then
-                If InStr(namedrange.RefersTo, "#REF!") > 0 Then MsgBox("DBMapper definitions range " + namedrange.Parent.name + "!" + namedrange.Name + " contains #REF!", vbOKOnly + vbCritical, "DBAddin: DBMapper definitions range error")
+                If InStr(namedrange.RefersTo, "#REF!") > 0 Then LogError("DBMapper definitions range " + namedrange.Parent.name + "!" + namedrange.Name + " contains #REF!", vbOKOnly + vbCritical, "DBAddin: DBMapper definitions range error")
                 ' final name of entry is without DBMapper and !
                 Dim finalname As String = Replace(Replace(namedrange.Name, "DBMapper", ""), "!", "")
                 Dim nodeName As String = Replace(Replace(namedrange.Name, "DBMapper", ""), namedrange.Parent.Name & "!", "")

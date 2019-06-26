@@ -112,7 +112,7 @@ Public Class MenuHandler
         Dim currentBar, button As XElement
 
         If Not Directory.Exists(ConfigStoreFolder) Then
-            MsgBox("No predefined config store folder '" & ConfigStoreFolder & "' found, please correct setting and refresh!", vbOKOnly + vbCritical, "DBAddin: No config store folder!")
+            LogError("No predefined config store folder '" & ConfigStoreFolder & "' found, please correct setting and refresh!", vbOKOnly + vbCritical, "DBAddin: No config store folder!")
             menuXML = "<menu xmlns='http://schemas.microsoft.com/office/2009/07/customui'><button id='refreshDBConfig' label='refresh DBConfig Tree' imageMso='Refresh' onAction='refreshDBConfigTree'/></menu>"
         Else
             ' top level menu

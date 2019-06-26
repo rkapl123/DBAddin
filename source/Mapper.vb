@@ -24,12 +24,12 @@ Public Module Mapper
     ''' <param name="DataRange">Excel Range, where Data is taken from</param>
     ''' <returns>True if successful, false in case of errors.</returns>
     Public Function saveRangeToDB(DataRange As Object) As Boolean
-        Dim tableName As String ' Database Table, where Data is to be stored
-        Dim primKeysStr As String ' String containing primary Key names for updating table data, comma separated
-        Dim database As String ' Database to store to
-        Dim env As String = fetchSetting("ConfigName", "1") ' Environment where connection id should be taken from (if not existing, take from setting), always fall back to environment 1 if not set
-        Dim insertIfMissing As Boolean = False ' if set, then insert row into table if primary key is missing there. Default = False (only update)
-        Dim executeAdditionalProc As String = "" 'additional stored procedure to be executed after saving
+        Dim tableName As String = String.Empty           ' Database Table, where Data is to be stored
+        Dim primKeysStr As String = String.Empty         ' String containing primary Key names for updating table data, comma separated
+        Dim database As String = String.Empty            ' Database to store to
+        Dim env As Integer = DBAddin.selectedEnvironment ' Environment where connection id should be taken from (if not existing, take from selectedEnvironment)
+        Dim insertIfMissing As Boolean = False           ' if set, then insert row into table if primary key is missing there. Default = False (only update)
+        Dim executeAdditionalProc As String = ""         ' additional stored procedure to be executed after saving
 
         Dim rst As ADODB.Recordset
         Dim checkrst As ADODB.Recordset
@@ -38,12 +38,24 @@ Public Module Mapper
         Dim i As Integer, headerRow As Integer
         Dim rowNum As Long, colNum As Long
 
-        Dim SaveParams = functionSplit(DataRange.Cells(1, 1).Comment.Text, ",", """", "saveRangeToDB", "", "")
-        tableName = SaveParams(0)
-        primKeysStr = SaveParams(1)
-        database = SaveParams(2)
-        If SaveParams(3) <> "" Then env = SaveParams(3)
-        If SaveParams(4) <> "" Then insertIfMissing = SaveParams(4)
+        Dim SaveParams() As String = functionSplit(DataRange.Cells(1, 1).Comment.Text, ",", """", "saveRangeToDB", "", "")
+        If SaveParams(0) <> "" Then env = Convert.ToInt16(SaveParams(0))
+        If SaveParams(1) <> "" Then
+            tableName = SaveParams(1)
+        Else
+            LogError("No Tablename given in DBMapper comment!")
+        End If
+        If SaveParams(2) <> "" Then
+            primKeysStr = SaveParams(2)
+        Else
+            LogError("No primary keys given in DBMapper comment!")
+        End If
+        If SaveParams(3) <> "" Then
+            database = SaveParams(3)
+        Else
+            LogError("No database given in DBMapper comment!")
+        End If
+        If SaveParams(4) <> "" Then insertIfMissing = Convert.ToBoolean(SaveParams(4))
         If SaveParams(5) <> "" Then executeAdditionalProc = SaveParams(5)
         ' set up parameters
         On Error GoTo saveRangeToDB_Err
@@ -123,7 +135,6 @@ Public Module Mapper
                 If insertIfMissing Then
                     On Error GoTo saveRangeToDB_Err
                     rst.AddNew()
-
                     For i = 0 To UBound(primKeys)
                         rst.Fields(primKeys(i)).Value = IIf(DataRange.Cells(rowNum, i + 1).ToString().Length = 0, vbNull, DataRange.Cells(rowNum, i + 1).Value)
                     Next
@@ -136,7 +147,6 @@ Public Module Mapper
             End If
 
             On Error GoTo saveRangeToDB_Err
-
             ' walk through columns and fill fields
             colNum = UBound(primKeys) + 1
             Do
@@ -159,7 +169,6 @@ nextColumn:
             ' now do the update/insert in the DB
             On Error Resume Next
             rst.Update()
-
             If Err.Number <> 0 Then
                 DataRange.Parent.Activate
                 DataRange.Rows(rowNum).Select
@@ -249,28 +258,33 @@ err1:
     ''' <returns>True on success</returns>
     Public Function openConnection(env As Integer, database As String) As Boolean
         Dim theConnString As String = fetchSetting("ConstConnString" & env, String.Empty)
+        If theConnString = String.Empty Then
+            LogError("No Connectionstring given for environment: " & env & ", please correct and rerun.")
+            Exit Function
+        End If
 
         On Error GoTo openConnection_Err
         openConnection = False
-        If Not dbcnn Is Nothing Then
-            If dbcnn.State = ObjectStateEnum.adStateClosed Then dbcnn = Nothing
+        dbcnn = Nothing
+        dbcnn = New Connection
+        Dim dbidentifier As String = fetchSetting("DBidentifierCCS" & env, String.Empty)
+        If dbidentifier = String.Empty Then
+            LogError("No DB identifier given for environment: " & env & ", please correct and rerun.")
+            Exit Function
         End If
-        If dbcnn Is Nothing Then
-            dbcnn = New Connection
-            dbcnn.ConnectionString = Change(theConnString, fetchSetting("dbspecifier", "database="), database, ";")
-            dbcnn.ConnectionTimeout = CnnTimeout
-            dbcnn.CommandTimeout = CmdTimeout
-            theHostApp.StatusBar = "Trying " & CnnTimeout & " sec. with connstring: " & theConnString
-            On Error Resume Next
-            dbcnn.Open()
-            theHostApp.StatusBar = String.Empty
-            If Err.Number <> 0 Then
-                On Error GoTo openConnection_Err
-                Dim exitMe As Boolean : exitMe = True
-                LogWarn("openConnection: Error connecting to DB: " & Err.Description & ", connection string: " & theConnString, exitMe)
-                dbcnn.Close()
-                dbcnn = Nothing
-            End If
+        dbcnn.ConnectionString = Change(theConnString, dbidentifier, database, ";")
+        dbcnn.ConnectionTimeout = DBAddin.CnnTimeout
+        dbcnn.CommandTimeout = DBAddin.CmdTimeout
+        theHostApp.StatusBar = "Trying " & CnnTimeout & " sec. with connstring: " & theConnString
+        On Error Resume Next
+        dbcnn.Open()
+        theHostApp.StatusBar = String.Empty
+        If Err.Number <> 0 Then
+            On Error GoTo openConnection_Err
+            Dim exitMe As Boolean : exitMe = True
+            LogWarn("openConnection: Error connecting to DB: " & Err.Description & ", connection string: " & theConnString, exitMe)
+            dbcnn.Close()
+            dbcnn = Nothing
         End If
         'dontTryConnection is only true if connection couldn't be succesfully opened until now..
         openConnection = Not dontTryConnection
