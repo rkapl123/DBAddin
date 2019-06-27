@@ -14,8 +14,8 @@ Public Module DBAddin
     Public hostApp As Object
     ''' <summary>environment definitions</summary>
     Public environdefs As String() = {}
-    ''' <summary>DBMapper definition maps (for labels)</summary>
-    Public DBMapperDefMap As Dictionary(Of String, String)
+    ''' <summary>DBMapper definitions per sheet map (for labels)</summary>
+    Public DBMapperSheets As Dictionary(Of String, String)
     ''' <summary>DBMapper definition collections (for target ranges)</summary>
     Public DBMapperDefColl As Dictionary(Of String, Dictionary(Of String, Range))
     ' general Global objects/variables
@@ -323,19 +323,14 @@ Public Class AddInEvents
     Private Sub Workbook_Activate(Wb As Excel.Workbook) Handles Application.WorkbookActivate
         ' load DBMapper definitions
         DBMapperDefColl = New Dictionary(Of String, Dictionary(Of String, Range))
-        DBMapperDefMap = New Dictionary(Of String, String)
+        DBMapperSheets = New Dictionary(Of String, String)
         Dim i As Integer = 0
         For Each namedrange As Name In hostApp.ActiveWorkbook.Names
             Dim cleanname As String = Replace(namedrange.Name, namedrange.Parent.Name & "!", "")
             If Left(cleanname, 8) = "DBMapper" Then
                 If InStr(namedrange.RefersTo, "#REF!") > 0 Then LogError("DBMapper definitions range " + namedrange.Parent.name + "!" + namedrange.Name + " contains #REF!", vbOKOnly + vbCritical, "DBAddin: DBMapper definitions range error")
-                ' final name of entry is without DBMapper and !
-                Dim finalname As String = Replace(Replace(namedrange.Name, "DBMapper", ""), "!", "")
                 Dim nodeName As String = Replace(Replace(namedrange.Name, "DBMapper", ""), namedrange.Parent.Name & "!", "")
                 If nodeName = "" Then nodeName = "MainDBMapper"
-                If Not InStr(namedrange.Name, "!") > 0 Then
-                    finalname = hostApp.ActiveWorkbook.Name + finalname
-                End If
 
                 Dim defColl As Dictionary(Of String, Range)
                 If Not DBMapperDefColl.ContainsKey(namedrange.Parent.Name) Then
@@ -343,7 +338,7 @@ Public Class AddInEvents
                     defColl = New Dictionary(Of String, Range)
                     defColl.Add(nodeName, namedrange.RefersToRange)
                     DBMapperDefColl.Add(namedrange.Parent.Name, defColl)
-                    DBMapperDefMap.Add("ID" + i.ToString(), namedrange.Parent.Name)
+                    DBMapperSheets.Add("ID" + i.ToString(), namedrange.Parent.Name)
                     i += 1
                 Else
                     ' add definition to existing sheet "menu"
@@ -351,6 +346,7 @@ Public Class AddInEvents
                     defColl.Add(nodeName, namedrange.RefersToRange)
                 End If
             End If
+            If i >= 15 Then LogError("Not more than 15 sheets with DBMapper definitions possible, ignoring definitions in sheet " + namedrange.Parent.Name)
         Next
         DBAddin.theRibbon.Invalidate()
     End Sub

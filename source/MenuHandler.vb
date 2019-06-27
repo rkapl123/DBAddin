@@ -22,9 +22,11 @@ Public Class MenuHandler
             "<group id='DBAddinGroup' label='General settings'>" +
               "<dropDown id='envDropDown' label='Environment:' sizeString='12345678901234567890' getSelectedItemIndex='GetSelItem' getItemCount='GetItemCount' getItemID='GetItemID' getItemLabel='GetItemLabel' onAction='selectItem'/>" +
               "<dynamicMenu id='DBConfigs' size='normal' label='DB Configs' imageMso='Refresh' screentip='DB Function Configuration Files quick access' getContent='getDBConfigMenu'/>" +
+              "<button id='saveAllWBtoDB' label='store all DBMapper Defs' imageMso='SignatureLineInsert' onAction='saveAllWBookRangesToDBClick'/>" +
               "<dialogBoxLauncher><button id='dialog' label='About DBAddin' onAction='showAbout' tag='3' screentip='Show Aboutbox and refresh configs if wanted'/></dialogBoxLauncher></group>" +
               "<group id='DBMapperGroup' label='Store Data defined with saveRangeToDB'>"
-        For i As Integer = 0 To 10
+        ' max. 15 sheets with DBMapper definitions possible:
+        For i As Integer = 0 To 14
             customUIXml = customUIXml + "<dynamicMenu id='ID" + i.ToString() + "' " +
                                             "size='normal' getLabel='getSheetLabel' imageMso='SignatureLineInsert' " +
                                             "screentip='Select DBMapper range to store' " +
@@ -299,18 +301,21 @@ buildFileSepMenuCtrl_Err:
     ''' <summary>set the name of the WB/sheet dropdown to the sheet name (for the WB dropdown this is the WB name)</summary>
     Public Function getSheetLabel(control As IRibbonControl) As String
         getSheetLabel = vbNullString
-        If DBMapperDefMap.ContainsKey(control.Id) Then getSheetLabel = DBMapperDefMap(control.Id)
+        If DBMapperSheets.ContainsKey(control.Id) Then getSheetLabel = DBMapperSheets(control.Id)
     End Function
 
-    ''' <summary>create the buttons in the WB/sheet dropdown</summary>
+    ''' <summary>selected sheet menu for DBMapper menu</summary>
+    Private currentSheet As String
+
+    ''' <summary>create the buttons in the DBMapper sheet dropdown menu</summary>
     Public Function getDynMenContent(control As IRibbonControl) As String
         Dim xmlString As String = "<menu xmlns='http://schemas.microsoft.com/office/2009/07/customui'>"
 
-        If Not DBMapperDefMap.ContainsKey(control.Id) Then Return ""
+        If Not DBMapperSheets.ContainsKey(control.Id) Then Return ""
 
-        Dim currentSheet As String = DBMapperDefMap(control.Id)
+        currentSheet = DBMapperSheets(control.Id)
         For Each nodeName As String In DBMapperDefColl(currentSheet).Keys
-            xmlString = xmlString + "<button id='" + nodeName + "' label='store " + nodeName + "' imageMso='SignatureLineInsert' onAction='saveRangeToDBClick' tag ='" + currentSheet + "' screentip='store " + nodeName + "' supertip='stores data defined in " + nodeName + " Mapper range on sheet " + currentSheet + "' />"
+            xmlString = xmlString + "<button id='" + nodeName + "' label='store " + nodeName + "' imageMso='SignatureLineInsert' onAction='saveRangeToDBClick' tag ='" + currentSheet + "' screentip='store " + nodeName + "' supertip='stores data defined in " + nodeName + " Mapper range on " + currentSheet + "![" + DBMapperDefColl(currentSheet).Item(nodeName).Address() + "]' />"
         Next
         xmlString += "</menu>"
         Return xmlString
@@ -318,19 +323,19 @@ buildFileSepMenuCtrl_Err:
 
     ''' <summary>shows the sheet button only if it was collected...</summary>
     Public Function getDynMenVisible(control As IRibbonControl) As Boolean
-        Return DBMapperDefMap.ContainsKey(control.Id)
+        Return DBMapperSheets.ContainsKey(control.Id)
     End Function
 
-    Public Shared Sub saveRangeToDBClick(control As IRibbonControl)
-        If saveRangeToDB(hostApp.ActiveCell) Then MsgBox("hooray!")
-    End Sub
-
-    Public Sub saveAllWSheetRangesToDBClick(control As IRibbonControl)
-
+    Public Sub saveRangeToDBClick(control As IRibbonControl)
+        saveRangeToDB(DBMapperDefColl(DBMapperSheets(currentSheet)).Item(control.Id))
     End Sub
 
     Public Sub saveAllWBookRangesToDBClick(control As IRibbonControl)
-
+        For Each curSheet In DBMapperSheets.Keys
+            For Each dbmapdefkey In DBMapperDefColl(curSheet).Keys
+                saveRangeToDB(DBMapperDefColl(DBMapperSheets(curSheet)).Item(dbmapdefkey))
+            Next
+        Next
     End Sub
 
     ''' <summary>context menu entry refreshData: refresh Data in db function (if area or cell selected) or all db functions</summary>

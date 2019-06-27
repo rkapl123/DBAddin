@@ -1,4 +1,5 @@
 Imports ADODB
+Imports Microsoft.Office.Interop.Excel
 
 ''' <summary>Contains the public callable Mapper function for storing/updating tabular excel data</summary>
 Public Enum CheckTypeFld
@@ -23,7 +24,7 @@ Public Module Mapper
     ''' primKey1Val,primKey2Val,..,primKeyNVal,DataCol1Val,DataCol2Val,..,DataColNVal</summary>
     ''' <param name="DataRange">Excel Range, where Data is taken from</param>
     ''' <returns>True if successful, false in case of errors.</returns>
-    Public Function saveRangeToDB(DataRange As Object) As Boolean
+    Public Sub saveRangeToDB(DataRange As Object)
         Dim tableName As String = String.Empty           ' Database Table, where Data is to be stored
         Dim primKeysStr As String = String.Empty         ' String containing primary Key names for updating table data, comma separated
         Dim database As String = String.Empty            ' Database to store to
@@ -38,6 +39,10 @@ Public Module Mapper
         Dim i As Integer, headerRow As Integer
         Dim rowNum As Long, colNum As Long
 
+        ' extend DataRange if it is only one cell...
+        If DataRange.Rows.Count = 1 And DataRange.Columns.Count = 1 Then
+            DataRange = DataRange.End(XlDirection.xlToLeft).End(XlDirection.xlDown)
+        End If
         Dim SaveParams() As String = functionSplit(DataRange.Cells(1, 1).Comment.Text, ",", """", "saveRangeToDB", "", "")
         If SaveParams(0) <> "" Then env = Convert.ToInt16(SaveParams(0))
         If SaveParams(1) <> "" Then
@@ -59,14 +64,13 @@ Public Module Mapper
         If SaveParams(5) <> "" Then executeAdditionalProc = SaveParams(5)
         ' set up parameters
         On Error GoTo saveRangeToDB_Err
-        saveRangeToDB = False
         primKeys = Split(primKeysStr, ",")
 
         ' first, create/get a connection (dbcnn)
         LogInfo("saveRangeToDB Mapper: open connection...")
 
         'now create/get a connection (dbcnn) for env(ironment)
-        If Not openConnection(env, database) Then Exit Function
+        If Not openConnection(env, database) Then Exit Sub
 
         'checkrst is opened to get information about table schema (field types)
         checkrst = New ADODB.Recordset
@@ -196,7 +200,6 @@ nextRow:
                 GoTo cleanup
             End If
         End If
-        saveRangeToDB = True
         GoTo cleanup
 
 saveRangeToDB_Err:
@@ -209,7 +212,7 @@ cleanup:
         checkrst = Nothing
         dbcnn = Nothing
         theHostApp.StatusBar = False
-    End Function
+    End Sub
 
 
     ''' <summary>check whether key with name "tblName" is contained in collection tblColl</summary>
