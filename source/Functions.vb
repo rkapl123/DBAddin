@@ -316,7 +316,7 @@ DBSetQuery_Error:
         End If
 
         ' get target range name ...
-14:     Dim functionArgs : functionArgs = functionSplit(caller.Formula, ",", """", "DBListFetch", "(", ")")
+14:     Dim functionArgs = functionSplit(caller.Formula, ",", """", "DBListFetch", "(", ")")
 15:     Dim targetRangeName As String : targetRangeName = functionArgs(2)
         ' check if fetched argument targetRangeName is really a name or just a plain range address
 16:     If Not existsNameInWb(targetRangeName, caller.Parent.Parent) And Not existsNameInSheet(targetRangeName, caller.Parent) Then targetRangeName = String.Empty

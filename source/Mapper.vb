@@ -23,12 +23,11 @@ Public Module Mapper
     ''' assumption: layout of dataRange is
     ''' primKey1Val,primKey2Val,..,primKeyNVal,DataCol1Val,DataCol2Val,..,DataColNVal</summary>
     ''' <param name="DataRange">Excel Range, where Data is taken from</param>
-    ''' <returns>True if successful, false in case of errors.</returns>
-    Public Sub saveRangeToDB(DataRange As Object)
+    Public Sub saveRangeToDB(DataRange As Object, DBMapperName As String)
         Dim tableName As String = String.Empty           ' Database Table, where Data is to be stored
         Dim primKeysStr As String = String.Empty         ' String containing primary Key names for updating table data, comma separated
         Dim database As String = String.Empty            ' Database to store to
-        Dim env As Integer = DBAddin.selectedEnvironment ' Environment where connection id should be taken from (if not existing, take from selectedEnvironment)
+        Dim env As Integer = DBAddin.selectedEnvironment + 1 ' Environment where connection id should be taken from (if not existing, take from selectedEnvironment)
         Dim insertIfMissing As Boolean = False           ' if set, then insert row into table if primary key is missing there. Default = False (only update)
         Dim executeAdditionalProc As String = ""         ' additional stored procedure to be executed after saving
 
@@ -41,35 +40,45 @@ Public Module Mapper
 
         ' extend DataRange if it is only one cell...
         If DataRange.Rows.Count = 1 And DataRange.Columns.Count = 1 Then
-            DataRange = DataRange.End(XlDirection.xlToLeft).End(XlDirection.xlDown)
+            DataRange = theHostApp.Range(DataRange, DataRange.End(XlDirection.xlToLeft).End(XlDirection.xlDown))
         End If
-        Dim SaveParams() As String = functionSplit(DataRange.Cells(1, 1).Comment.Text, ",", """", "saveRangeToDB", "", "")
-        If SaveParams(0) <> "" Then env = Convert.ToInt16(SaveParams(0))
-        If SaveParams(1) <> "" Then
-            tableName = SaveParams(1)
-        Else
-            LogError("No Tablename given in DBMapper comment!")
+        If IsNothing(DataRange.Cells(1, 1).Comment.Text) Then
+            LogError("No definition comment found for DBMapper definition in " + DBMapperName)
         End If
-        If SaveParams(2) <> "" Then
-            primKeysStr = SaveParams(2)
-        Else
-            LogError("No primary keys given in DBMapper comment!")
-        End If
-        If SaveParams(3) <> "" Then
-            database = SaveParams(3)
-        Else
-            LogError("No database given in DBMapper comment!")
-        End If
-        If SaveParams(4) <> "" Then insertIfMissing = Convert.ToBoolean(SaveParams(4))
-        If SaveParams(5) <> "" Then executeAdditionalProc = SaveParams(5)
         ' set up parameters
+        Dim saveRangeParams() As String = functionSplit(DataRange.Cells(1, 1).Comment.Text, ",", """", "saveRangeToDB", "(", ")")
+        If IsNothing(saveRangeParams) Then Exit Sub
+        If saveRangeParams.Length < 4 Then
+            LogError("At least environment (can be empty), Tablename, primary keys and database have to be provided as saveRangeToDB parameters !")
+            Exit Sub
+        End If
+        If saveRangeParams(0) <> "" Then env = Convert.ToInt16(saveRangeParams(0))
+        tableName = saveRangeParams(1).Replace("""", "").Trim ' remove all quotes and trim right and left
+        If tableName = "" Then
+            LogError("No Tablename given in DBMapper comment!")
+            Exit Sub
+        End If
+        primKeysStr = saveRangeParams(2).Replace("""", "").Trim
+        If primKeysStr = "" Then
+            LogError("No primary keys given in DBMapper comment!")
+            Exit Sub
+        End If
+        database = saveRangeParams(3).Replace("""", "").Trim
+        If database = "" Then
+            LogError("No database given in DBMapper comment!")
+            Exit Sub
+        End If
+        If saveRangeParams.Length > 4 Then
+            If saveRangeParams(4) <> "" Then insertIfMissing = Convert.ToBoolean(saveRangeParams(4))
+        End If
+        If saveRangeParams.Length > 5 Then
+            If saveRangeParams(5) <> "" Then executeAdditionalProc = saveRangeParams(5).Replace("""", "").Trim
+        End If
         On Error GoTo saveRangeToDB_Err
         primKeys = Split(primKeysStr, ",")
 
-        ' first, create/get a connection (dbcnn)
-        LogInfo("saveRangeToDB Mapper: open connection...")
-
         'now create/get a connection (dbcnn) for env(ironment)
+        LogInfo("saveRangeToDB Mapper: open connection...")
         If Not openConnection(env, database) Then Exit Sub
 
         'checkrst is opened to get information about table schema (field types)

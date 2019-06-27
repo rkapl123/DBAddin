@@ -301,21 +301,20 @@ buildFileSepMenuCtrl_Err:
     ''' <summary>set the name of the WB/sheet dropdown to the sheet name (for the WB dropdown this is the WB name)</summary>
     Public Function getSheetLabel(control As IRibbonControl) As String
         getSheetLabel = vbNullString
-        If DBMapperSheets.ContainsKey(control.Id) Then getSheetLabel = DBMapperSheets(control.Id)
+        If DBMapperDefColl.ContainsKey(control.Id) Then
+            ' get parent name of first stored DB Mapper range
+            getSheetLabel = DBMapperDefColl(control.Id).Item(DBMapperDefColl(control.Id).Keys.First).Parent.Name
+        End If
     End Function
-
-    ''' <summary>selected sheet menu for DBMapper menu</summary>
-    Private currentSheet As String
 
     ''' <summary>create the buttons in the DBMapper sheet dropdown menu</summary>
     Public Function getDynMenContent(control As IRibbonControl) As String
         Dim xmlString As String = "<menu xmlns='http://schemas.microsoft.com/office/2009/07/customui'>"
 
-        If Not DBMapperSheets.ContainsKey(control.Id) Then Return ""
+        If Not DBMapperDefColl.ContainsKey(control.Id) Then Return ""
 
-        currentSheet = DBMapperSheets(control.Id)
-        For Each nodeName As String In DBMapperDefColl(currentSheet).Keys
-            xmlString = xmlString + "<button id='" + nodeName + "' label='store " + nodeName + "' imageMso='SignatureLineInsert' onAction='saveRangeToDBClick' tag ='" + currentSheet + "' screentip='store " + nodeName + "' supertip='stores data defined in " + nodeName + " Mapper range on " + currentSheet + "![" + DBMapperDefColl(currentSheet).Item(nodeName).Address() + "]' />"
+        For Each nodeName As String In DBMapperDefColl(control.Id).Keys
+            xmlString = xmlString + "<button id='" + nodeName + "' label='store " + nodeName + "' imageMso='SignatureLineInsert' onAction='saveRangeToDBClick' tag='" + control.Id + "' screentip='store " + nodeName + "' supertip='stores data defined in " + nodeName + " Mapper range on " + DBMapperDefColl(control.Id).Item(nodeName).Parent.Name + "![" + DBMapperDefColl(control.Id).Item(nodeName).Address + "]' />"
         Next
         xmlString += "</menu>"
         Return xmlString
@@ -323,17 +322,18 @@ buildFileSepMenuCtrl_Err:
 
     ''' <summary>shows the sheet button only if it was collected...</summary>
     Public Function getDynMenVisible(control As IRibbonControl) As Boolean
-        Return DBMapperSheets.ContainsKey(control.Id)
+        Return DBMapperDefColl.ContainsKey(control.Id)
     End Function
 
     Public Sub saveRangeToDBClick(control As IRibbonControl)
-        saveRangeToDB(DBMapperDefColl(DBMapperSheets(currentSheet)).Item(control.Id))
+        saveRangeToDB(DBMapperDefColl(control.Tag).Item(control.Id), control.Id)
     End Sub
 
     Public Sub saveAllWBookRangesToDBClick(control As IRibbonControl)
-        For Each curSheet In DBMapperSheets.Keys
-            For Each dbmapdefkey In DBMapperDefColl(curSheet).Keys
-                saveRangeToDB(DBMapperDefColl(DBMapperSheets(curSheet)).Item(dbmapdefkey))
+        Dim DBmapSheet As String
+        For Each DBmapSheet In DBMapperDefColl.Keys
+            For Each dbmapdefkey In DBMapperDefColl(DBmapSheet).Keys
+                saveRangeToDB(DBMapperDefColl(control.Tag).Item(dbmapdefkey), dbmapdefkey)
             Next
         Next
     End Sub

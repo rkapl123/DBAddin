@@ -14,9 +14,7 @@ Public Module DBAddin
     Public hostApp As Object
     ''' <summary>environment definitions</summary>
     Public environdefs As String() = {}
-    ''' <summary>DBMapper definitions per sheet map (for labels)</summary>
-    Public DBMapperSheets As Dictionary(Of String, String)
-    ''' <summary>DBMapper definition collections (for target ranges)</summary>
+    ''' <summary>DBMapper definition collections (for labels (key of nested dictionary) and target ranges (value of nested dictionary))</summary>
     Public DBMapperDefColl As Dictionary(Of String, Dictionary(Of String, Range))
     ' general Global objects/variables
     ''' <summary>Application object used for referencing objects</summary>
@@ -323,26 +321,24 @@ Public Class AddInEvents
     Private Sub Workbook_Activate(Wb As Excel.Workbook) Handles Application.WorkbookActivate
         ' load DBMapper definitions
         DBMapperDefColl = New Dictionary(Of String, Dictionary(Of String, Range))
-        DBMapperSheets = New Dictionary(Of String, String)
         Dim i As Integer = 0
         For Each namedrange As Name In hostApp.ActiveWorkbook.Names
             Dim cleanname As String = Replace(namedrange.Name, namedrange.Parent.Name & "!", "")
             If Left(cleanname, 8) = "DBMapper" Then
                 If InStr(namedrange.RefersTo, "#REF!") > 0 Then LogError("DBMapper definitions range " + namedrange.Parent.name + "!" + namedrange.Name + " contains #REF!", vbOKOnly + vbCritical, "DBAddin: DBMapper definitions range error")
                 Dim nodeName As String = Replace(Replace(namedrange.Name, "DBMapper", ""), namedrange.Parent.Name & "!", "")
-                If nodeName = "" Then nodeName = "MainDBMapper"
+                If nodeName = "" Then nodeName = "UnnamedDBMapper"
 
                 Dim defColl As Dictionary(Of String, Range)
-                If Not DBMapperDefColl.ContainsKey(namedrange.Parent.Name) Then
+                If Not DBMapperDefColl.ContainsKey("ID" + i.ToString()) Then
                     ' add to new sheet "menu"
                     defColl = New Dictionary(Of String, Range)
                     defColl.Add(nodeName, namedrange.RefersToRange)
-                    DBMapperDefColl.Add(namedrange.Parent.Name, defColl)
-                    DBMapperSheets.Add("ID" + i.ToString(), namedrange.Parent.Name)
+                    DBMapperDefColl.Add("ID" + i.ToString(), defColl)
                     i += 1
                 Else
                     ' add definition to existing sheet "menu"
-                    defColl = DBMapperDefColl(namedrange.Parent.Name)
+                    defColl = DBMapperDefColl("ID" + i.ToString())
                     defColl.Add(nodeName, namedrange.RefersToRange)
                 End If
             End If

@@ -33,8 +33,8 @@ Public Module CommonFuncs
         functionSplit = finalResult
         Exit Function
 err0:
-        Err.Raise(1, , "couldn't produce balanced string from " & theString)
-        On Error Resume Next
+        LogError("couldn't produce balanced string from " & theString)
+        functionSplit = Nothing
         Exit Function
 err1:
         Dim errDesc As String = Err.Description
