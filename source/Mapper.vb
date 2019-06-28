@@ -38,9 +38,9 @@ Public Module Mapper
         Dim i As Integer, headerRow As Integer
         Dim rowNum As Long, colNum As Long
 
-        ' extend DataRange if it is only one cell...
+        ' extend DataRange if it is only one cell ...
         If DataRange.Rows.Count = 1 And DataRange.Columns.Count = 1 Then
-            DataRange = theHostApp.Range(DataRange, DataRange.End(XlDirection.xlToLeft).End(XlDirection.xlDown))
+            DataRange = theHostApp.Range(DataRange, DataRange.End(XlDirection.xlToRight).End(XlDirection.xlDown))
         End If
         If IsNothing(DataRange.Cells(1, 1).Comment.Text) Then
             LogError("No definition comment found for DBMapper definition in " + DBMapperName)
