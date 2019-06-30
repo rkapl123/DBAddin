@@ -1,14 +1,7 @@
 Imports ADODB
 Imports Microsoft.Office.Interop.Excel
 
-''' <summary>Contains the public callable Mapper function for storing/updating tabular excel data</summary>
-Public Enum CheckTypeFld
-    checkIsNumericFld = 0
-    checkIsDateFld = 1
-    checkIsTimeFld = 2
-    checkIsStringFld = 3
-End Enum
-
+''' <summary>Contains Mapper function saveRangeToDB for storing/updating tabular excel data and some helper functions</summary>
 Public Module Mapper
     ''' <summary>main db connection For mapper</summary>
     Public dbcnn As ADODB.Connection
@@ -40,7 +33,9 @@ Public Module Mapper
 
         ' extend DataRange if it is only one cell ...
         If DataRange.Rows.Count = 1 And DataRange.Columns.Count = 1 Then
-            DataRange = theHostApp.Range(DataRange, DataRange.End(XlDirection.xlToRight).End(XlDirection.xlDown))
+            Dim rowEnd = DataRange.End(XlDirection.xlDown).Row
+            Dim colEnd = DataRange.End(XlDirection.xlToRight).Column
+            DataRange = DataRange.Parent.Range(DataRange, DataRange.Parent.Cells(rowEnd, colEnd))
         End If
         If IsNothing(DataRange.Cells(1, 1).Comment.Text) Then
             LogError("No definition comment found for DBMapper definition in " + DBMapperName)
@@ -92,6 +87,7 @@ Public Module Mapper
             GoTo cleanup
         End If
 
+        ' to find the record to be updated, get types for primKeyCompound to build WHERE Clause with it
         For i = 0 To UBound(primKeys)
             ReDim Preserve checkTypes(i)
 
@@ -305,5 +301,11 @@ err1:
 openConnection_Err:
         LogError("Error: " & Err.Description & ", line " & Erl() & " in Mapper.openConnection")
     End Function
-
 End Module
+
+Public Enum CheckTypeFld
+    checkIsNumericFld = 0
+    checkIsDateFld = 1
+    checkIsTimeFld = 2
+    checkIsStringFld = 3
+End Enum

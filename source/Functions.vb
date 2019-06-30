@@ -1,7 +1,7 @@
 Imports Microsoft.Office.Interop.Excel
 Imports ExcelDna.Integration
 
-''' <summary>Contains the public callable DB functions and some helper functions</summary>
+''' <summary>Contains the public callable DB functions and helper functions</summary>
 Public Module Functions
 
     ''' <summary>Create database compliant date, time or datetime string from excel datetype value</summary>

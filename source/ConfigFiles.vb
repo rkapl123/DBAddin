@@ -1,14 +1,12 @@
 Imports Microsoft.Office.Interop
-Imports ExcelDna.Integration
-''
-'  procedures used for loading config files (storing DBFuncs and general sheet content)
+Imports System.IO ' for getting config files for menu
+
+'''<summary>procedures used for loading config files (containing DBFunctions and general sheet content) and building the config menu</summary>
 Public Module ConfigFiles
     Public referenceCell As Excel.Range
 
-    ''
-    ' get the current reference sheet (during display of the form/building db item)
-    ' @return the current reference sheet
-    ' @remarks
+    '''<summary>get the current reference sheet (during display of the form/building db item)</summary>
+    '''<returns>the current reference sheet</returns>
     Function referenceSheet() As Excel.Worksheet
         Return referenceCell.Parent
     End Function
@@ -173,6 +171,200 @@ err1:
         Else
             beg = Mid$(relAddr, InStr(srchBeg + 1, relAddr, srchSubStr) + 2)
             getRowOrCol = CLng(Mid$(beg, 1, InStr(1, beg, "]") - 1))
+        End If
+    End Function
+
+    ''' <summary>used to create menu and button ids</summary>
+    Private menuID As Integer
+    ''' <summary>tree menu stored here</summary>
+    Public ConfigMenuXML As String = vbNullString
+    ''' <summary>max depth limitation by Ribbon: 5 levels: 1 top level, 1 folder level (Database foldername) -> 3 left</summary>
+    Const specialFolderMaxDepth As Integer = 3
+    ''' <summary>store found submenus in this collection</summary>
+    Private specialConfigFoldersTempColl As Collection
+    ''' <summary>for correct display of menu</summary>
+    Private ReadOnly xnspace As XNamespace = "http://schemas.microsoft.com/office/2009/07/customui"
+
+    Public Sub createConfigTreeMenu()
+        Dim currentBar, button As XElement
+
+        If Not Directory.Exists(ConfigStoreFolder) Then
+            LogError("No predefined config store folder '" & ConfigStoreFolder & "' found, please correct setting and refresh!")
+            ConfigMenuXML = "<menu xmlns='http://schemas.microsoft.com/office/2009/07/customui'><button id='refreshDBConfig' label='refresh DBConfig Tree' imageMso='Refresh' onAction='refreshDBConfigTree'/></menu>"
+        Else
+            ' top level menu
+            currentBar = New XElement(xnspace + "menu")
+            ' refresh button
+            button = New XElement(xnspace + "button")
+            button.SetAttributeValue("id", "refreshConfig")
+            button.SetAttributeValue("label", "refresh DBConfig Tree")
+            button.SetAttributeValue("imageMso", "Refresh")
+            button.SetAttributeValue("onAction", "refreshDBConfigTree")
+            currentBar.Add(button)
+            specialConfigFoldersTempColl = New Collection
+            menuID = 0
+            readAllFiles(ConfigStoreFolder, currentBar)
+            specialConfigFoldersTempColl = Nothing
+            hostApp.StatusBar = String.Empty
+            currentBar.SetAttributeValue("xmlns", "http://schemas.microsoft.com/office/2009/07/customui")
+            ConfigMenuXML = currentBar.ToString()
+        End If
+    End Sub
+
+    ''' <summary>reads all files contained in rootPath and its subfolders (recursively) and adds them to the DBConfig menu (sub)structure (recursively). For folders contained in specialConfigStoreFolders, apply further structuring by splitting names on camelcase or specialConfigStoreSeparator</summary>
+    ''' <param name="rootPath"></param>
+    ''' <param name="currentBar"></param>
+    Private Sub readAllFiles(rootPath As String, ByRef currentBar As XElement)
+        Dim newBar As XElement = Nothing
+        Dim i As Long
+
+        On Error GoTo err1
+        ' read all leaf node entries (files) and sort them by name to create action menus
+        Dim di As DirectoryInfo = New DirectoryInfo(rootPath)
+        Dim fileList() As FileSystemInfo = di.GetFileSystemInfos("*.xcl").OrderBy(Function(fi) fi.Name).ToArray()
+        If fileList.Length > 0 Then
+
+            ' for special folders split further into camelcase (or other special ) separated names
+            Dim aFolder : Dim spclFolder As String : spclFolder = String.Empty
+            Dim theFolder As String
+            theFolder = Mid$(rootPath, InStrRev(rootPath, "\") + 1)
+            For Each aFolder In specialConfigStoreFolders
+                If UCase$(theFolder) = UCase$(aFolder) Then
+                    spclFolder = aFolder
+                    Exit For
+                End If
+            Next
+            If spclFolder.Length > 0 Then
+                Dim firstCharLevel As Boolean = CBool(fetchSetting(spclFolder & "FirstLetterLevel", "False"))
+                Dim specialConfigStoreSeparator As String = fetchSetting(spclFolder & "Separator", String.Empty)
+                Dim nameParts As String
+                For i = 0 To UBound(fileList)
+                    ' is current entry contained in next entry then revert order to allow for containment in next entry's hierarchy..
+                    If i < UBound(fileList) Then
+                        If InStr(1, Left$(fileList(i + 1).Name, Len(fileList(i + 1).Name) - 4), Left$(fileList(i).Name, Len(fileList(i).Name) - 4)) > 0 Then
+                            nameParts = stringParts(IIf(firstCharLevel, Left$(fileList(i + 1).Name, 1) & " ", String.Empty) &
+                                                            Left$(fileList(i + 1).Name, Len(fileList(i + 1).Name) - 4), specialConfigStoreSeparator)
+                            buildFileSepMenuCtrl(nameParts, currentBar, rootPath & "\" & fileList(i + 1).Name, spclFolder, specialFolderMaxDepth)
+                            nameParts = stringParts(IIf(firstCharLevel, Left$(fileList(i).Name, 1) & " ", String.Empty) &
+                                                            Left$(fileList(i).Name, Len(fileList(i).Name) - 4), specialConfigStoreSeparator)
+                            buildFileSepMenuCtrl(nameParts, currentBar, rootPath & "\" & fileList(i).Name, spclFolder, specialFolderMaxDepth)
+                            i += 2
+                            If i > UBound(fileList) Then Exit For
+                        End If
+                    End If
+                    nameParts = stringParts(IIf(firstCharLevel, Left$(fileList(i).Name, 1) & " ", String.Empty) &
+                            Left$(fileList(i).Name, Len(fileList(i).Name) - 4), specialConfigStoreSeparator)
+                    buildFileSepMenuCtrl(nameParts, currentBar, rootPath & "\" & fileList(i).Name, spclFolder, specialFolderMaxDepth)
+                Next
+                ' normal case: just follow the path and enter all entries as buttons
+            Else
+                For i = 0 To UBound(fileList)
+                    newBar = New XElement(xnspace + "button")
+                    menuID += 1
+                    newBar.SetAttributeValue("id", "m" + menuID.ToString())
+                    newBar.SetAttributeValue("tag", rootPath + "\" & fileList(i).Name)
+                    newBar.SetAttributeValue("label", Left$(fileList(i).Name, Len(fileList(i).Name) - 4))
+                    newBar.SetAttributeValue("onAction", "getConfig")
+                    currentBar.Add(newBar)
+                Next
+            End If
+        End If
+
+        ' read all folder xcl entries and sort them by name
+        Dim DirList() As DirectoryInfo = di.GetDirectories().OrderBy(Function(fi) fi.Name).ToArray()
+        If DirList.Length = 0 Then Exit Sub
+        ' recursively build branched menu structure from dirEntries
+        For i = 0 To UBound(DirList)
+            hostApp.StatusBar = "Filling DBConfigs Menu: " & rootPath & "\" & DirList(i).Name
+            newBar = New XElement(xnspace + "menu")
+            menuID += 1
+            newBar.SetAttributeValue("id", "m" + menuID.ToString())
+            newBar.SetAttributeValue("label", DirList(i).Name)
+            currentBar.Add(newBar)
+            readAllFiles(rootPath & "\" & DirList(i).Name, newBar)
+        Next
+        Exit Sub
+err1:
+        LogToEventViewer("Error (" & Err.Description & ") in MenuHandler.readAllFiles in " & Erl(), EventLogEntryType.Error)
+    End Sub
+
+    ''' <summary>parses Substrings contained in nameParts (recursively) and adds them to currentBar and submenus (recursively)</summary>
+    ''' <param name="nameParts" >tokenized string (separated by space)</param>
+    ''' <param name="currentBar"></param>
+    ''' <param name="fullPathName"></param>
+    ''' <param name="newRootName"></param>
+    ''' <param name="specialFolderMaxDepth"></param>
+    Private Sub buildFileSepMenuCtrl(nameParts As String, ByRef currentBar As XElement,
+                                         fullPathName As String, newRootName As String, specialFolderMaxDepth As Integer)
+        Dim newBar As XElement
+        Static currentDepth As Integer
+
+        On Error GoTo buildFileSepMenuCtrl_Err
+        ' end node: add callable entry (= button)
+        If InStr(1, nameParts, " ") = 0 Or currentDepth > specialFolderMaxDepth - 1 Then
+            Dim entryName As String = Mid$(fullPathName, InStrRev(fullPathName, "\") + 1)
+            newBar = New XElement(xnspace + "button")
+            menuID += 1
+            newBar.SetAttributeValue("id", "m" + menuID.ToString())
+            newBar.SetAttributeValue("label", Left$(entryName, Len(entryName) - 4))
+            newBar.SetAttributeValue("tag", fullPathName)
+            newBar.SetAttributeValue("onAction", "getConfig")
+            currentBar.Add(newBar)
+        Else  ' branch node: add new menu, recursively descend
+            Dim newName As String = Left$(nameParts, InStr(1, nameParts, " ") - 1)
+            ' prefix already exists: put new submenu below already existing prefix
+            If specialConfigFoldersTempColl.Contains(newRootName & newName) Then
+                newBar = specialConfigFoldersTempColl(newRootName & newName)
+            Else
+                newBar = New XElement(xnspace + "menu")
+                menuID += 1
+                newBar.SetAttributeValue("id", "m" + menuID.ToString())
+                newBar.SetAttributeValue("label", newName)
+                specialConfigFoldersTempColl.Add(newBar, newRootName & newName)
+                currentBar.Add(newBar)
+            End If
+            currentDepth += 1
+            buildFileSepMenuCtrl(Mid$(nameParts, InStr(1, nameParts, " ") + 1), newBar, fullPathName, newRootName & newName, specialFolderMaxDepth)
+            currentDepth -= 1
+        End If
+        Exit Sub
+
+buildFileSepMenuCtrl_Err:
+        LogToEventViewer("Error (" & Err.Description & ") in MenuHandler.buildFileSepMenuCtrl in " & Erl(), EventLogEntryType.Error)
+    End Sub
+
+    ''' <summary>returns string in space separated parts (tokenize String following CamelCase switch or when given specialConfigStoreSeparator occurs)</summary>
+    Private Function stringParts(theString As String, specialConfigStoreSeparator As String) As String
+        stringParts = String.Empty
+        ' specialConfigStoreSeparator given: split by it
+        If specialConfigStoreSeparator.Length > 0 Then
+            stringParts = Join(Split(theString, specialConfigStoreSeparator), " ")
+        Else ' walk through string, separating by camelcase switch
+            Dim CamelCaseStrLen As Integer = Len(theString)
+            Dim i As Integer
+            For i = 1 To CamelCaseStrLen
+                Dim aChar As String = Mid$(theString, i, 1)
+                Dim charAsc As Integer = Asc(aChar)
+
+                If i > 1 Then
+                    ' character before current character
+                    Dim pre As Integer = Asc(Mid$(theString, i - 1, 1))
+                    ' underscore also separates camelcase, except preceded by $, - or another underscore
+                    If charAsc = 95 Then
+                        If Not (pre = 36 Or pre = 45 Or pre = 95) _
+                            Then stringParts &= " "
+                    End If
+                    ' Uppercase characters separate unless the are preceding
+                    If (charAsc >= 65 And charAsc <= 90) Then
+                        If Not (pre >= 65 And pre <= 90) _
+                           And Not (pre = 36 Or pre = 45 Or pre = 95) _
+                           And Not (pre >= 48 And pre <= 57) _
+                           Then stringParts &= " "
+                    End If
+                End If
+                stringParts &= aChar
+            Next
+            stringParts = LTrim$(Replace(Replace(stringParts, "   ", " "), "  ", " "))
         End If
     End Function
 

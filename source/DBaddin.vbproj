@@ -113,6 +113,7 @@
     <Compile Include="AboutBox1.vb">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="AddInEvents.vb" />
     <Compile Include="CommonFuncs.vb" />
     <Compile Include="ConfigFiles.vb" />
     <Compile Include="ContainerMsgs.vb" />

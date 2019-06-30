@@ -1,11 +1,7 @@
 Imports Microsoft.Office.Interop.Excel
-Imports ExcelDna.Integration
-Imports ADODB
-Imports Microsoft.Office.Interop
 
 ''' <summary>various functions used in most parts of DBAddin</summary>
 Public Module CommonFuncs
-
     ''' <summary>splits theString into tokens delimited by delimiter, ignoring delimiters inside quotes and brackets</summary>
     ''' <param name="theString"></param>
     ''' <param name="delimiter"></param>
