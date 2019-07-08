@@ -8,8 +8,6 @@ Public Module Mapper
     ''' <summary>should the Mapper instance be used interactively, thus giving error messages to the user
     ''' or used in automation mode (invoked by VBA, needs to be explicitly set), collecting error messages for later retrieval</summary>
     Public isInteractive As Boolean
-    ''' <summary>if Mapper instance is not interactive, Log procedures store all messages here...</summary>
-    Public returnedErrorMessages As String
 
     ''' <summary>dump data given in dataRange to a database table specified by tableName and connID
     ''' this database table can have multiple primary columns specified by primKeysStr

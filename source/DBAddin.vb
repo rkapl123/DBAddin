@@ -124,7 +124,6 @@ Public Module DBAddin
         Dim retval As Integer
 
         LogToEventViewer(LogMessage, EventLogEntryType.Error)
-        'If Not automatedMapper Is Nothing Then automatedMapper.returnedErrorMessages = automatedMapper.returnedErrorMessages & LogMessage & vbCrLf
         If includeMsg Then retval = MsgBox(LogMessage, vbCritical + IIf(exitMe, vbOKCancel, vbOKOnly), "DBAddin: Internal Error !! ")
         If retval = vbCancel Then
             exitMe = True
@@ -141,7 +140,6 @@ Public Module DBAddin
         Dim retval As Integer
 
         LogToEventViewer(LogMessage, EventLogEntryType.Warning)
-        'If Not automatedMapper Is Nothing Then automatedMapper.returnedErrorMessages = automatedMapper.returnedErrorMessages & LogMessage & vbCrLf
         If includeMsg Then retval = MsgBox(LogMessage, vbCritical + IIf(exitMe, vbOKCancel, vbOKOnly), "DBAddin Error")
         If retval = vbCancel Then
             exitMe = True
