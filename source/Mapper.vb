@@ -67,7 +67,6 @@ Public Module Mapper
         If saveRangeParams.Length > 5 Then
             If saveRangeParams(5) <> "" Then executeAdditionalProc = saveRangeParams(5).Replace("""", "").Trim
         End If
-        On Error GoTo saveRangeToDB_Err
         primKeys = Split(primKeysStr, ",")
 
         'now create/get a connection (dbcnn) for env(ironment)
@@ -77,13 +76,13 @@ Public Module Mapper
         'checkrst is opened to get information about table schema (field types)
         checkrst = New ADODB.Recordset
         rst = New ADODB.Recordset
-        On Error Resume Next
-        checkrst.Open(tableName, dbcnn, CursorTypeEnum.adOpenForwardOnly, LockTypeEnum.adLockReadOnly, CommandTypeEnum.adCmdTableDirect)
-
-        If Err.Number <> 0 Then
-            LogWarn("Table: " & tableName & " caused error: " & Err.Description & " in sheet " & DataRange.Parent.name)
+        Try
+            checkrst.Open(tableName, dbcnn, CursorTypeEnum.adOpenForwardOnly, LockTypeEnum.adLockReadOnly, CommandTypeEnum.adCmdTableDirect)
+        Catch ex As Exception
+            LogWarn("Table: " & tableName & " caused error: " & ex.Message & " in sheet " & DataRange.Parent.name)
+            checkrst.Close()
             GoTo cleanup
-        End If
+        End Try
 
         ' to find the record to be updated, get types for primKeyCompound to build WHERE Clause with it
         For i = 0 To UBound(primKeys)
@@ -100,12 +99,10 @@ Public Module Mapper
             End If
         Next
         checkrst.Close()
-        checkrst = Nothing
 
         headerRow = 1
         rowNum = headerRow + 1
         dbcnn.CursorLocation = CursorLocationEnum.adUseServer
-        On Error GoTo saveRangeToDB_Err
 
         Dim finishLoop As Boolean
         ' walk through rows
@@ -130,17 +127,16 @@ Public Module Mapper
             Next
             theHostApp.StatusBar = "Inserting/Updating data, " & primKeyCompound & " in table " & tableName
 
-            On Error Resume Next
-            rst.Open("SELECT * FROM " & tableName & primKeyCompound, dbcnn, CursorTypeEnum.adOpenDynamic, LockTypeEnum.adLockOptimistic)
-
-            If Err.Number <> 0 Then
-                LogWarn("Problem getting recordset, Error: " & Err.Description & " in sheet " & DataRange.Parent.name & ", & row " & rowNum)
+            Try
+                rst.Open("SELECT * FROM " & tableName & primKeyCompound, dbcnn, CursorTypeEnum.adOpenDynamic, LockTypeEnum.adLockOptimistic)
+            Catch ex As Exception
+                LogWarn("Problem getting recordset, Error: " & ex.Message & " in sheet " & DataRange.Parent.name & ", & row " & rowNum)
+                rst.Close()
                 GoTo cleanup
-            End If
+            End Try
 
             If rst.EOF Then
                 If insertIfMissing Then
-                    On Error GoTo saveRangeToDB_Err
                     rst.AddNew()
                     For i = 0 To UBound(primKeys)
                         rst.Fields(primKeys(i)).Value = IIf(DataRange.Cells(rowNum, i + 1).ToString().Length = 0, vbNull, DataRange.Cells(rowNum, i + 1).Value)
@@ -149,70 +145,60 @@ Public Module Mapper
                     DataRange.Parent.Activate
                     DataRange.Cells(rowNum, i + 1).Select
                     LogWarn("Problem getting recordset " & primKeyCompound & " from table '" & tableName & "', insertIfMissing = " & insertIfMissing & " in sheet " & DataRange.Parent.name & ", & row " & rowNum)
+                    rst.Close()
                     GoTo cleanup
                 End If
             End If
 
-            On Error GoTo saveRangeToDB_Err
             ' walk through columns and fill fields
             colNum = UBound(primKeys) + 1
             Do
                 Dim fieldname As String
                 fieldname = DataRange.Cells(headerRow, colNum).Value
-                On Error Resume Next
-                rst.Fields(fieldname).Value = IIf(DataRange.Cells(rowNum, colNum).ToString().Length = 0, vbNull, DataRange.Cells(rowNum, colNum).Value)
 
-                If Err.Number <> 0 Then
+                Try
+                    rst.Fields(fieldname).Value = IIf(DataRange.Cells(rowNum, colNum).ToString().Length = 0, vbNull, DataRange.Cells(rowNum, colNum).Value)
+                Catch ex As Exception
                     DataRange.Parent.Activate
                     DataRange.Cells(rowNum, colNum).Select
-                    LogWarn("Table: " & tableName & ", Field: " & fieldname & ", Error: " & Err.Description & " in sheet " & DataRange.Parent.name & ", & row " & rowNum & ", col: " & colNum)
+                    LogWarn("General Error: " & ex.Message & " with Table: " & tableName & ", Field: " & fieldname & ", in sheet " & DataRange.Parent.name & ", & row " & rowNum & ", col: " & colNum)
+                    rst.Close()
                     GoTo cleanup
-                End If
-                On Error GoTo saveRangeToDB_Err
+                End Try
 nextColumn:
                 colNum += 1
             Loop Until colNum > DataRange.Columns.Count
 
             ' now do the update/insert in the DB
-            On Error Resume Next
-            rst.Update()
-            If Err.Number <> 0 Then
+            Try
+                rst.Update()
+            Catch ex As Exception
                 DataRange.Parent.Activate
                 DataRange.Rows(rowNum).Select
-                LogWarn("Table: " & rst.Source & ", Error: " & Err.Description & " in sheet " & DataRange.Parent.name & ", & row " & rowNum)
+                LogWarn("Table: " & rst.Source & ", Error: " & ex.Message & " in sheet " & DataRange.Parent.name & ", & row " & rowNum)
+                rst.Close()
                 GoTo cleanup
-            End If
+            End Try
             rst.Close()
 nextRow:
-            On Error Resume Next
-            finishLoop = IIf(DataRange.Cells(rowNum + 1, 1).ToString().Length = 0, True, False)
-
-            If Err.Number <> 0 Then
-                LogError("Error in primary column: Cells(" & rowNum + 1 & ",1)" & Err.Description)
+            Try
+                finishLoop = IIf(DataRange.Cells(rowNum + 1, 1).ToString().Length = 0, True, False)
+            Catch ex As Exception
+                LogError("Error in primary column: Cells(" & rowNum + 1 & ",1)" & ex.Message)
                 'finishLoop = True ' commented to allow erroneous data...
-            End If
-            Err.Clear()
+            End Try
             rowNum += 1
         Loop Until rowNum > DataRange.Rows.Count Or finishLoop
 
         If executeAdditionalProc.Length > 0 Then
-            On Error Resume Next
-            dbcnn.Execute(executeAdditionalProc)
-            If Err.Number <> 0 Then
-                LogError("Error in executing additional stored procedure:" & Err.Description)
+            Try
+                dbcnn.Execute(executeAdditionalProc)
+            Catch ex As Exception
+                LogError("Error in executing additional stored procedure:" & ex.Message)
                 GoTo cleanup
-            End If
+            End Try
         End If
-        GoTo cleanup
-
-saveRangeToDB_Err:
-        LogError("Internal Error: " & Err.Description & ", line " & Erl() & " in Mapper.saveRangeToDB in sheet " & DataRange.Parent.name)
-        On Error Resume Next
-        rst.CancelBatch()
-        rst.Close()
 cleanup:
-        rst = Nothing
-        checkrst = Nothing
         dbcnn = Nothing
         theHostApp.StatusBar = False
     End Sub
