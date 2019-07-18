@@ -14,19 +14,21 @@ Public Module Mapper
     ''' assumption: layout of dataRange is
     ''' primKey1Val,primKey2Val,..,primKeyNVal,DataCol1Val,DataCol2Val,..,DataColNVal</summary>
     ''' <param name="DataRange">Excel Range, where Data is taken from</param>
-    Public Sub saveRangeToDB(DataRange As Object, DBMapperName As String)
-        Dim tableName As String = String.Empty           ' Database Table, where Data is to be stored
-        Dim primKeysStr As String = String.Empty         ' String containing primary Key names for updating table data, comma separated
-        Dim database As String = String.Empty            ' Database to store to
+    Public Sub saveRangeToDB(DataRange As Object, DBMapperName As String, Optional WbIsSaving As Boolean = False)
+        Dim tableName As String                              ' Database Table, where Data is to be stored
+        Dim primKeysStr As String                            ' String containing primary Key names for updating table data, comma separated
+        Dim database As String                               ' Database to store to
         Dim env As Integer = DBAddin.selectedEnvironment + 1 ' Environment where connection id should be taken from (if not existing, take from selectedEnvironment)
-        Dim insertIfMissing As Boolean = False           ' if set, then insert row into table if primary key is missing there. Default = False (only update)
-        Dim executeAdditionalProc As String = ""         ' additional stored procedure to be executed after saving
+        Dim insertIfMissing As Boolean = False               ' if set, then insert row into table if primary key is missing there. Default = False (only update)
+        Dim executeAdditionalProc As String = ""             ' additional stored procedure to be executed after saving
+        Dim ignoreColumns As String = ""                     ' columns to be ignored (helper columns)
+        Dim storeDBMapOnSave As Boolean = False              ' should DBMap be saved on Excel Saving? (default no)
 
         Dim rst As ADODB.Recordset
         Dim checkrst As ADODB.Recordset
         Dim checkTypes() As CheckTypeFld = Nothing
         Dim primKeys() As String
-        Dim i As Integer, headerRow As Integer
+        Dim i As Integer
         Dim rowNum As Long, colNum As Long
 
         ' extend DataRange if it is only one cell ...
@@ -56,6 +58,7 @@ Public Module Mapper
             LogError("No primary keys given in DBMapper comment!")
             Exit Sub
         End If
+        primKeys = Split(primKeysStr, ",")
         database = saveRangeParams(3).Replace("""", "").Trim
         If database = "" Then
             LogError("No database given in DBMapper comment!")
@@ -67,7 +70,13 @@ Public Module Mapper
         If saveRangeParams.Length > 5 Then
             If saveRangeParams(5) <> "" Then executeAdditionalProc = saveRangeParams(5).Replace("""", "").Trim
         End If
-        primKeys = Split(primKeysStr, ",")
+        If saveRangeParams.Length > 6 Then
+            If saveRangeParams(6) <> "" Then ignoreColumns = LCase(saveRangeParams(6).Replace("""", "").Trim) + ","
+        End If
+        If saveRangeParams.Length > 7 Then
+            If saveRangeParams(7) <> "" Then storeDBMapOnSave = Convert.ToBoolean(saveRangeParams(7))
+        End If
+        If WbIsSaving And Not storeDBMapOnSave Then Exit Sub
 
         'now create/get a connection (dbcnn) for env(ironment)
         LogInfo("saveRangeToDB Mapper: open connection...")
@@ -98,28 +107,41 @@ Public Module Mapper
                 checkTypes(i) = CheckTypeFld.checkIsStringFld
             End If
         Next
+        ' check if all column names (except ignored) of DBMapper Range exist in table
+        colNum = 1
+        Do
+            Dim fieldname As String = DataRange.Cells(1, colNum).Value
+            ' only if not ignored...
+            If InStr(1, LCase(fieldname) + ",", ignoreColumns) = 0 Then
+                Try
+                    Dim testExist As String = checkrst.Fields(fieldname).Name
+                Catch ex As Exception
+                    DataRange.Parent.Activate
+                    DataRange.Cells(1, colNum).Select
+                    LogWarn("Field '" & fieldname & "' does not exist in Table '" & tableName & "' and is not in ignoreColumns, Error in sheet " & DataRange.Parent.name)
+                    GoTo cleanup
+                End Try
+            End If
+            colNum += 1
+        Loop Until colNum > DataRange.Columns.Count
         checkrst.Close()
 
-        headerRow = 1
-        rowNum = headerRow + 1
+        rowNum = 2
         dbcnn.CursorLocation = CursorLocationEnum.adUseServer
 
         Dim finishLoop As Boolean
         ' walk through rows
         Do
-            Dim primKeyCompound As String
-            primKeyCompound = " WHERE "
+            Dim primKeyCompound As String = " WHERE "
 
             For i = 0 To UBound(primKeys)
                 Dim primKeyValue
                 primKeyValue = DataRange.Cells(rowNum, i + 1).Value
                 primKeyCompound = primKeyCompound & primKeys(i) & " = " & dbFormatType(primKeyValue, checkTypes(i)) & IIf(i = UBound(primKeys), "", " AND ")
-
                 If IsError(primKeyValue) Then
                     LogError("Error in primary key value, cell (" & rowNum & "," & i + 1 & ") in sheet " & DataRange.Parent.name & ", & row " & rowNum)
                     GoTo nextRow
                 End If
-
                 If primKeyValue.ToString().Length = 0 Then
                     LogError("Empty primary key value, cell (" & rowNum & "," & i + 1 & ") in sheet " & DataRange.Parent.name & ", & row " & rowNum)
                     GoTo nextRow
@@ -153,19 +175,18 @@ Public Module Mapper
             ' walk through columns and fill fields
             colNum = UBound(primKeys) + 1
             Do
-                Dim fieldname As String
-                fieldname = DataRange.Cells(headerRow, colNum).Value
-
-                Try
-                    rst.Fields(fieldname).Value = IIf(DataRange.Cells(rowNum, colNum).ToString().Length = 0, vbNull, DataRange.Cells(rowNum, colNum).Value)
-                Catch ex As Exception
-                    DataRange.Parent.Activate
-                    DataRange.Cells(rowNum, colNum).Select
-                    LogWarn("General Error: " & ex.Message & " with Table: " & tableName & ", Field: " & fieldname & ", in sheet " & DataRange.Parent.name & ", & row " & rowNum & ", col: " & colNum)
-                    rst.Close()
-                    GoTo cleanup
-                End Try
-nextColumn:
+                Dim fieldname As String = DataRange.Cells(1, colNum).Value
+                If InStr(1, LCase(fieldname) + ",", ignoreColumns) = 0 Then
+                    Try
+                        rst.Fields(fieldname).Value = IIf(DataRange.Cells(rowNum, colNum).ToString().Length = 0, vbNull, DataRange.Cells(rowNum, colNum).Value)
+                    Catch ex As Exception
+                        DataRange.Parent.Activate
+                        DataRange.Cells(rowNum, colNum).Select
+                        LogWarn("General Error: " & ex.Message & " with Table: " & tableName & ", Field: " & fieldname & ", in sheet " & DataRange.Parent.name & ", & row " & rowNum & ", col: " & colNum)
+                        rst.Close()
+                        GoTo cleanup
+                    End Try
+                End If
                 colNum += 1
             Loop Until colNum > DataRange.Columns.Count
 
@@ -249,41 +270,34 @@ err1:
     ''' <param name="database">database to replace database selection parameter in connection string of environment</param>
     ''' <returns>True on success</returns>
     Public Function openConnection(env As Integer, database As String) As Boolean
+        openConnection = False
+
         Dim theConnString As String = fetchSetting("ConstConnString" & env, String.Empty)
         If theConnString = String.Empty Then
             LogError("No Connectionstring given for environment: " & env & ", please correct and rerun.")
             Exit Function
         End If
-
-        On Error GoTo openConnection_Err
-        openConnection = False
-        dbcnn = Nothing
-        dbcnn = New Connection
         Dim dbidentifier As String = fetchSetting("DBidentifierCCS" & env, String.Empty)
         If dbidentifier = String.Empty Then
             LogError("No DB identifier given for environment: " & env & ", please correct and rerun.")
             Exit Function
         End If
-        dbcnn.ConnectionString = Change(theConnString, dbidentifier, database, ";")
-        dbcnn.ConnectionTimeout = DBAddin.CnnTimeout
-        dbcnn.CommandTimeout = DBAddin.CmdTimeout
-        theHostApp.StatusBar = "Trying " & CnnTimeout & " sec. with connstring: " & theConnString
-        On Error Resume Next
-        dbcnn.Open()
-        theHostApp.StatusBar = String.Empty
-        If Err.Number <> 0 Then
-            On Error GoTo openConnection_Err
+        dbcnn = New Connection
+        theConnString = Change(theConnString, dbidentifier, database, ";")
+        theHostApp.StatusBar = "Trying " & DBAddin.CnnTimeout & " sec. with connstring: " & theConnString
+        Try
+            dbcnn.ConnectionString = theConnString
+            dbcnn.ConnectionTimeout = DBAddin.CnnTimeout
+            dbcnn.CommandTimeout = DBAddin.CmdTimeout
+            dbcnn.Open()
+        Catch ex As Exception
             Dim exitMe As Boolean : exitMe = True
             LogWarn("openConnection: Error connecting to DB: " & Err.Description & ", connection string: " & theConnString, exitMe)
-            dbcnn.Close()
+            If dbcnn.State = ADODB.ObjectStateEnum.adStateOpen Then dbcnn.Close()
             dbcnn = Nothing
-        End If
-        'dontTryConnection is only true if connection couldn't be succesfully opened until now..
-        openConnection = Not dontTryConnection
-        Exit Function
-
-openConnection_Err:
-        LogError("Error: " & Err.Description & ", line " & Erl() & " in Mapper.openConnection")
+        End Try
+        theHostApp.StatusBar = String.Empty
+        openConnection = True
     End Function
 End Module
 

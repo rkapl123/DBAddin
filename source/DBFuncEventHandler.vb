@@ -37,10 +37,11 @@ Public Class DBFuncEventHandler
             ' when opening, force recalculation of DB functions in workbook.
             ' this is required as there is no recalculation if no dependencies have changed (usually when opening workbooks)
             ' however the most important dependency for DB functions is the database data....
-            On Error Resume Next
-            refreshDBFuncs = Not Wb.CustomDocumentProperties("DBFskip")
-            If Err.Number <> 0 Then refreshDBFuncs = True
-            Err.Clear()
+            Try
+                refreshDBFuncs = Not Wb.CustomDocumentProperties("DBFskip")
+            Catch ex As Exception
+                refreshDBFuncs = True
+            End Try
             If refreshDBFuncs Then refreshDBFunctions(Wb)
         End If
     End Sub

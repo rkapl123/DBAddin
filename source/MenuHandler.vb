@@ -32,6 +32,11 @@ Public Class MenuHandler
          "<contextMenus><contextMenu idMso='ContextMenuCell'>" +
          "<button id='refreshDataC' label='refresh data (Ctrl-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
          "<button id='gotoDBFuncC' label='jump to DBFunc/target (Ctrl-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
+         "<menu id='createMenu' label='DBAddin create ...' insertBeforeMso='Cut'>" + '
+            "<button id='DBMapper' label='DBMapper' imageMso='AddToolGallery' onAction='clickCreateButton'/>" +
+            "<button id='DBListFetch' label='DBListFetch' imageMso='AddCalendarMenu' onAction='clickCreateButton'/>" +
+            "<button id='DBRowFetch' label='DBRowFetch' imageMso='DataFormAddRecord' onAction='clickCreateButton'/>" +
+            "<button id='DBSetQuery' label='DBSetQuery' imageMso='AddContentType' onAction='clickCreateButton'/></menu>" +
          "<menuSeparator id='MySeparatorC' insertBeforeMso='Cut'/></contextMenu>" +
          "<contextMenu idMso='ContextMenuRow'>" +
          "<button id='refreshDataR' label='refresh data (Ctrl-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
@@ -153,4 +158,8 @@ Public Class MenuHandler
         jumpButton()
     End Sub
 
+    ''' <summary>context menu entry refreshData: refresh Data in db function (if area or cell selected) or all db functions</summary>
+    Public Sub clickCreateButton(control As IRibbonControl)
+        MsgBox(control.Id)
+    End Sub
 End Class

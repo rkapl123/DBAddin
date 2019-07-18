@@ -46,7 +46,7 @@ Public Class AddInEvents
         If Not Wb.ReadOnlyRecommended Then
             For Each DBmapSheet In DBMapperDefColl.Keys
                 For Each dbmapdefkey In DBMapperDefColl(DBmapSheet).Keys
-                    saveRangeToDB(DBMapperDefColl(DBmapSheet).Item(dbmapdefkey), dbmapdefkey)
+                    saveRangeToDB(DBMapperDefColl(DBmapSheet).Item(dbmapdefkey), dbmapdefkey, True)
                 Next
             Next
         End If
