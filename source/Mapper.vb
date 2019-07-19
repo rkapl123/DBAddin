@@ -15,9 +15,9 @@ Public Module Mapper
     ''' primKey1Val,primKey2Val,..,primKeyNVal,DataCol1Val,DataCol2Val,..,DataColNVal</summary>
     ''' <param name="DataRange">Excel Range, where Data is taken from</param>
     Public Sub saveRangeToDB(DataRange As Object, DBMapperName As String, Optional WbIsSaving As Boolean = False)
-        Dim tableName As String                              ' Database Table, where Data is to be stored
-        Dim primKeysStr As String                            ' String containing primary Key names for updating table data, comma separated
-        Dim database As String                               ' Database to store to
+        Dim tableName As String = ""                         ' Database Table, where Data is to be stored
+        Dim primKeysStr As String = ""                       ' String containing primary Key names for updating table data, comma separated
+        Dim database As String = ""                          ' Database to store to
         Dim env As Integer = DBAddin.selectedEnvironment + 1 ' Environment where connection id should be taken from (if not existing, take from selectedEnvironment)
         Dim insertIfMissing As Boolean = False               ' if set, then insert row into table if primary key is missing there. Default = False (only update)
         Dim executeAdditionalProc As String = ""             ' additional stored procedure to be executed after saving
@@ -28,6 +28,7 @@ Public Module Mapper
         Dim checkrst As ADODB.Recordset
         Dim checkTypes() As CheckTypeFld = Nothing
         Dim primKeys() As String
+
         Dim i As Integer
         Dim rowNum As Long, colNum As Long
 
@@ -40,43 +41,12 @@ Public Module Mapper
         If IsNothing(DataRange.Cells(1, 1).Comment.Text) Then
             LogError("No definition comment found for DBMapper definition in " + DBMapperName)
         End If
-        ' set up parameters
-        Dim saveRangeParams() As String = functionSplit(DataRange.Cells(1, 1).Comment.Text, ",", """", "saveRangeToDB", "(", ")")
-        If IsNothing(saveRangeParams) Then Exit Sub
-        If saveRangeParams.Length < 4 Then
-            LogError("At least environment (can be empty), Tablename, primary keys and database have to be provided as saveRangeToDB parameters !")
-            Exit Sub
-        End If
-        If saveRangeParams(0) <> "" Then env = Convert.ToInt16(saveRangeParams(0))
-        tableName = saveRangeParams(1).Replace("""", "").Trim ' remove all quotes and trim right and left
-        If tableName = "" Then
-            LogError("No Tablename given in DBMapper comment!")
-            Exit Sub
-        End If
-        primKeysStr = saveRangeParams(2).Replace("""", "").Trim
-        If primKeysStr = "" Then
-            LogError("No primary keys given in DBMapper comment!")
-            Exit Sub
-        End If
-        primKeys = Split(primKeysStr, ",")
-        database = saveRangeParams(3).Replace("""", "").Trim
-        If database = "" Then
-            LogError("No database given in DBMapper comment!")
-            Exit Sub
-        End If
-        If saveRangeParams.Length > 4 Then
-            If saveRangeParams(4) <> "" Then insertIfMissing = Convert.ToBoolean(saveRangeParams(4))
-        End If
-        If saveRangeParams.Length > 5 Then
-            If saveRangeParams(5) <> "" Then executeAdditionalProc = saveRangeParams(5).Replace("""", "").Trim
-        End If
-        If saveRangeParams.Length > 6 Then
-            If saveRangeParams(6) <> "" Then ignoreColumns = LCase(saveRangeParams(6).Replace("""", "").Trim) + ","
-        End If
-        If saveRangeParams.Length > 7 Then
-            If saveRangeParams(7) <> "" Then storeDBMapOnSave = Convert.ToBoolean(saveRangeParams(7))
-        End If
+
+        ' set up parameters from comment text
+        If Not getParametersFromText(DataRange.Cells(1, 1).Comment.Text, env, tableName, primKeysStr, database, insertIfMissing, executeAdditionalProc, ignoreColumns, storeDBMapOnSave) Then Exit Sub
         If WbIsSaving And Not storeDBMapOnSave Then Exit Sub
+        primKeys = Split(primKeysStr, ",")
+        ignoreColumns = LCase(ignoreColumns) + "," ' lowercase and add comma for better retrieval
 
         'now create/get a connection (dbcnn) for env(ironment)
         LogInfo("saveRangeToDB Mapper: open connection...")
@@ -226,8 +196,8 @@ cleanup:
 
 
     ''' <summary>check whether key with name "tblName" is contained in collection tblColl</summary>
-    ''' <param name="tblName"></param>
-    ''' <param name="tblColl"></param>
+    ''' <param name="tblName">key to be found</param>
+    ''' <param name="tblColl">collection to be checked</param>
     ''' <returns>if name was found in collection</returns>
     Private Function existsInCollection(tblName As String, tblColl As Collection) As Boolean
         Dim dummy As Integer
@@ -299,6 +269,99 @@ err1:
         theHostApp.StatusBar = String.Empty
         openConnection = True
     End Function
+
+    ''' <summary>gets defined named ranges for DBMapper invocation in the current workbook and updates Ribbon with it</summary>
+    Sub getDBMapperDefinitions()
+        ' load DBMapper definitions
+        DBAddin.DBMapperDefColl = New Dictionary(Of String, Dictionary(Of String, Range))
+        For Each namedrange As Name In hostApp.ActiveWorkbook.Names
+            Dim cleanname As String = Replace(namedrange.Name, namedrange.Parent.Name & "!", "")
+            If Left(cleanname, 8) = "DBMapper" Then
+                If InStr(namedrange.RefersTo, "#REF!") > 0 Then LogError("DBMapper definitions range " + namedrange.Parent.name + "!" + namedrange.Name + " contains #REF!")
+                Dim nodeName As String = Replace(Replace(namedrange.Name, "DBMapper", ""), namedrange.Parent.Name & "!", "")
+                If nodeName = "" Then nodeName = "UnnamedDBMapper"
+
+                Dim i As Integer = namedrange.RefersToRange.Parent.Index
+                Dim defColl As Dictionary(Of String, Range)
+                If Not DBMapperDefColl.ContainsKey("ID" + i.ToString()) Then
+                    ' add to new sheet "menu"
+                    defColl = New Dictionary(Of String, Range)
+                    defColl.Add(nodeName, namedrange.RefersToRange)
+                    DBMapperDefColl.Add("ID" + i.ToString(), defColl)
+                Else
+                    ' add definition to existing sheet "menu"
+                    defColl = DBMapperDefColl("ID" + i.ToString())
+                    defColl.Add(nodeName, namedrange.RefersToRange)
+                End If
+            End If
+            If DBMapperDefColl.Count >= 15 Then LogError("Not more than 15 sheets with DBMapper definitions possible, ignoring definitions in sheet " + namedrange.Parent.Name)
+        Next
+        DBAddin.theRibbon.Invalidate()
+    End Sub
+
+    ''' <summary>saves defined DBMaps (depending on configuration)</summary>
+    Sub saveDBMaps(Wb As Workbook)
+        ' save all DBmaps on saving except Readonly is recommended on this workbook
+        Dim DBmapSheet As String
+        If Not Wb.ReadOnlyRecommended Then
+            For Each DBmapSheet In DBMapperDefColl.Keys
+                For Each dbmapdefkey In DBMapperDefColl(DBmapSheet).Keys
+                    saveRangeToDB(DBMapperDefColl(DBmapSheet).Item(dbmapdefkey), dbmapdefkey, True)
+                Next
+            Next
+        End If
+    End Sub
+
+    ''' <summary>get parameters from passed paramText</summary>
+    ''' <param name="paramText">paramtext to be parsed, currently only saveRangeToDB params</param>
+    ''' <param name="env">Environment (integer) where connection id should be taken from (if not existing, take from selectedEnvironment)</param>
+    ''' <param name="tableName">Database Table, where Data is to be stored</param>
+    ''' <param name="primKeysStr">String containing primary Key names for updating table data, comma separated</param>
+    ''' <param name="database">Database to store to</param>
+    ''' <param name="insertIfMissing">if set, then insert row into table if primary key is missing there. Default = False (only update)</param>
+    ''' <param name="executeAdditionalProc">additional stored procedure to be executed after saving</param>
+    ''' <param name="ignoreColumns">columns to be ignored (helper columns)</param>
+    ''' <param name="storeDBMapOnSave">should DBMap be saved on Excel Saving? (default no)</param>
+    Function getParametersFromText(paramText As String, ByRef env As Integer, ByRef tableName As String, ByRef primKeysStr As String, ByRef database As String, ByRef insertIfMissing As Boolean, ByRef executeAdditionalProc As String, ByRef ignoreColumns As String, ByRef storeDBMapOnSave As Boolean) As Boolean
+        Dim saveRangeParams() As String = functionSplit(paramText, ",", """", "saveRangeToDB", "(", ")")
+        If IsNothing(saveRangeParams) Then Return False
+        If saveRangeParams.Length < 4 Then
+            LogError("At least environment (can be empty), Tablename, primary keys and database have to be provided as saveRangeToDB parameters !")
+            Return False
+        End If
+        If saveRangeParams(0) <> "" Then env = Convert.ToInt16(saveRangeParams(0))
+        tableName = saveRangeParams(1).Replace("""", "").Trim ' remove all quotes and trim right and left
+        If tableName = "" Then
+            LogError("No Tablename given in DBMapper comment!")
+            Return False
+        End If
+        primKeysStr = saveRangeParams(2).Replace("""", "").Trim
+        If primKeysStr = "" Then
+            LogError("No primary keys given in DBMapper comment!")
+            Return False
+        End If
+        database = saveRangeParams(3).Replace("""", "").Trim
+        If database = "" Then
+            LogError("No database given in DBMapper comment!")
+            Return False
+        End If
+        insertIfMissing = False
+        If saveRangeParams.Length > 4 Then
+            If saveRangeParams(4) <> "" Then insertIfMissing = Convert.ToBoolean(saveRangeParams(4))
+        End If
+        If saveRangeParams.Length > 5 Then
+            If saveRangeParams(5) <> "" Then executeAdditionalProc = saveRangeParams(5).Replace("""", "").Trim
+        End If
+        If saveRangeParams.Length > 6 Then
+            If saveRangeParams(6) <> "" Then ignoreColumns = saveRangeParams(6).Replace("""", "").Trim
+        End If
+        storeDBMapOnSave = False
+        If saveRangeParams.Length > 7 Then
+            If saveRangeParams(7) <> "" Then storeDBMapOnSave = Convert.ToBoolean(saveRangeParams(7))
+        End If
+        Return True
+    End Function
+
 End Module
 
 Public Enum CheckTypeFld

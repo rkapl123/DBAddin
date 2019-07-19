@@ -119,6 +119,12 @@
     <Compile Include="ContainerMsgs.vb" />
     <Compile Include="DBAddin.vb" />
     <Compile Include="DBFuncEventHandler.vb" />
+    <Compile Include="DBMapperCreate.Designer.vb">
+      <DependentUpon>DBMapperCreate.vb</DependentUpon>
+    </Compile>
+    <Compile Include="DBMapperCreate.vb">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Functions.vb" />
     <Compile Include="Mapper.vb" />
     <Compile Include="MenuHandler.vb" />
@@ -164,6 +170,9 @@
   <ItemGroup>
     <EmbeddedResource Include="AboutBox1.resx">
       <DependentUpon>AboutBox1.vb</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="DBMapperCreate.resx">
+      <DependentUpon>DBMapperCreate.vb</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="My Project\Resources.resx">
       <CustomToolNamespace>My.Resources</CustomToolNamespace>

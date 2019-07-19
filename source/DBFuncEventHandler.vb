@@ -858,13 +858,13 @@ err_0:
                         theCell.Value = String.Empty
                     Else
                         If Not headerFilled Then
-                            theCell.Value = tableRst.Fields.Item(fieldIter).Name
+                            theCell.Value = tableRst.Fields(fieldIter).Name
                         ElseIf Delete Then
                             theCell.Value = String.Empty
                         Else
                             On Error Resume Next
-                            theCell.Value = tableRst.Fields.Item(fieldIter).Value
-                            If Err.Number <> 0 Then theCell.Value = "Field '" & tableRst.Fields.Item(fieldIter).Name & "' caused following error: '" & Err.Description & "'"
+                            theCell.Value = tableRst.Fields(fieldIter).Value
+                            If Err.Number <> 0 Then theCell.Value = "Field '" & tableRst.Fields(fieldIter).Name & "' caused following error: '" & Err.Description & "'"
                             On Error GoTo err_1
                         End If
                         If fieldIter = tableRst.Fields.Count - 1 Then
