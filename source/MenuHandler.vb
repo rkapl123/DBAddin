@@ -32,11 +32,11 @@ Public Class MenuHandler
          "<contextMenus><contextMenu idMso='ContextMenuCell'>" +
          "<button id='refreshDataC' label='refresh data (Ctrl-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
          "<button id='gotoDBFuncC' label='jump to DBFunc/target (Ctrl-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
-         "<menu id='createMenu' label='DBAddin create ...' insertBeforeMso='Cut'>" + '
-            "<button id='DBMapper' label='DBMapper' imageMso='AddToolGallery' onAction='clickCreateButton'/>" +
-            "<button id='DBListFetch' label='DBListFetch' imageMso='AddCalendarMenu' onAction='clickCreateButton'/>" +
-            "<button id='DBRowFetch' label='DBRowFetch' imageMso='DataFormAddRecord' onAction='clickCreateButton'/>" +
-            "<button id='DBSetQuery' label='DBSetQuery' imageMso='AddContentType' onAction='clickCreateButton'/></menu>" +
+         "<menu id='createMenuC' label='DBAddin create ...' insertBeforeMso='Cut'>" + '
+            "<button id='DBMapper' tag='DBMapper' label='DBMapper' imageMso='AddToolGallery' onAction='clickCreateButton'/>" +
+            "<button id='DBListFetch' tag='DBListFetch' label='DBListFetch' imageMso='AddCalendarMenu' onAction='clickCreateButton'/>" +
+            "<button id='DBRowFetch' tag='DBRowFetch' label='DBRowFetch' imageMso='DataFormAddRecord' onAction='clickCreateButton'/>" +
+            "<button id='DBSetQuery' tag='DBSetQuery' label='DBSetQuery' imageMso='AddContentType' onAction='clickCreateButton'/></menu>" +
          "<menuSeparator id='MySeparatorC' insertBeforeMso='Cut'/></contextMenu>" +
          "<contextMenu idMso='ContextMenuRow'>" +
          "<button id='refreshDataR' label='refresh data (Ctrl-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
@@ -47,6 +47,11 @@ Public Class MenuHandler
          "<contextMenu idMso='ContextMenuListRange'>" +
          "<button id='refreshDataL' label='refresh data (Ctrl-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
          "<button id='gotoDBFuncL' label='jump to DBFunc/target (Ctrl-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
+         "<menu id='createMenuL' label='DBAddin create ...' insertBeforeMso='Cut'>" + '
+            "<button id='DBMapperC' tag='DBMapper' label='DBMapper' imageMso='AddToolGallery' onAction='clickCreateButton'/>" +
+            "<button id='DBListFetchC' tag='DBListFetch' label='DBListFetch' imageMso='AddCalendarMenu' onAction='clickCreateButton'/>" +
+            "<button id='DBRowFetchC' tag='DBRowFetch' label='DBRowFetch' imageMso='DataFormAddRecord' onAction='clickCreateButton'/>" +
+            "<button id='DBSetQueryC' tag='DBSetQuery' label='DBSetQuery' imageMso='AddContentType' onAction='clickCreateButton'/></menu>" +
          "<menuSeparator id='MySeparatorL' insertBeforeMso='Cut'/></contextMenu>" +
          "</contextMenus></customUI>"
         Return customUIXml
@@ -160,75 +165,14 @@ Public Class MenuHandler
 
     ''' <summary>context menu entries below create...: create DB function or DB Mapper</summary>
     Public Sub clickCreateButton(control As IRibbonControl)
-        If control.Id = "DBListFetch" Then
+        If control.Tag = "DBListFetch" Then
             createFunctionsInCells(theHostApp.ActiveCell, {"RC", "=DBListFetch("""","""",R[1]C,,,TRUE,TRUE,TRUE)"})
-        ElseIf control.Id = "DBRowFetch" Then
+        ElseIf control.Tag = "DBRowFetch" Then
             createFunctionsInCells(theHostApp.ActiveCell, {"RC", "=DBRowFetch("""","""",TRUE,R[1]C:R[1]C[10])"})
-        ElseIf control.Id = "DBSetQuery" Then
+        ElseIf control.Tag = "DBSetQuery" Then
             createFunctionsInCells(theHostApp.ActiveCell, {"RC", "=DBSetQuery("""","""",R[1]C)"})
-        ElseIf control.Id = "DBMapper" Then
-            Dim theDBMapperCreateDlg As DBMapperCreate = Nothing
-            Dim activeCellName As String = ""
-            Try : activeCellName = theHostApp.ActiveCell.Name.Name : Catch ex As Exception : End Try
-            If Not IsNothing(theHostApp.ActiveCell.Comment) And activeCellName <> "" Then
-                If InStr(1, activeCellName, "DBMapper") > 0 Then   ' fetch parameters if existing comment and DBMapper definition...
-                    Try : theHostApp.ActiveWorkbook.Names(activeCellName).Delete
-                    Catch ex As Exception : LogError("Error when removing name '" + activeCellName + "' from active cell: " & ex.Message)
-                    End Try
-                    Dim tableName As String = ""                         ' Database Table, where Data is to be stored
-                    Dim primKeysStr As String = ""                       ' String containing primary Key names for updating table data, comma separated
-                    Dim database As String = ""                          ' Database to store to
-                    Dim env As Integer = -1                              ' Environment where connection id should be taken from
-                    Dim insertIfMissing As Boolean = False               ' if set, then insert row into table if primary key is missing there. Default = False (only update)
-                    Dim executeAdditionalProc As String = ""             ' additional stored procedure to be executed after saving
-                    Dim ignoreColumns As String = ""                     ' columns to be ignored (helper columns)
-                    Dim storeDBMapOnSave As Boolean = False              ' should DBMap be saved on Excel Saving? (default no)
-
-                    If Not getParametersFromText(theHostApp.ActiveCell.Comment.Text, env, tableName, primKeysStr, database, insertIfMissing, executeAdditionalProc, ignoreColumns, storeDBMapOnSave) Then Exit Sub
-                    theDBMapperCreateDlg = New DBMapperCreate()
-                    theDBMapperCreateDlg.DBMapperName.Text = Replace(activeCellName, "DBMapper", "")
-                    theDBMapperCreateDlg.envSel.DataSource = environdefs
-                    theDBMapperCreateDlg.envSel.SelectedIndex = env
-                    theDBMapperCreateDlg.Tablename.Text = tableName
-                    theDBMapperCreateDlg.PrimaryKeys.Text = primKeysStr
-                    theDBMapperCreateDlg.Database.Text = database
-                    theDBMapperCreateDlg.insertIfMissing.Checked = insertIfMissing
-                    theDBMapperCreateDlg.addStoredProc.Text = executeAdditionalProc
-                    theDBMapperCreateDlg.IgnoreColumns.Text = ignoreColumns
-                    theDBMapperCreateDlg.storeDBMapOnSave.Checked = storeDBMapOnSave
-                End If
-            End If
-            ' no DBMapper definitions found...
-            If IsNothing(theDBMapperCreateDlg) Then
-                theDBMapperCreateDlg = New DBMapperCreate()
-                theDBMapperCreateDlg.envSel.DataSource = environdefs
-                theDBMapperCreateDlg.envSel.SelectedIndex = -1
-            End If
-
-            ' display dialog for parameters
-            If theDBMapperCreateDlg.ShowDialog() = Windows.Forms.DialogResult.Cancel Then Exit Sub
-            ' set name
-            Try : theHostApp.ActiveCell.Name = "DBMapper" + theDBMapperCreateDlg.DBMapperName.Text
-            Catch ex As Exception : LogError("Error when assigning name 'DBMapper" + theDBMapperCreateDlg.DBMapperName.Text + "' to active cell: " & ex.Message)
-            End Try
-            ' set parameters in comment text
-            Try : theHostApp.ActiveCell.ClearComments : Catch ex As Exception : End Try
-            Dim paramText As String = "saveRangeToDB(" +
-                IIf(theDBMapperCreateDlg.envSel.SelectedIndex = -1, "", theDBMapperCreateDlg.envSel.SelectedIndex.ToString()) + ",""" +
-                theDBMapperCreateDlg.Tablename.Text + """,""" +
-                theDBMapperCreateDlg.PrimaryKeys.Text + """,""" +
-                theDBMapperCreateDlg.Database.Text + """," +
-                theDBMapperCreateDlg.insertIfMissing.Checked.ToString() + ",""" +
-                IIf(Len(theDBMapperCreateDlg.addStoredProc.Text) = 0, "", theDBMapperCreateDlg.addStoredProc.Text) + """,""" +
-                IIf(Len(theDBMapperCreateDlg.IgnoreColumns.Text) = 0, "", theDBMapperCreateDlg.IgnoreColumns.Text) + """," +
-                theDBMapperCreateDlg.storeDBMapOnSave.Checked.ToString() + ")"
-            Try
-                theHostApp.ActiveCell.AddComment
-                theHostApp.ActiveCell.Comment.Text(Text:=paramText)
-                theHostApp.ActiveCell.Comment.Shape.TextFrame.Characters.Font.Bold = False
-            Catch ex As Exception : LogError("Error when adding comments with DBMapper parameters to active cell: " & ex.Message) : End Try
-            ' refresh mapper definitions to reflect changes immediately...
-            getDBMapperDefinitions()
+        ElseIf control.Tag = "DBMapper" Then
+            createDBMapper()
         End If
     End Sub
 
