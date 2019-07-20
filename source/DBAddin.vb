@@ -107,7 +107,7 @@ Public Module DBAddin
     ''' <param name="sErrMsg"></param>
     ''' <param name="eEventType"></param>
     ''' <returns></returns>
-    Public Function LogToEventViewer(sErrMsg As String, eEventType As EventLogEntryType) As Boolean
+    Public Function WriteToLog(sErrMsg As String, eEventType As EventLogEntryType) As Boolean
         Try
             logfile.WriteLine(Now().ToString() & vbTab & IIf(eEventType = EventLogEntryType.Error, "ERROR", IIf(eEventType = EventLogEntryType.Information, "INFO", "WARNING")) & vbTab & sErrMsg)
         Catch ex As Exception
@@ -123,8 +123,8 @@ Public Module DBAddin
     Public Sub LogError(LogMessage As String, Optional ByRef exitMe As Boolean = False, Optional includeMsg As Boolean = True)
         Dim retval As Integer
 
-        LogToEventViewer(LogMessage, EventLogEntryType.Error)
-        If includeMsg Then retval = MsgBox(LogMessage, vbCritical + IIf(exitMe, vbOKCancel, vbOKOnly), "DBAddin: Internal Error !! ")
+        WriteToLog(LogMessage, EventLogEntryType.Error)
+        If includeMsg Then retval = MsgBox(LogMessage, vbCritical + IIf(exitMe, vbOKCancel, vbOKOnly), "DBAddin Error")
         If retval = vbCancel Then
             exitMe = True
         Else
@@ -139,8 +139,8 @@ Public Module DBAddin
     Public Sub LogWarn(LogMessage As String, Optional ByRef exitMe As Boolean = False, Optional includeMsg As Boolean = True)
         Dim retval As Integer
 
-        LogToEventViewer(LogMessage, EventLogEntryType.Warning)
-        If includeMsg Then retval = MsgBox(LogMessage, vbCritical + IIf(exitMe, vbOKCancel, vbOKOnly), "DBAddin Error")
+        WriteToLog(LogMessage, EventLogEntryType.Warning)
+        If includeMsg Then retval = MsgBox(LogMessage, vbCritical + IIf(exitMe, vbOKCancel, vbOKOnly), "DBAddin Warning")
         If retval = vbCancel Then
             exitMe = True
         Else
@@ -151,7 +151,7 @@ Public Module DBAddin
     ''' <summary>Logs informational messages</summary>
     ''' <param name="LogMessage"></param>
     Public Sub LogInfo(LogMessage As String)
-        If DebugAddin Then LogToEventViewer(LogMessage, EventLogEntryType.Information)
+        If DebugAddin Then WriteToLog(LogMessage, EventLogEntryType.Information)
     End Sub
 
     <ExcelCommand(Name:="refreshData", ShortCut:="^R")>
@@ -245,7 +245,7 @@ Public Module DBAddin
 
         Exit Sub
 err1:
-        LogToEventViewer("Error (" & Err.Description & ") in MenuHandler.refreshData in " & Erl(), EventLogEntryType.Error)
+        WriteToLog("Error (" & Err.Description & ") in MenuHandler.refreshData in " & Erl(), EventLogEntryType.Error)
     End Sub
 
     <ExcelCommand(Name:="jumpButton", ShortCut:="^J")>

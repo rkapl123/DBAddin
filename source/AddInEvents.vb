@@ -26,7 +26,7 @@ Public Class AddInEvents
         Catch ex As Exception
             MsgBox("Exception occured when trying to create logfile " + logfilename + ": " + ex.Message)
         End Try
-        LogToEventViewer("starting DBAddin", EventLogEntryType.Information)
+        WriteToLog("starting DBAddin", EventLogEntryType.Information)
         theMenuHandler = New MenuHandler
         theDBFuncEventHandler = New DBFuncEventHandler
         initSettings()

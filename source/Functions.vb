@@ -55,7 +55,7 @@ Public Module Functions
 
 DBDate_Error:
         Dim ErrDesc As String = Err.Description
-        LogToEventViewer("Error (" & ErrDesc & ") in Functions.DBDate, in " & Erl(), EventLogEntryType.Error)
+        WriteToLog("Error (" & ErrDesc & ") in Functions.DBDate, in " & Erl(), EventLogEntryType.Error)
         DBDate = "Error (" & ErrDesc & ") in function DBDate"
     End Function
 
@@ -89,7 +89,7 @@ DBDate_Error:
 
 DBString_Error:
         Dim ErrDesc As String = Err.Description
-        LogToEventViewer("Error (" & ErrDesc & ") in Functions.DBString, in " & Erl(), EventLogEntryType.Error)
+        WriteToLog("Error (" & ErrDesc & ") in Functions.DBString, in " & Erl(), EventLogEntryType.Error)
         DBString = "Error (" & ErrDesc & ") in DBString"
     End Function
 
@@ -191,7 +191,7 @@ DBString_Error:
 
 DoConcatCellsSep_Error:
         Dim ErrDesc As String = Err.Description
-        LogToEventViewer("Error (" & ErrDesc & ") in Functions.DoConcatCellsSep, in " & Erl(), EventLogEntryType.Error)
+        WriteToLog("Error (" & ErrDesc & ") in Functions.DoConcatCellsSep, in " & Erl(), EventLogEntryType.Error)
         DoConcatCellsSep = "Error (" & ErrDesc & ") !"
     End Function
 
@@ -207,14 +207,14 @@ DoConcatCellsSep_Error:
         Dim callID As String
         Dim setEnv As String
         Dim caller As Range = ToRange(XlCall.Excel(XlCall.xlfCaller))
+        If TypeName(ConnString) = "Error" Then ConnString = String.Empty
+        If TypeName(ConnString) = "Range" Then ConnString = ConnString.Value
+        Dim ConnStringSet As Boolean = (TypeName(ConnString) = "String" And ConnString <> "")
 
         On Error GoTo DBSetQuery_Error
         setEnv = fetchSetting("ConfigName", String.Empty)
         ' calcContainers are identified by wbname + Sheetname + function caller cell Address
-        'If Not IsObject(theHostApp.caller) Then Exit Function
         callID = "[" & caller.Parent.Parent.name & "]" & caller.Parent.name & "!" & caller.Address
-        If TypeName(ConnString) = "Error" Then ConnString = String.Empty
-        If TypeName(ConnString) = "Range" Then ConnString = ConnString.Value
         ' in case of number as connection string, take the stored Connection string .. 1 usually prod, 2 .. usually test, 3.. development)
         If TypeName(ConnString) = "Integer" Or TypeName(ConnString) = "Long" Or TypeName(ConnString) = "Double" Or TypeName(ConnString) = "Short" Then
             setEnv = fetchSetting("ConfigName" & ConnString, String.Empty)
@@ -224,7 +224,7 @@ DoConcatCellsSep_Error:
         DBSetQuery = checkParams(Query)
         ' error message is returned from checkParams, if OK then returns nothing
         If DBSetQuery.Length > 0 Then
-            DBSetQuery = "Env:" & setEnv & ", checkParams error: " & DBSetQuery
+            DBSetQuery = IIf(ConnStringSet, "ConnString set", "Env:" & setEnv) & ", checkParams error: " & DBSetQuery
             Exit Function
         End If
 
@@ -245,17 +245,17 @@ DoConcatCellsSep_Error:
             makeCalcMsgContainer(callID, CStr(Query), caller, Nothing, ToRange(targetRange), CStr(ConnString), Nothing, 0, False, False, False, False, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, False)
         End If
         If existsStatusCont(callID) Then
-            DBSetQuery = "Env:" & setEnv & ", statusMsg: " & allStatusContainers(callID).statusMsg
+            DBSetQuery = IIf(ConnStringSet, "ConnString set", "Env:" & setEnv) & ", statusMsg: " & allStatusContainers(callID).statusMsg
         Else
-            DBSetQuery = "Env:" & setEnv & ", no recalculation done for unchanged query..."
+            DBSetQuery = IIf(ConnStringSet, "ConnString set", "Env:" & setEnv) & ", no recalculation done for unchanged query..."
         End If
         theHostApp.EnableEvents = True
         Exit Function
 
 DBSetQuery_Error:
         Dim ErrDesc As String = Err.Description
-        LogToEventViewer("Error (" & ErrDesc & ") in Functions.DBSetQuery, callID : " & callID & ", in " & Erl(), EventLogEntryType.Error)
-        DBSetQuery = "Env:" & setEnv & ", Error (" & ErrDesc & ") in DBSetQuery, callID : " & callID
+        WriteToLog("Error (" & ErrDesc & ") in Functions.DBSetQuery, callID : " & callID & ", in " & Erl(), EventLogEntryType.Error)
+        DBSetQuery = IIf(ConnStringSet, "ConnString set", "Env:" & setEnv) & ", Error (" & ErrDesc & ") in DBSetQuery, callID : " & callID
         theHostApp.EnableEvents = True
     End Function
 
@@ -289,21 +289,22 @@ DBSetQuery_Error:
         Dim callID As String
         Dim setEnv As String
         Dim caller As Range = ToRange(XlCall.Excel(XlCall.xlfCaller))
+        If TypeName(ConnString) = "Error" Then ConnString = String.Empty
+        If TypeName(ConnString) = "Range" Then ConnString = ConnString.Value
+        Dim ConnStringSet As Boolean = (TypeName(ConnString) = "String" And ConnString <> "")
 
 1:      setEnv = fetchSetting("ConfigName", String.Empty)
 2:      If dontCalcWhileClearing Then
-3:          DBListFetch = "Env:" & setEnv & ", dontCalcWhileClearing = True !"
+3:          DBListFetch = IIf(ConnStringSet, "ConnString set", "Env:" & setEnv) & ", dontCalcWhileClearing = True !"
             Exit Function
         End If
 4:      If TypeName(targetRange) <> "ExcelReference" Then
-5:          DBListFetch = "Env:" & setEnv & ", Invalid targetRange or range name doesn't exist!"
+5:          DBListFetch = IIf(ConnStringSet, "ConnString set", "Env:" & setEnv) & ", Invalid targetRange or range name doesn't exist!"
             Exit Function
         End If
         On Error GoTo DBListFetch_Error
         ' calcContainers are identified by wbname + Sheetname + function caller cell Address
 6:      callID = "[" & caller.Parent.Parent.name & "]" & caller.Parent.name & "!" & caller.Address
-7:      If TypeName(ConnString) = "Error" Then ConnString = String.Empty
-8:      If TypeName(ConnString) = "Range" Then ConnString = ConnString.Value
         ' in case of number as connection string, take the stored Connection string .. 1 usually prod, 2 .. usually test, 3.. development)
 9:      If TypeName(ConnString) = "Integer" Or TypeName(ConnString) = "Long" Or TypeName(ConnString) = "Double" Or TypeName(ConnString) = "Short" Then
 10:         setEnv = fetchSetting("ConfigName" & ConnString, String.Empty)
@@ -311,7 +312,7 @@ DBSetQuery_Error:
         End If
 
 12:     If TypeName(formulaRange) <> "ExcelMissing" And TypeName(formulaRange) <> "ExcelReference" Then
-13:         DBListFetch = "Env:" & setEnv & ", Invalid FormulaRange or range name doesn't exist!"
+13:         DBListFetch = IIf(ConnStringSet, "ConnString set", "Env:" & setEnv) & ", Invalid FormulaRange or range name doesn't exist!"
             Exit Function
         End If
 
@@ -334,7 +335,7 @@ DBSetQuery_Error:
 20:     DBListFetch = checkParams(Query)
         ' error message is returned from checkParams, if OK then returns nothing
 21:     If DBListFetch.Length > 0 Then
-22:         DBListFetch = "Env:" & setEnv & ", " & DBListFetch
+22:         DBListFetch = IIf(ConnStringSet, "ConnString set", "Env:" & setEnv) & ", " & DBListFetch
             Exit Function
         End If
 
@@ -355,17 +356,17 @@ DBSetQuery_Error:
 29:         makeCalcMsgContainer(callID, CStr(Query), caller, Nothing, ToRange(targetRange), CStr(ConnString), ToRange(formulaRange), extendDataArea, HeaderInfo, AutoFit, autoformat, ShowRowNums, String.Empty, String.Empty, String.Empty, String.Empty, targetRangeName, formulaRangeName, False)
         End If
 30:     If existsStatusCont(callID) Then
-31:         DBListFetch = "Env:" & setEnv & ", " & allStatusContainers(callID).statusMsg
+31:         DBListFetch = IIf(ConnStringSet, "ConnString set", "Env:" & setEnv) & ", " & allStatusContainers(callID).statusMsg
         Else
-32:         DBListFetch = "Env:" & setEnv & ", no recalculation done for unchanged query..."
+32:         DBListFetch = IIf(ConnStringSet, "ConnString set", "Env:" & setEnv) & ", no recalculation done for unchanged query..."
         End If
         theHostApp.EnableEvents = True
         Exit Function
 
 DBListFetch_Error:
         Dim ErrDesc As String = Err.Description
-        LogToEventViewer("Error (" & ErrDesc & ") in Functions.DBListFetch, callID : " & callID & ", in " & Erl(), EventLogEntryType.Error)
-        DBListFetch = "Env:" & setEnv & ", Error (" & ErrDesc & ") in DBListFetch, callID : " & callID & ", in " & Erl()
+        WriteToLog("Error (" & ErrDesc & ") in Functions.DBListFetch, callID : " & callID & ", in " & Erl(), EventLogEntryType.Error)
+        DBListFetch = IIf(ConnStringSet, "ConnString set", "Env:" & setEnv) & ", Error (" & ErrDesc & ") in DBListFetch, callID : " & callID & ", in " & Erl()
         theHostApp.EnableEvents = True
     End Function
 
@@ -384,6 +385,9 @@ DBListFetch_Error:
         Dim subscribeTo As String
         Dim setEnv As String
         Dim caller As Range = ToRange(XlCall.Excel(XlCall.xlfCaller))
+        If TypeName(ConnString) = "Error" Then ConnString = String.Empty
+        If TypeName(ConnString) = "Range" Then ConnString = ConnString.Value
+        Dim ConnStringSet As Boolean = (TypeName(ConnString) = "String" And ConnString <> "")
 
         On Error GoTo DBRowFetch_Error
         setEnv = fetchSetting("ConfigName", String.Empty)
@@ -391,18 +395,16 @@ DBListFetch_Error:
         callID = "[" & caller.Parent.Parent.name & "]" & caller.Parent.name & "!" & caller.Address
         DBRowFetch = checkParams(Query)
         If DBRowFetch.Length > 0 Then
-            DBRowFetch = "Env:" & setEnv & ", " & DBRowFetch
+            DBRowFetch = IIf(ConnStringSet, "ConnString set/checkp", "Env:" & setEnv) & ", " & DBRowFetch
             Exit Function
         End If
-        ' add transportation info for event proc
-        If TypeName(ConnString) = "Error" Then ConnString = String.Empty
-        If TypeName(ConnString) = "Range" Then ConnString = ConnString.Value
         ' in case of number as connection string, take the stored Connection string .. 1 usually prod, 2 .. usually test, 3.. development)
         If TypeName(ConnString) = "Integer" Or TypeName(ConnString) = "Long" Or TypeName(ConnString) = "Double" Or TypeName(ConnString) = "Short" Then
             setEnv = fetchSetting("ConfigName" & ConnString, String.Empty)
             ConnString = fetchSetting("ConstConnString" & ConnString, String.Empty)
         End If
 
+        ' add transportation info for event proc
         Dim i As Long
         If TypeName(targetArray(0)) = "Boolean" Then
             HeaderInfo = targetArray(0)
@@ -411,7 +413,7 @@ DBListFetch_Error:
                 tempArray(i - 1) = ToRange(targetArray(i))
             Next
         ElseIf TypeName(targetArray(0)) = "Error" Then
-            DBRowFetch = "Env:" & setEnv & ", Error: First argument empty or error !"
+            DBRowFetch = IIf(ConnStringSet, "ConnString set", "Env:" & setEnv) & ", Error: First argument empty or error !"
             Exit Function
         Else
             For i = 0 To UBound(targetArray)
@@ -434,14 +436,14 @@ DBListFetch_Error:
             ' add transportation info for event proc
             makeCalcMsgContainer(callID, CStr(Query), caller, tempArray, Nothing, CStr(ConnString), Nothing, 0, HeaderInfo, False, False, False, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, False)
         End If
-        If existsStatusCont(callID) Then DBRowFetch = "Env:" & setEnv & ", " & allStatusContainers(callID).statusMsg
+        If existsStatusCont(callID) Then DBRowFetch = IIf(ConnStringSet, "ConnString set", "Env:" & setEnv) & ", " & allStatusContainers(callID).statusMsg
         theHostApp.EnableEvents = True
 
         Exit Function
 DBRowFetch_Error:
         Dim ErrDesc As String = Err.Description
-        LogToEventViewer("Error (" & ErrDesc & ") in DBRowFetch, callID : " & callID & ", in " & Erl(), EventLogEntryType.Error)
-        DBRowFetch = "Env:" & setEnv & ", Error (" & ErrDesc & ") in Functions.DBRowFetch, callID : " & callID
+        WriteToLog("Error (" & ErrDesc & ") in DBRowFetch, callID : " & callID & ", in " & Erl(), EventLogEntryType.Error)
+        DBRowFetch = IIf(ConnStringSet, "ConnString set", "Env:" & setEnv) & ", Error (" & ErrDesc & ") in Functions.DBRowFetch, callID : " & callID
         theHostApp.EnableEvents = True
     End Function
 
@@ -564,7 +566,7 @@ DBRowFetch_Error:
         Exit Sub
 makeCalcMsgContainer_Error:
         If Err.Number <> 457 Then
-            LogToEventViewer("Error (" & Err.Description & ") in Functions.makeCalcMsgContainer, callID: " & callID & ", in " & Erl(), EventLogEntryType.Error)
+            WriteToLog("Error (" & Err.Description & ") in Functions.makeCalcMsgContainer, callID: " & callID & ", in " & Erl(), EventLogEntryType.Error)
         End If
     End Sub
 

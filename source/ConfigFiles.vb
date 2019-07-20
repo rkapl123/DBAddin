@@ -73,7 +73,7 @@ Public Module ConfigFiles
                         TargetCell.Value = cellToBeStoredContent
                     End If
                 Catch ex As Exception
-                    LogWarn("Error in setting Cell: " & Err.Description, 1)
+                    LogError("Error in setting Cell: " & Err.Description, 1)
                 End Try
             End If
         Next

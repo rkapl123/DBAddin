@@ -152,7 +152,7 @@ Public Module Mapper
                     Catch ex As Exception
                         DataRange.Parent.Activate
                         DataRange.Cells(rowNum, colNum).Select
-                        LogWarn("General Error: " & ex.Message & " with Table: " & tableName & ", Field: " & fieldname & ", in sheet " & DataRange.Parent.name & ", & row " & rowNum & ", col: " & colNum)
+                        LogError("General Error: " & ex.Message & " with Table: " & tableName & ", Field: " & fieldname & ", in sheet " & DataRange.Parent.name & ", & row " & rowNum & ", col: " & colNum)
                         rst.Close()
                         GoTo cleanup
                     End Try

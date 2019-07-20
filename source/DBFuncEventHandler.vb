@@ -120,7 +120,7 @@ Public Class DBFuncEventHandler
         Exit Sub
 
 App_WorkbookBeforeSave_Err:
-        LogToEventViewer("DBFuncEventHandler.App_WorkbookBeforeSave Error: " & Wb.Name & Err.Description & ", in line " & Erl(), EventLogEntryType.Error)
+        WriteToLog("DBFuncEventHandler.App_WorkbookBeforeSave Error: " & Wb.Name & Err.Description & ", in line " & Erl(), EventLogEntryType.Error)
     End Sub
 
     ''' <summary>"OnTime" event function to "escape" workbook_save: event procedure to refetch DB functions results after saving</summary>
@@ -160,17 +160,17 @@ App_WorkbookBeforeSave_Err:
                 If Not .caller Is Nothing Then
                     callID = calcCont.callID
 
-                    Dim doFetching As Boolean
+                    Dim doFetching As Boolean = True
                     ' To avoid unneccessary queries (volatile funcions, autofilter set, etc.) , only run data fetching if ConnString/query is either not yet cached or has changed !
-                    If Not existsQueryCache(callID) Then
-                        queryCache.Add(calcCont.ConnString & calcCont.Query, callID)
-                        doFetching = True
-                    Else
-                        doFetching = (calcCont.ConnString & calcCont.Query <> queryCache(callID))
-                        ' refresh the query cache...
-                        queryCache.Remove(callID)
-                        queryCache.Add(calcCont.ConnString & calcCont.Query, callID)
-                    End If
+                    'If Not existsQueryCache(callID) Then
+                    '    queryCache.Add(calcCont.ConnString & calcCont.Query, callID)
+                    '    doFetching = True
+                    'Else
+                    '    doFetching = (calcCont.ConnString & calcCont.Query <> queryCache(callID))
+                    '    ' refresh the query cache...
+                    '    queryCache.Remove(callID)
+                    '    queryCache.Add(calcCont.ConnString & calcCont.Query, callID)
+                    'End If
 
                     If doFetching Then
                         ' avoid (infinite loop) processing if the event procedure invoked the calling DB function again (indirectly by changing target cells)
@@ -214,7 +214,7 @@ App_WorkbookBeforeSave_Err:
                                     cnn.Open(.ConnString)
 
                                     If Err.Number <> 0 Then
-                                        Debug.Print("App_SheetCalculate Connection error: " & Err.Description)
+                                        WriteToLog("App_SheetCalculate Connection error: " & Err.Description, EventLogEntryType.Error)
                                         ' prevent multiple reconnecting if connection errors present...
                                         dontTryConnection = True
                                         LogError("Connection Error: " & Err.Description)
@@ -261,7 +261,7 @@ App_WorkbookBeforeSave_Err:
                             theHostApp.Calculation = xlcalcmode
 
                             ' in manual calculation no recalc of own results is done so we do this now:
-                            If xlcalcmode = XlCalculation.xlCalculationManual Then theHostApp.Calculate
+                            If xlcalcmode = XlCalculation.xlCalculationManual Then calcCont.targetRange.Parent.Calculate
                         End If
                     Else
                         ' still set this (even for disabled fetching due to unchanged query) to true as it is needed in the calling function to determine a worked on calc container...
@@ -347,7 +347,7 @@ nextCalcCont:
 
 DBSetQueryParams_Error:
         errMsg = Err.Description & " in query: " & Query
-        LogToEventViewer("DBFuncEventHandler.DBSetQueryParams Error: " & errMsg & ", caller: " & callID, EventLogEntryType.Error)
+        WriteToLog("DBFuncEventHandler.DBSetQueryParams Error: " & errMsg & ", caller: " & callID, EventLogEntryType.Error)
 
         statusCont.statusMsg = errMsg
         ' need to mark calc container here as excel won't return to main event proc in case of error
@@ -758,7 +758,7 @@ err_0:
         'Err.Clear ' this is important as otherwise the error propagates to App_SheetCalculate,
         ' which recalcs in case of errors there, leading to endless calc loops !!
         If severity = Nothing Then severity = EventLogEntryType.Warning
-        LogToEventViewer("DBFuncEventHandler.DBListQuery Error: " & errMsg & ", caller: " & callID, severity)
+        WriteToLog("DBFuncEventHandler.DBListQuery Error: " & errMsg & ", caller: " & callID, severity)
 
         statusCont.statusMsg = errMsg
         ' need to mark calc container here as excel won't return to main event proc in case of error
@@ -789,6 +789,7 @@ err_0:
         headingsPresent = calcCont.HeaderInfo
         callID = calcCont.callID
         targetSH = targetCells(0).Parent
+        statusCont.statusMsg = ""
         On Error GoTo err_1
         theHostApp.StatusBar = "Retrieving data for DBRows: " & targetSH.Name & "!" & targetCells(0).Address
 
@@ -905,7 +906,7 @@ err_1:
         ' which recalcs in case of errors there, leading to endless calc loops !!
         If severity = Nothing Then severity = EventLogEntryType.Warning
         If tableRst.State <> 0 Then tableRst.Close()
-        LogToEventViewer("DBFuncEventHandler.DBRowQuery Error: " & errMsg & ", caller: " & callID & ", in line " & Erl(), severity)
+        WriteToLog("DBFuncEventHandler.DBRowQuery Error: " & errMsg & ", caller: " & callID & ", in line " & Erl(), severity)
         statusCont.statusMsg = errMsg
         ' need to mark calc container here as excel won't return to main event proc in case of error
         ' calc container is then removed in calling function
