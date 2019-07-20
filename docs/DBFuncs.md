@@ -346,12 +346,6 @@ End Sub
 
 ### Known Issues / Limitations
 
-*   DBMakeControl
-
-*   Listbox control selection shifts uncontrolled upwards when using mouse. This only occurs when the DBMakeControl is either dependent on calculation results that are themselves dependent on the control's target cell (kind of "circular dependency") or if there is a dependent DBListfetch in the same sheet with extendDataArea != 0\. In this case Excel somehow always sets other cells to "dirty" status, thus enforcing a recalculation of the DBMakeControl. The workaround is to either use up/down keys after the initial click for precise selecting or place the DBMakeControl function in a different sheet than the DBListFetch's target area.  
-
-*   Listbox control selection is not visibly retained during refresh (context menu resfresh data or full calc (Ctrl-Alt-F9)), i.e. the data target is kept, but the entry's highlighting is gone. This is the case when the control is placed on the same sheet as the DBMakeControl function. Workaround: put DBMakeControl in a different sheet than the control itself.  
-
 *   All DB getting functions (DBListfetch, DBRowFetch, etc....)
 
 *   A fundamental restriction for these function is that they should only exist alone in a cell with no other DB getters. This is needed because linking the functions with their cell targets is done via a hidden name in the function cell (created on first invocation)  
@@ -362,47 +356,15 @@ End Sub
 *   In Worksheets with names like Cell references (Letter + number + blank + something else, eg. 'C701 Country') this leads to a fundamental error with the names used for the data target. Avoid using those sheet names in conjunction with DBListFetch, i.e. do not use a blank between the 'cell reference' and the rest (eg. 'C701Country' instead of 'C701 Country').
 *   GUID Columns are not displayed when working with the standard data fetching method used by DBListFetch (using an opened recordset for adding a - temporary - querytable). A workaround has been built that circumvents this problem by adding the querytable the way that excel does (using the connection string and query directly when adding the querytable). This however implicitly opens another connection, so is more resource intensive. For details see [Connection String Special Settings](#Connection_String_Special_Settings)
 
-*   Query composition: Composing Queries (as these sometimes tends to be quite long) can become challenging, especially when handling parameters coming from cells. There is a simple way to avoid lots of trouble by placing
+*   Query composition: Composing Queries (as these sometimes tends to be quite long) can become challenging, especially when handling parameters coming from cells. There is a simple way to avoid lots of trouble by placing the parts of a query in different lines/cells and chaining all these cells together in the DB functions first argument (query)  
 *   When invoking an Excel Workbook from the commandline (from a cmd script or the task scheduler) Excel may register (call the connect method of the Add-in) the Add-in later than invoking the calculation which leads to an uninitialized host application object and therefore a non-functional dbfunctions (they all rely on the caller object of the Excel application to retrieve their calling cell's address). I'm still investigating into this.
 *   The Workbook containing the DB functions may not have any VBA Code with Compile Errors, or it will return an "Application defined Error". This relates to Excel not passing the Application.Caller object correctly to UDFs when having compile errors in VBA-Code.
 
 
-## Mapper
+## DBMapper
 
-Mapper is an object that you can use to save Excel Range data to database table(s). The function that is used to do that is
+DBMapper is a functionality that you can use to save Excel Range data to database table(s). It works by defining a name starting with "DBMapper" in a cell and adding a comment to this cell containing a "function" like:
 
-#### saveRangeToDB
+<pre lang="vb.net">saveRangeToDB(Environment, TableName, PrimaryKeys, Database, IgnoredColumns, AdditionalStoredProcedure, InsertIfMissing, StoreDBMapOnSave)</pre>
 
-<pre lang="vb.net">saveRangeToDB(DataRange As Excel.Range, tableNamesStr As String, _  
- primKeysStr As String, primKeyColumnsStr As String, startDataColumn As Integer, _  
- connID As String, ParamArray optionalArray() As Variant) As Boolean</pre>
-
-Dumps table given in DataRange to database table(s) in tableNamesStr in a database specified by connID.  
-Parameters:  
-
-*   DataRange As Excel.Range = The Excel Range to be saved to the database
-*   tableNamesStr As String = the table(s) where the range is to be saved to. If more than one table is given then use comma as a separator.
-*   primKeysStr As String = The primary key(s) used for identifying the rows in above table(s). If more than one primary key is given then use comma as a separator. The count of primary keys has to be the same as the tables.
-*   primKeyColumnsStr As String = The columns where the primary key value(s) are found in the Excel Range. If more than one primary key is given then use comma as a separator. The count of primary key columns has to be the same as the tables/primary keys.
-*   startDataColumn As Integer = The starting column for the actual data (excluding the primary column(s)).
-*   connID As String = The connection ID specified in DBConns.xml (see `DBConnFileName` in [Installation)](#Installation)
-*   if given in the optionalArray:
-*   [insertIfMissing] As Boolean = if True then insert row into table if primary key is missing there. Default = False (only update)
-*   [excludeColumns] As String = The column numbers of those columns that should be excluded from the storing (helper columns,etc.). If more than one column is to be excluded then use comma as a separator.
-*   [specialExceptionTable] As String = The table in whose specialExceptionField the update values should be checked whether they are of specialExceptionValue or result in an error. If that is the case then the rest of the row is not being stored, and the values given in specialExceptionDefaults are stored into the fields and tables given in specialExceptionDefaults.
-*   [specialExceptionField] As String = The field that is checked whether it's value is a specialExceptionValue (typically an undesired value, like empty or zero) or whether it is an error.
-*   [specialExceptionValue] As Variant = The special value that is checked (typically an undesired value, like empty or zero)
-*   [specialExceptionDefaults] As Variant() = Array of Array(""Tablename"",""Fieldname"",""COL/VAL"",value): The table/field/Column/Value combinations that are used for determining the special default values to be stored in the special fields of special tables in case of an above found exception. In case the third part of a specialExceptionDefaultArray is "COL" then the default values are taken from the column given in the fourth part (value). In case the third part of a specialExceptionDefaultArray is "VAL" then the default values are taken directly from the fourth part.
-
-The function returns True if successful, false in case of errors.  
-
-Example:  
-
-<pre lang="vb.net">Sub testdumpRangeToDB()  
-  Set mapper = CreateObject("DBAddin.Mapper")  
-  mapper.saveRangeToDB Range("employee"), "employee", "emp_id", 1, 2, "MSSQLPUBSTest", True  
-End Sub</pre>
-
-Here the data in range `employee` are stored to the table `employee` using primary key `emp_id`, which is located in column 1. Data is starting in column 2, the connection information is stored in connection id "MSSQLPUBSTest" and any missing employees are inserted with a new emp_id key if it is missing.  
-
-An Example for the Mapper object/saveRangeToDB usage can also be found in the DBFuncsTest.xls Workbook, Sheet "MapperExamples".
+Examples for the usage of DBMapper can be found in the DBMapperTests.xlsx Workbook.
