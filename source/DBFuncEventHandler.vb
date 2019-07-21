@@ -980,8 +980,4 @@ err_1:
         End If
     End Sub
 
-    Sub testRangeNames()
-        restoreRangeNames(theHostApp.Worksheets(1).Range("A1"), removeRangeName(theHostApp.Worksheets(1).Range("A1"), "test"))
-    End Sub
-
 End Class

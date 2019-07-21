@@ -38,54 +38,6 @@ err1:
         functionSplit = Nothing
     End Function
 
-
-    Sub testfunctionSplit()
-        Dim check
-
-        check = functionSplit("ignored, because it is before opener..,func(token3,'(', token4,internalfunc(next,next))&this is also ignored, because we have closed the bracket", ",", "'", "func", "(", ")")
-        Debug.Print(check(0) = "token3")
-        Debug.Print(check(1) = "'('")
-        Debug.Print(check(2) = " token4")
-        Debug.Print(check(3) = "internalfunc(next,next)")
-        Debug.Print(UBound(check) = 3)
-        Debug.Print("")
-
-        ' watch out, startStr really searches for the first occurrence ("func") !!
-        check = functionSplit("ignoredfunction(because,it,is,before,opener)&func(token3,'(', token4,internalfunc(next,next))&this is also ignored, because we have closed the bracket", ",", "'", "func", "(", ")")
-        Debug.Print(check(0) <> "token3")
-        Debug.Print(check(1) <> "'('")
-        Debug.Print(check(2) <> " token4")
-        Debug.Print(check(3) <> "internalfunc(next,next)")
-        Debug.Print(UBound(check) <> 3)
-        Debug.Print("")
-
-        check = functionSplit("ignored(because,it,is,before,opener)&func(token3,'(', token4,internalfunc(next,next))&this is also ignored, because we have closed the bracket", ",", "'", "func", "(", ")")
-        Debug.Print(check(0) = "token3")
-        Debug.Print(check(1) = "'('")
-        Debug.Print(check(2) = " token4")
-        Debug.Print(check(3) = "internalfunc(next,next)")
-        Debug.Print(UBound(check) = 3)
-        Debug.Print("")
-
-        check = functionSplit("func(token3,'(ignore,ignore),whatever is inside'&(still ignored, because in brackets), token4,internalfunc(arg1,anotherFunc(arg1,arg2),arg2))&this is also ignored, because we have closed the bracket", ",", "'", "func", "(", ")")
-        Debug.Print(check(0) = "token3")
-        Debug.Print(check(1) = "'(ignore,ignore),whatever is inside'&(still ignored, because in brackets)")
-        Debug.Print(check(2) = " token4")
-        Debug.Print(check(3) = "internalfunc(arg1,anotherFunc(arg1,arg2),arg2)")
-        Debug.Print(UBound(check) = 3)
-        Debug.Print("")
-
-        ' a different quote and a different delimiter:
-        check = functionSplit("=func(token1;token2;""ignoredcloseBracket)""; token3;""ignored1;ignored2"");ignored1;ignored2", ";", """", "func", "(", ")")
-        Debug.Print(check(0) = "token1")
-        Debug.Print(check(1) = "token2")
-        Debug.Print(check(2) = """ignoredcloseBracket)""")
-        Debug.Print(check(3) = " token3")
-        Debug.Print(check(4) = """ignored1;ignored2""")
-        Debug.Print(UBound(check) = 4)
-        Debug.Print("")
-    End Sub
-
     ''' <summary>returns the minimal bracket balancing string contained in theString, opening bracket defined in openBracket, closing bracket defined in closeBracket
     ''' disregarding quoted areas inside optionally given quote charachter/string</summary>
     ''' <param name="theString"></param>
@@ -93,7 +45,7 @@ err1:
     ''' <param name="closeBracket"></param>
     ''' <param name="quote"></param>
     ''' <returns>the balanced string</returns>
-    Private Function balancedString(theString As String, openBracket As String, closeBracket As String, Optional quote As String = "") As String
+    Public Function balancedString(theString As String, openBracket As String, closeBracket As String, Optional quote As String = "") As String
         Dim startBalance As Long, endBalance As Long, i As Long, countOpen As Long, countClose As Long
 
         Dim quoteMode As Boolean = False
@@ -128,12 +80,6 @@ err1:
 err1:
         WriteToLog("Error: " & Err.Description & " in CommonFuncs.balancedString in " & Erl(), EventLogEntryType.Error)
     End Function
-
-
-    Private Sub testBalanced()
-        Debug.Print(balancedString("ignored,(start,""ignore '(' , but include"",(go on, the end)),this should (all()) be excluded", "(", ")", """") = "start,""ignore '(' , but include"",(go on, the end)")
-        Debug.Print(balancedString("""(ignored"",(start,""ignore '(' , but include"",(go on, the end)),this should (all) be excluded", "(", ")", """") = "start,""ignore '(' , but include"",(go on, the end)")
-    End Sub
 
     ''' <summary>replaces the delimiter (delimiter) inside theString with specialSep, regarding both quoted areas inside quote and bracketed areas (inside openBracket/closeBracket)</summary>
     ''' <param name="theString"></param>
@@ -178,7 +124,6 @@ err1:
         WriteToLog("Error: " & Err.Description & " in CommonFuncs.replaceDelimsWithSpecialSep in " & Erl(), EventLogEntryType.Error)
     End Function
 
-
     ''' <summary>changes theString by replacing substring starting after keystr and ending with separator with changed, case insensitive !!</summary>
     ''' <param name="theString"></param>
     ''' <param name="keystr"></param>
@@ -198,9 +143,7 @@ err1:
         Change = Left$(theString, replaceBeg - 1 + Len(keystr)) & changed & Right$(theString, Len(theString) - replaceEnd + 1)
     End Function
 
-
-    ''' <summary>fetches substring starting after keystr and ending with separator from theString, case insensitive !!
-    ''' if separator is "" then fetch to end of string</summary>
+    ''' <summary>fetches substring starting after keystr and ending with separator from theString, case insensitive !! if separator is "" then fetch to end of string</summary>
     ''' <param name="theString"></param>
     ''' <param name="keystr"></param>
     ''' <param name="separator"></param>

@@ -5,6 +5,8 @@ VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "DBaddin", "DBaddin.vbproj", "{FA14BDF7-3A33-41FD-88DA-992FF9148B6E}"
 EndProject
+Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "DBAddinUnitTests", "..\DBAddinUnitTests\DBAddinUnitTests.vbproj", "{FBEE80E3-B781-4F0A-ABA5-114BBDFAE6F9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{FA14BDF7-3A33-41FD-88DA-992FF9148B6E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FA14BDF7-3A33-41FD-88DA-992FF9148B6E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FA14BDF7-3A33-41FD-88DA-992FF9148B6E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FBEE80E3-B781-4F0A-ABA5-114BBDFAE6F9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FBEE80E3-B781-4F0A-ABA5-114BBDFAE6F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FBEE80E3-B781-4F0A-ABA5-114BBDFAE6F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FBEE80E3-B781-4F0A-ABA5-114BBDFAE6F9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

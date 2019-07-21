@@ -41,14 +41,6 @@ Partial Class DBMapperCreate
         Me.insertIfMissing = New System.Windows.Forms.CheckBox()
         Me.storeDBMapOnSave = New System.Windows.Forms.CheckBox()
         Me.ToolTip1 = New System.Windows.Forms.ToolTip(Me.components)
-        Me.ToolTip2 = New System.Windows.Forms.ToolTip(Me.components)
-        Me.ToolTip3 = New System.Windows.Forms.ToolTip(Me.components)
-        Me.ToolTip4 = New System.Windows.Forms.ToolTip(Me.components)
-        Me.ToolTip5 = New System.Windows.Forms.ToolTip(Me.components)
-        Me.ToolTip6 = New System.Windows.Forms.ToolTip(Me.components)
-        Me.ToolTip7 = New System.Windows.Forms.ToolTip(Me.components)
-        Me.ToolTip8 = New System.Windows.Forms.ToolTip(Me.components)
-        Me.ToolTip9 = New System.Windows.Forms.ToolTip(Me.components)
         Me.envSel = New System.Windows.Forms.ComboBox()
         Me.Label7 = New System.Windows.Forms.Label()
         Me.TableLayoutPanel1.SuspendLayout()
@@ -113,6 +105,7 @@ Partial Class DBMapperCreate
         Me.Tablename.Name = "Tablename"
         Me.Tablename.Size = New System.Drawing.Size(259, 20)
         Me.Tablename.TabIndex = 2
+        Me.ToolTip1.SetToolTip(Me.Tablename, "Database Table, where Data is to be stored")
         '
         'PrimaryKeys
         '
@@ -120,6 +113,7 @@ Partial Class DBMapperCreate
         Me.PrimaryKeys.Name = "PrimaryKeys"
         Me.PrimaryKeys.Size = New System.Drawing.Size(259, 20)
         Me.PrimaryKeys.TabIndex = 3
+        Me.ToolTip1.SetToolTip(Me.PrimaryKeys, "String containing primary Key names for updating table data, comma separated")
         '
         'Database
         '
@@ -127,6 +121,7 @@ Partial Class DBMapperCreate
         Me.Database.Name = "Database"
         Me.Database.Size = New System.Drawing.Size(259, 20)
         Me.Database.TabIndex = 4
+        Me.ToolTip1.SetToolTip(Me.Database, "Database to store DBMaps Data into")
         '
         'IgnoreColumns
         '
@@ -134,6 +129,7 @@ Partial Class DBMapperCreate
         Me.IgnoreColumns.Name = "IgnoreColumns"
         Me.IgnoreColumns.Size = New System.Drawing.Size(259, 20)
         Me.IgnoreColumns.TabIndex = 5
+        Me.ToolTip1.SetToolTip(Me.IgnoreColumns, "columns to be ignored (e.g. helper columns), comma separated")
         '
         'addStoredProc
         '
@@ -141,6 +137,7 @@ Partial Class DBMapperCreate
         Me.addStoredProc.Name = "addStoredProc"
         Me.addStoredProc.Size = New System.Drawing.Size(259, 20)
         Me.addStoredProc.TabIndex = 6
+        Me.ToolTip1.SetToolTip(Me.addStoredProc, "additional stored procedure to be executed after saving")
         '
         'Label2
         '
@@ -195,6 +192,8 @@ Partial Class DBMapperCreate
         Me.insertIfMissing.Size = New System.Drawing.Size(99, 17)
         Me.insertIfMissing.TabIndex = 7
         Me.insertIfMissing.Text = "Insert If Missing"
+        Me.ToolTip1.SetToolTip(Me.insertIfMissing, "if set, then insert row into table if primary key is missing there. Default = Fal" &
+        "se (only update)")
         Me.insertIfMissing.UseVisualStyleBackColor = True
         '
         'storeDBMapOnSave
@@ -205,6 +204,7 @@ Partial Class DBMapperCreate
         Me.storeDBMapOnSave.Size = New System.Drawing.Size(133, 17)
         Me.storeDBMapOnSave.TabIndex = 8
         Me.storeDBMapOnSave.Text = "Store DBMap on Save"
+        Me.ToolTip1.SetToolTip(Me.storeDBMapOnSave, "should DBMap also be saved on Excel Workbook Saving? (default no)")
         Me.storeDBMapOnSave.UseVisualStyleBackColor = True
         '
         'envSel
@@ -214,6 +214,8 @@ Partial Class DBMapperCreate
         Me.envSel.Name = "envSel"
         Me.envSel.Size = New System.Drawing.Size(123, 21)
         Me.envSel.TabIndex = 9
+        Me.ToolTip1.SetToolTip(Me.envSel, "The Environment, where connection id should be taken from (if not existing, take " &
+        "from selected Environment in DB Addin General Settings Group)")
         '
         'Label7
         '
@@ -254,7 +256,7 @@ Partial Class DBMapperCreate
         Me.Name = "DBMapperCreate"
         Me.ShowInTaskbar = False
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent
-        Me.Text = "DBMapperCreate"
+        Me.Text = "Edit DBMapper definition"
         Me.TableLayoutPanel1.ResumeLayout(False)
         Me.ResumeLayout(False)
         Me.PerformLayout()
@@ -278,14 +280,6 @@ Partial Class DBMapperCreate
     Friend WithEvents insertIfMissing As Windows.Forms.CheckBox
     Friend WithEvents storeDBMapOnSave As Windows.Forms.CheckBox
     Friend WithEvents ToolTip1 As Windows.Forms.ToolTip
-    Friend WithEvents ToolTip2 As Windows.Forms.ToolTip
-    Friend WithEvents ToolTip3 As Windows.Forms.ToolTip
-    Friend WithEvents ToolTip4 As Windows.Forms.ToolTip
-    Friend WithEvents ToolTip5 As Windows.Forms.ToolTip
-    Friend WithEvents ToolTip6 As Windows.Forms.ToolTip
-    Friend WithEvents ToolTip7 As Windows.Forms.ToolTip
-    Friend WithEvents ToolTip8 As Windows.Forms.ToolTip
-    Friend WithEvents ToolTip9 As Windows.Forms.ToolTip
     Friend WithEvents envSel As Windows.Forms.ComboBox
     Friend WithEvents Label7 As Windows.Forms.Label
 End Class
