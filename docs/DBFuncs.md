@@ -375,7 +375,7 @@ Examples for the usage of DBMapper can be found in the DBMapperTests.xlsx Workbo
 
 ## Create DB Functions and DBMappers
 
-You can create the three DB Functions and DB Mappers by using the cell context menu:
+You can create the three DB Functions and DB Mappers by using the cell context menu:  
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/ContextMenu.PNG)  
 
 The DB functions are created with an empty query string and full feature settings (e.g. Headers displayed, autosize and autoformat switched on) and target cells directly below the current active cell.
@@ -385,7 +385,7 @@ Following results for a DB Function created in Cell A1:
 *   DBRowFetch:   `=DBRowFetch("";"";WAHR;A2:K2)`
 *   DBSetQuer     `=DBSetQuery("";"";A2)`
 
-The DBMapper creation starts following dialog (already filled, when clicked on a blank cell all entries are empty):
+The DBMapper creation starts following dialog (already filled, when clicked on a blank cell all entries are empty):  
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DbMapperCreate.PNG)  
 
 *   DBMapper Name: Enter the name for the selected Range that will be used to identify the DBMap in the "store DBMapper Data" Group dropdowns. If no name is given here, then UnnamedDBMapper will be used to identify it.
