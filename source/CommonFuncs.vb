@@ -167,7 +167,7 @@ err1:
         existsSheet = True
         On Error Resume Next
         Err.Clear()
-        dummy = theHostApp.Worksheets(theName).name
+        dummy = hostApp.Worksheets(theName).name
         If Err.Number <> 0 Then existsSheet = False
     End Function
 
@@ -231,7 +231,7 @@ err1:
             On Error GoTo err1
             If Not rng Is Nothing And Not (nm.Name Like "*ExterneDaten*" Or nm.Name Like "*_FilterDatabase") Then
                 On Error Resume Next
-                testRng = theHostApp.Intersect(theRange, rng)
+                testRng = hostApp.Intersect(theRange, rng)
                 If Err.Number = 0 And Not testRng Is Nothing And (InStr(1, nm.Name, "DBFtarget") >= 1 Or InStr(1, nm.Name, "DBFsource") >= 1) Then
                     getDBRangeName = nm
                     Err.Clear()
@@ -255,14 +255,15 @@ err1:
         Dim needRecalc As Boolean
         Dim theFunc
 
-        If TypeName(theHostApp.Calculation) = "Error" Then
-            WriteToLog("refreshDBFunctions: theHostApp.Calculation = Error, " & Wb.Path & "\" & Wb.Name, EventLogEntryType.Information)
+        If TypeName(hostApp.Calculation) = "Error" Then
+            WriteToLog("refreshDBFunctions: hostApp.Calculation = Error, " & Wb.Path & "\" & Wb.Name, EventLogEntryType.Information)
             Exit Sub
         End If
+
         On Error GoTo err_1
         needRecalc = False
         For Each ws In Wb.Worksheets
-            For Each theFunc In {"DBListFetch(", "DBRowFetch(", "DBCellFetch(", "DBMakeControl(", "DBSetQuery("}
+            For Each theFunc In {"DBListFetch(", "DBRowFetch(", "DBSetQuery("}
                 searchCells = ws.Cells.Find(What:=theFunc, After:=ws.Range("A1"), LookIn:=XlFindLookIn.xlFormulas, LookAt:=XlLookAt.xlPart, SearchOrder:=XlSearchOrder.xlByRows, SearchDirection:=XlSearchDirection.xlNext, MatchCase:=False)
                 If Not (searchCells Is Nothing) Then
                     ' reset the cell find dialog....
@@ -278,13 +279,57 @@ err1:
         Next
 
 done:
-        If needRecalc And (theHostApp.Calculation <> XlCalculation.xlCalculationManual Or ignoreCalcMode) Then
-            WriteToLog("refreshDBFunctions: theHostApp.CalculateFull called" & Wb.Path & "\" & Wb.Name, EventLogEntryType.Information)
-            theHostApp.CalculateFull
+        If needRecalc And (hostApp.Calculation <> XlCalculation.xlCalculationManual Or ignoreCalcMode) Then
+            WriteToLog("refreshDBFunctions: hostApp.CalculateFull called" & Wb.Path & "\" & Wb.Name, EventLogEntryType.Information)
+            hostApp.CalculateFull
         End If
         Exit Sub
 err_1:
         WriteToLog("Error: " & Err.Description & " in CommonFuncs.refreshDBFunctions in " & Erl() & ", " & Wb.Path & "\" & Wb.Name, EventLogEntryType.Error)
+    End Sub
+
+    ''' <summary>check whether key with name "tblName" is contained in collection tblColl</summary>
+    ''' <param name="tblName">key to be found</param>
+    ''' <param name="tblColl">collection to be checked</param>
+    ''' <returns>if name was found in collection</returns>
+    Public Function existsInCollection(tblName As String, tblColl As Collection) As Boolean
+        Dim dummy As Integer
+
+        On Error GoTo err1
+        existsInCollection = True
+        dummy = tblColl(tblName)
+        Exit Function
+err1:
+        Err.Clear()
+        existsInCollection = False
+    End Function
+
+    ''' <summary>"repairs" legacy functions from old VB6-COM Addin by removing "DBAddin.Functions." before function name</summary>
+    Public Sub repairLegacyFunctions()
+
+        Dim searchCell As Range
+        Dim foundLegacy As Boolean
+        Dim xlcalcmode As Long = hostApp.Calculation
+        For Each ws In hostApp.ActiveWorkbook.Worksheets
+            ' check whether legacy functions exist somewhere ...
+            searchCell = ws.Cells.Find(What:="DBAddin.Functions.", After:=ws.Range("A1"), LookIn:=XlFindLookIn.xlFormulas, LookAt:=XlLookAt.xlPart, SearchOrder:=XlSearchOrder.xlByRows, SearchDirection:=XlSearchDirection.xlNext, MatchCase:=False)
+            If Not (searchCell Is Nothing) Then foundLegacy = True
+        Next
+        If foundLegacy Then
+            Dim retval As MsgBoxResult = MsgBox("Found Legacy DBAddin functions in Workbook, should they be replaced with current Addin functions (save Workbook afterwards to persist) ?", vbQuestion + vbYesNo, "Legacy DBAddin functions")
+            If retval = vbYes Then
+                hostApp.Calculation = XlCalculation.xlCalculationManual ' avoid recalculations during repair...
+                hostApp.DisplayAlerts = False ' avoid warnings for sheet where "DBAddin.Functions." is not found
+                ' remove "DBAddin.Functions." in each sheet...
+                For Each ws In hostApp.ActiveWorkbook.Worksheets
+                    ws.Cells.Replace(What:="DBAddin.Functions.", Replacement:="", LookAt:=XlLookAt.xlPart, SearchOrder:=XlSearchOrder.xlByRows, MatchCase:=False, SearchFormat:=False, ReplaceFormat:=False)
+                Next
+                hostApp.DisplayAlerts = True
+                hostApp.Calculation = xlcalcmode
+            End If
+        End If
+        ' reset the cell find dialog....
+        hostApp.Activesheet.Cells.Find(What:="", After:=hostApp.Activesheet.Range("A1"), LookIn:=XlFindLookIn.xlFormulas, LookAt:=XlLookAt.xlPart, SearchOrder:=XlSearchOrder.xlByRows, SearchDirection:=XlSearchDirection.xlNext, MatchCase:=False)
     End Sub
 
 End Module

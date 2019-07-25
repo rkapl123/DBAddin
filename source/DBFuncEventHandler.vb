@@ -43,6 +43,7 @@ Public Class DBFuncEventHandler
                 refreshDBFuncs = True
             End Try
             If refreshDBFuncs Then refreshDBFunctions(Wb)
+            repairLegacyFunctions()
         End If
     End Sub
 
@@ -90,7 +91,7 @@ Public Class DBFuncEventHandler
                         DBFCA = DBFCAllColl(searchCell.Parent.name & "!" & Replace(searchCell.Address, "$", String.Empty)) Or DBFCA
                         Err.Clear()
                         Dim theTargetRange As Range
-                        theTargetRange = theHostApp.Range(targetName)
+                        theTargetRange = hostApp.Range(targetName)
                         If DBFCC Then
                             theTargetRange.Parent.Range(theTargetRange.Parent.Cells(theTargetRange.Row, theTargetRange.Column), theTargetRange.Parent.Cells(theTargetRange.Row + theTargetRange.Rows.Count - 1, theTargetRange.Column + theTargetRange.Columns.Count - 1)).ClearContents
                             LogInfo("App_WorkbookSave/DBFCC cleared")
@@ -129,10 +130,10 @@ App_WorkbookBeforeSave_Err:
     Shared Sub refreshDBFuncLater(ByVal sender As Object, ByVal e As ElapsedEventArgs)
         Dim previouslySaved As Boolean
 
-        If Not theHostApp.ActiveWorkbook Is Nothing Then
-            previouslySaved = theHostApp.ActiveWorkbook.Saved
-            refreshDBFunctions(theHostApp.ActiveWorkbook, True)
-            theHostApp.ActiveWorkbook.Saved = previouslySaved
+        If Not hostApp.ActiveWorkbook Is Nothing Then
+            previouslySaved = hostApp.ActiveWorkbook.Saved
+            refreshDBFunctions(hostApp.ActiveWorkbook, True)
+            hostApp.ActiveWorkbook.Saved = previouslySaved
         End If
     End Sub
 
@@ -148,7 +149,7 @@ App_WorkbookBeforeSave_Err:
         If allCalcContainers Is Nothing Then Exit Sub
         If allStatusContainers Is Nothing Then allStatusContainers = New Collection
 
-        'theHostApp.StatusBar = "Number of calcContainers: " & allStatusContainers.Count
+        'hostApp.StatusBar = "Number of calcContainers: " & allStatusContainers.Count
         For Each calcCont In allCalcContainers
 
             With calcCont
@@ -162,15 +163,15 @@ App_WorkbookBeforeSave_Err:
 
                     Dim doFetching As Boolean = True
                     ' To avoid unneccessary queries (volatile funcions, autofilter set, etc.) , only run data fetching if ConnString/query is either not yet cached or has changed !
-                    'If Not existsQueryCache(callID) Then
-                    '    queryCache.Add(calcCont.ConnString & calcCont.Query, callID)
-                    '    doFetching = True
-                    'Else
-                    '    doFetching = (calcCont.ConnString & calcCont.Query <> queryCache(callID))
-                    '    ' refresh the query cache...
-                    '    queryCache.Remove(callID)
-                    '    queryCache.Add(calcCont.ConnString & calcCont.Query, callID)
-                    'End If
+                    If Not existsQueryCache(callID) Then
+                        queryCache.Add(calcCont.ConnString & calcCont.Query, callID)
+                        doFetching = True
+                    Else
+                        doFetching = (calcCont.ConnString & calcCont.Query <> queryCache(callID))
+                        ' refresh the query cache...
+                        queryCache.Remove(callID)
+                        queryCache.Add(calcCont.ConnString & calcCont.Query, callID)
+                    End If
 
                     If doFetching Then
                         ' avoid (infinite loop) processing if the event procedure invoked the calling DB function again (indirectly by changing target cells)
@@ -188,7 +189,7 @@ App_WorkbookBeforeSave_Err:
                             callerText = .caller.Formula
 
                             If Err.Number <> 0 Then
-                                Debug.Print("App_SheetCalculate: ERROR with retrieving .caller.Formula: " & Err.Description)
+                                WriteToLog("App_SheetCalculate: ERROR with retrieving .caller.Formula: " & Err.Description, EventLogEntryType.Error)
                                 errorReason = "App_SheetCalculate: ERROR with .caller.Formula: " & Err.Description
                                 allCalcContainers(callID).errOccured = True
                             End If
@@ -209,7 +210,7 @@ App_WorkbookBeforeSave_Err:
                                     cnn.ConnectionTimeout = CnnTimeout
                                     cnn.CommandTimeout = CmdTimeout
                                     cnn.CursorLocation = CursorLocationEnum.adUseClient
-                                    theHostApp.StatusBar = "Trying " & CnnTimeout & " sec. with connstring: " & .ConnString
+                                    hostApp.StatusBar = "Trying " & CnnTimeout & " sec. with connstring: " & .ConnString
                                     Err.Clear()
                                     cnn.Open(.ConnString)
 
@@ -228,9 +229,9 @@ App_WorkbookBeforeSave_Err:
 
                             ' Do the work !!
                             If cnn.State = 1 And Not allCalcContainers(callID).errOccured Or UCase$(Left$(.ConnString, 5)) = "ODBC;" Then    ' only try database functions for open connection  and no previous errors!!
-                                xlcalcmode = theHostApp.Calculation
-                                theHostApp.EnableEvents = False
-                                theHostApp.Cursor = XlMousePointer.xlWait  ' To show the hourglass
+                                xlcalcmode = hostApp.Calculation
+                                hostApp.EnableEvents = False
+                                hostApp.Cursor = XlMousePointer.xlWait  ' To show the hourglass
                                 Interrupted = False
 
                                 If InStr(1, UCase$(callerText), "DBLISTFETCH(") > 0 Then
@@ -242,11 +243,11 @@ App_WorkbookBeforeSave_Err:
                                 End If
 
                                 ' Clean up settings...
-                                theHostApp.Cursor = XlMousePointer.xlDefault  ' To return cursor to normal
-                                theHostApp.StatusBar = False
+                                hostApp.Cursor = XlMousePointer.xlDefault  ' To return cursor to normal
+                                hostApp.StatusBar = False
                                 'this is NOT done here, otherwise we have a problem with print preview !!
                                 'Instead, enable events at the end of the calling db function
-                                'theHostApp.EnableEvents = True
+                                'hostApp.EnableEvents = True
                             Else
                                 statusCont.statusMsg = "No open connection for DB function, reason: " & errorReason
                             End If
@@ -256,9 +257,9 @@ App_WorkbookBeforeSave_Err:
                             If Not origWS Is Nothing Then
                                 origWS.Select()
                                 origWS = Nothing
-                                theHostApp.ScreenUpdating = True
+                                hostApp.ScreenUpdating = True
                             End If
-                            theHostApp.Calculation = xlcalcmode
+                            hostApp.Calculation = xlcalcmode
 
                             ' in manual calculation no recalc of own results is done so we do this now:
                             If xlcalcmode = XlCalculation.xlCalculationManual Then calcCont.targetRange.Parent.Calculate
@@ -293,15 +294,15 @@ nextCalcCont:
         Dim TargetCell As Range
         Dim targetSH As Worksheet
         Dim targetWB As Workbook
-        Dim callID As String, Query As String, warning As String, errMsg As String, ConnString As String
+        Dim callID As String, Query As String, errMsg As String, ConnString As String
         Dim thePivotTable As PivotTable
         Dim theListObject As ListObject
 
-        theHostApp.Calculation = XlCalculation.xlCalculationManual
+        hostApp.Calculation = XlCalculation.xlCalculationManual
         ' this works around the data validation input bug
         ' when selecting a value from a list of validated field, excel won't react to
         ' Application.Calculation changes, so just leave here...
-        If theHostApp.Calculation <> XlCalculation.xlCalculationManual Then Exit Sub
+        If hostApp.Calculation <> XlCalculation.xlCalculationManual Then Exit Sub
 
         callID = calcCont.callID
         targetSH = calcCont.targetRange.Parent
@@ -309,7 +310,6 @@ nextCalcCont:
         TargetCell = calcCont.targetRange
         Query = calcCont.Query
         ConnString = calcCont.ConnString
-        warning = String.Empty
 
         On Error Resume Next
         thePivotTable = TargetCell.PivotTable
@@ -371,13 +371,14 @@ DBSetQueryParams_Error:
         Dim extendArea As Integer, headingsPresent As Boolean, ShowRowNumbers As Boolean
         Dim storedNames() As String
 
-        theHostApp.Calculation = XlCalculation.xlCalculationManual
+        hostApp.Calculation = XlCalculation.xlCalculationManual
         ' this works around the data validation input bug
         ' when selecting a value from a list of validated field, excel won't react to
         ' Application.Calculation changes, so just leave here...
-        If theHostApp.Calculation <> XlCalculation.xlCalculationManual Then Exit Sub
+        If hostApp.Calculation <> XlCalculation.xlCalculationManual Then Exit Sub
 
         callID = calcCont.callID
+        LogInfo("entering DBListQuery: callID:" + callID)
         formulaRange = calcCont.formulaRange
         targetSH = calcCont.targetRange.Parent
         targetCells = calcCont.targetRange
@@ -448,7 +449,7 @@ DBSetQueryParams_Error:
         End If
         Err.Clear()
 
-        theHostApp.StatusBar = "Retrieving data for DBList: " & IIf(targetRangeName.Length > 0, targetRangeName, targetSH.Name & "!" & targetCells.Address)
+        hostApp.StatusBar = "Retrieving data for DBList: " & IIf(targetRangeName.Length > 0, targetRangeName, targetSH.Name & "!" & targetCells.Address)
         tableRst = New ADODB.Recordset
         tableRst.Open(Query, cnn, CursorTypeEnum.adOpenForwardOnly, LockTypeEnum.adLockReadOnly, CommandTypeEnum.adCmdText)
         Dim dberr As String = String.Empty
@@ -472,7 +473,7 @@ DBSetQueryParams_Error:
         End If
 
         ' from now on we don't propagate any errors as data is modified in sheet....
-        theHostApp.StatusBar = "Displaying data for DBList: " & IIf(targetRangeName.Length > 0, targetRangeName, targetSH.Name & "!" & targetCells.Address)
+        hostApp.StatusBar = "Displaying data for DBList: " & IIf(targetRangeName.Length > 0, targetRangeName, targetSH.Name & "!" & targetCells.Address)
         If tableRst.EOF Then warning = "Warning: No Data returned in query: " & Query
         ' set size for named range (size: arrayRows, arrayCols) used for resizing the data area (old extent)
         arrayCols = tableRst.Fields.Count
@@ -514,7 +515,7 @@ DBSetQueryParams_Error:
 
         ' check if formulaRange and targetRange overlap !
         Dim possibleIntersection As Range = Nothing
-        possibleIntersection = theHostApp.Intersect(formulaRange, targetSH.Range(targetCells.Cells(1, 1), targetCells.Cells(1, 1).Offset(0, arrayCols - 1)))
+        possibleIntersection = hostApp.Intersect(formulaRange, targetSH.Range(targetCells.Cells(1, 1), targetCells.Cells(1, 1).Offset(0, arrayCols - 1)))
         Err.Clear()
         If Not possibleIntersection Is Nothing Then
             warning = warning & ", formulaRange and targetRange intersect (" & targetSH.Name & "!" & possibleIntersection.Address & "), formula copying disabled !!"
@@ -742,6 +743,7 @@ DBSetQueryParams_Error:
             errMsg = "Error in autofitting: " & Err.Description & " in query: " & Query
             GoTo err_0
         End If
+        LogInfo("leaving DBListQuery: callID:" + callID)
         Exit Sub
 
 err_2:
@@ -755,7 +757,7 @@ err_0:
             errMsg = Err.Description & " in query: " & Query
             severity = EventLogEntryType.Error
         End If
-        'Err.Clear ' this is important as otherwise the error propagates to App_SheetCalculate,
+        Err.Clear() ' this is important as otherwise the error propagates to App_SheetCalculate,
         ' which recalcs in case of errors there, leading to endless calc loops !!
         If severity = Nothing Then severity = EventLogEntryType.Warning
         WriteToLog("DBFuncEventHandler.DBListQuery Error: " & errMsg & ", caller: " & callID, severity)
@@ -778,11 +780,11 @@ err_0:
         Dim theCell As Range, targetSlice As Range, targetSlices As Range
         Dim targetSH As Worksheet
 
-        theHostApp.Calculation = XlCalculation.xlCalculationManual
+        hostApp.Calculation = XlCalculation.xlCalculationManual
         ' this works around the data validation input bug
         ' when selecting a value from a list of validated field, excel won't react to
         ' Application.Calculation changes, so just leave here...
-        If theHostApp.Calculation <> XlCalculation.xlCalculationManual Then Exit Sub
+        If hostApp.Calculation <> XlCalculation.xlCalculationManual Then Exit Sub
 
         Query = calcCont.Query
         targetCells = calcCont.targetArray
@@ -791,7 +793,7 @@ err_0:
         targetSH = targetCells(0).Parent
         statusCont.statusMsg = ""
         On Error GoTo err_1
-        theHostApp.StatusBar = "Retrieving data for DBRows: " & targetSH.Name & "!" & targetCells(0).Address
+        hostApp.StatusBar = "Retrieving data for DBRows: " & targetSH.Name & "!" & targetCells(0).Address
 
         Dim srcExtentConnect As String, targetExtent As String
         On Error Resume Next
@@ -870,7 +872,7 @@ err_0:
                         End If
                         If fieldIter = tableRst.Fields.Count - 1 Then
                             If headerFilled Then
-                                theHostApp.StatusBar = "Displaying data for DBRows: " & targetSH.Name & "!" & targetCells(0).Address & ", record " & tableRst.AbsolutePosition & "/" & returnedRows
+                                hostApp.StatusBar = "Displaying data for DBRows: " & targetSH.Name & "!" & targetCells(0).Address & ", record " & tableRst.AbsolutePosition & "/" & returnedRows
                                 tableRst.MoveNext()
                             Else
                                 headerFilled = True
@@ -882,7 +884,7 @@ err_0:
                 Next
             Next
             rangeIter += 1
-            If Not rangeIter > UBound(targetCells) Then refCollector = theHostApp.Union(refCollector, targetCells(rangeIter))
+            If Not rangeIter > UBound(targetCells) Then refCollector = hostApp.Union(refCollector, targetCells(rangeIter))
         Loop Until rangeIter > UBound(targetCells)
 
         ' delete the name to have a "clean" name area (otherwise visible = false setting wont work for dataTargetRange)

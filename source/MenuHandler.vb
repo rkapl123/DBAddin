@@ -10,7 +10,6 @@ Public Class MenuHandler
     ''' <summary>callback after Excel loaded the Ribbon, used to initialize data for the Ribbon</summary>
     Public Sub ribbonLoaded(theRibbon As ExcelDna.Integration.CustomUI.IRibbonUI)
         DBAddin.theRibbon = theRibbon
-        hostApp = ExcelDnaUtil.Application
     End Sub
 
     ''' <summary>creates the Ribbon (only at startup). any changes to the ribbon can only be done via dynamic menus</summary>
@@ -19,15 +18,16 @@ Public Class MenuHandler
             "<group id='DBAddinGroup' label='General settings'>" +
               "<dropDown id='envDropDown' label='Environment:' sizeString='12345678901234567890' getSelectedItemIndex='GetSelItem' getItemCount='GetItemCount' getItemID='GetItemID' getItemLabel='GetItemLabel' onAction='selectItem'/>" +
               "<dynamicMenu id='DBConfigs' size='normal' label='DB Configs' imageMso='Refresh' screentip='DB Function Configuration Files quick access' getContent='getDBConfigMenu'/>" +
-              "<dialogBoxLauncher><button id='dialog' label='About DBAddin' onAction='showAbout' tag='3' screentip='Show Aboutbox and refresh configs if wanted'/></dialogBoxLauncher></group>" +
+              "<dialogBoxLauncher><button id='dialog' label='About DBAddin' onAction='showAbout' tag='3' screentip='Show Aboutbox with help, version information and homepage'/></dialogBoxLauncher></group>" +
               "<group id='DBMapperGroup' label='Store DBMapper Data'>"
         ' max. 15 sheets with DBMapper definitions possible:
         For i As Integer = 0 To 14
             customUIXml = customUIXml + "<dynamicMenu id='ID" + i.ToString() + "' " +
                                             "size='large' getLabel='getSheetLabel' imageMso='SignatureLineInsert' " +
                                             "screentip='Select DBMapper range to store' " +
-                                            "getContent='getDynMenContent' getVisible='getDynMenVisible'/>"
+                                            "getContent='getDBMapperMenuContent' getVisible='getDBMapperMenuVisible'/>"
         Next
+        ' context menus for refresh, jump and creation: in cell, row, column and ListRange (in a ListObject area)
         customUIXml = customUIXml + "</group></tab></tabs></ribbon>" +
          "<contextMenus><contextMenu idMso='ContextMenuCell'>" +
          "<button id='refreshDataC' label='refresh data (Ctrl-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
@@ -131,7 +131,7 @@ Public Class MenuHandler
     End Function
 
     ''' <summary>create the buttons in the DBMapper sheet dropdown menu</summary>
-    Public Function getDynMenContent(control As IRibbonControl) As String
+    Public Function getDBMapperMenuContent(control As IRibbonControl) As String
         Dim xmlString As String = "<menu xmlns='http://schemas.microsoft.com/office/2009/07/customui'>"
 
         If Not DBMapperDefColl.ContainsKey(control.Id) Then Return ""
@@ -144,7 +144,7 @@ Public Class MenuHandler
     End Function
 
     ''' <summary>shows the DBMapper sheet button only if it was collected...</summary>
-    Public Function getDynMenVisible(control As IRibbonControl) As Boolean
+    Public Function getDBMapperMenuVisible(control As IRibbonControl) As Boolean
         Return DBMapperDefColl.ContainsKey(control.Id)
     End Function
 
@@ -166,11 +166,11 @@ Public Class MenuHandler
     ''' <summary>context menu entries below create...: create DB function or DB Mapper</summary>
     Public Sub clickCreateButton(control As IRibbonControl)
         If control.Tag = "DBListFetch" Then
-            createFunctionsInCells(theHostApp.ActiveCell, {"RC", "=DBListFetch("""","""",R[1]C,,,TRUE,TRUE,TRUE)"})
+            createFunctionsInCells(hostApp.ActiveCell, {"RC", "=DBListFetch("""","""",R[1]C,,,TRUE,TRUE,TRUE)"})
         ElseIf control.Tag = "DBRowFetch" Then
-            createFunctionsInCells(theHostApp.ActiveCell, {"RC", "=DBRowFetch("""","""",TRUE,R[1]C:R[1]C[10])"})
+            createFunctionsInCells(hostApp.ActiveCell, {"RC", "=DBRowFetch("""","""",TRUE,R[1]C:R[1]C[10])"})
         ElseIf control.Tag = "DBSetQuery" Then
-            createFunctionsInCells(theHostApp.ActiveCell, {"RC", "=DBSetQuery("""","""",R[1]C)"})
+            createFunctionsInCells(hostApp.ActiveCell, {"RC", "=DBSetQuery("""","""",R[1]C)"})
         ElseIf control.Tag = "DBMapper" Then
             createDBMapper()
         End If

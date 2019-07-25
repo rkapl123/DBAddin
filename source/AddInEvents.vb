@@ -16,7 +16,7 @@ Public Class AddInEvents
         ExcelRegistration.GetExcelFunctions().ProcessParamsRegistrations().RegisterFunctions()
         ExcelRegistration.GetExcelCommands().RegisterCommands()
         Application = ExcelDnaUtil.Application
-        theHostApp = ExcelDnaUtil.Application
+        hostApp = ExcelDnaUtil.Application
 
         Dim logfilename As String = "C:\\DBAddinlogs\\" + DateTime.Today.ToString("yyyyMMdd") + ".log"
         If Not Directory.Exists("C:\\DBAddinlogs") Then MkDir("C:\\DBAddinlogs")
@@ -36,7 +36,7 @@ Public Class AddInEvents
     Public Sub AutoClose() Implements IExcelAddIn.AutoClose
         On Error Resume Next
         theMenuHandler = Nothing
-        theHostApp = Nothing
+        hostApp = Nothing
         theDBFuncEventHandler = Nothing
     End Sub
 

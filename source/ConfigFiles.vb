@@ -12,7 +12,7 @@ Public Module ConfigFiles
 
         retval = MsgBox("Inserting contents configured in " & theFileName, vbInformation + vbOKCancel, "DBAddin: Inserting Configuration...")
         If retval = vbCancel Then Exit Sub
-        If theHostApp.ActiveWorkbook Is Nothing Then theHostApp.Workbooks.Add
+        If hostApp.ActiveWorkbook Is Nothing Then hostApp.Workbooks.Add
 
         ' open file for reading
         Try
@@ -20,7 +20,7 @@ Public Module ConfigFiles
             Do
                 ItemLine = fileReader.ReadLine()
                 ' now insert the parsed information
-                createFunctionsInCells(theHostApp.ActiveCell, Split(ItemLine, vbTab))
+                createFunctionsInCells(hostApp.ActiveCell, Split(ItemLine, vbTab))
             Loop Until fileReader.EndOfStream
             fileReader.Close()
         Catch ex As Exception
@@ -35,8 +35,8 @@ Public Module ConfigFiles
     Public Sub createFunctionsInCells(originCell As Excel.Range, ByRef ItemLineDef As Object)
         Dim cellToBeStoredAddress As String, cellToBeStoredContent As String
         ' disabling calculation is necessary to avoid object errors
-        Dim calcMode As Long = theHostApp.Calculation
-        theHostApp.Calculation = Excel.XlCalculation.xlCalculationManual
+        Dim calcMode As Long = hostApp.Calculation
+        hostApp.Calculation = Excel.XlCalculation.xlCalculationManual
         Dim i As Long
 
         ' for each defined cell address and content pair
@@ -50,9 +50,9 @@ Public Module ConfigFiles
                 If InStr(1, cellToBeStoredAddress, "!") > 0 Then
                     Dim theSheetName As String = Replace(Mid$(cellToBeStoredAddress, 1, InStr(1, cellToBeStoredAddress, "!") - 1), "'", String.Empty)
                     Try
-                        Dim testSheetExist As String = theHostApp.Worksheets(theSheetName).name
+                        Dim testSheetExist As String = hostApp.Worksheets(theSheetName).name
                     Catch ex As Exception
-                        With theHostApp.Worksheets.Add(After:=originCell.Parent)
+                        With hostApp.Worksheets.Add(After:=originCell.Parent)
                             .name = theSheetName
                         End With
                         originCell.Parent.Activate()
@@ -77,7 +77,7 @@ Public Module ConfigFiles
                 End Try
             End If
         Next
-        theHostApp.Calculation = calcMode
+        hostApp.Calculation = calcMode
     End Sub
 
     ''' <summary>gets target range in relation to origin range</summary>
@@ -123,12 +123,12 @@ Public Module ConfigFiles
            And originCell.Column + startCol > 0 And originCell.Column + startCol <= originCell.Parent.Columns.Count Then
             If InStr(1, relAddress, ":") > 0 Then
                 ' for multi cell relative ranges, final target offset is starting at the bottom right of relative range
-                theTargetRange = theHostApp.Range(originCell, originCell.Offset(endRow - startRow, endCol - startCol))
+                theTargetRange = hostApp.Range(originCell, originCell.Offset(endRow - startRow, endCol - startCol))
             Else
                 ' for single cell relative ranges, target range is just set to the offsetting row and column of the relative range.
                 theTargetRange = originCell
             End If
-            theTargetRange = theHostApp.Worksheets(theSheetName).Range(theTargetRange.Offset(startRow, startCol).Address)
+            theTargetRange = hostApp.Worksheets(theSheetName).Range(theTargetRange.Offset(startRow, startCol).Address)
             getRangeFromRelative = True
         Else
             theTargetRange = Nothing

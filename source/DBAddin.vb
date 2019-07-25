@@ -5,26 +5,21 @@ Imports System.IO ' needed for logfile
 
 ''' <summary>Global variables and functions for DB Addin</summary>
 Public Module DBAddin
-    ''' <summary>currently selected environment for DB Functions</summary>
-    Public selectedEnvironment As Integer
-    ''' <summary>reference object for the Addins ribbon</summary>
-    Public theRibbon As ExcelDna.Integration.CustomUI.IRibbonUI
-    ''' <summary>Application object used for referencing objects</summary>
-    Public hostApp As Object
-    ''' <summary>environment definitions</summary>
-    Public environdefs As String() = {}
-    ''' <summary>DBMapper definition collections (for labels (key of nested dictionary) and target ranges (value of nested dictionary))</summary>
-    Public DBMapperDefColl As Dictionary(Of String, Dictionary(Of String, Range))
     ' general Global objects/variables
-    ''' <summary>Application object used for referencing objects</summary>
-    Public theHostApp As Object
     ''' <summary>ribbon menu handler</summary>
     Public theMenuHandler As MenuHandler
     ''' <summary>for interrupting long running operations with Ctl-Break</summary>
     Public Interrupted As Boolean
-
-    ''' <summary>the environment (for Mapper special cases "Test", "Development" or String.Empty (prod))</summary>
-    Public env As String
+    ''' <summary>currently selected environment for DB Functions</summary>
+    Public selectedEnvironment As Integer
+    ''' <summary>reference object for the Addins ribbon</summary>
+    Public theRibbon As ExcelDna.Integration.CustomUI.IRibbonUI
+    ''' <summary>Excel Application object used for referencing objects</summary>
+    Public hostApp As Application
+    ''' <summary>environment definitions</summary>
+    Public environdefs As String() = {}
+    ''' <summary>DBMapper definition collections (for labels (key of nested dictionary) and target ranges (value of nested dictionary))</summary>
+    Public DBMapperDefColl As Dictionary(Of String, Dictionary(Of String, Range))
 
     ' Global settings
     Public DebugAddin As Boolean
@@ -65,20 +60,20 @@ Public Module DBAddin
     ''' <param name="Key"></param>
     ''' <param name="defaultValue"></param>
     ''' <returns>the setting value</returns>
-    Public Function fetchSetting(Key As String, defaultValue As Object) As Object
+    Public Function fetchSetting(Key As String, defaultValue As String) As String
         fetchSetting = GetSetting("DBAddin", "Settings", Key, defaultValue)
     End Function
 
     ''' <summary>encapsulates setting storing (currently registry)</summary>
     ''' <param name="Key"></param>
     ''' <param name="Value"></param>
-    Public Sub storeSetting(Key As String, Value As Object)
+    Public Sub storeSetting(Key As String, Value As String)
         SaveSetting("DBAddin", "Settings", Key, Value)
     End Sub
 
     ''' <summary>initializes global configuration variables from registry</summary>
     Public Sub initSettings()
-        DebugAddin = fetchSetting("DebugAddin", False)
+        DebugAddin = CBool(fetchSetting("DebugAddin", "False"))
         ConstConnString = fetchSetting("ConstConnString", String.Empty)
         CnnTimeout = CInt(fetchSetting("CnnTimeout", "15"))
         CmdTimeout = CInt(fetchSetting("CmdTimeout", "60"))
@@ -140,7 +135,7 @@ Public Module DBAddin
         Dim retval As Integer
 
         WriteToLog(LogMessage, EventLogEntryType.Warning)
-        If includeMsg Then retval = MsgBox(LogMessage, vbCritical + IIf(exitMe, vbOKCancel, vbOKOnly), "DBAddin Warning")
+        If includeMsg Then retval = MsgBox(LogMessage, vbExclamation + IIf(exitMe, vbOKCancel, vbOKOnly), "DBAddin Warning")
         If retval = vbCancel Then
             exitMe = True
         Else

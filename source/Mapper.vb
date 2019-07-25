@@ -3,11 +3,9 @@ Imports Microsoft.Office.Interop.Excel
 
 ''' <summary>Contains Mapper function saveRangeToDB for storing/updating tabular excel data and some helper functions</summary>
 Public Module Mapper
+
     ''' <summary>main db connection For mapper</summary>
     Public dbcnn As ADODB.Connection
-    ''' <summary>should the Mapper instance be used interactively, thus giving error messages to the user
-    ''' or used in automation mode (invoked by VBA, needs to be explicitly set), collecting error messages for later retrieval</summary>
-    Public isInteractive As Boolean
 
     ''' <summary>dump data given in dataRange to a database table specified by tableName and connID
     ''' this database table can have multiple primary columns specified by primKeysStr
@@ -117,7 +115,7 @@ Public Module Mapper
                     GoTo nextRow
                 End If
             Next
-            theHostApp.StatusBar = "Inserting/Updating data, " & primKeyCompound & " in table " & tableName
+            hostApp.StatusBar = "Inserting/Updating data, " & primKeyCompound & " in table " & tableName
 
             Try
                 rst.Open("SELECT * FROM " & tableName & primKeyCompound, dbcnn, CursorTypeEnum.adOpenDynamic, LockTypeEnum.adLockOptimistic)
@@ -191,43 +189,25 @@ nextRow:
         End If
 cleanup:
         dbcnn = Nothing
-        theHostApp.StatusBar = False
+        hostApp.StatusBar = False
     End Sub
-
-
-    ''' <summary>check whether key with name "tblName" is contained in collection tblColl</summary>
-    ''' <param name="tblName">key to be found</param>
-    ''' <param name="tblColl">collection to be checked</param>
-    ''' <returns>if name was found in collection</returns>
-    Private Function existsInCollection(tblName As String, tblColl As Collection) As Boolean
-        Dim dummy As Integer
-
-        On Error GoTo err1
-        existsInCollection = True
-        dummy = tblColl(tblName)
-        Exit Function
-err1:
-        Err.Clear()
-        existsInCollection = False
-    End Function
 
     ''' <summary>formats theVal to fit the type of column theHead having data type dataType</summary>
     ''' <param name="theVal"></param>
     ''' <param name="dataType"></param>
     ''' <returns>the formatted value</returns>
     Private Function dbFormatType(ByVal theVal As Object, dataType As CheckTypeFld) As String
-        ' build where clause criteria..
-        If dataType = CheckTypeFld.checkIsNumericFld Then
+
+        If dataType = CheckTypeFld.checkIsNumericFld Then ' only decimal points allowed in numeric data
             dbFormatType = Replace(CStr(theVal), ",", ".")
         ElseIf dataType = CheckTypeFld.checkIsDateFld Then
-            dbFormatType = "'" & Format$(theVal, "YYYYMMDD") & "'"
+            dbFormatType = "'" & Format$(theVal, "YYYYMMDD") & "'" ' standard SQL Date formatting
         ElseIf dataType = CheckTypeFld.checkIsTimeFld Then
-            dbFormatType = "'" & Format$(theVal, "YYYYMMDD HH:MM:SS") & "'"
+            dbFormatType = "'" & Format$(theVal, "YYYYMMDD HH:MM:SS") & "'" ' standard SQL Date/time formatting
         ElseIf TypeName(theVal) = "Boolean" Then
             dbFormatType = IIf(theVal, 1, 0)
-        ElseIf dataType = CheckTypeFld.checkIsStringFld Then
-            ' quote strings
-            theVal = Replace(theVal, "'", "''")
+        ElseIf dataType = CheckTypeFld.checkIsStringFld Then ' quote Strings
+            theVal = Replace(theVal, "'", "''") ' quote quotes inside Strings
             dbFormatType = "'" & theVal & "'"
         Else
             LogError("Error: unknown data type '" & dataType & "' given in Mapper.dbFormatType !!")
@@ -254,7 +234,7 @@ err1:
         End If
         dbcnn = New Connection
         theConnString = Change(theConnString, dbidentifier, database, ";")
-        theHostApp.StatusBar = "Trying " & DBAddin.CnnTimeout & " sec. with connstring: " & theConnString
+        hostApp.StatusBar = "Trying " & DBAddin.CnnTimeout & " sec. with connstring: " & theConnString
         Try
             dbcnn.ConnectionString = theConnString
             dbcnn.ConnectionTimeout = DBAddin.CnnTimeout
@@ -266,7 +246,7 @@ err1:
             If dbcnn.State = ADODB.ObjectStateEnum.adStateOpen Then dbcnn.Close()
             dbcnn = Nothing
         End Try
-        theHostApp.StatusBar = String.Empty
+        hostApp.StatusBar = String.Empty
         openConnection = True
     End Function
 
@@ -367,13 +347,13 @@ err1:
         Dim theDBMapperCreateDlg As DBMapperCreate = Nothing
         Dim activeCellName As String = ""
         ' try regular defined name
-        Try : activeCellName = theHostApp.Selection.Name.Name : Catch ex As Exception : End Try
+        Try : activeCellName = hostApp.Selection.Name.Name : Catch ex As Exception : End Try
         ' try potential name to ListObject (parts), only possible if manually defined !
-        If activeCellName = "" And Not IsNothing(theHostApp.Selection.ListObject) Then
-            For Each listObjectCol In theHostApp.Selection.ListObject.ListColumns
+        If activeCellName = "" And Not IsNothing(hostApp.Selection.ListObject) Then
+            For Each listObjectCol In hostApp.Selection.ListObject.ListColumns
                 Dim aName As Name
-                For Each aName In theHostApp.ActiveWorkbook.Names
-                    If aName.RefersTo = "=" & theHostApp.Selection.ListObject.Name & "[[#Headers],[" & theHostApp.Selection.Value & "]]" Then
+                For Each aName In hostApp.ActiveWorkbook.Names
+                    If aName.RefersTo = "=" & hostApp.Selection.ListObject.Name & "[[#Headers],[" & hostApp.Selection.Value & "]]" Then
                         activeCellName = aName.Name
                         Exit For
                     End If
@@ -381,7 +361,7 @@ err1:
                 If activeCellName <> "" Then Exit For
             Next
         End If
-        If Not IsNothing(theHostApp.ActiveCell.Comment) Then
+        If Not IsNothing(hostApp.ActiveCell.Comment) Then
             ' fetch parameters if existing comment and DBMapper definition...
             Dim tableName As String = ""                         ' Database Table, where Data is to be stored
             Dim primKeysStr As String = ""                       ' String containing primary Key names for updating table data, comma separated
@@ -392,7 +372,7 @@ err1:
             Dim ignoreColumns As String = ""                     ' columns to be ignored (helper columns)
             Dim storeDBMapOnSave As Boolean = False              ' should DBMap be saved on Excel Saving? (default no)
 
-            If Not getParametersFromText(theHostApp.ActiveCell.Comment.Text, env, tableName, primKeysStr, database, insertIfMissing, executeAdditionalProc, ignoreColumns, storeDBMapOnSave) Then Exit Sub
+            If Not getParametersFromText(hostApp.ActiveCell.Comment.Text, env, tableName, primKeysStr, database, insertIfMissing, executeAdditionalProc, ignoreColumns, storeDBMapOnSave) Then Exit Sub
             theDBMapperCreateDlg = New DBMapperCreate()
             If InStr(1, activeCellName, "DBMapper") > 0 Then theDBMapperCreateDlg.DBMapperName.Text = Replace(activeCellName, "DBMapper", "")
             theDBMapperCreateDlg.envSel.DataSource = environdefs
@@ -416,15 +396,15 @@ err1:
         If theDBMapperCreateDlg.ShowDialog() = System.Windows.Forms.DialogResult.Cancel Then Exit Sub
         ' set name
         If InStr(1, activeCellName, "DBMapper") > 0 Then   ' fetch parameters if existing comment and DBMapper definition...
-            Try : theHostApp.ActiveWorkbook.Names(activeCellName).Delete
+            Try : hostApp.ActiveWorkbook.Names(activeCellName).Delete
             Catch ex As Exception : LogError("Error when removing name '" + activeCellName + "' from active cell: " & ex.Message)
             End Try
         End If
-        Try : theHostApp.ActiveCell.Name = "DBMapper" + theDBMapperCreateDlg.DBMapperName.Text
+        Try : hostApp.ActiveCell.Name = "DBMapper" + theDBMapperCreateDlg.DBMapperName.Text
         Catch ex As Exception : LogError("Error when assigning name 'DBMapper" + theDBMapperCreateDlg.DBMapperName.Text + "' to active cell: " & ex.Message)
         End Try
         ' set parameters in comment text
-        Try : theHostApp.ActiveCell.ClearComments : Catch ex As Exception : End Try
+        Try : hostApp.ActiveCell.ClearComments() : Catch ex As Exception : End Try
         Dim paramText As String = "saveRangeToDB(" +
             IIf(theDBMapperCreateDlg.envSel.SelectedIndex = -1, "", theDBMapperCreateDlg.envSel.SelectedIndex.ToString()) + ",""" +
             theDBMapperCreateDlg.Tablename.Text + """,""" +
@@ -435,9 +415,9 @@ err1:
             IIf(Len(theDBMapperCreateDlg.IgnoreColumns.Text) = 0, "", theDBMapperCreateDlg.IgnoreColumns.Text) + """," +
             theDBMapperCreateDlg.storeDBMapOnSave.Checked.ToString() + ")"
         Try
-            theHostApp.ActiveCell.AddComment
-            theHostApp.ActiveCell.Comment.Text(Text:=paramText)
-            theHostApp.ActiveCell.Comment.Shape.TextFrame.Characters.Font.Bold = False
+            hostApp.ActiveCell.AddComment()
+            hostApp.ActiveCell.Comment.Text(Text:=paramText)
+            hostApp.ActiveCell.Comment.Shape.TextFrame.Characters.Font.Bold = False
         Catch ex As Exception : LogError("Error when adding comments with DBMapper parameters to active cell: " & ex.Message) : End Try
         ' refresh mapper definitions to reflect changes immediately...
         getDBMapperDefinitions()
