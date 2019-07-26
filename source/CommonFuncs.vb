@@ -17,25 +17,23 @@ Public Module CommonFuncs
         Dim tempString As String
         Dim finalResult
 
-        On Error GoTo err1
-        ' skip until we found startStr
-        tempString = Mid$(theString, InStr(1, UCase$(theString), UCase$(startStr)) + Len(startStr))
-        ' rip out the balancing string now...
-        tempString = balancedString(tempString, openBracket, closeBracket, quote)
-        If tempString.Length = 0 Then GoTo err0
-        tempString = replaceDelimsWithSpecialSep(tempString, delimiter, quote, openBracket, closeBracket, vbTab)
-        finalResult = Split(tempString, vbTab)
-
-        functionSplit = finalResult
-        Exit Function
-err0:
-        LogError("couldn't produce balanced string from " & theString)
-        functionSplit = Nothing
-        Exit Function
-err1:
-        Dim errDesc As String = Err.Description
-        WriteToLog("Error: " & errDesc & " in CommonFuncs.functionSplit in " & Erl(), EventLogEntryType.Error)
-        functionSplit = Nothing
+        Try
+            ' skip until we found startStr
+            tempString = Mid$(theString, InStr(1, UCase$(theString), UCase$(startStr)) + Len(startStr))
+            ' rip out the balancing string now...
+            tempString = balancedString(tempString, openBracket, closeBracket, quote)
+            If tempString.Length = 0 Then
+                LogError("couldn't produce balanced string from " & theString)
+                functionSplit = Nothing
+                Exit Function
+            End If
+            tempString = replaceDelimsWithSpecialSep(tempString, delimiter, quote, openBracket, closeBracket, vbTab)
+            finalResult = Split(tempString, vbTab)
+            functionSplit = finalResult
+        Catch ex As Exception
+            WriteToLog("Error: " & ex.Message & " in CommonFuncs.functionSplit", EventLogEntryType.Warning)
+            functionSplit = Nothing
+        End Try
     End Function
 
     ''' <summary>returns the minimal bracket balancing string contained in theString, opening bracket defined in openBracket, closing bracket defined in closeBracket
@@ -47,38 +45,36 @@ err1:
     ''' <returns>the balanced string</returns>
     Public Function balancedString(theString As String, openBracket As String, closeBracket As String, Optional quote As String = "") As String
         Dim startBalance As Long, endBalance As Long, i As Long, countOpen As Long, countClose As Long
-
+        balancedString = String.Empty
         Dim quoteMode As Boolean = False
-        On Error GoTo err1
-        startBalance = 0
-        For i = 1 To Len(theString)
-            If Left$(Mid$(theString, i), Len(quote)) = quote And quote.Length > 0 And Not quoteMode Then
-                quoteMode = True
-            Else
-                If Not quoteMode Then
-                    If Left$(Mid$(theString, i), Len(openBracket)) = openBracket Then
-                        If startBalance = 0 Then startBalance = i
-                        countOpen = countOpen + 1
-                    End If
-                    If startBalance <> 0 And Left$(Mid$(theString, i), Len(closeBracket)) = closeBracket Then countClose = countClose + 1
+        Try
+            startBalance = 0
+            For i = 1 To Len(theString)
+                If Left$(Mid$(theString, i), Len(quote)) = quote And quote.Length > 0 And Not quoteMode Then
+                    quoteMode = True
                 Else
-                    If Left$(Mid$(theString, i), Len(quote)) = quote And quote.Length > 0 Then quoteMode = False
+                    If Not quoteMode Then
+                        If Left$(Mid$(theString, i), Len(openBracket)) = openBracket Then
+                            If startBalance = 0 Then startBalance = i
+                            countOpen += 1
+                        End If
+                        If startBalance <> 0 And Left$(Mid$(theString, i), Len(closeBracket)) = closeBracket Then countClose += 1
+                    Else
+                        If Left$(Mid$(theString, i), Len(quote)) = quote And quote.Length > 0 Then quoteMode = False
+                    End If
                 End If
-            End If
 
-            If countOpen = countClose And startBalance <> 0 Then
-                endBalance = i - 1
-                Exit For
+                If countOpen = countClose And startBalance <> 0 Then
+                    endBalance = i - 1
+                    Exit For
+                End If
+            Next
+            If endBalance <> 0 Then
+                balancedString = Mid$(theString, startBalance + 1, endBalance - startBalance)
             End If
-        Next
-        If endBalance = 0 Then
-            balancedString = String.Empty
-        Else
-            balancedString = Mid$(theString, startBalance + 1, endBalance - startBalance)
-        End If
-        Exit Function
-err1:
-        WriteToLog("Error: " & Err.Description & " in CommonFuncs.balancedString in " & Erl(), EventLogEntryType.Error)
+        Catch ex As Exception
+            WriteToLog("Error: " & ex.Message & " in CommonFuncs.balancedString in ", EventLogEntryType.Warning)
+        End Try
     End Function
 
     ''' <summary>replaces the delimiter (delimiter) inside theString with specialSep, regarding both quoted areas inside quote and bracketed areas (inside openBracket/closeBracket)</summary>
@@ -91,37 +87,36 @@ err1:
     ''' <returns>replaced string</returns>
     Private Function replaceDelimsWithSpecialSep(theString As String, delimiter As String, quote As String, openBracket As String, closeBracket As String, specialSep As String) As String
         Dim openedBrackets As Long, quoteMode As Boolean
-        replaceDelimsWithSpecialSep = String.Empty
-
         Dim i As Long
-        On Error GoTo err1
-        For i = 1 To Len(theString)
-            If Left$(Mid$(theString, i), Len(quote)) = quote And quote.Length > 0 And Not quoteMode Then
-                quoteMode = True
-            Else
-                If quoteMode And Left$(Mid$(theString, i), Len(quote)) = quote And quote.Length > 0 Then quoteMode = False
-            End If
-
-            If Left$(Mid$(theString, i), Len(openBracket)) = openBracket And openBracket.Length > 0 And Not quoteMode Then
-                openedBrackets = openedBrackets + 1
-            End If
-            If Left$(Mid$(theString, i), Len(closeBracket)) = closeBracket And closeBracket.Length > 0 And Not quoteMode Then
-                openedBrackets = openedBrackets - 1
-            End If
-
-            If Not (openedBrackets > 0 Or quoteMode) Then
-                If Left$(Mid$(theString, i), Len(delimiter)) = delimiter Then
-                    replaceDelimsWithSpecialSep = replaceDelimsWithSpecialSep & specialSep
+        replaceDelimsWithSpecialSep = String.Empty
+        Try
+            For i = 1 To Len(theString)
+                If Left$(Mid$(theString, i), Len(quote)) = quote And quote.Length > 0 And Not quoteMode Then
+                    quoteMode = True
                 Else
-                    replaceDelimsWithSpecialSep = replaceDelimsWithSpecialSep & Mid$(theString, i, 1)
+                    If quoteMode And Left$(Mid$(theString, i), Len(quote)) = quote And quote.Length > 0 Then quoteMode = False
                 End If
-            Else
-                replaceDelimsWithSpecialSep = replaceDelimsWithSpecialSep & Mid$(theString, i, 1)
-            End If
-        Next
-        Exit Function
-err1:
-        WriteToLog("Error: " & Err.Description & " in CommonFuncs.replaceDelimsWithSpecialSep in " & Erl(), EventLogEntryType.Error)
+
+                If Left$(Mid$(theString, i), Len(openBracket)) = openBracket And openBracket.Length > 0 And Not quoteMode Then
+                    openedBrackets += 1
+                End If
+                If Left$(Mid$(theString, i), Len(closeBracket)) = closeBracket And closeBracket.Length > 0 And Not quoteMode Then
+                    openedBrackets -= 1
+                End If
+
+                If Not (openedBrackets > 0 Or quoteMode) Then
+                    If Left$(Mid$(theString, i), Len(delimiter)) = delimiter Then
+                        replaceDelimsWithSpecialSep &= specialSep
+                    Else
+                        replaceDelimsWithSpecialSep &= Mid$(theString, i, 1)
+                    End If
+                Else
+                    replaceDelimsWithSpecialSep &= Mid$(theString, i, 1)
+                End If
+            Next
+        Catch ex As Exception
+            WriteToLog("Error: " & ex.Message & " in CommonFuncs.replaceDelimsWithSpecialSep", EventLogEntryType.Warning)
+        End Try
     End Function
 
     ''' <summary>changes theString by replacing substring starting after keystr and ending with separator with changed, case insensitive !!</summary>
@@ -131,7 +126,7 @@ err1:
     ''' <param name="separator"></param>
     ''' <returns>the changed string</returns>
     Public Function Change(ByVal theString As String, ByVal keystr As String, ByVal changed As String, ByVal separator As String) As String
-        Dim replaceBeg As Integer, replaceEnd As Integer
+        Dim replaceBeg, replaceEnd As Integer
 
         replaceBeg = InStr(1, UCase$(theString), UCase$(keystr))
         If replaceBeg = 0 Then
@@ -162,23 +157,21 @@ err1:
     ''' <param name="theName"></param>
     ''' <returns>True if sheet exists</returns>
     Public Function existsSheet(ByRef theName As String) As Boolean
-        Dim dummy As String
-
         existsSheet = True
-        On Error Resume Next
-        Err.Clear()
-        dummy = hostApp.Worksheets(theName).name
-        If Err.Number <> 0 Then existsSheet = False
+        Try
+            Dim dummy As String = hostApp.Worksheets(theName).name
+        Catch ex As Exception
+            existsSheet = False
+        End Try
     End Function
 
     ''' <summary>checks whether ADO type theType is a date or time type</summary>
     ''' <param name="theType"></param>
     ''' <returns>True if DateTime</returns>
     Public Function checkIsDateTime(theType As ADODB.DataTypeEnum) As Boolean
+        checkIsDateTime = False
         If theType = ADODB.DataTypeEnum.adDate Or theType = ADODB.DataTypeEnum.adDBDate Or theType = ADODB.DataTypeEnum.adDBTime Or theType = ADODB.DataTypeEnum.adDBTimeStamp Then
             checkIsDateTime = True
-        Else
-            checkIsDateTime = False
         End If
     End Function
 
@@ -186,10 +179,9 @@ err1:
     ''' <param name="theType"></param>
     ''' <returns>True if Date</returns>
     Public Function checkIsDate(theType As ADODB.DataTypeEnum) As Boolean
+        checkIsDate = False
         If theType = ADODB.DataTypeEnum.adDate Or theType = ADODB.DataTypeEnum.adDBDate Then
             checkIsDate = True
-        Else
-            checkIsDate = False
         End If
     End Function
 
@@ -197,10 +189,9 @@ err1:
     ''' <param name="theType"></param>
     ''' <returns>True if Time</returns>
     Public Function checkIsTime(theType As ADODB.DataTypeEnum) As Boolean
+        checkIsTime = False
         If theType = ADODB.DataTypeEnum.adDBTime Or theType = ADODB.DataTypeEnum.adDBTimeStamp Then
             checkIsTime = True
-        Else
-            checkIsTime = False
         End If
     End Function
 
@@ -208,10 +199,9 @@ err1:
     ''' <param name="theType"></param>
     ''' <returns>True if numeric</returns>
     Public Function checkIsNumeric(theType As ADODB.DataTypeEnum) As Boolean
+        checkIsNumeric = False
         If theType = ADODB.DataTypeEnum.adNumeric Or theType = ADODB.DataTypeEnum.adInteger Or theType = ADODB.DataTypeEnum.adTinyInt Or theType = ADODB.DataTypeEnum.adSmallInt Or theType = ADODB.DataTypeEnum.adBigInt Or theType = ADODB.DataTypeEnum.adUnsignedInt Or theType = ADODB.DataTypeEnum.adUnsignedTinyInt Or theType = ADODB.DataTypeEnum.adUnsignedSmallInt Or theType = ADODB.DataTypeEnum.adDouble Or theType = ADODB.DataTypeEnum.adSingle Or theType = ADODB.DataTypeEnum.adCurrency Or theType = ADODB.DataTypeEnum.adUnsignedBigInt Then
             checkIsNumeric = True
-        Else
-            checkIsNumeric = False
         End If
     End Function
 
@@ -222,28 +212,23 @@ err1:
         Dim nm As Name
         Dim rng As Range
         Dim testRng As Range
-
-        On Error GoTo err1
-        For Each nm In theRange.Parent.Parent.Names
-            rng = Nothing
-            On Error Resume Next
-            rng = nm.RefersToRange
-            On Error GoTo err1
-            If Not rng Is Nothing And Not (nm.Name Like "*ExterneDaten*" Or nm.Name Like "*_FilterDatabase") Then
-                On Error Resume Next
-                testRng = hostApp.Intersect(theRange, rng)
-                If Err.Number = 0 And Not testRng Is Nothing And (InStr(1, nm.Name, "DBFtarget") >= 1 Or InStr(1, nm.Name, "DBFsource") >= 1) Then
-                    getDBRangeName = nm
-                    Err.Clear()
-                    Exit Function
-                End If
-                On Error GoTo err1
-            End If
-        Next
         getDBRangeName = Nothing
-        Exit Function
-err1:
-        WriteToLog("Error: " & Err.Description & " in CommonFuncs.getRangeName in " & Erl(), EventLogEntryType.Error)
+        Try
+            For Each nm In theRange.Parent.Parent.Names
+                rng = Nothing
+                Try : rng = nm.RefersToRange : Catch ex As Exception : End Try
+                If Not rng Is Nothing And Not (nm.Name Like "*ExterneDaten*" Or nm.Name Like "*_FilterDatabase") Then
+                    testRng = Nothing
+                    Try : testRng = hostApp.Intersect(theRange, rng) : Catch ex As Exception : End Try
+                    If Not IsNothing(testRng) And (InStr(1, nm.Name, "DBFtarget") >= 1 Or InStr(1, nm.Name, "DBFsource") >= 1) Then
+                        getDBRangeName = nm
+                        Exit Function
+                    End If
+                End If
+            Next
+        Catch ex As Exception
+            WriteToLog("Error: " & Err.Description & " in CommonFuncs.getRangeName", EventLogEntryType.Warning)
+        End Try
     End Function
 
     ''' <summary>only recalc full if we have DBFuncs in the workbook somewhere</summary>
@@ -259,33 +244,31 @@ err1:
             WriteToLog("refreshDBFunctions: hostApp.Calculation = Error, " & Wb.Path & "\" & Wb.Name, EventLogEntryType.Information)
             Exit Sub
         End If
-
-        On Error GoTo err_1
-        needRecalc = False
-        For Each ws In Wb.Worksheets
-            For Each theFunc In {"DBListFetch(", "DBRowFetch(", "DBSetQuery("}
-                searchCells = ws.Cells.Find(What:=theFunc, After:=ws.Range("A1"), LookIn:=XlFindLookIn.xlFormulas, LookAt:=XlLookAt.xlPart, SearchOrder:=XlSearchOrder.xlByRows, SearchDirection:=XlSearchDirection.xlNext, MatchCase:=False)
-                If Not (searchCells Is Nothing) Then
-                    ' reset the cell find dialog....
-                    searchCells = Nothing
-                    searchCells = ws.Cells.Find(What:="", After:=ws.Range("A1"), LookIn:=XlFindLookIn.xlFormulas, LookAt:=XlLookAt.xlPart, SearchOrder:=XlSearchOrder.xlByRows, SearchDirection:=XlSearchDirection.xlNext, MatchCase:=False)
-                    needRecalc = True
-                    GoTo done
-                End If
+        Try
+            needRecalc = False
+            For Each ws In Wb.Worksheets
+                For Each theFunc In {"DBListFetch(", "DBRowFetch(", "DBSetQuery("}
+                    searchCells = ws.Cells.Find(What:=theFunc, After:=ws.Range("A1"), LookIn:=XlFindLookIn.xlFormulas, LookAt:=XlLookAt.xlPart, SearchOrder:=XlSearchOrder.xlByRows, SearchDirection:=XlSearchDirection.xlNext, MatchCase:=False)
+                    If Not (searchCells Is Nothing) Then
+                        ' reset the cell find dialog....
+                        searchCells = Nothing
+                        searchCells = ws.Cells.Find(What:="", After:=ws.Range("A1"), LookIn:=XlFindLookIn.xlFormulas, LookAt:=XlLookAt.xlPart, SearchOrder:=XlSearchOrder.xlByRows, SearchDirection:=XlSearchDirection.xlNext, MatchCase:=False)
+                        needRecalc = True
+                        GoTo done
+                    End If
+                Next
+                ' reset the cell find dialog....
+                searchCells = Nothing
+                searchCells = ws.Cells.Find(What:="", After:=ws.Range("A1"), LookIn:=XlFindLookIn.xlFormulas, LookAt:=XlLookAt.xlPart, SearchOrder:=XlSearchOrder.xlByRows, SearchDirection:=XlSearchDirection.xlNext, MatchCase:=False)
             Next
-            ' reset the cell find dialog....
-            searchCells = Nothing
-            searchCells = ws.Cells.Find(What:="", After:=ws.Range("A1"), LookIn:=XlFindLookIn.xlFormulas, LookAt:=XlLookAt.xlPart, SearchOrder:=XlSearchOrder.xlByRows, SearchDirection:=XlSearchDirection.xlNext, MatchCase:=False)
-        Next
-
 done:
-        If needRecalc And (hostApp.Calculation <> XlCalculation.xlCalculationManual Or ignoreCalcMode) Then
-            WriteToLog("refreshDBFunctions: hostApp.CalculateFull called" & Wb.Path & "\" & Wb.Name, EventLogEntryType.Information)
-            hostApp.CalculateFull
-        End If
-        Exit Sub
-err_1:
-        WriteToLog("Error: " & Err.Description & " in CommonFuncs.refreshDBFunctions in " & Erl() & ", " & Wb.Path & "\" & Wb.Name, EventLogEntryType.Error)
+            If needRecalc And (hostApp.Calculation <> XlCalculation.xlCalculationManual Or ignoreCalcMode) Then
+                WriteToLog("refreshDBFunctions: hostApp.CalculateFull called" & Wb.Path & "\" & Wb.Name, EventLogEntryType.Information)
+                hostApp.CalculateFull()
+            End If
+        Catch ex As Exception
+            WriteToLog("Error: " & ex.Message & " in CommonFuncs.refreshDBFunctions," & Wb.Path & "\" & Wb.Name, EventLogEntryType.Warning)
+        End Try
     End Sub
 
     ''' <summary>check whether key with name "tblName" is contained in collection tblColl</summary>
@@ -293,43 +276,77 @@ err_1:
     ''' <param name="tblColl">collection to be checked</param>
     ''' <returns>if name was found in collection</returns>
     Public Function existsInCollection(tblName As String, tblColl As Collection) As Boolean
-        Dim dummy As Integer
-
-        On Error GoTo err1
         existsInCollection = True
-        dummy = tblColl(tblName)
-        Exit Function
-err1:
-        Err.Clear()
-        existsInCollection = False
+        Try
+            Dim dummy As Integer = tblColl(tblName)
+        Catch ex As Exception
+            existsInCollection = False
+        End Try
     End Function
 
     ''' <summary>"repairs" legacy functions from old VB6-COM Addin by removing "DBAddin.Functions." before function name</summary>
     Public Sub repairLegacyFunctions()
-
         Dim searchCell As Range
         Dim foundLegacy As Boolean
-        Dim xlcalcmode As Long = hostApp.Calculation
-        For Each ws In hostApp.ActiveWorkbook.Worksheets
-            ' check whether legacy functions exist somewhere ...
-            searchCell = ws.Cells.Find(What:="DBAddin.Functions.", After:=ws.Range("A1"), LookIn:=XlFindLookIn.xlFormulas, LookAt:=XlLookAt.xlPart, SearchOrder:=XlSearchOrder.xlByRows, SearchDirection:=XlSearchDirection.xlNext, MatchCase:=False)
-            If Not (searchCell Is Nothing) Then foundLegacy = True
-        Next
-        If foundLegacy Then
-            Dim retval As MsgBoxResult = MsgBox("Found Legacy DBAddin functions in Workbook, should they be replaced with current Addin functions (save Workbook afterwards to persist) ?", vbQuestion + vbYesNo, "Legacy DBAddin functions")
-            If retval = vbYes Then
-                hostApp.Calculation = XlCalculation.xlCalculationManual ' avoid recalculations during repair...
-                hostApp.DisplayAlerts = False ' avoid warnings for sheet where "DBAddin.Functions." is not found
-                ' remove "DBAddin.Functions." in each sheet...
-                For Each ws In hostApp.ActiveWorkbook.Worksheets
-                    ws.Cells.Replace(What:="DBAddin.Functions.", Replacement:="", LookAt:=XlLookAt.xlPart, SearchOrder:=XlSearchOrder.xlByRows, MatchCase:=False, SearchFormat:=False, ReplaceFormat:=False)
-                Next
-                hostApp.DisplayAlerts = True
-                hostApp.Calculation = xlcalcmode
+        Try
+            Dim xlcalcmode As Long = hostApp.Calculation
+            For Each ws In hostApp.ActiveWorkbook.Worksheets
+                ' check whether legacy functions exist somewhere ...
+                searchCell = ws.Cells.Find(What:="DBAddin.Functions.", After:=ws.Range("A1"), LookIn:=XlFindLookIn.xlFormulas, LookAt:=XlLookAt.xlPart, SearchOrder:=XlSearchOrder.xlByRows, SearchDirection:=XlSearchDirection.xlNext, MatchCase:=False)
+                If Not (searchCell Is Nothing) Then foundLegacy = True
+            Next
+            If foundLegacy Then
+                Dim retval As MsgBoxResult = MsgBox("Found Legacy DBAddin functions in Workbook, should they be replaced with current Addin functions (save Workbook afterwards to persist) ?", vbQuestion + vbYesNo, "Legacy DBAddin functions")
+                If retval = vbYes Then
+                    hostApp.Calculation = XlCalculation.xlCalculationManual ' avoid recalculations during repair...
+                    hostApp.DisplayAlerts = False ' avoid warnings for sheet where "DBAddin.Functions." is not found
+                    ' remove "DBAddin.Functions." in each sheet...
+                    For Each ws In hostApp.ActiveWorkbook.Worksheets
+                        ws.Cells.Replace(What:="DBAddin.Functions.", Replacement:="", LookAt:=XlLookAt.xlPart, SearchOrder:=XlSearchOrder.xlByRows, MatchCase:=False, SearchFormat:=False, ReplaceFormat:=False)
+                    Next
+                    hostApp.DisplayAlerts = True
+                    hostApp.Calculation = xlcalcmode
+                End If
             End If
-        End If
-        ' reset the cell find dialog....
-        hostApp.Activesheet.Cells.Find(What:="", After:=hostApp.Activesheet.Range("A1"), LookIn:=XlFindLookIn.xlFormulas, LookAt:=XlLookAt.xlPart, SearchOrder:=XlSearchOrder.xlByRows, SearchDirection:=XlSearchDirection.xlNext, MatchCase:=False)
+            ' reset the cell find dialog....
+            hostApp.ActiveSheet.Cells.Find(What:="", After:=hostApp.ActiveSheet.Range("A1"), LookIn:=XlFindLookIn.xlFormulas, LookAt:=XlLookAt.xlPart, SearchOrder:=XlSearchOrder.xlByRows, SearchDirection:=XlSearchDirection.xlNext, MatchCase:=False)
+        Catch ex As Exception
+            LogError("Error occured in repairLegacyFunctions: " & ex.Message)
+        End Try
+    End Sub
+
+    ''' <summary> maintenance procedure to purge names used for dbfunctions from workbook</summary>
+    Public Sub purgeNames()
+        Dim resultingPurges As String = String.Empty
+        Try
+            Dim DBname As Name
+            For Each DBname In hostApp.ActiveWorkbook.Names
+                If DBname.Name Like "*ExterneDaten*" Or DBname.Name Like "*ExternalData*" Then
+                    resultingPurges += DBname.Name + ","
+                    DBname.Delete()
+                ElseIf DBname.Name Like "DBListArea*" Then
+                    resultingPurges += DBname.Name + ","
+                    DBname.Delete()
+                ElseIf DBname.Name Like "DBFtarget*" Then
+                    resultingPurges += DBname.Name + ","
+                    DBname.Delete()
+                ElseIf DBname.Name Like "DBFsource*" Then
+                    resultingPurges += DBname.Name + ","
+                    DBname.Delete()
+                ElseIf InStr(1, DBname.RefersTo, "#REF!") > 0 Then
+                    resultingPurges += DBname.Name + ","
+                    DBname.Delete()
+                End If
+            Next
+            If resultingPurges = String.Empty Then
+                MsgBox("nothing purged...", vbOKOnly, "purge Names")
+            Else
+                MsgBox("removed " + resultingPurges)
+                WriteToLog("purgeNames removed " + resultingPurges, EventLogEntryType.Information)
+            End If
+        Catch ex As Exception
+            LogError("Error occured in purgeNames: " & ex.Message)
+        End Try
     End Sub
 
 End Module

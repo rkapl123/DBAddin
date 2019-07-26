@@ -241,7 +241,7 @@ cleanup:
             dbcnn.CommandTimeout = DBAddin.CmdTimeout
             dbcnn.Open()
         Catch ex As Exception
-            Dim exitMe As Boolean : exitMe = True
+            Dim exitMe As Boolean = True
             LogWarn("openConnection: Error connecting to DB: " & Err.Description & ", connection string: " & theConnString, exitMe)
             If dbcnn.State = ADODB.ObjectStateEnum.adStateOpen Then dbcnn.Close()
             dbcnn = Nothing

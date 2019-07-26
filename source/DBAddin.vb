@@ -1,7 +1,6 @@
 ﻿Imports ExcelDna.Integration
 Imports Microsoft.Office.Interop
 Imports Microsoft.Office.Interop.Excel
-Imports System.IO ' needed for logfile
 
 ''' <summary>Global variables and functions for DB Addin</summary>
 Public Module DBAddin
@@ -20,6 +19,10 @@ Public Module DBAddin
     Public environdefs As String() = {}
     ''' <summary>DBMapper definition collections (for labels (key of nested dictionary) and target ranges (value of nested dictionary))</summary>
     Public DBMapperDefColl As Dictionary(Of String, Dictionary(Of String, Range))
+    ''' <summary>the selected event level in the About box</summary>
+    Public EventLevelsSelected As String
+    ''' <summary>the log listener</summary>
+    Public theLogListener As TraceListener
 
     ' Global settings
     Public DebugAddin As Boolean
@@ -53,8 +56,6 @@ Public Module DBAddin
     Public allCalcContainers As Collection
     ''' <summary>global collection of information transport containers between function and calc event procedure</summary>
     Public allStatusContainers As Collection
-    ''' <summary>logfile for messages</summary>
-    Public logfile As StreamWriter
 
     ''' <summary>encapsulates setting fetching (currently registry)</summary>
     ''' <param name="Key"></param>
@@ -73,57 +74,61 @@ Public Module DBAddin
 
     ''' <summary>initializes global configuration variables from registry</summary>
     Public Sub initSettings()
-        DebugAddin = CBool(fetchSetting("DebugAddin", "False"))
-        ConstConnString = fetchSetting("ConstConnString", String.Empty)
-        CnnTimeout = CInt(fetchSetting("CnnTimeout", "15"))
-        CmdTimeout = CInt(fetchSetting("CmdTimeout", "60"))
-        ConfigStoreFolder = fetchSetting("ConfigStoreFolder", String.Empty)
-        specialConfigStoreFolders = Split(fetchSetting("specialConfigStoreFolders", String.Empty), ":")
-        DefaultDBDateFormatting = CInt(fetchSetting("DefaultDBDateFormatting", "0"))
-        ' load environments
-        Dim i As Integer = 1
-        ReDim Preserve environdefs(-1)
-        Dim ConfigName As String
-        Do
-            ConfigName = fetchSetting("ConfigName" + i.ToString(), vbNullString)
-            If Len(ConfigName) > 0 Then
-                ReDim Preserve environdefs(environdefs.Length)
-                environdefs(environdefs.Length - 1) = ConfigName + " - " + i.ToString()
-            End If
-            ' set selectedEnvironment
-            If fetchSetting("ConstConnString" + i.ToString(), vbNullString) = ConstConnString Then
-                selectedEnvironment = i - 1
-            End If
-            i += 1
-        Loop Until Len(ConfigName) = 0
+        Try
+            DebugAddin = CBool(fetchSetting("DebugAddin", "False"))
+            ConstConnString = fetchSetting("ConstConnString", String.Empty)
+            CnnTimeout = CInt(fetchSetting("CnnTimeout", "15"))
+            CmdTimeout = CInt(fetchSetting("CmdTimeout", "60"))
+            ConfigStoreFolder = fetchSetting("ConfigStoreFolder", String.Empty)
+            specialConfigStoreFolders = Split(fetchSetting("specialConfigStoreFolders", String.Empty), ":")
+            DefaultDBDateFormatting = CInt(fetchSetting("DefaultDBDateFormatting", "0"))
+            ' load environments
+            Dim i As Integer = 1
+            ReDim Preserve environdefs(-1)
+            Dim ConfigName As String
+            Do
+                ConfigName = fetchSetting("ConfigName" + i.ToString(), vbNullString)
+                If Len(ConfigName) > 0 Then
+                    ReDim Preserve environdefs(environdefs.Length)
+                    environdefs(environdefs.Length - 1) = ConfigName + " - " + i.ToString()
+                End If
+                ' set selectedEnvironment
+                If fetchSetting("ConstConnString" + i.ToString(), vbNullString) = ConstConnString Then
+                    selectedEnvironment = i - 1
+                End If
+                i += 1
+            Loop Until Len(ConfigName) = 0
+        Catch ex As Exception
+            LogError("Error in initialization of Settings (DBAddin.initSettings):" + ex.Message)
+        End Try
     End Sub
 
-    ''' <summary>Logs sErrMsg of eEventType to Logfile</summary>
-    ''' <param name="sErrMsg"></param>
+    ''' <summary>Logs Message of eEventType to System.Diagnostics.Trace</summary>
+    ''' <param name="Message"></param>
     ''' <param name="eEventType"></param>
-    ''' <returns></returns>
-    Public Function WriteToLog(sErrMsg As String, eEventType As EventLogEntryType) As Boolean
-        Try
-            logfile.WriteLine(Now().ToString() & vbTab & IIf(eEventType = EventLogEntryType.Error, "ERROR", IIf(eEventType = EventLogEntryType.Information, "INFO", "WARNING")) & vbTab & sErrMsg)
-        Catch ex As Exception
-            Return False
-        End Try
-        Return True
-    End Function
+    Public Sub WriteToLog(Message As String, eEventType As EventLogEntryType, Optional caller As String = "")
+        If caller = "" Then
+            Dim theMethod As Object = (New System.Diagnostics.StackTrace).GetFrame(1).GetMethod
+            caller = theMethod.ReflectedType.FullName & "." & theMethod.Name
+        End If
+        Select Case eEventType
+            Case EventLogEntryType.Information : Trace.TraceInformation("{0}: {1}", caller, Message)
+            Case EventLogEntryType.Warning : Trace.TraceWarning("{0}: {1}", caller, Message)
+            Case EventLogEntryType.Error : Trace.TraceError("{0}: {1}", caller, Message)
+        End Select
+    End Sub
 
     ''' <summary>Logs error messages</summary>
     ''' <param name="LogMessage"></param>
     ''' <param name="includeMsg"></param>
     ''' <param name="exitMe"></param>
     Public Sub LogError(LogMessage As String, Optional ByRef exitMe As Boolean = False, Optional includeMsg As Boolean = True)
-        Dim retval As Integer
-
-        WriteToLog(LogMessage, EventLogEntryType.Error)
-        If includeMsg Then retval = MsgBox(LogMessage, vbCritical + IIf(exitMe, vbOKCancel, vbOKOnly), "DBAddin Error")
-        If retval = vbCancel Then
-            exitMe = True
-        Else
-            exitMe = False
+        Dim theMethod As Object = (New System.Diagnostics.StackTrace).GetFrame(1).GetMethod
+        Dim caller As String = theMethod.ReflectedType.FullName & "." & theMethod.Name
+        WriteToLog(LogMessage, EventLogEntryType.Error, caller)
+        If includeMsg Then
+            Dim retval As Integer = MsgBox(LogMessage, vbCritical + IIf(exitMe, vbOKCancel, vbOKOnly), "DBAddin Error")
+            If retval = vbCancel Then exitMe = True
         End If
     End Sub
 
@@ -132,21 +137,23 @@ Public Module DBAddin
     ''' <param name="exitMe"></param>
     ''' <param name="includeMsg"></param>
     Public Sub LogWarn(LogMessage As String, Optional ByRef exitMe As Boolean = False, Optional includeMsg As Boolean = True)
-        Dim retval As Integer
-
-        WriteToLog(LogMessage, EventLogEntryType.Warning)
-        If includeMsg Then retval = MsgBox(LogMessage, vbExclamation + IIf(exitMe, vbOKCancel, vbOKOnly), "DBAddin Warning")
-        If retval = vbCancel Then
-            exitMe = True
-        Else
-            exitMe = False
+        Dim theMethod As Object = (New System.Diagnostics.StackTrace).GetFrame(1).GetMethod
+        Dim caller As String = theMethod.ReflectedType.FullName & "." & theMethod.Name
+        WriteToLog(LogMessage, EventLogEntryType.Warning, caller)
+        If includeMsg Then
+            Dim retval As Integer = MsgBox(LogMessage, vbExclamation + IIf(exitMe, vbOKCancel, vbOKOnly), "DBAddin Warning")
+            If retval = vbCancel Then exitMe = True
         End If
     End Sub
 
     ''' <summary>Logs informational messages</summary>
     ''' <param name="LogMessage"></param>
     Public Sub LogInfo(LogMessage As String)
-        If DebugAddin Then WriteToLog(LogMessage, EventLogEntryType.Information)
+        If DebugAddin Then
+            Dim theMethod As Object = (New System.Diagnostics.StackTrace).GetFrame(1).GetMethod
+            Dim caller As String = theMethod.ReflectedType.FullName & "." & theMethod.Name
+            WriteToLog(LogMessage, EventLogEntryType.Information, caller)
+        End If
     End Sub
 
     <ExcelCommand(Name:="refreshData", ShortCut:="^R")>
@@ -164,7 +171,6 @@ Public Module DBAddin
         ' also reset the database connection in case of errors...
         theDBFuncEventHandler.cnn.Close()
         theDBFuncEventHandler.cnn = Nothing
-
         dontTryConnection = False
         On Error GoTo err1
 
@@ -215,7 +221,7 @@ Public Module DBAddin
                     hostApp.Range(jumpName).Parent.Select
                     On Error GoTo err1
                 End If
-                hostApp.Range(jumpName).Dirty
+                hostApp.Range(jumpName).Dirty()
                 ' we're being called on a target area
             ElseIf Left$(jumpName, 9) = "DBFtarget" Then
                 jumpName = Replace(jumpName, "DBFtarget", "DBFsource", 1, , vbTextCompare)
@@ -227,11 +233,11 @@ Public Module DBAddin
                     hostApp.Range(jumpName).Parent.Select
                     On Error GoTo err1
                 End If
-                hostApp.Range(jumpName).Dirty
+                hostApp.Range(jumpName).Dirty()
                 ' we're being called on a source (invoking function) cell
             ElseIf Left$(jumpName, 9) = "DBFsource" Then
                 On Error Resume Next
-                hostApp.Range(jumpName).Dirty
+                hostApp.Range(jumpName).Dirty()
                 On Error GoTo err1
             Else
                 refreshDBFunctions(hostApp.ActiveWorkbook)
@@ -240,7 +246,7 @@ Public Module DBAddin
 
         Exit Sub
 err1:
-        WriteToLog("Error (" & Err.Description & ") in MenuHandler.refreshData in " & Erl(), EventLogEntryType.Error)
+        WriteToLog("Error (" & Err.Description & ") in MenuHandler.refreshData in " & Erl(), EventLogEntryType.Warning)
     End Sub
 
     <ExcelCommand(Name:="jumpButton", ShortCut:="^J")>

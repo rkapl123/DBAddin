@@ -1,6 +1,8 @@
 ﻿''' <summary>About box: used to provide information about version/buildtime and links for local help and project homepage</summary>
 Public NotInheritable Class AboutBox1
 
+    Private dontChangeEventLevels As Boolean
+
     ''' <summary>set up Aboutbox</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
@@ -17,11 +19,14 @@ Public NotInheritable Class AboutBox1
 
         ' set the UI elements
         Me.Text = String.Format("About {0}", My.Application.Info.Title)
-        Me.LabelProductName.Text = "DB Addin Help (click here)..."
+        Me.LabelProductName.Text = "DB Addin Help"
         Me.LabelVersion.Text = String.Format("Version {0} Buildtime {1}", My.Application.Info.Version.ToString, sModuleInfo)
         Me.LabelCopyright.Text = My.Application.Info.Copyright
         Me.LabelCompanyName.Text = "Information: " + My.Application.Info.CompanyName
         Me.TextBoxDescription.Text = My.Application.Info.Description
+        dontChangeEventLevels = True
+        Me.EventLevels.SelectedItem = DBAddin.EventLevelsSelected
+        dontChangeEventLevels = False
     End Sub
 
     ''' <summary>Close Aboutbox</summary>
@@ -41,6 +46,35 @@ Public NotInheritable Class AboutBox1
     ''' <param name="e"></param>
     Private Sub LabelProductName_Click(sender As Object, e As EventArgs) Handles LabelProductName.Click
         Process.Start(fetchSetting("LocalHelp", String.Empty))
+    End Sub
+
+    Private Sub purge_Click(sender As Object, e As EventArgs) Handles purge.Click
+        purgeNames()
+    End Sub
+
+    Private Sub showLog_Click(sender As Object, e As EventArgs) Handles showLog.Click
+        ExcelDna.Logging.LogDisplay.Show()
+    End Sub
+
+    Private Sub EventLevels_SelectedValueChanged(sender As Object, e As EventArgs) Handles EventLevels.SelectedValueChanged
+        If dontChangeEventLevels Then Exit Sub
+        Select Case EventLevels.SelectedItem
+            Case "Information"
+                DBAddin.theLogListener.Filter = New EventTypeFilter(SourceLevels.Information)
+            Case "Warning"
+                DBAddin.theLogListener.Filter = New EventTypeFilter(SourceLevels.Warning)
+            Case "Error"
+                DBAddin.theLogListener.Filter = New EventTypeFilter(SourceLevels.Error)
+            Case "Verbose"
+                DBAddin.theLogListener.Filter = New EventTypeFilter(SourceLevels.Verbose)
+            Case "All"
+                DBAddin.theLogListener.Filter = New EventTypeFilter(SourceLevels.All)
+        End Select
+        Trace.Refresh()
+        If Not Trace.Listeners.Contains(DBAddin.theLogListener) Then
+            Trace.Listeners.Add(DBAddin.theLogListener)
+        End If
+        DBAddin.EventLevelsSelected = EventLevels.SelectedItem
     End Sub
 
 End Class

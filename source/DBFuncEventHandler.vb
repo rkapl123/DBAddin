@@ -53,7 +53,7 @@ Public Class DBFuncEventHandler
     ''' <param name="SaveAsUI"></param>
     ''' <param name="Cancel"></param>
     Private Sub App_WorkbookBeforeSave(ByVal Wb As Workbook, SaveAsUI As Boolean, ByRef Cancel As Boolean) Handles Application.WorkbookBeforeSave
-        Dim refreshDBFuncs As Boolean
+        Dim doRefreshDBFuncsAfterSave As Boolean = True
         Dim docproperty
         Dim DBFCContentColl As Collection, DBFCAllColl As Collection
         Dim theFunc
@@ -61,67 +61,62 @@ Public Class DBFuncEventHandler
         Dim searchCell As Range
         Dim firstAddress As String
 
-        On Error GoTo App_WorkbookBeforeSave_Err
-        DBFCContentColl = New Collection
-        DBFCAllColl = New Collection
-        refreshDBFuncs = True
-        For Each docproperty In Wb.CustomDocumentProperties
-            If TypeName(docproperty.Value) = "Boolean" Then
-                If Left$(docproperty.name, 5) = "DBFCC" And docproperty.Value Then DBFCContentColl.Add(True, Mid$(docproperty.name, 6))
-                If Left$(docproperty.name, 5) = "DBFCA" And docproperty.Value Then DBFCAllColl.Add(True, Mid$(docproperty.name, 6))
-                If docproperty.name = "DBFskip" Then refreshDBFuncs = Not docproperty.Value
-            End If
-        Next
-        dontCalcWhileClearing = True
-        For Each ws In Wb.Worksheets
-            For Each theFunc In {"DBListFetch(", "DBRowFetch("}
-                searchCell = ws.Cells.Find(What:=theFunc, After:=ws.Range("A1"), LookIn:=XlFindLookIn.xlFormulas, LookAt:=XlLookAt.xlPart, SearchOrder:=XlSearchOrder.xlByRows, SearchDirection:=XlSearchDirection.xlNext, MatchCase:=False)
-                If Not (searchCell Is Nothing) Then
-                    firstAddress = searchCell.Address
-                    Do
-                        Dim targetName As String
-                        targetName = getDBRangeName(searchCell).Name
-                        targetName = Replace(targetName, "DBFsource", "DBFtarget", 1, , vbTextCompare)
-                        Dim DBFCC As Boolean : Dim DBFCA As Boolean
-                        DBFCC = False : DBFCA = False
-                        On Error Resume Next
-                        DBFCC = DBFCContentColl("*")
-                        DBFCC = DBFCContentColl(searchCell.Parent.name & "!" & Replace(searchCell.Address, "$", String.Empty)) Or DBFCC
-                        DBFCA = DBFCAllColl("*")
-                        DBFCA = DBFCAllColl(searchCell.Parent.name & "!" & Replace(searchCell.Address, "$", String.Empty)) Or DBFCA
-                        Err.Clear()
-                        Dim theTargetRange As Range
-                        theTargetRange = hostApp.Range(targetName)
-                        If DBFCC Then
-                            theTargetRange.Parent.Range(theTargetRange.Parent.Cells(theTargetRange.Row, theTargetRange.Column), theTargetRange.Parent.Cells(theTargetRange.Row + theTargetRange.Rows.Count - 1, theTargetRange.Column + theTargetRange.Columns.Count - 1)).ClearContents
-                            LogInfo("App_WorkbookSave/DBFCC cleared")
-                        End If
-                        If DBFCA Then
-                            theTargetRange.Parent.Range(theTargetRange.Parent.Cells(theTargetRange.Row + 2, theTargetRange.Column), theTargetRange.Parent.Cells(theTargetRange.Row + theTargetRange.Rows.Count - 1, theTargetRange.Column + theTargetRange.Columns.Count - 1)).Clear
-                            theTargetRange.Parent.Range(theTargetRange.Parent.Cells(theTargetRange.Row, theTargetRange.Column), theTargetRange.Parent.Cells(theTargetRange.Row + 2, theTargetRange.Column + theTargetRange.Columns.Count - 1)).ClearContents
-                            LogInfo("App_WorkbookSave/DBFCA cleared")
-                        End If
-                        searchCell = ws.Cells.FindNext(searchCell)
-                    Loop While Not searchCell Is Nothing And searchCell.Address <> firstAddress
+        Try
+            DBFCContentColl = New Collection
+            DBFCAllColl = New Collection
+            For Each docproperty In Wb.CustomDocumentProperties
+                If TypeName(docproperty.Value) = "Boolean" Then
+                    If Left$(docproperty.Name, 5) = "DBFCC" And docproperty.Value Then DBFCContentColl.Add(True, Mid$(docproperty.Name, 6))
+                    If Left$(docproperty.Name, 5) = "DBFCA" And docproperty.Value Then DBFCAllColl.Add(True, Mid$(docproperty.Name, 6))
+                    If docproperty.Name = "DBFskip" Then doRefreshDBFuncsAfterSave = Not docproperty.Value
                 End If
             Next
-            lastWs = ws
-        Next
+            dontCalcWhileClearing = True
+            For Each ws In Wb.Worksheets
+                For Each theFunc In {"DBListFetch(", "DBRowFetch("}
+                    searchCell = ws.Cells.Find(What:=theFunc, After:=ws.Range("A1"), LookIn:=XlFindLookIn.xlFormulas, LookAt:=XlLookAt.xlPart, SearchOrder:=XlSearchOrder.xlByRows, SearchDirection:=XlSearchDirection.xlNext, MatchCase:=False)
+                    If Not (searchCell Is Nothing) Then
+                        firstAddress = searchCell.Address
+                        Do
+                            ' get DB function target names from source names
+                            Dim targetName As String = getDBRangeName(searchCell).Name
+                            targetName = Replace(targetName, "DBFsource", "DBFtarget", 1, , vbTextCompare)
+                            ' check which DB functions should be content cleared (CC) or all cleared (CA)
+                            Dim DBFCC As Boolean = False : Dim DBFCA As Boolean = False
+                            DBFCC = DBFCContentColl.Contains("*")
+                            DBFCC = DBFCContentColl.Contains(searchCell.Parent.Name & "!" & Replace(searchCell.Address, "$", String.Empty)) Or DBFCC
+                            DBFCA = DBFCAllColl.Contains("*")
+                            DBFCA = DBFCAllColl.Contains(searchCell.Parent.Name & "!" & Replace(searchCell.Address, "$", String.Empty)) Or DBFCA
+                            Dim theTargetRange As Range = hostApp.Range(targetName)
+                            If DBFCC Then
+                                theTargetRange.Parent.Range(theTargetRange.Parent.Cells(theTargetRange.Row, theTargetRange.Column), theTargetRange.Parent.Cells(theTargetRange.Row + theTargetRange.Rows.Count - 1, theTargetRange.Column + theTargetRange.Columns.Count - 1)).ClearContents
+                                LogInfo("App_WorkbookSave/Contents of selected DB Functions targets cleared")
+                            End If
+                            If DBFCA Then
+                                theTargetRange.Parent.Range(theTargetRange.Parent.Cells(theTargetRange.Row + 2, theTargetRange.Column), theTargetRange.Parent.Cells(theTargetRange.Row + theTargetRange.Rows.Count - 1, theTargetRange.Column + theTargetRange.Columns.Count - 1)).Clear
+                                theTargetRange.Parent.Range(theTargetRange.Parent.Cells(theTargetRange.Row, theTargetRange.Column), theTargetRange.Parent.Cells(theTargetRange.Row + 2, theTargetRange.Column + theTargetRange.Columns.Count - 1)).ClearContents
+                                LogInfo("App_WorkbookSave/All cleared from selected DB Functions targets")
+                            End If
+                            searchCell = ws.Cells.FindNext(searchCell)
+                        Loop While Not searchCell Is Nothing And searchCell.Address <> firstAddress
+                    End If
+                Next
+                lastWs = ws
+            Next
+            ' reset the cell find dialog....
+            searchCell = Nothing
+            searchCell = lastWs.Cells.Find(What:="", After:=lastWs.Range("A1"), LookIn:=XlFindLookIn.xlFormulas, LookAt:=XlLookAt.xlPart, SearchOrder:=XlSearchOrder.xlByRows, SearchDirection:=XlSearchDirection.xlNext, MatchCase:=False)
+            lastWs = Nothing
+            ' refresh after save event
+            If doRefreshDBFuncsAfterSave And (DBFCContentColl.Count > 0 Or DBFCAllColl.Count > 0) Then
+                aTimer = New Timers.Timer(100)
+                AddHandler aTimer.Elapsed, New ElapsedEventHandler(AddressOf refreshDBFuncLater)
+                aTimer.Enabled = True
+            End If
+        Catch ex As Exception
+            WriteToLog("DBFuncEventHandler.App_WorkbookBeforeSave Error: " & Wb.Name & ex.Message, EventLogEntryType.Warning)
+        End Try
         dontCalcWhileClearing = False
-        ' reset the cell find dialog....
-        searchCell = Nothing
-        searchCell = lastWs.Cells.Find(What:="", After:=lastWs.Range("A1"), LookIn:=XlFindLookIn.xlFormulas, LookAt:=XlLookAt.xlPart, SearchOrder:=XlSearchOrder.xlByRows, SearchDirection:=XlSearchDirection.xlNext, MatchCase:=False)
-        lastWs = Nothing
-        ' refresh after save event
-        If refreshDBFuncs And (DBFCContentColl.Count > 0 Or DBFCAllColl.Count > 0) Then
-            aTimer = New Timers.Timer(100)
-            AddHandler aTimer.Elapsed, New ElapsedEventHandler(AddressOf refreshDBFuncLater)
-            aTimer.Enabled = True
-        End If
-        Exit Sub
-
-App_WorkbookBeforeSave_Err:
-        WriteToLog("DBFuncEventHandler.App_WorkbookBeforeSave Error: " & Wb.Name & Err.Description & ", in line " & Erl(), EventLogEntryType.Error)
     End Sub
 
     ''' <summary>"OnTime" event function to "escape" workbook_save: event procedure to refetch DB functions results after saving</summary>
@@ -189,7 +184,7 @@ App_WorkbookBeforeSave_Err:
                             callerText = .caller.Formula
 
                             If Err.Number <> 0 Then
-                                WriteToLog("App_SheetCalculate: ERROR with retrieving .caller.Formula: " & Err.Description, EventLogEntryType.Error)
+                                WriteToLog("App_SheetCalculate: ERROR with retrieving .caller.Formula: " & Err.Description, EventLogEntryType.Warning)
                                 errorReason = "App_SheetCalculate: ERROR with .caller.Formula: " & Err.Description
                                 allCalcContainers(callID).errOccured = True
                             End If
@@ -215,7 +210,7 @@ App_WorkbookBeforeSave_Err:
                                     cnn.Open(.ConnString)
 
                                     If Err.Number <> 0 Then
-                                        WriteToLog("App_SheetCalculate Connection error: " & Err.Description, EventLogEntryType.Error)
+                                        WriteToLog("App_SheetCalculate Connection error: " & Err.Description, EventLogEntryType.Warning)
                                         ' prevent multiple reconnecting if connection errors present...
                                         dontTryConnection = True
                                         LogError("Connection Error: " & Err.Description)
@@ -347,7 +342,7 @@ nextCalcCont:
 
 DBSetQueryParams_Error:
         errMsg = Err.Description & " in query: " & Query
-        WriteToLog("DBFuncEventHandler.DBSetQueryParams Error: " & errMsg & ", caller: " & callID, EventLogEntryType.Error)
+        WriteToLog("DBFuncEventHandler.DBSetQueryParams Error: " & errMsg & ", caller: " & callID, EventLogEntryType.Warning)
 
         statusCont.statusMsg = errMsg
         ' need to mark calc container here as excel won't return to main event proc in case of error
@@ -755,11 +750,11 @@ err_0:
         Dim severity As EventLogEntryType
         If errMsg.Length = 0 Then
             errMsg = Err.Description & " in query: " & Query
-            severity = EventLogEntryType.Error
+            severity = EventLogEntryType.Warning
         End If
         Err.Clear() ' this is important as otherwise the error propagates to App_SheetCalculate,
         ' which recalcs in case of errors there, leading to endless calc loops !!
-        If severity = Nothing Then severity = EventLogEntryType.Warning
+        If severity = Nothing Then severity = EventLogEntryType.Information
         WriteToLog("DBFuncEventHandler.DBListQuery Error: " & errMsg & ", caller: " & callID, severity)
 
         statusCont.statusMsg = errMsg
@@ -902,11 +897,11 @@ err_1:
         Dim severity As EventLogEntryType
         If errMsg.Length = 0 Then
             errMsg = Err.Description & " in query: " & Query
-            severity = EventLogEntryType.Error
+            severity = EventLogEntryType.Warning
         End If
         'Err.Clear ' this is important as otherwise the error propagates to App_SheetCalculate,
         ' which recalcs in case of errors there, leading to endless calc loops !!
-        If severity = Nothing Then severity = EventLogEntryType.Warning
+        If severity = Nothing Then severity = EventLogEntryType.Information
         If tableRst.State <> 0 Then tableRst.Close()
         WriteToLog("DBFuncEventHandler.DBRowQuery Error: " & errMsg & ", caller: " & callID & ", in line " & Erl(), severity)
         statusCont.statusMsg = errMsg

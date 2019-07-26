@@ -18,45 +18,45 @@ Public Module Functions
     <ExcelFunction(Description:="Create database compliant date, time or datetime string from excel datetype value")>
     Public Function DBDate(<ExcelArgument(Description:="date/time/datetime")> ByVal datVal As Date,
                            <ExcelArgument(Description:="formatting option, 0: simple datestring (format 'YYYYMMDD'), 1: ANSI compliant Date string (format date 'YYYY-MM-DD'), 2: ODBC compliant Date string (format {d 'YYYY-MM-DD'}),3: Access/JetDB compliant Date string (format #DD/MM/YYYY#)")> Optional formatting As Integer = 99) As String
-        On Error GoTo DBDate_Error
-        If formatting = 99 Then formatting = DefaultDBDateFormatting
-        If Int(datVal.ToOADate()) = datVal.ToOADate() Then
-            If formatting = 0 Then
-                DBDate = "'" & Format$(datVal, "yyyyMMdd") & "'"
-            ElseIf formatting = 1 Then
-                DBDate = "DATE '" & Format$(datVal, "yyyy-MM-dd") & "'"
-            ElseIf formatting = 2 Then
-                DBDate = "{d '" & Format$(datVal, "yyyy-MM-dd") & "'}"
-            ElseIf formatting = 3 Then
-                DBDate = "#" & Format$(datVal, "yyyy-MM-dd") & "#"
+        Try
+            Dim retval As String = String.Empty
+            If formatting = 99 Then formatting = DefaultDBDateFormatting
+            If Int(datVal.ToOADate()) = datVal.ToOADate() Then
+                If formatting = 0 Then
+                    retval = "'" & Format$(datVal, "yyyyMMdd") & "'"
+                ElseIf formatting = 1 Then
+                    retval = "DATE '" & Format$(datVal, "yyyy-MM-dd") & "'"
+                ElseIf formatting = 2 Then
+                    retval = "{d '" & Format$(datVal, "yyyy-MM-dd") & "'}"
+                ElseIf formatting = 3 Then
+                    retval = "#" & Format$(datVal, "yyyy-MM-dd") & "#"
+                End If
+            ElseIf CInt(datVal.ToOADate()) > 1 Then
+                If formatting = 0 Then
+                    retval = "'" & Format$(datVal, "yyyyMMdd hh:mm:ss") & "'"
+                ElseIf formatting = 1 Then
+                    retval = "timestamp '" & Format$(datVal, "yyyy-MM-dd hh:mm:ss") & "'"
+                ElseIf formatting = 2 Then
+                    retval = "{ts '" & Format$(datVal, "yyyy-MM-dd hh:mm:ss") & "'}"
+                ElseIf formatting = 3 Then
+                    retval = "#" & Format$(datVal, "yyyy-MM-dd hh:mm:ss") & "#"
+                End If
+            Else
+                If formatting = 0 Then
+                    retval = "'" & Format$(datVal, "hh:mm:ss") & "'"
+                ElseIf formatting = 1 Then
+                    retval = "time '" & Format$(datVal, "hh:mm:ss") & "'"
+                ElseIf formatting = 2 Then
+                    retval = "{t '" & Format$(datVal, "hh:mm:ss") & "'}"
+                ElseIf formatting = 3 Then
+                    retval = "#" & Format$(datVal, "hh:mm:ss") & "#"
+                End If
             End If
-        ElseIf CInt(datVal.ToOADate()) > 1 Then
-            If formatting = 0 Then
-                DBDate = "'" & Format$(datVal, "yyyyMMdd hh:mm:ss") & "'"
-            ElseIf formatting = 1 Then
-                DBDate = "timestamp '" & Format$(datVal, "yyyy-MM-dd hh:mm:ss") & "'"
-            ElseIf formatting = 2 Then
-                DBDate = "{ts '" & Format$(datVal, "yyyy-MM-dd hh:mm:ss") & "'}"
-            ElseIf formatting = 3 Then
-                DBDate = "#" & Format$(datVal, "yyyy-MM-dd hh:mm:ss") & "#"
-            End If
-        Else
-            If formatting = 0 Then
-                DBDate = "'" & Format$(datVal, "hh:mm:ss") & "'"
-            ElseIf formatting = 1 Then
-                DBDate = "time '" & Format$(datVal, "hh:mm:ss") & "'"
-            ElseIf formatting = 2 Then
-                DBDate = "{t '" & Format$(datVal, "hh:mm:ss") & "'}"
-            ElseIf formatting = 3 Then
-                DBDate = "#" & Format$(datVal, "hh:mm:ss") & "#"
-            End If
-        End If
-        Exit Function
-
-DBDate_Error:
-        Dim ErrDesc As String = Err.Description
-        WriteToLog("Error (" & ErrDesc & ") in Functions.DBDate, in " & Erl(), EventLogEntryType.Error)
-        DBDate = "Error (" & ErrDesc & ") in function DBDate"
+            DBDate = retval
+        Catch ex As Exception
+            WriteToLog("Error (" & ex.Message & ") in Functions.DBDate", EventLogEntryType.Warning)
+            DBDate = "Error (" & ex.Message & ") in function DBDate"
+        End Try
     End Function
 
     ''' <summary>Create a database compliant string from cell values, potentially concatenating with other parts for easy inclusion of wildcards (%,_)</summary>
@@ -64,33 +64,29 @@ DBDate_Error:
     ''' <returns>database compliant string</returns>
     <ExcelFunction(Description:="Create a database compliant string from cell values, potentially concatenating with other parts for easy inclusion of wildcards (%,_)")>
     Public Function DBString(<ExcelArgument(Description:="array of strings/wildcards or ranges containing strings/wildcards")> ParamArray StringPart() As Object) As String
-        Dim myRange
-        Dim myCell
-        Dim retval As String = String.Empty
-
-        On Error GoTo DBString_Error
-        For Each myRange In StringPart
-            If TypeName(myRange) = "Object(,)" Then
-                For Each myCell In myRange
-                    If TypeName(myCell) = "ExcelEmpty" Then
-                        ' do nothing here
-                    Else
-                        retval &= myCell.ToString()
-                    End If
-                Next
-            ElseIf TypeName(myRange) = "ExcelEmpty" Then
-                ' do nothing here
-            Else
-                retval &= myRange.ToString()
-            End If
-        Next
-        DBString = "'" & retval & "'"
-        Exit Function
-
-DBString_Error:
-        Dim ErrDesc As String = Err.Description
-        WriteToLog("Error (" & ErrDesc & ") in Functions.DBString, in " & Erl(), EventLogEntryType.Error)
-        DBString = "Error (" & ErrDesc & ") in DBString"
+        Dim myRef, myCell
+        Try
+            Dim retval As String = String.Empty
+            For Each myRef In StringPart
+                If TypeName(myRef) = "Object(,)" Then
+                    For Each myCell In myRef
+                        If TypeName(myCell) = "ExcelEmpty" Then
+                            ' do nothing here
+                        Else
+                            retval &= myCell.ToString()
+                        End If
+                    Next
+                ElseIf TypeName(myRef) = "ExcelEmpty" Then
+                    ' do nothing here
+                Else
+                    retval &= myRef.ToString()
+                End If
+            Next
+            DBString = "'" & retval & "'"
+        Catch ex As Exception
+            WriteToLog("Error (" & ex.Message & ") in Functions.DBString", EventLogEntryType.Warning)
+            DBString = "Error (" & ex.Message & ") in DBString"
+        End Try
     End Function
 
     ''' <summary>Create an in clause from cell values, strings are created with quotation marks,
@@ -134,40 +130,50 @@ DBString_Error:
     ''' <param name="concatParts">Object array, whose values should be concatenated</param>
     ''' <returns>concatenated String</returns>
     Private Function DoConcatCellsSep(separator As String, DBcompliant As Boolean, ParamArray concatParts As Object()) As String
-        Dim retval As String = String.Empty
         Dim myRef, myCell
 
-        For Each myRef In concatParts
-            Dim isMultiCell As Boolean = False
-            If TypeName(myRef) = "ExcelReference" Then
-                isMultiCell = (TypeName(myRef.GetValue()) = "Object(,)")
-                If Not isMultiCell Then myRef = myRef.GetValue() ' single cell in reference -> convert to value
-            End If
-            If isMultiCell Then ' multiple cells in reference (range)
-                For Each myCell In myRef.GetValue()
-                    If TypeName(myCell) = "ExcelEmpty" Then
+        Try
+            Dim retval As String = String.Empty
+            For Each myRef In concatParts
+                Dim isMultiCell As Boolean = False
+                If TypeName(myRef) = "ExcelReference" Then
+                    ' pack into try to avoid exception for errors in passed cells in myRef (#NAME! etc.)
+                    Try
+                        isMultiCell = (TypeName(myRef.GetValue()) = "Object(,)")
+                        If Not isMultiCell Then myRef = myRef.GetValue() ' single cell in reference -> convert to value
+                    Catch ex As Exception
+                        myRef = "ExcelError"
+                    End Try
+                End If
+                If isMultiCell Then ' multiple cells in reference (range)
+                    For Each myCell In myRef.GetValue()
+                        If TypeName(myCell) = "ExcelEmpty" Then
+                            ' do nothing here
+                        ElseIf IsNumeric(myCell) Then
+                            retval = retval & separator & Convert.ToString(myCell, System.Globalization.CultureInfo.InvariantCulture)
+                        Else
+                            ' avoid double quoting if passed string is already quoted (by using DBDate or DBString as input to this) and DBcompliant quoting is requested
+                            retval = retval & separator & IIf(DBcompliant And Left(myCell, 1) <> "'", "'", "") & myCell & IIf(DBcompliant And Right(myCell, 1) <> "'", "'", "")
+                        End If
+                    Next
+                Else
+                    ' and other direct values in formulas..
+                    If TypeName(myRef) = "ExcelEmpty" Then
                         ' do nothing here
-                    ElseIf IsNumeric(myCell) Then
-                        retval = retval & separator & Convert.ToString(myCell, System.Globalization.CultureInfo.InvariantCulture)
+                    ElseIf IsNumeric(myRef) Then ' no separate Date type for direct formula values
+                        retval = retval & separator & Convert.ToString(myRef, System.Globalization.CultureInfo.InvariantCulture)
                     Else
                         ' avoid double quoting if passed string is already quoted (by using DBDate or DBString as input to this) and DBcompliant quoting is requested
-                        retval = retval & separator & IIf(DBcompliant And Left(myCell, 1) <> "'", "'", "") & myCell & IIf(DBcompliant And Right(myCell, 1) <> "'", "'", "")
+                        retval = retval & separator & IIf(DBcompliant And Left(myRef, 1) <> "'", "'", "") & myRef & IIf(DBcompliant And Right(myRef, 1) <> "'", "'", "")
                     End If
-                Next
-            Else
-                ' and other direct values in formulas..
-                If TypeName(myRef) = "ExcelEmpty" Then
-                    ' do nothing here
-                ElseIf IsNumeric(myRef) Then ' no separate Date type for direct formula values
-                    retval = retval & separator & Convert.ToString(myRef, System.Globalization.CultureInfo.InvariantCulture)
-                Else
-                    ' avoid double quoting if passed string is already quoted (by using DBDate or DBString as input to this) and DBcompliant quoting is requested
-                    retval = retval & separator & IIf(DBcompliant And Left(myRef, 1) <> "'", "'", "") & myRef & IIf(DBcompliant And Right(myRef, 1) <> "'", "'", "")
                 End If
-            End If
-        Next
-        DoConcatCellsSep = Mid$(retval, Len(separator) + 1) ' skip first separator
-        If DoConcatCellsSep = "" Then DoConcatCellsSep = "only empty arguments!"
+            Next
+            DoConcatCellsSep = Mid$(retval, Len(separator) + 1) ' skip first separator
+            If DoConcatCellsSep = "" Then DoConcatCellsSep = "only empty arguments!"
+        Catch ex As Exception
+            WriteToLog("Error (" & ex.Message & ") in Functions.DoConcatCellsSep", EventLogEntryType.Warning)
+            DoConcatCellsSep = "Error (" & ex.Message & ") in DoConcatCellsSep"
+        End Try
     End Function
 
     ''' <summary>Stores a query into an Object defined in targetRange (an embedded MS Query/Listobject, Pivot table, etc.)</summary>
@@ -179,67 +185,51 @@ DBString_Error:
     Public Function DBSetQuery(<ExcelArgument(Description:="query for getting data")> Query As Object,
                                <ExcelArgument(Description:="connection string defining DB, user, etc...")> ConnString As Object,
                                <ExcelArgument(Description:="Range with Object beneath to put the Query/ConnString into", AllowReference:=True)> targetRange As Object) As String
-        Dim callID As String
-        Dim caller As Range = ToRange(XlCall.Excel(XlCall.xlfCaller))
+        Dim callID As String = ""
+        Dim caller As Range
         Dim EnvPrefix As String = ""
-        resolveConnstring(ConnString, EnvPrefix)
+        Try
+            caller = ToRange(XlCall.Excel(XlCall.xlfCaller))
+            resolveConnstring(ConnString, EnvPrefix)
+            ' calcContainers are identified by wbname + Sheetname + function caller cell Address
+            callID = "[" & caller.Parent.Parent.name & "]" & caller.Parent.name & "!" & caller.Address
 
-        On Error GoTo DBSetQuery_Error
-        ' calcContainers are identified by wbname + Sheetname + function caller cell Address
-        callID = "[" & caller.Parent.Parent.name & "]" & caller.Parent.name & "!" & caller.Address
+            ' check query, also converts query to string (if it is a range)
+            DBSetQuery = checkParams(Query)
+            ' error message is returned from checkParams, if OK then returns nothing
+            If DBSetQuery.Length > 0 Then
+                DBSetQuery = EnvPrefix & ", checkParams error: " & DBSetQuery
+                Exit Function
+            End If
 
-        ' check query, also converts query to string (if it is a range)
-        DBSetQuery = checkParams(Query)
-        ' error message is returned from checkParams, if OK then returns nothing
-        If DBSetQuery.Length > 0 Then
-            DBSetQuery = EnvPrefix & ", checkParams error: " & DBSetQuery
-            Exit Function
-        End If
-
-        ' second call (we're being set to dirty in calc event handler)
-        If existsCalcCont(callID) Then
-            If allCalcContainers(callID).errOccured Then
-                ' commented this to prevent endless loops !!
-                'allCalcContainers.Remove callID
-                ' special case for invocations from function wizard
-            ElseIf Not allCalcContainers(callID).working Then
-                allCalcContainers.Remove(callID)
+            ' second call (we're being set to dirty in calc event handler)
+            If existsCalcCont(callID) Then
+                If allCalcContainers(callID).errOccured Then
+                    ' commented this to prevent endless loops !!
+                    'allCalcContainers.Remove callID
+                    ' special case for invocations from function wizard
+                ElseIf Not allCalcContainers(callID).working Then
+                    allCalcContainers.Remove(callID)
+                    makeCalcMsgContainer(callID, CStr(Query), caller, Nothing, ToRange(targetRange), CStr(ConnString), Nothing, 0, False, False, False, False, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, False)
+                End If
+            Else
+                ' reset status messages when starting new query...
+                If existsStatusCont(callID) Then allStatusContainers(callID).statusMsg = String.Empty
+                ' add transportation info for event proc
                 makeCalcMsgContainer(callID, CStr(Query), caller, Nothing, ToRange(targetRange), CStr(ConnString), Nothing, 0, False, False, False, False, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, False)
             End If
-        Else
-            ' reset status messages when starting new query...
-            If existsStatusCont(callID) Then allStatusContainers(callID).statusMsg = String.Empty
-            ' add transportation info for event proc
-            makeCalcMsgContainer(callID, CStr(Query), caller, Nothing, ToRange(targetRange), CStr(ConnString), Nothing, 0, False, False, False, False, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, False)
-        End If
-        If existsStatusCont(callID) Then
-            DBSetQuery = EnvPrefix & ", statusMsg: " & allStatusContainers(callID).statusMsg
-        Else
-            DBSetQuery = EnvPrefix & ", no recalculation done for unchanged query..."
-        End If
-        hostApp.EnableEvents = True
-        Exit Function
-
-DBSetQuery_Error:
-        Dim ErrDesc As String = Err.Description
-        WriteToLog("Error (" & ErrDesc & ") in Functions.DBSetQuery, callID : " & callID & ", in " & Erl(), EventLogEntryType.Error)
-        DBSetQuery = EnvPrefix & ", Error (" & ErrDesc & ") in DBSetQuery, callID : " & callID
-        hostApp.EnableEvents = True
+            If existsStatusCont(callID) Then
+                DBSetQuery = EnvPrefix & ", statusMsg: " & allStatusContainers(callID).statusMsg
+            Else
+                DBSetQuery = EnvPrefix & ", no recalculation done for unchanged query..."
+            End If
+            hostApp.EnableEvents = True
+        Catch ex As Exception
+            WriteToLog("Error (" & ex.Message & ") in Functions.DBSetQuery, callID : " & callID, EventLogEntryType.Warning)
+            DBSetQuery = EnvPrefix & ", Error (" & ex.Message & ") in DBSetQuery, callID : " & callID
+            hostApp.EnableEvents = True
+        End Try
     End Function
-
-    Sub resolveConnstring(ByRef ConnString As Object, ByRef EnvPrefix As String)
-        Dim setEnv As String
-
-        setEnv = fetchSetting("ConfigName", String.Empty)
-        If TypeName(ConnString) = "Error" Then ConnString = String.Empty
-        If TypeName(ConnString) = "Range" Then ConnString = ConnString.Value
-        If TypeName(ConnString) = "ExcelMissing" Then ConnString = ""
-        ' in case ConnString is a number (set environment, retrieve ConnString from Setting ConstConnString<Number>
-        If TypeName(ConnString) = "Integer" Or TypeName(ConnString) = "Long" Or TypeName(ConnString) = "Double" Or TypeName(ConnString) = "Short" Then
-            ConnString = fetchSetting("ConstConnString" & ConnString, String.Empty)
-        End If
-        EnvPrefix = IIf((TypeName(ConnString) = "String" And ConnString <> ""), "ConnString set", "Env:" & setEnv)
-    End Sub
 
     ''' <summary>
     ''' Fetches a list of data defined by query into TargetRange.
@@ -255,7 +245,6 @@ DBSetQuery_Error:
     ''' <param name="AutoFit">should columns be autofitted ?</param>
     ''' <param name="autoformat">should 1st row formats be autofilled down?</param>
     ''' <param name="ShowRowNums">should row numbers be displayed in 1st column?</param>
-    ''' <param name="subscribeTo">not yet implemented</param>
     ''' <returns>Status Message, data values are returned outside of function cell (@see DBFuncEventHandler)</returns>
     <ExcelFunction(Description:="Fetches a list of data defined by query into TargetRange. Optionally copy formulas contained in FormulaRange, extend list depending on ExtendDataArea (0(default) = overwrite, 1=insert Cells, 2=insert Rows) and add field headers if HeaderInfo = TRUE")>
     Public Function DBListFetch(<ExcelArgument(Description:="query for getting data")> Query As Object,
@@ -266,8 +255,7 @@ DBSetQuery_Error:
                                 <ExcelArgument(Description:="should headers be included in list")> Optional HeaderInfo As Boolean = False,
                                 <ExcelArgument(Description:="should columns be autofitted ?")> Optional AutoFit As Boolean = False,
                                 <ExcelArgument(Description:="should 1st row formats be autofilled down?")> Optional autoformat As Boolean = False,
-                                <ExcelArgument(Description:="should row numbers be displayed in 1st column?")> Optional ShowRowNums As Boolean = False,
-                                <ExcelArgument(Description:="not yet implemented (for push updates from database)")> Optional subscribeTo As String = "") As String
+                                <ExcelArgument(Description:="should row numbers be displayed in 1st column?")> Optional ShowRowNums As Boolean = False) As String
         Dim callID As String
         Dim caller As Range = ToRange(XlCall.Excel(XlCall.xlfCaller))
         Dim EnvPrefix As String = ""
@@ -340,7 +328,7 @@ DBSetQuery_Error:
 
 DBListFetch_Error:
         Dim ErrDesc As String = Err.Description
-        WriteToLog("Error (" & ErrDesc & ") in Functions.DBListFetch, callID : " & callID & ", in " & Erl(), EventLogEntryType.Error)
+        WriteToLog("Error (" & ErrDesc & ") in Functions.DBListFetch, callID : " & callID & ", in " & Erl(), EventLogEntryType.Warning)
         DBListFetch = EnvPrefix & ", Error (" & ErrDesc & ") in DBListFetch, callID : " & callID & ", in " & Erl()
         hostApp.EnableEvents = True
     End Function
@@ -408,7 +396,7 @@ DBListFetch_Error:
         Exit Function
 DBRowFetch_Error:
         Dim ErrDesc As String = Err.Description
-        WriteToLog("Error (" & ErrDesc & ") in DBRowFetch, callID : " & callID & ", in " & Erl(), EventLogEntryType.Error)
+        WriteToLog("Error (" & ErrDesc & ") in DBRowFetch, callID : " & callID & ", in " & Erl(), EventLogEntryType.Warning)
         DBRowFetch = EnvPrefix & ", Error (" & ErrDesc & ") in Functions.DBRowFetch, callID : " & callID
         hostApp.EnableEvents = True
     End Function
@@ -535,8 +523,24 @@ DBRowFetch_Error:
         Exit Sub
 makeCalcMsgContainer_Error:
         If Err.Number <> 457 Then
-            WriteToLog("Error (" & Err.Description & ") in Functions.makeCalcMsgContainer, callID: " & callID & ", in " & Erl(), EventLogEntryType.Error)
+            WriteToLog("Error (" & Err.Description & ") in Functions.makeCalcMsgContainer, callID: " & callID & ", in " & Erl(), EventLogEntryType.Warning)
         End If
+    End Sub
+
+    ''' <summary>create a final connection string from passed String or number (environment), as well as a EnvPrefix for showing the environment (or set ConnString)</summary>
+    ''' <param name="ConnString">passed connection string or environmnet number, resolved (=returned) to actual connection string</param>
+    ''' <param name="EnvPrefix">prefix for showing environment (ConnString set if no environment)</param>
+    Sub resolveConnstring(ByRef ConnString As Object, ByRef EnvPrefix As String)
+        Dim setEnv As String
+
+        setEnv = fetchSetting("ConfigName", String.Empty)
+        If TypeName(ConnString) = "Error" Then ConnString = String.Empty
+        If TypeName(ConnString) = "Range" Then ConnString = ConnString.Value
+        If TypeName(ConnString) = "ExcelMissing" Then ConnString = ""
+        EnvPrefix = IIf((TypeName(ConnString) = "String" And ConnString <> ""), "ConnString set", "Env:" & setEnv)
+        ' in case ConnString is a number (set environment, retrieve ConnString from Setting ConstConnString<Number>
+        If IsNumeric(ConnString) Then ConnString = fetchSetting("ConstConnString" & ConnString, String.Empty)
+        ' = "Integer" Or TypeName(ConnString) = "Long" Or TypeName(ConnString) = "Double" Or TypeName(ConnString) = "Short" 
     End Sub
 
     ''' <summary>check whether a calcContainer exists in allCalcContainers or not</summary>
@@ -615,25 +619,4 @@ err1:
         existsNameInSheet = False
     End Function
 
-    ''' <summary> maintenance procedure to purge names used for dbfunctions from workbook</summary>
-    Public Sub purge()
-        On Error GoTo err1
-        Dim DBname As Name
-        For Each DBname In hostApp.ActiveWorkbook.Names
-            If DBname.Name Like "*ExterneDaten*" Then
-                DBname.Delete()
-            ElseIf DBname.Name Like "DBListArea*" Then
-                DBname.Delete()
-            ElseIf DBname.Name Like "DBFtarget*" Then
-                DBname.Delete()
-            ElseIf DBname.Name Like "DBFsource*" Then
-                DBname.Delete()
-            ElseIf InStr(1, DBname.RefersTo, "#REF!") > 0 Then
-                DBname.Delete()
-            End If
-        Next
-        Exit Sub
-err1:
-        LogError("purge error: " & Err.Description & ", in " & Erl())
-    End Sub
 End Module

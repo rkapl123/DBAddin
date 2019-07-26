@@ -1,8 +1,6 @@
 ﻿Imports ExcelDna.Registration
-Imports System.IO ' needed for logfile
 Imports Microsoft.Office.Interop
 Imports ExcelDna.Integration
-Imports Microsoft.Office.Interop.Excel
 
 ''' <summary>Connection class handling basic Events from Excel (Open, Close)</summary>
 Public Class AddInEvents
@@ -17,27 +15,31 @@ Public Class AddInEvents
         ExcelRegistration.GetExcelCommands().RegisterCommands()
         Application = ExcelDnaUtil.Application
         hostApp = ExcelDnaUtil.Application
-
-        Dim logfilename As String = "C:\\DBAddinlogs\\" + DateTime.Today.ToString("yyyyMMdd") + ".log"
-        If Not Directory.Exists("C:\\DBAddinlogs") Then MkDir("C:\\DBAddinlogs")
-        Try
-            logfile = New StreamWriter(logfilename, True, System.Text.Encoding.GetEncoding(1252))
-            logfile.AutoFlush = True
-        Catch ex As Exception
-            MsgBox("Exception occured when trying to create logfile " + logfilename + ": " + ex.Message)
-        End Try
-        WriteToLog("starting DBAddin", EventLogEntryType.Information)
+        Trace.Listeners.Add(New ExcelDna.Logging.LogDisplayTraceListener())
+        ExcelDna.IntelliSense.IntelliSenseServer.Install()
         theMenuHandler = New MenuHandler
         theDBFuncEventHandler = New DBFuncEventHandler
+        WriteToLog("initialize configuration settings", EventLogEntryType.Information)
         initSettings()
+        Dim srchdListener As Object
+        For Each srchdListener In Trace.Listeners
+            If srchdListener.ToString() = "ExcelDna.Logging.LogDisplayTraceListener" Then
+                DBAddin.theLogListener = srchdListener
+                Exit For
+            End If
+        Next
     End Sub
 
     ''' <summary>AutoClose cleans up after finishing addin</summary>
     Public Sub AutoClose() Implements IExcelAddIn.AutoClose
-        On Error Resume Next
-        theMenuHandler = Nothing
-        hostApp = Nothing
-        theDBFuncEventHandler = Nothing
+        Try
+            theMenuHandler = Nothing
+            hostApp = Nothing
+            theDBFuncEventHandler = Nothing
+            ExcelDna.IntelliSense.IntelliSenseServer.Uninstall()
+        Catch ex As Exception
+            WriteToLog("DBAddin AutoClose (unloading) error: " + ex.Message, EventLogEntryType.Warning)
+        End Try
     End Sub
 
     ''' <summary>Workbook_Save: saves defined DBMaps (depending on configuration)</summary>
