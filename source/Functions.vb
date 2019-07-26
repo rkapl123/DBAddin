@@ -423,39 +423,46 @@ DBRowFetch_Error:
     ''' <summary>checks query and calculation mode if OK for both DBListFetch and DBRowFetch function</summary>
     ''' <param name="Query"></param>
     ''' <returns>Error String (empty if OK)</returns>
-    Private Function checkParams(ByRef Query As Object) As String
-        Dim errval As String
-
+    Private Function checkParams(ByRef Query) As String
         checkParams = String.Empty
-        LogInfo("entering checkParams")
         If hostApp.Calculation = XlCalculation.xlCalculationManual Then
             checkParams = "calc Mode is manual, please press F9 to trigger data fetching !"
         Else
-            If Left(TypeName(Query), 10) = "ExcelError" Then
-                Select Case Query
-                    Case ExcelError.ExcelErrorDiv0 : errval = "#DIV/0!"
-                    Case ExcelError.ExcelErrorNA : errval = "#N/A"
-                    Case ExcelError.ExcelErrorName : errval = "#NAME?"
-                    Case ExcelError.ExcelErrorNull : errval = "#NULL!"
-                    Case ExcelError.ExcelErrorNum : errval = "#NUM!"
-                    Case ExcelError.ExcelErrorRef : errval = "#REF!"
-                    Case ExcelError.ExcelErrorValue : errval = "#VALUE! (in case query is inside DBfunc, check if it's > 255 chars)"
-                    Case Else : errval = "impossible error value..."
-                End Select
-                checkParams = "query contains: '" & errval
-            ElseIf TypeName(Query) = "Range" Then
-                ' if query is range then get the query string out of it..
-                Query = DoConcatCellsSep(vbLf, False, Query)
-                If TypeName(Query) <> "String" Then checkParams = "query parameter invalid (not a string) !"
-                If Query.ToString().Length = 0 Then checkParams = "empty query provided !"
+            If TypeName(Query) = "ExcelEmpty" Then
+                checkParams = "empty query provided !"
+            ElseIf Left(TypeName(Query), 10) = "ExcelError" Then
+                If Query = ExcelError.ExcelErrorValue Then
+                    checkParams = "query contains: #Val! (in case query is an argument of a DBfunction, check if it's > 255 chars)"
+                Else
+                    checkParams = "query contains: #" + Replace(Query.ToString(), "ExcelError", "") + "!"
+                End If
+            ElseIf TypeName(Query) = "Object(,)" Then
+                ' if query is reference then get the query string out of it..
+                Dim myCell
+                Dim retval As String = String.Empty
+                For Each myCell In Query
+                    If TypeName(myCell) = "ExcelEmpty" Then
+                        'do nothing here
+                    ElseIf Left(TypeName(myCell), 10) = "ExcelError" Then
+                        If myCell = ExcelError.ExcelErrorValue Then
+                            checkParams = "query contains: #Val! (in case query is an argument of a DBfunction, check if it's > 255 chars)"
+                        Else
+                            checkParams = "query contains: #" + Replace(myCell.ToString(), "ExcelError", "") + "!"
+                        End If
+                    ElseIf IsNumeric(myCell) Then
+                        retval &= Convert.ToString(myCell, System.Globalization.CultureInfo.InvariantCulture) & " "
+                    Else
+                        retval &= myCell & " "
+                    End If
+                    Query = retval
+                Next
+                If retval.Length = 0 Then checkParams = "empty query provided !"
             ElseIf TypeName(Query) = "String" Then
-                If Query.ToString().Length = 0 Then checkParams = "empty query provided !"
+                If Query.Length = 0 Then checkParams = "empty query provided !"
             Else
                 checkParams = "query parameter invalid (not a range and not a string) !"
+                End If
             End If
-        End If
-        LogInfo("leaving checkParams")
-
     End Function
 
     ''' <summary>build/renew transport containers for functions</summary>
@@ -528,19 +535,23 @@ makeCalcMsgContainer_Error:
     End Sub
 
     ''' <summary>create a final connection string from passed String or number (environment), as well as a EnvPrefix for showing the environment (or set ConnString)</summary>
-    ''' <param name="ConnString">passed connection string or environmnet number, resolved (=returned) to actual connection string</param>
+    ''' <param name="ConnString">passed connection string or environment number, resolved (=returned) to actual connection string</param>
     ''' <param name="EnvPrefix">prefix for showing environment (ConnString set if no environment)</param>
     Sub resolveConnstring(ByRef ConnString As Object, ByRef EnvPrefix As String)
-        Dim setEnv As String
-
-        setEnv = fetchSetting("ConfigName", String.Empty)
-        If TypeName(ConnString) = "Error" Then ConnString = String.Empty
-        If TypeName(ConnString) = "Range" Then ConnString = ConnString.Value
+        If Left(TypeName(ConnString), 10) = "ExcelError" Then Exit Sub
+        If TypeName(ConnString) = "ExcelReference" Then ConnString = ConnString.Value
         If TypeName(ConnString) = "ExcelMissing" Then ConnString = ""
-        EnvPrefix = IIf((TypeName(ConnString) = "String" And ConnString <> ""), "ConnString set", "Env:" & setEnv)
         ' in case ConnString is a number (set environment, retrieve ConnString from Setting ConstConnString<Number>
-        If IsNumeric(ConnString) Then ConnString = fetchSetting("ConstConnString" & ConnString, String.Empty)
-        ' = "Integer" Or TypeName(ConnString) = "Long" Or TypeName(ConnString) = "Double" Or TypeName(ConnString) = "Short" 
+        If TypeName(ConnString) = "Double" Then
+            EnvPrefix = "Env:" & fetchSetting("ConfigName" & ConnString.ToString(), String.Empty)
+            ConnString = fetchSetting("ConstConnString" & ConnString.ToString(), String.Empty)
+        ElseIf TypeName(ConnString) = "String" Then
+            If ConnString = "" Then
+                EnvPrefix = "Env:" & fetchSetting("ConfigName", String.Empty)
+            Else
+                EnvPrefix = "ConnString set"
+            End If
+        End If
     End Sub
 
     ''' <summary>check whether a calcContainer exists in allCalcContainers or not</summary>
