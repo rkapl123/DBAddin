@@ -166,9 +166,6 @@
     <None Include="toc.yml" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="AboutBox1.en-US.resx">
-      <DependentUpon>AboutBox1.vb</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="AboutBox1.resx">
       <DependentUpon>AboutBox1.vb</DependentUpon>
     </EmbeddedResource>
