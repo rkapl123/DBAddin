@@ -231,6 +231,134 @@ Public Module Functions
         End Try
     End Function
 
+    ''' <summary>Stores a query into an Object defined in targetRange (an embedded MS Query/Listobject, Pivot table, etc.)</summary>
+    ''' <param name="Query">query for getting data</param>
+    ''' <param name="ConnString">connection string defining DB, user, etc...</param>
+    ''' <param name="targetRange">Range with Object beneath to put the Query/ConnString into</param>
+    ''' <returns>Status Message</returns>
+    <ExcelFunction(Description:="Stores a query into an Object defined in targetRange (an embedded MS Query/Listobject, Pivot table, etc.)")>
+    Public Function DBSetQueryAsync(<ExcelArgument(Description:="query for getting data")> Query As Object,
+                               <ExcelArgument(Description:="connection string defining DB, user, etc...")> ConnString As Object,
+                               <ExcelArgument(Description:="Range with Object beneath to put the Query/ConnString into", AllowReference:=True)> targetRange As Object) As String
+        Dim callID As String = ""
+        Dim caller As Range
+        Dim EnvPrefix As String = ""
+        Try
+            caller = ToRange(XlCall.Excel(XlCall.xlfCaller))
+            resolveConnstring(ConnString, EnvPrefix)
+            ' calcContainers are identified by wbname + Sheetname + function caller cell Address
+            callID = "[" & caller.Parent.Parent.name & "]" & caller.Parent.name & "!" & caller.Address
+
+            ' check query, also converts query to string (if it is a range)
+            DBSetQueryAsync = checkParams(Query)
+            ' error message is returned from checkParams, if OK then returns nothing
+            If DBSetQueryAsync.Length > 0 Then
+                DBSetQueryAsync = EnvPrefix & ", checkParams error: " & DBSetQueryAsync
+                Exit Function
+            End If
+
+            ' second call (we're being set to dirty in calc event handler)
+            If existsCalcCont(callID) Then
+                If allCalcContainers(callID).errOccured Then
+                    ' commented this to prevent endless loops !!
+                    'allCalcContainers.Remove callID
+                    ' special case for invocations from function wizard
+                ElseIf Not allCalcContainers(callID).working Then
+                    allCalcContainers.Remove(callID)
+                    makeCalcMsgContainer(callID, CStr(Query), caller, Nothing, ToRange(targetRange), CStr(ConnString), Nothing, 0, False, False, False, False, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, False)
+                End If
+            Else
+                ' reset status messages when starting new query...
+                If existsStatusCont(callID) Then allStatusContainers(callID).statusMsg = String.Empty
+                ' add transportation info for event proc
+                makeCalcMsgContainer(callID, CStr(Query), caller, Nothing, ToRange(targetRange), CStr(ConnString), Nothing, 0, False, False, False, False, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, False)
+            End If
+            ExcelAsyncUtil.QueueAsMacro(Sub()
+                                            DBSetQueryAction(allCalcContainers(callID), allStatusContainers(callID))
+                                        End Sub
+                                        )
+            If existsStatusCont(callID) Then
+                DBSetQueryAsync = EnvPrefix & ", statusMsg: " & allStatusContainers(callID).statusMsg
+            Else
+                DBSetQueryAsync = EnvPrefix & ", no recalculation done for unchanged query..."
+            End If
+            hostApp.EnableEvents = True
+        Catch ex As Exception
+            WriteToLog("Error (" & ex.Message & ") in Functions.DBSetQuery, callID : " & callID, EventLogEntryType.Warning)
+            DBSetQueryAsync = EnvPrefix & ", Error (" & ex.Message & ") in DBSetQuery, callID : " & callID
+            hostApp.EnableEvents = True
+        End Try
+    End Function
+
+    ''' <summary>set Query parameters (query text and connection string) of Query List or pivot table (incl. chart)</summary>
+    ''' <param name="calcCont"><see cref="ContainerCalcMsgs"/></param>
+    ''' <param name="statusCont"><see cref="ContainerStatusMsgs"/></param>
+    Public Sub DBSetQueryAction(calcCont As ContainerCalcMsgs, statusCont As ContainerStatusMsgs)
+        Dim TargetCell As Range
+        Dim targetSH As Worksheet
+        Dim targetWB As Workbook
+        Dim callID As String, Query As String, errMsg As String, ConnString As String
+        Dim thePivotTable As PivotTable
+        Dim theListObject As ListObject
+
+        hostApp.Calculation = XlCalculation.xlCalculationManual
+        ' this works around the data validation input bug
+        ' when selecting a value from a list of validated field, excel won't react to
+        ' Application.Calculation changes, so just leave here...
+        If hostApp.Calculation <> XlCalculation.xlCalculationManual Then Exit Sub
+
+        callID = calcCont.callID
+        targetSH = calcCont.targetRange.Parent
+        targetWB = calcCont.targetRange.Parent.Parent
+        TargetCell = calcCont.targetRange
+        Query = calcCont.Query
+        ConnString = calcCont.ConnString
+
+        On Error Resume Next
+        thePivotTable = TargetCell.PivotTable
+        theListObject = TargetCell.ListObject
+        Err.Clear()
+
+        Dim connType As String
+        Dim bgQuery As Boolean
+        On Error GoTo DBSetQueryParams_Error
+        If Not thePivotTable Is Nothing Then
+            bgQuery = thePivotTable.PivotCache.BackgroundQuery
+            connType = Left$(thePivotTable.PivotCache.Connection, InStr(1, thePivotTable.PivotCache.Connection, ";"))
+            thePivotTable.PivotCache.Connection = connType & ConnString
+            thePivotTable.PivotCache.CommandType = XlCmdType.xlCmdSql
+            thePivotTable.PivotCache.CommandText = Query
+            thePivotTable.PivotCache.BackgroundQuery = False
+            thePivotTable.PivotCache.Refresh()
+            statusCont.statusMsg = "Set " & connType & " PivotTable to (bgQuery= " & bgQuery & "): " & Query
+            thePivotTable.PivotCache.BackgroundQuery = bgQuery
+        End If
+
+        If Not theListObject Is Nothing Then
+            bgQuery = theListObject.QueryTable.BackgroundQuery
+            connType = Left$(theListObject.QueryTable.Connection, InStr(1, theListObject.QueryTable.Connection, ";"))
+            ' Attention Dirty Hack ! This works only for SQLOLEDB driver to ODBC driver setting change...
+            theListObject.QueryTable.Connection = connType & Replace(ConnString, "provider=SQLOLEDB", "driver=SQL SERVER")
+            theListObject.QueryTable.CommandType = XlCmdType.xlCmdSql
+            theListObject.QueryTable.CommandText = Query
+            theListObject.QueryTable.BackgroundQuery = False
+            theListObject.QueryTable.Refresh()
+            statusCont.statusMsg = "Set " & connType & " ListObject to (bgQuery= " & bgQuery & "): " & Query
+            theListObject.QueryTable.BackgroundQuery = bgQuery
+        End If
+        Exit Sub
+
+DBSetQueryParams_Error:
+        errMsg = Err.Description & " in query: " & Query
+        WriteToLog("DBFuncEventHandler.DBSetQueryParams Error: " & errMsg & ", caller: " & callID, EventLogEntryType.Warning)
+
+        statusCont.statusMsg = errMsg
+        ' need to mark calc container here as excel won't return to main event proc in case of error
+        ' calc container is then removed in calling function
+        allCalcContainers(callID).errOccured = True
+        allCalcContainers(callID).callsheet.Range(allCalcContainers(callID).caller.Address).Dirty
+    End Sub
+
     ''' <summary>
     ''' Fetches a list of data defined by query into TargetRange.
     ''' Optionally copy formulas contained in FormulaRange, extend list depending on ExtendDataArea (0(default) = overwrite, 1=insert Cells, 2=insert Rows)
@@ -461,8 +589,8 @@ DBRowFetch_Error:
                 If Query.Length = 0 Then checkParams = "empty query provided !"
             Else
                 checkParams = "query parameter invalid (not a range and not a string) !"
-                End If
             End If
+        End If
     End Function
 
     ''' <summary>build/renew transport containers for functions</summary>

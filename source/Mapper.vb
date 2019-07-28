@@ -12,6 +12,8 @@ Public Module Mapper
     ''' assumption: layout of dataRange is
     ''' primKey1Val,primKey2Val,..,primKeyNVal,DataCol1Val,DataCol2Val,..,DataColNVal</summary>
     ''' <param name="DataRange">Excel Range, where Data is taken from</param>
+    ''' <param name="DBMapperName">Name of DBMap for error messages</param>
+    ''' <param name="WbIsSaving">special flag to indicate calling of the procedure during saving of the Workbook</param>
     Public Sub saveRangeToDB(DataRange As Object, DBMapperName As String, Optional WbIsSaving As Boolean = False)
         Dim tableName As String = ""                         ' Database Table, where Data is to be stored
         Dim primKeysStr As String = ""                       ' String containing primary Key names for updating table data, comma separated
@@ -279,7 +281,8 @@ cleanup:
         DBAddin.theRibbon.Invalidate()
     End Sub
 
-    ''' <summary>saves defined DBMaps (depending on configuration)</summary>
+    ''' <summary>saves defined DBMaps (depending on configuration) during workbook saving</summary>
+    ''' <param name="Wb">active workbook that is being saved</param>
     Sub saveDBMaps(Wb As Workbook)
         ' save all DBmaps on saving except Readonly is recommended on this workbook
         Dim DBmapSheet As String

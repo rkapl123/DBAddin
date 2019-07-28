@@ -106,6 +106,7 @@ Public Module DBAddin
     ''' <summary>Logs Message of eEventType to System.Diagnostics.Trace</summary>
     ''' <param name="Message"></param>
     ''' <param name="eEventType"></param>
+    ''' <param name="caller"></param>
     Public Sub WriteToLog(Message As String, eEventType As EventLogEntryType, Optional caller As String = "")
         If caller = "" Then
             Dim theMethod As Object = (New System.Diagnostics.StackTrace).GetFrame(1).GetMethod
@@ -120,8 +121,8 @@ Public Module DBAddin
 
     ''' <summary>Logs error messages</summary>
     ''' <param name="LogMessage"></param>
-    ''' <param name="includeMsg"></param>
     ''' <param name="exitMe"></param>
+    ''' <param name="includeMsg"></param>
     Public Sub LogError(LogMessage As String, Optional ByRef exitMe As Boolean = False, Optional includeMsg As Boolean = True)
         Dim theMethod As Object = (New System.Diagnostics.StackTrace).GetFrame(1).GetMethod
         Dim caller As String = theMethod.ReflectedType.FullName & "." & theMethod.Name
@@ -161,92 +162,86 @@ Public Module DBAddin
         initSettings()
 
         ' enable events in case there were some problems in procedure with EnableEvents = false
-        On Error Resume Next
-        hostApp.EnableEvents = True
-        If Err.Number <> 0 Then
+        Try
+            hostApp.EnableEvents = True
+        Catch ex As Exception
             LogError("Can't refresh data while lookup dropdown is open !!")
             Exit Sub
-        End If
+        End Try
 
         ' also reset the database connection in case of errors...
         theDBFuncEventHandler.cnn.Close()
         theDBFuncEventHandler.cnn = Nothing
         dontTryConnection = False
-        On Error GoTo err1
-
-        ' now for DBListfetch/DBRowfetch resetting
-        allCalcContainers = Nothing
-        Dim underlyingName As Excel.Name
-        underlyingName = getDBRangeName(hostApp.ActiveCell)
-        hostApp.ScreenUpdating = True
-        If underlyingName Is Nothing Then
-            ' reset query cache, so we really get new data !
-            theDBFuncEventHandler.queryCache = New Collection
-            refreshDBFunctions(hostApp.ActiveWorkbook)
-            ' general refresh: also refresh all embedded queries and pivot tables..
-            'On Error Resume Next
-            'Dim ws     As Excel.Worksheet
-            'Dim qrytbl As Excel.QueryTable
-            'Dim pivottbl As Excel.PivotTable
-
-            'For Each ws In hostApp.ActiveWorkbook.Worksheets
-            '    For Each qrytbl In ws.QueryTables
-            '       qrytbl.Refresh
-            '    Next
-            '    For Each pivottbl In ws.PivotTables
-            '        pivottbl.PivotCache.Refresh
-            '    Next
-            'Next
-            'On Error GoTo err1
-        Else
-            ' reset query cache, so we really get new data !
-            theDBFuncEventHandler.queryCache = New Collection
-
-            Dim jumpName As String
-            jumpName = underlyingName.Name
-            ' because of a stupid excel behaviour (Range.Dirty only works if the parent sheet of Range is active)
-            ' we have to jump to the sheet containing the dbfunction and then activate back...
-            theDBFuncEventHandler.origWS = Nothing
-            ' this is switched back in DBFuncEventHandler.Calculate event,
-            ' where we also select back the original active worksheet
-
-            ' we're being called on a target (addtional) functions area
-            If Left$(jumpName, 10) = "DBFtargetF" Then
-                jumpName = Replace(jumpName, "DBFtargetF", "DBFsource", 1, , vbTextCompare)
-
-                If Not hostApp.Range(jumpName).Parent Is hostApp.ActiveSheet Then
-                    hostApp.ScreenUpdating = False
-                    theDBFuncEventHandler.origWS = hostApp.ActiveSheet
-                    On Error Resume Next
-                    hostApp.Range(jumpName).Parent.Select
-                    On Error GoTo err1
-                End If
-                hostApp.Range(jumpName).Dirty()
-                ' we're being called on a target area
-            ElseIf Left$(jumpName, 9) = "DBFtarget" Then
-                jumpName = Replace(jumpName, "DBFtarget", "DBFsource", 1, , vbTextCompare)
-
-                If Not hostApp.Range(jumpName).Parent Is hostApp.ActiveSheet Then
-                    hostApp.ScreenUpdating = False
-                    theDBFuncEventHandler.origWS = hostApp.ActiveSheet
-                    On Error Resume Next
-                    hostApp.Range(jumpName).Parent.Select
-                    On Error GoTo err1
-                End If
-                hostApp.Range(jumpName).Dirty()
-                ' we're being called on a source (invoking function) cell
-            ElseIf Left$(jumpName, 9) = "DBFsource" Then
-                On Error Resume Next
-                hostApp.Range(jumpName).Dirty()
-                On Error GoTo err1
-            Else
+        Try
+            ' now for DBListfetch/DBRowfetch resetting
+            allCalcContainers = Nothing
+            Dim underlyingName As Excel.Name
+            underlyingName = getDBRangeName(hostApp.ActiveCell)
+            hostApp.ScreenUpdating = True
+            If underlyingName Is Nothing Then
+                ' reset query cache, so we really get new data !
+                theDBFuncEventHandler.queryCache = New Collection
                 refreshDBFunctions(hostApp.ActiveWorkbook)
-            End If
-        End If
+                ' general refresh: also refresh all embedded queries and pivot tables..
+                Try
+                    Dim ws As Excel.Worksheet
+                    Dim qrytbl As Excel.QueryTable
+                    Dim pivottbl As Excel.PivotTable
 
-        Exit Sub
-err1:
-        WriteToLog("Error (" & Err.Description & ") in MenuHandler.refreshData in " & Erl(), EventLogEntryType.Warning)
+                    For Each ws In hostApp.ActiveWorkbook.Worksheets
+                        For Each qrytbl In ws.QueryTables
+                            qrytbl.Refresh()
+                        Next
+                        For Each pivottbl In ws.PivotTables
+                            pivottbl.PivotCache.Refresh()
+                        Next
+                    Next
+                Catch ex As Exception
+                End Try
+            Else
+                ' reset query cache, so we really get new data !
+                theDBFuncEventHandler.queryCache = New Collection
+
+                Dim jumpName As String
+                jumpName = underlyingName.Name
+                ' because of a stupid excel behaviour (Range.Dirty only works if the parent sheet of Range is active)
+                ' we have to jump to the sheet containing the dbfunction and then activate back...
+                theDBFuncEventHandler.origWS = Nothing
+                ' this is switched back in DBFuncEventHandler.Calculate event,
+                ' where we also select back the original active worksheet
+
+                ' we're being called on a target (addtional) functions area
+                If Left$(jumpName, 10) = "DBFtargetF" Then
+                    jumpName = Replace(jumpName, "DBFtargetF", "DBFsource", 1, , vbTextCompare)
+
+                    If Not hostApp.Range(jumpName).Parent Is hostApp.ActiveSheet Then
+                        hostApp.ScreenUpdating = False
+                        theDBFuncEventHandler.origWS = hostApp.ActiveSheet
+                        Try : hostApp.Range(jumpName).Parent.Select : Catch ex As Exception : End Try
+                    End If
+                    hostApp.Range(jumpName).Dirty()
+                    ' we're being called on a target area
+                ElseIf Left$(jumpName, 9) = "DBFtarget" Then
+                    jumpName = Replace(jumpName, "DBFtarget", "DBFsource", 1, , vbTextCompare)
+
+                    If Not hostApp.Range(jumpName).Parent Is hostApp.ActiveSheet Then
+                        hostApp.ScreenUpdating = False
+                        theDBFuncEventHandler.origWS = hostApp.ActiveSheet
+                        Try : hostApp.Range(jumpName).Parent.Select : Catch ex As Exception : End Try
+                        hostApp.Range(jumpName).Parent.Select
+                    End If
+                    hostApp.Range(jumpName).Dirty()
+                    ' we're being called on a source (invoking function) cell
+                ElseIf Left$(jumpName, 9) = "DBFsource" Then
+                    Try : hostApp.Range(jumpName).Dirty() : Catch ex As Exception : End Try
+                Else
+                    refreshDBFunctions(hostApp.ActiveWorkbook)
+                End If
+            End If
+        Catch ex As Exception
+            WriteToLog("Error (" & Err.Description & ") in MenuHandler.refreshData in " & Erl(), EventLogEntryType.Warning)
+        End Try
     End Sub
 
     <ExcelCommand(Name:="jumpButton", ShortCut:="^J")>
@@ -265,8 +260,8 @@ err1:
             jumpName = Replace(jumpName, "DBFsource", "DBFtarget", 1, , vbTextCompare)
         End If
         On Error Resume Next
-        hostApp.Range(jumpName).Parent.Select
-        hostApp.Range(jumpName).Select
+        hostApp.Range(jumpName).Parent.Select()
+        hostApp.Range(jumpName).Select()
         If Err.Number <> 0 Then LogWarn("Can't jump to target/source, corresponding workbook open? " & Err.Description, 1)
         Err.Clear()
     End Sub

@@ -24,12 +24,14 @@
     <DefineTrace>true</DefineTrace>
     <OutputPath>bin\Debug\</OutputPath>
     <DocumentationFile>DBaddin.xml</DocumentationFile>
-    <NoWarn>42016,41999,42017,42018,42019,42032,42036,42020,42021,42022</NoWarn>
+    <NoWarn>41999,42016,42017,42018,42019,42020,42021,42022,42032,42036</NoWarn>
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <RegisterForComInterop>false</RegisterForComInterop>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <WarningLevel>1</WarningLevel>
     <GenerateSerializationAssemblies>On</GenerateSerializationAssemblies>
+    <WarningsAsErrors>
+    </WarningsAsErrors>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>Full</DebugType>
@@ -38,10 +40,12 @@
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
     <DocumentationFile>DBaddin.xml</DocumentationFile>
-    <NoWarn>42016,41999,42017,42018,42019,42032,42036,42020,42021,42022</NoWarn>
+    <NoWarn>41999,42016,42017,42018,42019,42020,42021,42022,42032,42036</NoWarn>
     <DebugSymbols>true</DebugSymbols>
     <RegisterForComInterop>false</RegisterForComInterop>
     <WarningLevel>1</WarningLevel>
+    <WarningsAsErrors>
+    </WarningsAsErrors>
   </PropertyGroup>
   <PropertyGroup>
     <OptionExplicit>On</OptionExplicit>
@@ -186,7 +190,8 @@ copy /Y $(TargetDir)DBaddin-AddIn-packed.xll "%25appdata%25\Microsoft\AddIns"
 
 copy /Y $(TargetDir)DBaddin.pdb "%25appdata%25\Microsoft\AddIns"
 
-copy /Y $(TargetDir)DBaddin.dll.config "%25appdata%25\Microsoft\AddIns\DBaddin-AddIn-packed.xll.config"</PostBuildEvent>
+copy /Y $(TargetDir)DBaddin.dll.config "%25appdata%25\Microsoft\AddIns\DBaddin-AddIn-packed.xll.config"
+copy /Y $(TargetDir)DBaddin.dll.config "%25appdata%25\Microsoft\AddIns\DBaddin-AddIn64-packed.xll.config"</PostBuildEvent>
   </PropertyGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
