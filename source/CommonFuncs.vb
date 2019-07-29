@@ -241,7 +241,7 @@ Public Module CommonFuncs
         Dim theFunc
 
         If TypeName(hostApp.Calculation) = "Error" Then
-            WriteToLog("refreshDBFunctions: hostApp.Calculation = Error, " & Wb.Path & "\" & Wb.Name, EventLogEntryType.Information)
+            WriteToLog("hostApp.Calculation = Error, " & Wb.Path & "\" & Wb.Name, EventLogEntryType.Information)
             Exit Sub
         End If
         Try
@@ -263,7 +263,7 @@ Public Module CommonFuncs
             Next
 done:
             If needRecalc And (hostApp.Calculation <> XlCalculation.xlCalculationManual Or ignoreCalcMode) Then
-                WriteToLog("refreshDBFunctions: hostApp.CalculateFull called" & Wb.Path & "\" & Wb.Name, EventLogEntryType.Information)
+                WriteToLog("hostApp.CalculateFull called" & Wb.Path & "\" & Wb.Name, EventLogEntryType.Information)
                 hostApp.CalculateFull()
             End If
         Catch ex As Exception

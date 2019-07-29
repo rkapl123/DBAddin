@@ -4,6 +4,25 @@ Imports ExcelDna.Integration
 ''' <summary>Contains the public callable DB functions and helper functions</summary>
 Public Module Functions
 
+    Public Function existsCalcCont2(ByVal theName As String) As Boolean
+        Try
+            existsCalcCont2 = True
+            Dim dummy As String = allCalcContainers2(theName).ToString()
+        Catch ex As Exception
+            existsCalcCont2 = False
+        End Try
+    End Function
+
+    Public Function existsStatusCont2(ByVal theName As String) As Boolean
+        Try
+            existsStatusCont2 = True
+            Dim dummy As String = allStatusContainers2(theName).ToString()
+        Catch ex As Exception
+            existsStatusCont2 = False
+        End Try
+    End Function
+
+
     ''' <summary>Create database compliant date, time or datetime string from excel datetype value</summary>
     ''' <param name="datVal">date/time/datetime</param>
     ''' <param name="formatting">see remarks</param>
@@ -213,8 +232,6 @@ Public Module Functions
                     makeCalcMsgContainer(callID, CStr(Query), caller, Nothing, ToRange(targetRange), CStr(ConnString), Nothing, 0, False, False, False, False, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, False)
                 End If
             Else
-                ' reset status messages when starting new query...
-                If existsStatusCont(callID) Then allStatusContainers(callID).statusMsg = String.Empty
                 ' add transportation info for event proc
                 makeCalcMsgContainer(callID, CStr(Query), caller, Nothing, ToRange(targetRange), CStr(ConnString), Nothing, 0, False, False, False, False, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, False)
             End If
@@ -243,6 +260,9 @@ Public Module Functions
         Dim callID As String = ""
         Dim caller As Range
         Dim EnvPrefix As String = ""
+
+        If IsNothing(allCalcContainers2) Then allCalcContainers2 = New Collection
+        If IsNothing(allStatusContainers2) Then allStatusContainers2 = New Collection
         Try
             caller = ToRange(XlCall.Excel(XlCall.xlfCaller))
             resolveConnstring(ConnString, EnvPrefix)
@@ -258,34 +278,25 @@ Public Module Functions
             End If
 
             ' second call (we're being set to dirty in calc event handler)
-            If existsCalcCont(callID) Then
-                If allCalcContainers(callID).errOccured Then
-                    ' commented this to prevent endless loops !!
-                    'allCalcContainers.Remove callID
-                    ' special case for invocations from function wizard
-                ElseIf Not allCalcContainers(callID).working Then
-                    allCalcContainers.Remove(callID)
-                    makeCalcMsgContainer(callID, CStr(Query), caller, Nothing, ToRange(targetRange), CStr(ConnString), Nothing, 0, False, False, False, False, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, False)
-                End If
+            ' add transportation info for event proc
+            If existsCalcCont2(callID) Then
+                allCalcContainers2.Remove(callID)
             Else
-                ' reset status messages when starting new query...
-                If existsStatusCont(callID) Then allStatusContainers(callID).statusMsg = String.Empty
-                ' add transportation info for event proc
+                If existsStatusCont2(callID) Then allStatusContainers2.Remove(callID)
+                Dim statusCont As ContainerStatusMsgs = New ContainerStatusMsgs
+                allStatusContainers2.Add(statusCont, callID)
                 makeCalcMsgContainer(callID, CStr(Query), caller, Nothing, ToRange(targetRange), CStr(ConnString), Nothing, 0, False, False, False, False, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, False)
+                ExcelAsyncUtil.QueueAsMacro(Sub()
+                                                DBSetQueryAction(allCalcContainers2(callID), allStatusContainers2(callID))
+                                            End Sub)
             End If
-            ExcelAsyncUtil.QueueAsMacro(Sub()
-                                            DBSetQueryAction(allCalcContainers(callID), allStatusContainers(callID))
-                                        End Sub
-                                        )
-            If existsStatusCont(callID) Then
-                DBSetQueryAsync = EnvPrefix & ", statusMsg: " & allStatusContainers(callID).statusMsg
-            Else
-                DBSetQueryAsync = EnvPrefix & ", no recalculation done for unchanged query..."
+            If existsStatusCont2(callID) Then
+                DBSetQueryAsync = EnvPrefix & ", statusMsg: " & allStatusContainers2(callID).statusMsg
             End If
             hostApp.EnableEvents = True
         Catch ex As Exception
-            WriteToLog("Error (" & ex.Message & ") in Functions.DBSetQuery, callID : " & callID, EventLogEntryType.Warning)
-            DBSetQueryAsync = EnvPrefix & ", Error (" & ex.Message & ") in DBSetQuery, callID : " & callID
+            WriteToLog("Error (" & ex.Message & "), callID : " & callID, EventLogEntryType.Warning)
+            DBSetQueryAsync = EnvPrefix & ", Error (" & ex.Message & ") in DBSetQueryAsync, callID : " & callID
             hostApp.EnableEvents = True
         End Try
     End Function
@@ -301,12 +312,8 @@ Public Module Functions
         Dim thePivotTable As PivotTable
         Dim theListObject As ListObject
 
+        Dim calcMode = hostApp.Calculation
         hostApp.Calculation = XlCalculation.xlCalculationManual
-        ' this works around the data validation input bug
-        ' when selecting a value from a list of validated field, excel won't react to
-        ' Application.Calculation changes, so just leave here...
-        If hostApp.Calculation <> XlCalculation.xlCalculationManual Then Exit Sub
-
         callID = calcCont.callID
         targetSH = calcCont.targetRange.Parent
         targetWB = calcCont.targetRange.Parent.Parent
@@ -346,17 +353,15 @@ Public Module Functions
             statusCont.statusMsg = "Set " & connType & " ListObject to (bgQuery= " & bgQuery & "): " & Query
             theListObject.QueryTable.BackgroundQuery = bgQuery
         End If
+        hostApp.Calculation = calcMode
         Exit Sub
 
 DBSetQueryParams_Error:
+        TargetCell.Cells(1, 1) = "" ' set first cell to ALWAYS trigger return of error messages to calling function
         errMsg = Err.Description & " in query: " & Query
-        WriteToLog("DBFuncEventHandler.DBSetQueryParams Error: " & errMsg & ", caller: " & callID, EventLogEntryType.Warning)
-
+        WriteToLog("Error: " & errMsg & ", caller: " & callID, EventLogEntryType.Warning)
         statusCont.statusMsg = errMsg
-        ' need to mark calc container here as excel won't return to main event proc in case of error
-        ' calc container is then removed in calling function
-        allCalcContainers(callID).errOccured = True
-        allCalcContainers(callID).callsheet.Range(allCalcContainers(callID).caller.Address).Dirty
+        hostApp.Calculation = calcMode
     End Sub
 
     ''' <summary>
@@ -440,8 +445,6 @@ DBSetQueryParams_Error:
 27:             makeCalcMsgContainer(callID, CStr(Query), caller, Nothing, ToRange(targetRange), CStr(ConnString), ToRange(formulaRange), extendDataArea, HeaderInfo, AutoFit, autoformat, ShowRowNums, String.Empty, String.Empty, String.Empty, String.Empty, targetRangeName, formulaRangeName, False)
             End If
         Else
-            ' reset status messages when starting new query...
-28:         If existsStatusCont(callID) Then allStatusContainers(callID).statusMsg = String.Empty
             ' add transportation info for event proc
 29:         makeCalcMsgContainer(callID, CStr(Query), caller, Nothing, ToRange(targetRange), CStr(ConnString), ToRange(formulaRange), extendDataArea, HeaderInfo, AutoFit, autoformat, ShowRowNums, String.Empty, String.Empty, String.Empty, String.Empty, targetRangeName, formulaRangeName, False)
         End If
@@ -456,7 +459,7 @@ DBSetQueryParams_Error:
 
 DBListFetch_Error:
         Dim ErrDesc As String = Err.Description
-        WriteToLog("Error (" & ErrDesc & ") in Functions.DBListFetch, callID : " & callID & ", in " & Erl(), EventLogEntryType.Warning)
+        WriteToLog("Error (" & ErrDesc & "), callID : " & callID & ", in " & Erl(), EventLogEntryType.Warning)
         DBListFetch = EnvPrefix & ", Error (" & ErrDesc & ") in DBListFetch, callID : " & callID & ", in " & Erl()
         hostApp.EnableEvents = True
     End Function
@@ -513,24 +516,26 @@ DBListFetch_Error:
                 makeCalcMsgContainer(callID, CStr(Query), caller, tempArray, Nothing, CStr(ConnString), Nothing, 0, HeaderInfo, False, False, False, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, False)
             End If
         Else
-            ' reset status messages when starting new query...
-            If existsStatusCont(callID) Then allStatusContainers(callID).statusMsg = String.Empty
             ' add transportation info for event proc
             makeCalcMsgContainer(callID, CStr(Query), caller, tempArray, Nothing, CStr(ConnString), Nothing, 0, HeaderInfo, False, False, False, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, String.Empty, False)
         End If
-        If existsStatusCont(callID) Then DBRowFetch = EnvPrefix & ", " & allStatusContainers(callID).statusMsg
+        If existsStatusCont(callID) Then
+            DBRowFetch = EnvPrefix & ", " & allStatusContainers(callID).statusMsg
+        Else
+            DBRowFetch = EnvPrefix & ", no recalculation done for unchanged query..."
+        End If
         hostApp.EnableEvents = True
 
         Exit Function
 DBRowFetch_Error:
         Dim ErrDesc As String = Err.Description
-        WriteToLog("Error (" & ErrDesc & ") in DBRowFetch, callID : " & callID & ", in " & Erl(), EventLogEntryType.Warning)
+        WriteToLog("Error (" & ErrDesc & "), callID : " & callID & ", in " & Erl(), EventLogEntryType.Warning)
         DBRowFetch = EnvPrefix & ", Error (" & ErrDesc & ") in Functions.DBRowFetch, callID : " & callID
         hostApp.EnableEvents = True
     End Function
 
     Public Function DBAddinEnvironment() As String
-        hostApp.Volatile
+        hostApp.Volatile()
         DBAddinEnvironment = fetchSetting("ConfigName", String.Empty)
         If hostApp.Calculation = XlCalculation.xlCalculationManual Then DBAddinEnvironment = "calc Mode is manual, please press F9 to get current DBAddin environment !"
     End Function
@@ -539,7 +544,7 @@ DBRowFetch_Error:
         Dim keywordstart As Integer
         Dim theConnString As String
 
-        hostApp.Volatile
+        hostApp.Volatile()
         On Error Resume Next
         theConnString = fetchSetting("ConstConnString", String.Empty)
         keywordstart = InStr(1, theConnString, "Server=") + Len("Server=")
@@ -653,12 +658,16 @@ DBRowFetch_Error:
         myCalcCont.callID = callID
         myCalcCont.working = False
         'add to global collection of all calc containers
-        allCalcContainers.Add(myCalcCont, callID)
+        If existsStatusCont2(callID) Then
+            allCalcContainers2.Add(myCalcCont, callID)
+        Else
+            allCalcContainers.Add(myCalcCont, callID)
+        End If
 
         Exit Sub
 makeCalcMsgContainer_Error:
         If Err.Number <> 457 Then
-            WriteToLog("Error (" & Err.Description & ") in Functions.makeCalcMsgContainer, callID: " & callID & ", in " & Erl(), EventLogEntryType.Warning)
+            WriteToLog("Error (" & Err.Description & "), callID: " & callID & ", in " & Erl(), EventLogEntryType.Warning)
         End If
     End Sub
 
@@ -686,30 +695,25 @@ makeCalcMsgContainer_Error:
     ''' <param name="theName">name of calcContainer</param>
     ''' <returns>true if it exists</returns>
     Private Function existsCalcCont(ByVal theName As String) As Boolean
-        Dim dummy As String
-
-        On Error GoTo err1
-        existsCalcCont = True
-        dummy = allCalcContainers(theName).Query
-        Exit Function
-err1:
-        Err.Clear()
-        existsCalcCont = False
+        Try
+            existsCalcCont = True
+            Dim dummy As String = allCalcContainers(theName).ToString()
+        Catch ex As Exception
+            existsCalcCont = False
+        End Try
     End Function
+
 
     ''' <summary>check whether a statusMsgContainer exists in allStatusContainers or not</summary>
     ''' <param name="theName">name of statusMsgContainer</param>
     ''' <returns>true if it exists</returns>
     Private Function existsStatusCont(ByVal theName As String) As Boolean
-        Dim dummy As String
-
-        On Error GoTo err1
-        existsStatusCont = True
-        dummy = allStatusContainers(theName).statusMsg
-        Exit Function
-err1:
-        Err.Clear()
-        existsStatusCont = False
+        Try
+            existsStatusCont = True
+            Dim dummy As String = allStatusContainers(theName).statusMsg
+        Catch ex As Exception
+            existsStatusCont = False
+        End Try
     End Function
 
     ''' <summary>checks whether theName exists as a name in Workbook theWb</summary>
@@ -717,15 +721,27 @@ err1:
     ''' <param name="theWb"></param>
     ''' <returns>true if it exists</returns>
     Private Function existsNameInWb(ByRef theName As String, theWb As Workbook) As Boolean
-        Dim dummy As Name
-
-        On Error GoTo err1
-        existsNameInWb = True
-        dummy = theWb.Names(theName)
-        Exit Function
-err1:
-        Err.Clear()
         existsNameInWb = False
+        For Each aName In theWb.Names()
+            If aName.Name = theName Then
+                existsNameInWb = True
+                Exit Function
+            End If
+        Next
+    End Function
+
+    ''' <summary>checks whether theName exists as a name in Worksheet theWs</summary>
+    ''' <param name="theName"></param>
+    ''' <param name="theWs"></param>
+    ''' <returns>true if it exists</returns>
+    Private Function existsNameInSheet(ByRef theName As String, theWs As Worksheet) As Boolean
+        existsNameInSheet = False
+        For Each aName In theWs.Names()
+            If aName.Name = theWs.Name & "!" & theName Then
+                existsNameInSheet = True
+                Exit Function
+            End If
+        Next
     End Function
 
     ''' <summary>converts ExcelDna (C API) reference to excel (COM Based) Range</summary>
@@ -740,22 +756,6 @@ err1:
         Dim ws As Worksheet = ExcelDnaUtil.Application.Sheets(item)
         Dim target As Range = ws.Range(ws.Cells(reference.RowFirst + 1, reference.ColumnFirst + 1), ws.Cells(reference.RowLast + 1, reference.ColumnLast + 1))
         Return target
-    End Function
-
-    ''' <summary>checks whether theName exists as a name in Worksheet theWs</summary>
-    ''' <param name="theName"></param>
-    ''' <param name="theWs"></param>
-    ''' <returns>true if it exists</returns>
-    Private Function existsNameInSheet(ByRef theName As String, theWs As Worksheet) As Boolean
-        Dim dummy As Name
-
-        On Error GoTo err1
-        existsNameInSheet = True
-        dummy = theWs.Names(theName)
-        Exit Function
-err1:
-        Err.Clear()
-        existsNameInSheet = False
     End Function
 
 End Module

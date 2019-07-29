@@ -38,7 +38,7 @@ Public Class AddInEvents
             theDBFuncEventHandler = Nothing
             ExcelDna.IntelliSense.IntelliSenseServer.Uninstall()
         Catch ex As Exception
-            WriteToLog("DBAddin AutoClose (unloading) error: " + ex.Message, EventLogEntryType.Warning)
+            WriteToLog("DBAddin unloading error: " + ex.Message, EventLogEntryType.Warning)
         End Try
     End Sub
 

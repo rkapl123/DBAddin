@@ -27,11 +27,11 @@ Public Class MenuHandler
                                             "screentip='Select DBMapper range to store' " +
                                             "getContent='getDBMapperMenuContent' getVisible='getDBMapperMenuVisible'/>"
         Next
-        ' context menus for refresh, jump and creation: in cell, row, column and ListRange (in a ListObject area)
+        ' context menus for refresh, jump and creation: in cell, row, column and ListRange (area of ListObjects)
         customUIXml = customUIXml + "</group></tab></tabs></ribbon>" +
          "<contextMenus><contextMenu idMso='ContextMenuCell'>" +
-         "<button id='refreshDataC' label='refresh data (Ctrl-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
          "<button id='gotoDBFuncC' label='jump to DBFunc/target (Ctrl-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
+         "<button id='refreshDataC' label='refresh data (Ctrl-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
          "<menu id='createMenuC' label='DBAddin create ...' insertBeforeMso='Cut'>" +
             "<button id='DBMapper' tag='DBMapper' label='DBMapper' imageMso='AddToolGallery' onAction='clickCreateButton'/>" +
             "<button id='DBListFetch' tag='DBListFetch' label='DBListFetch' imageMso='AddCalendarMenu' onAction='clickCreateButton'/>" +
@@ -45,8 +45,8 @@ Public Class MenuHandler
          "<button id='refreshDataZ' label='refresh data (Ctrl-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
          "<menuSeparator id='MySeparatorZ' insertBeforeMso='Cut'/></contextMenu>" +
          "<contextMenu idMso='ContextMenuListRange'>" +
-         "<button id='refreshDataL' label='refresh data (Ctrl-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
          "<button id='gotoDBFuncL' label='jump to DBFunc/target (Ctrl-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
+         "<button id='refreshDataL' label='refresh data (Ctrl-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
          "<menu id='createMenuL' label='DBAddin create ...' insertBeforeMso='Cut'>" +
             "<button id='DBMapperC' tag='DBMapper' label='DBMapper' imageMso='AddToolGallery' onAction='clickCreateButton'/>" +
             "<button id='DBListFetchC' tag='DBListFetch' label='DBListFetch' imageMso='AddCalendarMenu' onAction='clickCreateButton'/>" +

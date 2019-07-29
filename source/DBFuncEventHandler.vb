@@ -114,7 +114,7 @@ Public Class DBFuncEventHandler
                 aTimer.Enabled = True
             End If
         Catch ex As Exception
-            WriteToLog("DBFuncEventHandler.App_WorkbookBeforeSave Error: " & Wb.Name & ex.Message, EventLogEntryType.Warning)
+            WriteToLog("Error: " & Wb.Name & ex.Message, EventLogEntryType.Warning)
         End Try
         dontCalcWhileClearing = False
     End Sub
@@ -142,6 +142,7 @@ Public Class DBFuncEventHandler
         Dim xlcalcmode As Long
 
         If allCalcContainers Is Nothing Then Exit Sub
+        If allCalcContainers2 Is Nothing Then Exit Sub
         If allStatusContainers Is Nothing Then allStatusContainers = New Collection
 
         'hostApp.StatusBar = "Number of calcContainers: " & allStatusContainers.Count
@@ -158,14 +159,20 @@ Public Class DBFuncEventHandler
 
                     Dim doFetching As Boolean = True
                     ' To avoid unneccessary queries (volatile funcions, autofilter set, etc.) , only run data fetching if ConnString/query is either not yet cached or has changed !
+                    ' for reconnecting after changed connection strings another ConnString cache is needed
                     If Not existsQueryCache(callID) Then
                         queryCache.Add(calcCont.ConnString & calcCont.Query, callID)
+                        queryCache.Add(calcCont.ConnString, "ConnString" & callID)
                         doFetching = True
                     Else
                         doFetching = (calcCont.ConnString & calcCont.Query <> queryCache(callID))
+                        dontTryConnection = (calcCont.ConnString = queryCache("ConnString" & callID))
                         ' refresh the query cache...
                         queryCache.Remove(callID)
                         queryCache.Add(calcCont.ConnString & calcCont.Query, callID)
+                        ' refresh the connstring cache...
+                        queryCache.Remove("ConnString" & callID)
+                        queryCache.Add(calcCont.ConnString, "ConnString" & callID)
                     End If
 
                     If doFetching Then
@@ -184,8 +191,8 @@ Public Class DBFuncEventHandler
                             callerText = .caller.Formula
 
                             If Err.Number <> 0 Then
-                                WriteToLog("App_SheetCalculate: ERROR with retrieving .caller.Formula: " & Err.Description, EventLogEntryType.Warning)
-                                errorReason = "App_SheetCalculate: ERROR with .caller.Formula: " & Err.Description
+                                WriteToLog("ERROR with retrieving .caller.Formula: " & Err.Description, EventLogEntryType.Warning)
+                                errorReason = "ERROR with .caller.Formula: " & Err.Description
                                 allCalcContainers(callID).errOccured = True
                             End If
 
@@ -210,10 +217,9 @@ Public Class DBFuncEventHandler
                                     cnn.Open(.ConnString)
 
                                     If Err.Number <> 0 Then
-                                        WriteToLog("App_SheetCalculate Connection error: " & Err.Description, EventLogEntryType.Warning)
+                                        WriteToLog("Connection Error: " & Err.Description, EventLogEntryType.Error)
                                         ' prevent multiple reconnecting if connection errors present...
                                         dontTryConnection = True
-                                        LogError("Connection Error: " & Err.Description)
                                         errorReason = "Connection Error: " & Err.Description
                                         statusCont.statusMsg = errorReason
                                         allCalcContainers(callID).errOccured = True
@@ -222,9 +228,9 @@ Public Class DBFuncEventHandler
                                 End If
                             End If
 
+                            xlcalcmode = hostApp.Calculation
                             ' Do the work !!
                             If cnn.State = 1 And Not allCalcContainers(callID).errOccured Or UCase$(Left$(.ConnString, 5)) = "ODBC;" Then    ' only try database functions for open connection  and no previous errors!!
-                                xlcalcmode = hostApp.Calculation
                                 hostApp.EnableEvents = False
                                 hostApp.Cursor = XlMousePointer.xlWait  ' To show the hourglass
                                 Interrupted = False
@@ -275,7 +281,6 @@ nextCalcCont:
                 calcCont = Nothing
             End If
         Next
-
         If allCalcContainers.Count = 0 Then
             allCalcContainers = Nothing
             allStatusContainers = Nothing
@@ -341,14 +346,14 @@ nextCalcCont:
         Exit Sub
 
 DBSetQueryParams_Error:
+        TargetCell.Dirty() ' target to dirty to ALWAYS trigger return of error messages to calling function
         errMsg = Err.Description & " in query: " & Query
-        WriteToLog("DBFuncEventHandler.DBSetQueryParams Error: " & errMsg & ", caller: " & callID, EventLogEntryType.Warning)
+        WriteToLog("Error: " & errMsg & ", caller: " & callID, EventLogEntryType.Warning)
 
         statusCont.statusMsg = errMsg
         ' need to mark calc container here as excel won't return to main event proc in case of error
         ' calc container is then removed in calling function
         allCalcContainers(callID).errOccured = True
-        allCalcContainers(callID).callsheet.Range(allCalcContainers(callID).caller.Address).Dirty
     End Sub
 
     ''' <summary>Query list of data delimited by maxRows and maxCols, write it into targetCells
@@ -738,24 +743,20 @@ DBSetQueryParams_Error:
             errMsg = "Error in autofitting: " & Err.Description & " in query: " & Query
             GoTo err_0
         End If
-        LogInfo("leaving DBListQuery: callID:" + callID)
+        LogInfo("leaving DBListQuery: callID:" + callID + "statusMsg:" + statusCont.statusMsg)
         Exit Sub
 
-err_2:
+err_2: ' errors where recordset was opened and QueryTables were already added, but temp names were not deleted
         targetSH.Names(tmpname).Delete
         targetSH.Parent.Names(tmpname).Delete
-err_1:
+err_1: ' errors where recordset was opened
         If tableRst.State <> 0 Then tableRst.Close()
-err_0:
-        Dim severity As EventLogEntryType
-        If errMsg.Length = 0 Then
-            errMsg = Err.Description & " in query: " & Query
-            severity = EventLogEntryType.Warning
-        End If
+err_0: ' errors where recordset was not opened or is already closed
+        targetCells.Dirty() ' target to dirty to ALWAYS trigger return of error messages to calling function
+        If errMsg.Length = 0 Then errMsg = Err.Description & " in query: " & Query
         Err.Clear() ' this is important as otherwise the error propagates to App_SheetCalculate,
         ' which recalcs in case of errors there, leading to endless calc loops !!
-        If severity = Nothing Then severity = EventLogEntryType.Information
-        WriteToLog("DBFuncEventHandler.DBListQuery Error: " & errMsg & ", caller: " & callID, severity)
+        WriteToLog("Error: " & errMsg & ", caller: " & callID, EventLogEntryType.Warning)
 
         statusCont.statusMsg = errMsg
         ' need to mark calc container here as excel won't return to main event proc in case of error
@@ -769,9 +770,9 @@ err_0:
     Public Sub DBRowQuery(calcCont As ContainerCalcMsgs, statusCont As ContainerStatusMsgs)
         Dim tableRst As ADODB.Recordset = Nothing
         Dim targetCells As Object
-        Dim Query As String, callID As String, errMsg As String, refCollector As Range
-        Dim headingsPresent As Boolean, headerFilled As Boolean, Delete As Boolean, fillByRows As Boolean
-        Dim returnedRows As Long, fieldIter As Long, rangeIter As Long
+        Dim Query As String, callID As String, errMsg As String = String.Empty, refCollector As Range
+        Dim headingsPresent As Boolean, headerFilled As Boolean, DeleteExistingContent As Boolean, fillByRows As Boolean
+        Dim returnedRows As Long, fieldIter As Integer, rangeIter As Integer
         Dim theCell As Range, targetSlice As Range, targetSlices As Range
         Dim targetSH As Worksheet
 
@@ -829,10 +830,9 @@ err_0:
         End If
 
         On Error GoTo err_1
-
-        ' check whether anything retrieved?
-        Delete = tableRst.EOF
-        If Delete Then statusCont.statusMsg = "Warning: No Data returned in query: " & Query
+        ' check whether anything retrieved? if not, delete possible existing content...
+        DeleteExistingContent = tableRst.EOF
+        If DeleteExistingContent Then statusCont.statusMsg = "Warning: No Data returned in query: " & Query
 
         ' if "heading range" is present then orientation of first range (header) defines layout of data: if "heading range" is column then data is returned columnwise, else row by row.
         ' if there is just one block of data then it is assumed that there are usually more rows than columns and orientation is set by row/column size
@@ -857,12 +857,12 @@ err_0:
                     Else
                         If Not headerFilled Then
                             theCell.Value = tableRst.Fields(fieldIter).Name
-                        ElseIf Delete Then
+                        ElseIf DeleteExistingContent Then
                             theCell.Value = String.Empty
                         Else
                             On Error Resume Next
                             theCell.Value = tableRst.Fields(fieldIter).Value
-                            If Err.Number <> 0 Then theCell.Value = "Field '" & tableRst.Fields(fieldIter).Name & "' caused following error: '" & Err.Description & "'"
+                            If Err.Number <> 0 Then errMsg &= "Field '" & tableRst.Fields(fieldIter).Name & "' caused following error: '" & Err.Description & "'"
                             On Error GoTo err_1
                         End If
                         If fieldIter = tableRst.Fields.Count - 1 Then
@@ -894,16 +894,12 @@ err_0:
         Exit Sub
 
 err_1:
-        Dim severity As EventLogEntryType
-        If errMsg.Length = 0 Then
-            errMsg = Err.Description & " in query: " & Query
-            severity = EventLogEntryType.Warning
-        End If
-        'Err.Clear ' this is important as otherwise the error propagates to App_SheetCalculate,
+        targetCells.Dirty() ' target to dirty to ALWAYS trigger return of error messages to calling function
+        If errMsg.Length = 0 Then errMsg = Err.Description & " in query: " & Query
+        Err.Clear() ' this is important as otherwise the error propagates to App_SheetCalculate,
         ' which recalcs in case of errors there, leading to endless calc loops !!
-        If severity = Nothing Then severity = EventLogEntryType.Information
         If tableRst.State <> 0 Then tableRst.Close()
-        WriteToLog("DBFuncEventHandler.DBRowQuery Error: " & errMsg & ", caller: " & callID & ", in line " & Erl(), severity)
+        WriteToLog("Error: " & errMsg & ", caller: " & callID, EventLogEntryType.Warning)
         statusCont.statusMsg = errMsg
         ' need to mark calc container here as excel won't return to main event proc in case of error
         ' calc container is then removed in calling function

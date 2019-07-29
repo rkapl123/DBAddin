@@ -24,6 +24,9 @@ Public Module DBAddin
     ''' <summary>the log listener</summary>
     Public theLogListener As TraceListener
 
+    Public allStatusContainers2 As Collection
+    Public allCalcContainers2 As Collection
+
     ' Global settings
     Public DebugAddin As Boolean
     ''' <summary>Default ConnectionString, if no connection string is given by user....</summary>
@@ -169,8 +172,8 @@ Public Module DBAddin
             Exit Sub
         End Try
 
-        ' also reset the database connection in case of errors...
-        theDBFuncEventHandler.cnn.Close()
+        ' also reset the database connection in case of errors (might be nothing or not open...)
+        Try : theDBFuncEventHandler.cnn.Close() : Catch ex As Exception : End Try
         theDBFuncEventHandler.cnn = Nothing
         dontTryConnection = False
         Try
