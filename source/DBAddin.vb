@@ -23,9 +23,9 @@ Public Module DBAddin
     Public EventLevelsSelected As String
     ''' <summary>the log listener</summary>
     Public theLogListener As TraceListener
-
-    Public allStatusContainers2 As Collection
-    Public allCalcContainers2 As Collection
+    ''' <summary>to work around a silly Excel bug with Dirty Method we have to select the sheet with the "dirtied" cell to actually do the dirtification.
+    ''' to return to the target, need the original worksheet here.</summary>
+    Public origWS As Worksheet
 
     ' Global settings
     Public DebugAddin As Boolean
@@ -184,7 +184,7 @@ Public Module DBAddin
             hostApp.ScreenUpdating = True
             If underlyingName Is Nothing Then
                 ' reset query cache, so we really get new data !
-                theDBFuncEventHandler.queryCache = New Collection
+                queryCache = New Collection
                 refreshDBFunctions(hostApp.ActiveWorkbook)
                 ' general refresh: also refresh all embedded queries and pivot tables..
                 Try
@@ -204,13 +204,13 @@ Public Module DBAddin
                 End Try
             Else
                 ' reset query cache, so we really get new data !
-                theDBFuncEventHandler.queryCache = New Collection
+                queryCache = New Collection
 
                 Dim jumpName As String
                 jumpName = underlyingName.Name
                 ' because of a stupid excel behaviour (Range.Dirty only works if the parent sheet of Range is active)
                 ' we have to jump to the sheet containing the dbfunction and then activate back...
-                theDBFuncEventHandler.origWS = Nothing
+                origWS = Nothing
                 ' this is switched back in DBFuncEventHandler.Calculate event,
                 ' where we also select back the original active worksheet
 
@@ -220,7 +220,7 @@ Public Module DBAddin
 
                     If Not hostApp.Range(jumpName).Parent Is hostApp.ActiveSheet Then
                         hostApp.ScreenUpdating = False
-                        theDBFuncEventHandler.origWS = hostApp.ActiveSheet
+                        origWS = hostApp.ActiveSheet
                         Try : hostApp.Range(jumpName).Parent.Select : Catch ex As Exception : End Try
                     End If
                     hostApp.Range(jumpName).Dirty()
@@ -230,7 +230,7 @@ Public Module DBAddin
 
                     If Not hostApp.Range(jumpName).Parent Is hostApp.ActiveSheet Then
                         hostApp.ScreenUpdating = False
-                        theDBFuncEventHandler.origWS = hostApp.ActiveSheet
+                        origWS = hostApp.ActiveSheet
                         Try : hostApp.Range(jumpName).Parent.Select : Catch ex As Exception : End Try
                         hostApp.Range(jumpName).Parent.Select
                     End If

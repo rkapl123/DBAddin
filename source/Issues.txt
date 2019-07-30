@@ -1,1 +1,3 @@
-﻿
+﻿formula copy down after range is empty
+format copy down error in log
+null value in DBSetQueryAction (PivotTable)

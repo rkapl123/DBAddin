@@ -1,16 +1,12 @@
 Imports Microsoft.Office.Interop.Excel
 Imports ExcelDna.Integration
 Imports ADODB
-Imports System.Timers
 
 ''' <summary>main calculation event handling and Data retrieving</summary>
 Public Class DBFuncEventHandler
 
     ''' <summary>connection string can be changed for calls with different connection strings</summary>
     Public CurrConnString As String
-    ''' <summary>to work around a silly Excel bug with Dirty Method we have to select the sheet with the "dirtied" cell to actually do the dirtification.
-    ''' to return to the target, need the original worksheet here.</summary>
-    Public origWS As Worksheet
     ''' <summary>cnn object always the same (only open/close)</summary>
     Public cnn As ADODB.Connection
     ''' <summary>the app object needed for excel event handling (most of this class is decdicated to that)</summary>
@@ -21,271 +17,165 @@ Public Class DBFuncEventHandler
 
     Private ODBCconnString As String
     ''' <summary>query cache for avoiding unnecessary recalculations/data retrievals</summary>
-    Public queryCache As Collection
+    'Public queryCache As Collection
 
     Public Sub New()
         Application = ExcelDnaUtil.Application
-        queryCache = New Collection
+        'queryCache = New Collection
     End Sub
-
-    ''' <summary>necessary to asynchronously start refresh of db functions after save event</summary>
-    Private aTimer As System.Timers.Timer
-
-    Private Sub App_WorkbookOpen(ByVal Wb As Workbook) Handles Application.WorkbookOpen
-        If Not Wb.IsAddin Then
-            Dim refreshDBFuncs As Boolean
-            ' when opening, force recalculation of DB functions in workbook.
-            ' this is required as there is no recalculation if no dependencies have changed (usually when opening workbooks)
-            ' however the most important dependency for DB functions is the database data....
-            Try
-                refreshDBFuncs = Not Wb.CustomDocumentProperties("DBFskip")
-            Catch ex As Exception
-                refreshDBFuncs = True
-            End Try
-            If refreshDBFuncs Then refreshDBFunctions(Wb)
-            repairLegacyFunctions()
-        End If
-    End Sub
-
-    ''' <summary>catch the save event, used to remove contents of DBListfunction results (data safety/space consumption)
-    ''' choosing functions for removal of target data is done with custom docproperties</summary>
-    ''' <param name="Wb"></param>
-    ''' <param name="SaveAsUI"></param>
-    ''' <param name="Cancel"></param>
-    Private Sub App_WorkbookBeforeSave(ByVal Wb As Workbook, SaveAsUI As Boolean, ByRef Cancel As Boolean) Handles Application.WorkbookBeforeSave
-        Dim doRefreshDBFuncsAfterSave As Boolean = True
-        Dim docproperty
-        Dim DBFCContentColl As Collection, DBFCAllColl As Collection
-        Dim theFunc
-        Dim ws As Worksheet, lastWs As Worksheet = Nothing
-        Dim searchCell As Range
-        Dim firstAddress As String
-
-        Try
-            DBFCContentColl = New Collection
-            DBFCAllColl = New Collection
-            For Each docproperty In Wb.CustomDocumentProperties
-                If TypeName(docproperty.Value) = "Boolean" Then
-                    If Left$(docproperty.Name, 5) = "DBFCC" And docproperty.Value Then DBFCContentColl.Add(True, Mid$(docproperty.Name, 6))
-                    If Left$(docproperty.Name, 5) = "DBFCA" And docproperty.Value Then DBFCAllColl.Add(True, Mid$(docproperty.Name, 6))
-                    If docproperty.Name = "DBFskip" Then doRefreshDBFuncsAfterSave = Not docproperty.Value
-                End If
-            Next
-            dontCalcWhileClearing = True
-            For Each ws In Wb.Worksheets
-                For Each theFunc In {"DBListFetch(", "DBRowFetch("}
-                    searchCell = ws.Cells.Find(What:=theFunc, After:=ws.Range("A1"), LookIn:=XlFindLookIn.xlFormulas, LookAt:=XlLookAt.xlPart, SearchOrder:=XlSearchOrder.xlByRows, SearchDirection:=XlSearchDirection.xlNext, MatchCase:=False)
-                    If Not (searchCell Is Nothing) Then
-                        firstAddress = searchCell.Address
-                        Do
-                            ' get DB function target names from source names
-                            Dim targetName As String = getDBRangeName(searchCell).Name
-                            targetName = Replace(targetName, "DBFsource", "DBFtarget", 1, , vbTextCompare)
-                            ' check which DB functions should be content cleared (CC) or all cleared (CA)
-                            Dim DBFCC As Boolean = False : Dim DBFCA As Boolean = False
-                            DBFCC = DBFCContentColl.Contains("*")
-                            DBFCC = DBFCContentColl.Contains(searchCell.Parent.Name & "!" & Replace(searchCell.Address, "$", String.Empty)) Or DBFCC
-                            DBFCA = DBFCAllColl.Contains("*")
-                            DBFCA = DBFCAllColl.Contains(searchCell.Parent.Name & "!" & Replace(searchCell.Address, "$", String.Empty)) Or DBFCA
-                            Dim theTargetRange As Range = hostApp.Range(targetName)
-                            If DBFCC Then
-                                theTargetRange.Parent.Range(theTargetRange.Parent.Cells(theTargetRange.Row, theTargetRange.Column), theTargetRange.Parent.Cells(theTargetRange.Row + theTargetRange.Rows.Count - 1, theTargetRange.Column + theTargetRange.Columns.Count - 1)).ClearContents
-                                LogInfo("App_WorkbookSave/Contents of selected DB Functions targets cleared")
-                            End If
-                            If DBFCA Then
-                                theTargetRange.Parent.Range(theTargetRange.Parent.Cells(theTargetRange.Row + 2, theTargetRange.Column), theTargetRange.Parent.Cells(theTargetRange.Row + theTargetRange.Rows.Count - 1, theTargetRange.Column + theTargetRange.Columns.Count - 1)).Clear
-                                theTargetRange.Parent.Range(theTargetRange.Parent.Cells(theTargetRange.Row, theTargetRange.Column), theTargetRange.Parent.Cells(theTargetRange.Row + 2, theTargetRange.Column + theTargetRange.Columns.Count - 1)).ClearContents
-                                LogInfo("App_WorkbookSave/All cleared from selected DB Functions targets")
-                            End If
-                            searchCell = ws.Cells.FindNext(searchCell)
-                        Loop While Not searchCell Is Nothing And searchCell.Address <> firstAddress
-                    End If
-                Next
-                lastWs = ws
-            Next
-            ' reset the cell find dialog....
-            searchCell = Nothing
-            searchCell = lastWs.Cells.Find(What:="", After:=lastWs.Range("A1"), LookIn:=XlFindLookIn.xlFormulas, LookAt:=XlLookAt.xlPart, SearchOrder:=XlSearchOrder.xlByRows, SearchDirection:=XlSearchDirection.xlNext, MatchCase:=False)
-            lastWs = Nothing
-            ' refresh after save event
-            If doRefreshDBFuncsAfterSave And (DBFCContentColl.Count > 0 Or DBFCAllColl.Count > 0) Then
-                aTimer = New Timers.Timer(100)
-                AddHandler aTimer.Elapsed, New ElapsedEventHandler(AddressOf refreshDBFuncLater)
-                aTimer.Enabled = True
-            End If
-        Catch ex As Exception
-            WriteToLog("Error: " & Wb.Name & ex.Message, EventLogEntryType.Warning)
-        End Try
-        dontCalcWhileClearing = False
-    End Sub
-
-    ''' <summary>"OnTime" event function to "escape" workbook_save: event procedure to refetch DB functions results after saving</summary>
-    ''' <param name="sender">the sending object (ourselves)</param>
-    ''' <param name="e">Data for the Timer.Elapsed event</param>
-    Shared Sub refreshDBFuncLater(ByVal sender As Object, ByVal e As ElapsedEventArgs)
-        Dim previouslySaved As Boolean
-
-        If Not hostApp.ActiveWorkbook Is Nothing Then
-            previouslySaved = hostApp.ActiveWorkbook.Saved
-            refreshDBFunctions(hostApp.ActiveWorkbook, True)
-            hostApp.ActiveWorkbook.Saved = previouslySaved
-        End If
-    End Sub
-
 
     ''' <summary>catch the calculation event: this is the technical basis to separate actions not usually allowed in UDFs</summary>
     ''' <param name="Sh">the invoking Sheet</param>
-    Private Sub App_SheetCalculate(ByVal Sh As Object) Handles Application.SheetCalculate
-        Dim calcCont As ContainerCalcMsgs
-        Dim statusCont As ContainerStatusMsgs
-        Dim callID As String, callerText As String
-        Dim xlcalcmode As Long
+    '    Private Sub App_SheetCalculate(ByVal Sh As Object) Handles Application.SheetCalculate
+    '        Dim calcCont As ContainerCalcMsgs
+    '        Dim statusCont As ContainerStatusMsgs
+    '        Dim callID As String, callerText As String
+    '        Dim xlcalcmode As Long
 
-        If allCalcContainers Is Nothing Then Exit Sub
-        If allCalcContainers2 Is Nothing Then Exit Sub
-        If allStatusContainers Is Nothing Then allStatusContainers = New Collection
+    '        If allCalcContainers Is Nothing Then Exit Sub
+    '        If allStatusContainers Is Nothing Then allStatusContainers = New Collection
 
-        'hostApp.StatusBar = "Number of calcContainers: " & allStatusContainers.Count
-        For Each calcCont In allCalcContainers
+    '        'hostApp.StatusBar = "Number of calcContainers: " & allStatusContainers.Count
+    '        For Each calcCont In allCalcContainers
 
-            With calcCont
-                On Error Resume Next
-                Err.Clear()
+    '            With calcCont
+    '                On Error Resume Next
+    '                Err.Clear()
 
-                ' fetch each container just once for working on (use calcCont.working and removal...)
-                ' do not compare Sh with .callsheet, as excel sometimes doesn't invoke the calcevent for a sheet
-                If Not .caller Is Nothing Then
-                    callID = calcCont.callID
+    '                ' fetch each container just once for working on (use calcCont.working and removal...)
+    '                ' do not compare Sh with .callsheet, as excel sometimes doesn't invoke the calcevent for a sheet
+    '                If Not .caller Is Nothing Then
+    '                    callID = calcCont.callID
 
-                    Dim doFetching As Boolean = True
-                    ' To avoid unneccessary queries (volatile funcions, autofilter set, etc.) , only run data fetching if ConnString/query is either not yet cached or has changed !
-                    ' for reconnecting after changed connection strings another ConnString cache is needed
-                    If Not existsQueryCache(callID) Then
-                        queryCache.Add(calcCont.ConnString & calcCont.Query, callID)
-                        queryCache.Add(calcCont.ConnString, "ConnString" & callID)
-                        doFetching = True
-                    Else
-                        doFetching = (calcCont.ConnString & calcCont.Query <> queryCache(callID))
-                        dontTryConnection = (calcCont.ConnString = queryCache("ConnString" & callID))
-                        ' refresh the query cache...
-                        queryCache.Remove(callID)
-                        queryCache.Add(calcCont.ConnString & calcCont.Query, callID)
-                        ' refresh the connstring cache...
-                        queryCache.Remove("ConnString" & callID)
-                        queryCache.Add(calcCont.ConnString, "ConnString" & callID)
-                    End If
+    '                    Dim doFetching As Boolean = True
+    '                    ' To avoid unneccessary queries (volatile funcions, autofilter set, etc.) , only run data fetching if ConnString/query is either not yet cached or has changed !
+    '                    ' for reconnecting after changed connection strings another ConnString cache is needed
+    '                    If Not existsQueryCache(callID) Then
+    '                        queryCache.Add(calcCont.ConnString & calcCont.Query, callID)
+    '                        queryCache.Add(calcCont.ConnString, "ConnString" & callID)
+    '                        doFetching = True
+    '                    Else
+    '                        doFetching = (calcCont.ConnString & calcCont.Query <> queryCache(callID))
+    '                        dontTryConnection = (calcCont.ConnString = queryCache("ConnString" & callID))
+    '                        ' refresh the query cache...
+    '                        queryCache.Remove(callID)
+    '                        queryCache.Add(calcCont.ConnString & calcCont.Query, callID)
+    '                        ' refresh the connstring cache...
+    '                        queryCache.Remove("ConnString" & callID)
+    '                        queryCache.Add(calcCont.ConnString, "ConnString" & callID)
+    '                    End If
 
-                    If doFetching Then
-                        ' avoid (infinite loop) processing if the event procedure invoked the calling DB function again (indirectly by changing target cells)
-                        If Not (allCalcContainers(callID).working Or allCalcContainers(callID).errOccured) Then ' either an error occured or working flag was not reset...
-                            allCalcContainers(callID).working = True
+    '                    If doFetching Then
+    '                        ' avoid (infinite loop) processing if the event procedure invoked the calling DB function again (indirectly by changing target cells)
+    '                        If Not (allCalcContainers(callID).working Or allCalcContainers(callID).errOccured) Then ' either an error occured or working flag was not reset...
+    '                            allCalcContainers(callID).working = True
 
-                            'get status container or add new one to global collection of all status msg containers
-                            If existsStatusColl(callID) Then
-                                statusCont = allStatusContainers(callID)
-                            Else
-                                statusCont = New ContainerStatusMsgs
-                                allStatusContainers.Add(statusCont, callID)
-                            End If
+    '                            'get status container or add new one to global collection of all status msg containers
+    '                            If existsStatusColl(callID) Then
+    '                                statusCont = allStatusContainers(callID)
+    '                            Else
+    '                                statusCont = New ContainerStatusMsgs
+    '                                allStatusContainers.Add(statusCont, callID)
+    '                            End If
 
-                            callerText = .caller.Formula
+    '                            callerText = .caller.Formula
 
-                            If Err.Number <> 0 Then
-                                WriteToLog("ERROR with retrieving .caller.Formula: " & Err.Description, EventLogEntryType.Warning)
-                                errorReason = "ERROR with .caller.Formula: " & Err.Description
-                                allCalcContainers(callID).errOccured = True
-                            End If
+    '                            If Err.Number <> 0 Then
+    '                                WriteToLog("ERROR with retrieving .caller.Formula: " & Err.Description, EventLogEntryType.Warning)
+    '                                errorReason = "ERROR with .caller.Formula: " & Err.Description
+    '                                allCalcContainers(callID).errOccured = True
+    '                            End If
 
-                            ' create/reconnect database connection, except for setting query/connstring with DBSETQUERY !
-                            If InStr(1, UCase$(callerText), "DBSETQUERY(") = 0 Then
-                                ODBCconnString = String.Empty
+    '                            ' create/reconnect database connection, except for setting query/connstring with DBSETQUERY !
+    '                            If InStr(1, UCase$(callerText), "DBSETQUERY(") = 0 Then
+    '                                ODBCconnString = String.Empty
 
-                                If InStr(1, UCase$(.ConnString), ";ODBC;") Then
-                                    ODBCconnString = Mid$(.ConnString, InStr(1, UCase$(.ConnString), ";ODBC;") + 1)
-                                    .ConnString = Left$(.ConnString, InStr(1, UCase$(.ConnString), ";ODBC;") - 1)
-                                End If
+    '                                If InStr(1, UCase$(.ConnString), ";ODBC;") Then
+    '                                    ODBCconnString = Mid$(.ConnString, InStr(1, UCase$(.ConnString), ";ODBC;") + 1)
+    '                                    .ConnString = Left$(.ConnString, InStr(1, UCase$(.ConnString), ";ODBC;") - 1)
+    '                                End If
 
-                                If cnn Is Nothing Then cnn = New ADODB.Connection
-                                If CurrConnString <> .ConnString And cnn.State <> 0 Then cnn.Close()
+    '                                If cnn Is Nothing Then cnn = New ADODB.Connection
+    '                                If CurrConnString <> .ConnString And cnn.State <> 0 Then cnn.Close()
 
-                                If cnn.State <> ADODB.ObjectStateEnum.adStateOpen And Not dontTryConnection Then
-                                    cnn.ConnectionTimeout = CnnTimeout
-                                    cnn.CommandTimeout = CmdTimeout
-                                    cnn.CursorLocation = CursorLocationEnum.adUseClient
-                                    hostApp.StatusBar = "Trying " & CnnTimeout & " sec. with connstring: " & .ConnString
-                                    Err.Clear()
-                                    cnn.Open(.ConnString)
+    '                                If cnn.State <> ADODB.ObjectStateEnum.adStateOpen And Not dontTryConnection Then
+    '                                    cnn.ConnectionTimeout = CnnTimeout
+    '                                    cnn.CommandTimeout = CmdTimeout
+    '                                    cnn.CursorLocation = CursorLocationEnum.adUseClient
+    '                                    hostApp.StatusBar = "Trying " & CnnTimeout & " sec. with connstring: " & .ConnString
+    '                                    Err.Clear()
+    '                                    cnn.Open(.ConnString)
 
-                                    If Err.Number <> 0 Then
-                                        WriteToLog("Connection Error: " & Err.Description, EventLogEntryType.Error)
-                                        ' prevent multiple reconnecting if connection errors present...
-                                        dontTryConnection = True
-                                        errorReason = "Connection Error: " & Err.Description
-                                        statusCont.statusMsg = errorReason
-                                        allCalcContainers(callID).errOccured = True
-                                    End If
-                                    CurrConnString = .ConnString
-                                End If
-                            End If
+    '                                    If Err.Number <> 0 Then
+    '                                        WriteToLog("Connection Error: " & Err.Description, EventLogEntryType.Error)
+    '                                        ' prevent multiple reconnecting if connection errors present...
+    '                                        dontTryConnection = True
+    '                                        errorReason = "Connection Error: " & Err.Description
+    '                                        statusCont.statusMsg = errorReason
+    '                                        allCalcContainers(callID).errOccured = True
+    '                                    End If
+    '                                    CurrConnString = .ConnString
+    '                                End If
+    '                            End If
 
-                            xlcalcmode = hostApp.Calculation
-                            ' Do the work !!
-                            If cnn.State = 1 And Not allCalcContainers(callID).errOccured Or UCase$(Left$(.ConnString, 5)) = "ODBC;" Then    ' only try database functions for open connection  and no previous errors!!
-                                hostApp.EnableEvents = False
-                                hostApp.Cursor = XlMousePointer.xlWait  ' To show the hourglass
-                                Interrupted = False
+    '                            xlcalcmode = hostApp.Calculation
+    '                            ' Do the work !!
+    '                            If cnn.State = 1 And Not allCalcContainers(callID).errOccured Or UCase$(Left$(.ConnString, 5)) = "ODBC;" Then    ' only try database functions for open connection  and no previous errors!!
+    '                                hostApp.EnableEvents = False
+    '                                hostApp.Cursor = XlMousePointer.xlWait  ' To show the hourglass
+    '                                Interrupted = False
 
-                                If InStr(1, UCase$(callerText), "DBLISTFETCH(") > 0 Then
-                                    DBListQuery(calcCont, statusCont)
-                                ElseIf InStr(1, UCase$(callerText), "DBROWFETCH(") > 0 Then
-                                    DBRowQuery(calcCont, statusCont)
-                                ElseIf InStr(1, UCase$(callerText), "DBSETQUERY(") > 0 Then
-                                    DBSetQueryParams(calcCont, statusCont)
-                                End If
+    '                                If InStr(1, UCase$(callerText), "DBLISTFETCH(") > 0 Then
+    '                                    DBListQuery(calcCont, statusCont)
+    '                                ElseIf InStr(1, UCase$(callerText), "DBROWFETCH(") > 0 Then
+    '                                    DBRowQuery(calcCont, statusCont)
+    '                                ElseIf InStr(1, UCase$(callerText), "DBSETQUERY(") > 0 Then
+    '                                    DBSetQueryParams(calcCont, statusCont)
+    '                                End If
 
-                                ' Clean up settings...
-                                hostApp.Cursor = XlMousePointer.xlDefault  ' To return cursor to normal
-                                hostApp.StatusBar = False
-                                'this is NOT done here, otherwise we have a problem with print preview !!
-                                'Instead, enable events at the end of the calling db function
-                                'hostApp.EnableEvents = True
-                            Else
-                                statusCont.statusMsg = "No open connection for DB function, reason: " & errorReason
-                            End If
+    '                                ' Clean up settings...
+    '                                hostApp.Cursor = XlMousePointer.xlDefault  ' To return cursor to normal
+    '                                hostApp.StatusBar = False
+    '                                'this is NOT done here, otherwise we have a problem with print preview !!
+    '                                'Instead, enable events at the end of the calling db function
+    '                                'hostApp.EnableEvents = True
+    '                            Else
+    '                                statusCont.statusMsg = "No open connection for DB function, reason: " & errorReason
+    '                            End If
 
-                            ' to work around silly Excel bug with Dirty Method (in refresh for selected target area)
-                            ' we have to select the sheet with the "dirtied" cell. Here we return to the (calling) target
-                            If Not origWS Is Nothing Then
-                                origWS.Select()
-                                origWS = Nothing
-                                hostApp.ScreenUpdating = True
-                            End If
-                            hostApp.Calculation = xlcalcmode
+    '                            ' to work around silly Excel bug with Dirty Method (in refresh for selected target area)
+    '                            ' we have to select the sheet with the "dirtied" cell. Here we return to the (calling) target
+    '                            If Not origWS Is Nothing Then
+    '                                origWS.Select()
+    '                                origWS = Nothing
+    '                                hostApp.ScreenUpdating = True
+    '                            End If
+    '                            hostApp.Calculation = xlcalcmode
 
-                            ' in manual calculation no recalc of own results is done so we do this now:
-                            If xlcalcmode = XlCalculation.xlCalculationManual Then calcCont.targetRange.Parent.Calculate
-                        End If
-                    Else
-                        ' still set this (even for disabled fetching due to unchanged query) to true as it is needed in the calling function to determine a worked on calc container...
-                        allCalcContainers(callID).working = True
-                    End If
-                End If
-            End With
-nextCalcCont:
-        Next
+    '                            ' in manual calculation no recalc of own results is done so we do this now:
+    '                            If xlcalcmode = XlCalculation.xlCalculationManual Then calcCont.targetRange.Parent.Calculate
+    '                        End If
+    '                    Else
+    '                        ' still set this (even for disabled fetching due to unchanged query) to true as it is needed in the calling function to determine a worked on calc container...
+    '                        allCalcContainers(callID).working = True
+    '                    End If
+    '                End If
+    '            End With
+    'nextCalcCont:
+    '        Next
 
-        ' remove all worked containers
-        For Each calcCont In allCalcContainers
-            If calcCont.working Then
-                allCalcContainers.Remove(calcCont.callID)
-                calcCont = Nothing
-            End If
-        Next
-        If allCalcContainers.Count = 0 Then
-            allCalcContainers = Nothing
-            allStatusContainers = Nothing
-        End If
-    End Sub
+    '        ' remove all worked containers
+    '        For Each calcCont In allCalcContainers
+    '            If calcCont.working Then
+    '                allCalcContainers.Remove(calcCont.callID)
+    '                calcCont = Nothing
+    '            End If
+    '        Next
+    '        If allCalcContainers.Count = 0 Then
+    '            allCalcContainers = Nothing
+    '            allStatusContainers = Nothing
+    '        End If
+    '    End Sub
 
     ''' <summary>set Query parameters (query text and connection string) of Query List or pivot table (incl. chart)</summary>
     ''' <param name="calcCont"><see cref="ContainerCalcMsgs"/></param>
