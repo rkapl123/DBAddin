@@ -241,7 +241,7 @@ Public Module CommonFuncs
         Dim theFunc
 
         If TypeName(hostApp.Calculation) = "Error" Then
-            WriteToLog("hostApp.Calculation = Error, " & Wb.Path & "\" & Wb.Name, EventLogEntryType.Information)
+            WriteToLog("hostApp.Calculation = Error, " & Wb.Path & "\" & Wb.Name, EventLogEntryType.Warning)
             Exit Sub
         End If
         Try
@@ -267,7 +267,7 @@ done:
                 hostApp.CalculateFull()
             End If
         Catch ex As Exception
-            WriteToLog("Error: " & ex.Message & " in CommonFuncs.refreshDBFunctions," & Wb.Path & "\" & Wb.Name, EventLogEntryType.Warning)
+            WriteToLog("Error: " & ex.Message & ", " & Wb.Path & "\" & Wb.Name, EventLogEntryType.Warning)
         End Try
     End Sub
 

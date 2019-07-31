@@ -1,3 +1,4 @@
-﻿formula copy down after range is empty
+﻿formula copy down after range is empty (test workbook)
 format copy down error in log
 null value in DBSetQueryAction (PivotTable)
+Jump back not working when named target range and not selected 1st cell of that range (exception)

@@ -59,27 +59,27 @@ Public Class MenuHandler
 
     ''' <summary>for environment dropdown to get the total number of the entries</summary>
     Public Function GetItemCount(control As IRibbonControl) As Integer
-        Return environdefs.Length
+        Return DBAddin.environdefs.Length
     End Function
 
     ''' <summary>for environment dropdown to get the label of the entries</summary>
     Public Function GetItemLabel(control As IRibbonControl, index As Integer) As String
-        Return environdefs(index)
+        Return DBAddin.environdefs(index)
     End Function
 
     ''' <summary>for environment dropdown to get the ID of the entries</summary>
     Public Function GetItemID(control As IRibbonControl, index As Integer) As String
-        Return environdefs(index)
+        Return DBAddin.environdefs(index)
     End Function
 
     ''' <summary>after selection of environment (using selectItem) used to return the selected environment</summary>
     Public Function GetSelItem(control As IRibbonControl) As Integer
-        Return selectedEnvironment
+        Return DBAddin.selectedEnvironment
     End Function
 
     ''' <summary>Choose environment (configured in registry with ConstConnString(N), ConfigStoreFolder(N))</summary>
     Public Sub selectItem(control As IRibbonControl, id As String, index As Integer)
-        selectedEnvironment = index
+        DBAddin.selectedEnvironment = index
         Dim env As String = (index + 1).ToString()
 
         If GetSetting("DBAddin", "Settings", "DontChangeEnvironment", String.Empty) = "Y" Then
@@ -92,8 +92,7 @@ Public Class MenuHandler
         initSettings()
         MsgBox("ConstConnString" & ConstConnString & vbCrLf & "ConfigStoreFolder:" & ConfigStoreFolder & vbCrLf & vbCrLf & "Please refresh DBSheets Or DBFuncs to see effects...", vbOKOnly, "set defaults to: ")
         ' provide a chance to reconnect when switching environment...
-        theDBFuncEventHandler.cnn = Nothing
-        dontTryConnection = False
+        conn = Nothing
     End Sub
 
     ''' <summary>dialogBoxLauncher of leftmost group: activate about box</summary>

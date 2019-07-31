@@ -7,8 +7,6 @@ Public Module DBAddin
     ' general Global objects/variables
     ''' <summary>ribbon menu handler</summary>
     Public theMenuHandler As MenuHandler
-    ''' <summary>for interrupting long running operations with Ctl-Break</summary>
-    Public Interrupted As Boolean
     ''' <summary>currently selected environment for DB Functions</summary>
     Public selectedEnvironment As Integer
     ''' <summary>reference object for the Addins ribbon</summary>
@@ -23,42 +21,17 @@ Public Module DBAddin
     Public EventLevelsSelected As String
     ''' <summary>the log listener</summary>
     Public theLogListener As TraceListener
-    ''' <summary>to work around a silly Excel bug with Dirty Method we have to select the sheet with the "dirtied" cell to actually do the dirtification.
-    ''' to return to the target, need the original worksheet here.</summary>
-    Public origWS As Worksheet
 
     ' Global settings
     Public DebugAddin As Boolean
     ''' <summary>Default ConnectionString, if no connection string is given by user....</summary>
     Public ConstConnString As String
-    ''' <summary>the folder used to store predefined DB item definitions</summary>
-    Public ConfigStoreFolder As String
-    ''' <summary>Array of special ConfigStoreFolders for non default treatment of Name Separation (Camelcase) and max depth</summary>
-    Public specialConfigStoreFolders() As String
-    ''' <summary>should config stores be sorted alphabetically</summary>
-    Public sortConfigStoreFolders As Boolean
     ''' <summary>global connection timeout (can't be set in DB functions)</summary>
     Public CnnTimeout As Integer
     ''' <summary>global command timeout (can't be set in DB functions)</summary>
     Public CmdTimeout As Integer
     ''' <summary>default formatting style used in DBDate</summary>
     Public DefaultDBDateFormatting As Integer
-
-    ' Global flags
-    ''' <summary>prevent multiple connection retries for each function in case of error</summary>
-    Public dontTryConnection As Boolean
-    ''' <summary>avoid entering dblistfetch function during clearing of listfetch areas (before saving)</summary>
-    Public dontCalcWhileClearing As Boolean
-
-    ' Global objects/variables for DBFuncs
-    ''' <summary>store target filter in case of empty data lists</summary>
-    Public targetFilterCont As Collection
-    ''' <summary>global event class, mainly for calc event procedure</summary>
-    Public theDBFuncEventHandler As DBFuncEventHandler
-    ''' <summary>global collection of information transport containers between function and calc event procedure</summary>
-    Public allCalcContainers As Collection
-    ''' <summary>global collection of information transport containers between function and calc event procedure</summary>
-    Public allStatusContainers As Collection
 
     ''' <summary>encapsulates setting fetching (currently registry)</summary>
     ''' <param name="Key"></param>
@@ -160,6 +133,7 @@ Public Module DBAddin
         End If
     End Sub
 
+    ''' <summary>refresh DB Functions (and - if called from outside any db function area - all other external data ranges)</summary>
     <ExcelCommand(Name:="refreshData", ShortCut:="^R")>
     Public Sub refreshData()
         initSettings()
@@ -173,18 +147,18 @@ Public Module DBAddin
         End Try
 
         ' also reset the database connection in case of errors (might be nothing or not open...)
-        Try : theDBFuncEventHandler.cnn.Close() : Catch ex As Exception : End Try
-        theDBFuncEventHandler.cnn = Nothing
+        Try : conn.Close() : Catch ex As Exception : End Try
+        conn = Nothing
         dontTryConnection = False
         Try
-            ' now for DBListfetch/DBRowfetch resetting
-            allCalcContainers = Nothing
+            ' reset query cache, so we really get new data !
+            queryCache = New Collection
+            StatusCollection = New Collection
             Dim underlyingName As Excel.Name
             underlyingName = getDBRangeName(hostApp.ActiveCell)
             hostApp.ScreenUpdating = True
+            ' now for DBListfetch/DBRowfetch resetting, first outside of all db function areas...
             If underlyingName Is Nothing Then
-                ' reset query cache, so we really get new data !
-                queryCache = New Collection
                 refreshDBFunctions(hostApp.ActiveWorkbook)
                 ' general refresh: also refresh all embedded queries and pivot tables..
                 Try
@@ -202,22 +176,12 @@ Public Module DBAddin
                     Next
                 Catch ex As Exception
                 End Try
-            Else
-                ' reset query cache, so we really get new data !
-                queryCache = New Collection
-
+            Else ' then inside a db function area (target or source = function cell)
                 Dim jumpName As String
                 jumpName = underlyingName.Name
-                ' because of a stupid excel behaviour (Range.Dirty only works if the parent sheet of Range is active)
-                ' we have to jump to the sheet containing the dbfunction and then activate back...
-                origWS = Nothing
-                ' this is switched back in DBFuncEventHandler.Calculate event,
-                ' where we also select back the original active worksheet
-
-                ' we're being called on a target (addtional) functions area
+                ' we're being called on a target functions area (additionally given in DBListFetch)
                 If Left$(jumpName, 10) = "DBFtargetF" Then
                     jumpName = Replace(jumpName, "DBFtargetF", "DBFsource", 1, , vbTextCompare)
-
                     If Not hostApp.Range(jumpName).Parent Is hostApp.ActiveSheet Then
                         hostApp.ScreenUpdating = False
                         origWS = hostApp.ActiveSheet
@@ -227,7 +191,7 @@ Public Module DBAddin
                     ' we're being called on a target area
                 ElseIf Left$(jumpName, 9) = "DBFtarget" Then
                     jumpName = Replace(jumpName, "DBFtarget", "DBFsource", 1, , vbTextCompare)
-
+                    ' return to source functions sheet to work around Dirty method problem (cell's sheet needs to be selected for Dirty to work on that cell)
                     If Not hostApp.Range(jumpName).Parent Is hostApp.ActiveSheet Then
                         hostApp.ScreenUpdating = False
                         origWS = hostApp.ActiveSheet
@@ -247,6 +211,7 @@ Public Module DBAddin
         End Try
     End Sub
 
+    ''' <summary>jumps between DB Function and target area</summary>
     <ExcelCommand(Name:="jumpButton", ShortCut:="^J")>
     Public Sub jumpButton()
         Dim underlyingName As Excel.Name
@@ -262,10 +227,11 @@ Public Module DBAddin
         Else
             jumpName = Replace(jumpName, "DBFsource", "DBFtarget", 1, , vbTextCompare)
         End If
-        On Error Resume Next
-        hostApp.Range(jumpName).Parent.Select()
-        hostApp.Range(jumpName).Select()
-        If Err.Number <> 0 Then LogWarn("Can't jump to target/source, corresponding workbook open? " & Err.Description, 1)
-        Err.Clear()
+        Try
+            hostApp.Range(jumpName).Parent.Select()
+            hostApp.Range(jumpName).Select()
+        Catch ex As Exception
+            LogWarn("Can't jump to target/source, corresponding workbook open? " & ex.Message)
+        End Try
     End Sub
 End Module

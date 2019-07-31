@@ -58,7 +58,7 @@ Public Module Mapper
         Try
             checkrst.Open(tableName, dbcnn, CursorTypeEnum.adOpenForwardOnly, LockTypeEnum.adLockReadOnly, CommandTypeEnum.adCmdTableDirect)
         Catch ex As Exception
-            LogWarn("Table: " & tableName & " caused error: " & ex.Message & " in sheet " & DataRange.Parent.name)
+            LogWarn("Table: " & tableName & " caused error: " & ex.Message & " in sheet " & DataRange.Parent.Name)
             checkrst.Close()
             GoTo cleanup
         End Try
@@ -80,7 +80,7 @@ Public Module Mapper
         ' check if all column names (except ignored) of DBMapper Range exist in table
         colNum = 1
         Do
-            Dim fieldname As String = DataRange.Cells(1, colNum).Value
+            Dim fieldname As String = Trim(DataRange.Cells(1, colNum).Value)
             ' only if not ignored...
             If InStr(1, LCase(fieldname) + ",", ignoreColumns) = 0 Then
                 Try
@@ -88,7 +88,7 @@ Public Module Mapper
                 Catch ex As Exception
                     DataRange.Parent.Activate
                     DataRange.Cells(1, colNum).Select
-                    LogWarn("Field '" & fieldname & "' does not exist in Table '" & tableName & "' and is not in ignoreColumns, Error in sheet " & DataRange.Parent.name)
+                    LogWarn("Field '" & fieldname & "' does not exist in Table '" & tableName & "' and is not in ignoreColumns, Error in sheet " & DataRange.Parent.Name)
                     GoTo cleanup
                 End Try
             End If
@@ -109,11 +109,11 @@ Public Module Mapper
                 primKeyValue = DataRange.Cells(rowNum, i + 1).Value
                 primKeyCompound = primKeyCompound & primKeys(i) & " = " & dbFormatType(primKeyValue, checkTypes(i)) & IIf(i = UBound(primKeys), "", " AND ")
                 If IsError(primKeyValue) Then
-                    LogError("Error in primary key value, cell (" & rowNum & "," & i + 1 & ") in sheet " & DataRange.Parent.name & ", & row " & rowNum)
+                    LogError("Error in primary key value, cell (" & rowNum & "," & i + 1 & ") in sheet " & DataRange.Parent.Name & ", & row " & rowNum)
                     GoTo nextRow
                 End If
                 If primKeyValue.ToString().Length = 0 Then
-                    LogError("Empty primary key value, cell (" & rowNum & "," & i + 1 & ") in sheet " & DataRange.Parent.name & ", & row " & rowNum)
+                    LogError("Empty primary key value, cell (" & rowNum & "," & i + 1 & ") in sheet " & DataRange.Parent.Name & ", & row " & rowNum)
                     GoTo nextRow
                 End If
             Next
@@ -122,7 +122,7 @@ Public Module Mapper
             Try
                 rst.Open("SELECT * FROM " & tableName & primKeyCompound, dbcnn, CursorTypeEnum.adOpenDynamic, LockTypeEnum.adLockOptimistic)
             Catch ex As Exception
-                LogWarn("Problem getting recordset, Error: " & ex.Message & " in sheet " & DataRange.Parent.name & ", & row " & rowNum)
+                LogWarn("Problem getting recordset, Error: " & ex.Message & " in sheet " & DataRange.Parent.Name & ", & row " & rowNum)
                 rst.Close()
                 GoTo cleanup
             End Try
@@ -136,7 +136,7 @@ Public Module Mapper
                 Else
                     DataRange.Parent.Activate
                     DataRange.Cells(rowNum, i + 1).Select
-                    LogWarn("Problem getting recordset " & primKeyCompound & " from table '" & tableName & "', insertIfMissing = " & insertIfMissing & " in sheet " & DataRange.Parent.name & ", & row " & rowNum)
+                    LogWarn("Problem getting recordset " & primKeyCompound & " from table '" & tableName & "', insertIfMissing = " & insertIfMissing & " in sheet " & DataRange.Parent.Name & ", & row " & rowNum)
                     rst.Close()
                     GoTo cleanup
                 End If
@@ -152,7 +152,7 @@ Public Module Mapper
                     Catch ex As Exception
                         DataRange.Parent.Activate
                         DataRange.Cells(rowNum, colNum).Select
-                        LogError("General Error: " & ex.Message & " with Table: " & tableName & ", Field: " & fieldname & ", in sheet " & DataRange.Parent.name & ", & row " & rowNum & ", col: " & colNum)
+                        LogError("General Error: " & ex.Message & " with Table: " & tableName & ", Field: " & fieldname & ", in sheet " & DataRange.Parent.Name & ", & row " & rowNum & ", col: " & colNum)
                         rst.Close()
                         GoTo cleanup
                     End Try
@@ -166,7 +166,7 @@ Public Module Mapper
             Catch ex As Exception
                 DataRange.Parent.Activate
                 DataRange.Rows(rowNum).Select
-                LogWarn("Table: " & rst.Source & ", Error: " & ex.Message & " in sheet " & DataRange.Parent.name & ", & row " & rowNum)
+                LogWarn("Table: " & rst.Source & ", Error: " & ex.Message & " in sheet " & DataRange.Parent.Name & ", & row " & rowNum)
                 rst.Close()
                 GoTo cleanup
             End Try
@@ -259,7 +259,7 @@ cleanup:
         For Each namedrange As Name In hostApp.ActiveWorkbook.Names
             Dim cleanname As String = Replace(namedrange.Name, namedrange.Parent.Name & "!", "")
             If Left(cleanname, 8) = "DBMapper" Then
-                If InStr(namedrange.RefersTo, "#REF!") > 0 Then LogError("DBMapper definitions range " + namedrange.Parent.name + "!" + namedrange.Name + " contains #REF!")
+                If InStr(namedrange.RefersTo, "#REF!") > 0 Then LogError("DBMapper definitions range " + namedrange.Parent.Name + "!" + namedrange.Name + " contains #REF!")
                 Dim nodeName As String = Replace(Replace(namedrange.Name, "DBMapper", ""), namedrange.Parent.Name & "!", "")
                 If nodeName = "" Then nodeName = "UnnamedDBMapper"
 
@@ -378,7 +378,7 @@ cleanup:
             If Not getParametersFromText(hostApp.ActiveCell.Comment.Text, env, tableName, primKeysStr, database, insertIfMissing, executeAdditionalProc, ignoreColumns, storeDBMapOnSave) Then Exit Sub
             theDBMapperCreateDlg = New DBMapperCreate()
             If InStr(1, activeCellName, "DBMapper") > 0 Then theDBMapperCreateDlg.DBMapperName.Text = Replace(activeCellName, "DBMapper", "")
-            theDBMapperCreateDlg.envSel.DataSource = environdefs
+            theDBMapperCreateDlg.envSel.DataSource = DBAddin.environdefs
             theDBMapperCreateDlg.envSel.SelectedIndex = env
             theDBMapperCreateDlg.Tablename.Text = tableName
             theDBMapperCreateDlg.PrimaryKeys.Text = primKeysStr
@@ -391,7 +391,7 @@ cleanup:
         ' no DBMapper definitions found...
         If IsNothing(theDBMapperCreateDlg) Then
             theDBMapperCreateDlg = New DBMapperCreate()
-            theDBMapperCreateDlg.envSel.DataSource = environdefs
+            theDBMapperCreateDlg.envSel.DataSource = DBAddin.environdefs
             theDBMapperCreateDlg.envSel.SelectedIndex = -1
         End If
 

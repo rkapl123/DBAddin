@@ -3,6 +3,10 @@ Imports System.IO ' for getting config files for menu
 
 '''<summary>procedures used for loading config files (containing DBFunctions and general sheet content) and building the config menu</summary>
 Public Module ConfigFiles
+    ''' <summary>the folder used to store predefined DB item definitions</summary>
+    Public ConfigStoreFolder As String
+    ''' <summary>Array of special ConfigStoreFolders for non default treatment of Name Separation (Camelcase) and max depth</summary>
+    Public specialConfigStoreFolders() As String
 
     ''' <summary>loads config from file given in theFileName</summary>
     ''' <param name="theFileName">the File name of the config file</param>

@@ -23,7 +23,6 @@ Public Class AddInEvents
         Trace.Listeners.Add(New ExcelDna.Logging.LogDisplayTraceListener())
         ExcelDna.IntelliSense.IntelliSenseServer.Install()
         theMenuHandler = New MenuHandler
-        theDBFuncEventHandler = New DBFuncEventHandler
         WriteToLog("initialize configuration settings", EventLogEntryType.Information)
         initSettings()
         Dim srchdListener As Object
@@ -40,7 +39,6 @@ Public Class AddInEvents
         Try
             theMenuHandler = Nothing
             hostApp = Nothing
-            theDBFuncEventHandler = Nothing
             ExcelDna.IntelliSense.IntelliSenseServer.Uninstall()
         Catch ex As Exception
             WriteToLog("DBAddin unloading error: " + ex.Message, EventLogEntryType.Warning)

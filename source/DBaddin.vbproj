@@ -118,9 +118,7 @@
     <Compile Include="AddInEvents.vb" />
     <Compile Include="CommonFuncs.vb" />
     <Compile Include="ConfigFiles.vb" />
-    <Compile Include="ContainerMsgs.vb" />
     <Compile Include="DBAddin.vb" />
-    <Compile Include="DBFuncEventHandler.vb" />
     <Compile Include="DBMapperCreate.Designer.vb">
       <DependentUpon>DBMapperCreate.vb</DependentUpon>
     </Compile>
