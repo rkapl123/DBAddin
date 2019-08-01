@@ -40,7 +40,6 @@ Partial Class AboutBox1
         Me.LabelCopyright = New System.Windows.Forms.Label()
         Me.LabelCompanyName = New System.Windows.Forms.Label()
         Me.TextBoxDescription = New System.Windows.Forms.TextBox()
-        Me.purge = New System.Windows.Forms.Button()
         Me.showLog = New System.Windows.Forms.Button()
         Me.OKButton = New System.Windows.Forms.Button()
         Me.EventLevels = New System.Windows.Forms.ComboBox()
@@ -63,7 +62,6 @@ Partial Class AboutBox1
         Me.TableLayoutPanel.Controls.Add(Me.LabelCopyright, 1, 2)
         Me.TableLayoutPanel.Controls.Add(Me.LabelCompanyName, 1, 3)
         Me.TableLayoutPanel.Controls.Add(Me.TextBoxDescription, 1, 4)
-        Me.TableLayoutPanel.Controls.Add(Me.purge, 1, 5)
         Me.TableLayoutPanel.Controls.Add(Me.showLog, 2, 5)
         Me.TableLayoutPanel.Controls.Add(Me.OKButton, 4, 5)
         Me.TableLayoutPanel.Controls.Add(Me.EventLevels, 3, 5)
@@ -164,17 +162,6 @@ Partial Class AboutBox1
         Me.TextBoxDescription.TabStop = False
         Me.TextBoxDescription.Text = resources.GetString("TextBoxDescription.Text")
         '
-        'purge
-        '
-        Me.purge.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.purge.Location = New System.Drawing.Point(137, 233)
-        Me.purge.Name = "purge"
-        Me.purge.Size = New System.Drawing.Size(131, 22)
-        Me.purge.TabIndex = 1
-        Me.purge.Text = "Purge DBfunc names"
-        Me.ToolTip1.SetToolTip(Me.purge, "purge all hidden names being set by DB Addin")
-        Me.purge.UseVisualStyleBackColor = True
-        '
         'showLog
         '
         Me.showLog.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
@@ -229,8 +216,6 @@ Partial Class AboutBox1
         Me.ResumeLayout(False)
 
     End Sub
-
-    Friend WithEvents purge As Windows.Forms.Button
     Friend WithEvents showLog As Windows.Forms.Button
     Friend WithEvents EventLevels As Windows.Forms.ComboBox
     Friend WithEvents ToolTip1 As Windows.Forms.ToolTip

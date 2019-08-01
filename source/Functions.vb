@@ -255,8 +255,8 @@ Public Module Functions
         Dim targetSH As Worksheet
         Dim targetWB As Workbook
         Dim errMsg As String
-        Dim thePivotTable As PivotTable
-        Dim theListObject As ListObject
+        Dim thePivotTable As PivotTable = Nothing
+        Dim theListObject As ListObject = Nothing
 
         Dim calcMode = hostApp.Calculation
         hostApp.Calculation = XlCalculation.xlCalculationManual
@@ -264,47 +264,55 @@ Public Module Functions
         targetSH = TargetCell.Parent
         targetWB = TargetCell.Parent.Parent
 
-        On Error Resume Next
-        thePivotTable = TargetCell.PivotTable
-        theListObject = TargetCell.ListObject
-        Err.Clear()
+        Try
+            thePivotTable = TargetCell.PivotTable
+            theListObject = TargetCell.ListObject
+        Catch ex As Exception : End Try
 
         Dim connType As String
         Dim bgQuery As Boolean
-        On Error GoTo DBSetQueryAction_Error
-        If Not thePivotTable Is Nothing Then
-            bgQuery = thePivotTable.PivotCache.BackgroundQuery
-            connType = Left$(thePivotTable.PivotCache.Connection, InStr(1, thePivotTable.PivotCache.Connection, ";"))
-            thePivotTable.PivotCache.Connection = connType & ConnString
-            thePivotTable.PivotCache.CommandType = XlCmdType.xlCmdSql
-            thePivotTable.PivotCache.CommandText = Query
-            thePivotTable.PivotCache.BackgroundQuery = False
-            thePivotTable.PivotCache.Refresh()
-            StatusCollection(callID).statusMsg = "Set " & connType & " PivotTable to (bgQuery= " & bgQuery & "): " & Query
-            thePivotTable.PivotCache.BackgroundQuery = bgQuery
-        End If
+        Try
+            StatusCollection(callID).statusMsg = "neither pivot table nor Listobject could be set..."
+            If Not thePivotTable Is Nothing Then
+                bgQuery = thePivotTable.PivotCache.BackgroundQuery
+                Try
+                    connType = Left$(thePivotTable.PivotCache.Connection, InStr(1, thePivotTable.PivotCache.Connection, ";"))
+                Catch ex As Exception
+                    MsgBox("couldn't get connection from Pivot Table, please create pivot table with external data source !", vbCritical + vbOKOnly, "Pivot Table assigning")
+                    Throw ex
+                End Try
+                thePivotTable.PivotCache.Connection = connType & ConnString
+                thePivotTable.PivotCache.CommandType = XlCmdType.xlCmdSql
+                thePivotTable.PivotCache.CommandText = Query
+                thePivotTable.PivotCache.BackgroundQuery = False
+                thePivotTable.PivotCache.Refresh()
+                StatusCollection(callID).statusMsg = "Set " & connType & " PivotTable to (bgQuery= " & bgQuery & "): " & Query
+                thePivotTable.PivotCache.BackgroundQuery = bgQuery
+            End If
 
-        If Not theListObject Is Nothing Then
-            bgQuery = theListObject.QueryTable.BackgroundQuery
-            connType = Left$(theListObject.QueryTable.Connection, InStr(1, theListObject.QueryTable.Connection, ";"))
-            ' Attention Dirty Hack ! This works only for SQLOLEDB driver to ODBC driver setting change...
-            theListObject.QueryTable.Connection = connType & Replace(ConnString, "provider=SQLOLEDB", "driver=SQL SERVER")
-            theListObject.QueryTable.CommandType = XlCmdType.xlCmdSql
-            theListObject.QueryTable.CommandText = Query
-            theListObject.QueryTable.BackgroundQuery = False
-            theListObject.QueryTable.Refresh()
-            StatusCollection(callID).statusMsg = "Set " & connType & " ListObject to (bgQuery= " & bgQuery & "): " & Query
-            theListObject.QueryTable.BackgroundQuery = bgQuery
-        End If
-        StatusCollection(callID).statusMsg = "neither pivot table nor Listobject could be set..."
-        hostApp.Calculation = calcMode
-        Exit Sub
-
-DBSetQueryAction_Error:
-        TargetCell.Cells(1, 1) = "" ' set first cell to ALWAYS trigger return of error messages to calling function
-        errMsg = Err.Description & " in query: " & Query
-        WriteToLog(errMsg & ", caller: " & callID, EventLogEntryType.Warning)
-        StatusCollection(callID).statusMsg = errMsg
+            If Not theListObject Is Nothing Then
+                bgQuery = theListObject.QueryTable.BackgroundQuery
+                Try
+                    connType = Left$(theListObject.QueryTable.Connection, InStr(1, theListObject.QueryTable.Connection, ";"))
+                Catch ex As Exception
+                    MsgBox("couldn't get connection from ListObject, please create ListObject with external data source !", vbCritical + vbOKOnly, "ListObject assigning")
+                    Throw ex
+                End Try
+                ' Attention Dirty Hack ! This works only for SQLOLEDB driver to ODBC driver setting change...
+                theListObject.QueryTable.Connection = connType & Replace(ConnString, "provider=SQLOLEDB", "driver=SQL SERVER")
+                theListObject.QueryTable.CommandType = XlCmdType.xlCmdSql
+                theListObject.QueryTable.CommandText = Query
+                theListObject.QueryTable.BackgroundQuery = False
+                theListObject.QueryTable.Refresh()
+                StatusCollection(callID).statusMsg = "Set " & connType & " ListObject to (bgQuery= " & bgQuery & "): " & Query
+                theListObject.QueryTable.BackgroundQuery = bgQuery
+            End If
+        Catch ex As Exception
+            TargetCell.Cells(1, 1) = "" ' set first cell to ALWAYS trigger return of error messages to calling function
+            errMsg = Err.Description & " in query: " & Query
+            WriteToLog(errMsg & ", caller: " & callID, EventLogEntryType.Warning)
+            StatusCollection(callID).statusMsg = errMsg
+        End Try
         hostApp.Calculation = calcMode
     End Sub
 
@@ -831,11 +839,16 @@ err_0: ' errors where recordset was not opened or is already closed
         finishAction(calcMode, callID, "Error")
     End Sub
 
+    ''' <summary>common sub to finish the action procedures, resetting anything that was set otherwise...</summary>
+    ''' <param name="calcMode"></param>
+    ''' <param name="callID"></param>
+    ''' <param name="additionalLogInfo"></param>
     Private Sub finishAction(calcMode As XlCalculation, callID As String, Optional additionalLogInfo As String = "")
         hostApp.Cursor = XlMousePointer.xlDefault  ' To return cursor to normal
         hostApp.StatusBar = False
         LogInfo("Leaving DBListFetchAction: callID " & callID & IIf(additionalLogInfo <> "", ", additionalInfo: " & additionalLogInfo, ""))
         If Not IsNothing(origWS) Then origWS.Select()
+        hostApp.ScreenUpdating = True ' coming from refresh, this might be off for dirtying "foreign" (being on a different sheet than the calling function) data targets 
         hostApp.Calculation = calcMode
     End Sub
 

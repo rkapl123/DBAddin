@@ -25,7 +25,7 @@ Public NotInheritable Class AboutBox1
         Me.LabelCompanyName.Text = "Information: " + My.Application.Info.CompanyName
         Me.TextBoxDescription.Text = My.Application.Info.Description
         dontChangeEventLevels = True
-        Me.EventLevels.SelectedItem = DBAddin.EventLevelsSelected
+        Me.EventLevels.SelectedItem = DBAddin.EventLevelSelected
         dontChangeEventLevels = False
     End Sub
 
@@ -46,10 +46,6 @@ Public NotInheritable Class AboutBox1
     ''' <param name="e"></param>
     Private Sub LabelProductName_Click(sender As Object, e As EventArgs) Handles LabelProductName.Click
         Process.Start(fetchSetting("LocalHelp", String.Empty))
-    End Sub
-
-    Private Sub purge_Click(sender As Object, e As EventArgs) Handles purge.Click
-        purgeNames()
     End Sub
 
     Private Sub showLog_Click(sender As Object, e As EventArgs) Handles showLog.Click
@@ -74,7 +70,7 @@ Public NotInheritable Class AboutBox1
         If Not Trace.Listeners.Contains(DBAddin.theLogListener) Then
             Trace.Listeners.Add(DBAddin.theLogListener)
         End If
-        DBAddin.EventLevelsSelected = EventLevels.SelectedItem
+        DBAddin.EventLevelSelected = EventLevels.SelectedItem
     End Sub
 
 End Class

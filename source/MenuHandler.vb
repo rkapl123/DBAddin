@@ -1,4 +1,3 @@
-Imports ExcelDna.Integration
 Imports ExcelDna.Integration.CustomUI
 Imports System.Runtime.InteropServices
 
@@ -8,27 +7,30 @@ Public Class MenuHandler
     Inherits ExcelRibbon
 
     ''' <summary>callback after Excel loaded the Ribbon, used to initialize data for the Ribbon</summary>
-    Public Sub ribbonLoaded(theRibbon As ExcelDna.Integration.CustomUI.IRibbonUI)
+    Public Sub ribbonLoaded(theRibbon As IRibbonUI)
         DBAddin.theRibbon = theRibbon
     End Sub
 
     ''' <summary>creates the Ribbon (only at startup). any changes to the ribbon can only be done via dynamic menus</summary>
     Public Overrides Function GetCustomUI(RibbonID As String) As String
-        Dim customUIXml As String = "<customUI xmlns='http://schemas.microsoft.com/office/2009/07/customui' onLoad='ribbonLoaded' ><ribbon><tabs><tab id='DBaddinTab' label='DB Addin'>" +
-            "<group id='DBAddinGroup' label='General settings'>" +
+        ' Ribbon definition XML
+        Dim customUIXml As String = "<customUI xmlns='http://schemas.microsoft.com/office/2009/07/customui' onLoad='ribbonLoaded' ><ribbon><tabs><tab id='DBaddinTab' label='DB Addin'>"
+        ' DBAddin Group: environment choice, DBConfics selection tree, purge names tool button and dialogBoxLauncher for AboutBox
+        customUIXml += "<group id='DBAddinGroup' label='General settings'>" +
               "<dropDown id='envDropDown' label='Environment:' sizeString='12345678901234567890' getSelectedItemIndex='GetSelItem' getItemCount='GetItemCount' getItemID='GetItemID' getItemLabel='GetItemLabel' onAction='selectItem'/>" +
               "<dynamicMenu id='DBConfigs' size='normal' label='DB Configs' imageMso='Refresh' screentip='DB Function Configuration Files quick access' getContent='getDBConfigMenu'/>" +
-              "<dialogBoxLauncher><button id='dialog' label='About DBAddin' onAction='showAbout' tag='3' screentip='Show Aboutbox with help, version information and homepage'/></dialogBoxLauncher></group>" +
-              "<group id='DBMapperGroup' label='Store DBMapper Data'>"
-        ' max. 15 sheets with DBMapper definitions possible:
+              "<button id='purgetool' label='purge names tool' imageMso='TableColumnsDeleteExcel' onAction='clickpurgetoolbutton'/>" +
+              "<dialogBoxLauncher><button id='dialog' label='About DBAddin' onAction='showAbout' tag='3' screentip='Show Aboutbox with help, version information, homepage and access to log'/></dialogBoxLauncher></group>"
+        ' DBMapper Group: max. 15 sheets with DBMapper definitions possible:
+        customUIXml += "<group id='DBMapperGroup' label='Store DBMapper Data'>"
         For i As Integer = 0 To 14
-            customUIXml = customUIXml + "<dynamicMenu id='ID" + i.ToString() + "' " +
+            customUIXml += "<dynamicMenu id='ID" + i.ToString() + "' " +
                                             "size='large' getLabel='getSheetLabel' imageMso='SignatureLineInsert' " +
                                             "screentip='Select DBMapper range to store' " +
                                             "getContent='getDBMapperMenuContent' getVisible='getDBMapperMenuVisible'/>"
         Next
-        ' context menus for refresh, jump and creation: in cell, row, column and ListRange (area of ListObjects)
-        customUIXml = customUIXml + "</group></tab></tabs></ribbon>" +
+        ' Context menus for refresh, jump and creation: in cell, row, column and ListRange (area of ListObjects)
+        customUIXml += "</group></tab></tabs></ribbon>" +
          "<contextMenus><contextMenu idMso='ContextMenuCell'>" +
          "<button id='gotoDBFuncC' label='jump to DBFunc/target (Ctrl-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
          "<button id='refreshDataC' label='refresh data (Ctrl-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
@@ -162,6 +164,11 @@ Public Class MenuHandler
         jumpButton()
     End Sub
 
+    ''' <summary>purge name tool button, purge names used for dbfunctions from workbook</summary>
+    Public Sub clickpurgetoolbutton(control As IRibbonControl)
+        purgeNames()
+    End Sub
+
     ''' <summary>context menu entries below create...: create DB function or DB Mapper</summary>
     Public Sub clickCreateButton(control As IRibbonControl)
         If control.Tag = "DBListFetch" Then
@@ -169,6 +176,13 @@ Public Class MenuHandler
         ElseIf control.Tag = "DBRowFetch" Then
             createFunctionsInCells(hostApp.ActiveCell, {"RC", "=DBRowFetch("""","""",TRUE,R[1]C:R[1]C[10])"})
         ElseIf control.Tag = "DBSetQuery" Then
+            Dim pivotcache As Microsoft.Office.Interop.Excel.PivotCache = hostApp.ActiveWorkbook.PivotCaches().Add(Microsoft.Office.Interop.Excel.XlPivotTableSourceType.xlExternal)
+            pivotcache.Connection = "OLEDB;" & DBAddin.ConstConnString
+            pivotcache.MaintainConnection = False
+            pivotcache.CommandText = "select CURRENT_TIMESTAMP"
+            pivotcache.CommandType = Microsoft.Office.Interop.Excel.XlCmdType.xlCmdSql
+            Dim pivotTables As Microsoft.Office.Interop.Excel.PivotTables = hostApp.ActiveSheet.PivotTables()
+            pivotTables.Add(pivotcache, hostApp.ActiveCell.Offset(1, 0), "PivotTable1")
             createFunctionsInCells(hostApp.ActiveCell, {"RC", "=DBSetQuery("""","""",R[1]C)"})
         ElseIf control.Tag = "DBMapper" Then
             createDBMapper()
