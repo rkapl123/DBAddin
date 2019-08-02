@@ -264,10 +264,9 @@ Public Module Functions
         targetSH = TargetCell.Parent
         targetWB = TargetCell.Parent.Parent
 
-        Try
-            thePivotTable = TargetCell.PivotTable
-            theListObject = TargetCell.ListObject
-        Catch ex As Exception : End Try
+        ' try to get either a pivot table object or a list object from the target cell. What we have, is checked later...
+        Try : thePivotTable = TargetCell.PivotTable : Catch ex As Exception : End Try
+        Try : theListObject = TargetCell.ListObject : Catch ex As Exception : End Try
 
         Dim connType As String
         Dim bgQuery As Boolean

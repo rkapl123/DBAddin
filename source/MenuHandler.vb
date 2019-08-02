@@ -34,27 +34,28 @@ Public Class MenuHandler
          "<contextMenus><contextMenu idMso='ContextMenuCell'>" +
          "<button id='gotoDBFuncC' label='jump to DBFunc/target (Ctrl-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
          "<button id='refreshDataC' label='refresh data (Ctrl-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
-         "<menu id='createMenuC' label='DBAddin create ...' insertBeforeMso='Cut'>" +
+         "<menu id='createMenu' label='DBAddin create ...' insertBeforeMso='Cut'>" +
             "<button id='DBMapper' tag='DBMapper' label='DBMapper' imageMso='AddToolGallery' onAction='clickCreateButton'/>" +
             "<button id='DBListFetch' tag='DBListFetch' label='DBListFetch' imageMso='AddCalendarMenu' onAction='clickCreateButton'/>" +
             "<button id='DBRowFetch' tag='DBRowFetch' label='DBRowFetch' imageMso='DataFormAddRecord' onAction='clickCreateButton'/>" +
-            "<button id='DBSetQuery' tag='DBSetQuery' label='DBSetQuery' imageMso='AddContentType' onAction='clickCreateButton'/></menu>" +
-         "<menuSeparator id='MySeparatorC' insertBeforeMso='Cut'/></contextMenu>" +
+            "<button id='DBSetQueryPivot' tag='DBSetQueryPivot' label='DBSetQueryPivot' imageMso='AddContentType' onAction='clickCreateButton'/>" +
+            "<button id='DBSetQueryListObject' tag='DBSetQueryListObject' label='DBSetQueryListObject' imageMso='AddContentType' onAction='clickCreateButton'/>" +
+         "</menu>" +
+         "<menuSeparator id='MySeparatorC' insertBeforeMso='Cut'/>" +
+         "</contextMenu>" +
          "<contextMenu idMso='ContextMenuRow'>" +
          "<button id='refreshDataR' label='refresh data (Ctrl-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
-         "<menuSeparator id='MySeparatorR' insertBeforeMso='Cut'/></contextMenu>" +
+         "<menuSeparator id='MySeparatorR' insertBeforeMso='Cut'/>" +
+         "</contextMenu>" +
          "<contextMenu idMso='ContextMenuColumn'>" +
          "<button id='refreshDataZ' label='refresh data (Ctrl-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
-         "<menuSeparator id='MySeparatorZ' insertBeforeMso='Cut'/></contextMenu>" +
+         "<menuSeparator id='MySeparatorZ' insertBeforeMso='Cut'/>" +
+         "</contextMenu>" +
          "<contextMenu idMso='ContextMenuListRange'>" +
          "<button id='gotoDBFuncL' label='jump to DBFunc/target (Ctrl-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
          "<button id='refreshDataL' label='refresh data (Ctrl-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
-         "<menu id='createMenuL' label='DBAddin create ...' insertBeforeMso='Cut'>" +
-            "<button id='DBMapperC' tag='DBMapper' label='DBMapper' imageMso='AddToolGallery' onAction='clickCreateButton'/>" +
-            "<button id='DBListFetchC' tag='DBListFetch' label='DBListFetch' imageMso='AddCalendarMenu' onAction='clickCreateButton'/>" +
-            "<button id='DBRowFetchC' tag='DBRowFetch' label='DBRowFetch' imageMso='DataFormAddRecord' onAction='clickCreateButton'/>" +
-            "<button id='DBSetQueryC' tag='DBSetQuery' label='DBSetQuery' imageMso='AddContentType' onAction='clickCreateButton'/></menu>" +
-         "<menuSeparator id='MySeparatorL' insertBeforeMso='Cut'/></contextMenu>" +
+         "<menuSeparator id='MySeparatorL' insertBeforeMso='Cut'/>" +
+         "</contextMenu>" +
          "</contextMenus></customUI>"
         Return customUIXml
     End Function
@@ -175,14 +176,32 @@ Public Class MenuHandler
             createFunctionsInCells(hostApp.ActiveCell, {"RC", "=DBListFetch("""","""",R[1]C,,,TRUE,TRUE,TRUE)"})
         ElseIf control.Tag = "DBRowFetch" Then
             createFunctionsInCells(hostApp.ActiveCell, {"RC", "=DBRowFetch("""","""",TRUE,R[1]C:R[1]C[10])"})
-        ElseIf control.Tag = "DBSetQuery" Then
+        ElseIf control.Tag = "DBSetQueryPivot" Then
             Dim pivotcache As Microsoft.Office.Interop.Excel.PivotCache = hostApp.ActiveWorkbook.PivotCaches().Add(Microsoft.Office.Interop.Excel.XlPivotTableSourceType.xlExternal)
             pivotcache.Connection = "OLEDB;" & DBAddin.ConstConnString
             pivotcache.MaintainConnection = False
-            pivotcache.CommandText = "select CURRENT_TIMESTAMP"
+            pivotcache.CommandText = "select CURRENT_TIMESTAMP" ' this should be sufficient for most databases
             pivotcache.CommandType = Microsoft.Office.Interop.Excel.XlCmdType.xlCmdSql
             Dim pivotTables As Microsoft.Office.Interop.Excel.PivotTables = hostApp.ActiveSheet.PivotTables()
             pivotTables.Add(pivotcache, hostApp.ActiveCell.Offset(1, 0), "PivotTable1")
+            createFunctionsInCells(hostApp.ActiveCell, {"RC", "=DBSetQuery("""","""",R[1]C)"})
+        ElseIf control.Tag = "DBSetQueryListObject" Then
+            With hostApp.ActiveSheet.ListObjects.Add(SourceType:=0, Source:="OLEDB;" & DBAddin.ConstConnString, Destination:=hostApp.ActiveCell.Offset(1, 0)).QueryTable
+                .CommandType = Microsoft.Office.Interop.Excel.XlCmdType.xlCmdSql
+                .CommandText = "select CURRENT_TIMESTAMP" ' this should be sufficient for most databases
+                .RowNumbers = False
+                .FillAdjacentFormulas = False
+                .PreserveFormatting = True
+                .RefreshOnFileOpen = False
+                .BackgroundQuery = True
+                .RefreshStyle = Microsoft.Office.Interop.Excel.XlCellInsertionMode.xlInsertDeleteCells
+                .SavePassword = False
+                .SaveData = True
+                .AdjustColumnWidth = True
+                .RefreshPeriod = 0
+                .PreserveColumnInfo = True
+                .Refresh(BackgroundQuery:=False)
+            End With
             createFunctionsInCells(hostApp.ActiveCell, {"RC", "=DBSetQuery("""","""",R[1]C)"})
         ElseIf control.Tag = "DBMapper" Then
             createDBMapper()

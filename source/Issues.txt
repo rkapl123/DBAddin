@@ -1,2 +1,3 @@
 ﻿formula copy down after range is empty (test workbook)
 format copy down error in log
+exception when calling SetQuery on a Listobject
