@@ -235,13 +235,13 @@ Public Module Functions
                 StatusCollection.Add(statusCont, callID)
                 StatusCollection(callID).statusMsg = "" ' need this to prevent object not set errors in checkCache
                 ExcelAsyncUtil.QueueAsMacro(Sub()
-                                                DBSetQueryAction(callID, Query, targetRange, ConnString)
+                                                DBSetQueryAction(callID, Query, targetRange, ConnString, caller)
                                             End Sub)
             End If
 
         Catch ex As Exception
             WriteToLog("Error (" & ex.Message & "), callID : " & callID, EventLogEntryType.Warning)
-            DBSetQuery = EnvPrefix & ", Error (" & ex.Message & ") in DBSetQueryAsync, callID : " & callID
+            DBSetQuery = EnvPrefix & ", Error (" & ex.Message & ") in DBSetQuery, callID : " & callID
         End Try
     End Function
 
@@ -250,7 +250,7 @@ Public Module Functions
     ''' <param name="Query"></param>
     ''' <param name="targetRange"></param>
     ''' <param name="ConnString"></param>
-    Sub DBSetQueryAction(callID As String, Query As String, targetRange As ExcelReference, ConnString As String)
+    Sub DBSetQueryAction(callID As String, Query As String, targetRange As ExcelReference, ConnString As String, caller As Range)
         Dim TargetCell As Range
         Dim targetSH As Worksheet
         Dim targetWB As Workbook
@@ -263,6 +263,7 @@ Public Module Functions
         TargetCell = ToRange(targetRange)
         targetSH = TargetCell.Parent
         targetWB = TargetCell.Parent.Parent
+        Dim callerFormula As String = caller.Formula
 
         ' try to get either a pivot table object or a list object from the target cell. What we have, is checked later...
         Try : thePivotTable = TargetCell.PivotTable : Catch ex As Exception : End Try
@@ -305,10 +306,15 @@ Public Module Functions
                 theListObject.QueryTable.Refresh()
                 StatusCollection(callID).statusMsg = "Set " & connType & " ListObject to (bgQuery= " & bgQuery & "): " & Query
                 theListObject.QueryTable.BackgroundQuery = bgQuery
+                Try
+                    Dim testTarget = TargetCell.Address
+                Catch ex As Exception
+                    caller.Formula = callerFormula ' restore formula as excel deletes target range when changing query fundamentally
+                End Try
             End If
         Catch ex As Exception
-            TargetCell.Cells(1, 1) = "" ' set first cell to ALWAYS trigger return of error messages to calling function
-            errMsg = Err.Description & " in query: " & Query
+            TargetCell.Cells(1, 1).Value = IIf(TargetCell.Cells(1, 1).Value = "", " ", "") ' recalculate to trigger return of error messages to calling function
+            errMsg = ex.Message & " in query: " & Query
             WriteToLog(errMsg & ", caller: " & callID, EventLogEntryType.Warning)
             StatusCollection(callID).statusMsg = errMsg
         End Try
@@ -389,14 +395,14 @@ Public Module Functions
             If Not StatusCollection.Contains(callID) Then
                 Dim statusCont As ContainedStatusMsg = New ContainedStatusMsg
                 StatusCollection.Add(statusCont, callID)
-                StatusCollection(callID).statusMsg = "" ' need this to prevent object not set errors in checkCache
+                'StatusCollection(callID).statusMsg = "" ' need this to prevent object not set errors in checkParamsAndCache
                 ExcelAsyncUtil.QueueAsMacro(Sub()
                                                 DBListFetchAction(callID, CStr(Query), caller, ToRange(targetRange), CStr(ConnString), ToRange(formulaRange), extendDataArea, HeaderInfo, AutoFit, autoformat, ShowRowNums, targetRangeName, formulaRangeName)
                                             End Sub)
             End If
         Catch ex As Exception
             WriteToLog("Error (" & ex.Message & "), callID : " & callID, EventLogEntryType.Warning)
-            DBListFetch = EnvPrefix & ", Error (" & ex.Message & "), callID : " & callID
+            DBListFetch = EnvPrefix & ", Error (" & ex.Message & ") in DBListFetch, callID : " & callID
         End Try
     End Function
 
@@ -831,7 +837,7 @@ err_2: ' errors where recordset was opened and QueryTables were already added, b
 err_1: ' errors where recordset was opened
         If tableRst.State <> 0 Then tableRst.Close()
 err_0: ' errors where recordset was not opened or is already closed
-        targetRange.Cells(1, 1) = "" ' target to dirty to ALWAYS trigger return of error messages to calling function
+        targetRange.Cells(1, 1).Value = IIf(targetRange.Cells(1, 1).Value = "", " ", "") ' recalculate to trigger return of error messages to calling function
         If errMsg.Length = 0 Then errMsg = Err.Description & " in query: " & Query
         WriteToLog(errMsg & ", caller: " & callID, EventLogEntryType.Warning)
         StatusCollection(callID).statusMsg = errMsg
@@ -907,7 +913,7 @@ err_0: ' errors where recordset was not opened or is already closed
             End If
         Catch ex As Exception
             WriteToLog("Error (" & ex.Message & "), callID : " & callID, EventLogEntryType.Warning)
-            DBRowFetch = EnvPrefix & ", Error (" & ex.Message & "), callID : " & callID
+            DBRowFetch = EnvPrefix & ", Error (" & ex.Message & ") in DBRowFetch, callID : " & callID
         End Try
     End Function
 
@@ -1070,7 +1076,7 @@ err_0: ' errors where recordset was not opened or is already closed
         Exit Sub
 
 err_1:
-        targetCells(0).Cells(1, 1) = "" ' target to dirty to ALWAYS trigger return of error messages to calling function
+        targetCells(0).Cells(1, 1).Value = IIf(targetCells(0).Cells(1, 1).Value = "", " ", "") ' recalculate to trigger return of error messages to calling function
         If errMsg.Length = 0 Then errMsg = Err.Description & " in query: " & Query
         If tableRst.State <> 0 Then tableRst.Close()
         WriteToLog(errMsg & ", caller: " & callID, EventLogEntryType.Warning)
@@ -1184,6 +1190,11 @@ err_1:
                 checkParamsAndCache = "query parameter invalid (not a range and not a string) !"
             End If
         End If
+        If checkParamsAndCache.Length > 0 Then
+            ' refresh the query cache ...
+            If queryCache.Contains(callID) Then queryCache.Remove(callID)
+            Exit Function
+        End If
 
         ' caching check mechanism to avoid unnecessary recalculations/refetching
         Dim doFetching As Boolean
@@ -1201,7 +1212,9 @@ err_1:
             If StatusCollection.Contains(callID) Then StatusCollection.Remove(callID)
         Else
             ' return Status Containers Message as last result
-            If StatusCollection.Contains(callID) Then checkParamsAndCache = StatusCollection(callID).statusMsg
+            If StatusCollection.Contains(callID) Then
+                If Not IsNothing(StatusCollection(callID).statusMsg) Then checkParamsAndCache = StatusCollection(callID).statusMsg
+            End If
         End If
     End Function
 

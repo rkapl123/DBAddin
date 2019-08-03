@@ -1,5 +1,6 @@
 Imports ExcelDna.Integration.CustomUI
 Imports System.Runtime.InteropServices
+Imports Microsoft.Office.Interop
 
 ''' <summary>handles all Menu related aspects (context menu for building/refreshing, "DBAddin"/"Load Config" tree menu for retrieving stored configuration files</summary>
 <ComVisible(True)>
@@ -177,24 +178,23 @@ Public Class MenuHandler
         ElseIf control.Tag = "DBRowFetch" Then
             createFunctionsInCells(hostApp.ActiveCell, {"RC", "=DBRowFetch("""","""",TRUE,R[1]C:R[1]C[10])"})
         ElseIf control.Tag = "DBSetQueryPivot" Then
-            Dim pivotcache As Microsoft.Office.Interop.Excel.PivotCache = hostApp.ActiveWorkbook.PivotCaches().Add(Microsoft.Office.Interop.Excel.XlPivotTableSourceType.xlExternal)
+            Dim pivotcache As Excel.PivotCache = hostApp.ActiveWorkbook.PivotCaches().Add(Excel.XlPivotTableSourceType.xlExternal)
             pivotcache.Connection = "OLEDB;" & DBAddin.ConstConnString
             pivotcache.MaintainConnection = False
             pivotcache.CommandText = "select CURRENT_TIMESTAMP" ' this should be sufficient for most databases
-            pivotcache.CommandType = Microsoft.Office.Interop.Excel.XlCmdType.xlCmdSql
-            Dim pivotTables As Microsoft.Office.Interop.Excel.PivotTables = hostApp.ActiveSheet.PivotTables()
+            pivotcache.CommandType = Excel.XlCmdType.xlCmdSql
+            Dim pivotTables As Excel.PivotTables = hostApp.ActiveSheet.PivotTables()
             pivotTables.Add(pivotcache, hostApp.ActiveCell.Offset(1, 0), "PivotTable1")
             createFunctionsInCells(hostApp.ActiveCell, {"RC", "=DBSetQuery("""","""",R[1]C)"})
         ElseIf control.Tag = "DBSetQueryListObject" Then
-            With hostApp.ActiveSheet.ListObjects.Add(SourceType:=0, Source:="OLEDB;" & DBAddin.ConstConnString, Destination:=hostApp.ActiveCell.Offset(1, 0)).QueryTable
-                .CommandType = Microsoft.Office.Interop.Excel.XlCmdType.xlCmdSql
+            With hostApp.ActiveSheet.ListObjects.Add(SourceType:=Excel.XlListObjectSourceType.xlSrcQuery, Source:="OLEDB;" & DBAddin.ConstConnString, Destination:=hostApp.ActiveCell.Offset(0, 1)).QueryTable
+                .CommandType = Excel.XlCmdType.xlCmdSql
                 .CommandText = "select CURRENT_TIMESTAMP" ' this should be sufficient for most databases
                 .RowNumbers = False
                 .FillAdjacentFormulas = False
                 .PreserveFormatting = True
-                .RefreshOnFileOpen = False
                 .BackgroundQuery = True
-                .RefreshStyle = Microsoft.Office.Interop.Excel.XlCellInsertionMode.xlInsertDeleteCells
+                .RefreshStyle = Excel.XlCellInsertionMode.xlInsertDeleteCells
                 .SavePassword = False
                 .SaveData = True
                 .AdjustColumnWidth = True
@@ -202,7 +202,7 @@ Public Class MenuHandler
                 .PreserveColumnInfo = True
                 .Refresh(BackgroundQuery:=False)
             End With
-            createFunctionsInCells(hostApp.ActiveCell, {"RC", "=DBSetQuery("""","""",R[1]C)"})
+            createFunctionsInCells(hostApp.ActiveCell, {"RC", "=DBSetQuery("""","""",RC[1])"})
         ElseIf control.Tag = "DBMapper" Then
             createDBMapper()
         End If
