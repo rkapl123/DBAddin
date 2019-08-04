@@ -14,6 +14,16 @@ Public Module ConfigFiles
         Dim ItemLine As String
         Dim retval As Integer
 
+        Dim srchdFunc As String = ""
+        ' check whether there is any existing db function other than DBListFetch inside active cell
+        For Each srchdFunc In {"DBSETQUERY", "DBROWFETCH"}
+            If Left(UCase(hostApp.ActiveCell.Formula), Len(srchdFunc) + 2) = "=" & srchdFunc & "(" Then
+                Exit For
+            Else
+                srchdFunc = ""
+            End If
+        Next
+
         retval = MsgBox("Inserting contents configured in " & theFileName, vbInformation + vbOKCancel, "DBAddin: Inserting Configuration...")
         If retval = vbCancel Then Exit Sub
         If hostApp.ActiveWorkbook Is Nothing Then hostApp.Workbooks.Add
@@ -23,8 +33,12 @@ Public Module ConfigFiles
             Dim fileReader As System.IO.StreamReader = My.Computer.FileSystem.OpenTextFileReader(theFileName)
             Do
                 ItemLine = fileReader.ReadLine()
-                ' now insert the parsed information
-                createFunctionsInCells(hostApp.ActiveCell, Split(ItemLine, vbTab))
+                ' for existing dbfunction replace querystring in existing formula of active cell
+                If srchdFunc <> "" Then
+                    hostApp.ActiveCell.Formula = replaceQueryInFormula(Split(ItemLine, vbTab)(1), srchdFunc, hostApp.ActiveCell.Formula)
+                Else ' for other cells simply insert the parsed information
+                    createFunctionsInCells(hostApp.ActiveCell, Split(ItemLine, vbTab))
+                End If
             Loop Until fileReader.EndOfStream
             fileReader.Close()
         Catch ex As Exception
@@ -32,6 +46,21 @@ Public Module ConfigFiles
         End Try
     End Sub
 
+    ''' <summary>replace query given in theQueryFormula inside sourceFormula containing DB Function "theFunction"</summary>
+    ''' <param name="theQueryFormula"></param>
+    ''' <param name="theFunction"></param>
+    ''' <param name="sourceFormula"></param>
+    ''' <returns></returns>
+    Private Function replaceQueryInFormula(theQueryFormula As String, theFunction As String, sourceFormula As Object) As String
+        Dim queryString As String = functionSplit(theQueryFormula, ",", """", "DBListFetch", "(", ")")(0)
+        Dim formulaBody As String = Mid$(sourceFormula, Len(theFunction) + 3)
+        formulaBody = Left(formulaBody, Len(formulaBody) - 1)
+        Dim tempFormula As String = replaceDelimsWithSpecialSep(formulaBody, ",", """", "(", ")", vbTab)
+        Dim restFormula As String = Mid$(tempFormula, InStr(tempFormula, vbTab))
+        ' for existing DB Functions DBSetQuery or DBRowFetch...
+        ' replace querystring in existing formula of active cell
+        replaceQueryInFormula = "=" & theFunction & "(" & queryString & Replace(restFormula, vbTab, ",")
+    End Function
 
     ''' <summary>creates functions in target cells (relative to referenceCell) as defined in ItemLineDef</summary>
     ''' <param name="originCell">original reference Cell</param>

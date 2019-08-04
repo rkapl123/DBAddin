@@ -214,7 +214,7 @@ Public Module Functions
         Dim callID As String = ""
         Dim caller As Range
         Dim EnvPrefix As String = ""
-
+        ' TODO: check for invocation in function wizard
         Try
             caller = ToRange(XlCall.Excel(XlCall.xlfCaller))
             resolveConnstring(ConnString, EnvPrefix)
@@ -348,7 +348,7 @@ Public Module Functions
                                 <ExcelArgument(Description:="should row numbers be displayed in 1st column?")> Optional ShowRowNums As Boolean = False) As String
         Dim callID As String = ""
         Dim EnvPrefix As String = ""
-
+        ' TODO: check for invocation in function wizard
         Try
             Dim caller As Range = ToRange(XlCall.Excel(XlCall.xlfCaller))
             resolveConnstring(ConnString, EnvPrefix)
@@ -870,7 +870,7 @@ err_0: ' errors where recordset was not opened or is already closed
         Dim callID As String = ""
         Dim HeaderInfo As Boolean
         Dim EnvPrefix As String = ""
-
+        ' TODO: check for invocation in function wizard
         Try
             Dim caller As Range = ToRange(XlCall.Excel(XlCall.xlfCaller))
             resolveConnstring(ConnString, EnvPrefix)

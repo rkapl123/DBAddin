@@ -254,7 +254,7 @@ Public Module DBAddin
         Dim finalResult
 
         Try
-            ' skip until we found startStr
+            ' find startStr
             tempString = Mid$(theString, InStr(1, UCase$(theString), UCase$(startStr)) + Len(startStr))
             ' rip out the balancing string now...
             tempString = balancedString(tempString, openBracket, closeBracket, quote)
@@ -321,7 +321,7 @@ Public Module DBAddin
     ''' <param name="closeBracket"></param>
     ''' <param name="specialSep"></param>
     ''' <returns>replaced string</returns>
-    Private Function replaceDelimsWithSpecialSep(theString As String, delimiter As String, quote As String, openBracket As String, closeBracket As String, specialSep As String) As String
+    Public Function replaceDelimsWithSpecialSep(theString As String, delimiter As String, quote As String, openBracket As String, closeBracket As String, specialSep As String) As String
         Dim openedBrackets As Long, quoteMode As Boolean
         Dim i As Long
         replaceDelimsWithSpecialSep = String.Empty
