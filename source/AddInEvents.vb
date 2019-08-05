@@ -117,6 +117,9 @@ Public Class AddInEvents
 
     Private Sub Workbook_Open(Wb As Excel.Workbook) Handles Application.WorkbookOpen
         If Not Wb.IsAddin Then
+            ' reset query cache !
+            queryCache = New Collection
+            StatusCollection = New Collection
             Dim refreshDBFuncs As Boolean
             ' when opening, force recalculation of DB functions in workbook.
             ' this is required as there is no recalculation if no dependencies have changed (usually when opening workbooks)

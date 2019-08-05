@@ -528,6 +528,8 @@ done:
             If needRecalc And (hostApp.Calculation <> XlCalculation.xlCalculationManual Or ignoreCalcMode) Then
                 WriteToLog("hostApp.CalculateFull called" & Wb.Path & "\" & Wb.Name, EventLogEntryType.Information)
                 hostApp.CalculateFull()
+            Else
+                WriteToLog("no dbfunc found... " & Wb.Path & "\" & Wb.Name, EventLogEntryType.Information)
             End If
         Catch ex As Exception
             WriteToLog("Error: " & ex.Message & ", " & Wb.Path & "\" & Wb.Name, EventLogEntryType.Warning)

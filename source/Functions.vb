@@ -214,7 +214,7 @@ Public Module Functions
         Dim callID As String = ""
         Dim caller As Range
         Dim EnvPrefix As String = ""
-        ' TODO: check for invocation in function wizard
+        If ExcelDnaUtil.IsInFunctionWizard() Then Return "invoked from function wizard..."
         Try
             caller = ToRange(XlCall.Excel(XlCall.xlfCaller))
             resolveConnstring(ConnString, EnvPrefix)
@@ -250,7 +250,7 @@ Public Module Functions
     ''' <param name="Query"></param>
     ''' <param name="targetRange"></param>
     ''' <param name="ConnString"></param>
-    Sub DBSetQueryAction(callID As String, Query As String, targetRange As ExcelReference, ConnString As String, caller As Range)
+    Sub DBSetQueryAction(callID As String, Query As String, targetRange As Object, ConnString As String, caller As Range)
         Dim TargetCell As Range
         Dim targetSH As Worksheet
         Dim targetWB As Workbook
@@ -272,15 +272,14 @@ Public Module Functions
         Dim connType As String
         Dim bgQuery As Boolean
         Try
-            StatusCollection(callID).statusMsg = "neither pivot table nor Listobject could be set..."
+            StatusCollection(callID).statusMsg = ""
             If Not thePivotTable Is Nothing Then
-                bgQuery = thePivotTable.PivotCache.BackgroundQuery
                 Try
                     connType = Left$(thePivotTable.PivotCache.Connection, InStr(1, thePivotTable.PivotCache.Connection, ";"))
                 Catch ex As Exception
-                    MsgBox("couldn't get connection from Pivot Table, please create pivot table with external data source !", vbCritical + vbOKOnly, "Pivot Table assigning")
-                    Throw ex
+                    Throw New Exception("couldn't get connection from Pivot Table, please create ListObject with external data source !")
                 End Try
+                bgQuery = thePivotTable.PivotCache.BackgroundQuery
                 thePivotTable.PivotCache.Connection = connType & ConnString
                 thePivotTable.PivotCache.CommandType = XlCmdType.xlCmdSql
                 thePivotTable.PivotCache.CommandText = Query
@@ -291,19 +290,29 @@ Public Module Functions
             End If
 
             If Not theListObject Is Nothing Then
-                bgQuery = theListObject.QueryTable.BackgroundQuery
                 Try
                     connType = Left$(theListObject.QueryTable.Connection, InStr(1, theListObject.QueryTable.Connection, ";"))
                 Catch ex As Exception
-                    MsgBox("couldn't get connection from ListObject, please create ListObject with external data source !", vbCritical + vbOKOnly, "ListObject assigning")
-                    Throw ex
+                    Throw New Exception("couldn't get connection from ListObject, please create ListObject with external data source !")
                 End Try
+                bgQuery = theListObject.QueryTable.BackgroundQuery
+                ' check whether target range is actually a table Listobject reference, if so, replace with simple address as this doesn't produce a #REF! error on QueryTable.Refresh
+                ' this simple address is below being set to caller.Formula
+                Dim functionArgs = functionSplit(caller.Formula, ",", """", "DBSetQuery", "(", ")")
+                Dim targetRangeName As String = functionArgs(2)
+                If UBound(functionArgs) = 3 Then targetRangeName += "," + functionArgs(3)
+                If InStr(targetRangeName, theListObject.Name) > 0 Then callerFormula = Replace(callerFormula, targetRangeName, Replace(TargetCell.Cells(1, 1).Address, "$", ""))
+
                 ' Attention Dirty Hack ! This works only for SQLOLEDB driver to ODBC driver setting change...
                 theListObject.QueryTable.Connection = connType & Replace(ConnString, "provider=SQLOLEDB", "driver=SQL SERVER")
                 theListObject.QueryTable.CommandType = XlCmdType.xlCmdSql
                 theListObject.QueryTable.CommandText = Query
                 theListObject.QueryTable.BackgroundQuery = False
-                theListObject.QueryTable.Refresh()
+                Try
+                    theListObject.QueryTable.Refresh()
+                Catch ex As Exception
+                    Throw New Exception("Error in query table refresh: " & ex.Message)
+                End Try
                 StatusCollection(callID).statusMsg = "Set " & connType & " ListObject to (bgQuery= " & bgQuery & "): " & Query
                 theListObject.QueryTable.BackgroundQuery = bgQuery
                 Try
@@ -312,8 +321,16 @@ Public Module Functions
                     caller.Formula = callerFormula ' restore formula as excel deletes target range when changing query fundamentally
                 End Try
             End If
+            If StatusCollection(callID).statusMsg = "" Then
+                TargetCell.Cells(1, 1).Value = IIf(TargetCell.Cells(1, 1).Value = "", " ", "") ' recalculate to trigger return of error messages to calling function
+                WriteToLog("No PivotTable or ListObject with external data connection could be found in TargetRange " & TargetCell.Address & ", caller: " & callID, EventLogEntryType.Warning)
+                StatusCollection(callID).statusMsg = "No PivotTable or ListObject with external data connection could be found in TargetRange " & TargetCell.Address
+            End If
         Catch ex As Exception
-            TargetCell.Cells(1, 1).Value = IIf(TargetCell.Cells(1, 1).Value = "", " ", "") ' recalculate to trigger return of error messages to calling function
+            ' excel doesn't like pivottables to be set, so make caller dirty instead
+            caller.Parent.Select() 'required, as Dirty doesn't work without it
+            caller.Dirty()
+            'TargetCell.Cells(1, 1).Value = IIf(TargetCell.Cells(1, 1).Value = "", " ", "") ' recalculate to trigger return of error messages to calling function
             errMsg = ex.Message & " in query: " & Query
             WriteToLog(errMsg & ", caller: " & callID, EventLogEntryType.Warning)
             StatusCollection(callID).statusMsg = errMsg
@@ -348,7 +365,7 @@ Public Module Functions
                                 <ExcelArgument(Description:="should row numbers be displayed in 1st column?")> Optional ShowRowNums As Boolean = False) As String
         Dim callID As String = ""
         Dim EnvPrefix As String = ""
-        ' TODO: check for invocation in function wizard
+        If ExcelDnaUtil.IsInFunctionWizard() Then Return "invoked from function wizard..."
         Try
             Dim caller As Range = ToRange(XlCall.Excel(XlCall.xlfCaller))
             resolveConnstring(ConnString, EnvPrefix)
@@ -870,7 +887,7 @@ err_0: ' errors where recordset was not opened or is already closed
         Dim callID As String = ""
         Dim HeaderInfo As Boolean
         Dim EnvPrefix As String = ""
-        ' TODO: check for invocation in function wizard
+        If ExcelDnaUtil.IsInFunctionWizard() Then Return "invoked from function wizard..."
         Try
             Dim caller As Range = ToRange(XlCall.Excel(XlCall.xlfCaller))
             resolveConnstring(ConnString, EnvPrefix)
