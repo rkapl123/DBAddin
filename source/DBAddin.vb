@@ -537,7 +537,7 @@ done:
     End Sub
 
     ''' <summary>"repairs" legacy functions from old VB6-COM Addin by removing "DBAddin.Functions." before function name</summary>
-    Public Sub repairLegacyFunctions()
+    Public Sub repairLegacyFunctions(Optional showReponse As Boolean = False)
         Dim searchCell As Range
         Dim foundLegacyWS As Collection = New Collection
         Dim xlcalcmode As Long = hostApp.Calculation
@@ -548,7 +548,7 @@ done:
                 If Not (searchCell Is Nothing) Then foundLegacyWS.Add(ws)
             Next
             If foundLegacyWS.Count > 0 Then
-                Dim retval As MsgBoxResult = MsgBox("Found Legacy DBAddin functions in Workbook, should they be replaced with current Addin functions (save Workbook afterwards to persist) ?", vbQuestion + vbYesNo, "Legacy DBAddin functions")
+                Dim retval As MsgBoxResult = MsgBox("Found legacy DBAddin functions in active workbook, should they be replaced with current addin functions (save workbook afterwards to persist) ?", vbQuestion + vbYesNo, "Legacy DBAddin functions")
                 If retval = vbYes Then
                     hostApp.Calculation = XlCalculation.xlCalculationManual ' avoid recalculations during replace action
                     hostApp.DisplayAlerts = False ' avoid warnings for sheet where "DBAddin.Functions." is not found
@@ -562,6 +562,8 @@ done:
                     hostApp.DisplayAlerts = True
                     hostApp.Calculation = xlcalcmode
                 End If
+            ElseIf showReponse Then
+                MsgBox("No legacy DBAddin functions found in active workbook.", vbExclamation + vbOKOnly, "Legacy DBAddin functions")
             End If
             ' reset the cell find dialog....
             hostApp.ActiveSheet.Cells.Find(What:="", After:=hostApp.ActiveSheet.Range("A1"), LookIn:=XlFindLookIn.xlFormulas, LookAt:=XlLookAt.xlPart, SearchOrder:=XlSearchOrder.xlByRows, SearchDirection:=XlSearchDirection.xlNext, MatchCase:=False)

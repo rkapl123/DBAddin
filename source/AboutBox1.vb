@@ -73,4 +73,8 @@ Public NotInheritable Class AboutBox1
         DBAddin.EventLevelSelected = EventLevels.SelectedItem
     End Sub
 
+    Private Sub FixLegacyFunctions_Click(sender As Object, e As EventArgs) Handles FixLegacyFunctions.Click
+        repairLegacyFunctions(True)
+    End Sub
+
 End Class

@@ -1,2 +1,1 @@
-﻿formula copy down after range is empty (test workbook)
-format copy down error in log
+﻿

@@ -43,6 +43,7 @@ Partial Class AboutBox1
         Me.showLog = New System.Windows.Forms.Button()
         Me.OKButton = New System.Windows.Forms.Button()
         Me.EventLevels = New System.Windows.Forms.ComboBox()
+        Me.FixLegacyFunctions = New System.Windows.Forms.Button()
         Me.ToolTip1 = New System.Windows.Forms.ToolTip(Me.components)
         Me.TableLayoutPanel.SuspendLayout()
         CType(Me.LogoPictureBox, System.ComponentModel.ISupportInitialize).BeginInit()
@@ -65,6 +66,7 @@ Partial Class AboutBox1
         Me.TableLayoutPanel.Controls.Add(Me.showLog, 2, 5)
         Me.TableLayoutPanel.Controls.Add(Me.OKButton, 4, 5)
         Me.TableLayoutPanel.Controls.Add(Me.EventLevels, 3, 5)
+        Me.TableLayoutPanel.Controls.Add(Me.FixLegacyFunctions, 1, 5)
         Me.TableLayoutPanel.Dock = System.Windows.Forms.DockStyle.Fill
         Me.TableLayoutPanel.Location = New System.Drawing.Point(9, 9)
         Me.TableLayoutPanel.Name = "TableLayoutPanel"
@@ -165,7 +167,7 @@ Partial Class AboutBox1
         'showLog
         '
         Me.showLog.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.showLog.Location = New System.Drawing.Point(274, 233)
+        Me.showLog.Location = New System.Drawing.Point(259, 233)
         Me.showLog.Name = "showLog"
         Me.showLog.Size = New System.Drawing.Size(70, 22)
         Me.showLog.TabIndex = 2
@@ -177,9 +179,9 @@ Partial Class AboutBox1
         '
         Me.OKButton.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.OKButton.DialogResult = System.Windows.Forms.DialogResult.Cancel
-        Me.OKButton.Location = New System.Drawing.Point(430, 233)
+        Me.OKButton.Location = New System.Drawing.Point(415, 233)
         Me.OKButton.Name = "OKButton"
-        Me.OKButton.Size = New System.Drawing.Size(43, 22)
+        Me.OKButton.Size = New System.Drawing.Size(58, 22)
         Me.OKButton.TabIndex = 0
         Me.OKButton.Text = "&OK"
         '
@@ -187,12 +189,22 @@ Partial Class AboutBox1
         '
         Me.EventLevels.FormattingEnabled = True
         Me.EventLevels.Items.AddRange(New Object() {"Error", "Warning", "Information", "Verbose", "All"})
-        Me.EventLevels.Location = New System.Drawing.Point(350, 233)
+        Me.EventLevels.Location = New System.Drawing.Point(335, 233)
         Me.EventLevels.Name = "EventLevels"
         Me.EventLevels.Size = New System.Drawing.Size(74, 21)
         Me.EventLevels.TabIndex = 3
         Me.ToolTip1.SetToolTip(Me.EventLevels, "Enter the maximumLog Level to be displayed from now on (existing log entries will" &
         " still be displayed)")
+        '
+        'FixLegacyFunctions
+        '
+        Me.FixLegacyFunctions.Location = New System.Drawing.Point(137, 233)
+        Me.FixLegacyFunctions.Name = "FixLegacyFunctions"
+        Me.FixLegacyFunctions.Size = New System.Drawing.Size(116, 22)
+        Me.FixLegacyFunctions.TabIndex = 4
+        Me.FixLegacyFunctions.Text = "Fix Legacy Functions"
+        Me.ToolTip1.SetToolTip(Me.FixLegacyFunctions, "fix legacy functions from old VB6 DBAddin")
+        Me.FixLegacyFunctions.UseVisualStyleBackColor = True
         '
         'AboutBox1
         '
@@ -219,4 +231,5 @@ Partial Class AboutBox1
     Friend WithEvents showLog As Windows.Forms.Button
     Friend WithEvents EventLevels As Windows.Forms.ComboBox
     Friend WithEvents ToolTip1 As Windows.Forms.ToolTip
+    Friend WithEvents FixLegacyFunctions As Windows.Forms.Button
 End Class
