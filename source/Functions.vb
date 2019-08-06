@@ -10,7 +10,13 @@ End Class
 
 ''' <summary>Contains the public callable DB functions and helper functions</summary>
 Public Module Functions
-    ''' <summary>cnn object always the same (only open/close)</summary>
+    ' Global objects/variables for DBFuncs
+    ''' <summary>because of a stupid excel behaviour (Range.Dirty only works if the parent sheet of Range is active)
+    ''' we have to jump to the sheet containing the dbfunction and then activate back in case of refresh (sets relevant source/dbfunc to dirty)</summary>
+    Public origWS As Worksheet
+    ''' <summary>global collection of information transport containers between function and calc event procedure</summary>
+    Public StatusCollection As Collection = New Collection
+    ''' <summary>connection object: always use the same, if possible (same ConnectionString)</summary>
     Public conn As ADODB.Connection
     ''' <summary>connection string can be changed for calls with different connection strings</summary>
     Public CurrConnString As String
@@ -20,69 +26,85 @@ Public Module Functions
     Public dontTryConnection As Boolean
     ''' <summary>avoid entering dblistfetch function during clearing of listfetch areas (before saving)</summary>
     Public dontCalcWhileClearing As Boolean
-    ' Global objects/variables for DBFuncs
-    ''' <summary>store target filter in case of empty data lists</summary>
-    Public targetFilterCont As Collection
-    ''' <summary>because of a stupid excel behaviour (Range.Dirty only works if the parent sheet of Range is active)
-    ''' we have to jump to the sheet containing the dbfunction and then activate back...</summary>
-    Public origWS As Worksheet
-
-    ''' <summary>global collection of information transport containers between function and calc event procedure</summary>
-    Public StatusCollection As Collection = New Collection
 
     ''' <summary>Create database compliant date, time or datetime string from excel datetype value</summary>
-    ''' <param name="datVal">date/time/datetime</param>
-    ''' <param name="formatting">see remarks</param>
+    ''' <param name="DatePart">date/time/datetime single parameter or range reference</param>
+    ''' <param name="formatting">formatting instruction for Date format, see remarks</param>
     ''' <returns>the DB compliant formatted date/time/datetime</returns>
     ''' <remarks>
     ''' formatting = 0: A simple datestring (format 'YYYYMMDD'), datetime values are converted to 'YYYYMMDD HH:MM:SS' and time values are converted to 'HH:MM:SS'.
     ''' formatting = 1: An ANSI compliant Date string (format date 'YYYY-MM-DD'), datetime values are converted to timestamp 'YYYY-MM-DD HH:MM:SS' and time values are converted to time time 'HH:MM:SS'.
     ''' formatting = 2: An ODBC compliant Date string (format {d 'YYYY-MM-DD'}), datetime values are converted to {ts 'YYYY-MM-DD HH:MM:SS'} and time values are converted to {t 'HH:MM:SS'}.
     ''' formatting = 3: An Access/JetDB compliant Date string (format #YYYY-MM-DD#), datetime values are converted to #YYYY-MM-DD HH:MM:SS# and time values are converted to #HH:MM:SS#.
-    ''' formatting = 99 (default value): take the formatting option from setting DefaultDBDateFormatting (0 if not given)
+    ''' formatting >3 or empty (99=default value): take the formatting option from setting DefaultDBDateFormatting (0 if not given)
     ''' </remarks>
     <ExcelFunction(Description:="Create database compliant date, time or datetime string from excel datetype value")>
-    Public Function DBDate(<ExcelArgument(Description:="date/time/datetime")> ByVal datVal As Date,
+    Public Function DBDate(<ExcelArgument(Description:="date/time/datetime")> ByVal DatePart As Object,
                            <ExcelArgument(Description:="formatting option, 0: simple datestring (format 'YYYYMMDD'), 1: ANSI compliant Date string (format date 'YYYY-MM-DD'), 2: ODBC compliant Date string (format {d 'YYYY-MM-DD'}),3: Access/JetDB compliant Date string (format #DD/MM/YYYY#)")> Optional formatting As Integer = 99) As String
+        DBDate = ""
         Try
-            Dim retval As String = String.Empty
-            If formatting = 99 Then formatting = DefaultDBDateFormatting
-            If Int(datVal.ToOADate()) = datVal.ToOADate() Then
-                If formatting = 0 Then
-                    retval = "'" & Format$(datVal, "yyyyMMdd") & "'"
-                ElseIf formatting = 1 Then
-                    retval = "DATE '" & Format$(datVal, "yyyy-MM-dd") & "'"
-                ElseIf formatting = 2 Then
-                    retval = "{d '" & Format$(datVal, "yyyy-MM-dd") & "'}"
-                ElseIf formatting = 3 Then
-                    retval = "#" & Format$(datVal, "yyyy-MM-dd") & "#"
-                End If
-            ElseIf CInt(datVal.ToOADate()) > 1 Then
-                If formatting = 0 Then
-                    retval = "'" & Format$(datVal, "yyyyMMdd hh:mm:ss") & "'"
-                ElseIf formatting = 1 Then
-                    retval = "timestamp '" & Format$(datVal, "yyyy-MM-dd hh:mm:ss") & "'"
-                ElseIf formatting = 2 Then
-                    retval = "{ts '" & Format$(datVal, "yyyy-MM-dd hh:mm:ss") & "'}"
-                ElseIf formatting = 3 Then
-                    retval = "#" & Format$(datVal, "yyyy-MM-dd hh:mm:ss") & "#"
-                End If
+            If formatting > 3 Then formatting = DefaultDBDateFormatting
+            If TypeName(DatePart) = "Object(,)" Then
+                For Each myCell In DatePart
+                    If TypeName(myCell) = "ExcelEmpty" Then
+                        ' do nothing here
+                    Else
+                        DBDate &= formatDBDate(myCell, formatting) & ","
+                    End If
+                Next
+                ' cut last comma
+                If DBDate.Length > 0 Then DBDate = Left(DBDate, Len(DBDate) - 1)
             Else
-                If formatting = 0 Then
-                    retval = "'" & Format$(datVal, "hh:mm:ss") & "'"
-                ElseIf formatting = 1 Then
-                    retval = "time '" & Format$(datVal, "hh:mm:ss") & "'"
-                ElseIf formatting = 2 Then
-                    retval = "{t '" & Format$(datVal, "hh:mm:ss") & "'}"
-                ElseIf formatting = 3 Then
-                    retval = "#" & Format$(datVal, "hh:mm:ss") & "#"
+                ' direct value in DBDate..
+                If TypeName(DatePart) = "ExcelEmpty" Then
+                    ' do nothing here
+                Else
+                    DBDate = formatDBDate(DatePart, formatting)
                 End If
             End If
-            DBDate = retval
         Catch ex As Exception
-            WriteToLog("Error (" & ex.Message & ") in Functions.DBDate", EventLogEntryType.Warning)
+            WriteToLog("Error: " & ex.Message, EventLogEntryType.Warning)
             DBDate = "Error (" & ex.Message & ") in function DBDate"
         End Try
+    End Function
+
+    ''' <summary>takes an OADate and formats it as a DB Compliant string, using formatting as formatting instruction</summary>
+    ''' <param name="datVal">OADate (double) date parameter</param>
+    ''' <param name="formatting">formatting flag (see DBDate for details)</param>
+    ''' <returns>formatted Date string</returns>
+    Private Function formatDBDate(datVal As Double, formatting As Integer) As String
+        formatDBDate = ""
+        If Int(datVal) = datVal Then
+            If formatting = 0 Then
+                formatDBDate = "'" & Format$(Date.FromOADate(datVal), "yyyyMMdd") & "'"
+            ElseIf formatting = 1 Then
+                formatDBDate = "DATE '" & Format$(Date.FromOADate(datVal), "yyyy-MM-dd") & "'"
+            ElseIf formatting = 2 Then
+                formatDBDate = "{d '" & Format$(Date.FromOADate(datVal), "yyyy-MM-dd") & "'}"
+            ElseIf formatting = 3 Then
+                formatDBDate = "#" & Format$(Date.FromOADate(datVal), "yyyy-MM-dd") & "#"
+            End If
+        ElseIf CInt(datVal) > 1 Then
+            If formatting = 0 Then
+                formatDBDate = "'" & Format$(Date.FromOADate(datVal), "yyyyMMdd hh:mm:ss") & "'"
+            ElseIf formatting = 1 Then
+                formatDBDate = "timestamp '" & Format$(Date.FromOADate(datVal), "yyyy-MM-dd hh:mm:ss") & "'"
+            ElseIf formatting = 2 Then
+                formatDBDate = "{ts '" & Format$(Date.FromOADate(datVal), "yyyy-MM-dd hh:mm:ss") & "'}"
+            ElseIf formatting = 3 Then
+                formatDBDate = "#" & Format$(Date.FromOADate(datVal), "yyyy-MM-dd hh:mm:ss") & "#"
+            End If
+        Else
+            If formatting = 0 Then
+                formatDBDate = "'" & Format$(Date.FromOADate(datVal), "hh:mm:ss") & "'"
+            ElseIf formatting = 1 Then
+                formatDBDate = "time '" & Format$(Date.FromOADate(datVal), "hh:mm:ss") & "'"
+            ElseIf formatting = 2 Then
+                formatDBDate = "{t '" & Format$(Date.FromOADate(datVal), "hh:mm:ss") & "'}"
+            ElseIf formatting = 3 Then
+                formatDBDate = "#" & Format$(Date.FromOADate(datVal), "hh:mm:ss") & "#"
+            End If
+        End If
     End Function
 
     ''' <summary>Create a database compliant string from cell values, potentially concatenating with other parts for easy inclusion of wildcards (%,_)</summary>
@@ -110,44 +132,45 @@ Public Module Functions
             Next
             DBString = "'" & retval & "'"
         Catch ex As Exception
-            WriteToLog("Error (" & ex.Message & ") in Functions.DBString", EventLogEntryType.Warning)
+            WriteToLog("Error: " & ex.Message, EventLogEntryType.Warning)
             DBString = "Error (" & ex.Message & ") in DBString"
         End Try
     End Function
 
     ''' <summary>Create an in clause from cell values, strings are created with quotation marks,
     '''             dates are created with DBDate</summary>
-    ''' <param name="inPart">array of values or ranges containing values</param>
+    ''' <param name="inClausePart">array of values or ranges containing values</param>
     ''' <returns>database compliant in-clause string</returns>
-    <ExcelFunction(Description:="Create an in clause from cell values, strings are created with quotation marks, dates are created with DBDate")>
-    Public Function DBinClause(<ExcelArgument(AllowReference:=True, Description:="array of values or ranges containing values")> ParamArray inPart As Object()) As String
-        DBinClause = "in (" & DoConcatCellsSep(",", True, inPart) & ")"
+    <ExcelFunction(Description:="Create an in clause from cell values, strings are created with quotation marks")>
+    Public Function DBinClause(<ExcelArgument(AllowReference:=True, Description:="array of values or ranges containing values")> ParamArray inClausePart As Object()) As String
+        Dim concatResult As String = DoConcatCellsSep(",", True, inClausePart)
+        DBinClause = IIf(Left(concatResult, 5) = "Error", concatResult, "in (" & concatResult & ")")
     End Function
 
     ''' <summary>concatenates values contained in thetarget together (using .value attribute for cells)</summary>
-    ''' <param name="thetarget">all cells/values which should be concatenated</param>
+    ''' <param name="concatPart">all cells/values which should be concatenated</param>
     ''' <returns>concatenated String</returns>
     <ExcelFunction(Description:="concatenates values contained in thetarget together (using .value attribute for cells)")>
-    Public Function concatCells(<ExcelArgument(AllowReference:=True, Description:="all cells/values which should be concatenated")> ParamArray thetarget As Object()) As String
-        concatCells = DoConcatCellsSep(String.Empty, False, thetarget)
+    Public Function concatCells(<ExcelArgument(AllowReference:=True, Description:="all cells/values which should be concatenated")> ParamArray concatPart As Object()) As String
+        concatCells = DoConcatCellsSep(String.Empty, False, concatPart)
     End Function
 
     ''' <summary>concatenates values contained in thetarget (using .value for cells) using a separator</summary>
     ''' <param name="separator">the separator</param>
-    ''' <param name="thetarget">all cells/values which should be concatenated</param>
+    ''' <param name="concatPart">all cells/values which should be concatenated</param>
     ''' <returns>concatenated String</returns>
     <ExcelFunction(Description:="concatenates values contained in thetarget (using .value for cells) using a separator")>
     Public Function concatCellsSep(<ExcelArgument(AllowReference:=True, Description:="the separator")> separator As String,
-                                   <ExcelArgument(AllowReference:=True, Description:="all cells/values which should be concatenated")> ParamArray thetarget As Object()) As String
-        concatCellsSep = DoConcatCellsSep(separator, False, thetarget)
+                                   <ExcelArgument(AllowReference:=True, Description:="all cells/values which should be concatenated")> ParamArray concatPart As Object()) As String
+        concatCellsSep = DoConcatCellsSep(separator, False, concatPart)
     End Function
 
     ''' <summary>chains values contained in thetarget together with commas, mainly used for creating select header</summary>
-    ''' <param name="thetarget">range where values should be chained</param>
+    ''' <param name="chainPart">range where values should be chained</param>
     ''' <returns>chained String</returns>
     <ExcelFunction(Description:="chains values contained in thetarget together with commas, mainly used for creating select header")>
-    Public Function chainCells(<ExcelArgument(AllowReference:=True, Description:="range where values should be chained")> ParamArray thetarget As Object()) As String
-        chainCells = DoConcatCellsSep(",", False, thetarget)
+    Public Function chainCells(<ExcelArgument(AllowReference:=True, Description:="range where values should be chained")> ParamArray chainPart As Object()) As String
+        chainCells = DoConcatCellsSep(",", False, chainPart)
     End Function
 
     ''' <summary>private function that actually concatenates values contained in Object array myRange together (either using .text or .value for cells in myrange) using a separator</summary>
@@ -195,9 +218,8 @@ Public Module Functions
                 End If
             Next
             DoConcatCellsSep = Mid$(retval, Len(separator) + 1) ' skip first separator
-            If DoConcatCellsSep = "" Then DoConcatCellsSep = "only empty arguments!"
         Catch ex As Exception
-            WriteToLog("Error (" & ex.Message & ") in Functions.DoConcatCellsSep", EventLogEntryType.Warning)
+            WriteToLog("Error: " & ex.Message, EventLogEntryType.Warning)
             DoConcatCellsSep = "Error (" & ex.Message & ") in DoConcatCellsSep"
         End Try
     End Function
@@ -240,8 +262,8 @@ Public Module Functions
             End If
 
         Catch ex As Exception
-            WriteToLog("Error (" & ex.Message & "), callID : " & callID, EventLogEntryType.Warning)
-            DBSetQuery = EnvPrefix & ", Error (" & ex.Message & ") in DBSetQuery, callID : " & callID
+            WriteToLog("Error: " & ex.Message & ", callID: " & callID, EventLogEntryType.Warning)
+            DBSetQuery = EnvPrefix & ", Error (" & ex.Message & ") in DBSetQuery, callID: " & callID
         End Try
     End Function
 
@@ -418,7 +440,7 @@ Public Module Functions
                                             End Sub)
             End If
         Catch ex As Exception
-            WriteToLog("Error (" & ex.Message & "), callID : " & callID, EventLogEntryType.Warning)
+            WriteToLog("Error: " & ex.Message & ", callID : " & callID, EventLogEntryType.Warning)
             DBListFetch = EnvPrefix & ", Error (" & ex.Message & ") in DBListFetch, callID : " & callID
         End Try
     End Function
@@ -826,6 +848,7 @@ Public Module Functions
 
         If Err.Number <> 0 Then
             errMsg = "Error in restoring formats: " & Err.Description & " in query: " & Query
+            WriteToLog(errMsg & ", caller: " & callID, EventLogEntryType.Error)
             GoTo err_0
         End If
 
@@ -929,8 +952,8 @@ err_0: ' errors where recordset was not opened or is already closed
                                             End Sub)
             End If
         Catch ex As Exception
-            WriteToLog("Error (" & ex.Message & "), callID : " & callID, EventLogEntryType.Warning)
-            DBRowFetch = EnvPrefix & ", Error (" & ex.Message & ") in DBRowFetch, callID : " & callID
+            WriteToLog("Error: " & ex.Message & ", callID: " & callID, EventLogEntryType.Warning)
+            DBRowFetch = EnvPrefix & ", Error (" & ex.Message & ") in DBRowFetch, callID: " & callID
         End Try
     End Function
 
@@ -1143,8 +1166,12 @@ err_1:
     <ExcelFunction(Description:="Get the current selected Environment for DB Functions")>
     Public Function DBAddinEnvironment() As String
         hostApp.Volatile()
-        DBAddinEnvironment = fetchSetting("ConfigName", String.Empty)
-        If hostApp.Calculation = XlCalculation.xlCalculationManual Then DBAddinEnvironment = "calc Mode is manual, please press F9 to get current DBAddin environment !"
+        Try
+            DBAddinEnvironment = fetchSetting("ConfigName", String.Empty)
+            If hostApp.Calculation = XlCalculation.xlCalculationManual Then DBAddinEnvironment = "calc Mode is manual, please press F9 to get current DBAddin environment !"
+        Catch ex As Exception
+            DBAddinEnvironment = "Error happened: " & ex.Message
+        End Try
     End Function
 
     ''' <summary>Get the server settings for the currently selected Environment for DB Functions</summary>
@@ -1154,11 +1181,147 @@ err_1:
         hostApp.Volatile()
         Try
             Dim theConnString As String = fetchSetting("ConstConnString", String.Empty)
-            Dim keywordstart As Integer = InStr(1, theConnString, "Server=") + Len("Server=")
+            Dim keywordstart As Integer = InStr(1, UCase(theConnString), "SERVER=") + Len("SERVER=")
             DBAddinServerSetting = Mid$(theConnString, keywordstart, InStr(keywordstart, theConnString, ";") - keywordstart)
             If hostApp.Calculation = XlCalculation.xlCalculationManual Then DBAddinServerSetting = "calc Mode is manual, please press F9 to get current DBAddin server setting !"
         Catch ex As Exception
-            DBAddinServerSetting = "Error happened: " & Err.Description
+            DBAddinServerSetting = "Error happened: " & ex.Message
+        End Try
+    End Function
+
+    ''' <summary>linearly inter/extrapolate a rate for Days taking values from RangeRates, interpolation points from RangeDays</summary>
+    ''' <param name="Days">the term (can be days but any time dimension coherent with RangeDays is valid) that should be interpolated for</param>
+    ''' <param name="DaysList">List with term points</param>
+    ''' <param name="RatesList">List with rate points</param>
+    ''' <returns>inter/extrapolated value</returns>
+    <ExcelFunction(Description:="linearly inter/extrapolate a rate for term Days taking interpolation values from RangeRates, interpolation terms from RangeDays")>
+    Public Function Interpolate(<ExcelArgument(Description:="the term (can be days but any time dimension coherent with RangeDays is valid) that should be interpolated for")> Days As Double,
+                                <ExcelArgument(Description:="List with term points", AllowReference:=True)> DaysList As Object,
+                                <ExcelArgument(Description:="List with rate points", AllowReference:=True)> RatesList As Object) As Object ' needs to be variant to return err msgs
+        Dim RangeDays, RangeRates, tempDays, tempRates As Range ' used for final range between shortDay and longDay
+        Dim shortDay As Long, longDay As Long
+        Dim layoutVertical As Boolean
+
+        Try
+            If TypeName(DaysList) <> "ExcelReference" Then
+                Interpolate = "Invalid Range given in DaysList"
+                Exit Function
+            End If
+            If TypeName(RatesList) <> "ExcelReference" Then
+                Interpolate = "Invalid Range given in RatesList"
+                Exit Function
+            End If
+            RangeDays = ToRange(DaysList)
+            RangeRates = ToRange(RatesList)
+
+            If RangeDays.Columns.Count = 1 Then
+                layoutVertical = True
+                If RangeDays.Rows.Count <> RangeRates.Rows.Count Then
+                    Interpolate = "Invalid Ranges given, DaysList not same size as RatesList"
+                    Exit Function
+                End If
+            ElseIf RangeDays.Rows.Count = 1 Then
+                layoutVertical = False
+                If RangeDays.Columns.Count <> RangeRates.Columns.Count Then
+                    Interpolate = "Invalid Ranges given, DaysList not same size as RatesList"
+                    Exit Function
+                End If
+            Else
+                Interpolate = "Invalid Range (more than one row for row data or more than one column for column data) given in DaysList !"
+                Exit Function
+            End If
+
+            If Days < hostApp.WorksheetFunction.Min(RangeDays) Then
+                shortDay = 1
+            ElseIf Days >= hostApp.WorksheetFunction.Max(RangeDays) Then
+                shortDay = IIf(layoutVertical, RangeDays.Rows.Count - 1, RangeDays.Columns.Count - 1)
+            Else
+                shortDay = hostApp.WorksheetFunction.Match(Days, RangeDays, 1)
+            End If
+
+            If layoutVertical Then
+                While (Not IsNumeric(RangeRates.Cells(shortDay, 1).Value) Or IsNothing(RangeRates.Cells(shortDay, 1).Value)) And shortDay > 1
+                    shortDay -= 1
+                End While
+                ' if going down didn't help, try going up ...
+                If shortDay = 1 And (Not IsNumeric(RangeRates.Cells(shortDay, 1).Value) Or IsNothing(RangeRates.Cells(shortDay, 1).Value)) Then
+                    Try : shortDay = hostApp.WorksheetFunction.Match(Days, RangeDays, 1) : Catch ex As Exception : End Try
+                    While (Not IsNumeric(RangeRates.Cells(shortDay, 1).Value) Or IsNothing(RangeRates.Cells(shortDay, 1).Value)) And shortDay < RangeDays.Rows.Count
+                        shortDay += 1
+                    End While
+                End If
+
+                If shortDay < RangeDays.Rows.Count Then
+                    longDay = shortDay + 1
+                    While (Not IsNumeric(RangeRates.Cells(longDay, 1).Value) Or IsNothing(RangeRates.Cells(longDay, 1).Value)) And longDay < RangeDays.Rows.Count
+                        longDay += 1
+                    End While
+                    If (Not IsNumeric(RangeRates.Cells(longDay, 1).Value) Or IsNothing(RangeRates.Cells(longDay, 1).Value)) Then
+                        shortDay -= 1
+                        While (Not IsNumeric(RangeRates.Cells(shortDay, 1).Value) Or IsNothing(RangeRates.Cells(shortDay, 1).Value)) And shortDay > 1
+                            shortDay -= 1
+                        End While
+                        If shortDay = 1 And (Not IsNumeric(RangeRates.Cells(shortDay, 1).Value) Or IsNothing(RangeRates.Cells(shortDay, 1).Value)) Then
+                            Interpolate = "Invalid Range (insufficient data) given in RatesList !"
+                            Exit Function
+                        End If
+                        longDay += 1
+                        While (Not IsNumeric(RangeRates.Cells(longDay, 1).Value) Or IsNothing(RangeRates.Cells(longDay, 1).Value)) And longDay < RangeDays.Rows.Count
+                            longDay += 1
+                        End While
+                    End If
+                Else
+                    Interpolate = "Invalid Range (insufficient data) given in RatesList !"
+                    Exit Function
+                End If
+                tempDays = RangeDays.Range(RangeDays.Parent.Cells(shortDay, 1), RangeDays.Parent.Cells(longDay, 1))
+                tempRates = RangeRates.Range(RangeRates.Parent.Cells(shortDay, 1), RangeRates.Parent.Cells(longDay, 1))
+            Else
+                While (Not IsNumeric(RangeRates.Cells(1, shortDay).Value) Or IsNothing(RangeRates.Cells(1, shortDay).Value)) And shortDay > 1
+                    shortDay -= 1
+                End While
+                ' if going down didn't help, try going up ...
+                If shortDay = 1 And (Not IsNumeric(RangeRates.Cells(1, shortDay).Value) Or IsNothing(RangeRates.Cells(1, shortDay).Value)) Then
+                    Try : shortDay = hostApp.WorksheetFunction.Match(Days, RangeDays, 1) : Catch ex As Exception : End Try
+                    While (Not IsNumeric(RangeRates.Cells(1, shortDay).Value) Or IsNothing(RangeRates.Cells(1, shortDay).Value)) And shortDay < RangeDays.Rows.Count
+                        shortDay += 1
+                    End While
+                End If
+
+                If shortDay < RangeDays.Columns.Count Then
+                    longDay = shortDay + 1
+                    While (Not IsNumeric(RangeRates.Cells(1, longDay).Value) Or IsNothing(RangeRates.Cells(1, longDay).Value)) And longDay < RangeDays.Columns.Count
+                        longDay += 1
+                    End While
+                    If (Not IsNumeric(RangeRates.Cells(1, longDay).Value) Or IsNothing(RangeRates.Cells(1, longDay).Value)) Then
+                        shortDay -= 1
+                        While (Not IsNumeric(RangeRates.Cells(1, shortDay).Value) Or IsNothing(RangeRates.Cells(1, shortDay).Value)) And shortDay > 1
+                            shortDay -= 1
+                        End While
+                        If shortDay = 1 And (Not IsNumeric(RangeRates.Cells(1, shortDay).Value) Or IsNothing(RangeRates.Cells(1, shortDay).Value)) Then
+                            Interpolate = "Invalid Range (insufficient data) given in RatesList !"
+                            Exit Function
+                        End If
+                        longDay = shortDay + 1
+                        While (Not IsNumeric(RangeRates.Cells(1, longDay).Value) Or IsNothing(RangeRates.Cells(1, longDay).Value)) And longDay < RangeDays.Columns.Count
+                            longDay += 1
+                        End While
+                    End If
+                Else
+                    Interpolate = "Invalid Range (insufficient data) given in RatesList !"
+                    Exit Function
+                End If
+                tempDays = RangeDays.Range(RangeDays.Parent.Cells(1, shortDay), RangeDays.Parent.Cells(1, longDay))
+                tempRates = RangeRates.Range(RangeRates.Parent.Cells(1, shortDay), RangeRates.Parent.Cells(1, longDay))
+            End If
+        Catch ex As Exception
+            Interpolate = "Error occured in Interpolate: " & ex.Message
+            Exit Function
+        End Try
+        Try
+            Interpolate = hostApp.WorksheetFunction.Forecast(Days, tempRates, tempDays)
+        Catch ex As Exception
+            Interpolate = "Invalid Range (contains errors or insufficient data) given in RatesList or DaysList !"
         End Try
     End Function
 
@@ -1239,7 +1402,7 @@ err_1:
     ''' <summary>create a final connection string from passed String or number (environment), as well as a EnvPrefix for showing the environment (or set ConnString)</summary>
     ''' <param name="ConnString">passed connection string or environment number, resolved (=returned) to actual connection string</param>
     ''' <param name="EnvPrefix">prefix for showing environment (ConnString set if no environment)</param>
-    Sub resolveConnstring(ByRef ConnString As Object, ByRef EnvPrefix As String)
+    Private Sub resolveConnstring(ByRef ConnString As Object, ByRef EnvPrefix As String)
         If Left(TypeName(ConnString), 10) = "ExcelError" Then Exit Sub
         If TypeName(ConnString) = "ExcelReference" Then ConnString = ConnString.Value
         If TypeName(ConnString) = "ExcelMissing" Then ConnString = ""

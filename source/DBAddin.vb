@@ -539,23 +539,26 @@ done:
     ''' <summary>"repairs" legacy functions from old VB6-COM Addin by removing "DBAddin.Functions." before function name</summary>
     Public Sub repairLegacyFunctions()
         Dim searchCell As Range
-        Dim foundLegacy As Boolean
+        Dim foundLegacyWS As Collection = New Collection
+        Dim xlcalcmode As Long = hostApp.Calculation
         Try
-            Dim xlcalcmode As Long = hostApp.Calculation
             For Each ws In hostApp.ActiveWorkbook.Worksheets
                 ' check whether legacy functions exist somewhere ...
                 searchCell = ws.Cells.Find(What:="DBAddin.Functions.", After:=ws.Range("A1"), LookIn:=XlFindLookIn.xlFormulas, LookAt:=XlLookAt.xlPart, SearchOrder:=XlSearchOrder.xlByRows, SearchDirection:=XlSearchDirection.xlNext, MatchCase:=False)
-                If Not (searchCell Is Nothing) Then foundLegacy = True
+                If Not (searchCell Is Nothing) Then foundLegacyWS.Add(ws)
             Next
-            If foundLegacy Then
+            If foundLegacyWS.Count > 0 Then
                 Dim retval As MsgBoxResult = MsgBox("Found Legacy DBAddin functions in Workbook, should they be replaced with current Addin functions (save Workbook afterwards to persist) ?", vbQuestion + vbYesNo, "Legacy DBAddin functions")
                 If retval = vbYes Then
-                    hostApp.Calculation = XlCalculation.xlCalculationManual ' avoid recalculations during repair...
+                    hostApp.Calculation = XlCalculation.xlCalculationManual ' avoid recalculations during replace action
                     hostApp.DisplayAlerts = False ' avoid warnings for sheet where "DBAddin.Functions." is not found
+                    hostApp.EnableEvents = False ' avoid event triggering during replace action
                     ' remove "DBAddin.Functions." in each sheet...
-                    For Each ws In hostApp.ActiveWorkbook.Worksheets
+                    For Each ws In foundLegacyWS
+                        ws.Cells.Replace(What:="DBAddin.Functions.Interpolieren", Replacement:="Interpolate", LookAt:=XlLookAt.xlPart, SearchOrder:=XlSearchOrder.xlByRows, MatchCase:=False, SearchFormat:=False, ReplaceFormat:=False)
                         ws.Cells.Replace(What:="DBAddin.Functions.", Replacement:="", LookAt:=XlLookAt.xlPart, SearchOrder:=XlSearchOrder.xlByRows, MatchCase:=False, SearchFormat:=False, ReplaceFormat:=False)
                     Next
+                    hostApp.EnableEvents = True
                     hostApp.DisplayAlerts = True
                     hostApp.Calculation = xlcalcmode
                 End If
@@ -563,7 +566,10 @@ done:
             ' reset the cell find dialog....
             hostApp.ActiveSheet.Cells.Find(What:="", After:=hostApp.ActiveSheet.Range("A1"), LookIn:=XlFindLookIn.xlFormulas, LookAt:=XlLookAt.xlPart, SearchOrder:=XlSearchOrder.xlByRows, SearchDirection:=XlSearchDirection.xlNext, MatchCase:=False)
         Catch ex As Exception
-            LogError("Error occured in repairLegacyFunctions: " & ex.Message)
+            LogError("Error occured in replacing DBAddin.Functions.: " & ex.Message)
+            hostApp.EnableEvents = True
+            hostApp.DisplayAlerts = True
+            hostApp.Calculation = xlcalcmode
         End Try
     End Sub
 
