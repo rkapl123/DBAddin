@@ -3,6 +3,7 @@ Imports Microsoft.Office.Interop
 Imports ExcelDna.Integration
 Imports Microsoft.Office.Interop.Excel
 Imports System.Timers
+Imports System.Diagnostics
 
 ''' <summary>AddIn Connection class, also handling Events from Excel (Open, Close, Activate)</summary>
 Public Class AddInEvents
@@ -20,10 +21,13 @@ Public Class AddInEvents
         ExcelRegistration.GetExcelCommands().RegisterCommands()
         Application = ExcelDnaUtil.Application
         hostApp = ExcelDnaUtil.Application
+        If hostApp.AddIns("DBAddin.Functions").Installed Then
+            MsgBox("Attention: legacy DBAddin (DBAddin.Functions) still active, this might lead to unexpected results!")
+        End If
         Trace.Listeners.Add(New ExcelDna.Logging.LogDisplayTraceListener())
         ExcelDna.IntelliSense.IntelliSenseServer.Install()
         theMenuHandler = New MenuHandler
-        WriteToLog("initialize configuration settings", EventLogEntryType.Information)
+        LogInfo("initialize configuration settings")
         initSettings()
         Dim srchdListener As Object
         For Each srchdListener In Trace.Listeners
@@ -41,7 +45,7 @@ Public Class AddInEvents
             hostApp = Nothing
             ExcelDna.IntelliSense.IntelliSenseServer.Uninstall()
         Catch ex As Exception
-            WriteToLog("DBAddin unloading error: " + ex.Message, EventLogEntryType.Warning)
+            LogError("DBAddin unloading error: " + ex.Message)
         End Try
     End Sub
 
@@ -110,11 +114,13 @@ Public Class AddInEvents
                 aTimer.Enabled = True
             End If
         Catch ex As Exception
-            WriteToLog("Error: " & Wb.Name & ex.Message, EventLogEntryType.Warning)
+            LogError("Error: " & Wb.Name & ex.Message)
         End Try
         dontCalcWhileClearing = False
     End Sub
 
+    ''' <summary>open workbook: reset query cache, refresh DB functions and repair legacy functions if existing</summary>
+    ''' <param name="Wb"></param>
     Private Sub Workbook_Open(Wb As Excel.Workbook) Handles Application.WorkbookOpen
         If Not Wb.IsAddin Then
             ' reset query cache !

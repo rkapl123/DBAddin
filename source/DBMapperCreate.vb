@@ -14,7 +14,7 @@ Public Class DBMapperCreate
         ElseIf Me.Database.Text = String.Empty Then
             MsgBox("Field Database is required, please fill !")
         Else
-            Me.DialogResult = System.Windows.Forms.DialogResult.OK
+            Me.DialogResult = DialogResult.OK
             Me.Close()
         End If
     End Sub
@@ -23,7 +23,7 @@ Public Class DBMapperCreate
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub Cancel_Button_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles Cancel_Button.Click
-        Me.DialogResult = System.Windows.Forms.DialogResult.Cancel
+        Me.DialogResult = DialogResult.Cancel
         Me.Close()
     End Sub
 

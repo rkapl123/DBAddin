@@ -26,6 +26,7 @@ An additional cell context menu is available providing:
 *   a "jump" feature that allows to move the focus from the DB function's cell to the data area and from the data area back to the DB function's cell (useful in complex workbooks with lots of remote (not on same-sheet) target ranges)
 *   refreshing the currently selected DB function or it's data area. If no DB function or a corresponding data area is selected, then all DB Functions are refreshed.
 *   [creation of DB Functions and DB Maps](#create-db-functions-and-dbmappers)
+![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/ContextMenu.PNG)  
 
 
 ### Using the Functions
@@ -240,19 +241,19 @@ The DBidentifierCCS is used to identify the database within the standard default
 
 Additionally the timeout (CnnTimeout, which can't be given in the functions) is also defined in the standard settings.
 
-### Supporting Tool Cell Config Deployment
+### Cell Config Deployment
 
-To easen the distribution of complex DB functions (resp. queries), there is a special deployment mechanism in the DBAddin Commandbar: Saving of DB function configurations can be done with the button "Save Config", whereas for loading there are two possibilities: The button "Load Config" (displaying a simple load file dialog) and a tree-dropdown menu below "DBConfigs" that displays the file hierarchy beneath ConfigStoreFolder for easy retrieval of the configs.  
+To easen the distribution of complex DB functions (resp. queries), there is a config file mechanism in DBAddin: DB function configurations can be created in config files (extension XCL) and are displayed with a tree-dropdown menu below "DB Configs" that displays the file hierarchy beneath ConfigStoreFolder for easy retrieval of the configs.  
+
+The layout of this file is a pairwise, tab separated instruction where to fill (first element) formulas(starting with "=", being in R1C1 representation) resp. values (second element). Values are simple values to be inserted into Excel (numbers, strings, dates (should be interpretable !)), formulas are best copied from the output of ActiveCell.FormulaR1C1 !
 
 #### Creating configs
 
-"Save Config" asks you to select cells you want to store for others to import into their sheet. This is done by either selecting one contiguous area or by Ctrl+clicking the single cells you want to add to the distribution. Finally a Save Dialog asks you for the filename where these cell contents/formulas should be stored. If you choose an existing file, you're asked whether the config should be appended to that file.  
+There is a helping script ("createTableViewConfigs.vbs") to create a DBListFetch with a "select TOP 10000 * from ..." for all tables and views in a given database (In order for that script to work, the ADO driver has to support the "OpenSchema" method of the connection object). The working of that script is quite simple: It takes the name of the folder it is located in, derives from that the database name by excluding the first character and opens the schema information of that database to retrieve all view and table names from that. These names are used to build the config files (XCL).  
 
-Other users can simply look up those config files either with "Load Config" or the hierarchical menu "DBConfigs", which is hierarchically showing all config files under the ConfigStoreFolder (set in the global settings). Using folders, you can build categorizations of any depth here.  
+Other users can simply look up those config files with the hierarchical menu "DBConfigs", which is showing all config files under the ConfigStoreFolder (set in the global settings). Using folders, you can build categorizations of any depth here.  
 
-There is a helping script ("createTableViewConfigs.vbs") to create a DBListFetch with a "select TOP 10000 * from ..." for all tables and views in a given database (In order for that script to work, the ADO driver has to support the "OpenSchema" method of the connection object). The working of that script is quite simple: It takes the name of the folder it is located in, derives from that the database name by excluding the first character and opens the schema information of that database to retrieve all view and table names from that. These names are used to build the Excel and Word config files (XCL/WRD).  
-
-DBAddin has a convenient feature to hierarchically order those config files furthermore, if they are consistently named. For this to work, there either has to be a separation character between "grouping" prefixes (like "\_" in "Customer_Customers", "Customer_Addresses", "Customer_Pets", etc.) for grouping similar objects (tables, views) together or "CamelCase" Notation is used for that purpose (e.g. "CustomerCustomers", "CustomerAddresses", "CustomerPets").  
+DBAddin has a convenient feature to hierarchically order those config files further, if they are consistently named. For this to work, there either has to be a separation character between "grouping" prefixes (like "\_" in "Customer_Customers", "Customer_Addresses", "Customer_Pets", etc.) for grouping similar objects (tables, views) together or "CamelCase" Notation is used for that purpose (e.g. "CustomerCustomers", "CustomerAddresses", "CustomerPets").  
 
 There is one registry setting and two registry setting groups to configure this further hierarchical ordering:  
 
@@ -274,15 +275,16 @@ You can decide for each subfolder whether it's contents should be hierarchically
 
 #### Inserting configs
 
-If the user finds/loads the relevant configuration, a warning is shown and then the configured cells are entered into the active workbook as defined in the config, relative to the current selection. The reference cell during saving is always the left/uppermost cell (A1), so anything chosen in other cells will be placed relatively right/downward.  
+If the user finds/loads the relevant configuration, a warning is shown and then the configured cells are entered into the active workbook as defined in the config, relative to the current selection.  
 
-Cells in other worksheets are also filled, these are also taking the reference relative to the current selection (when loading) or cell A1 (when saving). If the worksheet doesn't exist it is created.  
+Cells in other worksheets are also filled, these are also taking the reference relative to the current selection. If the worksheet doesn't exist it is created.  
 
-Currently there are no checks (except for Excels sheet boundaries) as whether any cells are overwritten !  
+There are no checks (except for Excels sheet boundaries) as whether any cells are overwritten !  
 
 #### Refreshing the config tree
 
-To save time when starting up DBAddin/Excel, refreshing the config tree is only done when you open the AboutBox Window and click OK.  
+To save time when starting up DBAddin/Excel, refreshing the config tree is only done when you open the Config Menu and click "refresh DB Config Tree".  
+![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/ConfigMenu.PNG)
 
 ### Installation
 
@@ -322,31 +324,16 @@ When starting the Testworkbook, after waiting for the – probable – connectio
 
 Several connection strings for "DBFuncsTest.xls" are placed to the right of the black line, the actual connection is then selected by choosing the appropriate shortname (dropdown) in the yellow input field. After the connection has been changed don't forget to refresh the queries/DBforms by right clicking and selecting "refresh data".
 
-### Points of Interest
+### AboutBox, Logs and Purge hidden names
 
-The basic principle behind returning results into an area external to the Database query functions, is the utilisation of the calculation event (as mentioned in and inspired by the excelmvf project, see [http://www.codeproject.com/macro/excelmvf.asp](http://www.codeproject.com/macro/excelmvf.asp) for further details), as Excel won't allow ANY side-effects inside a UDF.
+The Aboutbox can be reached by clicking the small dialogBox Launcher in the right bottom corner of the General Settings group of the DBAddin Ribbon.
+![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/AboutBox.PNG)  
 
-There is lots of information to be carried between the function call and the event (and back for status information). This is achieved by utilising a so-called "`calcContainer`" and a "`statusMsgContainer`", basically being VBA classes abused as a simple structure that are stored into global collections called "`allCalcContainers`" and "`allStatusContainers`". The references of the correct calcContainers and statusMsgContainers are the Workbook-name, the table name and the cell address of the calling functions which is quite a unique description of a function call (this description is called the "`callID`" in the code).
+There is a possibility to see the Log from there and set the future log events displayed (starting values are set in the config file). You can also fix legacy DBAddin functions, in case you decided to skip the possibility offered on opening a Workbook.
 
-Below diagram should clarify the process:
-
-![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/clip_image001.gif)  
-
-The real trick is to find out when resp. where to get rid of the calc containers, considering Excel's intricate way of invoking functions and the calc event handler (the above diagram is simplifying matters a bit as the chain of invocation is by no way linear in the calculations in the dependency tree).
-
-Excel sometimes does additional calculations to take shortcuts and this makes the order of invocation basically unpredictable, so you have to take great care to just work on every function once and then remove the `calcContainer.`
-
-After every calculation event the working `calcContainers` are removed, if there are no more `calcContainers` left, then `allCalcContainers` is reset to "Nothing", being ready for changes in input data or function layout. Good resources for more details on the calculation order/backgrounds is Decision Model's Excel Pages, especially Calculation Secrets ([http://www.decisionmodels.com/calcsecretsc.htm](http://www.decisionmodels.com/calcsecretsc.htm)).
-
-The DBListFetch's target areas' extent is stored in hidden named ranges assigned both to the calling function cell (DBFsource(Key)) and the target.
-
-There is a procedure in the Functions module, which may be used to "purge" these hidden named ranges in case of any strange behaviour due to multiple name assignments to the same area. This behaviour usually arises, when redefining/adding dbfunctions that refer to the same target area as the original/other dbfunction. The procedure is called "purge" and may be invoked from the VBA IDE as follows:
-
-<pre lang="vb.net">Sub purge()  
-  Set dbfuncs = CreateObject("DBAddin.Functions")  
-  dbfuncs.purge  
-End Sub  
-</pre>
+The DBListFetch's and DBRowFetch's target areas' extent is stored in hidden named ranges assigned both to the calling function cell (DBFsource(Key)) and the target (DBFtarget(Key)). These hidden names are used to keep track of the previous content to prevent overwriting, clearing old values, etc.
+Sometimes during copying and pasting DB Functions, these names can get mixed up, leading to strange results or non-functioning of the "jump" function. In these cases, there is a tool in the DBAddin menu, which may be used to "purge" these hidden named ranges in case of any strange behaviour due to multiple name assignments to the same area.
+![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/purgeNames.PNG)  
 
 ### Known Issues / Limitations
 
@@ -375,12 +362,15 @@ Examples for the usage of DBMapper can be found in the DBMapperTests.xlsx Workbo
 You can create the three DB Functions and DB Mappers by using the cell context menu:  
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/ContextMenu.PNG)  
 
-The DB functions are created with an empty query string and full feature settings (e.g. Headers displayed, autosize and autoformat switched on) and target cells directly below the current active cell.
+The DB functions are created with an empty query string and full feature settings (e.g. Headers displayed, autosize and autoformat switched on) and target cells directly below the current active cell (except DBSetQuery for ListObjects, the ListObjects are placed to the right).
 
 Below the results for a DB Function created in Cell A1:
 *   DBListFetch:  `=DBListFetch("";"";A2;;;WAHR;WAHR;WAHR)`
 *   DBRowFetch:   `=DBRowFetch("";"";WAHR;A2:K2)`
-*   DBSetQuery:   `=DBSetQuery("";"";A2)`
+*   DBSetQueryPivot:   `=DBSetQuery("";"";A2)`
+*   DBSetQueryListObject:   `=DBSetQuery("";"";B1)`
+
+DBSetQuery also creates the target Object (a Pivot Table or a ListObject) below resp. to the right of the DB Function, so it is easier to start with. In case you want to insert DB Configurations (see [Cell Config Deployment](#Cell_Config_Deployment)), just place the selection on the inserted DB function cell and select your config, the stored query will replace the empty query in the created DB function.
 
 The DBMapper creation starts following dialog (already filled, when clicked on a blank cell all entries are empty):  
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DbMapperCreate.PNG)  

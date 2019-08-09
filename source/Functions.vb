@@ -1,6 +1,7 @@
 Imports Microsoft.Office.Interop.Excel
 Imports ExcelDna.Integration
 Imports ADODB
+Imports System.Linq
 
 ''' <summary>Provides a data structure for transporting information back from the calculation action procedure to the calling function</summary>
 Public Class ContainedStatusMsg
@@ -63,7 +64,7 @@ Public Module Functions
                 End If
             End If
         Catch ex As Exception
-            WriteToLog("Error: " & ex.Message, EventLogEntryType.Warning)
+            LogWarn(ex.Message)
             DBDate = "Error (" & ex.Message & ") in function DBDate"
         End Try
     End Function
@@ -132,7 +133,7 @@ Public Module Functions
             Next
             DBString = "'" & retval & "'"
         Catch ex As Exception
-            WriteToLog("Error: " & ex.Message, EventLogEntryType.Warning)
+            LogWarn(ex.Message)
             DBString = "Error (" & ex.Message & ") in DBString"
         End Try
     End Function
@@ -219,7 +220,7 @@ Public Module Functions
             Next
             DoConcatCellsSep = Mid$(retval, Len(separator) + 1) ' skip first separator
         Catch ex As Exception
-            WriteToLog("Error: " & ex.Message, EventLogEntryType.Warning)
+            LogWarn(ex.Message)
             DoConcatCellsSep = "Error (" & ex.Message & ") in DoConcatCellsSep"
         End Try
     End Function
@@ -242,7 +243,7 @@ Public Module Functions
             resolveConnstring(ConnString, EnvPrefix)
             ' calcContainers are identified by wbname + Sheetname + function caller cell Address
             callID = "[" & caller.Parent.Parent.Name & "]" & caller.Parent.Name & "!" & caller.Address
-
+            LogInfo("entering function, callID: " & callID)
             ' check query, also converts query to string (if it is a range)
             ' error message or cached status message is returned from checkParamsAndCache, if query OK and result was not already calculated (cached) then empty string
             DBSetQuery = checkParamsAndCache(Query, callID, ConnString)
@@ -262,9 +263,10 @@ Public Module Functions
             End If
 
         Catch ex As Exception
-            WriteToLog("Error: " & ex.Message & ", callID: " & callID, EventLogEntryType.Warning)
+            LogWarn(ex.Message & ", callID: " & callID)
             DBSetQuery = EnvPrefix & ", Error (" & ex.Message & ") in DBSetQuery, callID: " & callID
         End Try
+        LogInfo("leaving function, callID: " & callID)
     End Function
 
     ''' <summary>set Query parameters (query text and connection string) of Query List or pivot table (incl. chart)</summary>
@@ -345,7 +347,7 @@ Public Module Functions
             End If
             If StatusCollection(callID).statusMsg = "" Then
                 TargetCell.Cells(1, 1).Value = IIf(TargetCell.Cells(1, 1).Value = "", " ", "") ' recalculate to trigger return of error messages to calling function
-                WriteToLog("No PivotTable or ListObject with external data connection could be found in TargetRange " & TargetCell.Address & ", caller: " & callID, EventLogEntryType.Warning)
+                LogWarn("No PivotTable or ListObject with external data connection could be found in TargetRange " & TargetCell.Address & ", caller: " & callID)
                 StatusCollection(callID).statusMsg = "No PivotTable or ListObject with external data connection could be found in TargetRange " & TargetCell.Address
             End If
         Catch ex As Exception
@@ -354,7 +356,7 @@ Public Module Functions
             caller.Dirty()
             'TargetCell.Cells(1, 1).Value = IIf(TargetCell.Cells(1, 1).Value = "", " ", "") ' recalculate to trigger return of error messages to calling function
             errMsg = ex.Message & " in query: " & Query
-            WriteToLog(errMsg & ", caller: " & callID, EventLogEntryType.Warning)
+            LogWarn(errMsg & ", caller: " & callID)
             StatusCollection(callID).statusMsg = errMsg
         End Try
         hostApp.Calculation = calcMode
@@ -381,10 +383,10 @@ Public Module Functions
                                 <ExcelArgument(Description:="Range to put the data into", AllowReference:=True)> targetRange As Object,
                                 <ExcelArgument(Description:="Range to copy formulas down from", AllowReference:=True)> Optional formulaRange As Object = Nothing,
                                 <ExcelArgument(Description:="how to deal with extending List Area")> Optional extendDataArea As Integer = 0,
-                                <ExcelArgument(Description:="should headers be included in list")> Optional HeaderInfo As Boolean = False,
-                                <ExcelArgument(Description:="should columns be autofitted ?")> Optional AutoFit As Boolean = False,
-                                <ExcelArgument(Description:="should 1st row formats be autofilled down?")> Optional autoformat As Boolean = False,
-                                <ExcelArgument(Description:="should row numbers be displayed in 1st column?")> Optional ShowRowNums As Boolean = False) As String
+                                <ExcelArgument(Description:="should headers be included in list")> Optional HeaderInfo As Object = Nothing,
+                                <ExcelArgument(Description:="should columns be autofitted ?")> Optional AutoFit As Object = Nothing,
+                                <ExcelArgument(Description:="should 1st row formats be autofilled down?")> Optional autoformat As Object = Nothing,
+                                <ExcelArgument(Description:="should row numbers be displayed in 1st column?")> Optional ShowRowNums As Object = Nothing) As String
         Dim callID As String = ""
         Dim EnvPrefix As String = ""
         If ExcelDnaUtil.IsInFunctionWizard() Then Return "invoked from function wizard..."
@@ -393,7 +395,7 @@ Public Module Functions
             resolveConnstring(ConnString, EnvPrefix)
             ' calcContainers are identified by wbname + Sheetname + function caller cell Address
             callID = "[" & caller.Parent.Parent.Name & "]" & caller.Parent.Name & "!" & caller.Address
-
+            LogInfo("entering function, callID: " & callID)
             ' prepare information for action proc
             If dontCalcWhileClearing Then
                 DBListFetch = EnvPrefix & ", dontCalcWhileClearing = True !"
@@ -429,6 +431,7 @@ Public Module Functions
             Else
                 formulaRangeName = String.Empty
             End If
+            HeaderInfo = convertToBool(HeaderInfo) : AutoFit = convertToBool(AutoFit) : autoformat = convertToBool(autoformat) : ShowRowNums = convertToBool(ShowRowNums)
 
             ' first call: Status Container not set, actually perform query
             If Not StatusCollection.Contains(callID) Then
@@ -440,9 +443,23 @@ Public Module Functions
                                             End Sub)
             End If
         Catch ex As Exception
-            WriteToLog("Error: " & ex.Message & ", callID : " & callID, EventLogEntryType.Warning)
+            LogWarn(ex.Message & ", callID : " & callID)
             DBListFetch = EnvPrefix & ", Error (" & ex.Message & ") in DBListFetch, callID : " & callID
         End Try
+        LogInfo("leaving function, callID: " & callID)
+    End Function
+
+    Function convertToBool(value As Object) As Boolean
+        Dim tempBool As Boolean
+        If TypeName(value) = "String" Then
+            Dim success As Boolean = Boolean.TryParse(value, tempBool)
+            If Not success Then tempBool = False
+        ElseIf TypeName(value) = "Boolean" Then
+            tempBool = value
+        Else
+            tempBool = False
+        End If
+        Return tempBool
     End Function
 
     ''' <summary>Actually do the work for DBListFetch: Query list of data delimited by maxRows and maxCols, write it into targetCells
@@ -563,7 +580,7 @@ Public Module Functions
             conn.Open(ConnString)
 
             If Err.Number <> 0 Then
-                WriteToLog("Connection Error: " & Err.Description, EventLogEntryType.Error)
+                LogWarn("Connection Error: " & Err.Description)
                 ' prevent multiple reconnecting if connection errors present...
                 dontTryConnection = True
                 StatusCollection(callID).statusMsg = "Connection Error: " & Err.Description
@@ -848,7 +865,7 @@ Public Module Functions
 
         If Err.Number <> 0 Then
             errMsg = "Error in restoring formats: " & Err.Description & " in query: " & Query
-            WriteToLog(errMsg & ", caller: " & callID, EventLogEntryType.Error)
+            LogWarn(errMsg & ", caller: " & callID)
             GoTo err_0
         End If
 
@@ -879,7 +896,7 @@ err_1: ' errors where recordset was opened
 err_0: ' errors where recordset was not opened or is already closed
         targetRange.Cells(1, 1).Value = IIf(targetRange.Cells(1, 1).Value = "", " ", "") ' recalculate to trigger return of error messages to calling function
         If errMsg.Length = 0 Then errMsg = Err.Description & " in query: " & Query
-        WriteToLog(errMsg & ", caller: " & callID, EventLogEntryType.Warning)
+        LogWarn(errMsg & ", caller: " & callID)
         StatusCollection(callID).statusMsg = errMsg
         finishAction(calcMode, callID, "Error")
     End Sub
@@ -891,7 +908,7 @@ err_0: ' errors where recordset was not opened or is already closed
     Private Sub finishAction(calcMode As XlCalculation, callID As String, Optional additionalLogInfo As String = "")
         hostApp.Cursor = XlMousePointer.xlDefault  ' To return cursor to normal
         hostApp.StatusBar = False
-        LogInfo("Leaving DBListFetchAction: callID " & callID & IIf(additionalLogInfo <> "", ", additionalInfo: " & additionalLogInfo, ""))
+        LogInfo("Leaving DBAction: callID " & callID & IIf(additionalLogInfo <> "", ", additionalInfo: " & additionalLogInfo, ""))
         If Not IsNothing(origWS) Then origWS.Select()
         hostApp.ScreenUpdating = True ' coming from refresh, this might be off for dirtying "foreign" (being on a different sheet than the calling function) data targets 
         hostApp.Calculation = calcMode
@@ -916,21 +933,30 @@ err_0: ' errors where recordset was not opened or is already closed
             resolveConnstring(ConnString, EnvPrefix)
             ' calcContainers are identified by wbname + sheetname + function caller cell Address
             callID = "[" & caller.Parent.Parent.Name & "]" & caller.Parent.Name & "!" & caller.Address
+            LogInfo("entering function, callID: " & callID)
 
             ' prepare information for action proc
             Dim i As Long
-            If TypeName(targetArray(0)) = "Boolean" Then
-                HeaderInfo = targetArray(0)
+            If TypeName(targetArray(0)) = "Boolean" Or TypeName(targetArray(0)) = "String" Then
+                HeaderInfo = convertToBool(targetArray(0))
                 For i = 1 To UBound(targetArray)
                     ReDim Preserve tempArray(i - 1)
+                    If IsNothing(ToRange(targetArray(i))) Then
+                        DBRowFetch = EnvPrefix & ", Part " + i.ToString() + " of Target is not a valid Range !"
+                        Exit Function
+                    End If
                     tempArray(i - 1) = ToRange(targetArray(i))
                 Next
-            ElseIf TypeName(targetArray(0)) = "Error" Then
-                DBRowFetch = EnvPrefix & ", Error: First argument empty or error !"
+            ElseIf TypeName(targetArray(0)) = "ExcelEmpty" Or TypeName(targetArray(0)) = "ExcelError" Or TypeName(targetArray(0)) = "ExcelMissing" Then
+                DBRowFetch = EnvPrefix & ", First argument (header) " & Replace(TypeName(targetArray(0)), "Excel", "") & " !"
                 Exit Function
             Else
                 For i = 0 To UBound(targetArray)
                     ReDim Preserve tempArray(i)
+                    If IsNothing(ToRange(targetArray(i))) Then
+                        DBRowFetch = EnvPrefix & ", Part " + (i + 1).ToString() + " of Target is not a valid Range !"
+                        Exit Function
+                    End If
                     tempArray(i) = ToRange(targetArray(i))
                 Next
             End If
@@ -952,9 +978,10 @@ err_0: ' errors where recordset was not opened or is already closed
                                             End Sub)
             End If
         Catch ex As Exception
-            WriteToLog("Error: " & ex.Message & ", callID: " & callID, EventLogEntryType.Warning)
+            LogWarn(ex.Message & ", callID: " & callID)
             DBRowFetch = EnvPrefix & ", Error (" & ex.Message & ") in DBRowFetch, callID: " & callID
         End Try
+        LogInfo("leaving function, callID: " & callID)
     End Function
 
     ''' <summary>Actually do the work for DBRowFetch: Query (assumed) one row of data, write it into targetCells</summary>
@@ -1020,7 +1047,7 @@ err_0: ' errors where recordset was not opened or is already closed
             conn.Open(ConnString)
 
             If Err.Number <> 0 Then
-                WriteToLog("Connection Error: " & Err.Description, EventLogEntryType.Error)
+                LogWarn("Connection Error: " & Err.Description)
                 ' prevent multiple reconnecting if connection errors present...
                 dontTryConnection = True
                 StatusCollection(callID).statusMsg = "Connection Error: " & Err.Description
@@ -1119,7 +1146,7 @@ err_1:
         targetCells(0).Cells(1, 1).Value = IIf(targetCells(0).Cells(1, 1).Value = "", " ", "") ' recalculate to trigger return of error messages to calling function
         If errMsg.Length = 0 Then errMsg = Err.Description & " in query: " & Query
         If tableRst.State <> 0 Then tableRst.Close()
-        WriteToLog(errMsg & ", caller: " & callID, EventLogEntryType.Warning)
+        LogWarn(errMsg & ", caller: " & callID)
         StatusCollection(callID).statusMsg = errMsg
         finishAction(calcMode, callID, "Error")
     End Sub
@@ -1171,6 +1198,7 @@ err_1:
             If hostApp.Calculation = XlCalculation.xlCalculationManual Then DBAddinEnvironment = "calc Mode is manual, please press F9 to get current DBAddin environment !"
         Catch ex As Exception
             DBAddinEnvironment = "Error happened: " & ex.Message
+            LogWarn(ex.Message)
         End Try
     End Function
 
@@ -1186,142 +1214,7 @@ err_1:
             If hostApp.Calculation = XlCalculation.xlCalculationManual Then DBAddinServerSetting = "calc Mode is manual, please press F9 to get current DBAddin server setting !"
         Catch ex As Exception
             DBAddinServerSetting = "Error happened: " & ex.Message
-        End Try
-    End Function
-
-    ''' <summary>linearly inter/extrapolate a rate for Days taking values from RangeRates, interpolation points from RangeDays</summary>
-    ''' <param name="Days">the term (can be days but any time dimension coherent with RangeDays is valid) that should be interpolated for</param>
-    ''' <param name="DaysList">List with term points</param>
-    ''' <param name="RatesList">List with rate points</param>
-    ''' <returns>inter/extrapolated value</returns>
-    <ExcelFunction(Description:="linearly inter/extrapolate a rate for term Days taking interpolation values from RangeRates, interpolation terms from RangeDays")>
-    Public Function Interpolate(<ExcelArgument(Description:="the term (can be days but any time dimension coherent with RangeDays is valid) that should be interpolated for")> Days As Double,
-                                <ExcelArgument(Description:="List with term points", AllowReference:=True)> DaysList As Object,
-                                <ExcelArgument(Description:="List with rate points", AllowReference:=True)> RatesList As Object) As Object ' needs to be variant to return err msgs
-        Dim RangeDays, RangeRates, tempDays, tempRates As Range ' used for final range between shortDay and longDay
-        Dim shortDay As Long, longDay As Long
-        Dim layoutVertical As Boolean
-
-        Try
-            If TypeName(DaysList) <> "ExcelReference" Then
-                Interpolate = "Invalid Range given in DaysList"
-                Exit Function
-            End If
-            If TypeName(RatesList) <> "ExcelReference" Then
-                Interpolate = "Invalid Range given in RatesList"
-                Exit Function
-            End If
-            RangeDays = ToRange(DaysList)
-            RangeRates = ToRange(RatesList)
-
-            If RangeDays.Columns.Count = 1 Then
-                layoutVertical = True
-                If RangeDays.Rows.Count <> RangeRates.Rows.Count Then
-                    Interpolate = "Invalid Ranges given, DaysList not same size as RatesList"
-                    Exit Function
-                End If
-            ElseIf RangeDays.Rows.Count = 1 Then
-                layoutVertical = False
-                If RangeDays.Columns.Count <> RangeRates.Columns.Count Then
-                    Interpolate = "Invalid Ranges given, DaysList not same size as RatesList"
-                    Exit Function
-                End If
-            Else
-                Interpolate = "Invalid Range (more than one row for row data or more than one column for column data) given in DaysList !"
-                Exit Function
-            End If
-
-            If Days < hostApp.WorksheetFunction.Min(RangeDays) Then
-                shortDay = 1
-            ElseIf Days >= hostApp.WorksheetFunction.Max(RangeDays) Then
-                shortDay = IIf(layoutVertical, RangeDays.Rows.Count - 1, RangeDays.Columns.Count - 1)
-            Else
-                shortDay = hostApp.WorksheetFunction.Match(Days, RangeDays, 1)
-            End If
-
-            If layoutVertical Then
-                While (Not IsNumeric(RangeRates.Cells(shortDay, 1).Value) Or IsNothing(RangeRates.Cells(shortDay, 1).Value)) And shortDay > 1
-                    shortDay -= 1
-                End While
-                ' if going down didn't help, try going up ...
-                If shortDay = 1 And (Not IsNumeric(RangeRates.Cells(shortDay, 1).Value) Or IsNothing(RangeRates.Cells(shortDay, 1).Value)) Then
-                    Try : shortDay = hostApp.WorksheetFunction.Match(Days, RangeDays, 1) : Catch ex As Exception : End Try
-                    While (Not IsNumeric(RangeRates.Cells(shortDay, 1).Value) Or IsNothing(RangeRates.Cells(shortDay, 1).Value)) And shortDay < RangeDays.Rows.Count
-                        shortDay += 1
-                    End While
-                End If
-
-                If shortDay < RangeDays.Rows.Count Then
-                    longDay = shortDay + 1
-                    While (Not IsNumeric(RangeRates.Cells(longDay, 1).Value) Or IsNothing(RangeRates.Cells(longDay, 1).Value)) And longDay < RangeDays.Rows.Count
-                        longDay += 1
-                    End While
-                    If (Not IsNumeric(RangeRates.Cells(longDay, 1).Value) Or IsNothing(RangeRates.Cells(longDay, 1).Value)) Then
-                        shortDay -= 1
-                        While (Not IsNumeric(RangeRates.Cells(shortDay, 1).Value) Or IsNothing(RangeRates.Cells(shortDay, 1).Value)) And shortDay > 1
-                            shortDay -= 1
-                        End While
-                        If shortDay = 1 And (Not IsNumeric(RangeRates.Cells(shortDay, 1).Value) Or IsNothing(RangeRates.Cells(shortDay, 1).Value)) Then
-                            Interpolate = "Invalid Range (insufficient data) given in RatesList !"
-                            Exit Function
-                        End If
-                        longDay += 1
-                        While (Not IsNumeric(RangeRates.Cells(longDay, 1).Value) Or IsNothing(RangeRates.Cells(longDay, 1).Value)) And longDay < RangeDays.Rows.Count
-                            longDay += 1
-                        End While
-                    End If
-                Else
-                    Interpolate = "Invalid Range (insufficient data) given in RatesList !"
-                    Exit Function
-                End If
-                tempDays = RangeDays.Range(RangeDays.Parent.Cells(shortDay, 1), RangeDays.Parent.Cells(longDay, 1))
-                tempRates = RangeRates.Range(RangeRates.Parent.Cells(shortDay, 1), RangeRates.Parent.Cells(longDay, 1))
-            Else
-                While (Not IsNumeric(RangeRates.Cells(1, shortDay).Value) Or IsNothing(RangeRates.Cells(1, shortDay).Value)) And shortDay > 1
-                    shortDay -= 1
-                End While
-                ' if going down didn't help, try going up ...
-                If shortDay = 1 And (Not IsNumeric(RangeRates.Cells(1, shortDay).Value) Or IsNothing(RangeRates.Cells(1, shortDay).Value)) Then
-                    Try : shortDay = hostApp.WorksheetFunction.Match(Days, RangeDays, 1) : Catch ex As Exception : End Try
-                    While (Not IsNumeric(RangeRates.Cells(1, shortDay).Value) Or IsNothing(RangeRates.Cells(1, shortDay).Value)) And shortDay < RangeDays.Rows.Count
-                        shortDay += 1
-                    End While
-                End If
-
-                If shortDay < RangeDays.Columns.Count Then
-                    longDay = shortDay + 1
-                    While (Not IsNumeric(RangeRates.Cells(1, longDay).Value) Or IsNothing(RangeRates.Cells(1, longDay).Value)) And longDay < RangeDays.Columns.Count
-                        longDay += 1
-                    End While
-                    If (Not IsNumeric(RangeRates.Cells(1, longDay).Value) Or IsNothing(RangeRates.Cells(1, longDay).Value)) Then
-                        shortDay -= 1
-                        While (Not IsNumeric(RangeRates.Cells(1, shortDay).Value) Or IsNothing(RangeRates.Cells(1, shortDay).Value)) And shortDay > 1
-                            shortDay -= 1
-                        End While
-                        If shortDay = 1 And (Not IsNumeric(RangeRates.Cells(1, shortDay).Value) Or IsNothing(RangeRates.Cells(1, shortDay).Value)) Then
-                            Interpolate = "Invalid Range (insufficient data) given in RatesList !"
-                            Exit Function
-                        End If
-                        longDay = shortDay + 1
-                        While (Not IsNumeric(RangeRates.Cells(1, longDay).Value) Or IsNothing(RangeRates.Cells(1, longDay).Value)) And longDay < RangeDays.Columns.Count
-                            longDay += 1
-                        End While
-                    End If
-                Else
-                    Interpolate = "Invalid Range (insufficient data) given in RatesList !"
-                    Exit Function
-                End If
-                tempDays = RangeDays.Range(RangeDays.Parent.Cells(1, shortDay), RangeDays.Parent.Cells(1, longDay))
-                tempRates = RangeRates.Range(RangeRates.Parent.Cells(1, shortDay), RangeRates.Parent.Cells(1, longDay))
-            End If
-        Catch ex As Exception
-            Interpolate = "Error occured in Interpolate: " & ex.Message
-            Exit Function
-        End Try
-        Try
-            Interpolate = hostApp.WorksheetFunction.Forecast(Days, tempRates, tempDays)
-        Catch ex As Exception
-            Interpolate = "Invalid Range (contains errors or insufficient data) given in RatesList or DaysList !"
+            LogWarn(ex.Message)
         End Try
     End Function
 

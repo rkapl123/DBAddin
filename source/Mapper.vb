@@ -1,5 +1,8 @@
 Imports ADODB
 Imports Microsoft.Office.Interop.Excel
+Imports System.Linq
+Imports System.Collections.Generic
+Imports System.Windows.Forms
 
 ''' <summary>Contains Mapper function saveRangeToDB for storing/updating tabular excel data and some helper functions</summary>
 Public Module Mapper
@@ -39,7 +42,7 @@ Public Module Mapper
             DataRange = DataRange.Parent.Range(DataRange, DataRange.Parent.Cells(rowEnd, colEnd))
         End If
         If IsNothing(DataRange.Cells(1, 1).Comment.Text) Then
-            LogError("No definition comment found for DBMapper definition in " + DBMapperName)
+            ErrorMsg("No definition comment found for DBMapper definition in " + DBMapperName)
         End If
 
         ' set up parameters from comment text
@@ -58,7 +61,7 @@ Public Module Mapper
         Try
             checkrst.Open(tableName, dbcnn, CursorTypeEnum.adOpenForwardOnly, LockTypeEnum.adLockReadOnly, CommandTypeEnum.adCmdTableDirect)
         Catch ex As Exception
-            LogWarn("Table: " & tableName & " caused error: " & ex.Message & " in sheet " & DataRange.Parent.Name)
+            LogError("Table: " & tableName & " caused error: " & ex.Message & " in sheet " & DataRange.Parent.Name)
             checkrst.Close()
             GoTo cleanup
         End Try
@@ -88,7 +91,7 @@ Public Module Mapper
                 Catch ex As Exception
                     DataRange.Parent.Activate
                     DataRange.Cells(1, colNum).Select
-                    LogWarn("Field '" & fieldname & "' does not exist in Table '" & tableName & "' and is not in ignoreColumns, Error in sheet " & DataRange.Parent.Name)
+                    LogError("Field '" & fieldname & "' does not exist in Table '" & tableName & "' and is not in ignoreColumns, Error in sheet " & DataRange.Parent.Name)
                     GoTo cleanup
                 End Try
             End If
@@ -109,11 +112,11 @@ Public Module Mapper
                 primKeyValue = DataRange.Cells(rowNum, i + 1).Value
                 primKeyCompound = primKeyCompound & primKeys(i) & " = " & dbFormatType(primKeyValue, checkTypes(i)) & IIf(i = UBound(primKeys), "", " AND ")
                 If IsError(primKeyValue) Then
-                    LogError("Error in primary key value, cell (" & rowNum & "," & i + 1 & ") in sheet " & DataRange.Parent.Name & ", & row " & rowNum)
+                    ErrorMsg("Error in primary key value, cell (" & rowNum & "," & i + 1 & ") in sheet " & DataRange.Parent.Name & ", & row " & rowNum)
                     GoTo nextRow
                 End If
                 If primKeyValue.ToString().Length = 0 Then
-                    LogError("Empty primary key value, cell (" & rowNum & "," & i + 1 & ") in sheet " & DataRange.Parent.Name & ", & row " & rowNum)
+                    ErrorMsg("Empty primary key value, cell (" & rowNum & "," & i + 1 & ") in sheet " & DataRange.Parent.Name & ", & row " & rowNum)
                     GoTo nextRow
                 End If
             Next
@@ -122,7 +125,7 @@ Public Module Mapper
             Try
                 rst.Open("SELECT * FROM " & tableName & primKeyCompound, dbcnn, CursorTypeEnum.adOpenDynamic, LockTypeEnum.adLockOptimistic)
             Catch ex As Exception
-                LogWarn("Problem getting recordset, Error: " & ex.Message & " in sheet " & DataRange.Parent.Name & ", & row " & rowNum)
+                LogError("Problem getting recordset, Error: " & ex.Message & " in sheet " & DataRange.Parent.Name & ", & row " & rowNum)
                 rst.Close()
                 GoTo cleanup
             End Try
@@ -136,7 +139,7 @@ Public Module Mapper
                 Else
                     DataRange.Parent.Activate
                     DataRange.Cells(rowNum, i + 1).Select
-                    LogWarn("Problem getting recordset " & primKeyCompound & " from table '" & tableName & "', insertIfMissing = " & insertIfMissing & " in sheet " & DataRange.Parent.Name & ", & row " & rowNum)
+                    LogError("Problem getting recordset " & primKeyCompound & " from table '" & tableName & "', insertIfMissing = " & insertIfMissing & " in sheet " & DataRange.Parent.Name & ", & row " & rowNum)
                     rst.Close()
                     GoTo cleanup
                 End If
@@ -152,7 +155,7 @@ Public Module Mapper
                     Catch ex As Exception
                         DataRange.Parent.Activate
                         DataRange.Cells(rowNum, colNum).Select
-                        LogError("General Error: " & ex.Message & " with Table: " & tableName & ", Field: " & fieldname & ", in sheet " & DataRange.Parent.Name & ", & row " & rowNum & ", col: " & colNum)
+                        ErrorMsg("General Error: " & ex.Message & " with Table: " & tableName & ", Field: " & fieldname & ", in sheet " & DataRange.Parent.Name & ", & row " & rowNum & ", col: " & colNum)
                         rst.Close()
                         GoTo cleanup
                     End Try
@@ -166,7 +169,7 @@ Public Module Mapper
             Catch ex As Exception
                 DataRange.Parent.Activate
                 DataRange.Rows(rowNum).Select
-                LogWarn("Table: " & rst.Source & ", Error: " & ex.Message & " in sheet " & DataRange.Parent.Name & ", & row " & rowNum)
+                LogError("Table: " & rst.Source & ", Error: " & ex.Message & " in sheet " & DataRange.Parent.Name & ", & row " & rowNum)
                 rst.Close()
                 GoTo cleanup
             End Try
@@ -175,7 +178,7 @@ nextRow:
             Try
                 finishLoop = IIf(DataRange.Cells(rowNum + 1, 1).ToString().Length = 0, True, False)
             Catch ex As Exception
-                LogError("Error in primary column: Cells(" & rowNum + 1 & ",1)" & ex.Message)
+                ErrorMsg("Error in primary column: Cells(" & rowNum + 1 & ",1)" & ex.Message)
                 'finishLoop = True ' commented to allow erroneous data...
             End Try
             rowNum += 1
@@ -185,7 +188,7 @@ nextRow:
             Try
                 dbcnn.Execute(executeAdditionalProc)
             Catch ex As Exception
-                LogError("Error in executing additional stored procedure:" & ex.Message)
+                ErrorMsg("Error in executing additional stored procedure:" & ex.Message)
                 GoTo cleanup
             End Try
         End If
@@ -212,7 +215,7 @@ cleanup:
             theVal = Replace(theVal, "'", "''") ' quote quotes inside Strings
             dbFormatType = "'" & theVal & "'"
         Else
-            LogError("Error: unknown data type '" & dataType & "' given in Mapper.dbFormatType !!")
+            ErrorMsg("Error: unknown data type '" & dataType & "' given in Mapper.dbFormatType !!")
             dbFormatType = String.Empty
         End If
     End Function
@@ -226,12 +229,12 @@ cleanup:
 
         Dim theConnString As String = fetchSetting("ConstConnString" & env, String.Empty)
         If theConnString = String.Empty Then
-            LogError("No Connectionstring given for environment: " & env & ", please correct and rerun.")
+            ErrorMsg("No Connectionstring given for environment: " & env & ", please correct and rerun.")
             Exit Function
         End If
         Dim dbidentifier As String = fetchSetting("DBidentifierCCS" & env, String.Empty)
         If dbidentifier = String.Empty Then
-            LogError("No DB identifier given for environment: " & env & ", please correct and rerun.")
+            ErrorMsg("No DB identifier given for environment: " & env & ", please correct and rerun.")
             Exit Function
         End If
         dbcnn = New Connection
@@ -243,8 +246,7 @@ cleanup:
             dbcnn.CommandTimeout = DBAddin.CmdTimeout
             dbcnn.Open()
         Catch ex As Exception
-            Dim exitMe As Boolean = True
-            LogWarn("openConnection: Error connecting to DB: " & Err.Description & ", connection string: " & theConnString, exitMe)
+            LogError("openConnection: Error connecting to DB: " & ex.Message & ", connection string: " & theConnString)
             If dbcnn.State = ADODB.ObjectStateEnum.adStateOpen Then dbcnn.Close()
             dbcnn = Nothing
         End Try
@@ -255,30 +257,35 @@ cleanup:
     ''' <summary>gets defined named ranges for DBMapper invocation in the current workbook and updates Ribbon with it</summary>
     Sub getDBMapperDefinitions()
         ' load DBMapper definitions
-        DBAddin.DBMapperDefColl = New Dictionary(Of String, Dictionary(Of String, Range))
-        For Each namedrange As Name In hostApp.ActiveWorkbook.Names
-            Dim cleanname As String = Replace(namedrange.Name, namedrange.Parent.Name & "!", "")
-            If Left(cleanname, 8) = "DBMapper" Then
-                If InStr(namedrange.RefersTo, "#REF!") > 0 Then LogError("DBMapper definitions range " + namedrange.Parent.Name + "!" + namedrange.Name + " contains #REF!")
-                Dim nodeName As String = Replace(Replace(namedrange.Name, "DBMapper", ""), namedrange.Parent.Name & "!", "")
-                If nodeName = "" Then nodeName = "UnnamedDBMapper"
+        Try
+            DBAddin.DBMapperDefColl = New Dictionary(Of String, Dictionary(Of String, Range))
+            For Each namedrange As Name In hostApp.ActiveWorkbook.Names
+                Dim cleanname As String = Replace(namedrange.Name, namedrange.Parent.Name & "!", "")
+                If Left(cleanname, 8) = "DBMapper" Or Left(cleanname, 8) = "DBAction" Then
+                    Dim DBMappertype As String = Left(cleanname, 8)
+                    If InStr(namedrange.RefersTo, "#REF!") > 0 Then ErrorMsg(DBMappertype + " definitions range " + namedrange.Parent.Name + "!" + namedrange.Name + " contains #REF!")
+                    Dim nodeName As String = Replace(Replace(namedrange.Name, DBMappertype, ""), namedrange.Parent.Name & "!", "")
+                    If nodeName = "" Then nodeName = "Unnamed" + DBMappertype
 
-                Dim i As Integer = namedrange.RefersToRange.Parent.Index
-                Dim defColl As Dictionary(Of String, Range)
-                If Not DBMapperDefColl.ContainsKey("ID" + i.ToString()) Then
-                    ' add to new sheet "menu"
-                    defColl = New Dictionary(Of String, Range)
-                    defColl.Add(nodeName, namedrange.RefersToRange)
-                    DBMapperDefColl.Add("ID" + i.ToString(), defColl)
-                Else
-                    ' add definition to existing sheet "menu"
-                    defColl = DBMapperDefColl("ID" + i.ToString())
-                    defColl.Add(nodeName, namedrange.RefersToRange)
+                    Dim i As Integer = namedrange.RefersToRange.Parent.Index
+                    Dim defColl As Dictionary(Of String, Range)
+                    If Not DBMapperDefColl.ContainsKey("ID" + i.ToString()) Then
+                        ' add to new sheet "menu"
+                        defColl = New Dictionary(Of String, Range)
+                        defColl.Add(nodeName, namedrange.RefersToRange)
+                        DBMapperDefColl.Add("ID" + i.ToString(), defColl)
+                    Else
+                        ' add definition to existing sheet "menu"
+                        defColl = DBMapperDefColl("ID" + i.ToString())
+                        defColl.Add(nodeName, namedrange.RefersToRange)
+                    End If
                 End If
-            End If
-            If DBMapperDefColl.Count >= 15 Then LogError("Not more than 15 sheets with DBMapper definitions possible, ignoring definitions in sheet " + namedrange.Parent.Name)
-        Next
-        DBAddin.theRibbon.Invalidate()
+                If DBMapperDefColl.Count >= 15 Then ErrorMsg("Not more than 15 sheets with DBMapper/DBAction definitions possible, ignoring definitions in sheet " + namedrange.Parent.Name)
+            Next
+            DBAddin.theRibbon.Invalidate()
+        Catch ex As Exception
+            LogError("Error: " & ex.Message)
+        End Try
     End Sub
 
     ''' <summary>saves defined DBMaps (depending on configuration) during workbook saving</summary>
@@ -309,23 +316,23 @@ cleanup:
         Dim saveRangeParams() As String = functionSplit(paramText, ",", """", "saveRangeToDB", "(", ")")
         If IsNothing(saveRangeParams) Then Return False
         If saveRangeParams.Length < 4 Then
-            LogError("At least environment (can be empty), Tablename, primary keys and database have to be provided as saveRangeToDB parameters !")
+            ErrorMsg("At least environment (can be empty), Tablename, primary keys and database have to be provided as saveRangeToDB parameters !")
             Return False
         End If
         If saveRangeParams(0) <> "" Then env = Convert.ToInt16(saveRangeParams(0))
         tableName = saveRangeParams(1).Replace("""", "").Trim ' remove all quotes and trim right and left
         If tableName = "" Then
-            LogError("No Tablename given in DBMapper comment!")
+            ErrorMsg("No Tablename given in DBMapper comment!")
             Return False
         End If
         primKeysStr = saveRangeParams(2).Replace("""", "").Trim
         If primKeysStr = "" Then
-            LogError("No primary keys given in DBMapper comment!")
+            ErrorMsg("No primary keys given in DBMapper comment!")
             Return False
         End If
         database = saveRangeParams(3).Replace("""", "").Trim
         If database = "" Then
-            LogError("No database given in DBMapper comment!")
+            ErrorMsg("No database given in DBMapper comment!")
             Return False
         End If
         insertIfMissing = False
@@ -396,15 +403,15 @@ cleanup:
         End If
 
         ' display dialog for parameters
-        If theDBMapperCreateDlg.ShowDialog() = System.Windows.Forms.DialogResult.Cancel Then Exit Sub
+        If theDBMapperCreateDlg.ShowDialog() = DialogResult.Cancel Then Exit Sub
         ' set name
         If InStr(1, activeCellName, "DBMapper") > 0 Then   ' fetch parameters if existing comment and DBMapper definition...
             Try : hostApp.ActiveWorkbook.Names(activeCellName).Delete
-            Catch ex As Exception : LogError("Error when removing name '" + activeCellName + "' from active cell: " & ex.Message)
+            Catch ex As Exception : ErrorMsg("Error when removing name '" + activeCellName + "' from active cell: " & ex.Message)
             End Try
         End If
         Try : hostApp.ActiveCell.Name = "DBMapper" + theDBMapperCreateDlg.DBMapperName.Text
-        Catch ex As Exception : LogError("Error when assigning name 'DBMapper" + theDBMapperCreateDlg.DBMapperName.Text + "' to active cell: " & ex.Message)
+        Catch ex As Exception : ErrorMsg("Error when assigning name 'DBMapper" + theDBMapperCreateDlg.DBMapperName.Text + "' to active cell: " & ex.Message)
         End Try
         ' set parameters in comment text
         Try : hostApp.ActiveCell.ClearComments() : Catch ex As Exception : End Try
@@ -421,7 +428,7 @@ cleanup:
             hostApp.ActiveCell.AddComment()
             hostApp.ActiveCell.Comment.Text(Text:=paramText)
             hostApp.ActiveCell.Comment.Shape.TextFrame.Characters.Font.Bold = False
-        Catch ex As Exception : LogError("Error when adding comments with DBMapper parameters to active cell: " & ex.Message) : End Try
+        Catch ex As Exception : ErrorMsg("Error when adding comments with DBMapper parameters to active cell: " & ex.Message) : End Try
         ' refresh mapper definitions to reflect changes immediately...
         getDBMapperDefinitions()
     End Sub

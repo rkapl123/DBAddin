@@ -1,5 +1,7 @@
 Imports Microsoft.Office.Interop
 Imports System.IO ' for getting config files for menu
+Imports System.Xml.Linq
+Imports System.Linq
 
 '''<summary>procedures used for loading config files (containing DBFunctions and general sheet content) and building the config menu</summary>
 Public Module ConfigFiles
@@ -42,7 +44,7 @@ Public Module ConfigFiles
             Loop Until fileReader.EndOfStream
             fileReader.Close()
         Catch ex As Exception
-            LogError("Error (" & ex.Message & ") during filling items from config file '" & theFileName & "' in ConfigFiles.loadConfig")
+            ErrorMsg("Error (" & ex.Message & ") during filling items from config file '" & theFileName & "' in ConfigFiles.loadConfig")
         End Try
     End Sub
 
@@ -95,7 +97,7 @@ Public Module ConfigFiles
                 ' get target cell respecting relative cellToBeStoredAddress starting from originCell
                 Dim TargetCell As Excel.Range = Nothing
                 If Not getRangeFromRelative(originCell, cellToBeStoredAddress, TargetCell) Then
-                    LogWarn("Excel Borders would be violated by placing target cell (relative address:" & cellToBeStoredAddress & ")" & vbLf & "Cell content: " & cellToBeStoredContent & vbLf & "Please select different cell !!", 1)
+                    ErrorMsg("Excel Borders would be violated by placing target cell (relative address:" & cellToBeStoredAddress & ")" & vbLf & "Cell content: " & cellToBeStoredContent & vbLf & "Please select different cell !!")
                 End If
 
                 ' finally fill function target cell with function text (relative cell references to target cell) or value
@@ -106,7 +108,7 @@ Public Module ConfigFiles
                         TargetCell.Value = cellToBeStoredContent
                     End If
                 Catch ex As Exception
-                    LogError("Error in setting Cell: " & Err.Description, 1)
+                    MsgBox("Error in setting Cell: " & ex.Message)
                 End Try
             End If
         Next
@@ -186,7 +188,7 @@ Public Module ConfigFiles
         Dim currentBar, button As XElement
 
         If Not Directory.Exists(ConfigStoreFolder) Then
-            LogError("No predefined config store folder '" & ConfigStoreFolder & "' found, please correct setting and refresh!")
+            ErrorMsg("No predefined config store folder '" & ConfigStoreFolder & "' found, please correct setting and refresh!")
             ConfigMenuXML = "<menu xmlns='http://schemas.microsoft.com/office/2009/07/customui'><button id='refreshDBConfig' label='refresh DBConfig Tree' imageMso='Refresh' onAction='refreshDBConfigTree'/></menu>"
         Else
             ' top level menu
@@ -280,7 +282,7 @@ Public Module ConfigFiles
                 readAllFiles(rootPath & "\" & DirList(i).Name, newBar)
             Next
         Catch ex As Exception
-            LogError("Error (" & ex.Message & ") in MenuHandler.readAllFiles")
+            ErrorMsg("Error (" & ex.Message & ") in MenuHandler.readAllFiles")
         End Try
     End Sub
 
@@ -322,7 +324,7 @@ Public Module ConfigFiles
                 currentDepth -= 1
             End If
         Catch ex As Exception
-            LogError("Error (" & ex.Message & ") in MenuHandler.buildFileSepMenuCtrl")
+            ErrorMsg("Error (" & ex.Message & ") in MenuHandler.buildFileSepMenuCtrl")
         End Try
     End Sub
 

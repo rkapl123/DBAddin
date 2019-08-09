@@ -1,6 +1,7 @@
 Imports ExcelDna.Integration.CustomUI
 Imports System.Runtime.InteropServices
 Imports Microsoft.Office.Interop
+Imports System.Linq
 
 ''' <summary>handles all Menu related aspects (context menu for building/refreshing, "DBAddin"/"Load Config" tree menu for retrieving stored configuration files</summary>
 <ComVisible(True)>
@@ -20,7 +21,10 @@ Public Class MenuHandler
         customUIXml += "<group id='DBAddinGroup' label='General settings'>" +
               "<dropDown id='envDropDown' label='Environment:' sizeString='12345678901234567890' getSelectedItemIndex='GetSelItem' getItemCount='GetItemCount' getItemID='GetItemID' getItemLabel='GetItemLabel' onAction='selectItem'/>" +
               "<dynamicMenu id='DBConfigs' size='normal' label='DB Configs' imageMso='Refresh' screentip='DB Function Configuration Files quick access' getContent='getDBConfigMenu'/>" +
-              "<button id='purgetool' label='purge names tool' imageMso='TableColumnsDeleteExcel' onAction='clickpurgetoolbutton'/>" +
+              "<buttonGroup id='buttonGroup'>" +
+              "<button id='purgetool' label='purge names' imageMso='TableColumnsDeleteExcel' onAction='clickpurgetoolbutton'/>" +
+              "<button id='disableAddin' label='disable Addin' imageMso='SpeakStop' onAction='clickDisableAddin'/>" +
+              "</buttonGroup>" +
               "<dialogBoxLauncher><button id='dialog' label='About DBAddin' onAction='showAbout' tag='3' screentip='Show Aboutbox with help, version information, homepage and access to log'/></dialogBoxLauncher></group>"
         ' DBMapper Group: max. 15 sheets with DBMapper definitions possible:
         customUIXml += "<group id='DBMapperGroup' label='Store DBMapper Data'>"
@@ -32,17 +36,30 @@ Public Class MenuHandler
         Next
         ' Context menus for refresh, jump and creation: in cell, row, column and ListRange (area of ListObjects)
         customUIXml += "</group></tab></tabs></ribbon>" +
-         "<contextMenus><contextMenu idMso='ContextMenuCell'>" +
-         "<button id='gotoDBFuncC' label='jump to DBFunc/target (Ctrl-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
-         "<button id='refreshDataC' label='refresh data (Ctrl-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
-         "<menu id='createMenu' label='DBAddin create ...' insertBeforeMso='Cut'>" +
+         "<contextMenus>" +
+         "<contextMenu idMso ='ContextMenuCell'>" +
+         "<menu id='createMenu' label='build DBFunc/Map ...' insertBeforeMso='Cut'>" +
             "<button id='DBMapper' tag='DBMapper' label='DBMapper' imageMso='AddToolGallery' onAction='clickCreateButton'/>" +
             "<button id='DBListFetch' tag='DBListFetch' label='DBListFetch' imageMso='AddCalendarMenu' onAction='clickCreateButton'/>" +
             "<button id='DBRowFetch' tag='DBRowFetch' label='DBRowFetch' imageMso='DataFormAddRecord' onAction='clickCreateButton'/>" +
             "<button id='DBSetQueryPivot' tag='DBSetQueryPivot' label='DBSetQueryPivot' imageMso='AddContentType' onAction='clickCreateButton'/>" +
             "<button id='DBSetQueryListObject' tag='DBSetQueryListObject' label='DBSetQueryListObject' imageMso='AddContentType' onAction='clickCreateButton'/>" +
          "</menu>" +
+         "<button id='refreshDataC' label='refresh data (Ctrl-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
+         "<button id='gotoDBFuncC' label='jump to DBFunc/target (Ctrl-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
          "<menuSeparator id='MySeparatorC' insertBeforeMso='Cut'/>" +
+         "</contextMenu>" +
+         "<contextMenu idMso ='ContextMenuCellLayout'>" +
+         "<menu id='createMenuCL' label='build DBFunc/Map ...' insertBeforeMso='Cut'>" +
+            "<button id='DBMapperCL' tag='DBMapper' label='DBMapper' imageMso='AddToolGallery' onAction='clickCreateButton'/>" +
+            "<button id='DBListFetchCL' tag='DBListFetch' label='DBListFetch' imageMso='AddCalendarMenu' onAction='clickCreateButton'/>" +
+            "<button id='DBRowFetchCL' tag='DBRowFetch' label='DBRowFetch' imageMso='DataFormAddRecord' onAction='clickCreateButton'/>" +
+            "<button id='DBSetQueryPivotCL' tag='DBSetQueryPivot' label='DBSetQueryPivot' imageMso='AddContentType' onAction='clickCreateButton'/>" +
+            "<button id='DBSetQueryListObjectCL' tag='DBSetQueryListObject' label='DBSetQueryListObject' imageMso='AddContentType' onAction='clickCreateButton'/>" +
+         "</menu>" +
+         "<button id='refreshDataCL' label='refresh data (Ctrl-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
+         "<button id='gotoDBFuncCL' label='jump to DBFunc/target (Ctrl-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
+         "<menuSeparator id='MySeparatorCL' insertBeforeMso='Cut'/>" +
          "</contextMenu>" +
          "<contextMenu idMso='ContextMenuRow'>" +
          "<button id='refreshDataR' label='refresh data (Ctrl-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
@@ -53,8 +70,8 @@ Public Class MenuHandler
          "<menuSeparator id='MySeparatorZ' insertBeforeMso='Cut'/>" +
          "</contextMenu>" +
          "<contextMenu idMso='ContextMenuListRange'>" +
-         "<button id='gotoDBFuncL' label='jump to DBFunc/target (Ctrl-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
          "<button id='refreshDataL' label='refresh data (Ctrl-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
+         "<button id='gotoDBFuncL' label='jump to DBFunc/target (Ctrl-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
          "<menuSeparator id='MySeparatorL' insertBeforeMso='Cut'/>" +
          "</contextMenu>" +
          "</contextMenus></customUI>"
@@ -94,7 +111,7 @@ Public Class MenuHandler
         storeSetting("ConfigStoreFolder", fetchSetting("ConfigStoreFolder" & env, String.Empty))
         storeSetting("ConfigName", fetchSetting("ConfigName" & env, String.Empty))
         initSettings()
-        MsgBox("ConstConnString" & ConstConnString & vbCrLf & "ConfigStoreFolder:" & ConfigStoreFolder & vbCrLf & vbCrLf & "Please refresh DBSheets Or DBFuncs to see effects...", vbOKOnly, "set defaults to: ")
+        MsgBox("ConstConnString" & ConstConnString & vbCrLf & "ConfigStoreFolder:" & ConfigStoreFolder & vbCrLf & vbCrLf & "Please refresh DBFunctions to see effects...", vbOKOnly, "set defaults to: ")
         ' provide a chance to reconnect when switching environment...
         conn = Nothing
     End Sub
@@ -127,28 +144,39 @@ Public Class MenuHandler
     ''' <summary>set the name of the WB/sheet dropdown to the sheet name (for the WB dropdown this is the WB name)</summary>
     Public Function getSheetLabel(control As IRibbonControl) As String
         getSheetLabel = vbNullString
-        If DBMapperDefColl.ContainsKey(control.Id) Then
-            ' get parent name of first stored DB Mapper range
-            getSheetLabel = DBMapperDefColl(control.Id).Item(DBMapperDefColl(control.Id).Keys.First).Parent.Name
-        End If
+        Try
+            If DBMapperDefColl.ContainsKey(control.Id) Then
+                ' get parent name of first stored DB Mapper range
+                getSheetLabel = DBMapperDefColl(control.Id).Item(DBMapperDefColl(control.Id).Keys.First).Parent.Name
+            End If
+        Catch ex As Exception
+            Return String.Empty
+        End Try
     End Function
 
     ''' <summary>create the buttons in the DBMapper sheet dropdown menu</summary>
     Public Function getDBMapperMenuContent(control As IRibbonControl) As String
         Dim xmlString As String = "<menu xmlns='http://schemas.microsoft.com/office/2009/07/customui'>"
+        Try
+            If Not DBMapperDefColl.ContainsKey(control.Id) Then Return ""
 
-        If Not DBMapperDefColl.ContainsKey(control.Id) Then Return ""
-
-        For Each nodeName As String In DBMapperDefColl(control.Id).Keys
-            xmlString = xmlString + "<button id='" + nodeName + "' label='store " + nodeName + "' imageMso='SignatureLineInsert' onAction='saveRangeToDBClick' tag='" + control.Id + "' screentip='store " + nodeName + "' supertip='stores data defined in " + nodeName + " Mapper range on " + DBMapperDefColl(control.Id).Item(nodeName).Parent.Name + "![" + DBMapperDefColl(control.Id).Item(nodeName).Address + "]' />"
-        Next
-        xmlString += "</menu>"
-        Return xmlString
+            For Each nodeName As String In DBMapperDefColl(control.Id).Keys
+                xmlString = xmlString + "<button id='" + nodeName + "' label='store " + nodeName + "' imageMso='SignatureLineInsert' onAction='saveRangeToDBClick' tag='" + control.Id + "' screentip='store " + nodeName + "' supertip='stores data defined in " + nodeName + " Mapper range on " + DBMapperDefColl(control.Id).Item(nodeName).Parent.Name + "![" + DBMapperDefColl(control.Id).Item(nodeName).Address + "]' />"
+            Next
+            xmlString += "</menu>"
+            Return xmlString
+        Catch ex As Exception
+            Return String.Empty
+        End Try
     End Function
 
     ''' <summary>shows the DBMapper sheet button only if it was collected...</summary>
     Public Function getDBMapperMenuVisible(control As IRibbonControl) As Boolean
-        Return DBMapperDefColl.ContainsKey(control.Id)
+        Try
+            Return DBMapperDefColl.ContainsKey(control.Id)
+        Catch ex As Exception
+            Return False
+        End Try
     End Function
 
     ''' <summary>DBMapper store button activated, save Range to DB...</summary>
@@ -169,6 +197,16 @@ Public Class MenuHandler
     ''' <summary>purge name tool button, purge names used for dbfunctions from workbook</summary>
     Public Sub clickpurgetoolbutton(control As IRibbonControl)
         purgeNames()
+    End Sub
+
+    Public Sub clickDisableAddin(control As IRibbonControl)
+        ' first reactivate legacy Addin
+        My.Computer.Registry.SetValue("HKEY_CURRENT_USER\Software\Microsoft\Office\Excel\Addins\DBAddin.Connection", "LoadBehavior", 3)
+        hostApp.AddIns("DBAddin.Functions").Installed = True
+        ' then suicide....
+        MsgBox("Please restart Excel to make changes effective...", vbOKOnly, "Disable DBAddin and re-enable Legacy DBAddin")
+        Try : hostApp.AddIns("OebfaFuncs-AddIn-packed").Installed = False : Catch ex As Exception : End Try
+        Try : hostApp.AddIns("DBAddin-AddIn-packed").Installed = False : Catch ex As Exception : End Try
     End Sub
 
     ''' <summary>context menu entries below create...: create DB function or DB Mapper</summary>

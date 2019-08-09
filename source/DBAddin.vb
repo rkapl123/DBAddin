@@ -1,6 +1,7 @@
 ﻿Imports ExcelDna.Integration
 Imports Microsoft.Office.Interop
-Imports Microsoft.Office.Interop.Excel
+Imports System.Diagnostics
+Imports System.Collections.Generic
 
 ''' <summary>Global variables and functions for DB Addin</summary>
 Public Module DBAddin
@@ -12,11 +13,11 @@ Public Module DBAddin
     ''' <summary>reference object for the Addins ribbon</summary>
     Public theRibbon As ExcelDna.Integration.CustomUI.IRibbonUI
     ''' <summary>Excel Application object used for referencing objects</summary>
-    Public hostApp As Application
+    Public hostApp As Excel.Application
     ''' <summary>environment definitions</summary>
     Public environdefs As String() = {}
     ''' <summary>DBMapper definition collections (for labels (key of nested dictionary) and target ranges (value of nested dictionary))</summary>
-    Public DBMapperDefColl As Dictionary(Of String, Dictionary(Of String, Range))
+    Public DBMapperDefColl As Dictionary(Of String, Dictionary(Of String, Excel.Range))
     ''' <summary>the selected event level in the About box</summary>
     Public EventLevelSelected As String
     ''' <summary>the log listener</summary>
@@ -75,61 +76,60 @@ Public Module DBAddin
                 i += 1
             Loop Until Len(ConfigName) = 0
         Catch ex As Exception
-            LogError("Error in initialization of Settings (DBAddin.initSettings):" + ex.Message)
+            ErrorMsg("Error in initialization of Settings (DBAddin.initSettings):" + ex.Message)
         End Try
     End Sub
 
     ''' <summary>Logs Message of eEventType to System.Diagnostics.Trace</summary>
-    ''' <param name="Message"></param>
-    ''' <param name="eEventType"></param>
-    ''' <param name="caller"></param>
-    Public Sub WriteToLog(Message As String, eEventType As EventLogEntryType, Optional caller As String = "")
-        If caller = "" Then
-            Dim theMethod As Object = (New System.Diagnostics.StackTrace).GetFrame(1).GetMethod
-            caller = theMethod.ReflectedType.FullName & "." & theMethod.Name
-        End If
+    ''' <param name="Message">Message to be logged</param>
+    ''' <param name="eEventType">event type: info, warning, error</param>
+    ''' <param name="caller">reflection based caller information: module.method</param>
+    Private Sub WriteToLog(Message As String, eEventType As EventLogEntryType, caller As String)
         Select Case eEventType
             Case EventLogEntryType.Information : Trace.TraceInformation("{0}: {1}", caller, Message)
-            Case EventLogEntryType.Warning : Trace.TraceWarning("[Warn] {0}: {1}", caller, Message)
-            Case EventLogEntryType.Error : Trace.TraceWarning("[Error] {0}: {1}", caller, Message) ' to avoid Diagnostic Window from popping up....
+            Case EventLogEntryType.Warning : Trace.TraceWarning("{0}: {1}", caller, Message)
+            Case EventLogEntryType.Error : Trace.TraceError("{0}: {1}", caller, Message)
         End Select
     End Sub
 
     ''' <summary>Logs error messages</summary>
-    ''' <param name="LogMessage"></param>
-    ''' <param name="exitMe"></param>
-    ''' <param name="includeMsg"></param>
-    Public Sub LogError(LogMessage As String, Optional ByRef exitMe As Boolean = False, Optional includeMsg As Boolean = True)
+    ''' <param name="LogMessage">the message to be logged</param>
+    Public Sub LogError(LogMessage As String)
         Dim theMethod As Object = (New System.Diagnostics.StackTrace).GetFrame(1).GetMethod
         Dim caller As String = theMethod.ReflectedType.FullName & "." & theMethod.Name
         WriteToLog(LogMessage, EventLogEntryType.Error, caller)
-        If includeMsg Then
-            Dim retval As Integer = MsgBox(LogMessage, vbCritical + IIf(exitMe, vbOKCancel, vbOKOnly), "DBAddin Error")
-            If retval = vbCancel Then exitMe = True
-        End If
     End Sub
 
     ''' <summary>Logs warning messages</summary>
-    ''' <param name="LogMessage"></param>
-    ''' <param name="exitMe"></param>
-    ''' <param name="includeMsg"></param>
-    Public Sub LogWarn(LogMessage As String, Optional ByRef exitMe As Boolean = False, Optional includeMsg As Boolean = True)
+    ''' <param name="LogMessage">the message to be logged</param>
+    Public Sub LogWarn(LogMessage As String)
         Dim theMethod As Object = (New System.Diagnostics.StackTrace).GetFrame(1).GetMethod
         Dim caller As String = theMethod.ReflectedType.FullName & "." & theMethod.Name
         WriteToLog(LogMessage, EventLogEntryType.Warning, caller)
-        If includeMsg Then
-            Dim retval As Integer = MsgBox(LogMessage, vbExclamation + IIf(exitMe, vbOKCancel, vbOKOnly), "DBAddin Warning")
-            If retval = vbCancel Then exitMe = True
-        End If
     End Sub
 
     ''' <summary>Logs informational messages</summary>
-    ''' <param name="LogMessage"></param>
+    ''' <param name="LogMessage">the message to be logged</param>
     Public Sub LogInfo(LogMessage As String)
         If DebugAddin Then
             Dim theMethod As Object = (New System.Diagnostics.StackTrace).GetFrame(1).GetMethod
             Dim caller As String = theMethod.ReflectedType.FullName & "." & theMethod.Name
             WriteToLog(LogMessage, EventLogEntryType.Information, caller)
+        End If
+    End Sub
+
+    ''' <summary>show Error message to User</summary>
+    ''' <param name="LogMessage">the message to be shown/logged</param>
+    ''' <param name="exitMe">can be set to True to let the user avoid repeated error messages, returns true if cancel was clicked</param>
+    Public Sub ErrorMsg(LogMessage As String, Optional ByRef exitMe As Boolean = False)
+        Dim theMethod As Object = (New System.Diagnostics.StackTrace).GetFrame(1).GetMethod
+        Dim caller As String = theMethod.ReflectedType.FullName & "." & theMethod.Name
+        WriteToLog(LogMessage, EventLogEntryType.Error, caller)
+        Dim retval As Integer = MsgBox(LogMessage & IIf(exitMe, vbCrLf & "(press Cancel to avoid further error messages of this kind)", ""), vbExclamation + IIf(exitMe, vbOKCancel, vbOKOnly), "DBAddin Error")
+        If retval = vbCancel Then
+            exitMe = True
+        Else
+            exitMe = False
         End If
     End Sub
 
@@ -142,7 +142,7 @@ Public Module DBAddin
         Try
             hostApp.EnableEvents = True
         Catch ex As Exception
-            LogError("Can't refresh data while lookup dropdown is open !!")
+            ErrorMsg("Can't refresh data while lookup dropdown is open !!")
             Exit Sub
         End Try
 
@@ -207,7 +207,7 @@ Public Module DBAddin
                 End If
             End If
         Catch ex As Exception
-            WriteToLog("Error (" & Err.Description & ") in MenuHandler.refreshData in " & Erl(), EventLogEntryType.Warning)
+            ErrorMsg("Error (" & ex.Message & ") in refreshData !")
         End Try
     End Sub
 
@@ -215,7 +215,7 @@ Public Module DBAddin
     <ExcelCommand(Name:="jumpButton", ShortCut:="^J")>
     Public Sub jumpButton()
         If checkMultipleDBRangeNames(hostApp.ActiveCell) Then
-            LogError("Multiple hidden DB Function names in selected cell (making 'jump' ambigous/impossible), please use purge names tool!")
+            ErrorMsg("Multiple hidden DB Function names in selected cell (making 'jump' ambigous/impossible), please use purge names tool!")
             Exit Sub
         End If
 
@@ -234,17 +234,17 @@ Public Module DBAddin
             hostApp.Range(jumpName).Parent.Select()
             hostApp.Range(jumpName).Select()
         Catch ex As Exception
-            LogWarn("Can't jump to target/source, corresponding workbook open? " & ex.Message)
+            ErrorMsg("Can't jump to target/source, corresponding workbook open? " & ex.Message)
         End Try
     End Sub
 
     ''' <summary>splits theString into tokens delimited by delimiter, ignoring delimiters inside quotes and brackets</summary>
-    ''' <param name="theString"></param>
-    ''' <param name="delimiter"></param>
-    ''' <param name="quote"></param>
-    ''' <param name="startStr"></param>
-    ''' <param name="openBracket"></param>
-    ''' <param name="closeBracket"></param>
+    ''' <param name="theString">string to be split into tokens</param>
+    ''' <param name="delimiter">delimiter that string is to be split by</param>
+    ''' <param name="quote">quote character where delimiters should be ignored inside</param>
+    ''' <param name="startStr">part of theString where splitting should start after</param>
+    ''' <param name="openBracket">opening bracket character</param>
+    ''' <param name="closeBracket">closing bracket character</param>
     ''' <returns>the list of tokens</returns>
     ''' <remarks>theString is split starting from startStr up to the first balancing closing Bracket (as defined by openBracket and closeBracket)
     ''' startStr, openBracket and closeBracket are case insensitive for comparing with theString.
@@ -259,7 +259,7 @@ Public Module DBAddin
             ' rip out the balancing string now...
             tempString = balancedString(tempString, openBracket, closeBracket, quote)
             If tempString.Length = 0 Then
-                LogError("couldn't produce balanced string from " & theString)
+                ErrorMsg("couldn't produce balanced string from " & theString)
                 functionSplit = Nothing
                 Exit Function
             End If
@@ -267,7 +267,7 @@ Public Module DBAddin
             finalResult = Split(tempString, vbTab)
             functionSplit = finalResult
         Catch ex As Exception
-            WriteToLog("Error: " & ex.Message & " in CommonFuncs.functionSplit", EventLogEntryType.Warning)
+            LogWarn("Error: " & ex.Message)
             functionSplit = Nothing
         End Try
     End Function
@@ -309,7 +309,7 @@ Public Module DBAddin
                 balancedString = Mid$(theString, startBalance + 1, endBalance - startBalance)
             End If
         Catch ex As Exception
-            WriteToLog("Error: " & ex.Message & " in CommonFuncs.balancedString in ", EventLogEntryType.Warning)
+            LogWarn("Error: " & ex.Message)
         End Try
     End Function
 
@@ -351,7 +351,7 @@ Public Module DBAddin
                 End If
             Next
         Catch ex As Exception
-            WriteToLog("Error: " & ex.Message & " in CommonFuncs.replaceDelimsWithSpecialSep", EventLogEntryType.Warning)
+            LogWarn("Error: " & ex.Message)
         End Try
     End Function
 
@@ -444,9 +444,9 @@ Public Module DBAddin
     ''' <summary>gets first underlying Name that contains DBtarget or DBsource in theRange</summary>
     ''' <param name="theRange"></param>
     ''' <returns>the retrieved name</returns>
-    Public Function getDBRangeName(theRange As Range) As Name
-        Dim nm As Name
-        Dim rng, testRng As Range
+    Public Function getDBRangeName(theRange As Excel.Range) As Excel.Name
+        Dim nm As Excel.Name
+        Dim rng, testRng As Excel.Range
 
         getDBRangeName = Nothing
         Try
@@ -463,16 +463,16 @@ Public Module DBAddin
                 End If
             Next
         Catch ex As Exception
-            WriteToLog("Error: " & Err.Description & " in CommonFuncs.getRangeName", EventLogEntryType.Warning)
+            ErrorMsg("Error: " & ex.Message & " in getDBRangeName !")
         End Try
     End Function
 
     ''' <summary>check if multiple (hidden, containing DBtarget or DBsource) DB Function names exist in theRange</summary>
     ''' <param name="theRange"></param>
     ''' <returns>True if multiple names exist</returns>
-    Public Function checkMultipleDBRangeNames(theRange As Range) As Boolean
-        Dim nm As Name
-        Dim rng, testRng As Range
+    Public Function checkMultipleDBRangeNames(theRange As Excel.Range) As Boolean
+        Dim nm As Excel.Name
+        Dim rng, testRng As Excel.Range
         Dim foundNames As Integer = 0
 
         checkMultipleDBRangeNames = False
@@ -490,75 +490,74 @@ Public Module DBAddin
             Next
             If foundNames > 1 Then checkMultipleDBRangeNames = True
         Catch ex As Exception
-            WriteToLog("Error: " & Err.Description & " in CommonFuncs.getRangeName", EventLogEntryType.Warning)
+            LogWarn("Error: " & ex.Message)
         End Try
     End Function
 
     ''' <summary>only recalc full if we have DBFuncs in the workbook somewhere</summary>
     ''' <param name="Wb"></param>
     ''' <param name="ignoreCalcMode"></param>
-    Public Sub refreshDBFunctions(Wb As Workbook, Optional ignoreCalcMode As Boolean = False)
-        Dim searchCells As Range
-        Dim ws As Worksheet
+    Public Sub refreshDBFunctions(Wb As Excel.Workbook, Optional ignoreCalcMode As Boolean = False)
+        Dim searchCells As Excel.Range
+        Dim ws As Excel.Worksheet
         Dim needRecalc As Boolean
         Dim theFunc
 
         If TypeName(hostApp.Calculation) = "Error" Then
-            WriteToLog("hostApp.Calculation = Error, " & Wb.Path & "\" & Wb.Name, EventLogEntryType.Warning)
+            LogWarn("hostApp.Calculation = Error, " & Wb.Path & "\" & Wb.Name)
             Exit Sub
         End If
         Try
             needRecalc = False
             For Each ws In Wb.Worksheets
                 For Each theFunc In {"DBListFetch(", "DBRowFetch(", "DBSetQuery("}
-                    searchCells = ws.Cells.Find(What:=theFunc, After:=ws.Range("A1"), LookIn:=XlFindLookIn.xlFormulas, LookAt:=XlLookAt.xlPart, SearchOrder:=XlSearchOrder.xlByRows, SearchDirection:=XlSearchDirection.xlNext, MatchCase:=False)
+                    searchCells = ws.Cells.Find(What:=theFunc, After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
                     If Not (searchCells Is Nothing) Then
                         ' reset the cell find dialog....
                         searchCells = Nothing
-                        searchCells = ws.Cells.Find(What:="", After:=ws.Range("A1"), LookIn:=XlFindLookIn.xlFormulas, LookAt:=XlLookAt.xlPart, SearchOrder:=XlSearchOrder.xlByRows, SearchDirection:=XlSearchDirection.xlNext, MatchCase:=False)
+                        searchCells = ws.Cells.Find(What:="", After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
                         needRecalc = True
                         GoTo done
                     End If
                 Next
                 ' reset the cell find dialog....
                 searchCells = Nothing
-                searchCells = ws.Cells.Find(What:="", After:=ws.Range("A1"), LookIn:=XlFindLookIn.xlFormulas, LookAt:=XlLookAt.xlPart, SearchOrder:=XlSearchOrder.xlByRows, SearchDirection:=XlSearchDirection.xlNext, MatchCase:=False)
+                searchCells = ws.Cells.Find(What:="", After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
             Next
 done:
-            If needRecalc And (hostApp.Calculation <> XlCalculation.xlCalculationManual Or ignoreCalcMode) Then
-                WriteToLog("hostApp.CalculateFull called" & Wb.Path & "\" & Wb.Name, EventLogEntryType.Information)
+            If needRecalc And (hostApp.Calculation <> Excel.XlCalculation.xlCalculationManual Or ignoreCalcMode) Then
+                LogInfo("hostApp.CalculateFull called" & Wb.Path & "\" & Wb.Name)
                 hostApp.CalculateFull()
             Else
-                WriteToLog("no dbfunc found... " & Wb.Path & "\" & Wb.Name, EventLogEntryType.Information)
+                LogInfo("no dbfunc found... " & Wb.Path & "\" & Wb.Name)
             End If
         Catch ex As Exception
-            WriteToLog("Error: " & ex.Message & ", " & Wb.Path & "\" & Wb.Name, EventLogEntryType.Warning)
+            ErrorMsg("Error: " & ex.Message & ", " & Wb.Path & "\" & Wb.Name)
         End Try
     End Sub
 
     ''' <summary>"repairs" legacy functions from old VB6-COM Addin by removing "DBAddin.Functions." before function name</summary>
     Public Sub repairLegacyFunctions(Optional showReponse As Boolean = False)
-        Dim searchCell As Range
+        Dim searchCell As Excel.Range
         Dim foundLegacyWS As Collection = New Collection
         Dim xlcalcmode As Long = hostApp.Calculation
         Try
             For Each ws In hostApp.ActiveWorkbook.Worksheets
                 ' check whether legacy functions exist somewhere ...
-                searchCell = ws.Cells.Find(What:="DBAddin.Functions.", After:=ws.Range("A1"), LookIn:=XlFindLookIn.xlFormulas, LookAt:=XlLookAt.xlPart, SearchOrder:=XlSearchOrder.xlByRows, SearchDirection:=XlSearchDirection.xlNext, MatchCase:=False)
+                searchCell = ws.Cells.Find(What:="DBAddin.Functions.", After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
                 If Not (searchCell Is Nothing) Then foundLegacyWS.Add(ws)
             Next
             If foundLegacyWS.Count > 0 Then
                 Dim retval As MsgBoxResult = MsgBox("Found legacy DBAddin functions in active workbook, should they be replaced with current addin functions (save workbook afterwards to persist) ?", vbQuestion + vbYesNo, "Legacy DBAddin functions")
                 If retval = vbYes Then
-                    hostApp.Calculation = XlCalculation.xlCalculationManual ' avoid recalculations during replace action
+                    hostApp.Calculation = Excel.XlCalculation.xlCalculationManual ' avoid recalculations during replace action
                     hostApp.DisplayAlerts = False ' avoid warnings for sheet where "DBAddin.Functions." is not found
-                    hostApp.EnableEvents = False ' avoid event triggering during replace action
+                    'hostApp.EnableEvents = False ' avoid event triggering during replace action
                     ' remove "DBAddin.Functions." in each sheet...
                     For Each ws In foundLegacyWS
-                        ws.Cells.Replace(What:="DBAddin.Functions.Interpolieren", Replacement:="Interpolate", LookAt:=XlLookAt.xlPart, SearchOrder:=XlSearchOrder.xlByRows, MatchCase:=False, SearchFormat:=False, ReplaceFormat:=False)
-                        ws.Cells.Replace(What:="DBAddin.Functions.", Replacement:="", LookAt:=XlLookAt.xlPart, SearchOrder:=XlSearchOrder.xlByRows, MatchCase:=False, SearchFormat:=False, ReplaceFormat:=False)
+                        ws.Cells.Replace(What:="DBAddin.Functions.", Replacement:="", LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, MatchCase:=False, SearchFormat:=False, ReplaceFormat:=False)
                     Next
-                    hostApp.EnableEvents = True
+                    'hostApp.EnableEvents = True
                     hostApp.DisplayAlerts = True
                     hostApp.Calculation = xlcalcmode
                 End If
@@ -566,10 +565,10 @@ done:
                 MsgBox("No legacy DBAddin functions found in active workbook.", vbExclamation + vbOKOnly, "Legacy DBAddin functions")
             End If
             ' reset the cell find dialog....
-            hostApp.ActiveSheet.Cells.Find(What:="", After:=hostApp.ActiveSheet.Range("A1"), LookIn:=XlFindLookIn.xlFormulas, LookAt:=XlLookAt.xlPart, SearchOrder:=XlSearchOrder.xlByRows, SearchDirection:=XlSearchDirection.xlNext, MatchCase:=False)
+            hostApp.ActiveSheet.Cells.Find(What:="", After:=hostApp.ActiveSheet.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
         Catch ex As Exception
-            LogError("Error occured in replacing DBAddin.Functions.: " & ex.Message)
-            hostApp.EnableEvents = True
+            ErrorMsg("Error occured in replacing DBAddin.Functions.: " & ex.Message)
+            'hostApp.EnableEvents = True
             hostApp.DisplayAlerts = True
             hostApp.Calculation = xlcalcmode
         End Try
@@ -581,9 +580,9 @@ done:
         Dim retval As MsgBoxResult = MsgBox("Should ExternalData names (from Queries) and names referring to missing references (thus containing #REF!) also be purged?", vbYesNoCancel + vbQuestion, "purge Names")
         If retval = vbCancel Then Exit Sub
         Dim calcMode = hostApp.Calculation
-        hostApp.Calculation = XlCalculation.xlCalculationManual
+        hostApp.Calculation = Excel.XlCalculation.xlCalculationManual
         Try
-            Dim DBname As Name
+            Dim DBname As Excel.Name
             For Each DBname In hostApp.ActiveWorkbook.Names
                 If DBname.Name Like "*ExterneDaten*" Or DBname.Name Like "*ExternalData*" And retval = vbYes Then
                     resultingPurges += DBname.Name + ", "
@@ -603,10 +602,10 @@ done:
                 MsgBox("nothing purged...", vbOKOnly, "purge Names")
             Else
                 MsgBox("removed " + resultingPurges, vbOKOnly, "purge Names")
-                WriteToLog("purgeNames removed " + resultingPurges, EventLogEntryType.Information)
+                LogInfo("purgeNames removed " + resultingPurges)
             End If
         Catch ex As Exception
-            LogError("Error occured in purgeNames: " & ex.Message)
+            ErrorMsg("Error: " & ex.Message)
         End Try
         hostApp.Calculation = calcMode
     End Sub
