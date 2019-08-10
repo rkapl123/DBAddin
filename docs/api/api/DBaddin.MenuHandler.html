@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Class MenuHandler
    ">
-    <meta name="generator" content="docfx 2.40.11.0">
+    <meta name="generator" content="docfx 2.43.2.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -73,15 +73,48 @@
   
   <h1 id="DBaddin_MenuHandler" data-uid="DBaddin.MenuHandler" class="text-break">Class MenuHandler
   </h1>
-  <div class="markdown level0 summary"></div>
+  <div class="markdown level0 summary"><p>handles all Menu related aspects (context menu for building/refreshing, &quot;DBAddin&quot;/&quot;Load Config&quot; tree menu for retrieving stored configuration files</p>
+</div>
   <div class="markdown level0 conceptual"></div>
   <div class="inheritance">
     <h5>Inheritance</h5>
     <div class="level0"><span class="xref">System.Object</span></div>
-    <div class="level1"><span class="xref">MenuHandler</span></div>
+    <div class="level1"><span class="xref">ExcelDna.Integration.ExcelComAddIn</span></div>
+    <div class="level2"><span class="xref">ExcelDna.Integration.CustomUI.ExcelRibbon</span></div>
+    <div class="level3"><span class="xref">MenuHandler</span></div>
   </div>
   <div class="inheritedMembers">
     <h5>Inherited Members</h5>
+    <div>
+      <span class="xref">ExcelDna.Integration.CustomUI.ExcelRibbon.NamespaceCustomUI2010</span>
+    </div>
+    <div>
+      <span class="xref">ExcelDna.Integration.CustomUI.ExcelRibbon.NamespaceCustomUI2007</span>
+    </div>
+    <div>
+      <span class="xref">ExcelDna.Integration.CustomUI.ExcelRibbon.LoadImage(System.String)</span>
+    </div>
+    <div>
+      <span class="xref">ExcelDna.Integration.CustomUI.ExcelRibbon.RunTagMacro(ExcelDna.Integration.CustomUI.IRibbonControl)</span>
+    </div>
+    <div>
+      <span class="xref">ExcelDna.Integration.ExcelComAddIn.OnConnection(System.Object, ExcelDna.Integration.Extensibility.ext_ConnectMode, System.Object, System.Array)</span>
+    </div>
+    <div>
+      <span class="xref">ExcelDna.Integration.ExcelComAddIn.OnDisconnection(ExcelDna.Integration.Extensibility.ext_DisconnectMode, System.Array)</span>
+    </div>
+    <div>
+      <span class="xref">ExcelDna.Integration.ExcelComAddIn.OnAddInsUpdate(System.Array)</span>
+    </div>
+    <div>
+      <span class="xref">ExcelDna.Integration.ExcelComAddIn.OnStartupComplete(System.Array)</span>
+    </div>
+    <div>
+      <span class="xref">ExcelDna.Integration.ExcelComAddIn.OnBeginShutdown(System.Array)</span>
+    </div>
+    <div>
+      <span class="xref">ExcelDna.Integration.ExcelComAddIn.ProgId</span>
+    </div>
     <div>
       <span class="xref">System.Object.ToString()</span>
     </div>
@@ -111,42 +144,388 @@
   <h6><strong>Assembly</strong>: DBaddin.dll</h6>
   <h5 id="DBaddin_MenuHandler_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public class MenuHandler</code></pre>
+    <pre><code class="lang-csharp hljs">[ComVisible(true)]
+public class MenuHandler : ExcelRibbon, IDTExtensibility2, IRibbonExtensibility</code></pre>
   </div>
-  <h3 id="constructors">Constructors
+  <h3 id="methods">Methods
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_MenuHandler__ctor.md&amp;value=---%0Auid%3A%20DBaddin.MenuHandler.%23ctor%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_MenuHandler_clickCreateButton_ExcelDna_Integration_CustomUI_IRibbonControl_.md&amp;value=---%0Auid%3A%20DBaddin.MenuHandler.clickCreateButton(ExcelDna.Integration.CustomUI.IRibbonControl)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/MenuHandler.vb/#L22">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/MenuHandler.vb/#L213">View Source</a>
   </span>
-  <a id="DBaddin_MenuHandler__ctor_" data-uid="DBaddin.MenuHandler.#ctor*"></a>
-  <h4 id="DBaddin_MenuHandler__ctor" data-uid="DBaddin.MenuHandler.#ctor">MenuHandler()</h4>
+  <a id="DBaddin_MenuHandler_clickCreateButton_" data-uid="DBaddin.MenuHandler.clickCreateButton*"></a>
+  <h4 id="DBaddin_MenuHandler_clickCreateButton_ExcelDna_Integration_CustomUI_IRibbonControl_" data-uid="DBaddin.MenuHandler.clickCreateButton(ExcelDna.Integration.CustomUI.IRibbonControl)">clickCreateButton(IRibbonControl)</h4>
+  <div class="markdown level1 summary"><p>context menu entries below create...: create DB function or DB Mapper</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void clickCreateButton(IRibbonControl control)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">ExcelDna.Integration.CustomUI.IRibbonControl</span></td>
+        <td><span class="parametername">control</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_MenuHandler_clickDisableAddin_ExcelDna_Integration_CustomUI_IRibbonControl_.md&amp;value=---%0Auid%3A%20DBaddin.MenuHandler.clickDisableAddin(ExcelDna.Integration.CustomUI.IRibbonControl)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/MenuHandler.vb/#L202">View Source</a>
+  </span>
+  <a id="DBaddin_MenuHandler_clickDisableAddin_" data-uid="DBaddin.MenuHandler.clickDisableAddin*"></a>
+  <h4 id="DBaddin_MenuHandler_clickDisableAddin_ExcelDna_Integration_CustomUI_IRibbonControl_" data-uid="DBaddin.MenuHandler.clickDisableAddin(ExcelDna.Integration.CustomUI.IRibbonControl)">clickDisableAddin(IRibbonControl)</h4>
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public MenuHandler()</code></pre>
+    <pre><code class="lang-csharp hljs">public void clickDisableAddin(IRibbonControl control)</code></pre>
   </div>
-  <h3 id="fields">Fields
-  </h3>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">ExcelDna.Integration.CustomUI.IRibbonControl</span></td>
+        <td><span class="parametername">control</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_MenuHandler_disableBar.md&amp;value=---%0Auid%3A%20DBaddin.MenuHandler.disableBar%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_MenuHandler_clickjumpButton_ExcelDna_Integration_CustomUI_IRibbonControl_.md&amp;value=---%0Auid%3A%20DBaddin.MenuHandler.clickjumpButton(ExcelDna.Integration.CustomUI.IRibbonControl)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/MenuHandler.vb/#L11">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/MenuHandler.vb/#L193">View Source</a>
   </span>
-  <h4 id="DBaddin_MenuHandler_disableBar" data-uid="DBaddin.MenuHandler.disableBar">disableBar</h4>
-  <div class="markdown level1 summary"></div>
+  <a id="DBaddin_MenuHandler_clickjumpButton_" data-uid="DBaddin.MenuHandler.clickjumpButton*"></a>
+  <h4 id="DBaddin_MenuHandler_clickjumpButton_ExcelDna_Integration_CustomUI_IRibbonControl_" data-uid="DBaddin.MenuHandler.clickjumpButton(ExcelDna.Integration.CustomUI.IRibbonControl)">clickjumpButton(IRibbonControl)</h4>
+  <div class="markdown level1 summary"><p>context menu entry gotoDBFunc: jumps from DB function to data area and back</p>
+</div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public bool disableBar</code></pre>
+    <pre><code class="lang-csharp hljs">public void clickjumpButton(IRibbonControl control)</code></pre>
   </div>
-  <h5 class="fieldValue">Field Value</h5>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">ExcelDna.Integration.CustomUI.IRibbonControl</span></td>
+        <td><span class="parametername">control</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_MenuHandler_clickpurgetoolbutton_ExcelDna_Integration_CustomUI_IRibbonControl_.md&amp;value=---%0Auid%3A%20DBaddin.MenuHandler.clickpurgetoolbutton(ExcelDna.Integration.CustomUI.IRibbonControl)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/MenuHandler.vb/#L198">View Source</a>
+  </span>
+  <a id="DBaddin_MenuHandler_clickpurgetoolbutton_" data-uid="DBaddin.MenuHandler.clickpurgetoolbutton*"></a>
+  <h4 id="DBaddin_MenuHandler_clickpurgetoolbutton_ExcelDna_Integration_CustomUI_IRibbonControl_" data-uid="DBaddin.MenuHandler.clickpurgetoolbutton(ExcelDna.Integration.CustomUI.IRibbonControl)">clickpurgetoolbutton(IRibbonControl)</h4>
+  <div class="markdown level1 summary"><p>purge name tool button, purge names used for dbfunctions from workbook</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void clickpurgetoolbutton(IRibbonControl control)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">ExcelDna.Integration.CustomUI.IRibbonControl</span></td>
+        <td><span class="parametername">control</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_MenuHandler_clickrefreshData_ExcelDna_Integration_CustomUI_IRibbonControl_.md&amp;value=---%0Auid%3A%20DBaddin.MenuHandler.clickrefreshData(ExcelDna.Integration.CustomUI.IRibbonControl)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/MenuHandler.vb/#L188">View Source</a>
+  </span>
+  <a id="DBaddin_MenuHandler_clickrefreshData_" data-uid="DBaddin.MenuHandler.clickrefreshData*"></a>
+  <h4 id="DBaddin_MenuHandler_clickrefreshData_ExcelDna_Integration_CustomUI_IRibbonControl_" data-uid="DBaddin.MenuHandler.clickrefreshData(ExcelDna.Integration.CustomUI.IRibbonControl)">clickrefreshData(IRibbonControl)</h4>
+  <div class="markdown level1 summary"><p>context menu entry refreshData: refresh Data in db function (if area or cell selected) or all db functions</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void clickrefreshData(IRibbonControl control)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">ExcelDna.Integration.CustomUI.IRibbonControl</span></td>
+        <td><span class="parametername">control</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_MenuHandler_getConfig_ExcelDna_Integration_CustomUI_IRibbonControl_.md&amp;value=---%0Auid%3A%20DBaddin.MenuHandler.getConfig(ExcelDna.Integration.CustomUI.IRibbonControl)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/MenuHandler.vb/#L140">View Source</a>
+  </span>
+  <a id="DBaddin_MenuHandler_getConfig_" data-uid="DBaddin.MenuHandler.getConfig*"></a>
+  <h4 id="DBaddin_MenuHandler_getConfig_ExcelDna_Integration_CustomUI_IRibbonControl_" data-uid="DBaddin.MenuHandler.getConfig(ExcelDna.Integration.CustomUI.IRibbonControl)">getConfig(IRibbonControl)</h4>
+  <div class="markdown level1 summary"><p>load config if config tree menu end-button has been activated (path to config xcl file is in control.Tag)</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void getConfig(IRibbonControl control)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">ExcelDna.Integration.CustomUI.IRibbonControl</span></td>
+        <td><span class="parametername">control</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_MenuHandler_GetCustomUI_System_String_.md&amp;value=---%0Auid%3A%20DBaddin.MenuHandler.GetCustomUI(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/MenuHandler.vb/#L17">View Source</a>
+  </span>
+  <a id="DBaddin_MenuHandler_GetCustomUI_" data-uid="DBaddin.MenuHandler.GetCustomUI*"></a>
+  <h4 id="DBaddin_MenuHandler_GetCustomUI_System_String_" data-uid="DBaddin.MenuHandler.GetCustomUI(System.String)">GetCustomUI(String)</h4>
+  <div class="markdown level1 summary"><p>creates the Ribbon (only at startup). any changes to the ribbon can only be done via dynamic menus</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override string GetCustomUI(string RibbonID)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">RibbonID</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="overrides">Overrides</h5>
+  <div><span class="xref">ExcelDna.Integration.CustomUI.ExcelRibbon.GetCustomUI(System.String)</span></div>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_MenuHandler_getDBConfigMenu_ExcelDna_Integration_CustomUI_IRibbonControl_.md&amp;value=---%0Auid%3A%20DBaddin.MenuHandler.getDBConfigMenu(ExcelDna.Integration.CustomUI.IRibbonControl)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/MenuHandler.vb/#L134">View Source</a>
+  </span>
+  <a id="DBaddin_MenuHandler_getDBConfigMenu_" data-uid="DBaddin.MenuHandler.getDBConfigMenu*"></a>
+  <h4 id="DBaddin_MenuHandler_getDBConfigMenu_ExcelDna_Integration_CustomUI_IRibbonControl_" data-uid="DBaddin.MenuHandler.getDBConfigMenu(ExcelDna.Integration.CustomUI.IRibbonControl)">getDBConfigMenu(IRibbonControl)</h4>
+  <div class="markdown level1 summary"><p>get DB Config Menu from File</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string getDBConfigMenu(IRibbonControl control)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">ExcelDna.Integration.CustomUI.IRibbonControl</span></td>
+        <td><span class="parametername">control</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_MenuHandler_getDBMapperMenuContent_ExcelDna_Integration_CustomUI_IRibbonControl_.md&amp;value=---%0Auid%3A%20DBaddin.MenuHandler.getDBMapperMenuContent(ExcelDna.Integration.CustomUI.IRibbonControl)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/MenuHandler.vb/#L158">View Source</a>
+  </span>
+  <a id="DBaddin_MenuHandler_getDBMapperMenuContent_" data-uid="DBaddin.MenuHandler.getDBMapperMenuContent*"></a>
+  <h4 id="DBaddin_MenuHandler_getDBMapperMenuContent_ExcelDna_Integration_CustomUI_IRibbonControl_" data-uid="DBaddin.MenuHandler.getDBMapperMenuContent(ExcelDna.Integration.CustomUI.IRibbonControl)">getDBMapperMenuContent(IRibbonControl)</h4>
+  <div class="markdown level1 summary"><p>create the buttons in the DBMapper sheet dropdown menu</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string getDBMapperMenuContent(IRibbonControl control)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">ExcelDna.Integration.CustomUI.IRibbonControl</span></td>
+        <td><span class="parametername">control</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_MenuHandler_getDBMapperMenuVisible_ExcelDna_Integration_CustomUI_IRibbonControl_.md&amp;value=---%0Auid%3A%20DBaddin.MenuHandler.getDBMapperMenuVisible(ExcelDna.Integration.CustomUI.IRibbonControl)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/MenuHandler.vb/#L174">View Source</a>
+  </span>
+  <a id="DBaddin_MenuHandler_getDBMapperMenuVisible_" data-uid="DBaddin.MenuHandler.getDBMapperMenuVisible*"></a>
+  <h4 id="DBaddin_MenuHandler_getDBMapperMenuVisible_ExcelDna_Integration_CustomUI_IRibbonControl_" data-uid="DBaddin.MenuHandler.getDBMapperMenuVisible(ExcelDna.Integration.CustomUI.IRibbonControl)">getDBMapperMenuVisible(IRibbonControl)</h4>
+  <div class="markdown level1 summary"><p>shows the DBMapper sheet button only if it was collected...</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool getDBMapperMenuVisible(IRibbonControl control)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">ExcelDna.Integration.CustomUI.IRibbonControl</span></td>
+        <td><span class="parametername">control</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
   <table class="table table-bordered table-striped table-condensed">
     <thead>
       <tr>
@@ -161,22 +540,21 @@
       </tr>
     </tbody>
   </table>
-  <h3 id="methods">Methods
-  </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_MenuHandler_buildFileSepMenuCtrl_System_String_ExcelDna_Integration_CustomUI_CommandBarControl_System_String_System_String_System_Int32_.md&amp;value=---%0Auid%3A%20DBaddin.MenuHandler.buildFileSepMenuCtrl(System.String%2CExcelDna.Integration.CustomUI.CommandBarControl%2CSystem.String%2CSystem.String%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_MenuHandler_GetItemCount_ExcelDna_Integration_CustomUI_IRibbonControl_.md&amp;value=---%0Auid%3A%20DBaddin.MenuHandler.GetItemCount(ExcelDna.Integration.CustomUI.IRibbonControl)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/MenuHandler.vb/#L424">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/MenuHandler.vb/#L82">View Source</a>
   </span>
-  <a id="DBaddin_MenuHandler_buildFileSepMenuCtrl_" data-uid="DBaddin.MenuHandler.buildFileSepMenuCtrl*"></a>
-  <h4 id="DBaddin_MenuHandler_buildFileSepMenuCtrl_System_String_ExcelDna_Integration_CustomUI_CommandBarControl_System_String_System_String_System_Int32_" data-uid="DBaddin.MenuHandler.buildFileSepMenuCtrl(System.String,ExcelDna.Integration.CustomUI.CommandBarControl,System.String,System.String,System.Int32)">buildFileSepMenuCtrl(String, CommandBarControl, String, String, Int32)</h4>
-  <div class="markdown level1 summary"></div>
+  <a id="DBaddin_MenuHandler_GetItemCount_" data-uid="DBaddin.MenuHandler.GetItemCount*"></a>
+  <h4 id="DBaddin_MenuHandler_GetItemCount_ExcelDna_Integration_CustomUI_IRibbonControl_" data-uid="DBaddin.MenuHandler.GetItemCount(ExcelDna.Integration.CustomUI.IRibbonControl)">GetItemCount(IRibbonControl)</h4>
+  <div class="markdown level1 summary"><p>for environment dropdown to get the total number of the entries</p>
+</div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void buildFileSepMenuCtrl(string nameParts, CommandBarControl currentBar, string fullPathName, string newRootName, int specialFolderMaxDepth)</code></pre>
+    <pre><code class="lang-csharp hljs">public int GetItemCount(IRibbonControl control)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -189,46 +567,42 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.String</span></td>
-        <td><span class="parametername">nameParts</span></td>
+        <td><span class="xref">ExcelDna.Integration.CustomUI.IRibbonControl</span></td>
+        <td><span class="parametername">control</span></td>
         <td></td>
       </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
       <tr>
-        <td><span class="xref">ExcelDna.Integration.CustomUI.CommandBarControl</span></td>
-        <td><span class="parametername">currentBar</span></td>
-        <td></td>
+        <th>Type</th>
+        <th>Description</th>
       </tr>
-      <tr>
-        <td><span class="xref">System.String</span></td>
-        <td><span class="parametername">fullPathName</span></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td><span class="xref">System.String</span></td>
-        <td><span class="parametername">newRootName</span></td>
-        <td></td>
-      </tr>
+    </thead>
+    <tbody>
       <tr>
         <td><span class="xref">System.Int32</span></td>
-        <td><span class="parametername">specialFolderMaxDepth</span></td>
         <td></td>
       </tr>
     </tbody>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_MenuHandler_readAllFiles_System_String_ExcelDna_Integration_CustomUI_CommandBarControl_.md&amp;value=---%0Auid%3A%20DBaddin.MenuHandler.readAllFiles(System.String%2CExcelDna.Integration.CustomUI.CommandBarControl)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_MenuHandler_GetItemID_ExcelDna_Integration_CustomUI_IRibbonControl_System_Int32_.md&amp;value=---%0Auid%3A%20DBaddin.MenuHandler.GetItemID(ExcelDna.Integration.CustomUI.IRibbonControl%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/MenuHandler.vb/#L320">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/MenuHandler.vb/#L92">View Source</a>
   </span>
-  <a id="DBaddin_MenuHandler_readAllFiles_" data-uid="DBaddin.MenuHandler.readAllFiles*"></a>
-  <h4 id="DBaddin_MenuHandler_readAllFiles_System_String_ExcelDna_Integration_CustomUI_CommandBarControl_" data-uid="DBaddin.MenuHandler.readAllFiles(System.String,ExcelDna.Integration.CustomUI.CommandBarControl)">readAllFiles(String, CommandBarControl)</h4>
-  <div class="markdown level1 summary"></div>
+  <a id="DBaddin_MenuHandler_GetItemID_" data-uid="DBaddin.MenuHandler.GetItemID*"></a>
+  <h4 id="DBaddin_MenuHandler_GetItemID_ExcelDna_Integration_CustomUI_IRibbonControl_System_Int32_" data-uid="DBaddin.MenuHandler.GetItemID(ExcelDna.Integration.CustomUI.IRibbonControl,System.Int32)">GetItemID(IRibbonControl, Int32)</h4>
+  <div class="markdown level1 summary"><p>for environment dropdown to get the ID of the entries</p>
+</div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void readAllFiles(string rootPath, CommandBarControl currentBar)</code></pre>
+    <pre><code class="lang-csharp hljs">public string GetItemID(IRibbonControl control, int index)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -241,13 +615,352 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.String</span></td>
-        <td><span class="parametername">rootPath</span></td>
+        <td><span class="xref">ExcelDna.Integration.CustomUI.IRibbonControl</span></td>
+        <td><span class="parametername">control</span></td>
         <td></td>
       </tr>
       <tr>
-        <td><span class="xref">ExcelDna.Integration.CustomUI.CommandBarControl</span></td>
-        <td><span class="parametername">currentBar</span></td>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">index</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_MenuHandler_GetItemLabel_ExcelDna_Integration_CustomUI_IRibbonControl_System_Int32_.md&amp;value=---%0Auid%3A%20DBaddin.MenuHandler.GetItemLabel(ExcelDna.Integration.CustomUI.IRibbonControl%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/MenuHandler.vb/#L87">View Source</a>
+  </span>
+  <a id="DBaddin_MenuHandler_GetItemLabel_" data-uid="DBaddin.MenuHandler.GetItemLabel*"></a>
+  <h4 id="DBaddin_MenuHandler_GetItemLabel_ExcelDna_Integration_CustomUI_IRibbonControl_System_Int32_" data-uid="DBaddin.MenuHandler.GetItemLabel(ExcelDna.Integration.CustomUI.IRibbonControl,System.Int32)">GetItemLabel(IRibbonControl, Int32)</h4>
+  <div class="markdown level1 summary"><p>for environment dropdown to get the label of the entries</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string GetItemLabel(IRibbonControl control, int index)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">ExcelDna.Integration.CustomUI.IRibbonControl</span></td>
+        <td><span class="parametername">control</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">index</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_MenuHandler_GetSelItem_ExcelDna_Integration_CustomUI_IRibbonControl_.md&amp;value=---%0Auid%3A%20DBaddin.MenuHandler.GetSelItem(ExcelDna.Integration.CustomUI.IRibbonControl)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/MenuHandler.vb/#L97">View Source</a>
+  </span>
+  <a id="DBaddin_MenuHandler_GetSelItem_" data-uid="DBaddin.MenuHandler.GetSelItem*"></a>
+  <h4 id="DBaddin_MenuHandler_GetSelItem_ExcelDna_Integration_CustomUI_IRibbonControl_" data-uid="DBaddin.MenuHandler.GetSelItem(ExcelDna.Integration.CustomUI.IRibbonControl)">GetSelItem(IRibbonControl)</h4>
+  <div class="markdown level1 summary"><p>after selection of environment (using selectItem) used to return the selected environment</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int GetSelItem(IRibbonControl control)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">ExcelDna.Integration.CustomUI.IRibbonControl</span></td>
+        <td><span class="parametername">control</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_MenuHandler_getSheetLabel_ExcelDna_Integration_CustomUI_IRibbonControl_.md&amp;value=---%0Auid%3A%20DBaddin.MenuHandler.getSheetLabel(ExcelDna.Integration.CustomUI.IRibbonControl)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/MenuHandler.vb/#L145">View Source</a>
+  </span>
+  <a id="DBaddin_MenuHandler_getSheetLabel_" data-uid="DBaddin.MenuHandler.getSheetLabel*"></a>
+  <h4 id="DBaddin_MenuHandler_getSheetLabel_ExcelDna_Integration_CustomUI_IRibbonControl_" data-uid="DBaddin.MenuHandler.getSheetLabel(ExcelDna.Integration.CustomUI.IRibbonControl)">getSheetLabel(IRibbonControl)</h4>
+  <div class="markdown level1 summary"><p>set the name of the WB/sheet dropdown to the sheet name (for the WB dropdown this is the WB name)</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string getSheetLabel(IRibbonControl control)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">ExcelDna.Integration.CustomUI.IRibbonControl</span></td>
+        <td><span class="parametername">control</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_MenuHandler_refreshDBConfigTree_ExcelDna_Integration_CustomUI_IRibbonControl_.md&amp;value=---%0Auid%3A%20DBaddin.MenuHandler.refreshDBConfigTree(ExcelDna.Integration.CustomUI.IRibbonControl)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/MenuHandler.vb/#L126">View Source</a>
+  </span>
+  <a id="DBaddin_MenuHandler_refreshDBConfigTree_" data-uid="DBaddin.MenuHandler.refreshDBConfigTree*"></a>
+  <h4 id="DBaddin_MenuHandler_refreshDBConfigTree_ExcelDna_Integration_CustomUI_IRibbonControl_" data-uid="DBaddin.MenuHandler.refreshDBConfigTree(ExcelDna.Integration.CustomUI.IRibbonControl)">refreshDBConfigTree(IRibbonControl)</h4>
+  <div class="markdown level1 summary"><p>on demand, refresh the DB Config tree</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void refreshDBConfigTree(IRibbonControl control)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">ExcelDna.Integration.CustomUI.IRibbonControl</span></td>
+        <td><span class="parametername">control</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_MenuHandler_ribbonLoaded_ExcelDna_Integration_CustomUI_IRibbonUI_.md&amp;value=---%0Auid%3A%20DBaddin.MenuHandler.ribbonLoaded(ExcelDna.Integration.CustomUI.IRibbonUI)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/MenuHandler.vb/#L12">View Source</a>
+  </span>
+  <a id="DBaddin_MenuHandler_ribbonLoaded_" data-uid="DBaddin.MenuHandler.ribbonLoaded*"></a>
+  <h4 id="DBaddin_MenuHandler_ribbonLoaded_ExcelDna_Integration_CustomUI_IRibbonUI_" data-uid="DBaddin.MenuHandler.ribbonLoaded(ExcelDna.Integration.CustomUI.IRibbonUI)">ribbonLoaded(IRibbonUI)</h4>
+  <div class="markdown level1 summary"><p>callback after Excel loaded the Ribbon, used to initialize data for the Ribbon</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void ribbonLoaded(IRibbonUI theRibbon)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">ExcelDna.Integration.CustomUI.IRibbonUI</span></td>
+        <td><span class="parametername">theRibbon</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_MenuHandler_saveRangeToDBClick_ExcelDna_Integration_CustomUI_IRibbonControl_.md&amp;value=---%0Auid%3A%20DBaddin.MenuHandler.saveRangeToDBClick(ExcelDna.Integration.CustomUI.IRibbonControl)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/MenuHandler.vb/#L183">View Source</a>
+  </span>
+  <a id="DBaddin_MenuHandler_saveRangeToDBClick_" data-uid="DBaddin.MenuHandler.saveRangeToDBClick*"></a>
+  <h4 id="DBaddin_MenuHandler_saveRangeToDBClick_ExcelDna_Integration_CustomUI_IRibbonControl_" data-uid="DBaddin.MenuHandler.saveRangeToDBClick(ExcelDna.Integration.CustomUI.IRibbonControl)">saveRangeToDBClick(IRibbonControl)</h4>
+  <div class="markdown level1 summary"><p>DBMapper store button activated, save Range to DB...</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void saveRangeToDBClick(IRibbonControl control)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">ExcelDna.Integration.CustomUI.IRibbonControl</span></td>
+        <td><span class="parametername">control</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_MenuHandler_selectItem_ExcelDna_Integration_CustomUI_IRibbonControl_System_String_System_Int32_.md&amp;value=---%0Auid%3A%20DBaddin.MenuHandler.selectItem(ExcelDna.Integration.CustomUI.IRibbonControl%2CSystem.String%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/MenuHandler.vb/#L102">View Source</a>
+  </span>
+  <a id="DBaddin_MenuHandler_selectItem_" data-uid="DBaddin.MenuHandler.selectItem*"></a>
+  <h4 id="DBaddin_MenuHandler_selectItem_ExcelDna_Integration_CustomUI_IRibbonControl_System_String_System_Int32_" data-uid="DBaddin.MenuHandler.selectItem(ExcelDna.Integration.CustomUI.IRibbonControl,System.String,System.Int32)">selectItem(IRibbonControl, String, Int32)</h4>
+  <div class="markdown level1 summary"><p>Choose environment (configured in registry with ConstConnString(N), ConfigStoreFolder(N))</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void selectItem(IRibbonControl control, string id, int index)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">ExcelDna.Integration.CustomUI.IRibbonControl</span></td>
+        <td><span class="parametername">control</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">id</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">index</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_MenuHandler_showAbout_ExcelDna_Integration_CustomUI_IRibbonControl_.md&amp;value=---%0Auid%3A%20DBaddin.MenuHandler.showAbout(ExcelDna.Integration.CustomUI.IRibbonControl)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/MenuHandler.vb/#L120">View Source</a>
+  </span>
+  <a id="DBaddin_MenuHandler_showAbout_" data-uid="DBaddin.MenuHandler.showAbout*"></a>
+  <h4 id="DBaddin_MenuHandler_showAbout_ExcelDna_Integration_CustomUI_IRibbonControl_" data-uid="DBaddin.MenuHandler.showAbout(ExcelDna.Integration.CustomUI.IRibbonControl)">showAbout(IRibbonControl)</h4>
+  <div class="markdown level1 summary"><p>dialogBoxLauncher of leftmost group: activate about box</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void showAbout(IRibbonControl control)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">ExcelDna.Integration.CustomUI.IRibbonControl</span></td>
+        <td><span class="parametername">control</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -263,7 +976,7 @@
                     <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_MenuHandler.md&amp;value=---%0Auid%3A%20DBaddin.MenuHandler%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
                   </li>
                   <li>
-                    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/MenuHandler.vb/#L9" class="contribution-link">View Source</a>
+                    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/MenuHandler.vb/#L7" class="contribution-link">View Source</a>
                   </li>
                 </ul>
               </div>

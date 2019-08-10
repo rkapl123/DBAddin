@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Namespace DBaddin
    ">
-    <meta name="generator" content="docfx 2.40.11.0">
+    <meta name="generator" content="docfx 2.43.2.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -77,47 +77,37 @@
   <div class="markdown level0 remarks"></div>
     <h3 id="classes">Classes
   </h3>
-      <h4><a class="xref" href="DBaddin.AddInEvents.html">AddInEvents</a></h4>
-      <section><p>Events from Excel (Workbook_Save ...)</p>
+      <h4><a class="xref" href="DBaddin.AboutBox1.html">AboutBox1</a></h4>
+      <section><p>About box: used to provide information about version/buildtime and links for local help and project homepage</p>
 </section>
-      <h4><a class="xref" href="DBaddin.CommonFuncs.html">CommonFuncs</a></h4>
-      <section><p>various functions used in most parts of DBAddin</p>
+      <h4><a class="xref" href="DBaddin.AddInEvents.html">AddInEvents</a></h4>
+      <section><p>AddIn Connection class, also handling Events from Excel (Open, Close, Activate)</p>
 </section>
       <h4><a class="xref" href="DBaddin.ConfigFiles.html">ConfigFiles</a></h4>
-      <section></section>
-      <h4><a class="xref" href="DBaddin.ContainerCalcMsgs.html">ContainerCalcMsgs</a></h4>
-      <section><p>Provides a data structure for transporting information from the calling function to calculation event procedure in DBFuncEventHandler the key for the calc msg container</p>
+      <section><p>procedures used for loading config files (containing DBFunctions and general sheet content) and building the config menu</p>
 </section>
-      <h4><a class="xref" href="DBaddin.ContainerStatusMsgs.html">ContainerStatusMsgs</a></h4>
-      <section><p>Provides a data structure for transporting information back from the calculation event procedure in DBFuncEventHandler to the calling function</p>
+      <h4><a class="xref" href="DBaddin.ContainedStatusMsg.html">ContainedStatusMsg</a></h4>
+      <section><p>Provides a data structure for transporting information back from the calculation action procedure to the calling function</p>
 </section>
-      <h4><a class="xref" href="DBaddin.DBFuncEventHandler.html">DBFuncEventHandler</a></h4>
-      <section><p>main calculation event handling and Data retrieving</p>
+      <h4><a class="xref" href="DBaddin.DBAddin.html">DBAddin</a></h4>
+      <section><p>Global variables and functions for DB Addin</p>
+</section>
+      <h4><a class="xref" href="DBaddin.DBMapperCreate.html">DBMapperCreate</a></h4>
+      <section><p>Dialog for creating DB Mapper configurations</p>
 </section>
       <h4><a class="xref" href="DBaddin.Functions.html">Functions</a></h4>
-      <section><p>Contains the public callable DB functions and some helper functions</p>
-</section>
-      <h4><a class="xref" href="DBaddin.Globals.html">Globals</a></h4>
-      <section><p>All global Variables for DBFuncBuilder and Functions and some global accessible functions</p>
+      <section><p>Contains the public callable DB functions and helper functions</p>
 </section>
       <h4><a class="xref" href="DBaddin.Mapper.html">Mapper</a></h4>
-      <section></section>
+      <section><p>Contains Mapper function saveRangeToDB for storing/updating tabular excel data and some helper functions</p>
+</section>
       <h4><a class="xref" href="DBaddin.MenuHandler.html">MenuHandler</a></h4>
-      <section></section>
-      <h4><a class="xref" href="DBaddin.MyRibbon.html">MyRibbon</a></h4>
-      <section><p>Events from Ribbon</p>
+      <section><p>handles all Menu related aspects (context menu for building/refreshing, &quot;DBAddin&quot;/&quot;Load Config&quot; tree menu for retrieving stored configuration files</p>
 </section>
     <h3 id="enums">Enums
   </h3>
-      <h4><a class="xref" href="DBaddin.checkTypeFld.html">checkTypeFld</a></h4>
-      <section><p>Contains the public callable Mapper function for storing/updating tabular excel data</p>
-</section>
-      <h4><a class="xref" href="DBaddin.dbsheetErrReason.html">dbsheetErrReason</a></h4>
-      <section><p>type for failure in reading DBsheet data</p>
-</section>
-      <h4><a class="xref" href="DBaddin.tDBFunc.html">tDBFunc</a></h4>
-      <section><p>type of DBFunc created with DBFuncBuilder insertForm</p>
-</section>
+      <h4><a class="xref" href="DBaddin.CheckTypeFld.html">CheckTypeFld</a></h4>
+      <section></section>
 </article>
           </div>
           

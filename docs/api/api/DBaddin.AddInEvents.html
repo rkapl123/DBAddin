@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Class AddInEvents
    ">
-    <meta name="generator" content="docfx 2.40.11.0">
+    <meta name="generator" content="docfx 2.43.2.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -73,7 +73,7 @@
   
   <h1 id="DBaddin_AddInEvents" data-uid="DBaddin.AddInEvents" class="text-break">Class AddInEvents
   </h1>
-  <div class="markdown level0 summary"><p>Events from Excel (Workbook_Save ...)</p>
+  <div class="markdown level0 summary"><p>AddIn Connection class, also handling Events from Excel (Open, Close, Activate)</p>
 </div>
   <div class="markdown level0 conceptual"></div>
   <div class="inheritance">
@@ -118,6 +118,48 @@
   <div class="codewrapper">
     <pre><code class="lang-csharp hljs">public class AddInEvents : IExcelAddIn</code></pre>
   </div>
+  <h3 id="methods">Methods
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_AddInEvents_refreshDBFuncLater_System_Object_System_Timers_ElapsedEventArgs_.md&amp;value=---%0Auid%3A%20DBaddin.AddInEvents.refreshDBFuncLater(System.Object%2CSystem.Timers.ElapsedEventArgs)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/AddInEvents.vb/#L151">View Source</a>
+  </span>
+  <a id="DBaddin_AddInEvents_refreshDBFuncLater_" data-uid="DBaddin.AddInEvents.refreshDBFuncLater*"></a>
+  <h4 id="DBaddin_AddInEvents_refreshDBFuncLater_System_Object_System_Timers_ElapsedEventArgs_" data-uid="DBaddin.AddInEvents.refreshDBFuncLater(System.Object,System.Timers.ElapsedEventArgs)">refreshDBFuncLater(Object, ElapsedEventArgs)</h4>
+  <div class="markdown level1 summary"><p>&quot;OnTime&quot; event function to &quot;escape&quot; workbook_save: event procedure to refetch DB functions results after saving</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static void refreshDBFuncLater(object sender, ElapsedEventArgs e)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Object</span></td>
+        <td><span class="parametername">sender</span></td>
+        <td><p>the sending object (ourselves)</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Timers.ElapsedEventArgs</span></td>
+        <td><span class="parametername">e</span></td>
+        <td><p>Data for the Timer.Elapsed event</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
   <h3 id="eii">Explicit Interface Implementations
   </h3>
   <span class="small pull-right mobile-hide">
@@ -125,7 +167,7 @@
     <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_AddInEvents_AutoClose.md&amp;value=---%0Auid%3A%20DBaddin.AddInEvents.AutoClose%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBAddin.vb/#L210">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/AddInEvents.vb/#L42">View Source</a>
   </span>
   <a id="DBaddin_AddInEvents_AutoClose_" data-uid="DBaddin.AddInEvents.AutoClose*"></a>
   <h4 id="DBaddin_AddInEvents_AutoClose" data-uid="DBaddin.AddInEvents.AutoClose">IExcelAddIn.AutoClose()</h4>
@@ -141,7 +183,7 @@
     <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_AddInEvents_AutoOpen.md&amp;value=---%0Auid%3A%20DBaddin.AddInEvents.AutoOpen%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBAddin.vb/#L201">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/AddInEvents.vb/#L18">View Source</a>
   </span>
   <a id="DBaddin_AddInEvents_AutoOpen_" data-uid="DBaddin.AddInEvents.AutoOpen*"></a>
   <h4 id="DBaddin_AddInEvents_AutoOpen" data-uid="DBaddin.AddInEvents.AutoOpen">IExcelAddIn.AutoOpen()</h4>
@@ -167,7 +209,7 @@
                     <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_AddInEvents.md&amp;value=---%0Auid%3A%20DBaddin.AddInEvents%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
                   </li>
                   <li>
-                    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBAddin.vb/#L195" class="contribution-link">View Source</a>
+                    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/AddInEvents.vb/#L9" class="contribution-link">View Source</a>
                   </li>
                 </ul>
               </div>

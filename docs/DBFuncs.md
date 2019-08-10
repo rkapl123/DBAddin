@@ -2,11 +2,11 @@
 
 There are three ways to query data with DBAddin:
 
-1.  A (fast) list-oriented way using `DBListFetch`.  
+1.  A list-oriented way using `DBListFetch`:  
     Here the values are entered into a rectangular list starting from the TargetRange cell (similar to MS-Query, actually the `QueryTables` Object is used to fill the data into the Worksheet).
-2.  A record-oriented way using `DBRowFetch`  
+2.  A record-oriented way using `DBRowFetch`:  
     Here the values are entered into several ranges given in the Parameter list `TargetArray`. Each of these ranges is filled in order of appearance with the results of the query.
-3.  Setting the Query of a ListObject (new since Excel 2007) or a PivotTable to a defined query using `DBSetQuery`  
+3.  Setting the Query of a ListObject (new since Excel 2007) or a PivotTable to a defined query using `DBSetQuery`:  
     This requires an existing object (e.g. a ListObject created from a DB query/connection or a pivot table) and sets the target's queryobject to the desired one.
 
 All these functions insert the queried data outside their calling cell context, which means that the target ranges can be put anywhere in the workbook (even outside of the workbook).
@@ -22,12 +22,14 @@ Additionally, some helper functions are available:
 *   `DBinClause`, building an SQL "in" clause from an open ended parameter list given in the argument.
 *   `DBDate`, building a quoted Date string (standard format YYYYMMDD, but other formats can be chosen) from the date value given in the argument.
 
-An additional cell context menu is available providing:
-*   a "jump" feature that allows to move the focus from the DB function's cell to the data area and from the data area back to the DB function's cell (useful in complex workbooks with lots of remote (not on same-sheet) target ranges)
-*   refreshing the currently selected DB function or it's data area. If no DB function or a corresponding data area is selected, then all DB Functions are refreshed.
-*   [creation of DB Functions and DB Maps](#create-db-functions-and-dbmappers)
+An additional cell context menu is available:
+
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/ContextMenu.PNG)  
 
+It provides:
+*   a "jump" feature that allows to move the focus from the DB function's cell to the data area and from the data area back to the DB function's cell (useful in complex workbooks with lots of remote (not on same-sheet) target ranges)
+*   refreshing the currently selected DB function or it's data area. If no DB function or a corresponding data area is selected, then all DB Functions are refreshed.
+*   [creation of DB Functions and DB Maps](#create-db-functions-and-dbmappers)  
 
 ### Using the Functions
 
@@ -290,7 +292,8 @@ To save time when starting up DBAddin/Excel, refreshing the config tree is only 
 
 #### Dependencies
 
-*   Office and Excel Object Libraries (well, as it is an Excel Addin, this should be expected on the target system)
+*   .NET 4.7 or higher
+*   Excel
 *   ADO 2.5 or higher (usually distributed with Windows)
 
 If any of these is missing, please install yourself before starting DBAddin.

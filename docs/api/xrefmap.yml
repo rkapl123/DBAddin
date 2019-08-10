@@ -7,6 +7,25 @@ references:
   commentId: N:DBaddin
   fullName: DBaddin
   nameWithType: DBaddin
+- uid: DBaddin.AboutBox1
+  name: AboutBox1
+  href: api/DBaddin.AboutBox1.html
+  commentId: T:DBaddin.AboutBox1
+  fullName: DBaddin.AboutBox1
+  nameWithType: AboutBox1
+- uid: DBaddin.AboutBox1.Dispose(System.Boolean)
+  name: Dispose(Boolean)
+  href: api/DBaddin.AboutBox1.html#DBaddin_AboutBox1_Dispose_System_Boolean_
+  commentId: M:DBaddin.AboutBox1.Dispose(System.Boolean)
+  fullName: DBaddin.AboutBox1.Dispose(System.Boolean)
+  nameWithType: AboutBox1.Dispose(Boolean)
+- uid: DBaddin.AboutBox1.Dispose*
+  name: Dispose
+  href: api/DBaddin.AboutBox1.html#DBaddin_AboutBox1_Dispose_
+  commentId: Overload:DBaddin.AboutBox1.Dispose
+  isSpec: "True"
+  fullName: DBaddin.AboutBox1.Dispose
+  nameWithType: AboutBox1.Dispose
 - uid: DBaddin.AddInEvents
   name: AddInEvents
   href: api/DBaddin.AddInEvents.html
@@ -51,249 +70,80 @@ references:
   fullName.vb: DBaddin.AddInEvents.AutoOpen
   nameWithType: AddInEvents.IExcelAddIn.AutoOpen
   nameWithType.vb: AddInEvents.AutoOpen
-- uid: DBaddin.checkTypeFld
-  name: checkTypeFld
-  href: api/DBaddin.checkTypeFld.html
-  commentId: T:DBaddin.checkTypeFld
-  fullName: DBaddin.checkTypeFld
-  nameWithType: checkTypeFld
-- uid: DBaddin.checkTypeFld.checkIsDateFld
+- uid: DBaddin.AddInEvents.refreshDBFuncLater(System.Object,System.Timers.ElapsedEventArgs)
+  name: refreshDBFuncLater(Object, ElapsedEventArgs)
+  href: api/DBaddin.AddInEvents.html#DBaddin_AddInEvents_refreshDBFuncLater_System_Object_System_Timers_ElapsedEventArgs_
+  commentId: M:DBaddin.AddInEvents.refreshDBFuncLater(System.Object,System.Timers.ElapsedEventArgs)
+  fullName: DBaddin.AddInEvents.refreshDBFuncLater(System.Object, System.Timers.ElapsedEventArgs)
+  nameWithType: AddInEvents.refreshDBFuncLater(Object, ElapsedEventArgs)
+- uid: DBaddin.AddInEvents.refreshDBFuncLater*
+  name: refreshDBFuncLater
+  href: api/DBaddin.AddInEvents.html#DBaddin_AddInEvents_refreshDBFuncLater_
+  commentId: Overload:DBaddin.AddInEvents.refreshDBFuncLater
+  isSpec: "True"
+  fullName: DBaddin.AddInEvents.refreshDBFuncLater
+  nameWithType: AddInEvents.refreshDBFuncLater
+- uid: DBaddin.CheckTypeFld
+  name: CheckTypeFld
+  href: api/DBaddin.CheckTypeFld.html
+  commentId: T:DBaddin.CheckTypeFld
+  fullName: DBaddin.CheckTypeFld
+  nameWithType: CheckTypeFld
+- uid: DBaddin.CheckTypeFld.checkIsDateFld
   name: checkIsDateFld
-  href: api/DBaddin.checkTypeFld.html#DBaddin_checkTypeFld_checkIsDateFld
-  commentId: F:DBaddin.checkTypeFld.checkIsDateFld
-  fullName: DBaddin.checkTypeFld.checkIsDateFld
-  nameWithType: checkTypeFld.checkIsDateFld
-- uid: DBaddin.checkTypeFld.checkIsNumericFld
+  href: api/DBaddin.CheckTypeFld.html#DBaddin_CheckTypeFld_checkIsDateFld
+  commentId: F:DBaddin.CheckTypeFld.checkIsDateFld
+  fullName: DBaddin.CheckTypeFld.checkIsDateFld
+  nameWithType: CheckTypeFld.checkIsDateFld
+- uid: DBaddin.CheckTypeFld.checkIsNumericFld
   name: checkIsNumericFld
-  href: api/DBaddin.checkTypeFld.html#DBaddin_checkTypeFld_checkIsNumericFld
-  commentId: F:DBaddin.checkTypeFld.checkIsNumericFld
-  fullName: DBaddin.checkTypeFld.checkIsNumericFld
-  nameWithType: checkTypeFld.checkIsNumericFld
-- uid: DBaddin.checkTypeFld.checkIsStringFld
+  href: api/DBaddin.CheckTypeFld.html#DBaddin_CheckTypeFld_checkIsNumericFld
+  commentId: F:DBaddin.CheckTypeFld.checkIsNumericFld
+  fullName: DBaddin.CheckTypeFld.checkIsNumericFld
+  nameWithType: CheckTypeFld.checkIsNumericFld
+- uid: DBaddin.CheckTypeFld.checkIsStringFld
   name: checkIsStringFld
-  href: api/DBaddin.checkTypeFld.html#DBaddin_checkTypeFld_checkIsStringFld
-  commentId: F:DBaddin.checkTypeFld.checkIsStringFld
-  fullName: DBaddin.checkTypeFld.checkIsStringFld
-  nameWithType: checkTypeFld.checkIsStringFld
-- uid: DBaddin.checkTypeFld.checkIsTimeFld
+  href: api/DBaddin.CheckTypeFld.html#DBaddin_CheckTypeFld_checkIsStringFld
+  commentId: F:DBaddin.CheckTypeFld.checkIsStringFld
+  fullName: DBaddin.CheckTypeFld.checkIsStringFld
+  nameWithType: CheckTypeFld.checkIsStringFld
+- uid: DBaddin.CheckTypeFld.checkIsTimeFld
   name: checkIsTimeFld
-  href: api/DBaddin.checkTypeFld.html#DBaddin_checkTypeFld_checkIsTimeFld
-  commentId: F:DBaddin.checkTypeFld.checkIsTimeFld
-  fullName: DBaddin.checkTypeFld.checkIsTimeFld
-  nameWithType: checkTypeFld.checkIsTimeFld
-- uid: DBaddin.CommonFuncs
-  name: CommonFuncs
-  href: api/DBaddin.CommonFuncs.html
-  commentId: T:DBaddin.CommonFuncs
-  fullName: DBaddin.CommonFuncs
-  nameWithType: CommonFuncs
-- uid: DBaddin.CommonFuncs.Change(System.String,System.String,System.String,System.String)
-  name: Change(String, String, String, String)
-  href: api/DBaddin.CommonFuncs.html#DBaddin_CommonFuncs_Change_System_String_System_String_System_String_System_String_
-  commentId: M:DBaddin.CommonFuncs.Change(System.String,System.String,System.String,System.String)
-  fullName: DBaddin.CommonFuncs.Change(System.String, System.String, System.String, System.String)
-  nameWithType: CommonFuncs.Change(String, String, String, String)
-- uid: DBaddin.CommonFuncs.Change*
-  name: Change
-  href: api/DBaddin.CommonFuncs.html#DBaddin_CommonFuncs_Change_
-  commentId: Overload:DBaddin.CommonFuncs.Change
-  isSpec: "True"
-  fullName: DBaddin.CommonFuncs.Change
-  nameWithType: CommonFuncs.Change
-- uid: DBaddin.CommonFuncs.checkIsDate(ADODB.DataTypeEnum)
-  name: checkIsDate(DataTypeEnum)
-  href: api/DBaddin.CommonFuncs.html#DBaddin_CommonFuncs_checkIsDate_ADODB_DataTypeEnum_
-  commentId: M:DBaddin.CommonFuncs.checkIsDate(ADODB.DataTypeEnum)
-  fullName: DBaddin.CommonFuncs.checkIsDate(ADODB.DataTypeEnum)
-  nameWithType: CommonFuncs.checkIsDate(DataTypeEnum)
-- uid: DBaddin.CommonFuncs.checkIsDate*
-  name: checkIsDate
-  href: api/DBaddin.CommonFuncs.html#DBaddin_CommonFuncs_checkIsDate_
-  commentId: Overload:DBaddin.CommonFuncs.checkIsDate
-  isSpec: "True"
-  fullName: DBaddin.CommonFuncs.checkIsDate
-  nameWithType: CommonFuncs.checkIsDate
-- uid: DBaddin.CommonFuncs.checkIsDateTime(ADODB.DataTypeEnum)
-  name: checkIsDateTime(DataTypeEnum)
-  href: api/DBaddin.CommonFuncs.html#DBaddin_CommonFuncs_checkIsDateTime_ADODB_DataTypeEnum_
-  commentId: M:DBaddin.CommonFuncs.checkIsDateTime(ADODB.DataTypeEnum)
-  fullName: DBaddin.CommonFuncs.checkIsDateTime(ADODB.DataTypeEnum)
-  nameWithType: CommonFuncs.checkIsDateTime(DataTypeEnum)
-- uid: DBaddin.CommonFuncs.checkIsDateTime*
-  name: checkIsDateTime
-  href: api/DBaddin.CommonFuncs.html#DBaddin_CommonFuncs_checkIsDateTime_
-  commentId: Overload:DBaddin.CommonFuncs.checkIsDateTime
-  isSpec: "True"
-  fullName: DBaddin.CommonFuncs.checkIsDateTime
-  nameWithType: CommonFuncs.checkIsDateTime
-- uid: DBaddin.CommonFuncs.checkIsNumeric(ADODB.DataTypeEnum)
-  name: checkIsNumeric(DataTypeEnum)
-  href: api/DBaddin.CommonFuncs.html#DBaddin_CommonFuncs_checkIsNumeric_ADODB_DataTypeEnum_
-  commentId: M:DBaddin.CommonFuncs.checkIsNumeric(ADODB.DataTypeEnum)
-  fullName: DBaddin.CommonFuncs.checkIsNumeric(ADODB.DataTypeEnum)
-  nameWithType: CommonFuncs.checkIsNumeric(DataTypeEnum)
-- uid: DBaddin.CommonFuncs.checkIsNumeric*
-  name: checkIsNumeric
-  href: api/DBaddin.CommonFuncs.html#DBaddin_CommonFuncs_checkIsNumeric_
-  commentId: Overload:DBaddin.CommonFuncs.checkIsNumeric
-  isSpec: "True"
-  fullName: DBaddin.CommonFuncs.checkIsNumeric
-  nameWithType: CommonFuncs.checkIsNumeric
-- uid: DBaddin.CommonFuncs.checkIsTime(ADODB.DataTypeEnum)
-  name: checkIsTime(DataTypeEnum)
-  href: api/DBaddin.CommonFuncs.html#DBaddin_CommonFuncs_checkIsTime_ADODB_DataTypeEnum_
-  commentId: M:DBaddin.CommonFuncs.checkIsTime(ADODB.DataTypeEnum)
-  fullName: DBaddin.CommonFuncs.checkIsTime(ADODB.DataTypeEnum)
-  nameWithType: CommonFuncs.checkIsTime(DataTypeEnum)
-- uid: DBaddin.CommonFuncs.checkIsTime*
-  name: checkIsTime
-  href: api/DBaddin.CommonFuncs.html#DBaddin_CommonFuncs_checkIsTime_
-  commentId: Overload:DBaddin.CommonFuncs.checkIsTime
-  isSpec: "True"
-  fullName: DBaddin.CommonFuncs.checkIsTime
-  nameWithType: CommonFuncs.checkIsTime
-- uid: DBaddin.CommonFuncs.dbformat(System.Object,System.String,ADODB.Recordset)
-  name: dbformat(Object, String, Recordset)
-  href: api/DBaddin.CommonFuncs.html#DBaddin_CommonFuncs_dbformat_System_Object_System_String_ADODB_Recordset_
-  commentId: M:DBaddin.CommonFuncs.dbformat(System.Object,System.String,ADODB.Recordset)
-  fullName: DBaddin.CommonFuncs.dbformat(System.Object, System.String, ADODB.Recordset)
-  nameWithType: CommonFuncs.dbformat(Object, String, Recordset)
-- uid: DBaddin.CommonFuncs.dbformat*
-  name: dbformat
-  href: api/DBaddin.CommonFuncs.html#DBaddin_CommonFuncs_dbformat_
-  commentId: Overload:DBaddin.CommonFuncs.dbformat
-  isSpec: "True"
-  fullName: DBaddin.CommonFuncs.dbformat
-  nameWithType: CommonFuncs.dbformat
-- uid: DBaddin.CommonFuncs.existsSheet(System.String@)
-  name: existsSheet(ref String)
-  href: api/DBaddin.CommonFuncs.html#DBaddin_CommonFuncs_existsSheet_System_String__
-  commentId: M:DBaddin.CommonFuncs.existsSheet(System.String@)
-  name.vb: existsSheet(ByRef String)
-  fullName: DBaddin.CommonFuncs.existsSheet(ref System.String)
-  fullName.vb: DBaddin.CommonFuncs.existsSheet(ByRef System.String)
-  nameWithType: CommonFuncs.existsSheet(ref String)
-  nameWithType.vb: CommonFuncs.existsSheet(ByRef String)
-- uid: DBaddin.CommonFuncs.existsSheet*
-  name: existsSheet
-  href: api/DBaddin.CommonFuncs.html#DBaddin_CommonFuncs_existsSheet_
-  commentId: Overload:DBaddin.CommonFuncs.existsSheet
-  isSpec: "True"
-  fullName: DBaddin.CommonFuncs.existsSheet
-  nameWithType: CommonFuncs.existsSheet
-- uid: DBaddin.CommonFuncs.fetch(System.String,System.String,System.String)
-  name: fetch(String, String, String)
-  href: api/DBaddin.CommonFuncs.html#DBaddin_CommonFuncs_fetch_System_String_System_String_System_String_
-  commentId: M:DBaddin.CommonFuncs.fetch(System.String,System.String,System.String)
-  fullName: DBaddin.CommonFuncs.fetch(System.String, System.String, System.String)
-  nameWithType: CommonFuncs.fetch(String, String, String)
-- uid: DBaddin.CommonFuncs.fetch*
-  name: fetch
-  href: api/DBaddin.CommonFuncs.html#DBaddin_CommonFuncs_fetch_
-  commentId: Overload:DBaddin.CommonFuncs.fetch
-  isSpec: "True"
-  fullName: DBaddin.CommonFuncs.fetch
-  nameWithType: CommonFuncs.fetch
-- uid: DBaddin.CommonFuncs.functionSplit(System.String,System.String,System.String,System.String,System.String,System.String)
-  name: functionSplit(String, String, String, String, String, String)
-  href: api/DBaddin.CommonFuncs.html#DBaddin_CommonFuncs_functionSplit_System_String_System_String_System_String_System_String_System_String_System_String_
-  commentId: M:DBaddin.CommonFuncs.functionSplit(System.String,System.String,System.String,System.String,System.String,System.String)
-  fullName: DBaddin.CommonFuncs.functionSplit(System.String, System.String, System.String, System.String, System.String, System.String)
-  nameWithType: CommonFuncs.functionSplit(String, String, String, String, String, String)
-- uid: DBaddin.CommonFuncs.functionSplit*
-  name: functionSplit
-  href: api/DBaddin.CommonFuncs.html#DBaddin_CommonFuncs_functionSplit_
-  commentId: Overload:DBaddin.CommonFuncs.functionSplit
-  isSpec: "True"
-  fullName: DBaddin.CommonFuncs.functionSplit
-  nameWithType: CommonFuncs.functionSplit
-- uid: DBaddin.CommonFuncs.getDBRangeName(Microsoft.Office.Interop.Excel.Range)
-  name: getDBRangeName(Range)
-  href: api/DBaddin.CommonFuncs.html#DBaddin_CommonFuncs_getDBRangeName_Microsoft_Office_Interop_Excel_Range_
-  commentId: M:DBaddin.CommonFuncs.getDBRangeName(Microsoft.Office.Interop.Excel.Range)
-  fullName: DBaddin.CommonFuncs.getDBRangeName(Microsoft.Office.Interop.Excel.Range)
-  nameWithType: CommonFuncs.getDBRangeName(Range)
-- uid: DBaddin.CommonFuncs.getDBRangeName*
-  name: getDBRangeName
-  href: api/DBaddin.CommonFuncs.html#DBaddin_CommonFuncs_getDBRangeName_
-  commentId: Overload:DBaddin.CommonFuncs.getDBRangeName
-  isSpec: "True"
-  fullName: DBaddin.CommonFuncs.getDBRangeName
-  nameWithType: CommonFuncs.getDBRangeName
-- uid: DBaddin.CommonFuncs.refreshDBFunctions(Microsoft.Office.Interop.Excel.Workbook,System.Boolean)
-  name: refreshDBFunctions(Workbook, Boolean)
-  href: api/DBaddin.CommonFuncs.html#DBaddin_CommonFuncs_refreshDBFunctions_Microsoft_Office_Interop_Excel_Workbook_System_Boolean_
-  commentId: M:DBaddin.CommonFuncs.refreshDBFunctions(Microsoft.Office.Interop.Excel.Workbook,System.Boolean)
-  fullName: DBaddin.CommonFuncs.refreshDBFunctions(Microsoft.Office.Interop.Excel.Workbook, System.Boolean)
-  nameWithType: CommonFuncs.refreshDBFunctions(Workbook, Boolean)
-- uid: DBaddin.CommonFuncs.refreshDBFunctions*
-  name: refreshDBFunctions
-  href: api/DBaddin.CommonFuncs.html#DBaddin_CommonFuncs_refreshDBFunctions_
-  commentId: Overload:DBaddin.CommonFuncs.refreshDBFunctions
-  isSpec: "True"
-  fullName: DBaddin.CommonFuncs.refreshDBFunctions
-  nameWithType: CommonFuncs.refreshDBFunctions
-- uid: DBaddin.CommonFuncs.restoreFilterSettings(System.Object,System.Object)
-  name: restoreFilterSettings(Object, Object)
-  href: api/DBaddin.CommonFuncs.html#DBaddin_CommonFuncs_restoreFilterSettings_System_Object_System_Object_
-  commentId: M:DBaddin.CommonFuncs.restoreFilterSettings(System.Object,System.Object)
-  fullName: DBaddin.CommonFuncs.restoreFilterSettings(System.Object, System.Object)
-  nameWithType: CommonFuncs.restoreFilterSettings(Object, Object)
-- uid: DBaddin.CommonFuncs.restoreFilterSettings*
-  name: restoreFilterSettings
-  href: api/DBaddin.CommonFuncs.html#DBaddin_CommonFuncs_restoreFilterSettings_
-  commentId: Overload:DBaddin.CommonFuncs.restoreFilterSettings
-  isSpec: "True"
-  fullName: DBaddin.CommonFuncs.restoreFilterSettings
-  nameWithType: CommonFuncs.restoreFilterSettings
-- uid: DBaddin.CommonFuncs.saveFilterSettings(Microsoft.Office.Interop.Excel.Worksheet)
-  name: saveFilterSettings(Worksheet)
-  href: api/DBaddin.CommonFuncs.html#DBaddin_CommonFuncs_saveFilterSettings_Microsoft_Office_Interop_Excel_Worksheet_
-  commentId: M:DBaddin.CommonFuncs.saveFilterSettings(Microsoft.Office.Interop.Excel.Worksheet)
-  fullName: DBaddin.CommonFuncs.saveFilterSettings(Microsoft.Office.Interop.Excel.Worksheet)
-  nameWithType: CommonFuncs.saveFilterSettings(Worksheet)
-- uid: DBaddin.CommonFuncs.saveFilterSettings*
-  name: saveFilterSettings
-  href: api/DBaddin.CommonFuncs.html#DBaddin_CommonFuncs_saveFilterSettings_
-  commentId: Overload:DBaddin.CommonFuncs.saveFilterSettings
-  isSpec: "True"
-  fullName: DBaddin.CommonFuncs.saveFilterSettings
-  nameWithType: CommonFuncs.saveFilterSettings
-- uid: DBaddin.CommonFuncs.testfunctionSplit
-  name: testfunctionSplit()
-  href: api/DBaddin.CommonFuncs.html#DBaddin_CommonFuncs_testfunctionSplit
-  commentId: M:DBaddin.CommonFuncs.testfunctionSplit
-  fullName: DBaddin.CommonFuncs.testfunctionSplit()
-  nameWithType: CommonFuncs.testfunctionSplit()
-- uid: DBaddin.CommonFuncs.testfunctionSplit*
-  name: testfunctionSplit
-  href: api/DBaddin.CommonFuncs.html#DBaddin_CommonFuncs_testfunctionSplit_
-  commentId: Overload:DBaddin.CommonFuncs.testfunctionSplit
-  isSpec: "True"
-  fullName: DBaddin.CommonFuncs.testfunctionSplit
-  nameWithType: CommonFuncs.testfunctionSplit
+  href: api/DBaddin.CheckTypeFld.html#DBaddin_CheckTypeFld_checkIsTimeFld
+  commentId: F:DBaddin.CheckTypeFld.checkIsTimeFld
+  fullName: DBaddin.CheckTypeFld.checkIsTimeFld
+  nameWithType: CheckTypeFld.checkIsTimeFld
 - uid: DBaddin.ConfigFiles
   name: ConfigFiles
   href: api/DBaddin.ConfigFiles.html
   commentId: T:DBaddin.ConfigFiles
   fullName: DBaddin.ConfigFiles
   nameWithType: ConfigFiles
-- uid: DBaddin.ConfigFiles.convertAddressOfDBMakeControl(System.String@,System.String)
-  name: convertAddressOfDBMakeControl(ref String, String)
-  href: api/DBaddin.ConfigFiles.html#DBaddin_ConfigFiles_convertAddressOfDBMakeControl_System_String__System_String_
-  commentId: M:DBaddin.ConfigFiles.convertAddressOfDBMakeControl(System.String@,System.String)
-  name.vb: convertAddressOfDBMakeControl(ByRef String, String)
-  fullName: DBaddin.ConfigFiles.convertAddressOfDBMakeControl(ref System.String, System.String)
-  fullName.vb: DBaddin.ConfigFiles.convertAddressOfDBMakeControl(ByRef System.String, System.String)
-  nameWithType: ConfigFiles.convertAddressOfDBMakeControl(ref String, String)
-  nameWithType.vb: ConfigFiles.convertAddressOfDBMakeControl(ByRef String, String)
-- uid: DBaddin.ConfigFiles.convertAddressOfDBMakeControl*
-  name: convertAddressOfDBMakeControl
-  href: api/DBaddin.ConfigFiles.html#DBaddin_ConfigFiles_convertAddressOfDBMakeControl_
-  commentId: Overload:DBaddin.ConfigFiles.convertAddressOfDBMakeControl
+- uid: DBaddin.ConfigFiles.ConfigMenuXML
+  name: ConfigMenuXML
+  href: api/DBaddin.ConfigFiles.html#DBaddin_ConfigFiles_ConfigMenuXML
+  commentId: F:DBaddin.ConfigFiles.ConfigMenuXML
+  fullName: DBaddin.ConfigFiles.ConfigMenuXML
+  nameWithType: ConfigFiles.ConfigMenuXML
+- uid: DBaddin.ConfigFiles.ConfigStoreFolder
+  name: ConfigStoreFolder
+  href: api/DBaddin.ConfigFiles.html#DBaddin_ConfigFiles_ConfigStoreFolder
+  commentId: F:DBaddin.ConfigFiles.ConfigStoreFolder
+  fullName: DBaddin.ConfigFiles.ConfigStoreFolder
+  nameWithType: ConfigFiles.ConfigStoreFolder
+- uid: DBaddin.ConfigFiles.createConfigTreeMenu
+  name: createConfigTreeMenu()
+  href: api/DBaddin.ConfigFiles.html#DBaddin_ConfigFiles_createConfigTreeMenu
+  commentId: M:DBaddin.ConfigFiles.createConfigTreeMenu
+  fullName: DBaddin.ConfigFiles.createConfigTreeMenu()
+  nameWithType: ConfigFiles.createConfigTreeMenu()
+- uid: DBaddin.ConfigFiles.createConfigTreeMenu*
+  name: createConfigTreeMenu
+  href: api/DBaddin.ConfigFiles.html#DBaddin_ConfigFiles_createConfigTreeMenu_
+  commentId: Overload:DBaddin.ConfigFiles.createConfigTreeMenu
   isSpec: "True"
-  fullName: DBaddin.ConfigFiles.convertAddressOfDBMakeControl
-  nameWithType: ConfigFiles.convertAddressOfDBMakeControl
+  fullName: DBaddin.ConfigFiles.createConfigTreeMenu
+  nameWithType: ConfigFiles.createConfigTreeMenu
 - uid: DBaddin.ConfigFiles.createFunctionsInCells(Microsoft.Office.Interop.Excel.Range,System.Object@)
   name: createFunctionsInCells(Range, ref Object)
   href: api/DBaddin.ConfigFiles.html#DBaddin_ConfigFiles_createFunctionsInCells_Microsoft_Office_Interop_Excel_Range_System_Object__
@@ -310,45 +160,6 @@ references:
   isSpec: "True"
   fullName: DBaddin.ConfigFiles.createFunctionsInCells
   nameWithType: ConfigFiles.createFunctionsInCells
-- uid: DBaddin.ConfigFiles.getRangeFromAbsolute(System.String,System.Int64,System.Int64,Microsoft.Office.Interop.Excel.Range)
-  name: getRangeFromAbsolute(String, Int64, Int64, Range)
-  href: api/DBaddin.ConfigFiles.html#DBaddin_ConfigFiles_getRangeFromAbsolute_System_String_System_Int64_System_Int64_Microsoft_Office_Interop_Excel_Range_
-  commentId: M:DBaddin.ConfigFiles.getRangeFromAbsolute(System.String,System.Int64,System.Int64,Microsoft.Office.Interop.Excel.Range)
-  fullName: DBaddin.ConfigFiles.getRangeFromAbsolute(System.String, System.Int64, System.Int64, Microsoft.Office.Interop.Excel.Range)
-  nameWithType: ConfigFiles.getRangeFromAbsolute(String, Int64, Int64, Range)
-- uid: DBaddin.ConfigFiles.getRangeFromAbsolute*
-  name: getRangeFromAbsolute
-  href: api/DBaddin.ConfigFiles.html#DBaddin_ConfigFiles_getRangeFromAbsolute_
-  commentId: Overload:DBaddin.ConfigFiles.getRangeFromAbsolute
-  isSpec: "True"
-  fullName: DBaddin.ConfigFiles.getRangeFromAbsolute
-  nameWithType: ConfigFiles.getRangeFromAbsolute
-- uid: DBaddin.ConfigFiles.getRelAddress(Microsoft.Office.Interop.Excel.Range,Microsoft.Office.Interop.Excel.Range)
-  name: getRelAddress(Range, Range)
-  href: api/DBaddin.ConfigFiles.html#DBaddin_ConfigFiles_getRelAddress_Microsoft_Office_Interop_Excel_Range_Microsoft_Office_Interop_Excel_Range_
-  commentId: M:DBaddin.ConfigFiles.getRelAddress(Microsoft.Office.Interop.Excel.Range,Microsoft.Office.Interop.Excel.Range)
-  fullName: DBaddin.ConfigFiles.getRelAddress(Microsoft.Office.Interop.Excel.Range, Microsoft.Office.Interop.Excel.Range)
-  nameWithType: ConfigFiles.getRelAddress(Range, Range)
-- uid: DBaddin.ConfigFiles.getRelAddress*
-  name: getRelAddress
-  href: api/DBaddin.ConfigFiles.html#DBaddin_ConfigFiles_getRelAddress_
-  commentId: Overload:DBaddin.ConfigFiles.getRelAddress
-  isSpec: "True"
-  fullName: DBaddin.ConfigFiles.getRelAddress
-  nameWithType: ConfigFiles.getRelAddress
-- uid: DBaddin.ConfigFiles.getRowOrCol(System.String,System.Boolean,System.Boolean)
-  name: getRowOrCol(String, Boolean, Boolean)
-  href: api/DBaddin.ConfigFiles.html#DBaddin_ConfigFiles_getRowOrCol_System_String_System_Boolean_System_Boolean_
-  commentId: M:DBaddin.ConfigFiles.getRowOrCol(System.String,System.Boolean,System.Boolean)
-  fullName: DBaddin.ConfigFiles.getRowOrCol(System.String, System.Boolean, System.Boolean)
-  nameWithType: ConfigFiles.getRowOrCol(String, Boolean, Boolean)
-- uid: DBaddin.ConfigFiles.getRowOrCol*
-  name: getRowOrCol
-  href: api/DBaddin.ConfigFiles.html#DBaddin_ConfigFiles_getRowOrCol_
-  commentId: Overload:DBaddin.ConfigFiles.getRowOrCol
-  isSpec: "True"
-  fullName: DBaddin.ConfigFiles.getRowOrCol
-  nameWithType: ConfigFiles.getRowOrCol
 - uid: DBaddin.ConfigFiles.loadConfig(System.String)
   name: loadConfig(String)
   href: api/DBaddin.ConfigFiles.html#DBaddin_ConfigFiles_loadConfig_System_String_
@@ -362,357 +173,445 @@ references:
   isSpec: "True"
   fullName: DBaddin.ConfigFiles.loadConfig
   nameWithType: ConfigFiles.loadConfig
-- uid: DBaddin.ConfigFiles.referenceCell
-  name: referenceCell
-  href: api/DBaddin.ConfigFiles.html#DBaddin_ConfigFiles_referenceCell
-  commentId: F:DBaddin.ConfigFiles.referenceCell
-  fullName: DBaddin.ConfigFiles.referenceCell
-  nameWithType: ConfigFiles.referenceCell
-- uid: DBaddin.ConfigFiles.referenceSheet
-  name: referenceSheet()
-  href: api/DBaddin.ConfigFiles.html#DBaddin_ConfigFiles_referenceSheet
-  commentId: M:DBaddin.ConfigFiles.referenceSheet
-  fullName: DBaddin.ConfigFiles.referenceSheet()
-  nameWithType: ConfigFiles.referenceSheet()
-- uid: DBaddin.ConfigFiles.referenceSheet*
-  name: referenceSheet
-  href: api/DBaddin.ConfigFiles.html#DBaddin_ConfigFiles_referenceSheet_
-  commentId: Overload:DBaddin.ConfigFiles.referenceSheet
-  isSpec: "True"
-  fullName: DBaddin.ConfigFiles.referenceSheet
-  nameWithType: ConfigFiles.referenceSheet
-- uid: DBaddin.ContainerCalcMsgs
-  name: ContainerCalcMsgs
-  href: api/DBaddin.ContainerCalcMsgs.html
-  commentId: T:DBaddin.ContainerCalcMsgs
-  fullName: DBaddin.ContainerCalcMsgs
-  nameWithType: ContainerCalcMsgs
-- uid: DBaddin.ContainerCalcMsgs.AutoFit
-  name: AutoFit
-  href: api/DBaddin.ContainerCalcMsgs.html#DBaddin_ContainerCalcMsgs_AutoFit
-  commentId: F:DBaddin.ContainerCalcMsgs.AutoFit
-  fullName: DBaddin.ContainerCalcMsgs.AutoFit
-  nameWithType: ContainerCalcMsgs.AutoFit
-- uid: DBaddin.ContainerCalcMsgs.autoformat
-  name: autoformat
-  href: api/DBaddin.ContainerCalcMsgs.html#DBaddin_ContainerCalcMsgs_autoformat
-  commentId: F:DBaddin.ContainerCalcMsgs.autoformat
-  fullName: DBaddin.ContainerCalcMsgs.autoformat
-  nameWithType: ContainerCalcMsgs.autoformat
-- uid: DBaddin.ContainerCalcMsgs.caller
-  name: caller
-  href: api/DBaddin.ContainerCalcMsgs.html#DBaddin_ContainerCalcMsgs_caller
-  commentId: F:DBaddin.ContainerCalcMsgs.caller
-  fullName: DBaddin.ContainerCalcMsgs.caller
-  nameWithType: ContainerCalcMsgs.caller
-- uid: DBaddin.ContainerCalcMsgs.callID
-  name: callID
-  href: api/DBaddin.ContainerCalcMsgs.html#DBaddin_ContainerCalcMsgs_callID
-  commentId: F:DBaddin.ContainerCalcMsgs.callID
-  fullName: DBaddin.ContainerCalcMsgs.callID
-  nameWithType: ContainerCalcMsgs.callID
-- uid: DBaddin.ContainerCalcMsgs.callsheet
-  name: callsheet
-  href: api/DBaddin.ContainerCalcMsgs.html#DBaddin_ContainerCalcMsgs_callsheet
-  commentId: F:DBaddin.ContainerCalcMsgs.callsheet
-  fullName: DBaddin.ContainerCalcMsgs.callsheet
-  nameWithType: ContainerCalcMsgs.callsheet
-- uid: DBaddin.ContainerCalcMsgs.colSep
-  name: colSep
-  href: api/DBaddin.ContainerCalcMsgs.html#DBaddin_ContainerCalcMsgs_colSep
-  commentId: F:DBaddin.ContainerCalcMsgs.colSep
-  fullName: DBaddin.ContainerCalcMsgs.colSep
-  nameWithType: ContainerCalcMsgs.colSep
-- uid: DBaddin.ContainerCalcMsgs.ConnString
-  name: ConnString
-  href: api/DBaddin.ContainerCalcMsgs.html#DBaddin_ContainerCalcMsgs_ConnString
-  commentId: F:DBaddin.ContainerCalcMsgs.ConnString
-  fullName: DBaddin.ContainerCalcMsgs.ConnString
-  nameWithType: ContainerCalcMsgs.ConnString
-- uid: DBaddin.ContainerCalcMsgs.controlLocation
-  name: controlLocation
-  href: api/DBaddin.ContainerCalcMsgs.html#DBaddin_ContainerCalcMsgs_controlLocation
-  commentId: F:DBaddin.ContainerCalcMsgs.controlLocation
-  fullName: DBaddin.ContainerCalcMsgs.controlLocation
-  nameWithType: ContainerCalcMsgs.controlLocation
-- uid: DBaddin.ContainerCalcMsgs.ControlName
-  name: ControlName
-  href: api/DBaddin.ContainerCalcMsgs.html#DBaddin_ContainerCalcMsgs_ControlName
-  commentId: F:DBaddin.ContainerCalcMsgs.ControlName
-  fullName: DBaddin.ContainerCalcMsgs.ControlName
-  nameWithType: ContainerCalcMsgs.ControlName
-- uid: DBaddin.ContainerCalcMsgs.controlType
-  name: controlType
-  href: api/DBaddin.ContainerCalcMsgs.html#DBaddin_ContainerCalcMsgs_controlType
-  commentId: F:DBaddin.ContainerCalcMsgs.controlType
-  fullName: DBaddin.ContainerCalcMsgs.controlType
-  nameWithType: ContainerCalcMsgs.controlType
-- uid: DBaddin.ContainerCalcMsgs.dataTargetRange
-  name: dataTargetRange
-  href: api/DBaddin.ContainerCalcMsgs.html#DBaddin_ContainerCalcMsgs_dataTargetRange
-  commentId: F:DBaddin.ContainerCalcMsgs.dataTargetRange
-  fullName: DBaddin.ContainerCalcMsgs.dataTargetRange
-  nameWithType: ContainerCalcMsgs.dataTargetRange
-- uid: DBaddin.ContainerCalcMsgs.errOccured
-  name: errOccured
-  href: api/DBaddin.ContainerCalcMsgs.html#DBaddin_ContainerCalcMsgs_errOccured
-  commentId: F:DBaddin.ContainerCalcMsgs.errOccured
-  fullName: DBaddin.ContainerCalcMsgs.errOccured
-  nameWithType: ContainerCalcMsgs.errOccured
-- uid: DBaddin.ContainerCalcMsgs.extendArea
-  name: extendArea
-  href: api/DBaddin.ContainerCalcMsgs.html#DBaddin_ContainerCalcMsgs_extendArea
-  commentId: F:DBaddin.ContainerCalcMsgs.extendArea
-  fullName: DBaddin.ContainerCalcMsgs.extendArea
-  nameWithType: ContainerCalcMsgs.extendArea
-- uid: DBaddin.ContainerCalcMsgs.formulaRange
-  name: formulaRange
-  href: api/DBaddin.ContainerCalcMsgs.html#DBaddin_ContainerCalcMsgs_formulaRange
-  commentId: F:DBaddin.ContainerCalcMsgs.formulaRange
-  fullName: DBaddin.ContainerCalcMsgs.formulaRange
-  nameWithType: ContainerCalcMsgs.formulaRange
-- uid: DBaddin.ContainerCalcMsgs.formulaRangeName
-  name: formulaRangeName
-  href: api/DBaddin.ContainerCalcMsgs.html#DBaddin_ContainerCalcMsgs_formulaRangeName
-  commentId: F:DBaddin.ContainerCalcMsgs.formulaRangeName
-  fullName: DBaddin.ContainerCalcMsgs.formulaRangeName
-  nameWithType: ContainerCalcMsgs.formulaRangeName
-- uid: DBaddin.ContainerCalcMsgs.HeaderInfo
-  name: HeaderInfo
-  href: api/DBaddin.ContainerCalcMsgs.html#DBaddin_ContainerCalcMsgs_HeaderInfo
-  commentId: F:DBaddin.ContainerCalcMsgs.HeaderInfo
-  fullName: DBaddin.ContainerCalcMsgs.HeaderInfo
-  nameWithType: ContainerCalcMsgs.HeaderInfo
-- uid: DBaddin.ContainerCalcMsgs.InterleaveHeader
-  name: InterleaveHeader
-  href: api/DBaddin.ContainerCalcMsgs.html#DBaddin_ContainerCalcMsgs_InterleaveHeader
-  commentId: F:DBaddin.ContainerCalcMsgs.InterleaveHeader
-  fullName: DBaddin.ContainerCalcMsgs.InterleaveHeader
-  nameWithType: ContainerCalcMsgs.InterleaveHeader
-- uid: DBaddin.ContainerCalcMsgs.lastColSep
-  name: lastColSep
-  href: api/DBaddin.ContainerCalcMsgs.html#DBaddin_ContainerCalcMsgs_lastColSep
-  commentId: F:DBaddin.ContainerCalcMsgs.lastColSep
-  fullName: DBaddin.ContainerCalcMsgs.lastColSep
-  nameWithType: ContainerCalcMsgs.lastColSep
-- uid: DBaddin.ContainerCalcMsgs.lastRowSep
-  name: lastRowSep
-  href: api/DBaddin.ContainerCalcMsgs.html#DBaddin_ContainerCalcMsgs_lastRowSep
-  commentId: F:DBaddin.ContainerCalcMsgs.lastRowSep
-  fullName: DBaddin.ContainerCalcMsgs.lastRowSep
-  nameWithType: ContainerCalcMsgs.lastRowSep
-- uid: DBaddin.ContainerCalcMsgs.Query
-  name: Query
-  href: api/DBaddin.ContainerCalcMsgs.html#DBaddin_ContainerCalcMsgs_Query
-  commentId: F:DBaddin.ContainerCalcMsgs.Query
-  fullName: DBaddin.ContainerCalcMsgs.Query
-  nameWithType: ContainerCalcMsgs.Query
-- uid: DBaddin.ContainerCalcMsgs.rowSep
-  name: rowSep
-  href: api/DBaddin.ContainerCalcMsgs.html#DBaddin_ContainerCalcMsgs_rowSep
-  commentId: F:DBaddin.ContainerCalcMsgs.rowSep
-  fullName: DBaddin.ContainerCalcMsgs.rowSep
-  nameWithType: ContainerCalcMsgs.rowSep
-- uid: DBaddin.ContainerCalcMsgs.ShowRowNumbers
-  name: ShowRowNumbers
-  href: api/DBaddin.ContainerCalcMsgs.html#DBaddin_ContainerCalcMsgs_ShowRowNumbers
-  commentId: F:DBaddin.ContainerCalcMsgs.ShowRowNumbers
-  fullName: DBaddin.ContainerCalcMsgs.ShowRowNumbers
-  nameWithType: ContainerCalcMsgs.ShowRowNumbers
-- uid: DBaddin.ContainerCalcMsgs.targetArray
-  name: targetArray
-  href: api/DBaddin.ContainerCalcMsgs.html#DBaddin_ContainerCalcMsgs_targetArray
-  commentId: F:DBaddin.ContainerCalcMsgs.targetArray
-  fullName: DBaddin.ContainerCalcMsgs.targetArray
-  nameWithType: ContainerCalcMsgs.targetArray
-- uid: DBaddin.ContainerCalcMsgs.targetRange
-  name: targetRange
-  href: api/DBaddin.ContainerCalcMsgs.html#DBaddin_ContainerCalcMsgs_targetRange
-  commentId: F:DBaddin.ContainerCalcMsgs.targetRange
-  fullName: DBaddin.ContainerCalcMsgs.targetRange
-  nameWithType: ContainerCalcMsgs.targetRange
-- uid: DBaddin.ContainerCalcMsgs.targetRangeName
-  name: targetRangeName
-  href: api/DBaddin.ContainerCalcMsgs.html#DBaddin_ContainerCalcMsgs_targetRangeName
-  commentId: F:DBaddin.ContainerCalcMsgs.targetRangeName
-  fullName: DBaddin.ContainerCalcMsgs.targetRangeName
-  nameWithType: ContainerCalcMsgs.targetRangeName
-- uid: DBaddin.ContainerCalcMsgs.working
-  name: working
-  href: api/DBaddin.ContainerCalcMsgs.html#DBaddin_ContainerCalcMsgs_working
-  commentId: F:DBaddin.ContainerCalcMsgs.working
-  fullName: DBaddin.ContainerCalcMsgs.working
-  nameWithType: ContainerCalcMsgs.working
-- uid: DBaddin.ContainerStatusMsgs
-  name: ContainerStatusMsgs
-  href: api/DBaddin.ContainerStatusMsgs.html
-  commentId: T:DBaddin.ContainerStatusMsgs
-  fullName: DBaddin.ContainerStatusMsgs
-  nameWithType: ContainerStatusMsgs
-- uid: DBaddin.ContainerStatusMsgs.statusMsg
+- uid: DBaddin.ConfigFiles.specialConfigStoreFolders
+  name: specialConfigStoreFolders
+  href: api/DBaddin.ConfigFiles.html#DBaddin_ConfigFiles_specialConfigStoreFolders
+  commentId: F:DBaddin.ConfigFiles.specialConfigStoreFolders
+  fullName: DBaddin.ConfigFiles.specialConfigStoreFolders
+  nameWithType: ConfigFiles.specialConfigStoreFolders
+- uid: DBaddin.ContainedStatusMsg
+  name: ContainedStatusMsg
+  href: api/DBaddin.ContainedStatusMsg.html
+  commentId: T:DBaddin.ContainedStatusMsg
+  fullName: DBaddin.ContainedStatusMsg
+  nameWithType: ContainedStatusMsg
+- uid: DBaddin.ContainedStatusMsg.statusMsg
   name: statusMsg
-  href: api/DBaddin.ContainerStatusMsgs.html#DBaddin_ContainerStatusMsgs_statusMsg
-  commentId: F:DBaddin.ContainerStatusMsgs.statusMsg
-  fullName: DBaddin.ContainerStatusMsgs.statusMsg
-  nameWithType: ContainerStatusMsgs.statusMsg
-- uid: DBaddin.DBFuncEventHandler
-  name: DBFuncEventHandler
-  href: api/DBaddin.DBFuncEventHandler.html
-  commentId: T:DBaddin.DBFuncEventHandler
-  fullName: DBaddin.DBFuncEventHandler
-  nameWithType: DBFuncEventHandler
-- uid: DBaddin.DBFuncEventHandler.#ctor
-  name: DBFuncEventHandler()
-  href: api/DBaddin.DBFuncEventHandler.html#DBaddin_DBFuncEventHandler__ctor
-  commentId: M:DBaddin.DBFuncEventHandler.#ctor
-  fullName: DBaddin.DBFuncEventHandler.DBFuncEventHandler()
-  nameWithType: DBFuncEventHandler.DBFuncEventHandler()
-- uid: DBaddin.DBFuncEventHandler.#ctor*
-  name: DBFuncEventHandler
-  href: api/DBaddin.DBFuncEventHandler.html#DBaddin_DBFuncEventHandler__ctor_
-  commentId: Overload:DBaddin.DBFuncEventHandler.#ctor
+  href: api/DBaddin.ContainedStatusMsg.html#DBaddin_ContainedStatusMsg_statusMsg
+  commentId: F:DBaddin.ContainedStatusMsg.statusMsg
+  fullName: DBaddin.ContainedStatusMsg.statusMsg
+  nameWithType: ContainedStatusMsg.statusMsg
+- uid: DBaddin.DBAddin
+  name: DBAddin
+  href: api/DBaddin.DBAddin.html
+  commentId: T:DBaddin.DBAddin
+  fullName: DBaddin.DBAddin
+  nameWithType: DBAddin
+- uid: DBaddin.DBAddin.balancedString(System.String,System.String,System.String,System.String)
+  name: balancedString(String, String, String, String)
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_balancedString_System_String_System_String_System_String_System_String_
+  commentId: M:DBaddin.DBAddin.balancedString(System.String,System.String,System.String,System.String)
+  fullName: DBaddin.DBAddin.balancedString(System.String, System.String, System.String, System.String)
+  nameWithType: DBAddin.balancedString(String, String, String, String)
+- uid: DBaddin.DBAddin.balancedString*
+  name: balancedString
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_balancedString_
+  commentId: Overload:DBaddin.DBAddin.balancedString
   isSpec: "True"
-  fullName: DBaddin.DBFuncEventHandler.DBFuncEventHandler
-  nameWithType: DBFuncEventHandler.DBFuncEventHandler
-- uid: DBaddin.DBFuncEventHandler.cnn
-  name: cnn
-  href: api/DBaddin.DBFuncEventHandler.html#DBaddin_DBFuncEventHandler_cnn
-  commentId: F:DBaddin.DBFuncEventHandler.cnn
-  fullName: DBaddin.DBFuncEventHandler.cnn
-  nameWithType: DBFuncEventHandler.cnn
-- uid: DBaddin.DBFuncEventHandler.CurrConnString
-  name: CurrConnString
-  href: api/DBaddin.DBFuncEventHandler.html#DBaddin_DBFuncEventHandler_CurrConnString
-  commentId: F:DBaddin.DBFuncEventHandler.CurrConnString
-  fullName: DBaddin.DBFuncEventHandler.CurrConnString
-  nameWithType: DBFuncEventHandler.CurrConnString
-- uid: DBaddin.DBFuncEventHandler.DBCellQuery(DBaddin.ContainerCalcMsgs,DBaddin.ContainerStatusMsgs)
-  name: DBCellQuery(ContainerCalcMsgs, ContainerStatusMsgs)
-  href: api/DBaddin.DBFuncEventHandler.html#DBaddin_DBFuncEventHandler_DBCellQuery_DBaddin_ContainerCalcMsgs_DBaddin_ContainerStatusMsgs_
-  commentId: M:DBaddin.DBFuncEventHandler.DBCellQuery(DBaddin.ContainerCalcMsgs,DBaddin.ContainerStatusMsgs)
-  fullName: DBaddin.DBFuncEventHandler.DBCellQuery(DBaddin.ContainerCalcMsgs, DBaddin.ContainerStatusMsgs)
-  nameWithType: DBFuncEventHandler.DBCellQuery(ContainerCalcMsgs, ContainerStatusMsgs)
-- uid: DBaddin.DBFuncEventHandler.DBCellQuery*
-  name: DBCellQuery
-  href: api/DBaddin.DBFuncEventHandler.html#DBaddin_DBFuncEventHandler_DBCellQuery_
-  commentId: Overload:DBaddin.DBFuncEventHandler.DBCellQuery
+  fullName: DBaddin.DBAddin.balancedString
+  nameWithType: DBAddin.balancedString
+- uid: DBaddin.DBAddin.Change(System.String,System.String,System.String,System.String)
+  name: Change(String, String, String, String)
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_Change_System_String_System_String_System_String_System_String_
+  commentId: M:DBaddin.DBAddin.Change(System.String,System.String,System.String,System.String)
+  fullName: DBaddin.DBAddin.Change(System.String, System.String, System.String, System.String)
+  nameWithType: DBAddin.Change(String, String, String, String)
+- uid: DBaddin.DBAddin.Change*
+  name: Change
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_Change_
+  commentId: Overload:DBaddin.DBAddin.Change
   isSpec: "True"
-  fullName: DBaddin.DBFuncEventHandler.DBCellQuery
-  nameWithType: DBFuncEventHandler.DBCellQuery
-- uid: DBaddin.DBFuncEventHandler.DBControlQuery(DBaddin.ContainerCalcMsgs,DBaddin.ContainerStatusMsgs)
-  name: DBControlQuery(ContainerCalcMsgs, ContainerStatusMsgs)
-  href: api/DBaddin.DBFuncEventHandler.html#DBaddin_DBFuncEventHandler_DBControlQuery_DBaddin_ContainerCalcMsgs_DBaddin_ContainerStatusMsgs_
-  commentId: M:DBaddin.DBFuncEventHandler.DBControlQuery(DBaddin.ContainerCalcMsgs,DBaddin.ContainerStatusMsgs)
-  fullName: DBaddin.DBFuncEventHandler.DBControlQuery(DBaddin.ContainerCalcMsgs, DBaddin.ContainerStatusMsgs)
-  nameWithType: DBFuncEventHandler.DBControlQuery(ContainerCalcMsgs, ContainerStatusMsgs)
-- uid: DBaddin.DBFuncEventHandler.DBControlQuery*
-  name: DBControlQuery
-  href: api/DBaddin.DBFuncEventHandler.html#DBaddin_DBFuncEventHandler_DBControlQuery_
-  commentId: Overload:DBaddin.DBFuncEventHandler.DBControlQuery
+  fullName: DBaddin.DBAddin.Change
+  nameWithType: DBAddin.Change
+- uid: DBaddin.DBAddin.checkIsDate(ADODB.DataTypeEnum)
+  name: checkIsDate(DataTypeEnum)
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_checkIsDate_ADODB_DataTypeEnum_
+  commentId: M:DBaddin.DBAddin.checkIsDate(ADODB.DataTypeEnum)
+  fullName: DBaddin.DBAddin.checkIsDate(ADODB.DataTypeEnum)
+  nameWithType: DBAddin.checkIsDate(DataTypeEnum)
+- uid: DBaddin.DBAddin.checkIsDate*
+  name: checkIsDate
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_checkIsDate_
+  commentId: Overload:DBaddin.DBAddin.checkIsDate
   isSpec: "True"
-  fullName: DBaddin.DBFuncEventHandler.DBControlQuery
-  nameWithType: DBFuncEventHandler.DBControlQuery
-- uid: DBaddin.DBFuncEventHandler.DBListQuery(DBaddin.ContainerCalcMsgs,DBaddin.ContainerStatusMsgs)
-  name: DBListQuery(ContainerCalcMsgs, ContainerStatusMsgs)
-  href: api/DBaddin.DBFuncEventHandler.html#DBaddin_DBFuncEventHandler_DBListQuery_DBaddin_ContainerCalcMsgs_DBaddin_ContainerStatusMsgs_
-  commentId: M:DBaddin.DBFuncEventHandler.DBListQuery(DBaddin.ContainerCalcMsgs,DBaddin.ContainerStatusMsgs)
-  fullName: DBaddin.DBFuncEventHandler.DBListQuery(DBaddin.ContainerCalcMsgs, DBaddin.ContainerStatusMsgs)
-  nameWithType: DBFuncEventHandler.DBListQuery(ContainerCalcMsgs, ContainerStatusMsgs)
-- uid: DBaddin.DBFuncEventHandler.DBListQuery*
-  name: DBListQuery
-  href: api/DBaddin.DBFuncEventHandler.html#DBaddin_DBFuncEventHandler_DBListQuery_
-  commentId: Overload:DBaddin.DBFuncEventHandler.DBListQuery
+  fullName: DBaddin.DBAddin.checkIsDate
+  nameWithType: DBAddin.checkIsDate
+- uid: DBaddin.DBAddin.checkIsDateTime(ADODB.DataTypeEnum)
+  name: checkIsDateTime(DataTypeEnum)
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_checkIsDateTime_ADODB_DataTypeEnum_
+  commentId: M:DBaddin.DBAddin.checkIsDateTime(ADODB.DataTypeEnum)
+  fullName: DBaddin.DBAddin.checkIsDateTime(ADODB.DataTypeEnum)
+  nameWithType: DBAddin.checkIsDateTime(DataTypeEnum)
+- uid: DBaddin.DBAddin.checkIsDateTime*
+  name: checkIsDateTime
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_checkIsDateTime_
+  commentId: Overload:DBaddin.DBAddin.checkIsDateTime
   isSpec: "True"
-  fullName: DBaddin.DBFuncEventHandler.DBListQuery
-  nameWithType: DBFuncEventHandler.DBListQuery
-- uid: DBaddin.DBFuncEventHandler.DBRowQuery(DBaddin.ContainerCalcMsgs,DBaddin.ContainerStatusMsgs)
-  name: DBRowQuery(ContainerCalcMsgs, ContainerStatusMsgs)
-  href: api/DBaddin.DBFuncEventHandler.html#DBaddin_DBFuncEventHandler_DBRowQuery_DBaddin_ContainerCalcMsgs_DBaddin_ContainerStatusMsgs_
-  commentId: M:DBaddin.DBFuncEventHandler.DBRowQuery(DBaddin.ContainerCalcMsgs,DBaddin.ContainerStatusMsgs)
-  fullName: DBaddin.DBFuncEventHandler.DBRowQuery(DBaddin.ContainerCalcMsgs, DBaddin.ContainerStatusMsgs)
-  nameWithType: DBFuncEventHandler.DBRowQuery(ContainerCalcMsgs, ContainerStatusMsgs)
-- uid: DBaddin.DBFuncEventHandler.DBRowQuery*
-  name: DBRowQuery
-  href: api/DBaddin.DBFuncEventHandler.html#DBaddin_DBFuncEventHandler_DBRowQuery_
-  commentId: Overload:DBaddin.DBFuncEventHandler.DBRowQuery
+  fullName: DBaddin.DBAddin.checkIsDateTime
+  nameWithType: DBAddin.checkIsDateTime
+- uid: DBaddin.DBAddin.checkIsNumeric(ADODB.DataTypeEnum)
+  name: checkIsNumeric(DataTypeEnum)
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_checkIsNumeric_ADODB_DataTypeEnum_
+  commentId: M:DBaddin.DBAddin.checkIsNumeric(ADODB.DataTypeEnum)
+  fullName: DBaddin.DBAddin.checkIsNumeric(ADODB.DataTypeEnum)
+  nameWithType: DBAddin.checkIsNumeric(DataTypeEnum)
+- uid: DBaddin.DBAddin.checkIsNumeric*
+  name: checkIsNumeric
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_checkIsNumeric_
+  commentId: Overload:DBaddin.DBAddin.checkIsNumeric
   isSpec: "True"
-  fullName: DBaddin.DBFuncEventHandler.DBRowQuery
-  nameWithType: DBFuncEventHandler.DBRowQuery
-- uid: DBaddin.DBFuncEventHandler.DBSetQueryParams(DBaddin.ContainerCalcMsgs,DBaddin.ContainerStatusMsgs)
-  name: DBSetQueryParams(ContainerCalcMsgs, ContainerStatusMsgs)
-  href: api/DBaddin.DBFuncEventHandler.html#DBaddin_DBFuncEventHandler_DBSetQueryParams_DBaddin_ContainerCalcMsgs_DBaddin_ContainerStatusMsgs_
-  commentId: M:DBaddin.DBFuncEventHandler.DBSetQueryParams(DBaddin.ContainerCalcMsgs,DBaddin.ContainerStatusMsgs)
-  fullName: DBaddin.DBFuncEventHandler.DBSetQueryParams(DBaddin.ContainerCalcMsgs, DBaddin.ContainerStatusMsgs)
-  nameWithType: DBFuncEventHandler.DBSetQueryParams(ContainerCalcMsgs, ContainerStatusMsgs)
-- uid: DBaddin.DBFuncEventHandler.DBSetQueryParams*
-  name: DBSetQueryParams
-  href: api/DBaddin.DBFuncEventHandler.html#DBaddin_DBFuncEventHandler_DBSetQueryParams_
-  commentId: Overload:DBaddin.DBFuncEventHandler.DBSetQueryParams
+  fullName: DBaddin.DBAddin.checkIsNumeric
+  nameWithType: DBAddin.checkIsNumeric
+- uid: DBaddin.DBAddin.checkIsTime(ADODB.DataTypeEnum)
+  name: checkIsTime(DataTypeEnum)
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_checkIsTime_ADODB_DataTypeEnum_
+  commentId: M:DBaddin.DBAddin.checkIsTime(ADODB.DataTypeEnum)
+  fullName: DBaddin.DBAddin.checkIsTime(ADODB.DataTypeEnum)
+  nameWithType: DBAddin.checkIsTime(DataTypeEnum)
+- uid: DBaddin.DBAddin.checkIsTime*
+  name: checkIsTime
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_checkIsTime_
+  commentId: Overload:DBaddin.DBAddin.checkIsTime
   isSpec: "True"
-  fullName: DBaddin.DBFuncEventHandler.DBSetQueryParams
-  nameWithType: DBFuncEventHandler.DBSetQueryParams
-- uid: DBaddin.DBFuncEventHandler.origWS
-  name: origWS
-  href: api/DBaddin.DBFuncEventHandler.html#DBaddin_DBFuncEventHandler_origWS
-  commentId: F:DBaddin.DBFuncEventHandler.origWS
-  fullName: DBaddin.DBFuncEventHandler.origWS
-  nameWithType: DBFuncEventHandler.origWS
-- uid: DBaddin.DBFuncEventHandler.queryCache
-  name: queryCache
-  href: api/DBaddin.DBFuncEventHandler.html#DBaddin_DBFuncEventHandler_queryCache
-  commentId: F:DBaddin.DBFuncEventHandler.queryCache
-  fullName: DBaddin.DBFuncEventHandler.queryCache
-  nameWithType: DBFuncEventHandler.queryCache
-- uid: DBaddin.DBFuncEventHandler.refreshDBFuncLater(System.Object,System.Timers.ElapsedEventArgs)
-  name: refreshDBFuncLater(Object, ElapsedEventArgs)
-  href: api/DBaddin.DBFuncEventHandler.html#DBaddin_DBFuncEventHandler_refreshDBFuncLater_System_Object_System_Timers_ElapsedEventArgs_
-  commentId: M:DBaddin.DBFuncEventHandler.refreshDBFuncLater(System.Object,System.Timers.ElapsedEventArgs)
-  fullName: DBaddin.DBFuncEventHandler.refreshDBFuncLater(System.Object, System.Timers.ElapsedEventArgs)
-  nameWithType: DBFuncEventHandler.refreshDBFuncLater(Object, ElapsedEventArgs)
-- uid: DBaddin.DBFuncEventHandler.refreshDBFuncLater*
-  name: refreshDBFuncLater
-  href: api/DBaddin.DBFuncEventHandler.html#DBaddin_DBFuncEventHandler_refreshDBFuncLater_
-  commentId: Overload:DBaddin.DBFuncEventHandler.refreshDBFuncLater
+  fullName: DBaddin.DBAddin.checkIsTime
+  nameWithType: DBAddin.checkIsTime
+- uid: DBaddin.DBAddin.checkMultipleDBRangeNames(Microsoft.Office.Interop.Excel.Range)
+  name: checkMultipleDBRangeNames(Range)
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_checkMultipleDBRangeNames_Microsoft_Office_Interop_Excel_Range_
+  commentId: M:DBaddin.DBAddin.checkMultipleDBRangeNames(Microsoft.Office.Interop.Excel.Range)
+  fullName: DBaddin.DBAddin.checkMultipleDBRangeNames(Microsoft.Office.Interop.Excel.Range)
+  nameWithType: DBAddin.checkMultipleDBRangeNames(Range)
+- uid: DBaddin.DBAddin.checkMultipleDBRangeNames*
+  name: checkMultipleDBRangeNames
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_checkMultipleDBRangeNames_
+  commentId: Overload:DBaddin.DBAddin.checkMultipleDBRangeNames
   isSpec: "True"
-  fullName: DBaddin.DBFuncEventHandler.refreshDBFuncLater
-  nameWithType: DBFuncEventHandler.refreshDBFuncLater
-- uid: DBaddin.DBFuncEventHandler.testRangeNames
-  name: testRangeNames()
-  href: api/DBaddin.DBFuncEventHandler.html#DBaddin_DBFuncEventHandler_testRangeNames
-  commentId: M:DBaddin.DBFuncEventHandler.testRangeNames
-  fullName: DBaddin.DBFuncEventHandler.testRangeNames()
-  nameWithType: DBFuncEventHandler.testRangeNames()
-- uid: DBaddin.DBFuncEventHandler.testRangeNames*
-  name: testRangeNames
-  href: api/DBaddin.DBFuncEventHandler.html#DBaddin_DBFuncEventHandler_testRangeNames_
-  commentId: Overload:DBaddin.DBFuncEventHandler.testRangeNames
+  fullName: DBaddin.DBAddin.checkMultipleDBRangeNames
+  nameWithType: DBAddin.checkMultipleDBRangeNames
+- uid: DBaddin.DBAddin.CmdTimeout
+  name: CmdTimeout
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_CmdTimeout
+  commentId: F:DBaddin.DBAddin.CmdTimeout
+  fullName: DBaddin.DBAddin.CmdTimeout
+  nameWithType: DBAddin.CmdTimeout
+- uid: DBaddin.DBAddin.CnnTimeout
+  name: CnnTimeout
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_CnnTimeout
+  commentId: F:DBaddin.DBAddin.CnnTimeout
+  fullName: DBaddin.DBAddin.CnnTimeout
+  nameWithType: DBAddin.CnnTimeout
+- uid: DBaddin.DBAddin.ConstConnString
+  name: ConstConnString
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_ConstConnString
+  commentId: F:DBaddin.DBAddin.ConstConnString
+  fullName: DBaddin.DBAddin.ConstConnString
+  nameWithType: DBAddin.ConstConnString
+- uid: DBaddin.DBAddin.DBMapperDefColl
+  name: DBMapperDefColl
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_DBMapperDefColl
+  commentId: F:DBaddin.DBAddin.DBMapperDefColl
+  fullName: DBaddin.DBAddin.DBMapperDefColl
+  nameWithType: DBAddin.DBMapperDefColl
+- uid: DBaddin.DBAddin.DebugAddin
+  name: DebugAddin
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_DebugAddin
+  commentId: F:DBaddin.DBAddin.DebugAddin
+  fullName: DBaddin.DBAddin.DebugAddin
+  nameWithType: DBAddin.DebugAddin
+- uid: DBaddin.DBAddin.DefaultDBDateFormatting
+  name: DefaultDBDateFormatting
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_DefaultDBDateFormatting
+  commentId: F:DBaddin.DBAddin.DefaultDBDateFormatting
+  fullName: DBaddin.DBAddin.DefaultDBDateFormatting
+  nameWithType: DBAddin.DefaultDBDateFormatting
+- uid: DBaddin.DBAddin.environdefs
+  name: environdefs
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_environdefs
+  commentId: F:DBaddin.DBAddin.environdefs
+  fullName: DBaddin.DBAddin.environdefs
+  nameWithType: DBAddin.environdefs
+- uid: DBaddin.DBAddin.ErrorMsg(System.String,System.Boolean@)
+  name: ErrorMsg(String, ref Boolean)
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_ErrorMsg_System_String_System_Boolean__
+  commentId: M:DBaddin.DBAddin.ErrorMsg(System.String,System.Boolean@)
+  name.vb: ErrorMsg(String, ByRef Boolean)
+  fullName: DBaddin.DBAddin.ErrorMsg(System.String, ref System.Boolean)
+  fullName.vb: DBaddin.DBAddin.ErrorMsg(System.String, ByRef System.Boolean)
+  nameWithType: DBAddin.ErrorMsg(String, ref Boolean)
+  nameWithType.vb: DBAddin.ErrorMsg(String, ByRef Boolean)
+- uid: DBaddin.DBAddin.ErrorMsg*
+  name: ErrorMsg
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_ErrorMsg_
+  commentId: Overload:DBaddin.DBAddin.ErrorMsg
   isSpec: "True"
-  fullName: DBaddin.DBFuncEventHandler.testRangeNames
-  nameWithType: DBFuncEventHandler.testRangeNames
-- uid: DBaddin.dbsheetErrReason
-  name: dbsheetErrReason
-  href: api/DBaddin.dbsheetErrReason.html
-  commentId: T:DBaddin.dbsheetErrReason
-  fullName: DBaddin.dbsheetErrReason
-  nameWithType: dbsheetErrReason
-- uid: DBaddin.dbsheetErrReason.dbDataError
-  name: dbDataError
-  href: api/DBaddin.dbsheetErrReason.html#DBaddin_dbsheetErrReason_dbDataError
-  commentId: F:DBaddin.dbsheetErrReason.dbDataError
-  fullName: DBaddin.dbsheetErrReason.dbDataError
-  nameWithType: dbsheetErrReason.dbDataError
-- uid: DBaddin.dbsheetErrReason.dbInternalError
-  name: dbInternalError
-  href: api/DBaddin.dbsheetErrReason.html#DBaddin_dbsheetErrReason_dbInternalError
-  commentId: F:DBaddin.dbsheetErrReason.dbInternalError
-  fullName: DBaddin.dbsheetErrReason.dbInternalError
-  nameWithType: dbsheetErrReason.dbInternalError
-- uid: DBaddin.dbsheetErrReason.dbOK
-  name: dbOK
-  href: api/DBaddin.dbsheetErrReason.html#DBaddin_dbsheetErrReason_dbOK
-  commentId: F:DBaddin.dbsheetErrReason.dbOK
-  fullName: DBaddin.dbsheetErrReason.dbOK
-  nameWithType: dbsheetErrReason.dbOK
+  fullName: DBaddin.DBAddin.ErrorMsg
+  nameWithType: DBAddin.ErrorMsg
+- uid: DBaddin.DBAddin.EventLevelSelected
+  name: EventLevelSelected
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_EventLevelSelected
+  commentId: F:DBaddin.DBAddin.EventLevelSelected
+  fullName: DBaddin.DBAddin.EventLevelSelected
+  nameWithType: DBAddin.EventLevelSelected
+- uid: DBaddin.DBAddin.existsSheet(System.String@)
+  name: existsSheet(ref String)
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_existsSheet_System_String__
+  commentId: M:DBaddin.DBAddin.existsSheet(System.String@)
+  name.vb: existsSheet(ByRef String)
+  fullName: DBaddin.DBAddin.existsSheet(ref System.String)
+  fullName.vb: DBaddin.DBAddin.existsSheet(ByRef System.String)
+  nameWithType: DBAddin.existsSheet(ref String)
+  nameWithType.vb: DBAddin.existsSheet(ByRef String)
+- uid: DBaddin.DBAddin.existsSheet*
+  name: existsSheet
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_existsSheet_
+  commentId: Overload:DBaddin.DBAddin.existsSheet
+  isSpec: "True"
+  fullName: DBaddin.DBAddin.existsSheet
+  nameWithType: DBAddin.existsSheet
+- uid: DBaddin.DBAddin.fetch(System.String,System.String,System.String)
+  name: fetch(String, String, String)
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_fetch_System_String_System_String_System_String_
+  commentId: M:DBaddin.DBAddin.fetch(System.String,System.String,System.String)
+  fullName: DBaddin.DBAddin.fetch(System.String, System.String, System.String)
+  nameWithType: DBAddin.fetch(String, String, String)
+- uid: DBaddin.DBAddin.fetch*
+  name: fetch
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_fetch_
+  commentId: Overload:DBaddin.DBAddin.fetch
+  isSpec: "True"
+  fullName: DBaddin.DBAddin.fetch
+  nameWithType: DBAddin.fetch
+- uid: DBaddin.DBAddin.fetchSetting(System.String,System.String)
+  name: fetchSetting(String, String)
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_fetchSetting_System_String_System_String_
+  commentId: M:DBaddin.DBAddin.fetchSetting(System.String,System.String)
+  fullName: DBaddin.DBAddin.fetchSetting(System.String, System.String)
+  nameWithType: DBAddin.fetchSetting(String, String)
+- uid: DBaddin.DBAddin.fetchSetting*
+  name: fetchSetting
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_fetchSetting_
+  commentId: Overload:DBaddin.DBAddin.fetchSetting
+  isSpec: "True"
+  fullName: DBaddin.DBAddin.fetchSetting
+  nameWithType: DBAddin.fetchSetting
+- uid: DBaddin.DBAddin.functionSplit(System.String,System.String,System.String,System.String,System.String,System.String)
+  name: functionSplit(String, String, String, String, String, String)
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_functionSplit_System_String_System_String_System_String_System_String_System_String_System_String_
+  commentId: M:DBaddin.DBAddin.functionSplit(System.String,System.String,System.String,System.String,System.String,System.String)
+  fullName: DBaddin.DBAddin.functionSplit(System.String, System.String, System.String, System.String, System.String, System.String)
+  nameWithType: DBAddin.functionSplit(String, String, String, String, String, String)
+- uid: DBaddin.DBAddin.functionSplit*
+  name: functionSplit
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_functionSplit_
+  commentId: Overload:DBaddin.DBAddin.functionSplit
+  isSpec: "True"
+  fullName: DBaddin.DBAddin.functionSplit
+  nameWithType: DBAddin.functionSplit
+- uid: DBaddin.DBAddin.getDBRangeName(Microsoft.Office.Interop.Excel.Range)
+  name: getDBRangeName(Range)
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_getDBRangeName_Microsoft_Office_Interop_Excel_Range_
+  commentId: M:DBaddin.DBAddin.getDBRangeName(Microsoft.Office.Interop.Excel.Range)
+  fullName: DBaddin.DBAddin.getDBRangeName(Microsoft.Office.Interop.Excel.Range)
+  nameWithType: DBAddin.getDBRangeName(Range)
+- uid: DBaddin.DBAddin.getDBRangeName*
+  name: getDBRangeName
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_getDBRangeName_
+  commentId: Overload:DBaddin.DBAddin.getDBRangeName
+  isSpec: "True"
+  fullName: DBaddin.DBAddin.getDBRangeName
+  nameWithType: DBAddin.getDBRangeName
+- uid: DBaddin.DBAddin.hostApp
+  name: hostApp
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_hostApp
+  commentId: F:DBaddin.DBAddin.hostApp
+  fullName: DBaddin.DBAddin.hostApp
+  nameWithType: DBAddin.hostApp
+- uid: DBaddin.DBAddin.initSettings
+  name: initSettings()
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_initSettings
+  commentId: M:DBaddin.DBAddin.initSettings
+  fullName: DBaddin.DBAddin.initSettings()
+  nameWithType: DBAddin.initSettings()
+- uid: DBaddin.DBAddin.initSettings*
+  name: initSettings
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_initSettings_
+  commentId: Overload:DBaddin.DBAddin.initSettings
+  isSpec: "True"
+  fullName: DBaddin.DBAddin.initSettings
+  nameWithType: DBAddin.initSettings
+- uid: DBaddin.DBAddin.jumpButton
+  name: jumpButton()
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_jumpButton
+  commentId: M:DBaddin.DBAddin.jumpButton
+  fullName: DBaddin.DBAddin.jumpButton()
+  nameWithType: DBAddin.jumpButton()
+- uid: DBaddin.DBAddin.jumpButton*
+  name: jumpButton
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_jumpButton_
+  commentId: Overload:DBaddin.DBAddin.jumpButton
+  isSpec: "True"
+  fullName: DBaddin.DBAddin.jumpButton
+  nameWithType: DBAddin.jumpButton
+- uid: DBaddin.DBAddin.LogError(System.String)
+  name: LogError(String)
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_LogError_System_String_
+  commentId: M:DBaddin.DBAddin.LogError(System.String)
+  fullName: DBaddin.DBAddin.LogError(System.String)
+  nameWithType: DBAddin.LogError(String)
+- uid: DBaddin.DBAddin.LogError*
+  name: LogError
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_LogError_
+  commentId: Overload:DBaddin.DBAddin.LogError
+  isSpec: "True"
+  fullName: DBaddin.DBAddin.LogError
+  nameWithType: DBAddin.LogError
+- uid: DBaddin.DBAddin.LogInfo(System.String)
+  name: LogInfo(String)
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_LogInfo_System_String_
+  commentId: M:DBaddin.DBAddin.LogInfo(System.String)
+  fullName: DBaddin.DBAddin.LogInfo(System.String)
+  nameWithType: DBAddin.LogInfo(String)
+- uid: DBaddin.DBAddin.LogInfo*
+  name: LogInfo
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_LogInfo_
+  commentId: Overload:DBaddin.DBAddin.LogInfo
+  isSpec: "True"
+  fullName: DBaddin.DBAddin.LogInfo
+  nameWithType: DBAddin.LogInfo
+- uid: DBaddin.DBAddin.LogWarn(System.String)
+  name: LogWarn(String)
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_LogWarn_System_String_
+  commentId: M:DBaddin.DBAddin.LogWarn(System.String)
+  fullName: DBaddin.DBAddin.LogWarn(System.String)
+  nameWithType: DBAddin.LogWarn(String)
+- uid: DBaddin.DBAddin.LogWarn*
+  name: LogWarn
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_LogWarn_
+  commentId: Overload:DBaddin.DBAddin.LogWarn
+  isSpec: "True"
+  fullName: DBaddin.DBAddin.LogWarn
+  nameWithType: DBAddin.LogWarn
+- uid: DBaddin.DBAddin.purgeNames
+  name: purgeNames()
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_purgeNames
+  commentId: M:DBaddin.DBAddin.purgeNames
+  fullName: DBaddin.DBAddin.purgeNames()
+  nameWithType: DBAddin.purgeNames()
+- uid: DBaddin.DBAddin.purgeNames*
+  name: purgeNames
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_purgeNames_
+  commentId: Overload:DBaddin.DBAddin.purgeNames
+  isSpec: "True"
+  fullName: DBaddin.DBAddin.purgeNames
+  nameWithType: DBAddin.purgeNames
+- uid: DBaddin.DBAddin.refreshData
+  name: refreshData()
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_refreshData
+  commentId: M:DBaddin.DBAddin.refreshData
+  fullName: DBaddin.DBAddin.refreshData()
+  nameWithType: DBAddin.refreshData()
+- uid: DBaddin.DBAddin.refreshData*
+  name: refreshData
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_refreshData_
+  commentId: Overload:DBaddin.DBAddin.refreshData
+  isSpec: "True"
+  fullName: DBaddin.DBAddin.refreshData
+  nameWithType: DBAddin.refreshData
+- uid: DBaddin.DBAddin.refreshDBFunctions(Microsoft.Office.Interop.Excel.Workbook,System.Boolean)
+  name: refreshDBFunctions(Workbook, Boolean)
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_refreshDBFunctions_Microsoft_Office_Interop_Excel_Workbook_System_Boolean_
+  commentId: M:DBaddin.DBAddin.refreshDBFunctions(Microsoft.Office.Interop.Excel.Workbook,System.Boolean)
+  fullName: DBaddin.DBAddin.refreshDBFunctions(Microsoft.Office.Interop.Excel.Workbook, System.Boolean)
+  nameWithType: DBAddin.refreshDBFunctions(Workbook, Boolean)
+- uid: DBaddin.DBAddin.refreshDBFunctions*
+  name: refreshDBFunctions
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_refreshDBFunctions_
+  commentId: Overload:DBaddin.DBAddin.refreshDBFunctions
+  isSpec: "True"
+  fullName: DBaddin.DBAddin.refreshDBFunctions
+  nameWithType: DBAddin.refreshDBFunctions
+- uid: DBaddin.DBAddin.repairLegacyFunctions(System.Boolean)
+  name: repairLegacyFunctions(Boolean)
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_repairLegacyFunctions_System_Boolean_
+  commentId: M:DBaddin.DBAddin.repairLegacyFunctions(System.Boolean)
+  fullName: DBaddin.DBAddin.repairLegacyFunctions(System.Boolean)
+  nameWithType: DBAddin.repairLegacyFunctions(Boolean)
+- uid: DBaddin.DBAddin.repairLegacyFunctions*
+  name: repairLegacyFunctions
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_repairLegacyFunctions_
+  commentId: Overload:DBaddin.DBAddin.repairLegacyFunctions
+  isSpec: "True"
+  fullName: DBaddin.DBAddin.repairLegacyFunctions
+  nameWithType: DBAddin.repairLegacyFunctions
+- uid: DBaddin.DBAddin.replaceDelimsWithSpecialSep(System.String,System.String,System.String,System.String,System.String,System.String)
+  name: replaceDelimsWithSpecialSep(String, String, String, String, String, String)
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_replaceDelimsWithSpecialSep_System_String_System_String_System_String_System_String_System_String_System_String_
+  commentId: M:DBaddin.DBAddin.replaceDelimsWithSpecialSep(System.String,System.String,System.String,System.String,System.String,System.String)
+  fullName: DBaddin.DBAddin.replaceDelimsWithSpecialSep(System.String, System.String, System.String, System.String, System.String, System.String)
+  nameWithType: DBAddin.replaceDelimsWithSpecialSep(String, String, String, String, String, String)
+- uid: DBaddin.DBAddin.replaceDelimsWithSpecialSep*
+  name: replaceDelimsWithSpecialSep
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_replaceDelimsWithSpecialSep_
+  commentId: Overload:DBaddin.DBAddin.replaceDelimsWithSpecialSep
+  isSpec: "True"
+  fullName: DBaddin.DBAddin.replaceDelimsWithSpecialSep
+  nameWithType: DBAddin.replaceDelimsWithSpecialSep
+- uid: DBaddin.DBAddin.selectedEnvironment
+  name: selectedEnvironment
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_selectedEnvironment
+  commentId: F:DBaddin.DBAddin.selectedEnvironment
+  fullName: DBaddin.DBAddin.selectedEnvironment
+  nameWithType: DBAddin.selectedEnvironment
+- uid: DBaddin.DBAddin.storeSetting(System.String,System.String)
+  name: storeSetting(String, String)
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_storeSetting_System_String_System_String_
+  commentId: M:DBaddin.DBAddin.storeSetting(System.String,System.String)
+  fullName: DBaddin.DBAddin.storeSetting(System.String, System.String)
+  nameWithType: DBAddin.storeSetting(String, String)
+- uid: DBaddin.DBAddin.storeSetting*
+  name: storeSetting
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_storeSetting_
+  commentId: Overload:DBaddin.DBAddin.storeSetting
+  isSpec: "True"
+  fullName: DBaddin.DBAddin.storeSetting
+  nameWithType: DBAddin.storeSetting
+- uid: DBaddin.DBAddin.theLogListener
+  name: theLogListener
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_theLogListener
+  commentId: F:DBaddin.DBAddin.theLogListener
+  fullName: DBaddin.DBAddin.theLogListener
+  nameWithType: DBAddin.theLogListener
+- uid: DBaddin.DBAddin.theMenuHandler
+  name: theMenuHandler
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_theMenuHandler
+  commentId: F:DBaddin.DBAddin.theMenuHandler
+  fullName: DBaddin.DBAddin.theMenuHandler
+  nameWithType: DBAddin.theMenuHandler
+- uid: DBaddin.DBAddin.theRibbon
+  name: theRibbon
+  href: api/DBaddin.DBAddin.html#DBaddin_DBAddin_theRibbon
+  commentId: F:DBaddin.DBAddin.theRibbon
+  fullName: DBaddin.DBAddin.theRibbon
+  nameWithType: DBAddin.theRibbon
+- uid: DBaddin.DBMapperCreate
+  name: DBMapperCreate
+  href: api/DBaddin.DBMapperCreate.html
+  commentId: T:DBaddin.DBMapperCreate
+  fullName: DBaddin.DBMapperCreate
+  nameWithType: DBMapperCreate
+- uid: DBaddin.DBMapperCreate.Dispose(System.Boolean)
+  name: Dispose(Boolean)
+  href: api/DBaddin.DBMapperCreate.html#DBaddin_DBMapperCreate_Dispose_System_Boolean_
+  commentId: M:DBaddin.DBMapperCreate.Dispose(System.Boolean)
+  fullName: DBaddin.DBMapperCreate.Dispose(System.Boolean)
+  nameWithType: DBMapperCreate.Dispose(Boolean)
+- uid: DBaddin.DBMapperCreate.Dispose*
+  name: Dispose
+  href: api/DBaddin.DBMapperCreate.html#DBaddin_DBMapperCreate_Dispose_
+  commentId: Overload:DBaddin.DBMapperCreate.Dispose
+  isSpec: "True"
+  fullName: DBaddin.DBMapperCreate.Dispose
+  nameWithType: DBMapperCreate.Dispose
 - uid: DBaddin.Functions
   name: Functions
   href: api/DBaddin.Functions.html
@@ -767,38 +666,31 @@ references:
   isSpec: "True"
   fullName: DBaddin.Functions.concatCellsSep
   nameWithType: Functions.concatCellsSep
-- uid: DBaddin.Functions.concatCellsSepText(System.String,System.Object[])
-  name: concatCellsSepText(String, Object[])
-  href: api/DBaddin.Functions.html#DBaddin_Functions_concatCellsSepText_System_String_System_Object___
-  commentId: M:DBaddin.Functions.concatCellsSepText(System.String,System.Object[])
-  name.vb: concatCellsSepText(String, Object())
-  fullName: DBaddin.Functions.concatCellsSepText(System.String, System.Object[])
-  fullName.vb: DBaddin.Functions.concatCellsSepText(System.String, System.Object())
-  nameWithType: Functions.concatCellsSepText(String, Object[])
-  nameWithType.vb: Functions.concatCellsSepText(String, Object())
-- uid: DBaddin.Functions.concatCellsSepText*
-  name: concatCellsSepText
-  href: api/DBaddin.Functions.html#DBaddin_Functions_concatCellsSepText_
-  commentId: Overload:DBaddin.Functions.concatCellsSepText
+- uid: DBaddin.Functions.conn
+  name: conn
+  href: api/DBaddin.Functions.html#DBaddin_Functions_conn
+  commentId: F:DBaddin.Functions.conn
+  fullName: DBaddin.Functions.conn
+  nameWithType: Functions.conn
+- uid: DBaddin.Functions.convertToBool(System.Object)
+  name: convertToBool(Object)
+  href: api/DBaddin.Functions.html#DBaddin_Functions_convertToBool_System_Object_
+  commentId: M:DBaddin.Functions.convertToBool(System.Object)
+  fullName: DBaddin.Functions.convertToBool(System.Object)
+  nameWithType: Functions.convertToBool(Object)
+- uid: DBaddin.Functions.convertToBool*
+  name: convertToBool
+  href: api/DBaddin.Functions.html#DBaddin_Functions_convertToBool_
+  commentId: Overload:DBaddin.Functions.convertToBool
   isSpec: "True"
-  fullName: DBaddin.Functions.concatCellsSepText
-  nameWithType: Functions.concatCellsSepText
-- uid: DBaddin.Functions.concatCellsText(System.Object[])
-  name: concatCellsText(Object[])
-  href: api/DBaddin.Functions.html#DBaddin_Functions_concatCellsText_System_Object___
-  commentId: M:DBaddin.Functions.concatCellsText(System.Object[])
-  name.vb: concatCellsText(Object())
-  fullName: DBaddin.Functions.concatCellsText(System.Object[])
-  fullName.vb: DBaddin.Functions.concatCellsText(System.Object())
-  nameWithType: Functions.concatCellsText(Object[])
-  nameWithType.vb: Functions.concatCellsText(Object())
-- uid: DBaddin.Functions.concatCellsText*
-  name: concatCellsText
-  href: api/DBaddin.Functions.html#DBaddin_Functions_concatCellsText_
-  commentId: Overload:DBaddin.Functions.concatCellsText
-  isSpec: "True"
-  fullName: DBaddin.Functions.concatCellsText
-  nameWithType: Functions.concatCellsText
+  fullName: DBaddin.Functions.convertToBool
+  nameWithType: Functions.convertToBool
+- uid: DBaddin.Functions.CurrConnString
+  name: CurrConnString
+  href: api/DBaddin.Functions.html#DBaddin_Functions_CurrConnString
+  commentId: F:DBaddin.Functions.CurrConnString
+  fullName: DBaddin.Functions.CurrConnString
+  nameWithType: Functions.CurrConnString
 - uid: DBaddin.Functions.DBAddinEnvironment
   name: DBAddinEnvironment()
   href: api/DBaddin.Functions.html#DBaddin_Functions_DBAddinEnvironment
@@ -825,25 +717,12 @@ references:
   isSpec: "True"
   fullName: DBaddin.Functions.DBAddinServerSetting
   nameWithType: Functions.DBAddinServerSetting
-- uid: DBaddin.Functions.DBCellFetch(System.Object,System.Object,System.Boolean,System.String,System.String,System.String,System.String,System.Boolean,System.String)
-  name: DBCellFetch(Object, Object, Boolean, String, String, String, String, Boolean, String)
-  href: api/DBaddin.Functions.html#DBaddin_Functions_DBCellFetch_System_Object_System_Object_System_Boolean_System_String_System_String_System_String_System_String_System_Boolean_System_String_
-  commentId: M:DBaddin.Functions.DBCellFetch(System.Object,System.Object,System.Boolean,System.String,System.String,System.String,System.String,System.Boolean,System.String)
-  fullName: DBaddin.Functions.DBCellFetch(System.Object, System.Object, System.Boolean, System.String, System.String, System.String, System.String, System.Boolean, System.String)
-  nameWithType: Functions.DBCellFetch(Object, Object, Boolean, String, String, String, String, Boolean, String)
-- uid: DBaddin.Functions.DBCellFetch*
-  name: DBCellFetch
-  href: api/DBaddin.Functions.html#DBaddin_Functions_DBCellFetch_
-  commentId: Overload:DBaddin.Functions.DBCellFetch
-  isSpec: "True"
-  fullName: DBaddin.Functions.DBCellFetch
-  nameWithType: Functions.DBCellFetch
-- uid: DBaddin.Functions.DBDate(System.DateTime,System.Int32)
-  name: DBDate(DateTime, Int32)
-  href: api/DBaddin.Functions.html#DBaddin_Functions_DBDate_System_DateTime_System_Int32_
-  commentId: M:DBaddin.Functions.DBDate(System.DateTime,System.Int32)
-  fullName: DBaddin.Functions.DBDate(System.DateTime, System.Int32)
-  nameWithType: Functions.DBDate(DateTime, Int32)
+- uid: DBaddin.Functions.DBDate(System.Object,System.Int32)
+  name: DBDate(Object, Int32)
+  href: api/DBaddin.Functions.html#DBaddin_Functions_DBDate_System_Object_System_Int32_
+  commentId: M:DBaddin.Functions.DBDate(System.Object,System.Int32)
+  fullName: DBaddin.Functions.DBDate(System.Object, System.Int32)
+  nameWithType: Functions.DBDate(Object, Int32)
 - uid: DBaddin.Functions.DBDate*
   name: DBDate
   href: api/DBaddin.Functions.html#DBaddin_Functions_DBDate_
@@ -867,12 +746,12 @@ references:
   isSpec: "True"
   fullName: DBaddin.Functions.DBinClause
   nameWithType: Functions.DBinClause
-- uid: DBaddin.Functions.DBListFetch(System.Object,System.Object,Microsoft.Office.Interop.Excel.Range,System.Object,System.Int32,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.String)
-  name: DBListFetch(Object, Object, Range, Object, Int32, Boolean, Boolean, Boolean, Boolean, String)
-  href: api/DBaddin.Functions.html#DBaddin_Functions_DBListFetch_System_Object_System_Object_Microsoft_Office_Interop_Excel_Range_System_Object_System_Int32_System_Boolean_System_Boolean_System_Boolean_System_Boolean_System_String_
-  commentId: M:DBaddin.Functions.DBListFetch(System.Object,System.Object,Microsoft.Office.Interop.Excel.Range,System.Object,System.Int32,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.String)
-  fullName: DBaddin.Functions.DBListFetch(System.Object, System.Object, Microsoft.Office.Interop.Excel.Range, System.Object, System.Int32, System.Boolean, System.Boolean, System.Boolean, System.Boolean, System.String)
-  nameWithType: Functions.DBListFetch(Object, Object, Range, Object, Int32, Boolean, Boolean, Boolean, Boolean, String)
+- uid: DBaddin.Functions.DBListFetch(System.Object,System.Object,System.Object,System.Object,System.Int32,System.Object,System.Object,System.Object,System.Object)
+  name: DBListFetch(Object, Object, Object, Object, Int32, Object, Object, Object, Object)
+  href: api/DBaddin.Functions.html#DBaddin_Functions_DBListFetch_System_Object_System_Object_System_Object_System_Object_System_Int32_System_Object_System_Object_System_Object_System_Object_
+  commentId: M:DBaddin.Functions.DBListFetch(System.Object,System.Object,System.Object,System.Object,System.Int32,System.Object,System.Object,System.Object,System.Object)
+  fullName: DBaddin.Functions.DBListFetch(System.Object, System.Object, System.Object, System.Object, System.Int32, System.Object, System.Object, System.Object, System.Object)
+  nameWithType: Functions.DBListFetch(Object, Object, Object, Object, Int32, Object, Object, Object, Object)
 - uid: DBaddin.Functions.DBListFetch*
   name: DBListFetch
   href: api/DBaddin.Functions.html#DBaddin_Functions_DBListFetch_
@@ -880,19 +759,19 @@ references:
   isSpec: "True"
   fullName: DBaddin.Functions.DBListFetch
   nameWithType: Functions.DBListFetch
-- uid: DBaddin.Functions.DBMakeControl(System.Object,System.Object,System.Int32,System.Boolean,System.Boolean,System.String,System.String,System.String,System.String)
-  name: DBMakeControl(Object, Object, Int32, Boolean, Boolean, String, String, String, String)
-  href: api/DBaddin.Functions.html#DBaddin_Functions_DBMakeControl_System_Object_System_Object_System_Int32_System_Boolean_System_Boolean_System_String_System_String_System_String_System_String_
-  commentId: M:DBaddin.Functions.DBMakeControl(System.Object,System.Object,System.Int32,System.Boolean,System.Boolean,System.String,System.String,System.String,System.String)
-  fullName: DBaddin.Functions.DBMakeControl(System.Object, System.Object, System.Int32, System.Boolean, System.Boolean, System.String, System.String, System.String, System.String)
-  nameWithType: Functions.DBMakeControl(Object, Object, Int32, Boolean, Boolean, String, String, String, String)
-- uid: DBaddin.Functions.DBMakeControl*
-  name: DBMakeControl
-  href: api/DBaddin.Functions.html#DBaddin_Functions_DBMakeControl_
-  commentId: Overload:DBaddin.Functions.DBMakeControl
+- uid: DBaddin.Functions.DBListFetchAction(System.String,System.String,System.Object,Microsoft.Office.Interop.Excel.Range,System.String,System.Object,System.Int32,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.String,System.String)
+  name: DBListFetchAction(String, String, Object, Range, String, Object, Int32, Boolean, Boolean, Boolean, Boolean, String, String)
+  href: api/DBaddin.Functions.html#DBaddin_Functions_DBListFetchAction_System_String_System_String_System_Object_Microsoft_Office_Interop_Excel_Range_System_String_System_Object_System_Int32_System_Boolean_System_Boolean_System_Boolean_System_Boolean_System_String_System_String_
+  commentId: M:DBaddin.Functions.DBListFetchAction(System.String,System.String,System.Object,Microsoft.Office.Interop.Excel.Range,System.String,System.Object,System.Int32,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.String,System.String)
+  fullName: DBaddin.Functions.DBListFetchAction(System.String, System.String, System.Object, Microsoft.Office.Interop.Excel.Range, System.String, System.Object, System.Int32, System.Boolean, System.Boolean, System.Boolean, System.Boolean, System.String, System.String)
+  nameWithType: Functions.DBListFetchAction(String, String, Object, Range, String, Object, Int32, Boolean, Boolean, Boolean, Boolean, String, String)
+- uid: DBaddin.Functions.DBListFetchAction*
+  name: DBListFetchAction
+  href: api/DBaddin.Functions.html#DBaddin_Functions_DBListFetchAction_
+  commentId: Overload:DBaddin.Functions.DBListFetchAction
   isSpec: "True"
-  fullName: DBaddin.Functions.DBMakeControl
-  nameWithType: Functions.DBMakeControl
+  fullName: DBaddin.Functions.DBListFetchAction
+  nameWithType: Functions.DBListFetchAction
 - uid: DBaddin.Functions.DBRowFetch(System.Object,System.Object,System.Object[])
   name: DBRowFetch(Object, Object, Object[])
   href: api/DBaddin.Functions.html#DBaddin_Functions_DBRowFetch_System_Object_System_Object_System_Object___
@@ -909,12 +788,25 @@ references:
   isSpec: "True"
   fullName: DBaddin.Functions.DBRowFetch
   nameWithType: Functions.DBRowFetch
-- uid: DBaddin.Functions.DBSetQuery(System.Object,System.Object,Microsoft.Office.Interop.Excel.Range)
-  name: DBSetQuery(Object, Object, Range)
-  href: api/DBaddin.Functions.html#DBaddin_Functions_DBSetQuery_System_Object_System_Object_Microsoft_Office_Interop_Excel_Range_
-  commentId: M:DBaddin.Functions.DBSetQuery(System.Object,System.Object,Microsoft.Office.Interop.Excel.Range)
-  fullName: DBaddin.Functions.DBSetQuery(System.Object, System.Object, Microsoft.Office.Interop.Excel.Range)
-  nameWithType: Functions.DBSetQuery(Object, Object, Range)
+- uid: DBaddin.Functions.DBRowFetchAction(System.String,System.String,System.Object,System.Object,System.String,System.Boolean)
+  name: DBRowFetchAction(String, String, Object, Object, String, Boolean)
+  href: api/DBaddin.Functions.html#DBaddin_Functions_DBRowFetchAction_System_String_System_String_System_Object_System_Object_System_String_System_Boolean_
+  commentId: M:DBaddin.Functions.DBRowFetchAction(System.String,System.String,System.Object,System.Object,System.String,System.Boolean)
+  fullName: DBaddin.Functions.DBRowFetchAction(System.String, System.String, System.Object, System.Object, System.String, System.Boolean)
+  nameWithType: Functions.DBRowFetchAction(String, String, Object, Object, String, Boolean)
+- uid: DBaddin.Functions.DBRowFetchAction*
+  name: DBRowFetchAction
+  href: api/DBaddin.Functions.html#DBaddin_Functions_DBRowFetchAction_
+  commentId: Overload:DBaddin.Functions.DBRowFetchAction
+  isSpec: "True"
+  fullName: DBaddin.Functions.DBRowFetchAction
+  nameWithType: Functions.DBRowFetchAction
+- uid: DBaddin.Functions.DBSetQuery(System.Object,System.Object,System.Object)
+  name: DBSetQuery(Object, Object, Object)
+  href: api/DBaddin.Functions.html#DBaddin_Functions_DBSetQuery_System_Object_System_Object_System_Object_
+  commentId: M:DBaddin.Functions.DBSetQuery(System.Object,System.Object,System.Object)
+  fullName: DBaddin.Functions.DBSetQuery(System.Object, System.Object, System.Object)
+  nameWithType: Functions.DBSetQuery(Object, Object, Object)
 - uid: DBaddin.Functions.DBSetQuery*
   name: DBSetQuery
   href: api/DBaddin.Functions.html#DBaddin_Functions_DBSetQuery_
@@ -922,6 +814,19 @@ references:
   isSpec: "True"
   fullName: DBaddin.Functions.DBSetQuery
   nameWithType: Functions.DBSetQuery
+- uid: DBaddin.Functions.DBSetQueryAction(System.String,System.String,System.Object,System.String,Microsoft.Office.Interop.Excel.Range)
+  name: DBSetQueryAction(String, String, Object, String, Range)
+  href: api/DBaddin.Functions.html#DBaddin_Functions_DBSetQueryAction_System_String_System_String_System_Object_System_String_Microsoft_Office_Interop_Excel_Range_
+  commentId: M:DBaddin.Functions.DBSetQueryAction(System.String,System.String,System.Object,System.String,Microsoft.Office.Interop.Excel.Range)
+  fullName: DBaddin.Functions.DBSetQueryAction(System.String, System.String, System.Object, System.String, Microsoft.Office.Interop.Excel.Range)
+  nameWithType: Functions.DBSetQueryAction(String, String, Object, String, Range)
+- uid: DBaddin.Functions.DBSetQueryAction*
+  name: DBSetQueryAction
+  href: api/DBaddin.Functions.html#DBaddin_Functions_DBSetQueryAction_
+  commentId: Overload:DBaddin.Functions.DBSetQueryAction
+  isSpec: "True"
+  fullName: DBaddin.Functions.DBSetQueryAction
+  nameWithType: Functions.DBSetQueryAction
 - uid: DBaddin.Functions.DBString(System.Object[])
   name: DBString(Object[])
   href: api/DBaddin.Functions.html#DBaddin_Functions_DBString_System_Object___
@@ -938,417 +843,90 @@ references:
   isSpec: "True"
   fullName: DBaddin.Functions.DBString
   nameWithType: Functions.DBString
-- uid: DBaddin.Functions.purge
-  name: purge()
-  href: api/DBaddin.Functions.html#DBaddin_Functions_purge
-  commentId: M:DBaddin.Functions.purge
-  fullName: DBaddin.Functions.purge()
-  nameWithType: Functions.purge()
-- uid: DBaddin.Functions.purge*
-  name: purge
-  href: api/DBaddin.Functions.html#DBaddin_Functions_purge_
-  commentId: Overload:DBaddin.Functions.purge
-  isSpec: "True"
-  fullName: DBaddin.Functions.purge
-  nameWithType: Functions.purge
-- uid: DBaddin.Globals
-  name: Globals
-  href: api/DBaddin.Globals.html
-  commentId: T:DBaddin.Globals
-  fullName: DBaddin.Globals
-  nameWithType: Globals
-- uid: DBaddin.Globals.allCalcContainers
-  name: allCalcContainers
-  href: api/DBaddin.Globals.html#DBaddin_Globals_allCalcContainers
-  commentId: F:DBaddin.Globals.allCalcContainers
-  fullName: DBaddin.Globals.allCalcContainers
-  nameWithType: Globals.allCalcContainers
-- uid: DBaddin.Globals.allStatusContainers
-  name: allStatusContainers
-  href: api/DBaddin.Globals.html#DBaddin_Globals_allStatusContainers
-  commentId: F:DBaddin.Globals.allStatusContainers
-  fullName: DBaddin.Globals.allStatusContainers
-  nameWithType: Globals.allStatusContainers
-- uid: DBaddin.Globals.automatedMapper
-  name: automatedMapper
-  href: api/DBaddin.Globals.html#DBaddin_Globals_automatedMapper
-  commentId: F:DBaddin.Globals.automatedMapper
-  fullName: DBaddin.Globals.automatedMapper
-  nameWithType: Globals.automatedMapper
-- uid: DBaddin.Globals.CmdTimeout
-  name: CmdTimeout
-  href: api/DBaddin.Globals.html#DBaddin_Globals_CmdTimeout
-  commentId: F:DBaddin.Globals.CmdTimeout
-  fullName: DBaddin.Globals.CmdTimeout
-  nameWithType: Globals.CmdTimeout
-- uid: DBaddin.Globals.CnnTimeout
-  name: CnnTimeout
-  href: api/DBaddin.Globals.html#DBaddin_Globals_CnnTimeout
-  commentId: F:DBaddin.Globals.CnnTimeout
-  fullName: DBaddin.Globals.CnnTimeout
-  nameWithType: Globals.CnnTimeout
-- uid: DBaddin.Globals.ConfigStoreFolder
-  name: ConfigStoreFolder
-  href: api/DBaddin.Globals.html#DBaddin_Globals_ConfigStoreFolder
-  commentId: F:DBaddin.Globals.ConfigStoreFolder
-  fullName: DBaddin.Globals.ConfigStoreFolder
-  nameWithType: Globals.ConfigStoreFolder
-- uid: DBaddin.Globals.ConstConnString
-  name: ConstConnString
-  href: api/DBaddin.Globals.html#DBaddin_Globals_ConstConnString
-  commentId: F:DBaddin.Globals.ConstConnString
-  fullName: DBaddin.Globals.ConstConnString
-  nameWithType: Globals.ConstConnString
-- uid: DBaddin.Globals.DBidentifierCCS
-  name: DBidentifierCCS
-  href: api/DBaddin.Globals.html#DBaddin_Globals_DBidentifierCCS
-  commentId: F:DBaddin.Globals.DBidentifierCCS
-  fullName: DBaddin.Globals.DBidentifierCCS
-  nameWithType: Globals.DBidentifierCCS
-- uid: DBaddin.Globals.DBidentifierODBC
-  name: DBidentifierODBC
-  href: api/DBaddin.Globals.html#DBaddin_Globals_DBidentifierODBC
-  commentId: F:DBaddin.Globals.DBidentifierODBC
-  fullName: DBaddin.Globals.DBidentifierODBC
-  nameWithType: Globals.DBidentifierODBC
-- uid: DBaddin.Globals.DEBUGME
-  name: DEBUGME
-  href: api/DBaddin.Globals.html#DBaddin_Globals_DEBUGME
-  commentId: F:DBaddin.Globals.DEBUGME
-  fullName: DBaddin.Globals.DEBUGME
-  nameWithType: Globals.DEBUGME
-- uid: DBaddin.Globals.DefaultDBDateFormatting
-  name: DefaultDBDateFormatting
-  href: api/DBaddin.Globals.html#DBaddin_Globals_DefaultDBDateFormatting
-  commentId: F:DBaddin.Globals.DefaultDBDateFormatting
-  fullName: DBaddin.Globals.DefaultDBDateFormatting
-  nameWithType: Globals.DefaultDBDateFormatting
-- uid: DBaddin.Globals.dontCalcWhileClearing
+- uid: DBaddin.Functions.dontCalcWhileClearing
   name: dontCalcWhileClearing
-  href: api/DBaddin.Globals.html#DBaddin_Globals_dontCalcWhileClearing
-  commentId: F:DBaddin.Globals.dontCalcWhileClearing
-  fullName: DBaddin.Globals.dontCalcWhileClearing
-  nameWithType: Globals.dontCalcWhileClearing
-- uid: DBaddin.Globals.dontTryConnection
+  href: api/DBaddin.Functions.html#DBaddin_Functions_dontCalcWhileClearing
+  commentId: F:DBaddin.Functions.dontCalcWhileClearing
+  fullName: DBaddin.Functions.dontCalcWhileClearing
+  nameWithType: Functions.dontCalcWhileClearing
+- uid: DBaddin.Functions.dontTryConnection
   name: dontTryConnection
-  href: api/DBaddin.Globals.html#DBaddin_Globals_dontTryConnection
-  commentId: F:DBaddin.Globals.dontTryConnection
-  fullName: DBaddin.Globals.dontTryConnection
-  nameWithType: Globals.dontTryConnection
-- uid: DBaddin.Globals.env
-  name: env
-  href: api/DBaddin.Globals.html#DBaddin_Globals_env
-  commentId: F:DBaddin.Globals.env
-  fullName: DBaddin.Globals.env
-  nameWithType: Globals.env
-- uid: DBaddin.Globals.fetchSetting(System.String,System.Object,System.Boolean)
-  name: fetchSetting(String, Object, Boolean)
-  href: api/DBaddin.Globals.html#DBaddin_Globals_fetchSetting_System_String_System_Object_System_Boolean_
-  commentId: M:DBaddin.Globals.fetchSetting(System.String,System.Object,System.Boolean)
-  fullName: DBaddin.Globals.fetchSetting(System.String, System.Object, System.Boolean)
-  nameWithType: Globals.fetchSetting(String, Object, Boolean)
-- uid: DBaddin.Globals.fetchSetting*
-  name: fetchSetting
-  href: api/DBaddin.Globals.html#DBaddin_Globals_fetchSetting_
-  commentId: Overload:DBaddin.Globals.fetchSetting
-  isSpec: "True"
-  fullName: DBaddin.Globals.fetchSetting
-  nameWithType: Globals.fetchSetting
-- uid: DBaddin.Globals.gsABOUT_TAG
-  name: gsABOUT_TAG
-  href: api/DBaddin.Globals.html#DBaddin_Globals_gsABOUT_TAG
-  commentId: F:DBaddin.Globals.gsABOUT_TAG
-  fullName: DBaddin.Globals.gsABOUT_TAG
-  nameWithType: Globals.gsABOUT_TAG
-- uid: DBaddin.Globals.gsBUILDDB_TAG
-  name: gsBUILDDB_TAG
-  href: api/DBaddin.Globals.html#DBaddin_Globals_gsBUILDDB_TAG
-  commentId: F:DBaddin.Globals.gsBUILDDB_TAG
-  fullName: DBaddin.Globals.gsBUILDDB_TAG
-  nameWithType: Globals.gsBUILDDB_TAG
-- uid: DBaddin.Globals.gsCONSTCONN_TAG
-  name: gsCONSTCONN_TAG
-  href: api/DBaddin.Globals.html#DBaddin_Globals_gsCONSTCONN_TAG
-  commentId: F:DBaddin.Globals.gsCONSTCONN_TAG
-  fullName: DBaddin.Globals.gsCONSTCONN_TAG
-  nameWithType: Globals.gsCONSTCONN_TAG
-- uid: DBaddin.Globals.gsCONSTCONNACTION_TAG
-  name: gsCONSTCONNACTION_TAG
-  href: api/DBaddin.Globals.html#DBaddin_Globals_gsCONSTCONNACTION_TAG
-  commentId: F:DBaddin.Globals.gsCONSTCONNACTION_TAG
-  fullName: DBaddin.Globals.gsCONSTCONNACTION_TAG
-  nameWithType: Globals.gsCONSTCONNACTION_TAG
-- uid: DBaddin.Globals.gsDBConfigB_TAG
-  name: gsDBConfigB_TAG
-  href: api/DBaddin.Globals.html#DBaddin_Globals_gsDBConfigB_TAG
-  commentId: F:DBaddin.Globals.gsDBConfigB_TAG
-  fullName: DBaddin.Globals.gsDBConfigB_TAG
-  nameWithType: Globals.gsDBConfigB_TAG
-- uid: DBaddin.Globals.gsDBConfigRefreshB_TAG
-  name: gsDBConfigRefreshB_TAG
-  href: api/DBaddin.Globals.html#DBaddin_Globals_gsDBConfigRefreshB_TAG
-  commentId: F:DBaddin.Globals.gsDBConfigRefreshB_TAG
-  fullName: DBaddin.Globals.gsDBConfigRefreshB_TAG
-  nameWithType: Globals.gsDBConfigRefreshB_TAG
-- uid: DBaddin.Globals.gsDBSheetAssignB_TAG
-  name: gsDBSheetAssignB_TAG
-  href: api/DBaddin.Globals.html#DBaddin_Globals_gsDBSheetAssignB_TAG
-  commentId: F:DBaddin.Globals.gsDBSheetAssignB_TAG
-  fullName: DBaddin.Globals.gsDBSheetAssignB_TAG
-  nameWithType: Globals.gsDBSheetAssignB_TAG
-- uid: DBaddin.Globals.gsDBSheetAutoRefreshB_TAG
-  name: gsDBSheetAutoRefreshB_TAG
-  href: api/DBaddin.Globals.html#DBaddin_Globals_gsDBSheetAutoRefreshB_TAG
-  commentId: F:DBaddin.Globals.gsDBSheetAutoRefreshB_TAG
-  fullName: DBaddin.Globals.gsDBSheetAutoRefreshB_TAG
-  nameWithType: Globals.gsDBSheetAutoRefreshB_TAG
-- uid: DBaddin.Globals.gsDBSheetDefinitionB_TAG
-  name: gsDBSheetDefinitionB_TAG
-  href: api/DBaddin.Globals.html#DBaddin_Globals_gsDBSheetDefinitionB_TAG
-  commentId: F:DBaddin.Globals.gsDBSheetDefinitionB_TAG
-  fullName: DBaddin.Globals.gsDBSheetDefinitionB_TAG
-  nameWithType: Globals.gsDBSheetDefinitionB_TAG
-- uid: DBaddin.Globals.gsDBSheetMain_TAG
-  name: gsDBSheetMain_TAG
-  href: api/DBaddin.Globals.html#DBaddin_Globals_gsDBSheetMain_TAG
-  commentId: F:DBaddin.Globals.gsDBSheetMain_TAG
-  fullName: DBaddin.Globals.gsDBSheetMain_TAG
-  nameWithType: Globals.gsDBSheetMain_TAG
-- uid: DBaddin.Globals.gsDBSheetParametersB_TAG
-  name: gsDBSheetParametersB_TAG
-  href: api/DBaddin.Globals.html#DBaddin_Globals_gsDBSheetParametersB_TAG
-  commentId: F:DBaddin.Globals.gsDBSheetParametersB_TAG
-  fullName: DBaddin.Globals.gsDBSheetParametersB_TAG
-  nameWithType: Globals.gsDBSheetParametersB_TAG
-- uid: DBaddin.Globals.gsDBSheetUnlockB_TAG
-  name: gsDBSheetUnlockB_TAG
-  href: api/DBaddin.Globals.html#DBaddin_Globals_gsDBSheetUnlockB_TAG
-  commentId: F:DBaddin.Globals.gsDBSheetUnlockB_TAG
-  fullName: DBaddin.Globals.gsDBSheetUnlockB_TAG
-  nameWithType: Globals.gsDBSheetUnlockB_TAG
-- uid: DBaddin.Globals.gsDeleteB_TAG
-  name: gsDeleteB_TAG
-  href: api/DBaddin.Globals.html#DBaddin_Globals_gsDeleteB_TAG
-  commentId: F:DBaddin.Globals.gsDeleteB_TAG
-  fullName: DBaddin.Globals.gsDeleteB_TAG
-  nameWithType: Globals.gsDeleteB_TAG
-- uid: DBaddin.Globals.gsForeignB_TAG
-  name: gsForeignB_TAG
-  href: api/DBaddin.Globals.html#DBaddin_Globals_gsForeignB_TAG
-  commentId: F:DBaddin.Globals.gsForeignB_TAG
-  fullName: DBaddin.Globals.gsForeignB_TAG
-  nameWithType: Globals.gsForeignB_TAG
-- uid: DBaddin.Globals.gsInsertB_TAG
-  name: gsInsertB_TAG
-  href: api/DBaddin.Globals.html#DBaddin_Globals_gsInsertB_TAG
-  commentId: F:DBaddin.Globals.gsInsertB_TAG
-  fullName: DBaddin.Globals.gsInsertB_TAG
-  nameWithType: Globals.gsInsertB_TAG
-- uid: DBaddin.Globals.gsITEMLOADCONFIG_TAG
-  name: gsITEMLOADCONFIG_TAG
-  href: api/DBaddin.Globals.html#DBaddin_Globals_gsITEMLOADCONFIG_TAG
-  commentId: F:DBaddin.Globals.gsITEMLOADCONFIG_TAG
-  fullName: DBaddin.Globals.gsITEMLOADCONFIG_TAG
-  nameWithType: Globals.gsITEMLOADCONFIG_TAG
-- uid: DBaddin.Globals.gsITEMLOADPREPARED_TAG
-  name: gsITEMLOADPREPARED_TAG
-  href: api/DBaddin.Globals.html#DBaddin_Globals_gsITEMLOADPREPARED_TAG
-  commentId: F:DBaddin.Globals.gsITEMLOADPREPARED_TAG
-  fullName: DBaddin.Globals.gsITEMLOADPREPARED_TAG
-  nameWithType: Globals.gsITEMLOADPREPARED_TAG
-- uid: DBaddin.Globals.gsITEMSAVECONFIG_TAG
-  name: gsITEMSAVECONFIG_TAG
-  href: api/DBaddin.Globals.html#DBaddin_Globals_gsITEMSAVECONFIG_TAG
-  commentId: F:DBaddin.Globals.gsITEMSAVECONFIG_TAG
-  fullName: DBaddin.Globals.gsITEMSAVECONFIG_TAG
-  nameWithType: Globals.gsITEMSAVECONFIG_TAG
-- uid: DBaddin.Globals.gsJUMP_TAG
-  name: gsJUMP_TAG
-  href: api/DBaddin.Globals.html#DBaddin_Globals_gsJUMP_TAG
-  commentId: F:DBaddin.Globals.gsJUMP_TAG
-  fullName: DBaddin.Globals.gsJUMP_TAG
-  nameWithType: Globals.gsJUMP_TAG
-- uid: DBaddin.Globals.gsREFRESH_TAG
-  name: gsREFRESH_TAG
-  href: api/DBaddin.Globals.html#DBaddin_Globals_gsREFRESH_TAG
-  commentId: F:DBaddin.Globals.gsREFRESH_TAG
-  fullName: DBaddin.Globals.gsREFRESH_TAG
-  nameWithType: Globals.gsREFRESH_TAG
-- uid: DBaddin.Globals.initSettings
-  name: initSettings()
-  href: api/DBaddin.Globals.html#DBaddin_Globals_initSettings
-  commentId: M:DBaddin.Globals.initSettings
-  fullName: DBaddin.Globals.initSettings()
-  nameWithType: Globals.initSettings()
-- uid: DBaddin.Globals.initSettings*
-  name: initSettings
-  href: api/DBaddin.Globals.html#DBaddin_Globals_initSettings_
-  commentId: Overload:DBaddin.Globals.initSettings
-  isSpec: "True"
-  fullName: DBaddin.Globals.initSettings
-  nameWithType: Globals.initSettings
-- uid: DBaddin.Globals.Interrupted
-  name: Interrupted
-  href: api/DBaddin.Globals.html#DBaddin_Globals_Interrupted
-  commentId: F:DBaddin.Globals.Interrupted
-  fullName: DBaddin.Globals.Interrupted
-  nameWithType: Globals.Interrupted
-- uid: DBaddin.Globals.LogError(System.String,System.Boolean,System.Boolean@,System.Int64)
-  name: LogError(String, Boolean, ref Boolean, Int64)
-  href: api/DBaddin.Globals.html#DBaddin_Globals_LogError_System_String_System_Boolean_System_Boolean__System_Int64_
-  commentId: M:DBaddin.Globals.LogError(System.String,System.Boolean,System.Boolean@,System.Int64)
-  name.vb: LogError(String, Boolean, ByRef Boolean, Int64)
-  fullName: DBaddin.Globals.LogError(System.String, System.Boolean, ref System.Boolean, System.Int64)
-  fullName.vb: DBaddin.Globals.LogError(System.String, System.Boolean, ByRef System.Boolean, System.Int64)
-  nameWithType: Globals.LogError(String, Boolean, ref Boolean, Int64)
-  nameWithType.vb: Globals.LogError(String, Boolean, ByRef Boolean, Int64)
-- uid: DBaddin.Globals.LogError*
-  name: LogError
-  href: api/DBaddin.Globals.html#DBaddin_Globals_LogError_
-  commentId: Overload:DBaddin.Globals.LogError
-  isSpec: "True"
-  fullName: DBaddin.Globals.LogError
-  nameWithType: Globals.LogError
-- uid: DBaddin.Globals.LogInfo(System.String,System.Int64)
-  name: LogInfo(String, Int64)
-  href: api/DBaddin.Globals.html#DBaddin_Globals_LogInfo_System_String_System_Int64_
-  commentId: M:DBaddin.Globals.LogInfo(System.String,System.Int64)
-  fullName: DBaddin.Globals.LogInfo(System.String, System.Int64)
-  nameWithType: Globals.LogInfo(String, Int64)
-- uid: DBaddin.Globals.LogInfo*
-  name: LogInfo
-  href: api/DBaddin.Globals.html#DBaddin_Globals_LogInfo_
-  commentId: Overload:DBaddin.Globals.LogInfo
-  isSpec: "True"
-  fullName: DBaddin.Globals.LogInfo
-  nameWithType: Globals.LogInfo
-- uid: DBaddin.Globals.LogToEventViewer(System.String,System.Diagnostics.EventLogEntryType,System.Int16)
-  name: LogToEventViewer(String, EventLogEntryType, Int16)
-  href: api/DBaddin.Globals.html#DBaddin_Globals_LogToEventViewer_System_String_System_Diagnostics_EventLogEntryType_System_Int16_
-  commentId: M:DBaddin.Globals.LogToEventViewer(System.String,System.Diagnostics.EventLogEntryType,System.Int16)
-  fullName: DBaddin.Globals.LogToEventViewer(System.String, System.Diagnostics.EventLogEntryType, System.Int16)
-  nameWithType: Globals.LogToEventViewer(String, EventLogEntryType, Int16)
-- uid: DBaddin.Globals.LogToEventViewer*
-  name: LogToEventViewer
-  href: api/DBaddin.Globals.html#DBaddin_Globals_LogToEventViewer_
-  commentId: Overload:DBaddin.Globals.LogToEventViewer
-  isSpec: "True"
-  fullName: DBaddin.Globals.LogToEventViewer
-  nameWithType: Globals.LogToEventViewer
-- uid: DBaddin.Globals.LogWarn(System.String,System.Boolean@,System.Int64,System.Boolean)
-  name: LogWarn(String, ref Boolean, Int64, Boolean)
-  href: api/DBaddin.Globals.html#DBaddin_Globals_LogWarn_System_String_System_Boolean__System_Int64_System_Boolean_
-  commentId: M:DBaddin.Globals.LogWarn(System.String,System.Boolean@,System.Int64,System.Boolean)
-  name.vb: LogWarn(String, ByRef Boolean, Int64, Boolean)
-  fullName: DBaddin.Globals.LogWarn(System.String, ref System.Boolean, System.Int64, System.Boolean)
-  fullName.vb: DBaddin.Globals.LogWarn(System.String, ByRef System.Boolean, System.Int64, System.Boolean)
-  nameWithType: Globals.LogWarn(String, ref Boolean, Int64, Boolean)
-  nameWithType.vb: Globals.LogWarn(String, ByRef Boolean, Int64, Boolean)
-- uid: DBaddin.Globals.LogWarn*
-  name: LogWarn
-  href: api/DBaddin.Globals.html#DBaddin_Globals_LogWarn_
-  commentId: Overload:DBaddin.Globals.LogWarn
-  isSpec: "True"
-  fullName: DBaddin.Globals.LogWarn
-  nameWithType: Globals.LogWarn
-- uid: DBaddin.Globals.myEventlog
-  name: myEventlog
-  href: api/DBaddin.Globals.html#DBaddin_Globals_myEventlog
-  commentId: F:DBaddin.Globals.myEventlog
-  fullName: DBaddin.Globals.myEventlog
-  nameWithType: Globals.myEventlog
-- uid: DBaddin.Globals.sortConfigStoreFolders
-  name: sortConfigStoreFolders
-  href: api/DBaddin.Globals.html#DBaddin_Globals_sortConfigStoreFolders
-  commentId: F:DBaddin.Globals.sortConfigStoreFolders
-  fullName: DBaddin.Globals.sortConfigStoreFolders
-  nameWithType: Globals.sortConfigStoreFolders
-- uid: DBaddin.Globals.specialConfigStoreFolders
-  name: specialConfigStoreFolders
-  href: api/DBaddin.Globals.html#DBaddin_Globals_specialConfigStoreFolders
-  commentId: F:DBaddin.Globals.specialConfigStoreFolders
-  fullName: DBaddin.Globals.specialConfigStoreFolders
-  nameWithType: Globals.specialConfigStoreFolders
-- uid: DBaddin.Globals.storeSetting(System.String,System.Object,System.Boolean)
-  name: storeSetting(String, Object, Boolean)
-  href: api/DBaddin.Globals.html#DBaddin_Globals_storeSetting_System_String_System_Object_System_Boolean_
-  commentId: M:DBaddin.Globals.storeSetting(System.String,System.Object,System.Boolean)
-  fullName: DBaddin.Globals.storeSetting(System.String, System.Object, System.Boolean)
-  nameWithType: Globals.storeSetting(String, Object, Boolean)
-- uid: DBaddin.Globals.storeSetting*
-  name: storeSetting
-  href: api/DBaddin.Globals.html#DBaddin_Globals_storeSetting_
-  commentId: Overload:DBaddin.Globals.storeSetting
-  isSpec: "True"
-  fullName: DBaddin.Globals.storeSetting
-  nameWithType: Globals.storeSetting
-- uid: DBaddin.Globals.targetFilterCont
-  name: targetFilterCont
-  href: api/DBaddin.Globals.html#DBaddin_Globals_targetFilterCont
-  commentId: F:DBaddin.Globals.targetFilterCont
-  fullName: DBaddin.Globals.targetFilterCont
-  nameWithType: Globals.targetFilterCont
-- uid: DBaddin.Globals.theDBFuncEventHandler
-  name: theDBFuncEventHandler
-  href: api/DBaddin.Globals.html#DBaddin_Globals_theDBFuncEventHandler
-  commentId: F:DBaddin.Globals.theDBFuncEventHandler
-  fullName: DBaddin.Globals.theDBFuncEventHandler
-  nameWithType: Globals.theDBFuncEventHandler
-- uid: DBaddin.Globals.theHostApp
-  name: theHostApp
-  href: api/DBaddin.Globals.html#DBaddin_Globals_theHostApp
-  commentId: F:DBaddin.Globals.theHostApp
-  fullName: DBaddin.Globals.theHostApp
-  nameWithType: Globals.theHostApp
-- uid: DBaddin.Globals.theMenuHandler
-  name: theMenuHandler
-  href: api/DBaddin.Globals.html#DBaddin_Globals_theMenuHandler
-  commentId: F:DBaddin.Globals.theMenuHandler
-  fullName: DBaddin.Globals.theMenuHandler
-  nameWithType: Globals.theMenuHandler
-- uid: DBaddin.Globals.theRibbon
-  name: theRibbon
-  href: api/DBaddin.Globals.html#DBaddin_Globals_theRibbon
-  commentId: F:DBaddin.Globals.theRibbon
-  fullName: DBaddin.Globals.theRibbon
-  nameWithType: Globals.theRibbon
-- uid: DBaddin.Globals.VBDEBUG
-  name: VBDEBUG
-  href: api/DBaddin.Globals.html#DBaddin_Globals_VBDEBUG
-  commentId: F:DBaddin.Globals.VBDEBUG
-  fullName: DBaddin.Globals.VBDEBUG
-  nameWithType: Globals.VBDEBUG
+  href: api/DBaddin.Functions.html#DBaddin_Functions_dontTryConnection
+  commentId: F:DBaddin.Functions.dontTryConnection
+  fullName: DBaddin.Functions.dontTryConnection
+  nameWithType: Functions.dontTryConnection
+- uid: DBaddin.Functions.origWS
+  name: origWS
+  href: api/DBaddin.Functions.html#DBaddin_Functions_origWS
+  commentId: F:DBaddin.Functions.origWS
+  fullName: DBaddin.Functions.origWS
+  nameWithType: Functions.origWS
+- uid: DBaddin.Functions.queryCache
+  name: queryCache
+  href: api/DBaddin.Functions.html#DBaddin_Functions_queryCache
+  commentId: F:DBaddin.Functions.queryCache
+  fullName: DBaddin.Functions.queryCache
+  nameWithType: Functions.queryCache
+- uid: DBaddin.Functions.StatusCollection
+  name: StatusCollection
+  href: api/DBaddin.Functions.html#DBaddin_Functions_StatusCollection
+  commentId: F:DBaddin.Functions.StatusCollection
+  fullName: DBaddin.Functions.StatusCollection
+  nameWithType: Functions.StatusCollection
 - uid: DBaddin.Mapper
   name: Mapper
   href: api/DBaddin.Mapper.html
   commentId: T:DBaddin.Mapper
   fullName: DBaddin.Mapper
   nameWithType: Mapper
-- uid: DBaddin.Mapper.#ctor
-  name: Mapper()
-  href: api/DBaddin.Mapper.html#DBaddin_Mapper__ctor
-  commentId: M:DBaddin.Mapper.#ctor
-  fullName: DBaddin.Mapper.Mapper()
-  nameWithType: Mapper.Mapper()
-- uid: DBaddin.Mapper.#ctor*
-  name: Mapper
-  href: api/DBaddin.Mapper.html#DBaddin_Mapper__ctor_
-  commentId: Overload:DBaddin.Mapper.#ctor
+- uid: DBaddin.Mapper.createDBMapper
+  name: createDBMapper()
+  href: api/DBaddin.Mapper.html#DBaddin_Mapper_createDBMapper
+  commentId: M:DBaddin.Mapper.createDBMapper
+  fullName: DBaddin.Mapper.createDBMapper()
+  nameWithType: Mapper.createDBMapper()
+- uid: DBaddin.Mapper.createDBMapper*
+  name: createDBMapper
+  href: api/DBaddin.Mapper.html#DBaddin_Mapper_createDBMapper_
+  commentId: Overload:DBaddin.Mapper.createDBMapper
   isSpec: "True"
-  fullName: DBaddin.Mapper.Mapper
-  nameWithType: Mapper.Mapper
+  fullName: DBaddin.Mapper.createDBMapper
+  nameWithType: Mapper.createDBMapper
 - uid: DBaddin.Mapper.dbcnn
   name: dbcnn
   href: api/DBaddin.Mapper.html#DBaddin_Mapper_dbcnn
   commentId: F:DBaddin.Mapper.dbcnn
   fullName: DBaddin.Mapper.dbcnn
   nameWithType: Mapper.dbcnn
-- uid: DBaddin.Mapper.isInteractive
-  name: isInteractive
-  href: api/DBaddin.Mapper.html#DBaddin_Mapper_isInteractive
-  commentId: F:DBaddin.Mapper.isInteractive
-  fullName: DBaddin.Mapper.isInteractive
-  nameWithType: Mapper.isInteractive
+- uid: DBaddin.Mapper.getDBMapperDefinitions
+  name: getDBMapperDefinitions()
+  href: api/DBaddin.Mapper.html#DBaddin_Mapper_getDBMapperDefinitions
+  commentId: M:DBaddin.Mapper.getDBMapperDefinitions
+  fullName: DBaddin.Mapper.getDBMapperDefinitions()
+  nameWithType: Mapper.getDBMapperDefinitions()
+- uid: DBaddin.Mapper.getDBMapperDefinitions*
+  name: getDBMapperDefinitions
+  href: api/DBaddin.Mapper.html#DBaddin_Mapper_getDBMapperDefinitions_
+  commentId: Overload:DBaddin.Mapper.getDBMapperDefinitions
+  isSpec: "True"
+  fullName: DBaddin.Mapper.getDBMapperDefinitions
+  nameWithType: Mapper.getDBMapperDefinitions
+- uid: DBaddin.Mapper.getParametersFromText(System.String,System.Int32@,System.String@,System.String@,System.String@,System.Boolean@,System.String@,System.String@,System.Boolean@)
+  name: getParametersFromText(String, ref Int32, ref String, ref String, ref String, ref Boolean, ref String, ref String, ref Boolean)
+  href: api/DBaddin.Mapper.html#DBaddin_Mapper_getParametersFromText_System_String_System_Int32__System_String__System_String__System_String__System_Boolean__System_String__System_String__System_Boolean__
+  commentId: M:DBaddin.Mapper.getParametersFromText(System.String,System.Int32@,System.String@,System.String@,System.String@,System.Boolean@,System.String@,System.String@,System.Boolean@)
+  name.vb: getParametersFromText(String, ByRef Int32, ByRef String, ByRef String, ByRef String, ByRef Boolean, ByRef String, ByRef String, ByRef Boolean)
+  fullName: DBaddin.Mapper.getParametersFromText(System.String, ref System.Int32, ref System.String, ref System.String, ref System.String, ref System.Boolean, ref System.String, ref System.String, ref System.Boolean)
+  fullName.vb: DBaddin.Mapper.getParametersFromText(System.String, ByRef System.Int32, ByRef System.String, ByRef System.String, ByRef System.String, ByRef System.Boolean, ByRef System.String, ByRef System.String, ByRef System.Boolean)
+  nameWithType: Mapper.getParametersFromText(String, ref Int32, ref String, ref String, ref String, ref Boolean, ref String, ref String, ref Boolean)
+  nameWithType.vb: Mapper.getParametersFromText(String, ByRef Int32, ByRef String, ByRef String, ByRef String, ByRef Boolean, ByRef String, ByRef String, ByRef Boolean)
+- uid: DBaddin.Mapper.getParametersFromText*
+  name: getParametersFromText
+  href: api/DBaddin.Mapper.html#DBaddin_Mapper_getParametersFromText_
+  commentId: Overload:DBaddin.Mapper.getParametersFromText
+  isSpec: "True"
+  fullName: DBaddin.Mapper.getParametersFromText
+  nameWithType: Mapper.getParametersFromText
 - uid: DBaddin.Mapper.openConnection(System.Int32,System.String)
   name: openConnection(Int32, String)
   href: api/DBaddin.Mapper.html#DBaddin_Mapper_openConnection_System_Int32_System_String_
@@ -1362,18 +940,25 @@ references:
   isSpec: "True"
   fullName: DBaddin.Mapper.openConnection
   nameWithType: Mapper.openConnection
-- uid: DBaddin.Mapper.returnedErrorMessages
-  name: returnedErrorMessages
-  href: api/DBaddin.Mapper.html#DBaddin_Mapper_returnedErrorMessages
-  commentId: F:DBaddin.Mapper.returnedErrorMessages
-  fullName: DBaddin.Mapper.returnedErrorMessages
-  nameWithType: Mapper.returnedErrorMessages
-- uid: DBaddin.Mapper.saveRangeToDB(Microsoft.Office.Interop.Excel.Range,System.String,System.String,System.String,System.Int32,System.Boolean,System.String)
-  name: saveRangeToDB(Range, String, String, String, Int32, Boolean, String)
-  href: api/DBaddin.Mapper.html#DBaddin_Mapper_saveRangeToDB_Microsoft_Office_Interop_Excel_Range_System_String_System_String_System_String_System_Int32_System_Boolean_System_String_
-  commentId: M:DBaddin.Mapper.saveRangeToDB(Microsoft.Office.Interop.Excel.Range,System.String,System.String,System.String,System.Int32,System.Boolean,System.String)
-  fullName: DBaddin.Mapper.saveRangeToDB(Microsoft.Office.Interop.Excel.Range, System.String, System.String, System.String, System.Int32, System.Boolean, System.String)
-  nameWithType: Mapper.saveRangeToDB(Range, String, String, String, Int32, Boolean, String)
+- uid: DBaddin.Mapper.saveDBMaps(Microsoft.Office.Interop.Excel.Workbook)
+  name: saveDBMaps(Workbook)
+  href: api/DBaddin.Mapper.html#DBaddin_Mapper_saveDBMaps_Microsoft_Office_Interop_Excel_Workbook_
+  commentId: M:DBaddin.Mapper.saveDBMaps(Microsoft.Office.Interop.Excel.Workbook)
+  fullName: DBaddin.Mapper.saveDBMaps(Microsoft.Office.Interop.Excel.Workbook)
+  nameWithType: Mapper.saveDBMaps(Workbook)
+- uid: DBaddin.Mapper.saveDBMaps*
+  name: saveDBMaps
+  href: api/DBaddin.Mapper.html#DBaddin_Mapper_saveDBMaps_
+  commentId: Overload:DBaddin.Mapper.saveDBMaps
+  isSpec: "True"
+  fullName: DBaddin.Mapper.saveDBMaps
+  nameWithType: Mapper.saveDBMaps
+- uid: DBaddin.Mapper.saveRangeToDB(System.Object,System.String,System.Boolean)
+  name: saveRangeToDB(Object, String, Boolean)
+  href: api/DBaddin.Mapper.html#DBaddin_Mapper_saveRangeToDB_System_Object_System_String_System_Boolean_
+  commentId: M:DBaddin.Mapper.saveRangeToDB(System.Object,System.String,System.Boolean)
+  fullName: DBaddin.Mapper.saveRangeToDB(System.Object, System.String, System.Boolean)
+  nameWithType: Mapper.saveRangeToDB(Object, String, Boolean)
 - uid: DBaddin.Mapper.saveRangeToDB*
   name: saveRangeToDB
   href: api/DBaddin.Mapper.html#DBaddin_Mapper_saveRangeToDB_
@@ -1387,97 +972,301 @@ references:
   commentId: T:DBaddin.MenuHandler
   fullName: DBaddin.MenuHandler
   nameWithType: MenuHandler
-- uid: DBaddin.MenuHandler.#ctor
-  name: MenuHandler()
-  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler__ctor
-  commentId: M:DBaddin.MenuHandler.#ctor
-  fullName: DBaddin.MenuHandler.MenuHandler()
-  nameWithType: MenuHandler.MenuHandler()
-- uid: DBaddin.MenuHandler.#ctor*
-  name: MenuHandler
-  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler__ctor_
-  commentId: Overload:DBaddin.MenuHandler.#ctor
+- uid: DBaddin.MenuHandler.clickCreateButton(ExcelDna.Integration.CustomUI.IRibbonControl)
+  name: clickCreateButton(IRibbonControl)
+  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_clickCreateButton_ExcelDna_Integration_CustomUI_IRibbonControl_
+  commentId: M:DBaddin.MenuHandler.clickCreateButton(ExcelDna.Integration.CustomUI.IRibbonControl)
+  fullName: DBaddin.MenuHandler.clickCreateButton(ExcelDna.Integration.CustomUI.IRibbonControl)
+  nameWithType: MenuHandler.clickCreateButton(IRibbonControl)
+- uid: DBaddin.MenuHandler.clickCreateButton*
+  name: clickCreateButton
+  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_clickCreateButton_
+  commentId: Overload:DBaddin.MenuHandler.clickCreateButton
   isSpec: "True"
-  fullName: DBaddin.MenuHandler.MenuHandler
-  nameWithType: MenuHandler.MenuHandler
-- uid: DBaddin.MenuHandler.buildFileSepMenuCtrl(System.String,ExcelDna.Integration.CustomUI.CommandBarControl,System.String,System.String,System.Int32)
-  name: buildFileSepMenuCtrl(String, CommandBarControl, String, String, Int32)
-  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_buildFileSepMenuCtrl_System_String_ExcelDna_Integration_CustomUI_CommandBarControl_System_String_System_String_System_Int32_
-  commentId: M:DBaddin.MenuHandler.buildFileSepMenuCtrl(System.String,ExcelDna.Integration.CustomUI.CommandBarControl,System.String,System.String,System.Int32)
-  fullName: DBaddin.MenuHandler.buildFileSepMenuCtrl(System.String, ExcelDna.Integration.CustomUI.CommandBarControl, System.String, System.String, System.Int32)
-  nameWithType: MenuHandler.buildFileSepMenuCtrl(String, CommandBarControl, String, String, Int32)
-- uid: DBaddin.MenuHandler.buildFileSepMenuCtrl*
-  name: buildFileSepMenuCtrl
-  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_buildFileSepMenuCtrl_
-  commentId: Overload:DBaddin.MenuHandler.buildFileSepMenuCtrl
+  fullName: DBaddin.MenuHandler.clickCreateButton
+  nameWithType: MenuHandler.clickCreateButton
+- uid: DBaddin.MenuHandler.clickDisableAddin(ExcelDna.Integration.CustomUI.IRibbonControl)
+  name: clickDisableAddin(IRibbonControl)
+  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_clickDisableAddin_ExcelDna_Integration_CustomUI_IRibbonControl_
+  commentId: M:DBaddin.MenuHandler.clickDisableAddin(ExcelDna.Integration.CustomUI.IRibbonControl)
+  fullName: DBaddin.MenuHandler.clickDisableAddin(ExcelDna.Integration.CustomUI.IRibbonControl)
+  nameWithType: MenuHandler.clickDisableAddin(IRibbonControl)
+- uid: DBaddin.MenuHandler.clickDisableAddin*
+  name: clickDisableAddin
+  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_clickDisableAddin_
+  commentId: Overload:DBaddin.MenuHandler.clickDisableAddin
   isSpec: "True"
-  fullName: DBaddin.MenuHandler.buildFileSepMenuCtrl
-  nameWithType: MenuHandler.buildFileSepMenuCtrl
-- uid: DBaddin.MenuHandler.disableBar
-  name: disableBar
-  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_disableBar
-  commentId: F:DBaddin.MenuHandler.disableBar
-  fullName: DBaddin.MenuHandler.disableBar
-  nameWithType: MenuHandler.disableBar
-- uid: DBaddin.MenuHandler.readAllFiles(System.String,ExcelDna.Integration.CustomUI.CommandBarControl)
-  name: readAllFiles(String, CommandBarControl)
-  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_readAllFiles_System_String_ExcelDna_Integration_CustomUI_CommandBarControl_
-  commentId: M:DBaddin.MenuHandler.readAllFiles(System.String,ExcelDna.Integration.CustomUI.CommandBarControl)
-  fullName: DBaddin.MenuHandler.readAllFiles(System.String, ExcelDna.Integration.CustomUI.CommandBarControl)
-  nameWithType: MenuHandler.readAllFiles(String, CommandBarControl)
-- uid: DBaddin.MenuHandler.readAllFiles*
-  name: readAllFiles
-  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_readAllFiles_
-  commentId: Overload:DBaddin.MenuHandler.readAllFiles
+  fullName: DBaddin.MenuHandler.clickDisableAddin
+  nameWithType: MenuHandler.clickDisableAddin
+- uid: DBaddin.MenuHandler.clickjumpButton(ExcelDna.Integration.CustomUI.IRibbonControl)
+  name: clickjumpButton(IRibbonControl)
+  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_clickjumpButton_ExcelDna_Integration_CustomUI_IRibbonControl_
+  commentId: M:DBaddin.MenuHandler.clickjumpButton(ExcelDna.Integration.CustomUI.IRibbonControl)
+  fullName: DBaddin.MenuHandler.clickjumpButton(ExcelDna.Integration.CustomUI.IRibbonControl)
+  nameWithType: MenuHandler.clickjumpButton(IRibbonControl)
+- uid: DBaddin.MenuHandler.clickjumpButton*
+  name: clickjumpButton
+  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_clickjumpButton_
+  commentId: Overload:DBaddin.MenuHandler.clickjumpButton
   isSpec: "True"
-  fullName: DBaddin.MenuHandler.readAllFiles
-  nameWithType: MenuHandler.readAllFiles
-- uid: DBaddin.MyRibbon
-  name: MyRibbon
-  href: api/DBaddin.MyRibbon.html
-  commentId: T:DBaddin.MyRibbon
-  fullName: DBaddin.MyRibbon
-  nameWithType: MyRibbon
-- uid: DBaddin.MyRibbon.ribbonLoaded(ExcelDna.Integration.CustomUI.IRibbonUI)
+  fullName: DBaddin.MenuHandler.clickjumpButton
+  nameWithType: MenuHandler.clickjumpButton
+- uid: DBaddin.MenuHandler.clickpurgetoolbutton(ExcelDna.Integration.CustomUI.IRibbonControl)
+  name: clickpurgetoolbutton(IRibbonControl)
+  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_clickpurgetoolbutton_ExcelDna_Integration_CustomUI_IRibbonControl_
+  commentId: M:DBaddin.MenuHandler.clickpurgetoolbutton(ExcelDna.Integration.CustomUI.IRibbonControl)
+  fullName: DBaddin.MenuHandler.clickpurgetoolbutton(ExcelDna.Integration.CustomUI.IRibbonControl)
+  nameWithType: MenuHandler.clickpurgetoolbutton(IRibbonControl)
+- uid: DBaddin.MenuHandler.clickpurgetoolbutton*
+  name: clickpurgetoolbutton
+  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_clickpurgetoolbutton_
+  commentId: Overload:DBaddin.MenuHandler.clickpurgetoolbutton
+  isSpec: "True"
+  fullName: DBaddin.MenuHandler.clickpurgetoolbutton
+  nameWithType: MenuHandler.clickpurgetoolbutton
+- uid: DBaddin.MenuHandler.clickrefreshData(ExcelDna.Integration.CustomUI.IRibbonControl)
+  name: clickrefreshData(IRibbonControl)
+  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_clickrefreshData_ExcelDna_Integration_CustomUI_IRibbonControl_
+  commentId: M:DBaddin.MenuHandler.clickrefreshData(ExcelDna.Integration.CustomUI.IRibbonControl)
+  fullName: DBaddin.MenuHandler.clickrefreshData(ExcelDna.Integration.CustomUI.IRibbonControl)
+  nameWithType: MenuHandler.clickrefreshData(IRibbonControl)
+- uid: DBaddin.MenuHandler.clickrefreshData*
+  name: clickrefreshData
+  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_clickrefreshData_
+  commentId: Overload:DBaddin.MenuHandler.clickrefreshData
+  isSpec: "True"
+  fullName: DBaddin.MenuHandler.clickrefreshData
+  nameWithType: MenuHandler.clickrefreshData
+- uid: DBaddin.MenuHandler.getConfig(ExcelDna.Integration.CustomUI.IRibbonControl)
+  name: getConfig(IRibbonControl)
+  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_getConfig_ExcelDna_Integration_CustomUI_IRibbonControl_
+  commentId: M:DBaddin.MenuHandler.getConfig(ExcelDna.Integration.CustomUI.IRibbonControl)
+  fullName: DBaddin.MenuHandler.getConfig(ExcelDna.Integration.CustomUI.IRibbonControl)
+  nameWithType: MenuHandler.getConfig(IRibbonControl)
+- uid: DBaddin.MenuHandler.getConfig*
+  name: getConfig
+  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_getConfig_
+  commentId: Overload:DBaddin.MenuHandler.getConfig
+  isSpec: "True"
+  fullName: DBaddin.MenuHandler.getConfig
+  nameWithType: MenuHandler.getConfig
+- uid: DBaddin.MenuHandler.GetCustomUI(System.String)
+  name: GetCustomUI(String)
+  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_GetCustomUI_System_String_
+  commentId: M:DBaddin.MenuHandler.GetCustomUI(System.String)
+  fullName: DBaddin.MenuHandler.GetCustomUI(System.String)
+  nameWithType: MenuHandler.GetCustomUI(String)
+- uid: DBaddin.MenuHandler.GetCustomUI*
+  name: GetCustomUI
+  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_GetCustomUI_
+  commentId: Overload:DBaddin.MenuHandler.GetCustomUI
+  isSpec: "True"
+  fullName: DBaddin.MenuHandler.GetCustomUI
+  nameWithType: MenuHandler.GetCustomUI
+- uid: DBaddin.MenuHandler.getDBConfigMenu(ExcelDna.Integration.CustomUI.IRibbonControl)
+  name: getDBConfigMenu(IRibbonControl)
+  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_getDBConfigMenu_ExcelDna_Integration_CustomUI_IRibbonControl_
+  commentId: M:DBaddin.MenuHandler.getDBConfigMenu(ExcelDna.Integration.CustomUI.IRibbonControl)
+  fullName: DBaddin.MenuHandler.getDBConfigMenu(ExcelDna.Integration.CustomUI.IRibbonControl)
+  nameWithType: MenuHandler.getDBConfigMenu(IRibbonControl)
+- uid: DBaddin.MenuHandler.getDBConfigMenu*
+  name: getDBConfigMenu
+  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_getDBConfigMenu_
+  commentId: Overload:DBaddin.MenuHandler.getDBConfigMenu
+  isSpec: "True"
+  fullName: DBaddin.MenuHandler.getDBConfigMenu
+  nameWithType: MenuHandler.getDBConfigMenu
+- uid: DBaddin.MenuHandler.getDBMapperMenuContent(ExcelDna.Integration.CustomUI.IRibbonControl)
+  name: getDBMapperMenuContent(IRibbonControl)
+  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_getDBMapperMenuContent_ExcelDna_Integration_CustomUI_IRibbonControl_
+  commentId: M:DBaddin.MenuHandler.getDBMapperMenuContent(ExcelDna.Integration.CustomUI.IRibbonControl)
+  fullName: DBaddin.MenuHandler.getDBMapperMenuContent(ExcelDna.Integration.CustomUI.IRibbonControl)
+  nameWithType: MenuHandler.getDBMapperMenuContent(IRibbonControl)
+- uid: DBaddin.MenuHandler.getDBMapperMenuContent*
+  name: getDBMapperMenuContent
+  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_getDBMapperMenuContent_
+  commentId: Overload:DBaddin.MenuHandler.getDBMapperMenuContent
+  isSpec: "True"
+  fullName: DBaddin.MenuHandler.getDBMapperMenuContent
+  nameWithType: MenuHandler.getDBMapperMenuContent
+- uid: DBaddin.MenuHandler.getDBMapperMenuVisible(ExcelDna.Integration.CustomUI.IRibbonControl)
+  name: getDBMapperMenuVisible(IRibbonControl)
+  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_getDBMapperMenuVisible_ExcelDna_Integration_CustomUI_IRibbonControl_
+  commentId: M:DBaddin.MenuHandler.getDBMapperMenuVisible(ExcelDna.Integration.CustomUI.IRibbonControl)
+  fullName: DBaddin.MenuHandler.getDBMapperMenuVisible(ExcelDna.Integration.CustomUI.IRibbonControl)
+  nameWithType: MenuHandler.getDBMapperMenuVisible(IRibbonControl)
+- uid: DBaddin.MenuHandler.getDBMapperMenuVisible*
+  name: getDBMapperMenuVisible
+  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_getDBMapperMenuVisible_
+  commentId: Overload:DBaddin.MenuHandler.getDBMapperMenuVisible
+  isSpec: "True"
+  fullName: DBaddin.MenuHandler.getDBMapperMenuVisible
+  nameWithType: MenuHandler.getDBMapperMenuVisible
+- uid: DBaddin.MenuHandler.GetItemCount(ExcelDna.Integration.CustomUI.IRibbonControl)
+  name: GetItemCount(IRibbonControl)
+  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_GetItemCount_ExcelDna_Integration_CustomUI_IRibbonControl_
+  commentId: M:DBaddin.MenuHandler.GetItemCount(ExcelDna.Integration.CustomUI.IRibbonControl)
+  fullName: DBaddin.MenuHandler.GetItemCount(ExcelDna.Integration.CustomUI.IRibbonControl)
+  nameWithType: MenuHandler.GetItemCount(IRibbonControl)
+- uid: DBaddin.MenuHandler.GetItemCount*
+  name: GetItemCount
+  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_GetItemCount_
+  commentId: Overload:DBaddin.MenuHandler.GetItemCount
+  isSpec: "True"
+  fullName: DBaddin.MenuHandler.GetItemCount
+  nameWithType: MenuHandler.GetItemCount
+- uid: DBaddin.MenuHandler.GetItemID(ExcelDna.Integration.CustomUI.IRibbonControl,System.Int32)
+  name: GetItemID(IRibbonControl, Int32)
+  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_GetItemID_ExcelDna_Integration_CustomUI_IRibbonControl_System_Int32_
+  commentId: M:DBaddin.MenuHandler.GetItemID(ExcelDna.Integration.CustomUI.IRibbonControl,System.Int32)
+  fullName: DBaddin.MenuHandler.GetItemID(ExcelDna.Integration.CustomUI.IRibbonControl, System.Int32)
+  nameWithType: MenuHandler.GetItemID(IRibbonControl, Int32)
+- uid: DBaddin.MenuHandler.GetItemID*
+  name: GetItemID
+  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_GetItemID_
+  commentId: Overload:DBaddin.MenuHandler.GetItemID
+  isSpec: "True"
+  fullName: DBaddin.MenuHandler.GetItemID
+  nameWithType: MenuHandler.GetItemID
+- uid: DBaddin.MenuHandler.GetItemLabel(ExcelDna.Integration.CustomUI.IRibbonControl,System.Int32)
+  name: GetItemLabel(IRibbonControl, Int32)
+  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_GetItemLabel_ExcelDna_Integration_CustomUI_IRibbonControl_System_Int32_
+  commentId: M:DBaddin.MenuHandler.GetItemLabel(ExcelDna.Integration.CustomUI.IRibbonControl,System.Int32)
+  fullName: DBaddin.MenuHandler.GetItemLabel(ExcelDna.Integration.CustomUI.IRibbonControl, System.Int32)
+  nameWithType: MenuHandler.GetItemLabel(IRibbonControl, Int32)
+- uid: DBaddin.MenuHandler.GetItemLabel*
+  name: GetItemLabel
+  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_GetItemLabel_
+  commentId: Overload:DBaddin.MenuHandler.GetItemLabel
+  isSpec: "True"
+  fullName: DBaddin.MenuHandler.GetItemLabel
+  nameWithType: MenuHandler.GetItemLabel
+- uid: DBaddin.MenuHandler.GetSelItem(ExcelDna.Integration.CustomUI.IRibbonControl)
+  name: GetSelItem(IRibbonControl)
+  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_GetSelItem_ExcelDna_Integration_CustomUI_IRibbonControl_
+  commentId: M:DBaddin.MenuHandler.GetSelItem(ExcelDna.Integration.CustomUI.IRibbonControl)
+  fullName: DBaddin.MenuHandler.GetSelItem(ExcelDna.Integration.CustomUI.IRibbonControl)
+  nameWithType: MenuHandler.GetSelItem(IRibbonControl)
+- uid: DBaddin.MenuHandler.GetSelItem*
+  name: GetSelItem
+  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_GetSelItem_
+  commentId: Overload:DBaddin.MenuHandler.GetSelItem
+  isSpec: "True"
+  fullName: DBaddin.MenuHandler.GetSelItem
+  nameWithType: MenuHandler.GetSelItem
+- uid: DBaddin.MenuHandler.getSheetLabel(ExcelDna.Integration.CustomUI.IRibbonControl)
+  name: getSheetLabel(IRibbonControl)
+  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_getSheetLabel_ExcelDna_Integration_CustomUI_IRibbonControl_
+  commentId: M:DBaddin.MenuHandler.getSheetLabel(ExcelDna.Integration.CustomUI.IRibbonControl)
+  fullName: DBaddin.MenuHandler.getSheetLabel(ExcelDna.Integration.CustomUI.IRibbonControl)
+  nameWithType: MenuHandler.getSheetLabel(IRibbonControl)
+- uid: DBaddin.MenuHandler.getSheetLabel*
+  name: getSheetLabel
+  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_getSheetLabel_
+  commentId: Overload:DBaddin.MenuHandler.getSheetLabel
+  isSpec: "True"
+  fullName: DBaddin.MenuHandler.getSheetLabel
+  nameWithType: MenuHandler.getSheetLabel
+- uid: DBaddin.MenuHandler.refreshDBConfigTree(ExcelDna.Integration.CustomUI.IRibbonControl)
+  name: refreshDBConfigTree(IRibbonControl)
+  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_refreshDBConfigTree_ExcelDna_Integration_CustomUI_IRibbonControl_
+  commentId: M:DBaddin.MenuHandler.refreshDBConfigTree(ExcelDna.Integration.CustomUI.IRibbonControl)
+  fullName: DBaddin.MenuHandler.refreshDBConfigTree(ExcelDna.Integration.CustomUI.IRibbonControl)
+  nameWithType: MenuHandler.refreshDBConfigTree(IRibbonControl)
+- uid: DBaddin.MenuHandler.refreshDBConfigTree*
+  name: refreshDBConfigTree
+  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_refreshDBConfigTree_
+  commentId: Overload:DBaddin.MenuHandler.refreshDBConfigTree
+  isSpec: "True"
+  fullName: DBaddin.MenuHandler.refreshDBConfigTree
+  nameWithType: MenuHandler.refreshDBConfigTree
+- uid: DBaddin.MenuHandler.ribbonLoaded(ExcelDna.Integration.CustomUI.IRibbonUI)
   name: ribbonLoaded(IRibbonUI)
-  href: api/DBaddin.MyRibbon.html#DBaddin_MyRibbon_ribbonLoaded_ExcelDna_Integration_CustomUI_IRibbonUI_
-  commentId: M:DBaddin.MyRibbon.ribbonLoaded(ExcelDna.Integration.CustomUI.IRibbonUI)
-  fullName: DBaddin.MyRibbon.ribbonLoaded(ExcelDna.Integration.CustomUI.IRibbonUI)
-  nameWithType: MyRibbon.ribbonLoaded(IRibbonUI)
-- uid: DBaddin.MyRibbon.ribbonLoaded*
+  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_ribbonLoaded_ExcelDna_Integration_CustomUI_IRibbonUI_
+  commentId: M:DBaddin.MenuHandler.ribbonLoaded(ExcelDna.Integration.CustomUI.IRibbonUI)
+  fullName: DBaddin.MenuHandler.ribbonLoaded(ExcelDna.Integration.CustomUI.IRibbonUI)
+  nameWithType: MenuHandler.ribbonLoaded(IRibbonUI)
+- uid: DBaddin.MenuHandler.ribbonLoaded*
   name: ribbonLoaded
-  href: api/DBaddin.MyRibbon.html#DBaddin_MyRibbon_ribbonLoaded_
-  commentId: Overload:DBaddin.MyRibbon.ribbonLoaded
+  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_ribbonLoaded_
+  commentId: Overload:DBaddin.MenuHandler.ribbonLoaded
   isSpec: "True"
-  fullName: DBaddin.MyRibbon.ribbonLoaded
-  nameWithType: MyRibbon.ribbonLoaded
-- uid: DBaddin.tDBFunc
-  name: tDBFunc
-  href: api/DBaddin.tDBFunc.html
-  commentId: T:DBaddin.tDBFunc
-  fullName: DBaddin.tDBFunc
-  nameWithType: tDBFunc
-- uid: DBaddin.tDBFunc.DBCell
-  name: DBCell
-  href: api/DBaddin.tDBFunc.html#DBaddin_tDBFunc_DBCell
-  commentId: F:DBaddin.tDBFunc.DBCell
-  fullName: DBaddin.tDBFunc.DBCell
-  nameWithType: tDBFunc.DBCell
-- uid: DBaddin.tDBFunc.DBCtrl
-  name: DBCtrl
-  href: api/DBaddin.tDBFunc.html#DBaddin_tDBFunc_DBCtrl
-  commentId: F:DBaddin.tDBFunc.DBCtrl
-  fullName: DBaddin.tDBFunc.DBCtrl
-  nameWithType: tDBFunc.DBCtrl
-- uid: DBaddin.tDBFunc.DBList
-  name: DBList
-  href: api/DBaddin.tDBFunc.html#DBaddin_tDBFunc_DBList
-  commentId: F:DBaddin.tDBFunc.DBList
-  fullName: DBaddin.tDBFunc.DBList
-  nameWithType: tDBFunc.DBList
-- uid: DBaddin.tDBFunc.DBRow
-  name: DBRow
-  href: api/DBaddin.tDBFunc.html#DBaddin_tDBFunc_DBRow
-  commentId: F:DBaddin.tDBFunc.DBRow
-  fullName: DBaddin.tDBFunc.DBRow
-  nameWithType: tDBFunc.DBRow
+  fullName: DBaddin.MenuHandler.ribbonLoaded
+  nameWithType: MenuHandler.ribbonLoaded
+- uid: DBaddin.MenuHandler.saveRangeToDBClick(ExcelDna.Integration.CustomUI.IRibbonControl)
+  name: saveRangeToDBClick(IRibbonControl)
+  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_saveRangeToDBClick_ExcelDna_Integration_CustomUI_IRibbonControl_
+  commentId: M:DBaddin.MenuHandler.saveRangeToDBClick(ExcelDna.Integration.CustomUI.IRibbonControl)
+  fullName: DBaddin.MenuHandler.saveRangeToDBClick(ExcelDna.Integration.CustomUI.IRibbonControl)
+  nameWithType: MenuHandler.saveRangeToDBClick(IRibbonControl)
+- uid: DBaddin.MenuHandler.saveRangeToDBClick*
+  name: saveRangeToDBClick
+  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_saveRangeToDBClick_
+  commentId: Overload:DBaddin.MenuHandler.saveRangeToDBClick
+  isSpec: "True"
+  fullName: DBaddin.MenuHandler.saveRangeToDBClick
+  nameWithType: MenuHandler.saveRangeToDBClick
+- uid: DBaddin.MenuHandler.selectItem(ExcelDna.Integration.CustomUI.IRibbonControl,System.String,System.Int32)
+  name: selectItem(IRibbonControl, String, Int32)
+  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_selectItem_ExcelDna_Integration_CustomUI_IRibbonControl_System_String_System_Int32_
+  commentId: M:DBaddin.MenuHandler.selectItem(ExcelDna.Integration.CustomUI.IRibbonControl,System.String,System.Int32)
+  fullName: DBaddin.MenuHandler.selectItem(ExcelDna.Integration.CustomUI.IRibbonControl, System.String, System.Int32)
+  nameWithType: MenuHandler.selectItem(IRibbonControl, String, Int32)
+- uid: DBaddin.MenuHandler.selectItem*
+  name: selectItem
+  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_selectItem_
+  commentId: Overload:DBaddin.MenuHandler.selectItem
+  isSpec: "True"
+  fullName: DBaddin.MenuHandler.selectItem
+  nameWithType: MenuHandler.selectItem
+- uid: DBaddin.MenuHandler.showAbout(ExcelDna.Integration.CustomUI.IRibbonControl)
+  name: showAbout(IRibbonControl)
+  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_showAbout_ExcelDna_Integration_CustomUI_IRibbonControl_
+  commentId: M:DBaddin.MenuHandler.showAbout(ExcelDna.Integration.CustomUI.IRibbonControl)
+  fullName: DBaddin.MenuHandler.showAbout(ExcelDna.Integration.CustomUI.IRibbonControl)
+  nameWithType: MenuHandler.showAbout(IRibbonControl)
+- uid: DBaddin.MenuHandler.showAbout*
+  name: showAbout
+  href: api/DBaddin.MenuHandler.html#DBaddin_MenuHandler_showAbout_
+  commentId: Overload:DBaddin.MenuHandler.showAbout
+  isSpec: "True"
+  fullName: DBaddin.MenuHandler.showAbout
+  nameWithType: MenuHandler.showAbout
+- uid: DBAddinUnitTests
+  name: DBAddinUnitTests
+  href: api/DBAddinUnitTests.html
+  commentId: N:DBAddinUnitTests
+  fullName: DBAddinUnitTests
+  nameWithType: DBAddinUnitTests
+- uid: DBAddinUnitTests.UnitTest1
+  name: UnitTest1
+  href: api/DBAddinUnitTests.UnitTest1.html
+  commentId: T:DBAddinUnitTests.UnitTest1
+  fullName: DBAddinUnitTests.UnitTest1
+  nameWithType: UnitTest1
+- uid: DBAddinUnitTests.UnitTest1.TestBalancedString
+  name: TestBalancedString()
+  href: api/DBAddinUnitTests.UnitTest1.html#DBAddinUnitTests_UnitTest1_TestBalancedString
+  commentId: M:DBAddinUnitTests.UnitTest1.TestBalancedString
+  fullName: DBAddinUnitTests.UnitTest1.TestBalancedString()
+  nameWithType: UnitTest1.TestBalancedString()
+- uid: DBAddinUnitTests.UnitTest1.TestBalancedString*
+  name: TestBalancedString
+  href: api/DBAddinUnitTests.UnitTest1.html#DBAddinUnitTests_UnitTest1_TestBalancedString_
+  commentId: Overload:DBAddinUnitTests.UnitTest1.TestBalancedString
+  isSpec: "True"
+  fullName: DBAddinUnitTests.UnitTest1.TestBalancedString
+  nameWithType: UnitTest1.TestBalancedString
+- uid: DBAddinUnitTests.UnitTest1.TestFunctionSplit
+  name: TestFunctionSplit()
+  href: api/DBAddinUnitTests.UnitTest1.html#DBAddinUnitTests_UnitTest1_TestFunctionSplit
+  commentId: M:DBAddinUnitTests.UnitTest1.TestFunctionSplit
+  fullName: DBAddinUnitTests.UnitTest1.TestFunctionSplit()
+  nameWithType: UnitTest1.TestFunctionSplit()
+- uid: DBAddinUnitTests.UnitTest1.TestFunctionSplit*
+  name: TestFunctionSplit
+  href: api/DBAddinUnitTests.UnitTest1.html#DBAddinUnitTests_UnitTest1_TestFunctionSplit_
+  commentId: Overload:DBAddinUnitTests.UnitTest1.TestFunctionSplit
+  isSpec: "True"
+  fullName: DBAddinUnitTests.UnitTest1.TestFunctionSplit
+  nameWithType: UnitTest1.TestFunctionSplit

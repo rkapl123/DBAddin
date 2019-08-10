@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Class ConfigFiles
    ">
-    <meta name="generator" content="docfx 2.40.11.0">
+    <meta name="generator" content="docfx 2.43.2.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -73,7 +73,8 @@
   
   <h1 id="DBaddin_ConfigFiles" data-uid="DBaddin.ConfigFiles" class="text-break">Class ConfigFiles
   </h1>
-  <div class="markdown level0 summary"></div>
+  <div class="markdown level0 summary"><p>procedures used for loading config files (containing DBFunctions and general sheet content) and building the config menu</p>
+</div>
   <div class="markdown level0 conceptual"></div>
   <div class="inheritance">
     <h5>Inheritance</h5>
@@ -89,17 +90,18 @@
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_ConfigFiles_referenceCell.md&amp;value=---%0Auid%3A%20DBaddin.ConfigFiles.referenceCell%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_ConfigFiles_ConfigMenuXML.md&amp;value=---%0Auid%3A%20DBaddin.ConfigFiles.ConfigMenuXML%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/ConfigFiles.vb/#L6">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/ConfigFiles.vb/#L178">View Source</a>
   </span>
-  <h4 id="DBaddin_ConfigFiles_referenceCell" data-uid="DBaddin.ConfigFiles.referenceCell">referenceCell</h4>
-  <div class="markdown level1 summary"></div>
+  <h4 id="DBaddin_ConfigFiles_ConfigMenuXML" data-uid="DBaddin.ConfigFiles.ConfigMenuXML">ConfigMenuXML</h4>
+  <div class="markdown level1 summary"><p>tree menu stored here</p>
+</div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static Range referenceCell</code></pre>
+    <pre><code class="lang-csharp hljs">public static string ConfigMenuXML</code></pre>
   </div>
   <h5 class="fieldValue">Field Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -111,7 +113,67 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Microsoft.Office.Interop.Excel.Range</span></td>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_ConfigFiles_ConfigStoreFolder.md&amp;value=---%0Auid%3A%20DBaddin.ConfigFiles.ConfigStoreFolder%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/ConfigFiles.vb/#L9">View Source</a>
+  </span>
+  <h4 id="DBaddin_ConfigFiles_ConfigStoreFolder" data-uid="DBaddin.ConfigFiles.ConfigStoreFolder">ConfigStoreFolder</h4>
+  <div class="markdown level1 summary"><p>the folder used to store predefined DB item definitions</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static string ConfigStoreFolder</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_ConfigFiles_specialConfigStoreFolders.md&amp;value=---%0Auid%3A%20DBaddin.ConfigFiles.specialConfigStoreFolders%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/ConfigFiles.vb/#L11">View Source</a>
+  </span>
+  <h4 id="DBaddin_ConfigFiles_specialConfigStoreFolders" data-uid="DBaddin.ConfigFiles.specialConfigStoreFolders">specialConfigStoreFolders</h4>
+  <div class="markdown level1 summary"><p>Array of special ConfigStoreFolders for non default treatment of Name Separation (Camelcase) and max depth</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static string[] specialConfigStoreFolders</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span>[]</td>
         <td></td>
       </tr>
     </tbody>
@@ -120,50 +182,26 @@
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_ConfigFiles_convertAddressOfDBMakeControl_System_String__System_String_.md&amp;value=---%0Auid%3A%20DBaddin.ConfigFiles.convertAddressOfDBMakeControl(System.String%40%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_ConfigFiles_createConfigTreeMenu.md&amp;value=---%0Auid%3A%20DBaddin.ConfigFiles.createConfigTreeMenu%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/ConfigFiles.vb/#L111">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/ConfigFiles.vb/#L187">View Source</a>
   </span>
-  <a id="DBaddin_ConfigFiles_convertAddressOfDBMakeControl_" data-uid="DBaddin.ConfigFiles.convertAddressOfDBMakeControl*"></a>
-  <h4 id="DBaddin_ConfigFiles_convertAddressOfDBMakeControl_System_String__System_String_" data-uid="DBaddin.ConfigFiles.convertAddressOfDBMakeControl(System.String@,System.String)">convertAddressOfDBMakeControl(ref String, String)</h4>
-  <div class="markdown level1 summary"><p>converts the two string specified addresses in DBMakeControl (controlLocation and dataTargetRange)</p>
+  <a id="DBaddin_ConfigFiles_createConfigTreeMenu_" data-uid="DBaddin.ConfigFiles.createConfigTreeMenu*"></a>
+  <h4 id="DBaddin_ConfigFiles_createConfigTreeMenu" data-uid="DBaddin.ConfigFiles.createConfigTreeMenu">createConfigTreeMenu()</h4>
+  <div class="markdown level1 summary"><p>creates the Config tree menu by reading the menu elements from the config store folder files/subfolders</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static void convertAddressOfDBMakeControl(ref string cellToBeStoredContent, string convertMode)</code></pre>
+    <pre><code class="lang-csharp hljs">public static void createConfigTreeMenu()</code></pre>
   </div>
-  <h5 class="parameters">Parameters</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Name</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">System.String</span></td>
-        <td><span class="parametername">cellToBeStoredContent</span></td>
-        <td><p>content of cell containing dbmakecontrol function</p>
-</td>
-      </tr>
-      <tr>
-        <td><span class="xref">System.String</span></td>
-        <td><span class="parametername">convertMode</span></td>
-        <td><p>from relative to absolute Address: toAbsolute&quot;; from absolute to relative Address: toRelative</p>
-</td>
-      </tr>
-    </tbody>
-  </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
     <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_ConfigFiles_createFunctionsInCells_Microsoft_Office_Interop_Excel_Range_System_Object__.md&amp;value=---%0Auid%3A%20DBaddin.ConfigFiles.createFunctionsInCells(Microsoft.Office.Interop.Excel.Range%2CSystem.Object%40)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/ConfigFiles.vb/#L46">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/ConfigFiles.vb/#L70">View Source</a>
   </span>
   <a id="DBaddin_ConfigFiles_createFunctionsInCells_" data-uid="DBaddin.ConfigFiles.createFunctionsInCells*"></a>
   <h4 id="DBaddin_ConfigFiles_createFunctionsInCells_Microsoft_Office_Interop_Excel_Range_System_Object__" data-uid="DBaddin.ConfigFiles.createFunctionsInCells(Microsoft.Office.Interop.Excel.Range,System.Object@)">createFunctionsInCells(Range, ref Object)</h4>
@@ -172,7 +210,7 @@
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static void createFunctionsInCells(Range referenceCell, ref object ItemLineDef)</code></pre>
+    <pre><code class="lang-csharp hljs">public static void createFunctionsInCells(Range originCell, ref object ItemLineDef)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -186,8 +224,8 @@
     <tbody>
       <tr>
         <td><span class="xref">Microsoft.Office.Interop.Excel.Range</span></td>
-        <td><span class="parametername">referenceCell</span></td>
-        <td><p>reference Cell where all functions relative addresses are related to</p>
+        <td><span class="parametername">originCell</span></td>
+        <td><p>original reference Cell</p>
 </td>
       </tr>
       <tr>
@@ -200,198 +238,14 @@
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_ConfigFiles_getRangeFromAbsolute_System_String_System_Int64_System_Int64_Microsoft_Office_Interop_Excel_Range_.md&amp;value=---%0Auid%3A%20DBaddin.ConfigFiles.getRangeFromAbsolute(System.String%2CSystem.Int64%2CSystem.Int64%2CMicrosoft.Office.Interop.Excel.Range)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/ConfigFiles.vb/#L269">View Source</a>
-  </span>
-  <a id="DBaddin_ConfigFiles_getRangeFromAbsolute_" data-uid="DBaddin.ConfigFiles.getRangeFromAbsolute*"></a>
-  <h4 id="DBaddin_ConfigFiles_getRangeFromAbsolute_System_String_System_Int64_System_Int64_Microsoft_Office_Interop_Excel_Range_" data-uid="DBaddin.ConfigFiles.getRangeFromAbsolute(System.String,System.Int64,System.Int64,Microsoft.Office.Interop.Excel.Range)">getRangeFromAbsolute(String, Int64, Int64, Range)</h4>
-  <div class="markdown level1 summary"><p>provides either the range from the target cell given in cellAddress
-          or the range of the default target cell in case cellAddress is not given
-          default target cells are defined by defaultRow and defaultCol,
-          which are the default offsets from originCell (the function&apos;s target cell)</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static Range getRangeFromAbsolute(string cellAddress, long defaultRow = 0L, long defaultCol = 0L, Range originCell = null)</code></pre>
-  </div>
-  <h5 class="parameters">Parameters</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Name</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">System.String</span></td>
-        <td><span class="parametername">cellAddress</span></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td><span class="xref">System.Int64</span></td>
-        <td><span class="parametername">defaultRow</span></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td><span class="xref">System.Int64</span></td>
-        <td><span class="parametername">defaultCol</span></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td><span class="xref">Microsoft.Office.Interop.Excel.Range</span></td>
-        <td><span class="parametername">originCell</span></td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
-  <h5 class="returns">Returns</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">Microsoft.Office.Interop.Excel.Range</span></td>
-        <td><p>the target range</p>
-</td>
-      </tr>
-    </tbody>
-  </table>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
-    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_ConfigFiles_getRelAddress_Microsoft_Office_Interop_Excel_Range_Microsoft_Office_Interop_Excel_Range_.md&amp;value=---%0Auid%3A%20DBaddin.ConfigFiles.getRelAddress(Microsoft.Office.Interop.Excel.Range%2CMicrosoft.Office.Interop.Excel.Range)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/ConfigFiles.vb/#L291">View Source</a>
-  </span>
-  <a id="DBaddin_ConfigFiles_getRelAddress_" data-uid="DBaddin.ConfigFiles.getRelAddress*"></a>
-  <h4 id="DBaddin_ConfigFiles_getRelAddress_Microsoft_Office_Interop_Excel_Range_Microsoft_Office_Interop_Excel_Range_" data-uid="DBaddin.ConfigFiles.getRelAddress(Microsoft.Office.Interop.Excel.Range,Microsoft.Office.Interop.Excel.Range)">getRelAddress(Range, Range)</h4>
-  <div class="markdown level1 summary"><p>retrieve cell-address from theTargetCell as R1C1 relative style relative to relativeToCell
-            (including potential prepended worksheet if theTargetCell&apos;s Parentsheet Is Not referenceSheet)</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static string getRelAddress(Range theTargetCell, Range relativeToCell)</code></pre>
-  </div>
-  <h5 class="parameters">Parameters</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Name</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">Microsoft.Office.Interop.Excel.Range</span></td>
-        <td><span class="parametername">theTargetCell</span></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td><span class="xref">Microsoft.Office.Interop.Excel.Range</span></td>
-        <td><span class="parametername">relativeToCell</span></td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
-  <h5 class="returns">Returns</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">System.String</span></td>
-        <td><p>the relative cell-address</p>
-</td>
-      </tr>
-    </tbody>
-  </table>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
-    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_ConfigFiles_getRowOrCol_System_String_System_Boolean_System_Boolean_.md&amp;value=---%0Auid%3A%20DBaddin.ConfigFiles.getRowOrCol(System.String%2CSystem.Boolean%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/ConfigFiles.vb/#L212">View Source</a>
-  </span>
-  <a id="DBaddin_ConfigFiles_getRowOrCol_" data-uid="DBaddin.ConfigFiles.getRowOrCol*"></a>
-  <h4 id="DBaddin_ConfigFiles_getRowOrCol_System_String_System_Boolean_System_Boolean_" data-uid="DBaddin.ConfigFiles.getRowOrCol(System.String,System.Boolean,System.Boolean)">getRowOrCol(String, Boolean, Boolean)</h4>
-  <div class="markdown level1 summary"><p>parse row or column out of RC style reference adresses</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static long getRowOrCol(string relAddr, bool getRow, bool getBottomRight = false)</code></pre>
-  </div>
-  <h5 class="parameters">Parameters</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Name</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">System.String</span></td>
-        <td><span class="parametername">relAddr</span></td>
-        <td><p>RC style reference adresses</p>
-</td>
-      </tr>
-      <tr>
-        <td><span class="xref">System.Boolean</span></td>
-        <td><span class="parametername">getRow</span></td>
-        <td><p>get the row (true) or column (false)</p>
-</td>
-      </tr>
-      <tr>
-        <td><span class="xref">System.Boolean</span></td>
-        <td><span class="parametername">getBottomRight</span></td>
-        <td><p>if we have a multi cell range ((topleftAddress):(bottomrightAddress)) then get the row or column from the bottomright part</p>
-</td>
-      </tr>
-    </tbody>
-  </table>
-  <h5 class="returns">Returns</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">System.Int64</span></td>
-        <td><p>parsed row (getRow = true) or column (getRow = false) from address</p>
-</td>
-      </tr>
-    </tbody>
-  </table>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
     <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_ConfigFiles_loadConfig_System_String_.md&amp;value=---%0Auid%3A%20DBaddin.ConfigFiles.loadConfig(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/ConfigFiles.vb/#L18">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/ConfigFiles.vb/#L15">View Source</a>
   </span>
   <a id="DBaddin_ConfigFiles_loadConfig_" data-uid="DBaddin.ConfigFiles.loadConfig*"></a>
   <h4 id="DBaddin_ConfigFiles_loadConfig_System_String_" data-uid="DBaddin.ConfigFiles.loadConfig(System.String)">loadConfig(String)</h4>
-  <div class="markdown level1 summary"><p>loads config from file given in theFileName; if theFileName not given, displays file dialog for loading several cells to a configuration file (.XCL)</p>
+  <div class="markdown level1 summary"><p>loads config from file given in theFileName</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
@@ -416,36 +270,6 @@
       </tr>
     </tbody>
   </table>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
-    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_ConfigFiles_referenceSheet.md&amp;value=---%0Auid%3A%20DBaddin.ConfigFiles.referenceSheet%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/ConfigFiles.vb/#L12">View Source</a>
-  </span>
-  <a id="DBaddin_ConfigFiles_referenceSheet_" data-uid="DBaddin.ConfigFiles.referenceSheet*"></a>
-  <h4 id="DBaddin_ConfigFiles_referenceSheet" data-uid="DBaddin.ConfigFiles.referenceSheet">referenceSheet()</h4>
-  <div class="markdown level1 summary"></div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static Worksheet referenceSheet()</code></pre>
-  </div>
-  <h5 class="returns">Returns</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">Microsoft.Office.Interop.Excel.Worksheet</span></td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
 </article>
           </div>
           
@@ -457,7 +281,7 @@
                     <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_ConfigFiles.md&amp;value=---%0Auid%3A%20DBaddin.ConfigFiles%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
                   </li>
                   <li>
-                    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/ConfigFiles.vb/#L5" class="contribution-link">View Source</a>
+                    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/ConfigFiles.vb/#L7" class="contribution-link">View Source</a>
                   </li>
                 </ul>
               </div>

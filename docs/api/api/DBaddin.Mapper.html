@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Class Mapper
    ">
-    <meta name="generator" content="docfx 2.40.11.0">
+    <meta name="generator" content="docfx 2.43.2.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -73,63 +73,18 @@
   
   <h1 id="DBaddin_Mapper" data-uid="DBaddin.Mapper" class="text-break">Class Mapper
   </h1>
-  <div class="markdown level0 summary"></div>
+  <div class="markdown level0 summary"><p>Contains Mapper function saveRangeToDB for storing/updating tabular excel data and some helper functions</p>
+</div>
   <div class="markdown level0 conceptual"></div>
   <div class="inheritance">
     <h5>Inheritance</h5>
-    <div class="level0"><span class="xref">System.Object</span></div>
-    <div class="level1"><span class="xref">Mapper</span></div>
-  </div>
-  <div class="inheritedMembers">
-    <h5>Inherited Members</h5>
-    <div>
-      <span class="xref">System.Object.ToString()</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.Equals(System.Object)</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.GetHashCode()</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.GetType()</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.Finalize()</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.MemberwiseClone()</span>
-    </div>
+    <div class="level0"><span class="xref">Mapper</span></div>
   </div>
   <h6><strong>Namespace</strong>: <a class="xref" href="DBaddin.html">DBaddin</a></h6>
   <h6><strong>Assembly</strong>: DBaddin.dll</h6>
   <h5 id="DBaddin_Mapper_syntax">Syntax</h5>
   <div class="codewrapper">
     <pre><code class="lang-csharp hljs">public class Mapper</code></pre>
-  </div>
-  <h3 id="constructors">Constructors
-  </h3>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
-    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Mapper__ctor.md&amp;value=---%0Auid%3A%20DBaddin.Mapper.%23ctor%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Mapper.vb/#L250">View Source</a>
-  </span>
-  <a id="DBaddin_Mapper__ctor_" data-uid="DBaddin.Mapper.#ctor*"></a>
-  <h4 id="DBaddin_Mapper__ctor" data-uid="DBaddin.Mapper.#ctor">Mapper()</h4>
-  <div class="markdown level1 summary"><p>new Mapper instances are always interactive by default. If you want automation mode, set isInteractive to false before calling saveRangeToDB</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public Mapper()</code></pre>
   </div>
   <h3 id="fields">Fields
   </h3>
@@ -138,7 +93,7 @@
     <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Mapper_dbcnn.md&amp;value=---%0Auid%3A%20DBaddin.Mapper.dbcnn%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Mapper.vb/#L14">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Mapper.vb/#L11">View Source</a>
   </span>
   <h4 id="DBaddin_Mapper_dbcnn" data-uid="DBaddin.Mapper.dbcnn">dbcnn</h4>
   <div class="markdown level1 summary"><p>main db connection For mapper</p>
@@ -146,7 +101,7 @@
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public Connection dbcnn</code></pre>
+    <pre><code class="lang-csharp hljs">public static Connection dbcnn</code></pre>
   </div>
   <h5 class="fieldValue">Field Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -163,23 +118,123 @@
       </tr>
     </tbody>
   </table>
+  <h3 id="methods">Methods
+  </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Mapper_isInteractive.md&amp;value=---%0Auid%3A%20DBaddin.Mapper.isInteractive%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Mapper_createDBMapper.md&amp;value=---%0Auid%3A%20DBaddin.Mapper.createDBMapper%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Mapper.vb/#L17">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Mapper.vb/#L356">View Source</a>
   </span>
-  <h4 id="DBaddin_Mapper_isInteractive" data-uid="DBaddin.Mapper.isInteractive">isInteractive</h4>
-  <div class="markdown level1 summary"><p>should the Mapper instance be used interactively, thus giving error messages to the user
-or used in automation mode (invoked by VBA, needs to be explicitly set), collecting error messages for later retrieval</p>
+  <a id="DBaddin_Mapper_createDBMapper_" data-uid="DBaddin.Mapper.createDBMapper*"></a>
+  <h4 id="DBaddin_Mapper_createDBMapper" data-uid="DBaddin.Mapper.createDBMapper">createDBMapper()</h4>
+  <div class="markdown level1 summary"><p>creates a DBMap at the current active cell</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public bool isInteractive</code></pre>
+    <pre><code class="lang-csharp hljs">public static void createDBMapper()</code></pre>
   </div>
-  <h5 class="fieldValue">Field Value</h5>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Mapper_getDBMapperDefinitions.md&amp;value=---%0Auid%3A%20DBaddin.Mapper.getDBMapperDefinitions%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Mapper.vb/#L258">View Source</a>
+  </span>
+  <a id="DBaddin_Mapper_getDBMapperDefinitions_" data-uid="DBaddin.Mapper.getDBMapperDefinitions*"></a>
+  <h4 id="DBaddin_Mapper_getDBMapperDefinitions" data-uid="DBaddin.Mapper.getDBMapperDefinitions">getDBMapperDefinitions()</h4>
+  <div class="markdown level1 summary"><p>gets defined named ranges for DBMapper invocation in the current workbook and updates Ribbon with it</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static void getDBMapperDefinitions()</code></pre>
+  </div>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Mapper_getParametersFromText_System_String_System_Int32__System_String__System_String__System_String__System_Boolean__System_String__System_String__System_Boolean__.md&amp;value=---%0Auid%3A%20DBaddin.Mapper.getParametersFromText(System.String%2CSystem.Int32%40%2CSystem.String%40%2CSystem.String%40%2CSystem.String%40%2CSystem.Boolean%40%2CSystem.String%40%2CSystem.String%40%2CSystem.Boolean%40)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Mapper.vb/#L315">View Source</a>
+  </span>
+  <a id="DBaddin_Mapper_getParametersFromText_" data-uid="DBaddin.Mapper.getParametersFromText*"></a>
+  <h4 id="DBaddin_Mapper_getParametersFromText_System_String_System_Int32__System_String__System_String__System_String__System_Boolean__System_String__System_String__System_Boolean__" data-uid="DBaddin.Mapper.getParametersFromText(System.String,System.Int32@,System.String@,System.String@,System.String@,System.Boolean@,System.String@,System.String@,System.Boolean@)">getParametersFromText(String, ref Int32, ref String, ref String, ref String, ref Boolean, ref String, ref String, ref Boolean)</h4>
+  <div class="markdown level1 summary"><p>get parameters from passed paramText</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool getParametersFromText(string paramText, ref int env, ref string tableName, ref string primKeysStr, ref string database, ref bool insertIfMissing, ref string executeAdditionalProc, ref string ignoreColumns, ref bool storeDBMapOnSave)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">paramText</span></td>
+        <td><p>paramtext to be parsed, currently only saveRangeToDB params</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">env</span></td>
+        <td><p>Environment (integer) where connection id should be taken from (if not existing, take from selectedEnvironment)</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">tableName</span></td>
+        <td><p>Database Table, where Data is to be stored</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">primKeysStr</span></td>
+        <td><p>String containing primary Key names for updating table data, comma separated</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">database</span></td>
+        <td><p>Database to store to</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">insertIfMissing</span></td>
+        <td><p>if set, then insert row into table if primary key is missing there. Default = False (only update)</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">executeAdditionalProc</span></td>
+        <td><p>additional stored procedure to be executed after saving</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">ignoreColumns</span></td>
+        <td><p>columns to be ignored (helper columns)</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">storeDBMapOnSave</span></td>
+        <td><p>should DBMap be saved on Excel Saving? (default no)</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
   <table class="table table-bordered table-striped table-condensed">
     <thead>
       <tr>
@@ -196,42 +251,10 @@ or used in automation mode (invoked by VBA, needs to be explicitly set), collect
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Mapper_returnedErrorMessages.md&amp;value=---%0Auid%3A%20DBaddin.Mapper.returnedErrorMessages%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Mapper.vb/#L19">View Source</a>
-  </span>
-  <h4 id="DBaddin_Mapper_returnedErrorMessages" data-uid="DBaddin.Mapper.returnedErrorMessages">returnedErrorMessages</h4>
-  <div class="markdown level1 summary"><p>if Mapper instance is not interactive, Log procedures store all messages here...</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public string returnedErrorMessages</code></pre>
-  </div>
-  <h5 class="fieldValue">Field Value</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">System.String</span></td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
-  <h3 id="methods">Methods
-  </h3>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
     <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Mapper_openConnection_System_Int32_System_String_.md&amp;value=---%0Auid%3A%20DBaddin.Mapper.openConnection(System.Int32%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Mapper.vb/#L258">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Mapper.vb/#L227">View Source</a>
   </span>
   <a id="DBaddin_Mapper_openConnection_" data-uid="DBaddin.Mapper.openConnection*"></a>
   <h4 id="DBaddin_Mapper_openConnection_System_Int32_System_String_" data-uid="DBaddin.Mapper.openConnection(System.Int32,System.String)">openConnection(Int32, String)</h4>
@@ -240,7 +263,7 @@ or used in automation mode (invoked by VBA, needs to be explicitly set), collect
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public bool openConnection(int env, string database)</code></pre>
+    <pre><code class="lang-csharp hljs">public static bool openConnection(int env, string database)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -284,22 +307,19 @@ or used in automation mode (invoked by VBA, needs to be explicitly set), collect
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Mapper_saveRangeToDB_Microsoft_Office_Interop_Excel_Range_System_String_System_String_System_String_System_Int32_System_Boolean_System_String_.md&amp;value=---%0Auid%3A%20DBaddin.Mapper.saveRangeToDB(Microsoft.Office.Interop.Excel.Range%2CSystem.String%2CSystem.String%2CSystem.String%2CSystem.Int32%2CSystem.Boolean%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Mapper_saveDBMaps_Microsoft_Office_Interop_Excel_Workbook_.md&amp;value=---%0Auid%3A%20DBaddin.Mapper.saveDBMaps(Microsoft.Office.Interop.Excel.Workbook)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Mapper.vb/#L33">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Mapper.vb/#L293">View Source</a>
   </span>
-  <a id="DBaddin_Mapper_saveRangeToDB_" data-uid="DBaddin.Mapper.saveRangeToDB*"></a>
-  <h4 id="DBaddin_Mapper_saveRangeToDB_Microsoft_Office_Interop_Excel_Range_System_String_System_String_System_String_System_Int32_System_Boolean_System_String_" data-uid="DBaddin.Mapper.saveRangeToDB(Microsoft.Office.Interop.Excel.Range,System.String,System.String,System.String,System.Int32,System.Boolean,System.String)">saveRangeToDB(Range, String, String, String, Int32, Boolean, String)</h4>
-  <div class="markdown level1 summary"><p>dump data given in dataRange to a database table specified by tableName and connID
-this database table can have multiple primary columns specified by primKeysStr
-assumption: layout of dataRange is
-primKey1Val,primKey2Val,..,primKeyNVal,DataCol1Val,DataCol2Val,..,DataColNVal</p>
+  <a id="DBaddin_Mapper_saveDBMaps_" data-uid="DBaddin.Mapper.saveDBMaps*"></a>
+  <h4 id="DBaddin_Mapper_saveDBMaps_Microsoft_Office_Interop_Excel_Workbook_" data-uid="DBaddin.Mapper.saveDBMaps(Microsoft.Office.Interop.Excel.Workbook)">saveDBMaps(Workbook)</h4>
+  <div class="markdown level1 summary"><p>saves defined DBMaps (depending on configuration) during workbook saving</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public bool saveRangeToDB(Range DataRange, string tableName, string primKeysStr, string database, int env = 1, bool insertIfMissing = false, string executeAdditionalProc = null)</code></pre>
+    <pre><code class="lang-csharp hljs">public static void saveDBMaps(Workbook Wb)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -312,61 +332,58 @@ primKey1Val,primKey2Val,..,primKeyNVal,DataCol1Val,DataCol2Val,..,DataColNVal</p
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Microsoft.Office.Interop.Excel.Range</span></td>
+        <td><span class="xref">Microsoft.Office.Interop.Excel.Workbook</span></td>
+        <td><span class="parametername">Wb</span></td>
+        <td><p>active workbook that is being saved</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Mapper_saveRangeToDB_System_Object_System_String_System_Boolean_.md&amp;value=---%0Auid%3A%20DBaddin.Mapper.saveRangeToDB(System.Object%2CSystem.String%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Mapper.vb/#L20">View Source</a>
+  </span>
+  <a id="DBaddin_Mapper_saveRangeToDB_" data-uid="DBaddin.Mapper.saveRangeToDB*"></a>
+  <h4 id="DBaddin_Mapper_saveRangeToDB_System_Object_System_String_System_Boolean_" data-uid="DBaddin.Mapper.saveRangeToDB(System.Object,System.String,System.Boolean)">saveRangeToDB(Object, String, Boolean)</h4>
+  <div class="markdown level1 summary"><p>dump data given in dataRange to a database table specified by tableName and connID
+this database table can have multiple primary columns specified by primKeysStr
+assumption: layout of dataRange is
+primKey1Val,primKey2Val,..,primKeyNVal,DataCol1Val,DataCol2Val,..,DataColNVal</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static void saveRangeToDB(object DataRange, string DBMapperName, bool WbIsSaving = false)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Object</span></td>
         <td><span class="parametername">DataRange</span></td>
         <td><p>Excel Range, where Data is taken from</p>
 </td>
       </tr>
       <tr>
         <td><span class="xref">System.String</span></td>
-        <td><span class="parametername">tableName</span></td>
-        <td><p>Database Table, where Data is to be stored</p>
-</td>
-      </tr>
-      <tr>
-        <td><span class="xref">System.String</span></td>
-        <td><span class="parametername">primKeysStr</span></td>
-        <td><p>String containing primary Key names for updating table data, comma separated</p>
-</td>
-      </tr>
-      <tr>
-        <td><span class="xref">System.String</span></td>
-        <td><span class="parametername">database</span></td>
-        <td><p>Database to replace D</p>
-</td>
-      </tr>
-      <tr>
-        <td><span class="xref">System.Int32</span></td>
-        <td><span class="parametername">env</span></td>
-        <td><p>Environment where connection id should be taken from</p>
+        <td><span class="parametername">DBMapperName</span></td>
+        <td><p>Name of DBMap for error messages</p>
 </td>
       </tr>
       <tr>
         <td><span class="xref">System.Boolean</span></td>
-        <td><span class="parametername">insertIfMissing</span></td>
-        <td><p>then insert row into table if primary key is missing there. Default = False (only update)</p>
-</td>
-      </tr>
-      <tr>
-        <td><span class="xref">System.String</span></td>
-        <td><span class="parametername">executeAdditionalProc</span></td>
-        <td><p>additional stored procedure to be executed after saving</p>
-</td>
-      </tr>
-    </tbody>
-  </table>
-  <h5 class="returns">Returns</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">System.Boolean</span></td>
-        <td><p>True if successful, false in case of errors.</p>
+        <td><span class="parametername">WbIsSaving</span></td>
+        <td><p>special flag to indicate calling of the procedure during saving of the Workbook</p>
 </td>
       </tr>
     </tbody>
@@ -382,7 +399,7 @@ primKey1Val,primKey2Val,..,primKeyNVal,DataCol1Val,DataCol2Val,..,DataColNVal</p
                     <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Mapper.md&amp;value=---%0Auid%3A%20DBaddin.Mapper%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
                   </li>
                   <li>
-                    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Mapper.vb/#L12" class="contribution-link">View Source</a>
+                    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Mapper.vb/#L8" class="contribution-link">View Source</a>
                   </li>
                 </ul>
               </div>

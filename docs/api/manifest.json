@@ -9,10 +9,10 @@
       "output": {
         ".html": {
           "relative_path": "api/index.html",
-          "hash": "uhOHWyW1VCFNdAXiDT4fiw=="
+          "hash": "4Uxm4k7WJZzkUCVvEmaGjw=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -21,10 +21,10 @@
       "output": {
         ".html": {
           "relative_path": "articles/intro.html",
-          "hash": "hq2jP5v/m3+WrLkatSP73g=="
+          "hash": "1pCRCoL1WtWwH9SiLO6Avg=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -45,10 +45,46 @@
       "output": {
         ".html": {
           "relative_path": "index.html",
-          "hash": "glApwt3rFZY0GjVltbn7pw=="
+          "hash": "16XIUgCJQoBN25rAZeq2CQ=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/DBAddinUnitTests.UnitTest1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DBAddinUnitTests.UnitTest1.html",
+          "hash": "CUqvj1t5PUCXW5x3a9+AjA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/DBAddinUnitTests.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DBAddinUnitTests.html",
+          "hash": "QNDD3qB4eL3VlCz1TCr0fQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/DBaddin.AboutBox1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DBaddin.AboutBox1.html",
+          "hash": "/qu3Yv3lm6h5W23KnUVjaQ=="
+        }
+      },
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -57,22 +93,22 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.AddInEvents.html",
-          "hash": "JpYCW/mHouRdZKdDgZyCpg=="
+          "hash": "QsyBM3Rc7pv0LTCcicdlIw=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/api/DBaddin.CommonFuncs.yml",
+      "source_relative_path": "obj/api/DBaddin.CheckTypeFld.yml",
       "output": {
         ".html": {
-          "relative_path": "api/DBaddin.CommonFuncs.html",
-          "hash": "DheABsWDT8e9rdjYU2k4Ew=="
+          "relative_path": "api/DBaddin.CheckTypeFld.html",
+          "hash": "CEhAdJGjDl0IlwzMfG2CnA=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -81,46 +117,46 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.ConfigFiles.html",
-          "hash": "aVk8rSXaBmH2aBo6GNjabA=="
+          "hash": "yn11JgJ3bSyMKqpEMpU2Sw=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/api/DBaddin.ContainerCalcMsgs.yml",
+      "source_relative_path": "obj/api/DBaddin.ContainedStatusMsg.yml",
       "output": {
         ".html": {
-          "relative_path": "api/DBaddin.ContainerCalcMsgs.html",
-          "hash": "eGtWzSlp6v31hzGCFUQlFg=="
+          "relative_path": "api/DBaddin.ContainedStatusMsg.html",
+          "hash": "MJzPIpTXy5LMP5OdRtaaqw=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/api/DBaddin.ContainerStatusMsgs.yml",
+      "source_relative_path": "obj/api/DBaddin.DBAddin.yml",
       "output": {
         ".html": {
-          "relative_path": "api/DBaddin.ContainerStatusMsgs.html",
-          "hash": "jeLdVjnE4E8zkPTS/fApLQ=="
+          "relative_path": "api/DBaddin.DBAddin.html",
+          "hash": "S2CxwPJ2hFrVGQybmwI9eg=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/api/DBaddin.DBFuncEventHandler.yml",
+      "source_relative_path": "obj/api/DBaddin.DBMapperCreate.yml",
       "output": {
         ".html": {
-          "relative_path": "api/DBaddin.DBFuncEventHandler.html",
-          "hash": "biawraPUDarC90zt6dJYEg=="
+          "relative_path": "api/DBaddin.DBMapperCreate.html",
+          "hash": "+AHQPV2E3+GRJbhslGawhw=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -129,22 +165,10 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.Functions.html",
-          "hash": "wqcjdyt9N4Y+tymvRaYH6Q=="
+          "hash": "On+LQMT7UUgpIotiEkekeg=="
         }
       },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "obj/api/DBaddin.Globals.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/DBaddin.Globals.html",
-          "hash": "kLMB4mmqE7kyoTD8LyJKIA=="
-        }
-      },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -153,10 +177,10 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.Mapper.html",
-          "hash": "f6SyhCH9Kxyv5ESPMBT1FQ=="
+          "hash": "ZFw2HM6W1JIF4399Q7s5iw=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -165,58 +189,10 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.MenuHandler.html",
-          "hash": "Ibb2fu22rBdgWLJNszlMiA=="
+          "hash": "oYhCP3ioCUSj6jWqmcJKGA=="
         }
       },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "obj/api/DBaddin.MyRibbon.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/DBaddin.MyRibbon.html",
-          "hash": "KPH/Vgb2XtkPoB8maVt2Lg=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "obj/api/DBaddin.checkTypeFld.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/DBaddin.checkTypeFld.html",
-          "hash": "pzpEYMrieVze3E1j7HDrvg=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "obj/api/DBaddin.dbsheetErrReason.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/DBaddin.dbsheetErrReason.html",
-          "hash": "7xlWnhM0c5O0ZEWXg70Jfw=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "obj/api/DBaddin.tDBFunc.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/DBaddin.tDBFunc.html",
-          "hash": "kD7rkBovkWXZCGmrt8CfFA=="
-        }
-      },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -225,10 +201,10 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.html",
-          "hash": "Ci2IHvmEQtg5Ee3XtgIpfQ=="
+          "hash": "vMfokA3z3MhIDky1tmRx0Q=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -237,7 +213,7 @@
       "output": {
         ".html": {
           "relative_path": "api/toc.html",
-          "hash": "ETVj6C2Gf6LUHcYyHkkhJg=="
+          "hash": "n0Bw4quep4SzPx+mgG9i4w=="
         }
       },
       "is_incremental": false,
@@ -259,12 +235,10 @@
   "incremental_info": [
     {
       "status": {
-        "can_incremental": false,
-        "details": "Disable incremental build by force rebuild option.",
+        "can_incremental": true,
         "incrementalPhase": "build",
         "total_file_count": 0,
-        "skipped_file_count": 0,
-        "full_build_reason_code": "ForceRebuild"
+        "skipped_file_count": 0
       },
       "processors": {
         "TocDocumentProcessor": {
@@ -274,24 +248,24 @@
           "total_file_count": 0,
           "skipped_file_count": 0
         },
+        "ManagedReferenceDocumentProcessor": {
+          "can_incremental": true,
+          "incrementalPhase": "build",
+          "total_file_count": 13,
+          "skipped_file_count": 13
+        },
         "ConceptualDocumentProcessor": {
-          "can_incremental": false,
+          "can_incremental": true,
           "incrementalPhase": "build",
           "total_file_count": 3,
-          "skipped_file_count": 0
-        },
-        "ManagedReferenceDocumentProcessor": {
-          "can_incremental": false,
-          "incrementalPhase": "build",
-          "total_file_count": 15,
-          "skipped_file_count": 0
+          "skipped_file_count": 3
         }
       }
     },
     {
       "status": {
-        "can_incremental": false,
-        "details": "Cannot support incremental post processing, the reason is: it's disabled.",
+        "can_incremental": true,
+        "details": "Can support incremental post processing.",
         "incrementalPhase": "postProcessing",
         "total_file_count": 0,
         "skipped_file_count": 0
