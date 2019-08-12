@@ -21,9 +21,11 @@ Public Class AddInEvents
         ExcelRegistration.GetExcelCommands().RegisterCommands()
         Application = ExcelDnaUtil.Application
         hostApp = ExcelDnaUtil.Application
-        If hostApp.AddIns("DBAddin.Functions").Installed Then
-            MsgBox("Attention: legacy DBAddin (DBAddin.Functions) still active, this might lead to unexpected results!")
-        End If
+        Try
+            If hostApp.AddIns("DBAddin.Functions").Installed Then
+                MsgBox("Attention: legacy DBAddin (DBAddin.Functions) still active, this might lead to unexpected results!")
+            End If
+        Catch ex As Exception : End Try
         Trace.Listeners.Add(New ExcelDna.Logging.LogDisplayTraceListener())
         ExcelDna.IntelliSense.IntelliSenseServer.Install()
         theMenuHandler = New MenuHandler
@@ -61,7 +63,7 @@ Public Class AddInEvents
         Dim firstAddress As String
 
         Try
-            saveDBMaps(Wb)
+            doDBRanges(Wb)
             DBFCContentColl = New Collection
             DBFCAllColl = New Collection
             For Each docproperty In Wb.CustomDocumentProperties

@@ -118,13 +118,13 @@ Public Module DBAddin
         End If
     End Sub
 
-    ''' <summary>show Error message to User</summary>
+    ''' <summary>show Error message to User</summary> 
     ''' <param name="LogMessage">the message to be shown/logged</param>
     ''' <param name="exitMe">can be set to True to let the user avoid repeated error messages, returns true if cancel was clicked</param>
     Public Sub ErrorMsg(LogMessage As String, Optional ByRef exitMe As Boolean = False)
         Dim theMethod As Object = (New System.Diagnostics.StackTrace).GetFrame(1).GetMethod
         Dim caller As String = theMethod.ReflectedType.FullName & "." & theMethod.Name
-        WriteToLog(LogMessage, EventLogEntryType.Error, caller)
+        WriteToLog(LogMessage, EventLogEntryType.Warning, caller) ' to avoid popup of trace log
         Dim retval As Integer = MsgBox(LogMessage & IIf(exitMe, vbCrLf & "(press Cancel to avoid further error messages of this kind)", ""), vbExclamation + IIf(exitMe, vbOKCancel, vbOKOnly), "DBAddin Error")
         If retval = vbCancel Then
             exitMe = True
@@ -439,6 +439,32 @@ Public Module DBAddin
         If theType = ADODB.DataTypeEnum.adNumeric Or theType = ADODB.DataTypeEnum.adInteger Or theType = ADODB.DataTypeEnum.adTinyInt Or theType = ADODB.DataTypeEnum.adSmallInt Or theType = ADODB.DataTypeEnum.adBigInt Or theType = ADODB.DataTypeEnum.adUnsignedInt Or theType = ADODB.DataTypeEnum.adUnsignedTinyInt Or theType = ADODB.DataTypeEnum.adUnsignedSmallInt Or theType = ADODB.DataTypeEnum.adDouble Or theType = ADODB.DataTypeEnum.adSingle Or theType = ADODB.DataTypeEnum.adCurrency Or theType = ADODB.DataTypeEnum.adUnsignedBigInt Then
             checkIsNumeric = True
         End If
+    End Function
+
+    ''' <summary>gets first underlying Name that contains DBtarget or DBsource in theRange</summary>
+    ''' <param name="theRange"></param>
+    ''' <returns>the retrieved name</returns>
+    Public Function getDBMapperActionSeqnceName(theRange As Excel.Range) As Excel.Name
+        Dim nm As Excel.Name
+        Dim rng, testRng As Excel.Range
+
+        getDBMapperActionSeqnceName = Nothing
+        Try
+            For Each nm In theRange.Parent.Parent.Names
+                rng = Nothing
+                Try : rng = nm.RefersToRange : Catch ex As Exception : End Try
+                If Not rng Is Nothing And Not (nm.Name Like "*ExterneDaten*" Or nm.Name Like "*_FilterDatabase") Then
+                    testRng = Nothing
+                    Try : testRng = hostApp.Intersect(theRange, rng) : Catch ex As Exception : End Try
+                    If Not IsNothing(testRng) And (InStr(1, nm.Name, "DBMapper") >= 1 Or InStr(1, nm.Name, "DBAction") >= 1) Or InStr(1, nm.Name, "DBSeqnce") >= 1 Then
+                        getDBMapperActionSeqnceName = nm
+                        Exit Function
+                    End If
+                End If
+            Next
+        Catch ex As Exception
+            ErrorMsg("Error: " & ex.Message & " in getDBMapperActionSeqnceName !")
+        End Try
     End Function
 
     ''' <summary>gets first underlying Name that contains DBtarget or DBsource in theRange</summary>

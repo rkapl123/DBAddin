@@ -30,7 +30,7 @@ Public Class MenuHandler
         customUIXml += "<group id='DBMapperGroup' label='Store DBMapper Data'>"
         For i As Integer = 0 To 14
             customUIXml += "<dynamicMenu id='ID" + i.ToString() + "' " +
-                                            "size='large' getLabel='getSheetLabel' imageMso='SignatureLineInsert' " +
+                                            "size='large' getLabel='getSheetLabel' imageMso='ApplicationOptionsDialog' " +
                                             "screentip='Select DBMapper range to store' " +
                                             "getContent='getDBMapperMenuContent' getVisible='getDBMapperMenuVisible'/>"
         Next
@@ -40,6 +40,7 @@ Public Class MenuHandler
          "<contextMenu idMso ='ContextMenuCell'>" +
          "<menu id='createMenu' label='build DBFunc/Map ...' insertBeforeMso='Cut'>" +
             "<button id='DBMapper' tag='DBMapper' label='DBMapper' imageMso='AddToolGallery' onAction='clickCreateButton'/>" +
+            "<button id='DBAction' tag='DBAction' label='DBAction' imageMso='AddToolGallery' onAction='clickCreateButton'/>" +
             "<button id='DBListFetch' tag='DBListFetch' label='DBListFetch' imageMso='AddCalendarMenu' onAction='clickCreateButton'/>" +
             "<button id='DBRowFetch' tag='DBRowFetch' label='DBRowFetch' imageMso='DataFormAddRecord' onAction='clickCreateButton'/>" +
             "<button id='DBSetQueryPivot' tag='DBSetQueryPivot' label='DBSetQueryPivot' imageMso='AddContentType' onAction='clickCreateButton'/>" +
@@ -52,6 +53,7 @@ Public Class MenuHandler
          "<contextMenu idMso ='ContextMenuCellLayout'>" +
          "<menu id='createMenuCL' label='build DBFunc/Map ...' insertBeforeMso='Cut'>" +
             "<button id='DBMapperCL' tag='DBMapper' label='DBMapper' imageMso='AddToolGallery' onAction='clickCreateButton'/>" +
+            "<button id='DBActionCL' tag='DBAction' label='DBAction' imageMso='AddToolGallery' onAction='clickCreateButton'/>" +
             "<button id='DBListFetchCL' tag='DBListFetch' label='DBListFetch' imageMso='AddCalendarMenu' onAction='clickCreateButton'/>" +
             "<button id='DBRowFetchCL' tag='DBRowFetch' label='DBRowFetch' imageMso='DataFormAddRecord' onAction='clickCreateButton'/>" +
             "<button id='DBSetQueryPivotCL' tag='DBSetQueryPivot' label='DBSetQueryPivot' imageMso='AddContentType' onAction='clickCreateButton'/>" +
@@ -70,6 +72,9 @@ Public Class MenuHandler
          "<menuSeparator id='MySeparatorZ' insertBeforeMso='Cut'/>" +
          "</contextMenu>" +
          "<contextMenu idMso='ContextMenuListRange'>" +
+         "<menu id='createMenuL' label='build DBFunc/Map ...' insertBeforeMso='Cut'>" +
+            "<button id='DBMapperL' tag='DBMapper' label='DBMapper' imageMso='AddToolGallery' onAction='clickCreateButton'/>" +
+         "</menu>" +
          "<button id='refreshDataL' label='refresh data (Ctrl-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
          "<button id='gotoDBFuncL' label='jump to DBFunc/target (Ctrl-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
          "<menuSeparator id='MySeparatorL' insertBeforeMso='Cut'/>" +
@@ -161,7 +166,13 @@ Public Class MenuHandler
             If Not DBMapperDefColl.ContainsKey(control.Id) Then Return ""
 
             For Each nodeName As String In DBMapperDefColl(control.Id).Keys
-                xmlString = xmlString + "<button id='" + nodeName + "' label='store " + nodeName + "' imageMso='SignatureLineInsert' onAction='saveRangeToDBClick' tag='" + control.Id + "' screentip='store " + nodeName + "' supertip='stores data defined in " + nodeName + " Mapper range on " + DBMapperDefColl(control.Id).Item(nodeName).Parent.Name + "![" + DBMapperDefColl(control.Id).Item(nodeName).Address + "]' />"
+                If Left(getDBMapperActionSeqnceName(DBMapperDefColl(control.Id).Item(nodeName)).Name, 8) = "DBMapper" Then
+                    xmlString = xmlString + "<button id='" + nodeName + "' label='store " + nodeName + "' imageMso='SignatureLineInsert' onAction='saveRangeToDBClick' tag='" + control.Id + "' screentip='store " + nodeName + "' supertip='stores data defined in " + nodeName + " Mapper range on " + DBMapperDefColl(control.Id).Item(nodeName).Parent.Name + "![" + DBMapperDefColl(control.Id).Item(nodeName).Address + "]' />"
+                ElseIf Left(getDBMapperActionSeqnceName(DBMapperDefColl(control.Id).Item(nodeName)).Name, 8) = "DBAction" Then
+                    xmlString = xmlString + "<button id='" + nodeName + "' label='do " + nodeName + "' imageMso='SignatureShow' onAction='DBActionClick' tag='" + control.Id + "' screentip='store " + nodeName + "' supertip='executes Action defined in " + nodeName + " DBAction range on " + DBMapperDefColl(control.Id).Item(nodeName).Parent.Name + "![" + DBMapperDefColl(control.Id).Item(nodeName).Address + "]' />"
+                ElseIf Left(getDBMapperActionSeqnceName(DBMapperDefColl(control.Id).Item(nodeName)).Name, 8) = "DBSeqnce" Then
+                    xmlString = xmlString + "<button id='" + nodeName + "' label='do " + nodeName + "' imageMso='FilePrepareMenu' onAction='DBSequenceClick' tag='" + control.Id + "' screentip='store " + nodeName + "' supertip='executes Sequence defined in " + nodeName + " DBSeqnce range on " + DBMapperDefColl(control.Id).Item(nodeName).Parent.Name + "![" + DBMapperDefColl(control.Id).Item(nodeName).Address + "]' />"
+                End If
             Next
             xmlString += "</menu>"
             Return xmlString
@@ -182,6 +193,16 @@ Public Class MenuHandler
     ''' <summary>DBMapper store button activated, save Range to DB...</summary>
     Public Sub saveRangeToDBClick(control As IRibbonControl)
         saveRangeToDB(DBMapperDefColl(control.Tag).Item(control.Id), control.Id)
+    End Sub
+
+    ''' <summary>DBMapper store button activated, save Range to DB...</summary>
+    Public Sub DBActionClick(control As IRibbonControl)
+        doDBAction(DBMapperDefColl(control.Tag).Item(control.Id), control.Id)
+    End Sub
+
+    ''' <summary>DBMapper store button activated, save Range to DB...</summary>
+    Public Sub DBSequenceClick(control As IRibbonControl)
+        doDBSequence(DBMapperDefColl(control.Tag).Item(control.Id), control.Id)
     End Sub
 
     ''' <summary>context menu entry refreshData: refresh Data in db function (if area or cell selected) or all db functions</summary>
@@ -241,8 +262,8 @@ Public Class MenuHandler
                 .Refresh(BackgroundQuery:=False)
             End With
             createFunctionsInCells(hostApp.ActiveCell, {"RC", "=DBSetQuery("""","""",RC[1])"})
-        ElseIf control.Tag = "DBMapper" Then
-            createDBMapper()
+        ElseIf control.Tag = "DBMapper" Or control.Tag = "DBAction" Then
+            createDBMapper(control.Tag)
         End If
     End Sub
 
