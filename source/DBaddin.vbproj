@@ -106,7 +106,7 @@
     </Compile>
     <Compile Include="AddInEvents.vb" />
     <Compile Include="ConfigFiles.vb" />
-    <Compile Include="DBAddin.vb" />
+    <Compile Include="Globals.vb" />
     <Compile Include="DBMapperCreate.Designer.vb">
       <DependentUpon>DBMapperCreate.vb</DependentUpon>
     </Compile>

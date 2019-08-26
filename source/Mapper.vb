@@ -12,7 +12,7 @@ Public Module Mapper
 
     Public Sub doDBAction(DataRange As Object, DBActionName As String, Optional WbIsSaving As Boolean = False)
         Dim database As String = ""                          ' Database to store to
-        Dim env As Integer = DBAddin.selectedEnvironment + 1 ' Environment where connection id should be taken from (if not existing, take from selectedEnvironment)
+        Dim env As Integer = Globals.selectedEnvironment + 1 ' Environment where connection id should be taken from (if not existing, take from selectedEnvironment)
         Dim storeDBMapOnSave As Boolean = False              ' should DBaction be done on Excel Saving? (default no)
         If Not IsNothing(DataRange.Cells(1, 1).Comment) Then
             If IsNothing(DataRange.Cells(1, 1).Comment.Text) Then ErrorMsg("No definition comment found for DBAction definition in " + DBActionName)
@@ -57,7 +57,7 @@ Public Module Mapper
         Dim tableName As String = ""                         ' Database Table, where Data is to be stored
         Dim primKeysStr As String = ""                       ' String containing primary Key names for updating table data, comma separated
         Dim database As String = ""                          ' Database to store to
-        Dim env As Integer = DBAddin.selectedEnvironment + 1 ' Environment where connection id should be taken from (if not existing, take from selectedEnvironment)
+        Dim env As Integer = Globals.selectedEnvironment + 1 ' Environment where connection id should be taken from (if not existing, take from selectedEnvironment)
         Dim insertIfMissing As Boolean = False               ' if set, then insert row into table if primary key is missing there. Default = False (only update)
         Dim executeAdditionalProc As String = ""             ' additional stored procedure to be executed after saving
         Dim ignoreColumns As String = ""                     ' columns to be ignored (helper columns)
@@ -277,11 +277,11 @@ cleanup:
         End If
         dbcnn = New Connection
         theConnString = Change(theConnString, dbidentifier, database, ";")
-        hostApp.StatusBar = "Trying " & DBAddin.CnnTimeout & " sec. with connstring: " & theConnString
+        hostApp.StatusBar = "Trying " & Globals.CnnTimeout & " sec. with connstring: " & theConnString
         Try
             dbcnn.ConnectionString = theConnString
-            dbcnn.ConnectionTimeout = DBAddin.CnnTimeout
-            dbcnn.CommandTimeout = DBAddin.CmdTimeout
+            dbcnn.ConnectionTimeout = Globals.CnnTimeout
+            dbcnn.CommandTimeout = Globals.CmdTimeout
             dbcnn.Open()
         Catch ex As Exception
             LogError("openConnection: Error connecting to DB: " & ex.Message & ", connection string: " & theConnString)
@@ -296,7 +296,7 @@ cleanup:
     Sub getDBMapperDefinitions()
         ' load DBMapper definitions
         Try
-            DBAddin.DBMapperDefColl = New Dictionary(Of String, Dictionary(Of String, Range))
+            Globals.DBMapperDefColl = New Dictionary(Of String, Dictionary(Of String, Range))
             For Each namedrange As Name In hostApp.ActiveWorkbook.Names
                 Dim cleanname As String = Replace(namedrange.Name, namedrange.Parent.Name & "!", "")
                 If Left(cleanname, 8) = "DBMapper" Or Left(cleanname, 8) = "DBAction" Or Left(cleanname, 8) = "DBSeqnce" Then
@@ -323,7 +323,7 @@ cleanup:
                 End If
                 If DBMapperDefColl.Count >= 15 Then ErrorMsg("Not more than 15 sheets with DBMapper/DBAction definitions possible, ignoring definitions in sheet " + namedrange.Parent.Name)
             Next
-            DBAddin.theRibbon.Invalidate()
+            Globals.theRibbon.Invalidate()
         Catch ex As Exception
             LogError("Error: " & ex.Message)
         End Try
@@ -457,7 +457,7 @@ cleanup:
             theDBMapperCreateDlg = New DBMapperCreate()
             If InStr(1, activeCellName, type) > 0 Then theDBMapperCreateDlg.DBMapperName.Text = Replace(activeCellName, type, "")
 
-            theDBMapperCreateDlg.envSel.DataSource = DBAddin.environdefs
+            theDBMapperCreateDlg.envSel.DataSource = Globals.environdefs
             theDBMapperCreateDlg.envSel.SelectedIndex = env
             theDBMapperCreateDlg.Database.Text = database
             theDBMapperCreateDlg.storeDBMapOnSave.Checked = storeDBMapOnSave
@@ -472,7 +472,7 @@ cleanup:
         ' no DBMapper/DBAction definitions found...
         If IsNothing(theDBMapperCreateDlg) Then
             theDBMapperCreateDlg = New DBMapperCreate()
-            theDBMapperCreateDlg.envSel.DataSource = DBAddin.environdefs
+            theDBMapperCreateDlg.envSel.DataSource = Globals.environdefs
             theDBMapperCreateDlg.envSel.SelectedIndex = -1
         End If
         theDBMapperCreateDlg.NameLabel.Text = type & " Name:"

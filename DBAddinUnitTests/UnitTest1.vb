@@ -1,6 +1,6 @@
 ﻿Imports System.Text
 Imports Microsoft.VisualStudio.TestTools.UnitTesting
-Imports DBaddin.DBAddin
+Imports DBaddin.Globals
 
 <TestClass()> Public Class UnitTest1
 

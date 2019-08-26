@@ -34,7 +34,7 @@ Public Class AddInEvents
         Dim srchdListener As Object
         For Each srchdListener In Trace.Listeners
             If srchdListener.ToString() = "ExcelDna.Logging.LogDisplayTraceListener" Then
-                DBAddin.theLogListener = srchdListener
+                Globals.theLogListener = srchdListener
                 Exit For
             End If
         Next
@@ -62,10 +62,10 @@ Public Class AddInEvents
         Dim searchCell As Range
         Dim firstAddress As String
 
+        doDBRanges(Wb)
+        DBFCContentColl = New Collection
+        DBFCAllColl = New Collection
         Try
-            doDBRanges(Wb)
-            DBFCContentColl = New Collection
-            DBFCAllColl = New Collection
             For Each docproperty In Wb.CustomDocumentProperties
                 If TypeName(docproperty.Value) = "Boolean" Then
                     If Left$(docproperty.Name, 5) = "DBFCC" And docproperty.Value Then DBFCContentColl.Add(True, Mid$(docproperty.Name, 6))
@@ -73,8 +73,16 @@ Public Class AddInEvents
                     If docproperty.Name = "DBFskip" Then doRefreshDBFuncsAfterSave = Not docproperty.Value
                 End If
             Next
-            dontCalcWhileClearing = True
+        Catch ex As Exception
+            LogError("Error getting docproperties: " & Wb.Name & ex.Message)
+        End Try
+        dontCalcWhileClearing = True
+        Try
             For Each ws In Wb.Worksheets
+                If IsNothing(ws) Then
+                    LogWarn("no worksheet in saving workbook...")
+                    Exit For
+                End If
                 For Each theFunc In {"DBListFetch(", "DBRowFetch("}
                     searchCell = ws.Cells.Find(What:=theFunc, After:=ws.Range("A1"), LookIn:=XlFindLookIn.xlFormulas, LookAt:=XlLookAt.xlPart, SearchOrder:=XlSearchOrder.xlByRows, SearchDirection:=XlSearchDirection.xlNext, MatchCase:=False)
                     If Not (searchCell Is Nothing) Then
@@ -116,7 +124,7 @@ Public Class AddInEvents
                 aTimer.Enabled = True
             End If
         Catch ex As Exception
-            LogError("Error: " & Wb.Name & ex.Message)
+            LogError("Error clearing DBfunction targets: " & Wb.Name & ex.Message)
         End Try
         dontCalcWhileClearing = False
     End Sub

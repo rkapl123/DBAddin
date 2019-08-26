@@ -10,7 +10,7 @@ Public Class MenuHandler
 
     ''' <summary>callback after Excel loaded the Ribbon, used to initialize data for the Ribbon</summary>
     Public Sub ribbonLoaded(theRibbon As IRibbonUI)
-        DBAddin.theRibbon = theRibbon
+        Globals.theRibbon = theRibbon
     End Sub
 
     ''' <summary>creates the Ribbon (only at startup). any changes to the ribbon can only be done via dynamic menus</summary>
@@ -26,7 +26,7 @@ Public Class MenuHandler
               "<button id='disableAddin' label='disable Addin' imageMso='SpeakStop' onAction='clickDisableAddin'/>" +
               "</buttonGroup>" +
               "<dialogBoxLauncher><button id='dialog' label='About DBAddin' onAction='showAbout' tag='3' screentip='Show Aboutbox with help, version information, homepage and access to log'/></dialogBoxLauncher></group>"
-        ' DBMapper Group: max. 15 sheets with DBMapper definitions possible:
+        ' DBMapper Group: max. 15 sheets with DBMapper definitions possible: 
         customUIXml += "<group id='DBMapperGroup' label='Store DBMapper Data'>"
         For i As Integer = 0 To 14
             customUIXml += "<dynamicMenu id='ID" + i.ToString() + "' " +
@@ -85,27 +85,27 @@ Public Class MenuHandler
 
     ''' <summary>for environment dropdown to get the total number of the entries</summary>
     Public Function GetItemCount(control As IRibbonControl) As Integer
-        Return DBAddin.environdefs.Length
+        Return Globals.environdefs.Length
     End Function
 
     ''' <summary>for environment dropdown to get the label of the entries</summary>
     Public Function GetItemLabel(control As IRibbonControl, index As Integer) As String
-        Return DBAddin.environdefs(index)
+        Return Globals.environdefs(index)
     End Function
 
     ''' <summary>for environment dropdown to get the ID of the entries</summary>
     Public Function GetItemID(control As IRibbonControl, index As Integer) As String
-        Return DBAddin.environdefs(index)
+        Return Globals.environdefs(index)
     End Function
 
     ''' <summary>after selection of environment (using selectItem) used to return the selected environment</summary>
     Public Function GetSelItem(control As IRibbonControl) As Integer
-        Return DBAddin.selectedEnvironment
+        Return Globals.selectedEnvironment
     End Function
 
     ''' <summary>Choose environment (configured in registry with ConstConnString(N), ConfigStoreFolder(N))</summary>
     Public Sub selectItem(control As IRibbonControl, id As String, index As Integer)
-        DBAddin.selectedEnvironment = index
+        Globals.selectedEnvironment = index
         Dim env As String = (index + 1).ToString()
 
         If GetSetting("DBAddin", "Settings", "DontChangeEnvironment", String.Empty) = "Y" Then
@@ -238,7 +238,7 @@ Public Class MenuHandler
             createFunctionsInCells(hostApp.ActiveCell, {"RC", "=DBRowFetch("""","""",TRUE,R[1]C:R[1]C[10])"})
         ElseIf control.Tag = "DBSetQueryPivot" Then
             Dim pivotcache As Excel.PivotCache = hostApp.ActiveWorkbook.PivotCaches().Add(Excel.XlPivotTableSourceType.xlExternal)
-            pivotcache.Connection = "OLEDB;" & DBAddin.ConstConnString
+            pivotcache.Connection = "OLEDB;" & Globals.ConstConnString
             pivotcache.MaintainConnection = False
             pivotcache.CommandText = "select CURRENT_TIMESTAMP" ' this should be sufficient for most databases
             pivotcache.CommandType = Excel.XlCmdType.xlCmdSql
@@ -246,7 +246,7 @@ Public Class MenuHandler
             pivotTables.Add(pivotcache, hostApp.ActiveCell.Offset(1, 0), "PivotTable1")
             createFunctionsInCells(hostApp.ActiveCell, {"RC", "=DBSetQuery("""","""",R[1]C)"})
         ElseIf control.Tag = "DBSetQueryListObject" Then
-            With hostApp.ActiveSheet.ListObjects.Add(SourceType:=Excel.XlListObjectSourceType.xlSrcQuery, Source:="OLEDB;" & DBAddin.ConstConnString, Destination:=hostApp.ActiveCell.Offset(0, 1)).QueryTable
+            With hostApp.ActiveSheet.ListObjects.Add(SourceType:=Excel.XlListObjectSourceType.xlSrcQuery, Source:="OLEDB;" & Globals.ConstConnString, Destination:=hostApp.ActiveCell.Offset(0, 1)).QueryTable
                 .CommandType = Excel.XlCmdType.xlCmdSql
                 .CommandText = "select CURRENT_TIMESTAMP" ' this should be sufficient for most databases
                 .RowNumbers = False

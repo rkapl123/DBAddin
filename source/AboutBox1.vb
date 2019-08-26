@@ -26,7 +26,7 @@ Public NotInheritable Class AboutBox1
         Me.LabelCompanyName.Text = "Information: " + My.Application.Info.CompanyName
         Me.TextBoxDescription.Text = My.Application.Info.Description
         dontChangeEventLevels = True
-        Me.EventLevels.SelectedItem = DBAddin.EventLevelSelected
+        Me.EventLevels.SelectedItem = Globals.EventLevelSelected
         dontChangeEventLevels = False
     End Sub
 
@@ -65,20 +65,20 @@ Public NotInheritable Class AboutBox1
         If dontChangeEventLevels Then Exit Sub
         Select Case EventLevels.SelectedItem
             Case "Information"
-                DBAddin.theLogListener.Filter = New EventTypeFilter(SourceLevels.Information)
+                Globals.theLogListener.Filter = New EventTypeFilter(SourceLevels.Information)
             Case "Warning"
-                DBAddin.theLogListener.Filter = New EventTypeFilter(SourceLevels.Warning)
+                Globals.theLogListener.Filter = New EventTypeFilter(SourceLevels.Warning)
             Case "Error"
-                DBAddin.theLogListener.Filter = New EventTypeFilter(SourceLevels.Error)
+                Globals.theLogListener.Filter = New EventTypeFilter(SourceLevels.Error)
             Case "Verbose"
-                DBAddin.theLogListener.Filter = New EventTypeFilter(SourceLevels.Verbose)
+                Globals.theLogListener.Filter = New EventTypeFilter(SourceLevels.Verbose)
             Case "All"
-                DBAddin.theLogListener.Filter = New EventTypeFilter(SourceLevels.All)
+                Globals.theLogListener.Filter = New EventTypeFilter(SourceLevels.All)
         End Select
         Trace.Refresh()
         ' by refreshing the Trace with a different filter, the LogListener gets lost sometimes...
-        If Not Trace.Listeners.Contains(DBAddin.theLogListener) Then Trace.Listeners.Add(DBAddin.theLogListener)
-        DBAddin.EventLevelSelected = EventLevels.SelectedItem
+        If Not Trace.Listeners.Contains(Globals.theLogListener) Then Trace.Listeners.Add(Globals.theLogListener)
+        Globals.EventLevelSelected = EventLevels.SelectedItem
     End Sub
 
     Private Sub FixLegacyFunctions_Click(sender As Object, e As EventArgs) Handles FixLegacyFunctions.Click

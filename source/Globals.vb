@@ -4,7 +4,7 @@ Imports System.Diagnostics
 Imports System.Collections.Generic
 
 ''' <summary>Global variables and functions for DB Addin</summary>
-Public Module DBAddin
+Public Module Globals
     ' general Global objects/variables
     ''' <summary>ribbon menu handler</summary>
     Public theMenuHandler As MenuHandler
@@ -207,7 +207,7 @@ Public Module DBAddin
                 End If
             End If
         Catch ex As Exception
-            ErrorMsg("Error (" & ex.Message & ") in refreshData !")
+            LogError("Error (" & ex.Message & ") in refreshData !")
         End Try
     End Sub
 
@@ -267,7 +267,7 @@ Public Module DBAddin
             finalResult = Split(tempString, vbTab)
             functionSplit = finalResult
         Catch ex As Exception
-            LogWarn("Error: " & ex.Message)
+            LogError("Error: " & ex.Message)
             functionSplit = Nothing
         End Try
     End Function
@@ -309,7 +309,7 @@ Public Module DBAddin
                 balancedString = Mid$(theString, startBalance + 1, endBalance - startBalance)
             End If
         Catch ex As Exception
-            LogWarn("Error: " & ex.Message)
+            LogError("Error: " & ex.Message)
         End Try
     End Function
 
@@ -351,7 +351,7 @@ Public Module DBAddin
                 End If
             Next
         Catch ex As Exception
-            LogWarn("Error: " & ex.Message)
+            LogError("Error: " & ex.Message)
         End Try
     End Function
 
@@ -463,7 +463,7 @@ Public Module DBAddin
                 End If
             Next
         Catch ex As Exception
-            ErrorMsg("Error: " & ex.Message & " in getDBMapperActionSeqnceName !")
+            LogError("Error: " & ex.Message & " in getDBMapperActionSeqnceName !")
         End Try
     End Function
 
@@ -489,7 +489,7 @@ Public Module DBAddin
                 End If
             Next
         Catch ex As Exception
-            ErrorMsg("Error: " & ex.Message & " in getDBRangeName !")
+            LogError("Error: " & ex.Message & " in getDBRangeName !")
         End Try
     End Function
 
@@ -516,26 +516,26 @@ Public Module DBAddin
             Next
             If foundNames > 1 Then checkMultipleDBRangeNames = True
         Catch ex As Exception
-            LogWarn("Error: " & ex.Message)
+            LogError("Error: " & ex.Message)
         End Try
     End Function
 
-    ''' <summary>only recalc full if we have DBFuncs in the workbook somewhere</summary>
-    ''' <param name="Wb"></param>
-    ''' <param name="ignoreCalcMode"></param>
+    ''' <summary>find out whether to recalc full (and do it), if we have DBFuncs in the workbook somewhere</summary>
+    ''' <param name="Wb">workbook to refresh DB Functions in</param>
+    ''' <param name="ignoreCalcMode">when calling refreshDBFunctions time delayed (when saving a workbook and DBFC* is set), need to trigger calculation regardless of calculation mode being manual, otherwise data is not refreshed</param>
     Public Sub refreshDBFunctions(Wb As Excel.Workbook, Optional ignoreCalcMode As Boolean = False)
         Dim searchCells As Excel.Range
         Dim ws As Excel.Worksheet
         Dim needRecalc As Boolean
-        Dim theFunc
 
-        If TypeName(hostApp.Calculation) = "Error" Then
-            LogWarn("hostApp.Calculation = Error, " & Wb.Path & "\" & Wb.Name)
-            Exit Sub
-        End If
+        'If TypeName(hostApp.Calculation) = "Error" Then
+        '    LogWarn("hostApp.Calculation = Error, " & Wb.Path & "\" & Wb.Name)
+        '    Exit Sub
+        'End If
         Try
             needRecalc = False
             For Each ws In Wb.Worksheets
+                Dim theFunc As String
                 For Each theFunc In {"DBListFetch(", "DBRowFetch(", "DBSetQuery("}
                     searchCells = ws.Cells.Find(What:=theFunc, After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
                     If Not (searchCells Is Nothing) Then
@@ -558,17 +558,23 @@ done:
                 LogInfo("no dbfunc found... " & Wb.Path & "\" & Wb.Name)
             End If
         Catch ex As Exception
-            ErrorMsg("Error: " & ex.Message & ", " & Wb.Path & "\" & Wb.Name)
+            LogError("Error: " & ex.Message & ", " & Wb.Path & "\" & Wb.Name)
         End Try
     End Sub
 
     ''' <summary>"repairs" legacy functions from old VB6-COM Addin by removing "DBAddin.Functions." before function name</summary>
+    ''' <param name="showReponse">in case this is called interactively, provide a response in case of no legacy functions there</param>
     Public Sub repairLegacyFunctions(Optional showReponse As Boolean = False)
         Dim searchCell As Excel.Range
         Dim foundLegacyWS As Collection = New Collection
         Dim xlcalcmode As Long = hostApp.Calculation
+        Dim actWB As Excel.Workbook = hostApp.ActiveWorkbook
+        If IsNothing(actWB) Then
+            LogWarn("no active workbook available !")
+            Exit Sub
+        End If
         Try
-            For Each ws In hostApp.ActiveWorkbook.Worksheets
+            For Each ws In actWB.Worksheets
                 ' check whether legacy functions exist somewhere ...
                 searchCell = ws.Cells.Find(What:="DBAddin.Functions.", After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
                 If Not (searchCell Is Nothing) Then foundLegacyWS.Add(ws)
@@ -593,7 +599,7 @@ done:
             ' reset the cell find dialog....
             hostApp.ActiveSheet.Cells.Find(What:="", After:=hostApp.ActiveSheet.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
         Catch ex As Exception
-            ErrorMsg("Error occured in replacing DBAddin.Functions.: " & ex.Message)
+            LogError("Error occured in replacing DBAddin.Functions.: " & ex.Message)
             'hostApp.EnableEvents = True
             hostApp.DisplayAlerts = True
             hostApp.Calculation = xlcalcmode
@@ -631,7 +637,7 @@ done:
                 LogInfo("purgeNames removed " + resultingPurges)
             End If
         Catch ex As Exception
-            ErrorMsg("Error: " & ex.Message)
+            LogError("Error: " & ex.Message)
         End Try
         hostApp.Calculation = calcMode
     End Sub
