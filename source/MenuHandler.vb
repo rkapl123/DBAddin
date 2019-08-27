@@ -23,7 +23,7 @@ Public Class MenuHandler
               "<dynamicMenu id='DBConfigs' size='normal' label='DB Configs' imageMso='Refresh' screentip='DB Function Configuration Files quick access' getContent='getDBConfigMenu'/>" +
               "<buttonGroup id='buttonGroup'>" +
               "<button id='purgetool' label='purge names' imageMso='TableColumnsDeleteExcel' onAction='clickpurgetoolbutton'/>" +
-              "<button id='disableAddin' label='disable Addin' imageMso='SpeakStop' onAction='clickDisableAddin'/>" +
+              "<button id='showLog' label='show Log' imageMso='ZoomOnePage' onAction='clickShowLog'/>" +
               "</buttonGroup>" +
               "<dialogBoxLauncher><button id='dialog' label='About DBAddin' onAction='showAbout' tag='3' screentip='Show Aboutbox with help, version information, homepage and access to log'/></dialogBoxLauncher></group>"
         ' DBMapper Group: max. 15 sheets with DBMapper definitions possible: 
@@ -125,6 +125,10 @@ Public Class MenuHandler
     Public Sub showAbout(control As IRibbonControl)
         Dim myAbout As AboutBox1 = New AboutBox1
         myAbout.ShowDialog()
+        ' if disabling the addin was chosen, then suicide here...
+        If myAbout.disableAddinAfterwards Then
+            Try : hostApp.AddIns("DBAddin-AddIn-packed").Installed = False : Catch ex As Exception : End Try
+        End If
     End Sub
 
     ''' <summary>on demand, refresh the DB Config tree</summary>
@@ -192,17 +196,17 @@ Public Class MenuHandler
 
     ''' <summary>DBMapper store button activated, save Range to DB...</summary>
     Public Sub saveRangeToDBClick(control As IRibbonControl)
-        saveRangeToDB(DBMapperDefColl(control.Tag).Item(control.Id), control.Id)
+        saveRangeToDB(DBMapperDefColl(control.Tag).Item(control.Id))
     End Sub
 
-    ''' <summary>DBMapper store button activated, save Range to DB...</summary>
+    ''' <summary>DBAction button activated, do DB Action...</summary>
     Public Sub DBActionClick(control As IRibbonControl)
-        doDBAction(DBMapperDefColl(control.Tag).Item(control.Id), control.Id)
+        doDBAction(DBMapperDefColl(control.Tag).Item(control.Id))
     End Sub
 
-    ''' <summary>DBMapper store button activated, save Range to DB...</summary>
+    ''' <summary>DBSequence button activated, do DB Sequence...</summary>
     Public Sub DBSequenceClick(control As IRibbonControl)
-        doDBSequence(DBMapperDefColl(control.Tag).Item(control.Id), control.Id)
+        doDBSequence(control.Id, DBMapperDefColl(control.Tag).Item(control.Id))
     End Sub
 
     ''' <summary>context menu entry refreshData: refresh Data in db function (if area or cell selected) or all db functions</summary>
@@ -220,14 +224,9 @@ Public Class MenuHandler
         purgeNames()
     End Sub
 
-    Public Sub clickDisableAddin(control As IRibbonControl)
-        ' first reactivate legacy Addin
-        My.Computer.Registry.SetValue("HKEY_CURRENT_USER\Software\Microsoft\Office\Excel\Addins\DBAddin.Connection", "LoadBehavior", 3)
-        hostApp.AddIns("DBAddin.Functions").Installed = True
-        ' then suicide....
-        MsgBox("Please restart Excel to make changes effective...", vbOKOnly, "Disable DBAddin and re-enable Legacy DBAddin")
-        Try : hostApp.AddIns("OebfaFuncs-AddIn-packed").Installed = False : Catch ex As Exception : End Try
-        Try : hostApp.AddIns("DBAddin-AddIn-packed").Installed = False : Catch ex As Exception : End Try
+    ''' <summary>show the trace log</summary>
+    Public Sub clickShowLog(control As IRibbonControl)
+        ExcelDna.Logging.LogDisplay.Show()
     End Sub
 
     ''' <summary>context menu entries below create...: create DB function or DB Mapper</summary>

@@ -17,7 +17,7 @@ Public Module Globals
     ''' <summary>environment definitions</summary>
     Public environdefs As String() = {}
     ''' <summary>DBMapper definition collections (for labels (key of nested dictionary) and target ranges (value of nested dictionary))</summary>
-    Public DBMapperDefColl As Dictionary(Of String, Dictionary(Of String, Excel.Range))
+    Public DBMapperDefColl As Dictionary(Of String, Dictionary(Of String, Object))
     ''' <summary>the selected event level in the About box</summary>
     Public EventLevelSelected As String
     ''' <summary>the log listener</summary>
@@ -441,7 +441,7 @@ Public Module Globals
         End If
     End Function
 
-    ''' <summary>gets first underlying Name that contains DBtarget or DBsource in theRange</summary>
+    ''' <summary>gets first underlying Name that contains DBMapper, DBAction or DBSeqnce in theRange</summary>
     ''' <param name="theRange"></param>
     ''' <returns>the retrieved name</returns>
     Public Function getDBMapperActionSeqnceName(theRange As Excel.Range) As Excel.Name
@@ -453,7 +453,7 @@ Public Module Globals
             For Each nm In theRange.Parent.Parent.Names
                 rng = Nothing
                 Try : rng = nm.RefersToRange : Catch ex As Exception : End Try
-                If Not rng Is Nothing And Not (nm.Name Like "*ExterneDaten*" Or nm.Name Like "*_FilterDatabase") Then
+                If Not rng Is Nothing Then
                     testRng = Nothing
                     Try : testRng = hostApp.Intersect(theRange, rng) : Catch ex As Exception : End Try
                     If Not IsNothing(testRng) And (InStr(1, nm.Name, "DBMapper") >= 1 Or InStr(1, nm.Name, "DBAction") >= 1) Or InStr(1, nm.Name, "DBSeqnce") >= 1 Then

@@ -2,7 +2,7 @@
 
 ''' <summary>About box: used to provide information about version/buildtime and links for local help and project homepage</summary>
 Public NotInheritable Class AboutBox1
-
+    Public disableAddinAfterwards As Boolean = False
     Private dontChangeEventLevels As Boolean
 
     ''' <summary>set up Aboutbox</summary>
@@ -57,10 +57,9 @@ Public NotInheritable Class AboutBox1
         End Try
     End Sub
 
-    Private Sub showLog_Click(sender As Object, e As EventArgs) Handles showLog.Click
-        ExcelDna.Logging.LogDisplay.Show()
-    End Sub
-
+    ''' <summary>select event levels: filter events by selected level (from now on)</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
     Private Sub EventLevels_SelectedValueChanged(sender As Object, e As EventArgs) Handles EventLevels.SelectedValueChanged
         If dontChangeEventLevels Then Exit Sub
         Select Case EventLevels.SelectedItem
@@ -85,4 +84,13 @@ Public NotInheritable Class AboutBox1
         repairLegacyFunctions(True)
     End Sub
 
+    Private Sub DisableAddin_Click(sender As Object, e As EventArgs) Handles disableAddin.Click
+        ' first reactivate legacy Addin
+        My.Computer.Registry.SetValue("HKEY_CURRENT_USER\Software\Microsoft\Office\Excel\Addins\DBAddin.Connection", "LoadBehavior", 3)
+        hostApp.AddIns("DBAddin.Functions").Installed = True
+        MsgBox("Please restart Excel to make changes effective...", vbOKOnly, "Disable DBAddin and re-enable Legacy DBAddin")
+        Try : hostApp.AddIns("OebfaFuncs-AddIn-packed").Installed = False : Catch ex As Exception : End Try
+        disableAddinAfterwards = True
+        Me.Close()
+    End Sub
 End Class
