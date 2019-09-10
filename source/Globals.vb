@@ -8,7 +8,7 @@ Public Module Globals
     ' general Global objects/variables
     ''' <summary>ribbon menu handler</summary>
     Public theMenuHandler As MenuHandler
-    ''' <summary>currently selected environment for DB Functions</summary>
+    ''' <summary>currently selected environment for DB Functions, zero based (env -1) !!</summary>
     Public selectedEnvironment As Integer
     ''' <summary>reference object for the Addins ribbon</summary>
     Public theRibbon As ExcelDna.Integration.CustomUI.IRibbonUI

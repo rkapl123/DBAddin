@@ -9,7 +9,35 @@ Public Module Mapper
     ''' <summary>main db connection For mapper</summary>
     Public dbcnn As ADODB.Connection
 
-    Public Sub doDBAction(DataRange As Object, Optional WbIsSaving As Boolean = False)
+    ''' <summary>execute sequence of Database actions and saveRangeToDB invocations defined in DBSequenceText</summary>
+    ''' <param name="DBSequenceName">Name of DB Sequence</param>
+    ''' <param name="DBSequenceText">Definition of DB Sequence: (storeDBMapOnSave flag),(Type1:WsheetID1:Name1),(Type2:WsheetID2:Name2)...</param>
+    ''' <param name="WbIsSaving">special flag to indicate calling of the procedure during saving of the Workbook</param>
+    Public Sub doDBSequence(DBSequenceName As String, DBSequenceText As String, Optional WbIsSaving As Boolean = False)
+        If DBSequenceText = "" Then
+            ErrorMsg("No Sequence defined in " + DBSequenceName)
+            Exit Sub
+        End If
+        ' parse parameters: 1st item is storeDBMapOnSave, rest defines sequence (Type:WsheetID:Name)
+        Dim params() As String = Split(DBSequenceText, ",")
+        Dim storeDBMapOnSave As Boolean = Convert.ToBoolean(params(0)) ' should DBSequence be done on Excel Saving?
+        If WbIsSaving And Not storeDBMapOnSave Then Exit Sub
+        Dim i As Integer
+        For i = 1 To UBound(params)
+            Dim definition() As String = Split(params(i), ":")
+            If definition(0) = "DBAction" Then
+                doDBAction(DataRange:=DBMapperDefColl(definition(1)).Item(definition(2)), calledByDBSeq:=DBSequenceName) ' ignore storeDBMapOnSave in subtasks
+            ElseIf definition(0) = "saveRangeToDB" Then
+                saveRangeToDB(DataRange:=DBMapperDefColl(definition(1)).Item(definition(2)), calledByDBSeq:=DBSequenceName) ' ignore storeDBMapOnSave in subtasks
+            End If
+        Next
+    End Sub
+
+    ''' <summary>execute Database Action defined in DataRange (single cell), this can be any DML code</summary>
+    ''' <param name="DataRange">Excel Range, where Database action is taken from</param>
+    ''' <param name="WbIsSaving">special flag to indicate calling of the procedure during saving of the Workbook</param>
+    ''' <param name="calledByDBSeq">DBSequenceName of calling DB Sequence, indicates possible duplicate invocation during saving of Workbook</param>
+    Public Sub doDBAction(DataRange As Object, Optional WbIsSaving As Boolean = False, Optional calledByDBSeq As String = "")
         Dim database As String = ""                          ' Database to store to
         Dim env As Integer = Globals.selectedEnvironment + 1 ' Environment where connection id should be taken from (if not existing, take from selectedEnvironment)
         Dim storeDBMapOnSave As Boolean = False              ' should DBaction be done on Excel Saving? (default no)
@@ -20,7 +48,9 @@ Public Module Mapper
         ' set up parameters
         If Not getParametersFromText(paramType:="DBAction", paramTarget:=DataRange, env:=env, database:=database, storeDBMapOnSave:=storeDBMapOnSave) Then Exit Sub
         If WbIsSaving And Not storeDBMapOnSave Then Exit Sub
-
+        If WbIsSaving And storeDBMapOnSave And calledByDBSeq <> "" Then
+            MsgBox("DBAction " & DBActionName & " will be executed twice on saving because it is part of DBSequence " & calledByDBSeq & ". Is this really intended (change storeDBMapOnSave parameter) ?")
+        End If
         'now create/get a connection (dbcnn) for env(ironment)
         LogInfo("doDBAction: open connection...")
         If Not openConnection(env, database) Then Exit Sub
@@ -36,33 +66,14 @@ Public Module Mapper
         End If
     End Sub
 
-    Public Sub doDBSequence(DBSequenceName As String, DBSequenceText As String, Optional WbIsSaving As Boolean = False)
-        If DBSequenceText = "" Then
-            ErrorMsg("No Sequence defined in " + DBSequenceName)
-            Exit Sub
-        End If
-        ' parse parameters: 1st item is storeDBMapOnSave, rest defines sequence (Type:WsheetID:Name)
-        Dim params() As String = Split(DBSequenceText, ",")
-        Dim storeDBMapOnSave As Boolean = Convert.ToBoolean(params(0)) ' should DBSequence be done on Excel Saving?
-        If WbIsSaving And Not storeDBMapOnSave Then Exit Sub
-        Dim i As Integer
-        For i = 1 To UBound(params)
-            Dim definition() As String = Split(params(i), ":")
-            If definition(0) = "DBAction" Then
-                doDBAction(DBMapperDefColl(definition(1)).Item(definition(2)), True)
-            ElseIf definition(0) = "saveRangeToDB" Then
-                saveRangeToDB(DBMapperDefColl(definition(1)).Item(definition(2)), True)
-            End If
-        Next
-    End Sub
-
     ''' <summary>dump data given in dataRange to a database table specified by tableName and connID
     ''' this database table can have multiple primary columns specified by primKeysStr
     ''' assumption: layout of dataRange is
     ''' primKey1Val,primKey2Val,..,primKeyNVal,DataCol1Val,DataCol2Val,..,DataColNVal</summary>
     ''' <param name="DataRange">Excel Range, where Data is taken from</param>
     ''' <param name="WbIsSaving">special flag to indicate calling of the procedure during saving of the Workbook</param>
-    Public Sub saveRangeToDB(DataRange As Object, Optional WbIsSaving As Boolean = False)
+    ''' <param name="calledByDBSeq">DBSequenceName of calling DB Sequence, indicates possible duplicate invocation during saving of Workbook</param>
+    Public Sub saveRangeToDB(DataRange As Object, Optional WbIsSaving As Boolean = False, Optional calledByDBSeq As String = "")
         Dim tableName As String = ""                         ' Database Table, where Data is to be stored
         Dim primKeysStr As String = ""                       ' String containing primary Key names for updating table data, comma separated
         Dim database As String = ""                          ' Database to store to
@@ -90,6 +101,9 @@ Public Module Mapper
         ' set up parameters
         If Not getParametersFromText(paramType:="", paramTarget:=DataRange, env:=env, database:=database, tableName:=tableName, primKeysStr:=primKeysStr, insertIfMissing:=insertIfMissing, executeAdditionalProc:=executeAdditionalProc, ignoreColumns:=ignoreColumns, storeDBMapOnSave:=storeDBMapOnSave) Then Exit Sub
         If WbIsSaving And Not storeDBMapOnSave Then Exit Sub
+        If WbIsSaving And storeDBMapOnSave And calledByDBSeq <> "" Then
+            MsgBox("saveRangeToDB in " & DataRange.Parent.Name & "!" & DataRange.Address & " will be executed twice on saving because it is part of DBSequence " & calledByDBSeq & ". Is this really intended (change storeDBMapOnSave parameter) ?")
+        End If
         primKeys = Split(primKeysStr, ",")
         ignoreColumns = LCase(ignoreColumns) + "," ' lowercase and add comma for better retrieval
 
@@ -297,10 +311,26 @@ cleanup:
     End Function
 
     ''' <summary>gets defined named ranges for DBMapper invocation in the current workbook and updates Ribbon with it</summary>
-    Sub getDBMapperDefinitions()
+    Public Sub getDBMapperDefinitions()
         ' load DBMapper definitions
         Try
             Globals.DBMapperDefColl = New Dictionary(Of String, Dictionary(Of String, Object))
+            ' add DB sequences on Workbook level...
+            For Each docproperty In hostApp.ActiveWorkbook.CustomDocumentProperties
+                If TypeName(docproperty.Value) = "String" And Left(docproperty.Name, 8) = "DBSeqnce" Then
+                    Dim defColl As Dictionary(Of String, Object)
+                    If Not DBMapperDefColl.ContainsKey("ID0") Then
+                        ' add to new sheet "menu"
+                        defColl = New Dictionary(Of String, Object)
+                        defColl.Add(docproperty.Name, docproperty.Value)
+                        DBMapperDefColl.Add("ID0", defColl)
+                    Else
+                        ' add definition to existing sheet "menu"
+                        defColl = DBMapperDefColl("ID0")
+                        defColl.Add(docproperty.Name, docproperty.Value)
+                    End If
+                End If
+            Next
             For Each namedrange As Name In hostApp.ActiveWorkbook.Names
                 Dim cleanname As String = Replace(namedrange.Name, namedrange.Parent.Name & "!", "")
                 If Left(cleanname, 8) = "DBMapper" Or Left(cleanname, 8) = "DBAction" Then
@@ -318,28 +348,15 @@ cleanup:
                         ' add to new sheet "menu"
                         defColl = New Dictionary(Of String, Object)
                         defColl.Add(nodeName, namedrange.RefersToRange)
+                        If DBMapperDefColl.Count = 15 Then
+                            ErrorMsg("Not more than 15 sheets with DBMapper/DBAction/DBSequence definitions possible, ignoring definitions in sheet " + namedrange.Parent.Name)
+                            Exit For
+                        End If
                         DBMapperDefColl.Add("ID" + i.ToString(), defColl)
                     Else
                         ' add definition to existing sheet "menu"
                         defColl = DBMapperDefColl("ID" + i.ToString())
                         defColl.Add(nodeName, namedrange.RefersToRange)
-                    End If
-                End If
-                If DBMapperDefColl.Count >= 15 Then ErrorMsg("Not more than 15 sheets with DBMapper/DBAction definitions possible, ignoring definitions in sheet " + namedrange.Parent.Name)
-            Next
-            ' add DB sequences on Workbook level...
-            For Each docproperty In hostApp.ActiveWorkbook.CustomDocumentProperties
-                If TypeName(docproperty.Value) = "String" And Left(docproperty.Name, 8) = "DBSeqnce" Then
-                    Dim defColl As Dictionary(Of String, Object)
-                    If Not DBMapperDefColl.ContainsKey("IDWB") Then
-                        ' add to new sheet "menu"
-                        defColl = New Dictionary(Of String, Object)
-                        defColl.Add(docproperty.Name, docproperty.Value)
-                        DBMapperDefColl.Add("IDWB", defColl)
-                    Else
-                        ' add definition to existing sheet "menu"
-                        defColl = DBMapperDefColl("IDWB")
-                        defColl.Add(docproperty.Name, docproperty.Value)
                     End If
                 End If
             Next
@@ -358,11 +375,12 @@ cleanup:
             For Each DBmapSheet In DBMapperDefColl.Keys
                 For Each dbmapdefkey In DBMapperDefColl(DBmapSheet).Keys
                     If Left(getDBMapperActionSeqnceName(DBMapperDefColl(DBmapSheet).Item(dbmapdefkey)).Name, 8) = "DBMapper" Then
-                        saveRangeToDB(DBMapperDefColl(DBmapSheet).Item(dbmapdefkey), True)
+                        saveRangeToDB(DBMapperDefColl(DBmapSheet).Item(dbmapdefkey), WbIsSaving:=True)
                     ElseIf Left(getDBMapperActionSeqnceName(DBMapperDefColl(DBmapSheet).Item(dbmapdefkey)).Name, 8) = "DBAction" Then
-                        doDBAction(DBMapperDefColl(DBmapSheet).Item(dbmapdefkey), True)
+                        doDBAction(DBMapperDefColl(DBmapSheet).Item(dbmapdefkey), WbIsSaving:=True)
                     ElseIf Left(getDBMapperActionSeqnceName(DBMapperDefColl(DBmapSheet).Item(dbmapdefkey)).Name, 8) = "DBSeqnce" Then
-                        doDBSequence(DBMapperDefColl(DBmapSheet).Item(dbmapdefkey), True)
+                        ' DB sequence actions (the sequence to be done) are stored directly in DBMapperDefColl, so different invocation here
+                        doDBSequence(dbmapdefkey, DBMapperDefColl(DBmapSheet).Item(dbmapdefkey), WbIsSaving:=True)
                     End If
                 Next
             Next
@@ -386,7 +404,7 @@ cleanup:
                                    Optional ByRef storeDBMapOnSave As Boolean = False) As Boolean
         Dim paramText As String = ""
         Dim paramTargetName As String = getDBMapperActionSeqnceName(paramTarget).Name
-        For Each docproperty In paramTarget.Parent.CustomDocumentProperties
+        For Each docproperty In paramTarget.Parent.Parent.CustomDocumentProperties
             If TypeName(docproperty.Value) = "String" And docproperty.Name = paramTargetName Then
                 paramText = docproperty.Value
                 Exit For
@@ -449,7 +467,7 @@ cleanup:
 
     ''' <summary>creates a DBMap at the current active cell</summary>
     Sub createDBMapper(type As String)
-        Dim theDBMapperCreateDlg As DBMapperCreate = Nothing
+        Dim theDBMapperCreateDlg As DBMapperCreate
         Dim activeCellName As String = ""
         ' try regular defined name
         Try : activeCellName = hostApp.Selection.Name.Name : Catch ex As Exception : End Try
@@ -468,26 +486,32 @@ cleanup:
                 Next
             End If
         End If
-        If Not IsNothing(hostApp.ActiveCell.Comment) Then
-            ' fetch parameters if existing comment and DBMapper definition...
-            Dim tableName As String = ""                         ' Database Table, where Data is to be stored
-            Dim primKeysStr As String = ""                       ' String containing primary Key names for updating table data, comma separated
-            Dim database As String = ""                          ' Database to store to
-            Dim env As Integer = -1                              ' Environment where connection id should be taken from
-            Dim insertIfMissing As Boolean = False               ' if set, then insert row into table if primary key is missing there. Default = False (only update)
-            Dim executeAdditionalProc As String = ""             ' additional stored procedure to be executed after saving
-            Dim ignoreColumns As String = ""                     ' columns to be ignored (helper columns)
-            Dim storeDBMapOnSave As Boolean = False              ' should DBMap be saved on Excel Saving? (default no)
-            If type = "DBAction" Then
-                If Not getParametersFromText(paramType:="DBAction", paramTarget:=hostApp.ActiveCell, env:=env, database:=database, storeDBMapOnSave:=storeDBMapOnSave) Then Exit Sub
-            Else
-                If Not getParametersFromText(paramType:="saveRangeToDB", paramTarget:=hostApp.ActiveCell, env:=env, database:=database, tableName:=tableName, primKeysStr:=primKeysStr, insertIfMissing:=insertIfMissing, executeAdditionalProc:=executeAdditionalProc, ignoreColumns:=ignoreColumns, storeDBMapOnSave:=storeDBMapOnSave) Then Exit Sub
-            End If
-            theDBMapperCreateDlg = New DBMapperCreate()
+        ' fetch parameters if existing comment and DBMapper definition...
+        Dim tableName As String = ""                         ' Database Table, where Data is to be stored
+        Dim primKeysStr As String = ""                       ' String containing primary Key names for updating table data, comma separated
+        Dim database As String = ""                          ' Database to store to
+        Dim env As Integer = -1                              ' Environment where connection id should be taken from
+        Dim insertIfMissing As Boolean = False               ' if set, then insert row into table if primary key is missing there. Default = False (only update)
+        Dim executeAdditionalProc As String = ""             ' additional stored procedure to be executed after saving
+        Dim ignoreColumns As String = ""                     ' columns to be ignored (helper columns)
+        Dim storeDBMapOnSave As Boolean = False              ' should DBMap be saved on Excel Saving? (default no)
+        Dim existingDefinition As Boolean
+        If type = "DBAction" Then
+            existingDefinition = getParametersFromText(paramType:="DBAction", paramTarget:=hostApp.ActiveCell, env:=env, database:=database, storeDBMapOnSave:=storeDBMapOnSave)
+        Else
+            existingDefinition = getParametersFromText(paramType:="saveRangeToDB", paramTarget:=hostApp.ActiveCell, env:=env, database:=database, tableName:=tableName, primKeysStr:=primKeysStr, insertIfMissing:=insertIfMissing, executeAdditionalProc:=executeAdditionalProc, ignoreColumns:=ignoreColumns, storeDBMapOnSave:=storeDBMapOnSave)
+        End If
+        theDBMapperCreateDlg = New DBMapperCreate()
+        theDBMapperCreateDlg.envSel.DataSource = Globals.environdefs
+        theDBMapperCreateDlg.envSel.SelectedIndex = -1
+        If existingDefinition Then
             If InStr(1, activeCellName, type) > 0 Then theDBMapperCreateDlg.DBMapperName.Text = Replace(activeCellName, type, "")
-
-            theDBMapperCreateDlg.envSel.DataSource = Globals.environdefs
-            theDBMapperCreateDlg.envSel.SelectedIndex = env
+            Try
+                theDBMapperCreateDlg.envSel.SelectedIndex = env - 1
+            Catch ex As Exception
+                ErrorMsg("Error setting environment " & env & " (correct environment manually in docproperty " & activeCellName & "): " & ex.Message)
+                Exit Sub
+            End Try
             theDBMapperCreateDlg.Database.Text = database
             theDBMapperCreateDlg.storeDBMapOnSave.Checked = storeDBMapOnSave
             If type <> "DBAction" Then
@@ -497,12 +521,6 @@ cleanup:
                 theDBMapperCreateDlg.addStoredProc.Text = executeAdditionalProc
                 theDBMapperCreateDlg.IgnoreColumns.Text = ignoreColumns
             End If
-        End If
-        ' no DBMapper/DBAction definitions found...
-        If IsNothing(theDBMapperCreateDlg) Then
-            theDBMapperCreateDlg = New DBMapperCreate()
-            theDBMapperCreateDlg.envSel.DataSource = Globals.environdefs
-            theDBMapperCreateDlg.envSel.SelectedIndex = -1
         End If
         theDBMapperCreateDlg.NameLabel.Text = type & " Name:"
         theDBMapperCreateDlg.Text = "Edit " & type & " definition"
@@ -532,17 +550,16 @@ cleanup:
         Try : hostApp.ActiveCell.Name = type + theDBMapperCreateDlg.DBMapperName.Text
         Catch ex As Exception : ErrorMsg("Error when assigning name '" & type & theDBMapperCreateDlg.DBMapperName.Text & "' to active cell: " & ex.Message)
         End Try
-        ' set parameters in comment text
-        Try : hostApp.ActiveCell.ClearComments() : Catch ex As Exception : End Try
+        ' create parameter definition string ...
         Dim paramText As String
         If type = "DBAction" Then
             paramText = "DBAction(" +
-                IIf(theDBMapperCreateDlg.envSel.SelectedIndex = -1, "", theDBMapperCreateDlg.envSel.SelectedIndex.ToString()) + "," +
+                IIf(theDBMapperCreateDlg.envSel.SelectedIndex = -1, "", (theDBMapperCreateDlg.envSel.SelectedIndex + 1).ToString()) + "," +
                 """" + theDBMapperCreateDlg.Database.Text + """," +
                 theDBMapperCreateDlg.storeDBMapOnSave.Checked.ToString() + ")"
         Else
             paramText = "saveRangeToDB(" +
-                IIf(theDBMapperCreateDlg.envSel.SelectedIndex = -1, "", theDBMapperCreateDlg.envSel.SelectedIndex.ToString()) + "," +
+                IIf(theDBMapperCreateDlg.envSel.SelectedIndex = -1, "", (theDBMapperCreateDlg.envSel.SelectedIndex + 1).ToString()) + "," +
                 """" + theDBMapperCreateDlg.Database.Text + """," +
                 """" + theDBMapperCreateDlg.Tablename.Text + """," +
                 """" + theDBMapperCreateDlg.PrimaryKeys.Text + """," +
@@ -551,11 +568,13 @@ cleanup:
                 """" + IIf(Len(theDBMapperCreateDlg.IgnoreColumns.Text) = 0, "", theDBMapperCreateDlg.IgnoreColumns.Text) + """," +
                 theDBMapperCreateDlg.storeDBMapOnSave.Checked.ToString() + ")"
         End If
+        ' ... and store in docproperty (rename docproperty first to current cell name, might have been changed)
         Try
-            hostApp.ActiveCell.AddComment()
-            hostApp.ActiveCell.Comment.Text(Text:=paramText)
-            hostApp.ActiveCell.Comment.Shape.TextFrame.Characters.Font.Bold = False
-        Catch ex As Exception : ErrorMsg("Error when adding comments with DBMapper parameters to active cell: " & ex.Message) : End Try
+            hostApp.ActiveWorkbook.CustomDocumentProperties(activeCellName).Delete
+        Catch ex As Exception : End Try
+        Try
+            hostApp.ActiveWorkbook.CustomDocumentProperties.Add(Name:=type + theDBMapperCreateDlg.DBMapperName.Text, LinkToContent:=False, Type:=Microsoft.Office.Core.MsoDocProperties.msoPropertyTypeString, Value:=paramText)
+        Catch ex As Exception : ErrorMsg("Error when adding property with DBMapper parameters: " & ex.Message) : End Try
         ' refresh mapper definitions to reflect changes immediately...
         getDBMapperDefinitions()
     End Sub

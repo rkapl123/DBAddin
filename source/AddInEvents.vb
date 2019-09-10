@@ -53,7 +53,7 @@ Public Class AddInEvents
 
     ''' <summary>Workbook_Save: saves defined DBMaps (depending on configuration), also used to remove contents of DBListfunction results (data safety/space consumption)
     ''' choosing functions for removal of target data is done with custom docproperties</summary>
-    Private Sub Workbook_Save(Wb As Excel.Workbook, ByVal SaveAsUI As Boolean, ByRef Cancel As Boolean) Handles Application.WorkbookBeforeSave
+    Private Sub Application_WorkbookSave(Wb As Excel.Workbook, ByVal SaveAsUI As Boolean, ByRef Cancel As Boolean) Handles Application.WorkbookBeforeSave
         Dim doRefreshDBFuncsAfterSave As Boolean = True
         Dim docproperty
         Dim DBFCContentColl As Collection, DBFCAllColl As Collection
@@ -131,7 +131,7 @@ Public Class AddInEvents
 
     ''' <summary>open workbook: reset query cache, refresh DB functions and repair legacy functions if existing</summary>
     ''' <param name="Wb"></param>
-    Private Sub Workbook_Open(Wb As Excel.Workbook) Handles Application.WorkbookOpen
+    Private Sub Application_WorkbookOpen(Wb As Excel.Workbook) Handles Application.WorkbookOpen
         If Not Wb.IsAddin Then
             ' reset query cache !
             queryCache = New Collection
@@ -150,8 +150,8 @@ Public Class AddInEvents
         End If
     End Sub
 
-    ''' <summary>Workbook_Activate: gets defined named ranges for DBMapper invocation in the current workbook and updates Ribbon with it</summary>
-    Private Sub Workbook_Activate(Wb As Excel.Workbook) Handles Application.WorkbookActivate
+    ''' <summary>WorkbookActivate: gets defined named ranges for DBMapper invocation in the current workbook after activation and updates Ribbon with it</summary>
+    Private Sub Application_WorkbookActivate(Wb As Excel.Workbook) Handles Application.WorkbookActivate
         getDBMapperDefinitions()
     End Sub
 
@@ -166,5 +166,10 @@ Public Class AddInEvents
             refreshDBFunctions(hostApp.ActiveWorkbook, True)
             hostApp.ActiveWorkbook.Saved = previouslySaved
         End If
+    End Sub
+
+    ''' <summary>SheetDeactivate: gets defined named ranges for DBMapper invocation after sheet was deleted/added (changes index of sheets-> IDs!) and updates Ribbon with it</summary>
+    Private Sub Application_SheetDeactivate(Sh As Object) Handles Application.SheetDeactivate
+        getDBMapperDefinitions()
     End Sub
 End Class

@@ -14,6 +14,7 @@ Public Class MenuHandler
     End Sub
 
     ''' <summary>creates the Ribbon (only at startup). any changes to the ribbon can only be done via dynamic menus</summary>
+    ''' <returns></returns>
     Public Overrides Function GetCustomUI(RibbonID As String) As String
         ' Ribbon definition XML
         Dim customUIXml As String = "<customUI xmlns='http://schemas.microsoft.com/office/2009/07/customui' onLoad='ribbonLoaded' ><ribbon><tabs><tab id='DBaddinTab' label='DB Addin'>"
@@ -31,8 +32,7 @@ Public Class MenuHandler
         For i As Integer = 0 To 14
             customUIXml += "<dynamicMenu id='ID" + i.ToString() + "' " +
                                             "size='large' getLabel='getSheetLabel' imageMso='ApplicationOptionsDialog' " +
-                                            "screentip='Select DBMapper range to store' " +
-                                            "getContent='getDBMapperMenuContent' getVisible='getDBMapperMenuVisible'/>"
+                                            "getScreentip='getDBMapperScreentip' getContent='getDBMapperMenuContent' getVisible='getDBMapperMenuVisible'/>"
         Next
         ' Context menus for refresh, jump and creation: in cell, row, column and ListRange (area of ListObjects)
         customUIXml += "</group></tab></tabs></ribbon>" +
@@ -84,21 +84,25 @@ Public Class MenuHandler
     End Function
 
     ''' <summary>for environment dropdown to get the total number of the entries</summary>
+    ''' <returns></returns>
     Public Function GetItemCount(control As IRibbonControl) As Integer
         Return Globals.environdefs.Length
     End Function
 
     ''' <summary>for environment dropdown to get the label of the entries</summary>
+    ''' <returns></returns>
     Public Function GetItemLabel(control As IRibbonControl, index As Integer) As String
         Return Globals.environdefs(index)
     End Function
 
     ''' <summary>for environment dropdown to get the ID of the entries</summary>
+    ''' <returns></returns>
     Public Function GetItemID(control As IRibbonControl, index As Integer) As String
         Return Globals.environdefs(index)
     End Function
 
     ''' <summary>after selection of environment (using selectItem) used to return the selected environment</summary>
+    ''' <returns></returns>
     Public Function GetSelItem(control As IRibbonControl) As Integer
         Return Globals.selectedEnvironment
     End Function
@@ -109,7 +113,7 @@ Public Class MenuHandler
         Dim env As String = (index + 1).ToString()
 
         If GetSetting("DBAddin", "Settings", "DontChangeEnvironment", String.Empty) = "Y" Then
-            MsgBox("Setting DontChangeEnvironment Is set to Y, therefore changing the Environment Is prevented !")
+            MsgBox("Setting DontChangeEnvironment is set to Y, therefore changing the Environment is prevented !")
             Exit Sub
         End If
         storeSetting("ConstConnString", fetchSetting("ConstConnString" & env, String.Empty))
@@ -140,6 +144,7 @@ Public Class MenuHandler
     End Sub
 
     ''' <summary>get DB Config Menu from File</summary>
+    ''' <returns></returns>
     Public Function getDBConfigMenu(control As IRibbonControl) As String
         If ConfigMenuXML = vbNullString Then createConfigTreeMenu()
         Return ConfigMenuXML
@@ -151,10 +156,14 @@ Public Class MenuHandler
     End Sub
 
     ''' <summary>set the name of the WB/sheet dropdown to the sheet name (for the WB dropdown this is the WB name)</summary>
+    ''' <returns></returns>
     Public Function getSheetLabel(control As IRibbonControl) As String
         getSheetLabel = vbNullString
         Try
-            If DBMapperDefColl.ContainsKey(control.Id) Then
+            If DBMapperDefColl.ContainsKey(control.Id) And control.Id = "ID0" Then
+                ' special menu for sequences
+                getSheetLabel = "DBSequences"
+            ElseIf DBMapperDefColl.ContainsKey(control.Id) Then
                 ' get parent name of first stored DB Mapper range
                 getSheetLabel = DBMapperDefColl(control.Id).Item(DBMapperDefColl(control.Id).Keys.First).Parent.Name
             End If
@@ -164,18 +173,20 @@ Public Class MenuHandler
     End Function
 
     ''' <summary>create the buttons in the DBMapper sheet dropdown menu</summary>
+    ''' <returns></returns>
     Public Function getDBMapperMenuContent(control As IRibbonControl) As String
         Dim xmlString As String = "<menu xmlns='http://schemas.microsoft.com/office/2009/07/customui'>"
         Try
             If Not DBMapperDefColl.ContainsKey(control.Id) Then Return ""
 
             For Each nodeName As String In DBMapperDefColl(control.Id).Keys
-                If Left(getDBMapperActionSeqnceName(DBMapperDefColl(control.Id).Item(nodeName)).Name, 8) = "DBMapper" Then
+                ' special menu for sequences
+                If Left(nodeName, 8) = "DBSeqnce" Then
+                    xmlString = xmlString + "<button id='" + nodeName + "' label='do " + nodeName + "' imageMso='FilePrepareMenu' onAction='DBSequenceClick' tag='" + control.Id + "' screentip='do " + nodeName + "' supertip='executes DB Sequence defined in docproperty " + nodeName + "' />"
+                ElseIf Left(getDBMapperActionSeqnceName(DBMapperDefColl(control.Id).Item(nodeName)).Name, 8) = "DBMapper" Then
                     xmlString = xmlString + "<button id='" + nodeName + "' label='store " + nodeName + "' imageMso='SignatureLineInsert' onAction='saveRangeToDBClick' tag='" + control.Id + "' screentip='store " + nodeName + "' supertip='stores data defined in " + nodeName + " Mapper range on " + DBMapperDefColl(control.Id).Item(nodeName).Parent.Name + "![" + DBMapperDefColl(control.Id).Item(nodeName).Address + "]' />"
                 ElseIf Left(getDBMapperActionSeqnceName(DBMapperDefColl(control.Id).Item(nodeName)).Name, 8) = "DBAction" Then
-                    xmlString = xmlString + "<button id='" + nodeName + "' label='do " + nodeName + "' imageMso='SignatureShow' onAction='DBActionClick' tag='" + control.Id + "' screentip='store " + nodeName + "' supertip='executes Action defined in " + nodeName + " DBAction range on " + DBMapperDefColl(control.Id).Item(nodeName).Parent.Name + "![" + DBMapperDefColl(control.Id).Item(nodeName).Address + "]' />"
-                ElseIf Left(getDBMapperActionSeqnceName(DBMapperDefColl(control.Id).Item(nodeName)).Name, 8) = "DBSeqnce" Then
-                    xmlString = xmlString + "<button id='" + nodeName + "' label='do " + nodeName + "' imageMso='FilePrepareMenu' onAction='DBSequenceClick' tag='" + control.Id + "' screentip='store " + nodeName + "' supertip='executes Sequence defined in " + nodeName + " DBSeqnce range on " + DBMapperDefColl(control.Id).Item(nodeName).Parent.Name + "![" + DBMapperDefColl(control.Id).Item(nodeName).Address + "]' />"
+                    xmlString = xmlString + "<button id='" + nodeName + "' label='do " + nodeName + "' imageMso='SignatureShow' onAction='DBActionClick' tag='" + control.Id + "' screentip='do " + nodeName + "' supertip='executes Action defined in " + nodeName + " DBAction range on " + DBMapperDefColl(control.Id).Item(nodeName).Parent.Name + "![" + DBMapperDefColl(control.Id).Item(nodeName).Address + "]' />"
                 End If
             Next
             xmlString += "</menu>"
@@ -185,7 +196,14 @@ Public Class MenuHandler
         End Try
     End Function
 
+    ''' <summary>show a screentip for the dynamic DBMapper/Action/Sequence Menus (also showing the ID behind)</summary>
+    ''' <returns></returns>
+    Public Function getDBMapperScreentip(control As IRibbonControl) As String
+        Return "Select DBMapper range to store (" & control.Id & ")"
+    End Function
+
     ''' <summary>shows the DBMapper sheet button only if it was collected...</summary>
+    ''' <returns></returns>
     Public Function getDBMapperMenuVisible(control As IRibbonControl) As Boolean
         Try
             Return DBMapperDefColl.ContainsKey(control.Id)
@@ -206,6 +224,7 @@ Public Class MenuHandler
 
     ''' <summary>DBSequence button activated, do DB Sequence...</summary>
     Public Sub DBSequenceClick(control As IRibbonControl)
+        ' DB sequence actions (the sequence to be done) are stored directly in DBMapperDefColl, so different invocation here
         doDBSequence(control.Id, DBMapperDefColl(control.Tag).Item(control.Id))
     End Sub
 
