@@ -41,6 +41,7 @@ Public Class MenuHandler
          "<menu id='createMenu' label='build DBFunc/Map ...' insertBeforeMso='Cut'>" +
             "<button id='DBMapper' tag='DBMapper' label='DBMapper' imageMso='AddToolGallery' onAction='clickCreateButton'/>" +
             "<button id='DBAction' tag='DBAction' label='DBAction' imageMso='AddToolGallery' onAction='clickCreateButton'/>" +
+            "<button id='DBSequence' tag='DBSeqnce' label='DBSeqnce' imageMso='AddToolGallery' onAction='clickCreateButton'/>" +
             "<button id='DBListFetch' tag='DBListFetch' label='DBListFetch' imageMso='AddCalendarMenu' onAction='clickCreateButton'/>" +
             "<button id='DBRowFetch' tag='DBRowFetch' label='DBRowFetch' imageMso='DataFormAddRecord' onAction='clickCreateButton'/>" +
             "<button id='DBSetQueryPivot' tag='DBSetQueryPivot' label='DBSetQueryPivot' imageMso='AddContentType' onAction='clickCreateButton'/>" +
@@ -54,6 +55,7 @@ Public Class MenuHandler
          "<menu id='createMenuCL' label='build DBFunc/Map ...' insertBeforeMso='Cut'>" +
             "<button id='DBMapperCL' tag='DBMapper' label='DBMapper' imageMso='AddToolGallery' onAction='clickCreateButton'/>" +
             "<button id='DBActionCL' tag='DBAction' label='DBAction' imageMso='AddToolGallery' onAction='clickCreateButton'/>" +
+            "<button id='DBSequenceCL' tag='DBSeqnce' label='DBSeqnce' imageMso='AddToolGallery' onAction='clickCreateButton'/>" +
             "<button id='DBListFetchCL' tag='DBListFetch' label='DBListFetch' imageMso='AddCalendarMenu' onAction='clickCreateButton'/>" +
             "<button id='DBRowFetchCL' tag='DBRowFetch' label='DBRowFetch' imageMso='DataFormAddRecord' onAction='clickCreateButton'/>" +
             "<button id='DBSetQueryPivotCL' tag='DBSetQueryPivot' label='DBSetQueryPivot' imageMso='AddContentType' onAction='clickCreateButton'/>" +
@@ -183,9 +185,9 @@ Public Class MenuHandler
                 ' special menu for sequences
                 If Left(nodeName, 8) = "DBSeqnce" Then
                     xmlString = xmlString + "<button id='" + nodeName + "' label='do " + nodeName + "' imageMso='FilePrepareMenu' onAction='DBSequenceClick' tag='" + control.Id + "' screentip='do " + nodeName + "' supertip='executes DB Sequence defined in docproperty " + nodeName + "' />"
-                ElseIf Left(getDBMapperActionSeqnceName(DBMapperDefColl(control.Id).Item(nodeName)).Name, 8) = "DBMapper" Then
+                ElseIf Left(getDBMapperActionName(DBMapperDefColl(control.Id).Item(nodeName)).Name, 8) = "DBMapper" Then
                     xmlString = xmlString + "<button id='" + nodeName + "' label='store " + nodeName + "' imageMso='SignatureLineInsert' onAction='saveRangeToDBClick' tag='" + control.Id + "' screentip='store " + nodeName + "' supertip='stores data defined in " + nodeName + " Mapper range on " + DBMapperDefColl(control.Id).Item(nodeName).Parent.Name + "![" + DBMapperDefColl(control.Id).Item(nodeName).Address + "]' />"
-                ElseIf Left(getDBMapperActionSeqnceName(DBMapperDefColl(control.Id).Item(nodeName)).Name, 8) = "DBAction" Then
+                ElseIf Left(getDBMapperActionName(DBMapperDefColl(control.Id).Item(nodeName)).Name, 8) = "DBAction" Then
                     xmlString = xmlString + "<button id='" + nodeName + "' label='do " + nodeName + "' imageMso='SignatureShow' onAction='DBActionClick' tag='" + control.Id + "' screentip='do " + nodeName + "' supertip='executes Action defined in " + nodeName + " DBAction range on " + DBMapperDefColl(control.Id).Item(nodeName).Parent.Name + "![" + DBMapperDefColl(control.Id).Item(nodeName).Address + "]' />"
                 End If
             Next
@@ -212,20 +214,32 @@ Public Class MenuHandler
         End Try
     End Function
 
-    ''' <summary>DBMapper store button activated, save Range to DB...</summary>
+    ''' <summary>DBMapper store button activated, save Range to DB or define existing (CtrlKey pressed)...</summary>
     Public Sub saveRangeToDBClick(control As IRibbonControl)
-        saveRangeToDB(DBMapperDefColl(control.Tag).Item(control.Id))
+        If My.Computer.Keyboard.CtrlKeyDown Then
+            createDBMapper("DBMapper", targetRange:=DBMapperDefColl(control.Tag).Item(control.Id))
+        Else
+            saveRangeToDB(DBMapperDefColl(control.Tag).Item(control.Id))
+        End If
     End Sub
 
-    ''' <summary>DBAction button activated, do DB Action...</summary>
+    ''' <summary>DBAction button activated, do DB Action or define existing (CtrlKey pressed)...</summary>
     Public Sub DBActionClick(control As IRibbonControl)
-        doDBAction(DBMapperDefColl(control.Tag).Item(control.Id))
+        If My.Computer.Keyboard.CtrlKeyDown Then
+            createDBMapper("DBAction", targetRange:=DBMapperDefColl(control.Tag).Item(control.Id))
+        Else
+            doDBAction(DBMapperDefColl(control.Tag).Item(control.Id))
+        End If
     End Sub
 
-    ''' <summary>DBSequence button activated, do DB Sequence...</summary>
+    ''' <summary>DBSequence button activated, do DB Sequence or define existing (CtrlKey pressed)...</summary>
     Public Sub DBSequenceClick(control As IRibbonControl)
-        ' DB sequence actions (the sequence to be done) are stored directly in DBMapperDefColl, so different invocation here
-        doDBSequence(control.Id, DBMapperDefColl(control.Tag).Item(control.Id))
+        If My.Computer.Keyboard.CtrlKeyDown Then
+            createDBMapper("DBSeqnce", targetDefName:=control.Id, DBSequenceText:=DBMapperDefColl(control.Tag).Item(control.Id))
+        Else
+            ' DB sequence actions (the sequence to be done) are stored directly in DBMapperDefColl, so different invocation here
+            doDBSequence(control.Id, DBMapperDefColl(control.Tag).Item(control.Id))
+        End If
     End Sub
 
     ''' <summary>context menu entry refreshData: refresh Data in db function (if area or cell selected) or all db functions</summary>
@@ -280,7 +294,7 @@ Public Class MenuHandler
                 .Refresh(BackgroundQuery:=False)
             End With
             createFunctionsInCells(hostApp.ActiveCell, {"RC", "=DBSetQuery("""","""",RC[1])"})
-        ElseIf control.Tag = "DBMapper" Or control.Tag = "DBAction" Then
+        ElseIf control.Tag = "DBMapper" Or control.Tag = "DBAction" Or control.Tag = "DBSeqnce" Then
             createDBMapper(control.Tag)
         End If
     End Sub

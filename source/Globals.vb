@@ -444,11 +444,11 @@ Public Module Globals
     ''' <summary>gets first underlying Name that contains DBMapper, DBAction or DBSeqnce in theRange</summary>
     ''' <param name="theRange"></param>
     ''' <returns>the retrieved name</returns>
-    Public Function getDBMapperActionSeqnceName(theRange As Excel.Range) As Excel.Name
+    Public Function getDBMapperActionName(theRange As Excel.Range) As Excel.Name
         Dim nm As Excel.Name
         Dim rng, testRng As Excel.Range
 
-        getDBMapperActionSeqnceName = Nothing
+        getDBMapperActionName = Nothing
         Try
             For Each nm In theRange.Parent.Parent.Names
                 rng = Nothing
@@ -456,14 +456,14 @@ Public Module Globals
                 If Not rng Is Nothing Then
                     testRng = Nothing
                     Try : testRng = hostApp.Intersect(theRange, rng) : Catch ex As Exception : End Try
-                    If Not IsNothing(testRng) And (InStr(1, nm.Name, "DBMapper") >= 1 Or InStr(1, nm.Name, "DBAction") >= 1) Or InStr(1, nm.Name, "DBSeqnce") >= 1 Then
-                        getDBMapperActionSeqnceName = nm
+                    If Not IsNothing(testRng) And (InStr(1, nm.Name, "DBMapper") >= 1 Or InStr(1, nm.Name, "DBAction") >= 1) Then
+                        getDBMapperActionName = nm
                         Exit Function
                     End If
                 End If
             Next
         Catch ex As Exception
-            LogError("Error: " & ex.Message & " in getDBMapperActionSeqnceName !")
+            LogError("Error: " & ex.Message)
         End Try
     End Function
 

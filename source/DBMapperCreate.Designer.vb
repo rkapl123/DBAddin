@@ -1,9 +1,9 @@
-﻿<Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()> _
+﻿<Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class DBMapperCreate
     Inherits System.Windows.Forms.Form
 
     'Das Formular überschreibt den Löschvorgang, um die Komponentenliste zu bereinigen.
-    <System.Diagnostics.DebuggerNonUserCode()> _
+    <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(ByVal disposing As Boolean)
         Try
             If disposing AndAlso components IsNot Nothing Then
@@ -20,7 +20,7 @@ Partial Class DBMapperCreate
     'Hinweis: Die folgende Prozedur ist für den Windows Form-Designer erforderlich.
     'Das Bearbeiten ist mit dem Windows Form-Designer möglich.  
     'Das Bearbeiten mit dem Code-Editor ist nicht möglich.
-    <System.Diagnostics.DebuggerStepThrough()> _
+    <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         Me.components = New System.ComponentModel.Container()
         Me.TableLayoutPanel1 = New System.Windows.Forms.TableLayoutPanel()
@@ -42,8 +42,10 @@ Partial Class DBMapperCreate
         Me.storeDBMapOnSave = New System.Windows.Forms.CheckBox()
         Me.ToolTip1 = New System.Windows.Forms.ToolTip(Me.components)
         Me.envSel = New System.Windows.Forms.ComboBox()
-        Me.Label7 = New System.Windows.Forms.Label()
+        Me.EnvironmentLabel = New System.Windows.Forms.Label()
+        Me.DBSeqenceDataGrid = New System.Windows.Forms.DataGridView()
         Me.TableLayoutPanel1.SuspendLayout()
+        CType(Me.DBSeqenceDataGrid, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
         'TableLayoutPanel1
@@ -54,7 +56,7 @@ Partial Class DBMapperCreate
         Me.TableLayoutPanel1.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50.0!))
         Me.TableLayoutPanel1.Controls.Add(Me.OK_Button, 0, 0)
         Me.TableLayoutPanel1.Controls.Add(Me.Cancel_Button, 1, 0)
-        Me.TableLayoutPanel1.Location = New System.Drawing.Point(275, 238)
+        Me.TableLayoutPanel1.Location = New System.Drawing.Point(275, 382)
         Me.TableLayoutPanel1.Name = "TableLayoutPanel1"
         Me.TableLayoutPanel1.RowCount = 1
         Me.TableLayoutPanel1.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50.0!))
@@ -199,7 +201,7 @@ Partial Class DBMapperCreate
         'storeDBMapOnSave
         '
         Me.storeDBMapOnSave.AutoSize = True
-        Me.storeDBMapOnSave.Location = New System.Drawing.Point(14, 212)
+        Me.storeDBMapOnSave.Location = New System.Drawing.Point(12, 389)
         Me.storeDBMapOnSave.Name = "storeDBMapOnSave"
         Me.storeDBMapOnSave.Size = New System.Drawing.Size(133, 17)
         Me.storeDBMapOnSave.TabIndex = 8
@@ -217,14 +219,22 @@ Partial Class DBMapperCreate
         Me.ToolTip1.SetToolTip(Me.envSel, "The Environment, where connection id should be taken from (if not existing, take " &
         "from selected Environment in DB Addin General Settings Group)")
         '
-        'Label7
+        'EnvironmentLabel
         '
-        Me.Label7.AutoSize = True
-        Me.Label7.Location = New System.Drawing.Point(211, 190)
-        Me.Label7.Name = "Label7"
-        Me.Label7.Size = New System.Drawing.Size(69, 13)
-        Me.Label7.TabIndex = 6
-        Me.Label7.Text = "Environment:"
+        Me.EnvironmentLabel.AutoSize = True
+        Me.EnvironmentLabel.Location = New System.Drawing.Point(211, 190)
+        Me.EnvironmentLabel.Name = "EnvironmentLabel"
+        Me.EnvironmentLabel.Size = New System.Drawing.Size(69, 13)
+        Me.EnvironmentLabel.TabIndex = 6
+        Me.EnvironmentLabel.Text = "Environment:"
+        '
+        'DBSeqenceDataGrid
+        '
+        Me.DBSeqenceDataGrid.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize
+        Me.DBSeqenceDataGrid.Location = New System.Drawing.Point(15, 214)
+        Me.DBSeqenceDataGrid.Name = "DBSeqenceDataGrid"
+        Me.DBSeqenceDataGrid.Size = New System.Drawing.Size(405, 152)
+        Me.DBSeqenceDataGrid.TabIndex = 10
         '
         'DBMapperCreate
         '
@@ -232,8 +242,9 @@ Partial Class DBMapperCreate
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.CancelButton = Me.Cancel_Button
-        Me.ClientSize = New System.Drawing.Size(433, 279)
-        Me.Controls.Add(Me.Label7)
+        Me.ClientSize = New System.Drawing.Size(433, 423)
+        Me.Controls.Add(Me.DBSeqenceDataGrid)
+        Me.Controls.Add(Me.EnvironmentLabel)
         Me.Controls.Add(Me.envSel)
         Me.Controls.Add(Me.storeDBMapOnSave)
         Me.Controls.Add(Me.insertIfMissing)
@@ -257,6 +268,7 @@ Partial Class DBMapperCreate
         Me.ShowInTaskbar = False
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent
         Me.TableLayoutPanel1.ResumeLayout(False)
+        CType(Me.DBSeqenceDataGrid, System.ComponentModel.ISupportInitialize).EndInit()
         Me.ResumeLayout(False)
         Me.PerformLayout()
 
@@ -280,5 +292,6 @@ Partial Class DBMapperCreate
     Friend WithEvents storeDBMapOnSave As Windows.Forms.CheckBox
     Friend WithEvents ToolTip1 As Windows.Forms.ToolTip
     Friend WithEvents envSel As Windows.Forms.ComboBox
-    Friend WithEvents Label7 As Windows.Forms.Label
+    Friend WithEvents EnvironmentLabel As Windows.Forms.Label
+    Friend WithEvents DBSeqenceDataGrid As Windows.Forms.DataGridView
 End Class

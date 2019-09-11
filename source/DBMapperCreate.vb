@@ -27,4 +27,7 @@ Public Class DBMapperCreate
         Me.Close()
     End Sub
 
+    Private Sub DBSeqenceDataGrid_DataError(sender As Object, e As DataGridViewDataErrorEventArgs) Handles DBSeqenceDataGrid.DataError
+
+    End Sub
 End Class
