@@ -1,7 +1,7 @@
 ﻿Imports System.Windows.Forms
 
-''' <summary>Dialog for creating DB Mapper configurations</summary>
-Public Class DBMapperCreate
+''' <summary>Dialog for creating DB Modifier configurations</summary>
+Public Class DBModifCreate
 
     ''' <summary>check for required fields before closing</summary>
     ''' <param name="sender"></param>
@@ -28,6 +28,7 @@ Public Class DBMapperCreate
     End Sub
 
     Private Sub DBSeqenceDataGrid_DataError(sender As Object, e As DataGridViewDataErrorEventArgs) Handles DBSeqenceDataGrid.DataError
-
+        LogWarn(e.Exception.Message & ":" & e.RowIndex & ":" & e.Context.ToString())
     End Sub
+
 End Class

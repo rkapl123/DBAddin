@@ -16,8 +16,8 @@ Public Module Globals
     Public hostApp As Excel.Application
     ''' <summary>environment definitions</summary>
     Public environdefs As String() = {}
-    ''' <summary>DBMapper definition collections (for labels (key of nested dictionary) and target ranges (value of nested dictionary))</summary>
-    Public DBMapperDefColl As Dictionary(Of String, Dictionary(Of String, Object))
+    ''' <summary>DBModif definition collections (for labels (key of nested dictionary) and target ranges (value of nested dictionary))</summary>
+    Public DBModifDefColl As Dictionary(Of String, Dictionary(Of String, Object))
     ''' <summary>the selected event level in the About box</summary>
     Public EventLevelSelected As String
     ''' <summary>the log listener</summary>
@@ -125,7 +125,7 @@ Public Module Globals
         Dim theMethod As Object = (New System.Diagnostics.StackTrace).GetFrame(1).GetMethod
         Dim caller As String = theMethod.ReflectedType.FullName & "." & theMethod.Name
         WriteToLog(LogMessage, EventLogEntryType.Warning, caller) ' to avoid popup of trace log
-        Dim retval As Integer = MsgBox(LogMessage & IIf(exitMe, vbCrLf & "(press Cancel to avoid further error messages of this kind)", ""), vbExclamation + IIf(exitMe, vbOKCancel, vbOKOnly), "DBAddin Error")
+        Dim retval As Integer = MsgBox(LogMessage & " in " & caller & IIf(exitMe, vbCrLf & " (press Cancel to avoid further error messages of this kind)", ""), vbExclamation + IIf(exitMe, vbOKCancel, vbOKOnly), "DBAddin Error")
         If retval = vbCancel Then
             exitMe = True
         Else
@@ -155,7 +155,7 @@ Public Module Globals
             queryCache = New Collection
             StatusCollection = New Collection
             Dim underlyingName As Excel.Name
-            underlyingName = getDBRangeName(hostApp.ActiveCell)
+            underlyingName = getDBunderlyingNameFromRange(hostApp.ActiveCell)
 
             ' now for DBListfetch/DBRowfetch resetting, first outside of all db function areas...
             If underlyingName Is Nothing Then
@@ -219,7 +219,7 @@ Public Module Globals
             Exit Sub
         End If
 
-        Dim underlyingName As Excel.Name = getDBRangeName(hostApp.ActiveCell)
+        Dim underlyingName As Excel.Name = getDBunderlyingNameFromRange(hostApp.ActiveCell)
         If underlyingName Is Nothing Then Exit Sub
         Dim jumpName As String
         jumpName = underlyingName.Name
@@ -441,14 +441,14 @@ Public Module Globals
         End If
     End Function
 
-    ''' <summary>gets first underlying Name that contains DBMapper, DBAction or DBSeqnce in theRange</summary>
+    ''' <summary>gets DB Modification Name (DBMapper, DBAction or DBSeqnce) from theRange</summary>
     ''' <param name="theRange"></param>
-    ''' <returns>the retrieved name</returns>
-    Public Function getDBMapperActionName(theRange As Excel.Range) As Excel.Name
+    ''' <returns>the retrieved name as a string (not name object !)</returns>
+    Public Function getDBModifNameFromRange(theRange As Excel.Range) As String
         Dim nm As Excel.Name
         Dim rng, testRng As Excel.Range
 
-        getDBMapperActionName = Nothing
+        getDBModifNameFromRange = ""
         Try
             For Each nm In theRange.Parent.Parent.Names
                 rng = Nothing
@@ -457,7 +457,7 @@ Public Module Globals
                     testRng = Nothing
                     Try : testRng = hostApp.Intersect(theRange, rng) : Catch ex As Exception : End Try
                     If Not IsNothing(testRng) And (InStr(1, nm.Name, "DBMapper") >= 1 Or InStr(1, nm.Name, "DBAction") >= 1) Then
-                        getDBMapperActionName = nm
+                        getDBModifNameFromRange = nm.Name
                         Exit Function
                     End If
                 End If
@@ -467,29 +467,29 @@ Public Module Globals
         End Try
     End Function
 
-    ''' <summary>gets first underlying Name that contains DBtarget or DBsource in theRange</summary>
+    ''' <summary>gets underlying DBtarget/DBsource Name from theRange</summary>
     ''' <param name="theRange"></param>
     ''' <returns>the retrieved name</returns>
-    Public Function getDBRangeName(theRange As Excel.Range) As Excel.Name
+    Public Function getDBunderlyingNameFromRange(theRange As Excel.Range) As Excel.Name
         Dim nm As Excel.Name
         Dim rng, testRng As Excel.Range
 
-        getDBRangeName = Nothing
+        getDBunderlyingNameFromRange = Nothing
         Try
             For Each nm In theRange.Parent.Parent.Names
                 rng = Nothing
                 Try : rng = nm.RefersToRange : Catch ex As Exception : End Try
-                If Not rng Is Nothing And Not (nm.Name Like "*ExterneDaten*" Or nm.Name Like "*_FilterDatabase") Then
+                If Not rng Is Nothing Then
                     testRng = Nothing
                     Try : testRng = hostApp.Intersect(theRange, rng) : Catch ex As Exception : End Try
                     If Not IsNothing(testRng) And (InStr(1, nm.Name, "DBFtarget") >= 1 Or InStr(1, nm.Name, "DBFsource") >= 1) Then
-                        getDBRangeName = nm
+                        getDBunderlyingNameFromRange = nm
                         Exit Function
                     End If
                 End If
             Next
         Catch ex As Exception
-            LogError("Error: " & ex.Message & " in getDBRangeName !")
+            LogError("Error: " & ex.Message)
         End Try
     End Function
 

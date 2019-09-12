@@ -27,12 +27,12 @@ Public Class MenuHandler
               "<button id='showLog' label='show Log' imageMso='ZoomOnePage' onAction='clickShowLog'/>" +
               "</buttonGroup>" +
               "<dialogBoxLauncher><button id='dialog' label='About DBAddin' onAction='showAbout' tag='3' screentip='Show Aboutbox with help, version information, homepage and access to log'/></dialogBoxLauncher></group>"
-        ' DBMapper Group: max. 15 sheets with DBMapper definitions possible: 
-        customUIXml += "<group id='DBMapperGroup' label='Store DBMapper Data'>"
+        ' DBModif Group: max. 15 sheets with DBModif definitions possible: 
+        customUIXml += "<group id='DBModifGroup' label='Store DBModif Data'>"
         For i As Integer = 0 To 14
             customUIXml += "<dynamicMenu id='ID" + i.ToString() + "' " +
                                             "size='large' getLabel='getSheetLabel' imageMso='ApplicationOptionsDialog' " +
-                                            "getScreentip='getDBMapperScreentip' getContent='getDBMapperMenuContent' getVisible='getDBMapperMenuVisible'/>"
+                                            "getScreentip='getDBModifScreentip' getContent='getDBModifMenuContent' getVisible='getDBModifMenuVisible'/>"
         Next
         ' Context menus for refresh, jump and creation: in cell, row, column and ListRange (area of ListObjects)
         customUIXml += "</group></tab></tabs></ribbon>" +
@@ -41,7 +41,7 @@ Public Class MenuHandler
          "<menu id='createMenu' label='build DBFunc/Map ...' insertBeforeMso='Cut'>" +
             "<button id='DBMapper' tag='DBMapper' label='DBMapper' imageMso='AddToolGallery' onAction='clickCreateButton'/>" +
             "<button id='DBAction' tag='DBAction' label='DBAction' imageMso='AddToolGallery' onAction='clickCreateButton'/>" +
-            "<button id='DBSequence' tag='DBSeqnce' label='DBSeqnce' imageMso='AddToolGallery' onAction='clickCreateButton'/>" +
+            "<button id='DBSequence' tag='DBSeqnce' label='DBSequence' imageMso='AddToolGallery' onAction='clickCreateButton'/>" +
             "<button id='DBListFetch' tag='DBListFetch' label='DBListFetch' imageMso='AddCalendarMenu' onAction='clickCreateButton'/>" +
             "<button id='DBRowFetch' tag='DBRowFetch' label='DBRowFetch' imageMso='DataFormAddRecord' onAction='clickCreateButton'/>" +
             "<button id='DBSetQueryPivot' tag='DBSetQueryPivot' label='DBSetQueryPivot' imageMso='AddContentType' onAction='clickCreateButton'/>" +
@@ -55,7 +55,7 @@ Public Class MenuHandler
          "<menu id='createMenuCL' label='build DBFunc/Map ...' insertBeforeMso='Cut'>" +
             "<button id='DBMapperCL' tag='DBMapper' label='DBMapper' imageMso='AddToolGallery' onAction='clickCreateButton'/>" +
             "<button id='DBActionCL' tag='DBAction' label='DBAction' imageMso='AddToolGallery' onAction='clickCreateButton'/>" +
-            "<button id='DBSequenceCL' tag='DBSeqnce' label='DBSeqnce' imageMso='AddToolGallery' onAction='clickCreateButton'/>" +
+            "<button id='DBSequenceCL' tag='DBSeqnce' label='DBSequence' imageMso='AddToolGallery' onAction='clickCreateButton'/>" +
             "<button id='DBListFetchCL' tag='DBListFetch' label='DBListFetch' imageMso='AddCalendarMenu' onAction='clickCreateButton'/>" +
             "<button id='DBRowFetchCL' tag='DBRowFetch' label='DBRowFetch' imageMso='DataFormAddRecord' onAction='clickCreateButton'/>" +
             "<button id='DBSetQueryPivotCL' tag='DBSetQueryPivot' label='DBSetQueryPivot' imageMso='AddContentType' onAction='clickCreateButton'/>" +
@@ -162,33 +162,36 @@ Public Class MenuHandler
     Public Function getSheetLabel(control As IRibbonControl) As String
         getSheetLabel = vbNullString
         Try
-            If DBMapperDefColl.ContainsKey(control.Id) And control.Id = "ID0" Then
+            If DBModifDefColl.ContainsKey(control.Id) And control.Id = "ID0" Then
                 ' special menu for sequences
                 getSheetLabel = "DBSequences"
-            ElseIf DBMapperDefColl.ContainsKey(control.Id) Then
-                ' get parent name of first stored DB Mapper range
-                getSheetLabel = DBMapperDefColl(control.Id).Item(DBMapperDefColl(control.Id).Keys.First).Parent.Name
+            ElseIf DBModifDefColl.ContainsKey(control.Id) Then
+                ' get parent name of first stored DBModif range
+                getSheetLabel = DBModifDefColl(control.Id).Item(DBModifDefColl(control.Id).Keys.First).Parent.Name
             End If
         Catch ex As Exception
             Return String.Empty
         End Try
     End Function
 
-    ''' <summary>create the buttons in the DBMapper sheet dropdown menu</summary>
+    ''' <summary>create the buttons in the DBModif sheet dropdown menu</summary>
     ''' <returns></returns>
-    Public Function getDBMapperMenuContent(control As IRibbonControl) As String
+    Public Function getDBModifMenuContent(control As IRibbonControl) As String
         Dim xmlString As String = "<menu xmlns='http://schemas.microsoft.com/office/2009/07/customui'>"
         Try
-            If Not DBMapperDefColl.ContainsKey(control.Id) Then Return ""
+            If Not DBModifDefColl.ContainsKey(control.Id) Then Return ""
 
-            For Each nodeName As String In DBMapperDefColl(control.Id).Keys
+            For Each nodeName As String In DBModifDefColl(control.Id).Keys
                 ' special menu for sequences
                 If Left(nodeName, 8) = "DBSeqnce" Then
-                    xmlString = xmlString + "<button id='" + nodeName + "' label='do " + nodeName + "' imageMso='FilePrepareMenu' onAction='DBSequenceClick' tag='" + control.Id + "' screentip='do " + nodeName + "' supertip='executes DB Sequence defined in docproperty " + nodeName + "' />"
-                ElseIf Left(getDBMapperActionName(DBMapperDefColl(control.Id).Item(nodeName)).Name, 8) = "DBMapper" Then
-                    xmlString = xmlString + "<button id='" + nodeName + "' label='store " + nodeName + "' imageMso='SignatureLineInsert' onAction='saveRangeToDBClick' tag='" + control.Id + "' screentip='store " + nodeName + "' supertip='stores data defined in " + nodeName + " Mapper range on " + DBMapperDefColl(control.Id).Item(nodeName).Parent.Name + "![" + DBMapperDefColl(control.Id).Item(nodeName).Address + "]' />"
-                ElseIf Left(getDBMapperActionName(DBMapperDefColl(control.Id).Item(nodeName)).Name, 8) = "DBAction" Then
-                    xmlString = xmlString + "<button id='" + nodeName + "' label='do " + nodeName + "' imageMso='SignatureShow' onAction='DBActionClick' tag='" + control.Id + "' screentip='do " + nodeName + "' supertip='executes Action defined in " + nodeName + " DBAction range on " + DBMapperDefColl(control.Id).Item(nodeName).Parent.Name + "![" + DBMapperDefColl(control.Id).Item(nodeName).Address + "]' />"
+                    xmlString = xmlString + "<button id='" + nodeName + "' label='do " + nodeName + "' imageMso='FilePrepareMenu' onAction='DBSeqnceClick' tag='" + control.Id + "' screentip='do " + nodeName + "' supertip='executes DB Sequence defined in docproperty " + nodeName + "' />"
+                Else
+                    Dim rngName As String = getDBModifNameFromRange(DBModifDefColl(control.Id).Item(nodeName))
+                    If Left(rngName, 8) = "DBMapper" Then
+                        xmlString = xmlString + "<button id='" + nodeName + "' label='store " + nodeName + "' imageMso='SignatureLineInsert' onAction='DBMapperClick' tag='" + control.Id + "' screentip='store " + nodeName + "' supertip='stores data defined in " + nodeName + " Mapper range on " + DBModifDefColl(control.Id).Item(nodeName).Parent.Name + "![" + DBModifDefColl(control.Id).Item(nodeName).Address + "]' />"
+                    ElseIf Left(rngName, 8) = "DBAction" Then
+                        xmlString = xmlString + "<button id='" + nodeName + "' label='do " + nodeName + "' imageMso='SignatureShow' onAction='DBActionClick' tag='" + control.Id + "' screentip='do " + nodeName + "' supertip='executes Action defined in " + nodeName + " DBAction range on " + DBModifDefColl(control.Id).Item(nodeName).Parent.Name + "![" + DBModifDefColl(control.Id).Item(nodeName).Address + "]' />"
+                    End If
                 End If
             Next
             xmlString += "</menu>"
@@ -198,47 +201,47 @@ Public Class MenuHandler
         End Try
     End Function
 
-    ''' <summary>show a screentip for the dynamic DBMapper/Action/Sequence Menus (also showing the ID behind)</summary>
+    ''' <summary>show a screentip for the dynamic DBMapper/DBAction/DBSequence Menus (also showing the ID behind)</summary>
     ''' <returns></returns>
-    Public Function getDBMapperScreentip(control As IRibbonControl) As String
-        Return "Select DBMapper range to store (" & control.Id & ")"
+    Public Function getDBModifScreentip(control As IRibbonControl) As String
+        Return "Select DBModifier to store/do action/do sequence (" & control.Id & ")"
     End Function
 
-    ''' <summary>shows the DBMapper sheet button only if it was collected...</summary>
+    ''' <summary>shows the DBModif sheet button only if it was collected...</summary>
     ''' <returns></returns>
-    Public Function getDBMapperMenuVisible(control As IRibbonControl) As Boolean
+    Public Function getDBModifMenuVisible(control As IRibbonControl) As Boolean
         Try
-            Return DBMapperDefColl.ContainsKey(control.Id)
+            Return DBModifDefColl.ContainsKey(control.Id)
         Catch ex As Exception
             Return False
         End Try
     End Function
 
     ''' <summary>DBMapper store button activated, save Range to DB or define existing (CtrlKey pressed)...</summary>
-    Public Sub saveRangeToDBClick(control As IRibbonControl)
+    Public Sub DBMapperClick(control As IRibbonControl)
         If My.Computer.Keyboard.CtrlKeyDown Then
-            createDBMapper("DBMapper", targetRange:=DBMapperDefColl(control.Tag).Item(control.Id))
+            createDBModif("DBMapper", targetRange:=DBModifDefColl(control.Tag).Item(control.Id))
         Else
-            saveRangeToDB(DBMapperDefColl(control.Tag).Item(control.Id))
+            doDBMapper(DBModifDefColl(control.Tag).Item(control.Id))
         End If
     End Sub
 
     ''' <summary>DBAction button activated, do DB Action or define existing (CtrlKey pressed)...</summary>
     Public Sub DBActionClick(control As IRibbonControl)
         If My.Computer.Keyboard.CtrlKeyDown Then
-            createDBMapper("DBAction", targetRange:=DBMapperDefColl(control.Tag).Item(control.Id))
+            createDBModif("DBAction", targetRange:=DBModifDefColl(control.Tag).Item(control.Id))
         Else
-            doDBAction(DBMapperDefColl(control.Tag).Item(control.Id))
+            doDBAction(DBModifDefColl(control.Tag).Item(control.Id))
         End If
     End Sub
 
     ''' <summary>DBSequence button activated, do DB Sequence or define existing (CtrlKey pressed)...</summary>
-    Public Sub DBSequenceClick(control As IRibbonControl)
+    Public Sub DBSeqnceClick(control As IRibbonControl)
         If My.Computer.Keyboard.CtrlKeyDown Then
-            createDBMapper("DBSeqnce", targetDefName:=control.Id, DBSequenceText:=DBMapperDefColl(control.Tag).Item(control.Id))
+            createDBModif("DBSeqnce", targetDefName:=control.Id, DBSequenceText:=DBModifDefColl(control.Tag).Item(control.Id))
         Else
             ' DB sequence actions (the sequence to be done) are stored directly in DBMapperDefColl, so different invocation here
-            doDBSequence(control.Id, DBMapperDefColl(control.Tag).Item(control.Id))
+            doDBSeqnce(control.Id, DBModifDefColl(control.Tag).Item(control.Id))
         End If
     End Sub
 
@@ -262,7 +265,7 @@ Public Class MenuHandler
         ExcelDna.Logging.LogDisplay.Show()
     End Sub
 
-    ''' <summary>context menu entries below create...: create DB function or DB Mapper</summary>
+    ''' <summary>context menu entries below create...: create DB function or DB Modification definition</summary>
     Public Sub clickCreateButton(control As IRibbonControl)
         If control.Tag = "DBListFetch" Then
             createFunctionsInCells(hostApp.ActiveCell, {"RC", "=DBListFetch("""","""",R[1]C,,,TRUE,TRUE,TRUE)"})
@@ -295,7 +298,7 @@ Public Class MenuHandler
             End With
             createFunctionsInCells(hostApp.ActiveCell, {"RC", "=DBSetQuery("""","""",RC[1])"})
         ElseIf control.Tag = "DBMapper" Or control.Tag = "DBAction" Or control.Tag = "DBSeqnce" Then
-            createDBMapper(control.Tag)
+            createDBModif(control.Tag)
         End If
     End Sub
 

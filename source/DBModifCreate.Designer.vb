@@ -1,5 +1,5 @@
 ﻿<Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
-Partial Class DBMapperCreate
+Partial Class DBModifCreate
     Inherits System.Windows.Forms.Form
 
     'Das Formular überschreibt den Löschvorgang, um die Komponentenliste zu bereinigen.
@@ -23,10 +23,11 @@ Partial Class DBMapperCreate
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         Me.components = New System.ComponentModel.Container()
+        Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(DBModifCreate))
         Me.TableLayoutPanel1 = New System.Windows.Forms.TableLayoutPanel()
         Me.OK_Button = New System.Windows.Forms.Button()
         Me.Cancel_Button = New System.Windows.Forms.Button()
-        Me.DBMapperName = New System.Windows.Forms.TextBox()
+        Me.DBModifName = New System.Windows.Forms.TextBox()
         Me.NameLabel = New System.Windows.Forms.Label()
         Me.Tablename = New System.Windows.Forms.TextBox()
         Me.PrimaryKeys = New System.Windows.Forms.TextBox()
@@ -35,11 +36,11 @@ Partial Class DBMapperCreate
         Me.addStoredProc = New System.Windows.Forms.TextBox()
         Me.TablenameLabel = New System.Windows.Forms.Label()
         Me.PrimaryKeysLabel = New System.Windows.Forms.Label()
-        Me.Label4 = New System.Windows.Forms.Label()
+        Me.DatabaseLabel = New System.Windows.Forms.Label()
         Me.IgnoreColumnsLabel = New System.Windows.Forms.Label()
         Me.AdditionalStoredProcLabel = New System.Windows.Forms.Label()
         Me.insertIfMissing = New System.Windows.Forms.CheckBox()
-        Me.storeDBMapOnSave = New System.Windows.Forms.CheckBox()
+        Me.execOnSave = New System.Windows.Forms.CheckBox()
         Me.ToolTip1 = New System.Windows.Forms.ToolTip(Me.components)
         Me.envSel = New System.Windows.Forms.ComboBox()
         Me.EnvironmentLabel = New System.Windows.Forms.Label()
@@ -82,24 +83,22 @@ Partial Class DBMapperCreate
         Me.Cancel_Button.TabIndex = 0
         Me.Cancel_Button.Text = "Abbrechen"
         '
-        'DBMapperName
+        'DBModifName
         '
-        Me.DBMapperName.Location = New System.Drawing.Point(161, 25)
-        Me.DBMapperName.Name = "DBMapperName"
-        Me.DBMapperName.Size = New System.Drawing.Size(259, 20)
-        Me.DBMapperName.TabIndex = 1
-        Me.ToolTip1.SetToolTip(Me.DBMapperName, "Enter the name for the selected Range that will be used to identify the DBMap in " &
-        "the ""store DBMapper Data"" Group dropdowns." & Global.Microsoft.VisualBasic.ChrW(13) & Global.Microsoft.VisualBasic.ChrW(10) & "If no name is given here, then Unnam" &
-        "edDBMapper will be used to identify it.")
+        Me.DBModifName.Location = New System.Drawing.Point(161, 25)
+        Me.DBModifName.Name = "DBModifName"
+        Me.DBModifName.Size = New System.Drawing.Size(259, 20)
+        Me.DBModifName.TabIndex = 1
+        Me.ToolTip1.SetToolTip(Me.DBModifName, resources.GetString("DBModifName.ToolTip"))
         '
         'NameLabel
         '
         Me.NameLabel.AutoSize = True
         Me.NameLabel.Location = New System.Drawing.Point(12, 28)
         Me.NameLabel.Name = "NameLabel"
-        Me.NameLabel.Size = New System.Drawing.Size(92, 13)
+        Me.NameLabel.Size = New System.Drawing.Size(93, 13)
         Me.NameLabel.TabIndex = 2
-        Me.NameLabel.Text = "DBMapper Name:"
+        Me.NameLabel.Text = "DBModifier Name:"
         '
         'Tablename
         '
@@ -123,7 +122,7 @@ Partial Class DBMapperCreate
         Me.Database.Name = "Database"
         Me.Database.Size = New System.Drawing.Size(259, 20)
         Me.Database.TabIndex = 2
-        Me.ToolTip1.SetToolTip(Me.Database, "Database to store DBMaps Data into")
+        Me.ToolTip1.SetToolTip(Me.Database, "Database to store DBMaps Data  into/ do DBActions")
         '
         'IgnoreColumns
         '
@@ -159,14 +158,14 @@ Partial Class DBMapperCreate
         Me.PrimaryKeysLabel.TabIndex = 2
         Me.PrimaryKeysLabel.Text = "Primary Keys:"
         '
-        'Label4
+        'DatabaseLabel
         '
-        Me.Label4.AutoSize = True
-        Me.Label4.Location = New System.Drawing.Point(12, 54)
-        Me.Label4.Name = "Label4"
-        Me.Label4.Size = New System.Drawing.Size(56, 13)
-        Me.Label4.TabIndex = 2
-        Me.Label4.Text = "Database:"
+        Me.DatabaseLabel.AutoSize = True
+        Me.DatabaseLabel.Location = New System.Drawing.Point(12, 54)
+        Me.DatabaseLabel.Name = "DatabaseLabel"
+        Me.DatabaseLabel.Size = New System.Drawing.Size(56, 13)
+        Me.DatabaseLabel.TabIndex = 2
+        Me.DatabaseLabel.Text = "Database:"
         '
         'IgnoreColumnsLabel
         '
@@ -198,16 +197,17 @@ Partial Class DBMapperCreate
         "se (only update)")
         Me.insertIfMissing.UseVisualStyleBackColor = True
         '
-        'storeDBMapOnSave
+        'execOnSave
         '
-        Me.storeDBMapOnSave.AutoSize = True
-        Me.storeDBMapOnSave.Location = New System.Drawing.Point(12, 389)
-        Me.storeDBMapOnSave.Name = "storeDBMapOnSave"
-        Me.storeDBMapOnSave.Size = New System.Drawing.Size(133, 17)
-        Me.storeDBMapOnSave.TabIndex = 8
-        Me.storeDBMapOnSave.Text = "Store DBMap on Save"
-        Me.ToolTip1.SetToolTip(Me.storeDBMapOnSave, "should DBMap also be saved on Excel Workbook Saving? (default no)")
-        Me.storeDBMapOnSave.UseVisualStyleBackColor = True
+        Me.execOnSave.AutoSize = True
+        Me.execOnSave.Location = New System.Drawing.Point(12, 389)
+        Me.execOnSave.Name = "execOnSave"
+        Me.execOnSave.Size = New System.Drawing.Size(108, 17)
+        Me.execOnSave.TabIndex = 8
+        Me.execOnSave.Text = "Execute on Save"
+        Me.ToolTip1.SetToolTip(Me.execOnSave, "should DBMap also be saved/DBAction/DBSequence be done on Excel Workbook Saving? " &
+        "(default no)")
+        Me.execOnSave.UseVisualStyleBackColor = True
         '
         'envSel
         '
@@ -233,10 +233,10 @@ Partial Class DBMapperCreate
         Me.DBSeqenceDataGrid.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize
         Me.DBSeqenceDataGrid.Location = New System.Drawing.Point(15, 214)
         Me.DBSeqenceDataGrid.Name = "DBSeqenceDataGrid"
-        Me.DBSeqenceDataGrid.Size = New System.Drawing.Size(405, 152)
+        Me.DBSeqenceDataGrid.Size = New System.Drawing.Size(405, 162)
         Me.DBSeqenceDataGrid.TabIndex = 10
         '
-        'DBMapperCreate
+        'DBModifCreate
         '
         Me.AcceptButton = Me.OK_Button
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
@@ -246,11 +246,11 @@ Partial Class DBMapperCreate
         Me.Controls.Add(Me.DBSeqenceDataGrid)
         Me.Controls.Add(Me.EnvironmentLabel)
         Me.Controls.Add(Me.envSel)
-        Me.Controls.Add(Me.storeDBMapOnSave)
+        Me.Controls.Add(Me.execOnSave)
         Me.Controls.Add(Me.insertIfMissing)
         Me.Controls.Add(Me.AdditionalStoredProcLabel)
         Me.Controls.Add(Me.IgnoreColumnsLabel)
-        Me.Controls.Add(Me.Label4)
+        Me.Controls.Add(Me.DatabaseLabel)
         Me.Controls.Add(Me.PrimaryKeysLabel)
         Me.Controls.Add(Me.TablenameLabel)
         Me.Controls.Add(Me.NameLabel)
@@ -259,12 +259,12 @@ Partial Class DBMapperCreate
         Me.Controls.Add(Me.Database)
         Me.Controls.Add(Me.PrimaryKeys)
         Me.Controls.Add(Me.Tablename)
-        Me.Controls.Add(Me.DBMapperName)
+        Me.Controls.Add(Me.DBModifName)
         Me.Controls.Add(Me.TableLayoutPanel1)
         Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog
         Me.MaximizeBox = False
         Me.MinimizeBox = False
-        Me.Name = "DBMapperCreate"
+        Me.Name = "DBModifCreate"
         Me.ShowInTaskbar = False
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent
         Me.TableLayoutPanel1.ResumeLayout(False)
@@ -276,7 +276,7 @@ Partial Class DBMapperCreate
     Friend WithEvents TableLayoutPanel1 As System.Windows.Forms.TableLayoutPanel
     Friend WithEvents OK_Button As System.Windows.Forms.Button
     Friend WithEvents Cancel_Button As System.Windows.Forms.Button
-    Friend WithEvents DBMapperName As Windows.Forms.TextBox
+    Friend WithEvents DBModifName As Windows.Forms.TextBox
     Friend WithEvents NameLabel As Windows.Forms.Label
     Friend WithEvents Tablename As Windows.Forms.TextBox
     Friend WithEvents PrimaryKeys As Windows.Forms.TextBox
@@ -285,11 +285,11 @@ Partial Class DBMapperCreate
     Friend WithEvents addStoredProc As Windows.Forms.TextBox
     Friend WithEvents TablenameLabel As Windows.Forms.Label
     Friend WithEvents PrimaryKeysLabel As Windows.Forms.Label
-    Friend WithEvents Label4 As Windows.Forms.Label
+    Friend WithEvents DatabaseLabel As Windows.Forms.Label
     Friend WithEvents IgnoreColumnsLabel As Windows.Forms.Label
     Friend WithEvents AdditionalStoredProcLabel As Windows.Forms.Label
     Friend WithEvents insertIfMissing As Windows.Forms.CheckBox
-    Friend WithEvents storeDBMapOnSave As Windows.Forms.CheckBox
+    Friend WithEvents execOnSave As Windows.Forms.CheckBox
     Friend WithEvents ToolTip1 As Windows.Forms.ToolTip
     Friend WithEvents envSel As Windows.Forms.ComboBox
     Friend WithEvents EnvironmentLabel As Windows.Forms.Label

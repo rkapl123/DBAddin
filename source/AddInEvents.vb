@@ -62,7 +62,25 @@ Public Class AddInEvents
         Dim searchCell As Range
         Dim firstAddress As String
 
-        doDBRanges(Wb)
+        ' save all DBmaps/DBActions/DBSequences on saving except Readonly is recommended on this workbook
+        Dim DBmapSheet As String
+        If Not Wb.ReadOnlyRecommended Then
+            For Each DBmapSheet In DBModifDefColl.Keys
+                For Each dbmapdefkey In DBModifDefColl(DBmapSheet).Keys
+                    If Left(dbmapdefkey, 8) = "DBSeqnce" Then
+                        ' DB sequence actions (the sequence to be done) are stored directly in DBMapperDefColl, so different invocation here
+                        doDBSeqnce(dbmapdefkey, DBModifDefColl(DBmapSheet).Item(dbmapdefkey), WbIsSaving:=True)
+                    Else
+                        Dim rngName As String = getDBModifNameFromRange(DBModifDefColl(DBmapSheet).Item(dbmapdefkey))
+                        If Left(rngName, 8) = "DBMapper" Then
+                            doDBMapper(DBModifDefColl(DBmapSheet).Item(dbmapdefkey), WbIsSaving:=True)
+                        ElseIf Left(rngName, 8) = "DBAction" Then
+                            doDBAction(DBModifDefColl(DBmapSheet).Item(dbmapdefkey), WbIsSaving:=True)
+                        End If
+                    End If
+                Next
+            Next
+        End If
         DBFCContentColl = New Collection
         DBFCAllColl = New Collection
         Try
@@ -89,7 +107,7 @@ Public Class AddInEvents
                         firstAddress = searchCell.Address
                         Do
                             ' get DB function target names from source names
-                            Dim targetName As String = getDBRangeName(searchCell).Name
+                            Dim targetName As String = getDBunderlyingNameFromRange(searchCell).Name
                             targetName = Replace(targetName, "DBFsource", "DBFtarget", 1, , vbTextCompare)
                             ' check which DB functions should be content cleared (CC) or all cleared (CA)
                             Dim DBFCC As Boolean = False : Dim DBFCA As Boolean = False
@@ -152,7 +170,7 @@ Public Class AddInEvents
 
     ''' <summary>WorkbookActivate: gets defined named ranges for DBMapper invocation in the current workbook after activation and updates Ribbon with it</summary>
     Private Sub Application_WorkbookActivate(Wb As Excel.Workbook) Handles Application.WorkbookActivate
-        getDBMapperDefinitions()
+        getDBModifDefinitions()
     End Sub
 
     ''' <summary>"OnTime" event function to "escape" workbook_save: event procedure to refetch DB functions results after saving</summary>
@@ -170,6 +188,6 @@ Public Class AddInEvents
 
     ''' <summary>SheetDeactivate: gets defined named ranges for DBMapper invocation after sheet was deleted/added (changes index of sheets-> IDs!) and updates Ribbon with it</summary>
     Private Sub Application_SheetDeactivate(Sh As Object) Handles Application.SheetDeactivate
-        getDBMapperDefinitions()
+        getDBModifDefinitions()
     End Sub
 End Class
