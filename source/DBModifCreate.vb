@@ -8,11 +8,11 @@ Public Class DBModifCreate
     ''' <param name="e"></param>
     Private Sub OK_Button_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles OK_Button.Click
         If Me.Tablename.Text = String.Empty And Me.Tablename.Visible Then
-            MsgBox("Field Tablename is required, please fill !")
+            MsgBox("Field Tablename is required, please fill in!")
         ElseIf Me.PrimaryKeys.Text = String.Empty And Me.PrimaryKeys.Visible Then
-            MsgBox("Field Primary Keys is required, please fill !")
+            MsgBox("Field Primary Keys is required, please fill in!")
         ElseIf Me.Database.Text = String.Empty And Me.Database.Visible Then
-            MsgBox("Field Database is required, please fill !")
+            MsgBox("Field Database is required, please fill in!")
         Else
             Me.DialogResult = DialogResult.OK
             Me.Close()

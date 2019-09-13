@@ -9,7 +9,7 @@ Public Module DBModif
     ''' <summary>main db connection For mapper</summary>
     Public dbcnn As ADODB.Connection
 
-    ''' <summary>execute sequence of Database actions and saveRangeToDB invocations defined in DBSequenceText</summary>
+    ''' <summary>execute sequence of DBAction and DBMapper invocations defined in DBSequenceText</summary>
     ''' <param name="DBSequenceName">Name of DB Sequence</param>
     ''' <param name="DBSequenceText">Definition of DB Sequence: (storeDBMapOnSave flag),(Type1:WsheetID1:Name1),(Type2:WsheetID2:Name2)...</param>
     ''' <param name="WbIsSaving">special flag to indicate calling of the procedure during saving of the Workbook</param>
@@ -27,7 +27,7 @@ Public Module DBModif
             Dim definition() As String = Split(params(i), ":")
             If definition(0) = "DBAction" Then
                 doDBAction(DataRange:=DBModifDefColl(definition(1)).Item(definition(2)), calledByDBSeq:=DBSequenceName) ' ignore storeDBMapOnSave in subtasks
-            ElseIf definition(0) = "saveRangeToDB" Then
+            ElseIf definition(0) = "DBMapper" Then
                 doDBMapper(DataRange:=DBModifDefColl(definition(1)).Item(definition(2)), calledByDBSeq:=DBSequenceName) ' ignore storeDBMapOnSave in subtasks
             End If
         Next
@@ -50,9 +50,6 @@ Public Module DBModif
             Exit Sub
         End If
         If WbIsSaving And Not execOnSave Then Exit Sub
-        If WbIsSaving And execOnSave And calledByDBSeq <> "" Then
-            MsgBox("DBAction " & DBActionName & " will be executed twice on saving because it is part of DBSequence " & calledByDBSeq & ". Is this really intended (change storeDBMapOnSave parameter) ?")
-        End If
         'now create/get a connection (dbcnn) for env(ironment)
         If Not openConnection(env, database) Then Exit Sub
         Dim result As Long = 0
@@ -86,10 +83,7 @@ Public Module DBModif
 
         Dim rst As ADODB.Recordset
         Dim checkrst As ADODB.Recordset
-        Dim checkTypes() As CheckTypeFld = Nothing
         Dim primKeys() As String
-
-        Dim i As Integer
         Dim rowNum As Long, colNum As Long
 
         ' extend DataRange if it is only one cell ...
@@ -100,11 +94,8 @@ Public Module DBModif
         End If
 
         ' set up parameters
-        If Not getParametersFromTargetRange(paramType:="", paramTarget:=DataRange, env:=env, database:=database, tableName:=tableName, primKeysStr:=primKeysStr, insertIfMissing:=insertIfMissing, executeAdditionalProc:=executeAdditionalProc, ignoreColumns:=ignoreColumns, execOnSave:=execOnSave) Then Exit Sub
+        If Not getParametersFromTargetRange(paramType:="DBMapper", paramTarget:=DataRange, env:=env, database:=database, tableName:=tableName, primKeysStr:=primKeysStr, insertIfMissing:=insertIfMissing, executeAdditionalProc:=executeAdditionalProc, ignoreColumns:=ignoreColumns, execOnSave:=execOnSave) Then Exit Sub
         If WbIsSaving And Not execOnSave Then Exit Sub
-        If WbIsSaving And execOnSave And calledByDBSeq <> "" Then
-            MsgBox("DBMapper in " & DataRange.Parent.Name & "!" & DataRange.Address & " will be executed twice on saving because it is part of DBSequence " & calledByDBSeq & ". Is this really intended (change storeDBMapOnSave parameter) ?")
-        End If
         primKeys = Split(primKeysStr, ",")
         ignoreColumns = LCase(ignoreColumns) + "," ' lowercase and add comma for better retrieval
 
@@ -123,6 +114,7 @@ Public Module DBModif
         End Try
 
         ' to find the record to be updated, get types for primKeyCompound to build WHERE Clause with it
+        Dim checkTypes() As CheckTypeFld = Nothing
         For i = 0 To UBound(primKeys)
             ReDim Preserve checkTypes(i)
 
@@ -163,7 +155,7 @@ Public Module DBModif
         Do
             Dim primKeyCompound As String = " WHERE "
 
-            For i = 0 To UBound(primKeys)
+            For i As Integer = 0 To UBound(primKeys)
                 Dim primKeyValue
                 primKeyValue = DataRange.Cells(rowNum, i + 1).Value
                 primKeyCompound = primKeyCompound & primKeys(i) & " = " & dbFormatType(primKeyValue, checkTypes(i)) & IIf(i = UBound(primKeys), "", " AND ")
@@ -187,6 +179,7 @@ Public Module DBModif
             End Try
 
             If rst.EOF Then
+                Dim i As Integer
                 If insertIfMissing Then
                     rst.AddNew()
                     For i = 0 To UBound(primKeys)
@@ -397,52 +390,52 @@ cleanup:
             End If
         Next
         If paramText = "" Then Return False
-        Dim saveRangeParams() As String = functionSplit(paramText, ",", """", "def", "(", ")")
-        If IsNothing(saveRangeParams) Then Return False
-        If saveRangeParams.Length < 4 And paramType = "DBMapper" Then
+        Dim DBModifParams() As String = functionSplit(paramText, ",", """", "def", "(", ")")
+        If IsNothing(DBModifParams) Then Return False
+        If DBModifParams.Length < 4 And paramType = "DBMapper" Then
             ErrorMsg("At least environment (can be empty), database, Tablename and primary keys have to be provided as DBMapper parameters !")
             Return False
         End If
-        If saveRangeParams.Length < 2 And paramType = "DBAction" Then
+        If DBModifParams.Length < 2 And paramType = "DBAction" Then
             ErrorMsg("At least environment (can be empty) and database have to be provided as DBAction parameters !")
             Return False
         End If
-        If saveRangeParams(0) <> "" Then env = Convert.ToInt16(saveRangeParams(0))
-        database = saveRangeParams(1).Replace("""", "").Trim
+        If DBModifParams(0) <> "" Then env = Convert.ToInt16(DBModifParams(0))
+        database = DBModifParams(1).Replace("""", "").Trim
         If database = "" Then
             ErrorMsg("No database given in " & paramType & " comment!")
             Return False
         End If
         If paramType = "DBAction" Then
             execOnSave = False
-            If saveRangeParams.Length > 2 Then
-                If saveRangeParams(2) <> "" Then execOnSave = Convert.ToBoolean(saveRangeParams(2))
+            If DBModifParams.Length > 2 Then
+                If DBModifParams(2) <> "" Then execOnSave = Convert.ToBoolean(DBModifParams(2))
             End If
             Return True
         End If
 
-        tableName = saveRangeParams(2).Replace("""", "").Trim ' remove all quotes and trim right and left
+        tableName = DBModifParams(2).Replace("""", "").Trim ' remove all quotes and trim right and left
         If tableName = "" Then
             ErrorMsg("No Tablename given in " & paramType & " comment!")
             Return False
         End If
-        primKeysStr = saveRangeParams(3).Replace("""", "").Trim
+        primKeysStr = DBModifParams(3).Replace("""", "").Trim
         If primKeysStr = "" Then
             ErrorMsg("No primary keys given in " & paramType & " comment!")
             Return False
         End If
 
-        If saveRangeParams.Length > 4 Then
-            If saveRangeParams(4) <> "" Then insertIfMissing = Convert.ToBoolean(saveRangeParams(4))
+        If DBModifParams.Length > 4 Then
+            If DBModifParams(4) <> "" Then insertIfMissing = Convert.ToBoolean(DBModifParams(4))
         End If
-        If saveRangeParams.Length > 5 Then
-            If saveRangeParams(5) <> "" Then executeAdditionalProc = saveRangeParams(5).Replace("""", "").Trim
+        If DBModifParams.Length > 5 Then
+            If DBModifParams(5) <> "" Then executeAdditionalProc = DBModifParams(5).Replace("""", "").Trim
         End If
-        If saveRangeParams.Length > 6 Then
-            If saveRangeParams(6) <> "" Then ignoreColumns = saveRangeParams(6).Replace("""", "").Trim
+        If DBModifParams.Length > 6 Then
+            If DBModifParams(6) <> "" Then ignoreColumns = DBModifParams(6).Replace("""", "").Trim
         End If
-        If saveRangeParams.Length > 7 Then
-            If saveRangeParams(7) <> "" Then execOnSave = Convert.ToBoolean(saveRangeParams(7))
+        If DBModifParams.Length > 7 Then
+            If DBModifParams(7) <> "" Then execOnSave = Convert.ToBoolean(DBModifParams(7))
         End If
         Return True
     End Function
@@ -522,8 +515,8 @@ cleanup:
                     .IgnoreColumns.Text = ignoreColumns
                 End If
             End If
-            .NameLabel.Text = type & " Name:"
-            .Text = "Edit " & type & " definition"
+            .NameLabel.Text = IIf(type = "DBSeqnce", "DBSequence", type) & " Name:"
+            .Text = "Edit " & IIf(type = "DBSeqnce", "DBSequence", type) & " definition"
             If type <> "DBMapper" Then
                 .TablenameLabel.Hide()
                 .PrimaryKeysLabel.Hide()
@@ -544,7 +537,7 @@ cleanup:
                 .DBSeqenceDataGrid.Top = 55
                 .DBSeqenceDataGrid.Height = 320
                 Dim cb As DataGridViewComboBoxColumn = New DataGridViewComboBoxColumn()
-                cb.HeaderText = "SequenceStep"
+                cb.HeaderText = "Sequence Step"
                 cb.ReadOnly = False
                 cb.ValueType() = GetType(String)
                 Dim ds As List(Of String) = New List(Of String)
@@ -596,8 +589,16 @@ cleanup:
             ' create parameter definition string ...
             Dim paramText As String
             If type = "DBAction" Then
+                ' TODO: check if double invocation because of execOnSave being set for DBAction
+                If execOnSave Then
+                    MsgBox("DBAction DBActionName will be executed twice on saving because it is part of DBSequence calledByDBSeq. Is this really intended (change storeDBMapOnSave parameter) ?")
+                End If
                 paramText = "def(" + IIf(.envSel.SelectedIndex = -1, "", (.envSel.SelectedIndex + 1).ToString()) + "," + """" + .Database.Text + """," + .execOnSave.Checked.ToString() + ")"
             ElseIf type = "DBMapper" Then
+                ' TODO: check if double invocation because of execOnSave being set for DBMapper
+                If execOnSave Then
+                    MsgBox("DBMapper in DataRange.Parent.Name!DataRange.Address will be executed twice on saving because it is part of DBSequence calledByDBSeq. Is this really intended (change storeDBMapOnSave parameter) ?")
+                End If
                 paramText = "def(" +
                     IIf(.envSel.SelectedIndex = -1, "", (.envSel.SelectedIndex + 1).ToString()) + "," +
                     """" + .Database.Text + """," + """" + .Tablename.Text + """," + """" + .PrimaryKeys.Text + """," + .insertIfMissing.Checked.ToString() + "," +

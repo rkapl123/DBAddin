@@ -98,10 +98,10 @@
     <Import Include="System" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AboutBox1.Designer.vb">
-      <DependentUpon>AboutBox1.vb</DependentUpon>
+    <Compile Include="AboutBox.Designer.vb">
+      <DependentUpon>AboutBox.vb</DependentUpon>
     </Compile>
-    <Compile Include="AboutBox1.vb">
+    <Compile Include="AboutBox.vb">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="AddInEvents.vb" />
@@ -145,8 +145,8 @@
     <None Include="toc.yml" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="AboutBox1.resx">
-      <DependentUpon>AboutBox1.vb</DependentUpon>
+    <EmbeddedResource Include="AboutBox.resx">
+      <DependentUpon>AboutBox.vb</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="DBModifCreate.resx">
       <DependentUpon>DBModifCreate.vb</DependentUpon>

@@ -200,7 +200,7 @@ Partial Class DBModifCreate
         'execOnSave
         '
         Me.execOnSave.AutoSize = True
-        Me.execOnSave.Location = New System.Drawing.Point(12, 389)
+        Me.execOnSave.Location = New System.Drawing.Point(15, 391)
         Me.execOnSave.Name = "execOnSave"
         Me.execOnSave.Size = New System.Drawing.Size(108, 17)
         Me.execOnSave.TabIndex = 8
