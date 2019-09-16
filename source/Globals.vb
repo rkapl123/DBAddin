@@ -441,7 +441,7 @@ Public Module Globals
         End If
     End Function
 
-    ''' <summary>gets DB Modification Name (DBMapper, DBAction or DBSeqnce) from theRange</summary>
+    ''' <summary>gets DB Modification Name (DBMapper or DBAction) from theRange</summary>
     ''' <param name="theRange"></param>
     ''' <returns>the retrieved name as a string (not name object !)</returns>
     Public Function getDBModifNameFromRange(theRange As Excel.Range) As String
@@ -528,10 +528,11 @@ Public Module Globals
         Dim ws As Excel.Worksheet
         Dim needRecalc As Boolean
 
-        'If TypeName(hostApp.Calculation) = "Error" Then
-        '    LogWarn("hostApp.Calculation = Error, " & Wb.Path & "\" & Wb.Name)
-        '    Exit Sub
-        'End If
+        ' hidden workbooks produce an error when searching for cells, this is captured by 
+        If TypeName(hostApp.Calculation) = "Error" Then
+            MsgBox("hostApp.Calculation = Error, " & Wb.Path & "\" & Wb.Name)
+            Exit Sub
+        End If
         Try
             needRecalc = False
             For Each ws In Wb.Worksheets

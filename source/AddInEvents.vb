@@ -1,7 +1,8 @@
 ﻿Imports ExcelDna.Registration
-Imports Microsoft.Office.Interop
 Imports ExcelDna.Integration
+Imports Microsoft.Office.Interop
 Imports Microsoft.Office.Interop.Excel
+Imports Microsoft.Office.Core
 Imports System.Timers
 Imports System.Diagnostics
 
@@ -11,6 +12,8 @@ Public Class AddInEvents
 
     ''' <summary>the app object needed for excel event handling (most of this class is dedicated to that)</summary>
     WithEvents Application As Excel.Application
+    ''' <summary></summary>
+    WithEvents ContextButton As CommandBarButton
     ''' <summary>necessary to asynchronously start refresh of db functions after save event</summary>
     Private aTimer As System.Timers.Timer
 
@@ -190,4 +193,31 @@ Public Class AddInEvents
     Private Sub Application_SheetDeactivate(Sh As Object) Handles Application.SheetDeactivate
         getDBModifDefinitions()
     End Sub
+
+    Private Sub Application_SheetBeforeRightClick(Sh As Object, Target As Range, ByRef Cancel As Boolean) Handles Application.SheetBeforeRightClick
+        Try : ContextButton.Delete() : Catch ex As Exception : End Try
+        Dim dbModifName As String = getDBModifNameFromRange(hostApp.ActiveCell)
+        If dbModifName <> "" Then
+            Try
+                ContextButton = hostApp.CommandBars("Cell").Controls.Add(Type:=MsoControlType.msoControlButton, Before:=1, Temporary:=True)
+                ContextButton.Caption = "do " & Left(dbModifName, 8) & " (Ctrl-Shift-Alt to edit)"
+                ContextButton.Tag = Left(dbModifName, 8)
+                ContextButton.FaceId = 582
+            Catch ex As Exception
+            End Try
+        End If
+    End Sub
+
+    Private Sub ContextButton_Click(Ctrl As CommandBarButton, ByRef CancelDefault As Boolean) Handles ContextButton.Click
+        If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown And My.Computer.Keyboard.AltKeyDown Then
+            createDBModif(Ctrl.Tag, targetRange:=hostApp.ActiveCell)
+        Else
+            If Ctrl.Tag = "DBAction" Then
+                doDBAction(hostApp.ActiveCell)
+            ElseIf Ctrl.Tag = "DBMapper" Then
+                doDBMapper(hostApp.ActiveCell)
+            End If
+        End If
+    End Sub
+
 End Class

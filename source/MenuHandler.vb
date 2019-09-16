@@ -35,32 +35,36 @@ Public Class MenuHandler
                                             "getScreentip='getDBModifScreentip' getContent='getDBModifMenuContent' getVisible='getDBModifMenuVisible'/>"
         Next
         ' Context menus for refresh, jump and creation: in cell, row, column and ListRange (area of ListObjects)
+        '"<menu id='createMenu' label='build DBFunc/Map ...' insertBeforeMso='Cut'>" +
+        '   "<button id='DBMapper' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
+        '   "<button id='DBAction' tag='DBAction' label='DBAction' imageMso='TableIndexes' onAction='clickCreateButton'/>" +
+        '   "<button id='DBSequence' tag='DBSeqnce' label='DBSequence' imageMso='ShowOnNewButton' onAction='clickCreateButton'/>" +
+        '   "<button id='DBListFetch' tag='DBListFetch' label='DBListFetch' imageMso='GroupLists' onAction='clickCreateButton'/>" +
+        '   "<button id='DBRowFetch' tag='DBRowFetch' label='DBRowFetch' imageMso='GroupRecords' onAction='clickCreateButton'/>" +
+        '   "<button id='DBSetQueryPivot' tag='DBSetQueryPivot' label='DBSetQueryPivot' imageMso='AddContentType' onAction='clickCreateButton'/>" +
+        '   "<button id='DBSetQueryListObject' tag='DBSetQueryListObject' label='DBSetQueryListObject' imageMso='AddContentType' onAction='clickCreateButton'/>" +
+        '"</menu>" +
+
+        '"<menu id='createMenuCL' label='build DBFunc/Map ...' insertBeforeMso='Cut'>" +
+        '   "<button id='DBMapperCL' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
+        '   "<button id='DBActionCL' tag='DBAction' label='DBAction' imageMso='TableIndexes' onAction='clickCreateButton'/>" +
+        '   "<button id='DBSequenceCL' tag='DBSeqnce' label='DBSequence' imageMso='ShowOnNewButton' onAction='clickCreateButton'/>" +
+        '   "<button id='DBListFetchCL' tag='DBListFetch' label='DBListFetch' imageMso='GroupLists' onAction='clickCreateButton'/>" +
+        '   "<button id='DBRowFetchCL' tag='DBRowFetch' label='DBRowFetch' imageMso='GroupRecords' onAction='clickCreateButton'/>" +
+        '   "<button id='DBSetQueryPivotCL' tag='DBSetQueryPivot' label='DBSetQueryPivot' imageMso='AddContentType' onAction='clickCreateButton'/>" +
+        '   "<button id='DBSetQueryListObjectCL' tag='DBSetQueryListObject' label='DBSetQueryListObject' imageMso='AddContentType' onAction='clickCreateButton'/>" +
+        '"</menu>" +
+        '"<menu id='createMenuL' label='build DBFunc/Map ...' insertBeforeMso='Cut'>" +
+        '   "<button id='DBMapperL' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
+        '"</menu>" +
         customUIXml += "</group></tab></tabs></ribbon>" +
          "<contextMenus>" +
          "<contextMenu idMso ='ContextMenuCell'>" +
-         "<menu id='createMenu' label='build DBFunc/Map ...' insertBeforeMso='Cut'>" +
-            "<button id='DBMapper' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
-            "<button id='DBAction' tag='DBAction' label='DBAction' imageMso='TableIndexes' onAction='clickCreateButton'/>" +
-            "<button id='DBSequence' tag='DBSeqnce' label='DBSequence' imageMso='ShowOnNewButton' onAction='clickCreateButton'/>" +
-            "<button id='DBListFetch' tag='DBListFetch' label='DBListFetch' imageMso='GroupLists' onAction='clickCreateButton'/>" +
-            "<button id='DBRowFetch' tag='DBRowFetch' label='DBRowFetch' imageMso='GroupRecords' onAction='clickCreateButton'/>" +
-            "<button id='DBSetQueryPivot' tag='DBSetQueryPivot' label='DBSetQueryPivot' imageMso='AddContentType' onAction='clickCreateButton'/>" +
-            "<button id='DBSetQueryListObject' tag='DBSetQueryListObject' label='DBSetQueryListObject' imageMso='AddContentType' onAction='clickCreateButton'/>" +
-         "</menu>" +
          "<button id='refreshDataC' label='refresh data (Ctrl-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
          "<button id='gotoDBFuncC' label='jump to DBFunc/target (Ctrl-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
          "<menuSeparator id='MySeparatorC' insertBeforeMso='Cut'/>" +
          "</contextMenu>" +
          "<contextMenu idMso ='ContextMenuCellLayout'>" +
-         "<menu id='createMenuCL' label='build DBFunc/Map ...' insertBeforeMso='Cut'>" +
-            "<button id='DBMapperCL' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
-            "<button id='DBActionCL' tag='DBAction' label='DBAction' imageMso='TableIndexes' onAction='clickCreateButton'/>" +
-            "<button id='DBSequenceCL' tag='DBSeqnce' label='DBSequence' imageMso='ShowOnNewButton' onAction='clickCreateButton'/>" +
-            "<button id='DBListFetchCL' tag='DBListFetch' label='DBListFetch' imageMso='GroupLists' onAction='clickCreateButton'/>" +
-            "<button id='DBRowFetchCL' tag='DBRowFetch' label='DBRowFetch' imageMso='GroupRecords' onAction='clickCreateButton'/>" +
-            "<button id='DBSetQueryPivotCL' tag='DBSetQueryPivot' label='DBSetQueryPivot' imageMso='AddContentType' onAction='clickCreateButton'/>" +
-            "<button id='DBSetQueryListObjectCL' tag='DBSetQueryListObject' label='DBSetQueryListObject' imageMso='AddContentType' onAction='clickCreateButton'/>" +
-         "</menu>" +
          "<button id='refreshDataCL' label='refresh data (Ctrl-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
          "<button id='gotoDBFuncCL' label='jump to DBFunc/target (Ctrl-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
          "<menuSeparator id='MySeparatorCL' insertBeforeMso='Cut'/>" +
@@ -74,16 +78,12 @@ Public Class MenuHandler
          "<menuSeparator id='MySeparatorZ' insertBeforeMso='Cut'/>" +
          "</contextMenu>" +
          "<contextMenu idMso='ContextMenuListRange'>" +
-         "<menu id='createMenuL' label='build DBFunc/Map ...' insertBeforeMso='Cut'>" +
-            "<button id='DBMapperL' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
-         "</menu>" +
          "<button id='refreshDataL' label='refresh data (Ctrl-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
          "<button id='gotoDBFuncL' label='jump to DBFunc/target (Ctrl-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
          "<menuSeparator id='MySeparatorL' insertBeforeMso='Cut'/>" +
          "</contextMenu>" +
          "</contextMenus></customUI>"
         Return customUIXml
-        ' DBMapper: AddToolGallery
     End Function
 
     ''' <summary>for environment dropdown to get the total number of the entries</summary>
@@ -220,7 +220,7 @@ Public Class MenuHandler
 
     ''' <summary>DBMapper store button activated, save Range to DB or define existing (CtrlKey pressed)...</summary>
     Public Sub DBMapperClick(control As IRibbonControl)
-        If My.Computer.Keyboard.CtrlKeyDown Then
+        If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown And My.Computer.Keyboard.AltKeyDown Then
             createDBModif("DBMapper", targetRange:=DBModifDefColl(control.Tag).Item(control.Id))
         Else
             doDBMapper(DBModifDefColl(control.Tag).Item(control.Id))
@@ -229,7 +229,7 @@ Public Class MenuHandler
 
     ''' <summary>DBAction button activated, do DB Action or define existing (CtrlKey pressed)...</summary>
     Public Sub DBActionClick(control As IRibbonControl)
-        If My.Computer.Keyboard.CtrlKeyDown Then
+        If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown And My.Computer.Keyboard.AltKeyDown Then
             createDBModif("DBAction", targetRange:=DBModifDefColl(control.Tag).Item(control.Id))
         Else
             doDBAction(DBModifDefColl(control.Tag).Item(control.Id))
@@ -238,7 +238,7 @@ Public Class MenuHandler
 
     ''' <summary>DBSequence button activated, do DB Sequence or define existing (CtrlKey pressed)...</summary>
     Public Sub DBSeqnceClick(control As IRibbonControl)
-        If My.Computer.Keyboard.CtrlKeyDown Then
+        If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown And My.Computer.Keyboard.AltKeyDown Then
             createDBModif("DBSeqnce", targetDefName:=control.Id, DBSequenceText:=DBModifDefColl(control.Tag).Item(control.Id))
         Else
             ' DB sequence actions (the sequence to be done) are stored directly in DBMapperDefColl, so different invocation here
