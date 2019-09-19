@@ -35,15 +35,6 @@ Public Class MenuHandler
                                             "getScreentip='getDBModifScreentip' getContent='getDBModifMenuContent' getVisible='getDBModifMenuVisible'/>"
         Next
         ' Context menus for refresh, jump and creation: in cell, row, column and ListRange (area of ListObjects)
-        '"<menu id='createMenu' label='build DBFunc/Map ...' insertBeforeMso='Cut'>" +
-        '   "<button id='DBMapper' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
-        '   "<button id='DBAction' tag='DBAction' label='DBAction' imageMso='TableIndexes' onAction='clickCreateButton'/>" +
-        '   "<button id='DBSequence' tag='DBSeqnce' label='DBSequence' imageMso='ShowOnNewButton' onAction='clickCreateButton'/>" +
-        '   "<button id='DBListFetch' tag='DBListFetch' label='DBListFetch' imageMso='GroupLists' onAction='clickCreateButton'/>" +
-        '   "<button id='DBRowFetch' tag='DBRowFetch' label='DBRowFetch' imageMso='GroupRecords' onAction='clickCreateButton'/>" +
-        '   "<button id='DBSetQueryPivot' tag='DBSetQueryPivot' label='DBSetQueryPivot' imageMso='AddContentType' onAction='clickCreateButton'/>" +
-        '   "<button id='DBSetQueryListObject' tag='DBSetQueryListObject' label='DBSetQueryListObject' imageMso='AddContentType' onAction='clickCreateButton'/>" +
-        '"</menu>" +
 
         '"<menu id='createMenuCL' label='build DBFunc/Map ...' insertBeforeMso='Cut'>" +
         '   "<button id='DBMapperCL' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
@@ -60,6 +51,15 @@ Public Class MenuHandler
         customUIXml += "</group></tab></tabs></ribbon>" +
          "<contextMenus>" +
          "<contextMenu idMso ='ContextMenuCell'>" +
+         "<menu id='createMenu' label='build DBFunc/Map ...' insertBeforeMso='Cut'>" +
+           "<button id='DBMapper' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
+           "<button id='DBAction' tag='DBAction' label='DBAction' imageMso='TableIndexes' onAction='clickCreateButton'/>" +
+           "<button id='DBSequence' tag='DBSeqnce' label='DBSequence' imageMso='ShowOnNewButton' onAction='clickCreateButton'/>" +
+           "<button id='DBListFetch' tag='DBListFetch' label='DBListFetch' imageMso='GroupLists' onAction='clickCreateButton'/>" +
+           "<button id='DBRowFetch' tag='DBRowFetch' label='DBRowFetch' imageMso='GroupRecords' onAction='clickCreateButton'/>" +
+           "<button id='DBSetQueryPivot' tag='DBSetQueryPivot' label='DBSetQueryPivot' imageMso='AddContentType' onAction='clickCreateButton'/>" +
+           "<button id='DBSetQueryListObject' tag='DBSetQueryListObject' label='DBSetQueryListObject' imageMso='AddContentType' onAction='clickCreateButton'/>" +
+        "</menu>" +
          "<button id='refreshDataC' label='refresh data (Ctrl-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
          "<button id='gotoDBFuncC' label='jump to DBFunc/target (Ctrl-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
          "<menuSeparator id='MySeparatorC' insertBeforeMso='Cut'/>" +
