@@ -313,16 +313,19 @@ cleanup:
             ' add DB sequences on Workbook level...
             For Each docproperty In hostApp.ActiveWorkbook.CustomDocumentProperties
                 If TypeName(docproperty.Value) = "String" And Left(docproperty.Name, 8) = "DBSeqnce" Then
+                    Dim nodeName As String = Replace(docproperty.Name, "DBSeqnce", "")
+                    If nodeName = "" Then nodeName = "UnnamedDBSeqnce"
+
                     Dim defColl As Dictionary(Of String, Object)
                     If Not DBModifDefColl.ContainsKey("ID0") Then
                         ' add to new sheet "menu"
                         defColl = New Dictionary(Of String, Object)
-                        defColl.Add(docproperty.Name, docproperty.Value)
+                        defColl.Add(nodeName, docproperty.Value)
                         DBModifDefColl.Add("ID0", defColl)
                     Else
                         ' add definition to existing sheet "menu"
                         defColl = DBModifDefColl("ID0")
-                        defColl.Add(docproperty.Name, docproperty.Value)
+                        defColl.Add(nodeName, docproperty.Value)
                     End If
                 End If
             Next

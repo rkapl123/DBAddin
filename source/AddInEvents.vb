@@ -5,8 +5,11 @@ Imports Microsoft.Office.Interop.Excel
 Imports Microsoft.Office.Core
 Imports System.Timers
 Imports System.Diagnostics
+Imports System.Runtime.InteropServices
+
 
 ''' <summary>AddIn Connection class, also handling Events from Excel (Open, Close, Activate)</summary>
+<ComVisible(True)>
 Public Class AddInEvents
     Implements IExcelAddIn
 
@@ -14,6 +17,9 @@ Public Class AddInEvents
     WithEvents Application As Excel.Application
     ''' <summary></summary>
     WithEvents ContextButton As CommandBarButton
+    WithEvents cb As Microsoft.Vbe.Interop.Forms.CommandButton
+    Private cbname As String
+
     ''' <summary>necessary to asynchronously start refresh of db functions after save event</summary>
     Private aTimer As System.Timers.Timer
 
@@ -174,6 +180,8 @@ Public Class AddInEvents
     ''' <summary>WorkbookActivate: gets defined named ranges for DBMapper invocation in the current workbook after activation and updates Ribbon with it</summary>
     Private Sub Application_WorkbookActivate(Wb As Excel.Workbook) Handles Application.WorkbookActivate
         getDBModifDefinitions()
+        ' unfortunately, Excel doesn't fire SheetActivate when opening workbooks, so do that here...
+        assignHandler(Wb.ActiveSheet)
     End Sub
 
     ''' <summary>"OnTime" event function to "escape" workbook_save: event procedure to refetch DB functions results after saving</summary>
@@ -187,6 +195,36 @@ Public Class AddInEvents
             refreshDBFunctions(hostApp.ActiveWorkbook, True)
             hostApp.ActiveWorkbook.Saved = previouslySaved
         End If
+    End Sub
+    Private Sub cb_Click() Handles cb.Click
+        If Left(cbname, 8) = "DBMapper" Then
+            doDBMapper(hostApp.ActiveWorkbook.Names.Item(cbname).RefersToRange)
+        ElseIf Left(cbname, 8) = "DBAction" Then
+            doDBAction(hostApp.ActiveWorkbook.Names.Item(cbname).RefersToRange)
+        ElseIf Left(cbname, 8) = "DBSeqnce" Then
+            Dim dbseqname As String = IIf(cbname = "DBSeqnce", "UnnamedDBSeqnce", Replace(cbname, "DBSeqnce", ""))
+            doDBSeqnce(cbname, DBModifDefColl("ID0").Item(dbseqname))
+        End If
+    End Sub
+
+    Sub assignHandler(Sh As Object)
+        Dim foundDBModif As Boolean = False
+        For Each shp As Excel.Shape In Sh.Shapes
+            ' Associate clickhandler with all click events of the CommandButtons.
+            Dim ctrlName As String = Sh.OLEObjects(shp.Name).Object.Name
+            If Left(ctrlName, 8) = "DBMapper" Or Left(ctrlName, 8) = "DBAction" Or Left(ctrlName, 8) = "DBSeqnce" Then
+                If foundDBModif Then
+                    MsgBox("only one DBModifier Button allowed on a Worksheet, currently using " & cbname & " !")
+                    Exit For
+                End If
+                cb = Sh.OLEObjects(shp.Name).Object
+                cbname = ctrlName
+                foundDBModif = True
+            End If
+        Next
+    End Sub
+    Private Sub Application_SheetActivate(Sh As Object) Handles Application.SheetActivate
+        assignHandler(Sh)
     End Sub
 
     ''' <summary>SheetDeactivate: gets defined named ranges for DBMapper invocation after sheet was deleted/added (changes index of sheets-> IDs!) and updates Ribbon with it</summary>
