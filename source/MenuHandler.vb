@@ -35,19 +35,6 @@ Public Class MenuHandler
                                             "getScreentip='getDBModifScreentip' getContent='getDBModifMenuContent' getVisible='getDBModifMenuVisible'/>"
         Next
         ' Context menus for refresh, jump and creation: in cell, row, column and ListRange (area of ListObjects)
-
-        '"<menu id='createMenuCL' label='build DBFunc/Map ...' insertBeforeMso='Cut'>" +
-        '   "<button id='DBMapperCL' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
-        '   "<button id='DBActionCL' tag='DBAction' label='DBAction' imageMso='TableIndexes' onAction='clickCreateButton'/>" +
-        '   "<button id='DBSequenceCL' tag='DBSeqnce' label='DBSequence' imageMso='ShowOnNewButton' onAction='clickCreateButton'/>" +
-        '   "<button id='DBListFetchCL' tag='DBListFetch' label='DBListFetch' imageMso='GroupLists' onAction='clickCreateButton'/>" +
-        '   "<button id='DBRowFetchCL' tag='DBRowFetch' label='DBRowFetch' imageMso='GroupRecords' onAction='clickCreateButton'/>" +
-        '   "<button id='DBSetQueryPivotCL' tag='DBSetQueryPivot' label='DBSetQueryPivot' imageMso='AddContentType' onAction='clickCreateButton'/>" +
-        '   "<button id='DBSetQueryListObjectCL' tag='DBSetQueryListObject' label='DBSetQueryListObject' imageMso='AddContentType' onAction='clickCreateButton'/>" +
-        '"</menu>" +
-        '"<menu id='createMenuL' label='build DBFunc/Map ...' insertBeforeMso='Cut'>" +
-        '   "<button id='DBMapperL' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
-        '"</menu>" +
         customUIXml += "</group></tab></tabs></ribbon>" +
          "<contextMenus>" +
          "<contextMenu idMso ='ContextMenuCell'>" +
@@ -59,7 +46,7 @@ Public Class MenuHandler
            "<button id='DBRowFetch' tag='DBRowFetch' label='DBRowFetch' imageMso='GroupRecords' onAction='clickCreateButton'/>" +
            "<button id='DBSetQueryPivot' tag='DBSetQueryPivot' label='DBSetQueryPivot' imageMso='AddContentType' onAction='clickCreateButton'/>" +
            "<button id='DBSetQueryListObject' tag='DBSetQueryListObject' label='DBSetQueryListObject' imageMso='AddContentType' onAction='clickCreateButton'/>" +
-        "</menu>" +
+         "</menu>" +
          "<button id='refreshDataC' label='refresh data (Ctrl-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
          "<button id='gotoDBFuncC' label='jump to DBFunc/target (Ctrl-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
          "<menuSeparator id='MySeparatorC' insertBeforeMso='Cut'/>" +
@@ -67,6 +54,15 @@ Public Class MenuHandler
          "<contextMenu idMso ='ContextMenuCellLayout'>" +
          "<button id='refreshDataCL' label='refresh data (Ctrl-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
          "<button id='gotoDBFuncCL' label='jump to DBFunc/target (Ctrl-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
+         "<menu id='createMenuCL' label='build DBFunc/Map ...' insertBeforeMso='Cut'>" +
+            "<button id='DBMapperCL' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
+            "<button id='DBActionCL' tag='DBAction' label='DBAction' imageMso='TableIndexes' onAction='clickCreateButton'/>" +
+            "<button id='DBSequenceCL' tag='DBSeqnce' label='DBSequence' imageMso='ShowOnNewButton' onAction='clickCreateButton'/>" +
+            "<button id='DBListFetchCL' tag='DBListFetch' label='DBListFetch' imageMso='GroupLists' onAction='clickCreateButton'/>" +
+            "<button id='DBRowFetchCL' tag='DBRowFetch' label='DBRowFetch' imageMso='GroupRecords' onAction='clickCreateButton'/>" +
+            "<button id='DBSetQueryPivotCL' tag='DBSetQueryPivot' label='DBSetQueryPivot' imageMso='AddContentType' onAction='clickCreateButton'/>" +
+            "<button id='DBSetQueryListObjectCL' tag='DBSetQueryListObject' label='DBSetQueryListObject' imageMso='AddContentType' onAction='clickCreateButton'/>" +
+         "</menu>" +
          "<menuSeparator id='MySeparatorCL' insertBeforeMso='Cut'/>" +
          "</contextMenu>" +
          "<contextMenu idMso='ContextMenuRow'>" +
@@ -78,9 +74,12 @@ Public Class MenuHandler
          "<menuSeparator id='MySeparatorZ' insertBeforeMso='Cut'/>" +
          "</contextMenu>" +
          "<contextMenu idMso='ContextMenuListRange'>" +
-         "<button id='refreshDataL' label='refresh data (Ctrl-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
-         "<button id='gotoDBFuncL' label='jump to DBFunc/target (Ctrl-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
-         "<menuSeparator id='MySeparatorL' insertBeforeMso='Cut'/>" +
+             "<button id='refreshDataL' label='refresh data (Ctrl-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
+             "<button id='gotoDBFuncL' label='jump to DBFunc/target (Ctrl-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
+             "<menu id='createMenuL' label='build DBFunc/Map ...' insertBeforeMso='Cut'>" +
+               "<button id='DBMapperL' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
+             "</menu>" +
+             "<menuSeparator id='MySeparatorL' insertBeforeMso='Cut'/>" +
          "</contextMenu>" +
          "</contextMenus></customUI>"
         Return customUIXml
@@ -184,14 +183,14 @@ Public Class MenuHandler
 
             For Each nodeName As String In DBModifDefColl(control.Id).Keys
                 ' special menu for sequences
-                If Left(nodeName, 8) = "DBSeqnce" Then
-                    xmlString = xmlString + "<button id='" + nodeName + "' label='do " + nodeName + "' imageMso='ShowOnNewButton' onAction='DBSeqnceClick' tag='" + control.Id + "' screentip='do " + nodeName + "' supertip='executes DB Sequence defined in docproperty " + nodeName + "' />"
+                If control.Id = "ID0" Then
+                    xmlString = xmlString + "<button id='" + nodeName + "' label='do " + nodeName + "' imageMso='ShowOnNewButton' onAction='DBSeqnceClick' tag='" + control.Id + "' screentip='do Sequence " + nodeName + "' supertip='executes DB Sequence defined in docproperty DBSeqnce" + nodeName + "' />"
                 Else
                     Dim rngName As String = getDBModifNameFromRange(DBModifDefColl(control.Id).Item(nodeName))
                     If Left(rngName, 8) = "DBMapper" Then
-                        xmlString = xmlString + "<button id='" + nodeName + "' label='store " + nodeName + "' imageMso='TableSave' onAction='DBMapperClick' tag='" + control.Id + "' screentip='store " + nodeName + "' supertip='stores data defined in " + nodeName + " Mapper range on " + DBModifDefColl(control.Id).Item(nodeName).Parent.Name + "!" + DBModifDefColl(control.Id).Item(nodeName).Address + "' />"
+                        xmlString = xmlString + "<button id='" + nodeName + "' label='store " + nodeName + "' imageMso='TableSave' onAction='DBMapperClick' tag='" + control.Id + "' screentip='store DBMapper " + nodeName + "' supertip='stores data defined in " + nodeName + " DBMapper range on " + DBModifDefColl(control.Id).Item(nodeName).Parent.Name + "!" + DBModifDefColl(control.Id).Item(nodeName).Address + "' />"
                     ElseIf Left(rngName, 8) = "DBAction" Then
-                        xmlString = xmlString + "<button id='" + nodeName + "' label='do " + nodeName + "' imageMso='TableIndexes' onAction='DBActionClick' tag='" + control.Id + "' screentip='do " + nodeName + "' supertip='executes Action defined in " + nodeName + " DBAction range on " + DBModifDefColl(control.Id).Item(nodeName).Parent.Name + "!" + DBModifDefColl(control.Id).Item(nodeName).Address + "' />"
+                        xmlString = xmlString + "<button id='" + nodeName + "' label='do " + nodeName + "' imageMso='TableIndexes' onAction='DBActionClick' tag='" + control.Id + "' screentip='do DBAction " + nodeName + "' supertip='executes Action defined in " + nodeName + " DBAction range on " + DBModifDefColl(control.Id).Item(nodeName).Parent.Name + "!" + DBModifDefColl(control.Id).Item(nodeName).Address + "' />"
                     End If
                 End If
             Next

@@ -444,7 +444,7 @@ cleanup:
     End Function
 
     ''' <summary>creates a DBModif at the current active cell or edits an existing one being there or after being called from ribbon + Ctrl</summary>
-    Sub createDBModif(type As String, Optional targetRange As Range = Nothing, Optional targetDefName As String = "DBSeqnce", Optional DBSequenceText As String = "")
+    Sub createDBModif(type As String, Optional targetRange As Range = Nothing, Optional targetDefName As String = "UnnamedDBSeqnce", Optional DBSequenceText As String = "")
 
         ' get potentially existing target range name
         If IsNothing(targetRange) Then targetRange = hostApp.ActiveCell
@@ -546,7 +546,7 @@ cleanup:
                 Dim ds As List(Of String) = New List(Of String)
                 For Each sheetId As String In DBModifDefColl.Keys
                     For Each nodeName As String In DBModifDefColl(sheetId).Keys
-                        If Left(nodeName, 8) = "DBSeqnce" Then
+                        If sheetId = "ID0" Then
                             ' avoid self referencing DB Sequences (endless recursion)
                             If nodeName <> targetDefName Then ds.Add(Left(nodeName, 8) & ":" & sheetId & ":" & Right(nodeName, Len(nodeName) - 8))
                         Else
@@ -617,7 +617,6 @@ cleanup:
                     Else
                         paramText += "," + .DBSeqenceDataGrid.Rows(i).Cells(0).Value
                     End If
-
                 Next
             End If
             ' ... and store in docproperty (rename docproperty first to current cell name, might have been changed)

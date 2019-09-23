@@ -230,10 +230,10 @@ Public Module Functions
     ''' <param name="ConnString">connection string defining DB, user, etc...</param>
     ''' <param name="targetRange">Range with Object beneath to put the Query/ConnString into</param>
     ''' <returns>Status Message</returns>
-    <ExcelFunction(Description:="Stores a query into an Object defined in targetRange (an embedded MS Query/Listobject, Pivot table, etc.)")>
+    <ExcelFunction(Description:="Stores a query into an Object (embedded Listobject or Pivot table) defined in targetRange")>
     Public Function DBSetQuery(<ExcelArgument(Description:="query for getting data")> Query As Object,
                                <ExcelArgument(Description:="connection string defining DB, user, etc...")> ConnString As Object,
-                               <ExcelArgument(Description:="Range with Object beneath to put the Query/ConnString into", AllowReference:=True)> targetRange As Object) As String
+                               <ExcelArgument(Description:="Range with embedded Object to put the Query/ConnString into", AllowReference:=True)> targetRange As Object) As String
         Dim callID As String = ""
         Dim caller As Range
         Dim EnvPrefix As String = ""

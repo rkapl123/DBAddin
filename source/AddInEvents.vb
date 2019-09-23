@@ -15,11 +15,8 @@ Public Class AddInEvents
 
     ''' <summary>the app object needed for excel event handling (most of this class is dedicated to that)</summary>
     WithEvents Application As Excel.Application
-    ''' <summary></summary>
-    WithEvents ContextButton As CommandBarButton
+    ''' <summary>CommandButton that can be inserted on a worksheet (name property being the same as the respective target range (for DBMapper/DBAction) or DBSeqnce Name)</summary>
     WithEvents cb As Microsoft.Vbe.Interop.Forms.CommandButton
-    Private cbname As String
-
     ''' <summary>necessary to asynchronously start refresh of db functions after save event</summary>
     Private aTimer As System.Timers.Timer
 
@@ -196,17 +193,21 @@ Public Class AddInEvents
             hostApp.ActiveWorkbook.Saved = previouslySaved
         End If
     End Sub
+
+    ''' <summary></summary>
     Private Sub cb_Click() Handles cb.Click
-        If Left(cbname, 8) = "DBMapper" Then
-            doDBMapper(hostApp.ActiveWorkbook.Names.Item(cbname).RefersToRange)
-        ElseIf Left(cbname, 8) = "DBAction" Then
-            doDBAction(hostApp.ActiveWorkbook.Names.Item(cbname).RefersToRange)
-        ElseIf Left(cbname, 8) = "DBSeqnce" Then
-            Dim dbseqname As String = IIf(cbname = "DBSeqnce", "UnnamedDBSeqnce", Replace(cbname, "DBSeqnce", ""))
-            doDBSeqnce(cbname, DBModifDefColl("ID0").Item(dbseqname))
+        If Left(cb.Name, 8) = "DBMapper" Then
+            doDBMapper(hostApp.ActiveWorkbook.Names.Item(cb.Name).RefersToRange)
+        ElseIf Left(cb.Name, 8) = "DBAction" Then
+            doDBAction(hostApp.ActiveWorkbook.Names.Item(cb.Name).RefersToRange)
+        ElseIf Left(cb.Name, 8) = "DBSeqnce" Then
+            Dim dbseqname As String = IIf(cb.Name = "DBSeqnce", "UnnamedDBSeqnce", Replace(cb.Name, "DBSeqnce", ""))
+            doDBSeqnce(cb.Name, DBModifDefColl("ID0").Item(dbseqname))
         End If
     End Sub
 
+    ''' <summary></summary>
+    ''' <param name="Sh"></param>
     Sub assignHandler(Sh As Object)
         Dim foundDBModif As Boolean = False
         For Each shp As Excel.Shape In Sh.Shapes
@@ -214,48 +215,25 @@ Public Class AddInEvents
             Dim ctrlName As String = Sh.OLEObjects(shp.Name).Object.Name
             If Left(ctrlName, 8) = "DBMapper" Or Left(ctrlName, 8) = "DBAction" Or Left(ctrlName, 8) = "DBSeqnce" Then
                 If foundDBModif Then
-                    MsgBox("only one DBModifier Button allowed on a Worksheet, currently using " & cbname & " !")
+                    MsgBox("only one DBModifier Button allowed on a Worksheet, currently using " & cb.Name & " !")
                     Exit For
                 End If
                 cb = Sh.OLEObjects(shp.Name).Object
-                cbname = ctrlName
                 foundDBModif = True
             End If
         Next
     End Sub
+
+    ''' <summary></summary>
+    ''' <param name="Sh"></param>
     Private Sub Application_SheetActivate(Sh As Object) Handles Application.SheetActivate
         assignHandler(Sh)
     End Sub
 
     ''' <summary>SheetDeactivate: gets defined named ranges for DBMapper invocation after sheet was deleted/added (changes index of sheets-> IDs!) and updates Ribbon with it</summary>
+    ''' <param name="Sh"></param>
     Private Sub Application_SheetDeactivate(Sh As Object) Handles Application.SheetDeactivate
         getDBModifDefinitions()
-    End Sub
-
-    Private Sub Application_SheetBeforeRightClick(Sh As Object, Target As Range, ByRef Cancel As Boolean) Handles Application.SheetBeforeRightClick
-        Try : ContextButton.Delete() : Catch ex As Exception : End Try
-        Dim dbModifName As String = getDBModifNameFromRange(hostApp.ActiveCell)
-        If dbModifName <> "" Then
-            Try
-                ContextButton = hostApp.CommandBars("Cell").Controls.Add(Type:=MsoControlType.msoControlButton, Before:=1, Temporary:=True)
-                ContextButton.Caption = "do " & Left(dbModifName, 8) & " (Ctrl-Shift-Alt to edit)"
-                ContextButton.Tag = Left(dbModifName, 8)
-                ContextButton.FaceId = 582
-            Catch ex As Exception
-            End Try
-        End If
-    End Sub
-
-    Private Sub ContextButton_Click(Ctrl As CommandBarButton, ByRef CancelDefault As Boolean) Handles ContextButton.Click
-        If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown And My.Computer.Keyboard.AltKeyDown Then
-            createDBModif(Ctrl.Tag, targetRange:=hostApp.ActiveCell)
-        Else
-            If Ctrl.Tag = "DBAction" Then
-                doDBAction(hostApp.ActiveCell)
-            ElseIf Ctrl.Tag = "DBMapper" Then
-                doDBMapper(hostApp.ActiveCell)
-            End If
-        End If
     End Sub
 
 End Class
