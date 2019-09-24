@@ -184,13 +184,15 @@ Public Class MenuHandler
             For Each nodeName As String In DBModifDefColl(control.Id).Keys
                 ' special menu for sequences
                 If control.Id = "ID0" Then
-                    xmlString = xmlString + "<button id='" + nodeName + "' label='do " + nodeName + "' imageMso='ShowOnNewButton' onAction='DBSeqnceClick' tag='" + control.Id + "' screentip='do Sequence " + nodeName + "' supertip='executes DB Sequence defined in docproperty DBSeqnce" + nodeName + "' />"
+                    Dim descName As String = IIf(nodeName = "", "Unnamed DBSequence", nodeName)
+                    xmlString = xmlString + "<button id='_" + nodeName + "' label='do " + descName + "' imageMso='ShowOnNewButton' onAction='DBSeqnceClick' tag='" + control.Id + "' screentip='do Sequence: " + descName + "' supertip='executes DB Sequence defined in docproperty DBSeqnce: " + descName + "' />"
                 Else
                     Dim rngName As String = getDBModifNameFromRange(DBModifDefColl(control.Id).Item(nodeName))
+                    Dim descName As String = IIf(nodeName = "", "Unnamed " + Left(rngName, 8), nodeName)
                     If Left(rngName, 8) = "DBMapper" Then
-                        xmlString = xmlString + "<button id='" + nodeName + "' label='store " + nodeName + "' imageMso='TableSave' onAction='DBMapperClick' tag='" + control.Id + "' screentip='store DBMapper " + nodeName + "' supertip='stores data defined in " + nodeName + " DBMapper range on " + DBModifDefColl(control.Id).Item(nodeName).Parent.Name + "!" + DBModifDefColl(control.Id).Item(nodeName).Address + "' />"
+                        xmlString = xmlString + "<button id='_" + nodeName + "' label='store " + descName + "' imageMso='TableSave' onAction='DBMapperClick' tag='" + control.Id + "' screentip='store DBMapper: " + descName + "' supertip='stores data defined in DBMapper (named " + descName + ") range on " + DBModifDefColl(control.Id).Item(nodeName).Parent.Name + "!" + DBModifDefColl(control.Id).Item(nodeName).Address + "' />"
                     ElseIf Left(rngName, 8) = "DBAction" Then
-                        xmlString = xmlString + "<button id='" + nodeName + "' label='do " + nodeName + "' imageMso='TableIndexes' onAction='DBActionClick' tag='" + control.Id + "' screentip='do DBAction " + nodeName + "' supertip='executes Action defined in " + nodeName + " DBAction range on " + DBModifDefColl(control.Id).Item(nodeName).Parent.Name + "!" + DBModifDefColl(control.Id).Item(nodeName).Address + "' />"
+                        xmlString = xmlString + "<button id='_" + nodeName + "' label='do " + descName + "' imageMso='TableIndexes' onAction='DBActionClick' tag='" + control.Id + "' screentip='do DBAction: " + descName + "' supertip='executes Action defined in DBAction (named " + descName + ") range on " + DBModifDefColl(control.Id).Item(nodeName).Parent.Name + "!" + DBModifDefColl(control.Id).Item(nodeName).Address + "' />"
                     End If
                 End If
             Next
@@ -219,29 +221,32 @@ Public Class MenuHandler
 
     ''' <summary>DBMapper store button activated, save Range to DB or define existing (CtrlKey pressed)...</summary>
     Public Sub DBMapperClick(control As IRibbonControl)
+        Dim nodeName As String = Right(control.Id, Len(control.Id) - 1) ' remove underscore at beginning of id
         If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown And My.Computer.Keyboard.AltKeyDown Then
-            createDBModif("DBMapper", targetRange:=DBModifDefColl(control.Tag).Item(control.Id))
+            createDBModif("DBMapper", targetRange:=DBModifDefColl(control.Tag).Item(nodeName))
         Else
-            doDBMapper(DBModifDefColl(control.Tag).Item(control.Id))
+            doDBMapper(DBModifDefColl(control.Tag).Item(nodeName))
         End If
     End Sub
 
     ''' <summary>DBAction button activated, do DB Action or define existing (CtrlKey pressed)...</summary>
     Public Sub DBActionClick(control As IRibbonControl)
+        Dim nodeName As String = Right(control.Id, Len(control.Id) - 1)
         If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown And My.Computer.Keyboard.AltKeyDown Then
-            createDBModif("DBAction", targetRange:=DBModifDefColl(control.Tag).Item(control.Id))
+            createDBModif("DBAction", targetRange:=DBModifDefColl(control.Tag).Item(nodeName))
         Else
-            doDBAction(DBModifDefColl(control.Tag).Item(control.Id))
+            doDBAction(DBModifDefColl(control.Tag).Item(nodeName))
         End If
     End Sub
 
     ''' <summary>DBSequence button activated, do DB Sequence or define existing (CtrlKey pressed)...</summary>
     Public Sub DBSeqnceClick(control As IRibbonControl)
+        Dim nodeName As String = Right(control.Id, Len(control.Id) - 1)
         If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown And My.Computer.Keyboard.AltKeyDown Then
-            createDBModif("DBSeqnce", targetDefName:=control.Id, DBSequenceText:=DBModifDefColl(control.Tag).Item(control.Id))
+            createDBModif("DBSeqnce", targetDefName:=nodeName, DBSequenceText:=DBModifDefColl(control.Tag).Item(nodeName))
         Else
             ' DB sequence actions (the sequence to be done) are stored directly in DBMapperDefColl, so different invocation here
-            doDBSeqnce(control.Id, DBModifDefColl(control.Tag).Item(control.Id))
+            doDBSeqnce(nodeName, DBModifDefColl(control.Tag).Item(nodeName))
         End If
     End Sub
 

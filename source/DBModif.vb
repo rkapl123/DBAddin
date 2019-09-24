@@ -314,7 +314,6 @@ cleanup:
             For Each docproperty In hostApp.ActiveWorkbook.CustomDocumentProperties
                 If TypeName(docproperty.Value) = "String" And Left(docproperty.Name, 8) = "DBSeqnce" Then
                     Dim nodeName As String = Replace(docproperty.Name, "DBSeqnce", "")
-                    If nodeName = "" Then nodeName = "UnnamedDBSeqnce"
 
                     Dim defColl As Dictionary(Of String, Object)
                     If Not DBModifDefColl.ContainsKey("ID0") Then
@@ -337,8 +336,7 @@ cleanup:
                         ErrorMsg(DBModiftype + " definitions range " + namedrange.Parent.Name + "!" + namedrange.Name + " contains #REF!")
                         Continue For
                     End If
-                    Dim nodeName As String = Replace(Replace(namedrange.Name, DBModiftype, ""), namedrange.Parent.Name & "!", "")
-                    If nodeName = "" Then nodeName = "Unnamed" + DBModiftype
+                    Dim nodeName As String = Replace(cleanname, DBModiftype, "")
 
                     Dim i As Integer = namedrange.RefersToRange.Parent.Index
                     Dim defColl As Dictionary(Of String, Object)
@@ -385,7 +383,6 @@ cleanup:
             ErrorMsg("target not matching passed DBModif type " & paramType & " !")
             Return False
         End If
-        If paramTargetName = paramType Then paramTargetName += "Unnamed" + paramType
         For Each docproperty In paramTarget.Parent.Parent.CustomDocumentProperties
             If TypeName(docproperty.Value) = "String" And docproperty.Name = paramTargetName Then
                 paramText = docproperty.Value
@@ -444,7 +441,7 @@ cleanup:
     End Function
 
     ''' <summary>creates a DBModif at the current active cell or edits an existing one being there or after being called from ribbon + Ctrl</summary>
-    Sub createDBModif(type As String, Optional targetRange As Range = Nothing, Optional targetDefName As String = "UnnamedDBSeqnce", Optional DBSequenceText As String = "")
+    Sub createDBModif(type As String, Optional targetRange As Range = Nothing, Optional targetDefName As String = "", Optional DBSequenceText As String = "")
 
         ' get potentially existing target range name
         If IsNothing(targetRange) Then targetRange = hostApp.ActiveCell

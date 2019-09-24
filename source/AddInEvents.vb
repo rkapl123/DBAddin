@@ -16,7 +16,15 @@ Public Class AddInEvents
     ''' <summary>the app object needed for excel event handling (most of this class is dedicated to that)</summary>
     WithEvents Application As Excel.Application
     ''' <summary>CommandButton that can be inserted on a worksheet (name property being the same as the respective target range (for DBMapper/DBAction) or DBSeqnce Name)</summary>
-    WithEvents cb As Microsoft.Vbe.Interop.Forms.CommandButton
+    WithEvents cb1 As Microsoft.Vbe.Interop.Forms.CommandButton
+    ''' <summary>CommandButton that can be inserted on a worksheet (name property being the same as the respective target range (for DBMapper/DBAction) or DBSeqnce Name)</summary>
+    WithEvents cb2 As Microsoft.Vbe.Interop.Forms.CommandButton
+    ''' <summary>CommandButton that can be inserted on a worksheet (name property being the same as the respective target range (for DBMapper/DBAction) or DBSeqnce Name)</summary>
+    WithEvents cb3 As Microsoft.Vbe.Interop.Forms.CommandButton
+    ''' <summary>CommandButton that can be inserted on a worksheet (name property being the same as the respective target range (for DBMapper/DBAction) or DBSeqnce Name)</summary>
+    WithEvents cb4 As Microsoft.Vbe.Interop.Forms.CommandButton
+    ''' <summary>CommandButton that can be inserted on a worksheet (name property being the same as the respective target range (for DBMapper/DBAction) or DBSeqnce Name)</summary>
+    WithEvents cb5 As Microsoft.Vbe.Interop.Forms.CommandButton
     ''' <summary>necessary to asynchronously start refresh of db functions after save event</summary>
     Private aTimer As System.Timers.Timer
 
@@ -195,31 +203,67 @@ Public Class AddInEvents
     End Sub
 
     ''' <summary></summary>
-    Private Sub cb_Click() Handles cb.Click
-        If Left(cb.Name, 8) = "DBMapper" Then
-            doDBMapper(hostApp.ActiveWorkbook.Names.Item(cb.Name).RefersToRange)
-        ElseIf Left(cb.Name, 8) = "DBAction" Then
-            doDBAction(hostApp.ActiveWorkbook.Names.Item(cb.Name).RefersToRange)
-        ElseIf Left(cb.Name, 8) = "DBSeqnce" Then
-            Dim dbseqname As String = IIf(cb.Name = "DBSeqnce", "UnnamedDBSeqnce", Replace(cb.Name, "DBSeqnce", ""))
-            doDBSeqnce(cb.Name, DBModifDefColl("ID0").Item(dbseqname))
+    Private Sub cb1_Click() Handles cb1.Click
+        cbClick(cb1.Name)
+    End Sub
+    Private Sub cb2_Click() Handles cb2.Click
+        cbClick(cb2.Name)
+    End Sub
+    Private Sub cb3_Click() Handles cb3.Click
+        cbClick(cb3.Name)
+    End Sub
+    Private Sub cb4_Click() Handles cb4.Click
+        cbClick(cb4.Name)
+    End Sub
+    Private Sub cb5_Click() Handles cb5.Click
+        cbClick(cb5.Name)
+    End Sub
+
+    Private Sub cbClick(cbName As String)
+        If Left(cbName, 8) = "DBSeqnce" Then
+            Dim dbseqname As String = Replace(cbName, "DBSeqnce", "")
+            If Not DBModifDefColl("ID0").ContainsKey(dbseqname) Then
+                MsgBox("No defined DB Sequence " & cbName & " found, exiting without DBModification.")
+                Exit Sub
+            Else
+                doDBSeqnce(cbName, DBModifDefColl("ID0").Item(dbseqname))
+            End If
+        Else
+            Dim targetRange As Range
+            Try
+                targetRange = hostApp.ActiveWorkbook.Names.Item(cbName).RefersToRange
+            Catch ex As Exception
+                MsgBox("No underlying " & Left(cbName, 8) & " Range named " & cbName & " found, exiting without DBModification.")
+                LogWarn("targetRange assignment failed: " & ex.Message)
+                Exit Sub
+            End Try
+            doDBMapper(targetRange)
         End If
     End Sub
 
     ''' <summary></summary>
     ''' <param name="Sh"></param>
     Sub assignHandler(Sh As Object)
-        Dim foundDBModif As Boolean = False
+        cb1 = Nothing : cb2 = Nothing : cb3 = Nothing : cb4 = Nothing : cb5 = Nothing
         For Each shp As Excel.Shape In Sh.Shapes
             ' Associate clickhandler with all click events of the CommandButtons.
-            Dim ctrlName As String = Sh.OLEObjects(shp.Name).Object.Name
+            Dim ctrlName As String
+            Try : ctrlName = Sh.OLEObjects(shp.Name).Object.Name : Catch ex As Exception : ctrlName = "" : End Try
             If Left(ctrlName, 8) = "DBMapper" Or Left(ctrlName, 8) = "DBAction" Or Left(ctrlName, 8) = "DBSeqnce" Then
-                If foundDBModif Then
-                    MsgBox("only one DBModifier Button allowed on a Worksheet, currently using " & cb.Name & " !")
+                If IsNothing(cb1) Then
+                    cb1 = Sh.OLEObjects(shp.Name).Object
+                ElseIf IsNothing(cb2) Then
+                    cb2 = Sh.OLEObjects(shp.Name).Object
+                ElseIf IsNothing(cb3) Then
+                    cb3 = Sh.OLEObjects(shp.Name).Object
+                ElseIf IsNothing(cb4) Then
+                    cb4 = Sh.OLEObjects(shp.Name).Object
+                ElseIf IsNothing(cb5) Then
+                    cb5 = Sh.OLEObjects(shp.Name).Object
+                Else
+                    MsgBox("only max. of five DBModifier Buttons allowed on a Worksheet, currently using " & cb1.Name & "," & cb2.Name & "," & cb3.Name & "," & cb4.Name & " and " & cb5.Name & " !")
                     Exit For
                 End If
-                cb = Sh.OLEObjects(shp.Name).Object
-                foundDBModif = True
             End If
         Next
     End Sub

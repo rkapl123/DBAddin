@@ -122,7 +122,7 @@
   </metadata>
   <data name="DBModifName.ToolTip" xml:space="preserve">
     <value>Enter the name for the selected Range or Definition that will be used to identify the DBModifier in the "DBModify Data" Group dropdowns.
-If no name is given here, then UnnamedDB&lt;type&gt; will be used to identify it.</value>
+If no name is given here, then Unnamed DB&lt;type&gt; will be used to identify it in the Ribbon Menu.</value>
   </data>
   <metadata name="$this.TrayHeight" type="System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
     <value>196</value>

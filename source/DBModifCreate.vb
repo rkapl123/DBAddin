@@ -7,12 +7,23 @@ Public Class DBModifCreate
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub OK_Button_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles OK_Button.Click
+        Dim NameValidation As String = ""
+        If Me.DBModifName.Text <> String.Empty Then
+            Try
+                hostApp.Names.Add(Name:=Me.DBModifName.Text, RefersTo:=hostApp.ActiveCell)
+            Catch ex As Exception
+                NameValidation = ex.Message
+            End Try
+            Try : hostApp.Names.Item(Me.DBModifName.Text).Delete() : Catch ex As Exception : End Try
+        End If
         If Me.Tablename.Text = String.Empty And Me.Tablename.Visible Then
             MsgBox("Field Tablename is required, please fill in!")
         ElseIf Me.PrimaryKeys.Text = String.Empty And Me.PrimaryKeys.Visible Then
             MsgBox("Field Primary Keys is required, please fill in!")
         ElseIf Me.Database.Text = String.Empty And Me.Database.Visible Then
             MsgBox("Field Database is required, please fill in!")
+        ElseIf NameValidation <> "" Then
+            MsgBox("Invalid " & Me.NameLabel.Text & NameValidation)
         Else
             Me.DialogResult = DialogResult.OK
             Me.Close()
