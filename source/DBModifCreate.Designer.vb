@@ -43,8 +43,12 @@ Partial Class DBModifCreate
         Me.execOnSave = New System.Windows.Forms.CheckBox()
         Me.ToolTip1 = New System.Windows.Forms.ToolTip(Me.components)
         Me.envSel = New System.Windows.Forms.ComboBox()
-        Me.EnvironmentLabel = New System.Windows.Forms.Label()
         Me.DBSeqenceDataGrid = New System.Windows.Forms.DataGridView()
+        Me.EnvironmentLabel = New System.Windows.Forms.Label()
+        Me.TargetRangeAddress = New System.Windows.Forms.Label()
+        Me.TargetRangeLabel = New System.Windows.Forms.Label()
+        Me.up = New System.Windows.Forms.Button()
+        Me.down = New System.Windows.Forms.Button()
         Me.TableLayoutPanel1.SuspendLayout()
         CType(Me.DBSeqenceDataGrid, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
@@ -94,7 +98,7 @@ Partial Class DBModifCreate
         'NameLabel
         '
         Me.NameLabel.AutoSize = True
-        Me.NameLabel.Location = New System.Drawing.Point(12, 28)
+        Me.NameLabel.Location = New System.Drawing.Point(9, 28)
         Me.NameLabel.Name = "NameLabel"
         Me.NameLabel.Size = New System.Drawing.Size(93, 13)
         Me.NameLabel.TabIndex = 2
@@ -143,7 +147,7 @@ Partial Class DBModifCreate
         'TablenameLabel
         '
         Me.TablenameLabel.AutoSize = True
-        Me.TablenameLabel.Location = New System.Drawing.Point(12, 80)
+        Me.TablenameLabel.Location = New System.Drawing.Point(9, 80)
         Me.TablenameLabel.Name = "TablenameLabel"
         Me.TablenameLabel.Size = New System.Drawing.Size(63, 13)
         Me.TablenameLabel.TabIndex = 2
@@ -152,7 +156,7 @@ Partial Class DBModifCreate
         'PrimaryKeysLabel
         '
         Me.PrimaryKeysLabel.AutoSize = True
-        Me.PrimaryKeysLabel.Location = New System.Drawing.Point(12, 106)
+        Me.PrimaryKeysLabel.Location = New System.Drawing.Point(9, 106)
         Me.PrimaryKeysLabel.Name = "PrimaryKeysLabel"
         Me.PrimaryKeysLabel.Size = New System.Drawing.Size(70, 13)
         Me.PrimaryKeysLabel.TabIndex = 2
@@ -161,7 +165,7 @@ Partial Class DBModifCreate
         'DatabaseLabel
         '
         Me.DatabaseLabel.AutoSize = True
-        Me.DatabaseLabel.Location = New System.Drawing.Point(12, 54)
+        Me.DatabaseLabel.Location = New System.Drawing.Point(9, 54)
         Me.DatabaseLabel.Name = "DatabaseLabel"
         Me.DatabaseLabel.Size = New System.Drawing.Size(56, 13)
         Me.DatabaseLabel.TabIndex = 2
@@ -170,7 +174,7 @@ Partial Class DBModifCreate
         'IgnoreColumnsLabel
         '
         Me.IgnoreColumnsLabel.AutoSize = True
-        Me.IgnoreColumnsLabel.Location = New System.Drawing.Point(12, 132)
+        Me.IgnoreColumnsLabel.Location = New System.Drawing.Point(9, 132)
         Me.IgnoreColumnsLabel.Name = "IgnoreColumnsLabel"
         Me.IgnoreColumnsLabel.Size = New System.Drawing.Size(83, 13)
         Me.IgnoreColumnsLabel.TabIndex = 2
@@ -179,7 +183,7 @@ Partial Class DBModifCreate
         'AdditionalStoredProcLabel
         '
         Me.AdditionalStoredProcLabel.AutoSize = True
-        Me.AdditionalStoredProcLabel.Location = New System.Drawing.Point(12, 158)
+        Me.AdditionalStoredProcLabel.Location = New System.Drawing.Point(9, 158)
         Me.AdditionalStoredProcLabel.Name = "AdditionalStoredProcLabel"
         Me.AdditionalStoredProcLabel.Size = New System.Drawing.Size(142, 13)
         Me.AdditionalStoredProcLabel.TabIndex = 2
@@ -188,7 +192,7 @@ Partial Class DBModifCreate
         'insertIfMissing
         '
         Me.insertIfMissing.AutoSize = True
-        Me.insertIfMissing.Location = New System.Drawing.Point(15, 189)
+        Me.insertIfMissing.Location = New System.Drawing.Point(126, 187)
         Me.insertIfMissing.Name = "insertIfMissing"
         Me.insertIfMissing.Size = New System.Drawing.Size(99, 17)
         Me.insertIfMissing.TabIndex = 7
@@ -200,7 +204,7 @@ Partial Class DBModifCreate
         'execOnSave
         '
         Me.execOnSave.AutoSize = True
-        Me.execOnSave.Location = New System.Drawing.Point(15, 391)
+        Me.execOnSave.Location = New System.Drawing.Point(12, 187)
         Me.execOnSave.Name = "execOnSave"
         Me.execOnSave.Size = New System.Drawing.Size(108, 17)
         Me.execOnSave.TabIndex = 8
@@ -212,29 +216,73 @@ Partial Class DBModifCreate
         'envSel
         '
         Me.envSel.FormattingEnabled = True
-        Me.envSel.Location = New System.Drawing.Point(297, 187)
+        Me.envSel.Location = New System.Drawing.Point(305, 183)
         Me.envSel.Name = "envSel"
-        Me.envSel.Size = New System.Drawing.Size(123, 21)
+        Me.envSel.Size = New System.Drawing.Size(115, 21)
         Me.envSel.TabIndex = 9
         Me.ToolTip1.SetToolTip(Me.envSel, "The Environment, where connection id should be taken from (if not existing, take " &
         "from selected Environment in DB Addin General Settings Group)")
         '
+        'DBSeqenceDataGrid
+        '
+        Me.DBSeqenceDataGrid.AllowDrop = True
+        Me.DBSeqenceDataGrid.AllowUserToResizeRows = False
+        Me.DBSeqenceDataGrid.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize
+        Me.DBSeqenceDataGrid.Location = New System.Drawing.Point(12, 214)
+        Me.DBSeqenceDataGrid.MultiSelect = False
+        Me.DBSeqenceDataGrid.Name = "DBSeqenceDataGrid"
+        Me.DBSeqenceDataGrid.Size = New System.Drawing.Size(408, 162)
+        Me.DBSeqenceDataGrid.TabIndex = 10
+        Me.ToolTip1.SetToolTip(Me.DBSeqenceDataGrid, "Define the steps for the DB Sequence in the order of their desired execution here" &
+        ". Any DBMapper and/or DBAction can be selected.")
+        '
         'EnvironmentLabel
         '
         Me.EnvironmentLabel.AutoSize = True
-        Me.EnvironmentLabel.Location = New System.Drawing.Point(211, 190)
+        Me.EnvironmentLabel.Location = New System.Drawing.Point(231, 188)
         Me.EnvironmentLabel.Name = "EnvironmentLabel"
         Me.EnvironmentLabel.Size = New System.Drawing.Size(69, 13)
         Me.EnvironmentLabel.TabIndex = 6
         Me.EnvironmentLabel.Text = "Environment:"
         '
-        'DBSeqenceDataGrid
+        'TargetRangeAddress
         '
-        Me.DBSeqenceDataGrid.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize
-        Me.DBSeqenceDataGrid.Location = New System.Drawing.Point(15, 214)
-        Me.DBSeqenceDataGrid.Name = "DBSeqenceDataGrid"
-        Me.DBSeqenceDataGrid.Size = New System.Drawing.Size(405, 162)
-        Me.DBSeqenceDataGrid.TabIndex = 10
+        Me.TargetRangeAddress.AutoSize = True
+        Me.TargetRangeAddress.Font = New System.Drawing.Font("Microsoft Sans Serif", 8.25!, System.Drawing.FontStyle.Underline, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
+        Me.TargetRangeAddress.ForeColor = System.Drawing.Color.DodgerBlue
+        Me.TargetRangeAddress.Location = New System.Drawing.Point(56, 390)
+        Me.TargetRangeAddress.Name = "TargetRangeAddress"
+        Me.TargetRangeAddress.Size = New System.Drawing.Size(108, 13)
+        Me.TargetRangeAddress.TabIndex = 11
+        Me.TargetRangeAddress.Text = "TargetRangeAddress"
+        '
+        'TargetRangeLabel
+        '
+        Me.TargetRangeLabel.AutoSize = True
+        Me.TargetRangeLabel.Location = New System.Drawing.Point(9, 390)
+        Me.TargetRangeLabel.Name = "TargetRangeLabel"
+        Me.TargetRangeLabel.Size = New System.Drawing.Size(41, 13)
+        Me.TargetRangeLabel.TabIndex = 2
+        Me.TargetRangeLabel.Text = "Target:"
+        '
+        'up
+        '
+        Me.up.Font = New System.Drawing.Font("Courier New", 9.75!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
+        Me.up.Location = New System.Drawing.Point(193, 388)
+        Me.up.Name = "up"
+        Me.up.Size = New System.Drawing.Size(18, 19)
+        Me.up.TabIndex = 12
+        Me.up.Text = "^"
+        Me.up.UseVisualStyleBackColor = True
+        '
+        'down
+        '
+        Me.down.Location = New System.Drawing.Point(217, 388)
+        Me.down.Name = "down"
+        Me.down.Size = New System.Drawing.Size(18, 19)
+        Me.down.TabIndex = 12
+        Me.down.Text = "v"
+        Me.down.UseVisualStyleBackColor = True
         '
         'DBModifCreate
         '
@@ -243,6 +291,9 @@ Partial Class DBModifCreate
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.CancelButton = Me.Cancel_Button
         Me.ClientSize = New System.Drawing.Size(433, 423)
+        Me.Controls.Add(Me.down)
+        Me.Controls.Add(Me.up)
+        Me.Controls.Add(Me.TargetRangeAddress)
         Me.Controls.Add(Me.DBSeqenceDataGrid)
         Me.Controls.Add(Me.EnvironmentLabel)
         Me.Controls.Add(Me.envSel)
@@ -253,6 +304,7 @@ Partial Class DBModifCreate
         Me.Controls.Add(Me.DatabaseLabel)
         Me.Controls.Add(Me.PrimaryKeysLabel)
         Me.Controls.Add(Me.TablenameLabel)
+        Me.Controls.Add(Me.TargetRangeLabel)
         Me.Controls.Add(Me.NameLabel)
         Me.Controls.Add(Me.addStoredProc)
         Me.Controls.Add(Me.IgnoreColumns)
@@ -294,4 +346,8 @@ Partial Class DBModifCreate
     Friend WithEvents envSel As Windows.Forms.ComboBox
     Friend WithEvents EnvironmentLabel As Windows.Forms.Label
     Friend WithEvents DBSeqenceDataGrid As Windows.Forms.DataGridView
+    Friend WithEvents TargetRangeAddress As Windows.Forms.Label
+    Friend WithEvents TargetRangeLabel As Windows.Forms.Label
+    Friend WithEvents up As Windows.Forms.Button
+    Friend WithEvents down As Windows.Forms.Button
 End Class

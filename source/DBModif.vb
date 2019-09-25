@@ -514,6 +514,7 @@ cleanup:
                     .addStoredProc.Text = executeAdditionalProc
                     .IgnoreColumns.Text = ignoreColumns
                 End If
+                .TargetRangeAddress.Text = targetRange.Parent.Name & "!" & targetRange.Address
             End If
             .NameLabel.Text = IIf(type = "DBSeqnce", "DBSequence", type) & " Name:"
             .Text = "Edit " & IIf(type = "DBSeqnce", "DBSequence", type) & " definition"
@@ -530,6 +531,8 @@ cleanup:
             End If
             If type = "DBSeqnce" Then
                 If activeCellName <> "DBSeqnce" Then .DBModifName.Text = Replace(activeCellName, type, "")
+                .TargetRangeLabel.Hide()
+                .TargetRangeAddress.Hide()
                 .envSel.Hide()
                 .EnvironmentLabel.Hide()
                 .Database.Hide()
