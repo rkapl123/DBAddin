@@ -31,7 +31,7 @@ Public Class DBModifCreate
         End If
     End Sub
 
-    ''' <summary>ignore all changes</summary>
+    ''' <summary>ignore all done changes in dialog</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub Cancel_Button_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles Cancel_Button.Click
@@ -39,10 +39,16 @@ Public Class DBModifCreate
         Me.Close()
     End Sub
 
+    ''' <summary>in case of (actually impossible) data errors in DBSequence DataGridView row entries, catch and log them here</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
     Private Sub DBSeqenceDataGrid_DataError(sender As Object, e As DataGridViewDataErrorEventArgs) Handles DBSeqenceDataGrid.DataError
         LogWarn(e.Exception.Message & ":" & e.RowIndex & ":" & e.Context.ToString())
     End Sub
 
+    ''' <summary>the DBMapper and DBAction Target Range Address is displayed as a hyperlink, simulate this link here</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
     Private Sub TargetRangeAddress_Click(sender As Object, e As EventArgs) Handles TargetRangeAddress.Click
         Dim rangePart() As String
         rangePart = Split(Me.TargetRangeAddress.Text, "!")
@@ -54,21 +60,28 @@ Public Class DBModifCreate
         End Try
     End Sub
 
-    ' move rows in DataGridView
+    ''' <summary>move row up in DataGridView of DB Sequence</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
     Private Sub Up_Click(sender As Object, e As EventArgs) Handles up.Click
-        If IsNothing(DBSeqenceDataGrid.SelectedRows) Then Return
-        Dim rw As DataGridViewRow = DBSeqenceDataGrid.SelectedRows(0)
-        Dim selIndex As Integer = DBSeqenceDataGrid.SelectedRows(0).Index
+        If IsNothing(DBSeqenceDataGrid.CurrentRow) Then Return
+        Dim rw As DataGridViewRow = DBSeqenceDataGrid.CurrentRow
+        Dim selIndex As Integer = DBSeqenceDataGrid.CurrentRow.Index
+        ' avoid moving up of first row
         If selIndex = 0 Then Return
         DBSeqenceDataGrid.Rows.RemoveAt(selIndex)
         DBSeqenceDataGrid.Rows.Insert(selIndex - 1, rw)
     End Sub
 
+    ''' <summary>move row down in DataGridView of DB Sequence</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
     Private Sub Down_Click(sender As Object, e As EventArgs) Handles down.Click
-        If IsNothing(DBSeqenceDataGrid.SelectedRows) Then Return
-        Dim rw As DataGridViewRow = DBSeqenceDataGrid.SelectedRows(0)
-        Dim selIndex As Integer = DBSeqenceDataGrid.SelectedRows(0).Index
-        If selIndex = DBSeqenceDataGrid.Rows.Count - 1 Then Return
+        If IsNothing(DBSeqenceDataGrid.CurrentRow) Then Return
+        Dim rw As DataGridViewRow = DBSeqenceDataGrid.CurrentRow
+        Dim selIndex As Integer = DBSeqenceDataGrid.CurrentRow.Index
+        ' avoid moving down of last row, DBSeqenceDataGrid.Rows.Count is 1 more than the actual inserted rows because of the "new" row, selIndex is 0 based
+        If selIndex = DBSeqenceDataGrid.Rows.Count - 2 Then Return
         DBSeqenceDataGrid.Rows.RemoveAt(selIndex)
         DBSeqenceDataGrid.Rows.Insert(selIndex + 1, rw)
     End Sub

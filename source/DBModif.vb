@@ -460,7 +460,7 @@ cleanup:
             End If
         End If
         Dim activeCellName As String = getDBModifNameFromRange(targetRange) ' try regular defined name
-        If type = "DBSeqnce" Then activeCellName = targetDefName
+        If type = "DBSeqnce" Then activeCellName = "DBSeqnce" & targetDefName
         If type = "DBMapper" Then
             ' try potential name to ListObject (parts), only possible if manually defined !
             If activeCellName = "" And Not IsNothing(hostApp.Selection.ListObject) Then
@@ -531,6 +531,7 @@ cleanup:
             End If
             If type = "DBSeqnce" Then
                 If activeCellName <> "DBSeqnce" Then .DBModifName.Text = Replace(activeCellName, type, "")
+                ' hide controls irrelevant for DBSeqnce
                 .TargetRangeLabel.Hide()
                 .TargetRangeAddress.Hide()
                 .envSel.Hide()
@@ -539,6 +540,8 @@ cleanup:
                 .DatabaseLabel.Hide()
                 .DBSeqenceDataGrid.Top = 55
                 .DBSeqenceDataGrid.Height = 320
+                .execOnSave.Top = .TargetRangeLabel.Top
+                ' fill Datagridview for DBSequence
                 Dim cb As DataGridViewComboBoxColumn = New DataGridViewComboBoxColumn()
                 cb.HeaderText = "Sequence Step"
                 cb.ReadOnly = False
@@ -546,10 +549,8 @@ cleanup:
                 Dim ds As List(Of String) = New List(Of String)
                 For Each sheetId As String In DBModifDefColl.Keys
                     For Each nodeName As String In DBModifDefColl(sheetId).Keys
-                        If sheetId = "ID0" Then
-                            ' avoid self referencing DB Sequences (endless recursion)
-                            If nodeName <> targetDefName Then ds.Add(Left(nodeName, 8) & ":" & sheetId & ":" & Right(nodeName, Len(nodeName) - 8))
-                        Else
+                        ' avoid DB Sequences (might be - indirectly - self referencing, leading to endless recursion)
+                        If sheetId <> "ID0" Then
                             ' for DBMapper and DBAction, full name is only available from the target range name
                             Dim targetRangeName As String = getDBModifNameFromRange(DBModifDefColl(sheetId).Item(nodeName))
                             ds.Add(Left(targetRangeName, 8) & ":" & sheetId & ":" & Right(targetRangeName, Len(targetRangeName) - 8))
@@ -558,7 +559,7 @@ cleanup:
                 Next
                 cb.DataSource() = ds
                 .DBSeqenceDataGrid.Columns.Add(cb)
-                ' fill possible existing definitions into form
+                ' fill possible existing sequence definitions into form/Datagridview
                 If Len(DBSequenceText) > 0 Then
                     Dim params() As String = Split(DBSequenceText, ",")
                     .execOnSave.Checked = Convert.ToBoolean(params(0))
@@ -568,6 +569,9 @@ cleanup:
                 End If
                 .DBSeqenceDataGrid.Columns(0).Width = 200
             Else
+                ' hide controls irrelevant for DBMapper and DBAction
+                .up.Hide()
+                .down.Hide()
                 .DBSeqenceDataGrid.Hide()
             End If
 
@@ -578,8 +582,8 @@ cleanup:
                 ' set content range name: first clear name
                 If InStr(1, activeCellName, type) > 0 Then   ' fetch parameters if existing comment and DBMapper definition...
                     Try
-                        For Each DBname In hostApp.ActiveWorkbook.Names
-                            If DBname.Name = activeCellName Then DBname.Delete()
+                        For Each DBModifName As Name In hostApp.ActiveWorkbook.Names
+                            If DBModifName.Name = activeCellName Then DBModifName.Delete()
                         Next
                     Catch ex As Exception : ErrorMsg("Error when removing name '" + activeCellName + "' from active cell: " & ex.Message) : End Try
                 End If
@@ -589,19 +593,33 @@ cleanup:
                 End Try
             End If
 
+            ' check for double invocation because of execOnSave being set for DBAction/DBMapper
+            For Each docproperty In hostApp.ActiveWorkbook.CustomDocumentProperties
+                If TypeName(docproperty.Value) = "String" And Left(docproperty.Name, 8) = "DBSeqnce" Then
+                    Dim dbseqName As String = Replace(docproperty.Name, "DBSeqnce", "")
+                    Dim params() As String = Split(docproperty.Value, ",")
+                    Dim storeDBMapOnSave As Boolean = Convert.ToBoolean(params(0)) ' should DBSequence be done on Excel Saving?
+                    Dim i As Integer
+                    For i = 1 To UBound(params)
+                        Dim definition() As String = Split(params(i), ":")
+                        If DBModifDefColl.ContainsKey(definition(1)) AndAlso DBModifDefColl(definition(1)).ContainsKey(definition(2)) Then
+                            If .execOnSave.Checked And storeDBMapOnSave Then
+                                Dim DataRange As Range = DBModifDefColl(definition(1)).Item(definition(2))
+                                Dim DataRangeName As String = getDBModifNameFromRange(DataRange)
+                                ' display warning only if we are in current DBModification
+                                If DataRangeName = activeCellName Or docproperty.Name = activeCellName Then
+                                    MsgBox(DataRangeName & " in " & DataRange.Parent.Name & "!" & DataRange.Address & " will be executed twice on saving because it is part of DBSequence " & dbseqName & ", which is also done on saving. Is this really intended (change Execute on Save parameter) ?")
+                                End If
+                            End If
+                        End If
+                    Next
+                End If
+            Next
             ' create parameter definition string ...
             Dim paramText As String
             If type = "DBAction" Then
-                ' TODO: check if double invocation because of execOnSave being set for DBAction
-                If execOnSave Then
-                    MsgBox("DBAction DBActionName will be executed twice on saving because it is part of DBSequence calledByDBSeq. Is this really intended (change storeDBMapOnSave parameter) ?")
-                End If
                 paramText = "def(" + IIf(.envSel.SelectedIndex = -1, "", (.envSel.SelectedIndex + 1).ToString()) + "," + """" + .Database.Text + """," + .execOnSave.Checked.ToString() + ")"
             ElseIf type = "DBMapper" Then
-                ' TODO: check if double invocation because of execOnSave being set for DBMapper
-                If execOnSave Then
-                    MsgBox("DBMapper in DataRange.Parent.Name!DataRange.Address will be executed twice on saving because it is part of DBSequence calledByDBSeq. Is this really intended (change storeDBMapOnSave parameter) ?")
-                End If
                 paramText = "def(" +
                     IIf(.envSel.SelectedIndex = -1, "", (.envSel.SelectedIndex + 1).ToString()) + "," +
                     """" + .Database.Text + """," + """" + .Tablename.Text + """," + """" + .PrimaryKeys.Text + """," + .insertIfMissing.Checked.ToString() + "," +
@@ -612,14 +630,10 @@ cleanup:
                 paramText = .execOnSave.Checked.ToString()
                 ' need that because empty row at the end is passed along with Rows() !!
                 For i As Integer = 0 To .DBSeqenceDataGrid.Rows().Count - 2
-                    If InStr(.DBSeqenceDataGrid.Rows(i).Cells(0).Value, "DBSeqnce" + .DBModifName.Text) > 0 Then
-                        MsgBox("Self referencing DB Sequences are not allowed (endless recursion)!")
-                    Else
-                        paramText += "," + .DBSeqenceDataGrid.Rows(i).Cells(0).Value
-                    End If
+                    paramText += "," + .DBSeqenceDataGrid.Rows(i).Cells(0).Value
                 Next
             End If
-            ' ... and store in docproperty (rename docproperty first to current cell name, might have been changed)
+            ' ... and store in docproperty (rename docproperty first to current name, might have been changed)
             Try
                 hostApp.ActiveWorkbook.CustomDocumentProperties(activeCellName).Delete
             Catch ex As Exception : End Try
