@@ -1,5 +1,4 @@
-﻿Imports System.Drawing ' for clientPoint in DBSeqenceDataGrid_DragDrop
-Imports System.Windows.Forms
+﻿Imports System.Windows.Forms
 
 ''' <summary>Dialog for creating DB Modifier configurations</summary>
 Public Class DBModifCreate
@@ -26,6 +25,46 @@ Public Class DBModifCreate
         ElseIf NameValidation <> "" Then
             MsgBox("Invalid " & Me.NameLabel.Text & NameValidation)
         Else
+            ' check for double invocation because of execOnSave being set on DBAction/DBMapper
+            If Me.Tag <> "DBSeqnce" Then
+                For Each docproperty In hostApp.ActiveWorkbook.CustomDocumentProperties
+                    If TypeName(docproperty.Value) = "String" And Strings.Left(docproperty.Name, 8) = "DBSeqnce" Then
+                        Dim dbseqName As String = Replace(docproperty.Name, "DBSeqnce", "")
+                        Dim params() As String = Split(docproperty.Value, ",")
+                        Dim storeDBMapOnSave As Boolean = Convert.ToBoolean(params(0))
+                        Dim i As Integer
+                        For i = 1 To UBound(params)
+                            Dim definition() As String = Split(params(i), ":")
+                            If definition(0) = Me.Tag AndAlso definition(2) = Me.DBModifName.Text AndAlso
+                                DBModifDefColl.ContainsKey(definition(1)) AndAlso DBModifDefColl(definition(1)).ContainsKey(definition(2)) AndAlso
+                                Me.execOnSave.Checked AndAlso storeDBMapOnSave Then
+                                Dim retval As MsgBoxResult = MsgBox(Me.Tag & Me.DBModifName.Text & " in " & definition(1) & "!" & DBModifDefColl(definition(1)).Item(definition(2)).Address & " will be executed twice on saving because it is part of DBSequence " & dbseqName & ", which is also executed on saving. Is this really intended (change Execute on Save parameter) ?", MsgBoxStyle.Critical + vbOKCancel, "DBModification Validation")
+                                If retval = vbCancel Then Exit Sub
+                            End If
+                        Next
+                    End If
+                Next
+                ' check for double invocation because of execOnSave being set on DBSequence
+            Else
+                For Each docproperty In hostApp.ActiveWorkbook.CustomDocumentProperties
+                    For i As Integer = 0 To Me.DBSeqenceDataGrid.Rows().Count - 2
+                        Dim definition() As String = Split(Me.DBSeqenceDataGrid.Rows(i).Cells(0).Value, ":")
+                        If TypeName(docproperty.Value) = "String" And docproperty.Name = definition(0) & definition(2) Then
+                            Dim DBModifParams() As String = functionSplit(docproperty.Value, ",", """", "def", "(", ")")
+                            Dim storeDBMapOnSave As Boolean = False
+                            If definition(0) = "DBAction" Then
+                                If DBModifParams.Length > 2 AndAlso DBModifParams(2) <> "" Then storeDBMapOnSave = Convert.ToBoolean(DBModifParams(2))
+                            ElseIf definition(0) = "DBMapper" Then
+                                If DBModifParams(7) <> "" Then storeDBMapOnSave = Convert.ToBoolean(DBModifParams(7))
+                            End If
+                            If Me.execOnSave.Checked And storeDBMapOnSave Then
+                                Dim foundDBModifName As String = definition(0) & IIf(definition(2) = "", "Unnamed " & definition(0), definition(2))
+                                MsgBox(foundDBModifName & " will be executed twice on saving because it is part of this DBSequence, which is also executed on saving. Is this really intended (change Execute on Save parameter on '" & foundDBModifName & "') ?", MsgBoxStyle.Critical, "DBModification Validation")
+                            End If
+                        End If
+                    Next
+                Next
+            End If
             Me.DialogResult = DialogResult.OK
             Me.Close()
         End If
@@ -71,6 +110,7 @@ Public Class DBModifCreate
         If selIndex = 0 Then Return
         DBSeqenceDataGrid.Rows.RemoveAt(selIndex)
         DBSeqenceDataGrid.Rows.Insert(selIndex - 1, rw)
+        DBSeqenceDataGrid.Rows(selIndex - 1).Cells(0).Selected = True
     End Sub
 
     ''' <summary>move row down in DataGridView of DB Sequence</summary>
@@ -84,6 +124,7 @@ Public Class DBModifCreate
         If selIndex = DBSeqenceDataGrid.Rows.Count - 2 Then Return
         DBSeqenceDataGrid.Rows.RemoveAt(selIndex)
         DBSeqenceDataGrid.Rows.Insert(selIndex + 1, rw)
+        DBSeqenceDataGrid.Rows(selIndex + 1).Cells(0).Selected = True
     End Sub
 
 End Class

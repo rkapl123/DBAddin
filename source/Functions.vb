@@ -1349,10 +1349,10 @@ err_1:
 
         Dim item As String = XlCall.Excel(XlCall.xlSheetNm, reference)
         Dim index As Integer = item.LastIndexOf("]")
+        Dim wbname As String = item.Substring(0, index).Substring(1)
         item = item.Substring(index + 1)
-        Dim ws As Worksheet = ExcelDnaUtil.Application.Sheets(item)
-        Dim target As Range = ws.Range(ws.Cells(reference.RowFirst + 1, reference.ColumnFirst + 1), ws.Cells(reference.RowLast + 1, reference.ColumnLast + 1))
-        Return target
+        Dim ws As Worksheet = ExcelDnaUtil.Application.Workbooks(wbname).Worksheets(item)
+        Return ws.Range(ws.Cells(reference.RowFirst + 1, reference.ColumnFirst + 1), ws.Cells(reference.RowLast + 1, reference.ColumnLast + 1))
     End Function
 
 End Module

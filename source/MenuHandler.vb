@@ -78,6 +78,7 @@ Public Class MenuHandler
              "<button id='gotoDBFuncL' label='jump to DBFunc/target (Ctrl-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
              "<menu id='createMenuL' label='build DBFunc/Map ...' insertBeforeMso='Cut'>" +
                "<button id='DBMapperL' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
+               "<button id='DBSequenceL' tag='DBSeqnce' label='DBSequence' imageMso='ShowOnNewButton' onAction='clickCreateButton'/>" +
              "</menu>" +
              "<menuSeparator id='MySeparatorL' insertBeforeMso='Cut'/>" +
          "</contextMenu>" +
@@ -160,18 +161,7 @@ Public Class MenuHandler
     ''' <summary>set the name of the WB/sheet dropdown to the sheet name (for the WB dropdown this is the WB name)</summary>
     ''' <returns></returns>
     Public Function getSheetLabel(control As IRibbonControl) As String
-        getSheetLabel = vbNullString
-        Try
-            If DBModifDefColl.ContainsKey(control.Id) And control.Id = "ID0" Then
-                ' special menu for sequences
-                getSheetLabel = "DBSequences"
-            ElseIf DBModifDefColl.ContainsKey(control.Id) Then
-                ' get parent name of first stored DBModif range
-                getSheetLabel = DBModifDefColl(control.Id).Item(DBModifDefColl(control.Id).Keys.First).Parent.Name
-            End If
-        Catch ex As Exception
-            Return String.Empty
-        End Try
+        getSheetLabel = IIf(getSheetNameForMenuID(control.Id) = "ID0", "DBSequences", getSheetNameForMenuID(control.Id))
     End Function
 
     ''' <summary>create the buttons in the DBModif sheet dropdown menu</summary>
@@ -179,23 +169,26 @@ Public Class MenuHandler
     Public Function getDBModifMenuContent(control As IRibbonControl) As String
         Dim xmlString As String = "<menu xmlns='http://schemas.microsoft.com/office/2009/07/customui'>"
         Try
-            If Not DBModifDefColl.ContainsKey(control.Id) Then Return ""
-
-            For Each nodeName As String In DBModifDefColl(control.Id).Keys
+            If control.Id = "ID0" Then
                 ' special menu for sequences
-                If control.Id = "ID0" Then
+                For Each nodeName As String In DBModifDefColl(control.Id).Keys
                     Dim descName As String = IIf(nodeName = "", "Unnamed DBSequence", nodeName)
                     xmlString = xmlString + "<button id='_" + nodeName + "' label='do " + descName + "' imageMso='ShowOnNewButton' onAction='DBSeqnceClick' tag='" + control.Id + "' screentip='do Sequence: " + descName + "' supertip='executes DB Sequence defined in docproperty DBSeqnce: " + descName + "' />"
-                Else
-                    Dim rngName As String = getDBModifNameFromRange(DBModifDefColl(control.Id).Item(nodeName))
+                Next
+            Else
+                Dim curWsName As String = getSheetNameForMenuID(control.Id)
+                If Not DBModifDefColl.ContainsKey(curWsName) Then Return ""
+
+                For Each nodeName As String In DBModifDefColl(curWsName).Keys
+                    Dim rngName As String = getDBModifNameFromRange(DBModifDefColl(curWsName).Item(nodeName))
                     Dim descName As String = IIf(nodeName = "", "Unnamed " + Left(rngName, 8), nodeName)
                     If Left(rngName, 8) = "DBMapper" Then
-                        xmlString = xmlString + "<button id='_" + nodeName + "' label='store " + descName + "' imageMso='TableSave' onAction='DBMapperClick' tag='" + control.Id + "' screentip='store DBMapper: " + descName + "' supertip='stores data defined in DBMapper (named " + descName + ") range on " + DBModifDefColl(control.Id).Item(nodeName).Parent.Name + "!" + DBModifDefColl(control.Id).Item(nodeName).Address + "' />"
+                        xmlString = xmlString + "<button id='_" + nodeName + "' label='store " + descName + "' imageMso='TableSave' onAction='DBMapperClick' tag='" + curWsName + "' screentip='store DBMapper: " + descName + "' supertip='stores data defined in DBMapper (named " + descName + ") range on " + DBModifDefColl(curWsName).Item(nodeName).Parent.Name + "!" + DBModifDefColl(curWsName).Item(nodeName).Address + "' />"
                     ElseIf Left(rngName, 8) = "DBAction" Then
-                        xmlString = xmlString + "<button id='_" + nodeName + "' label='do " + descName + "' imageMso='TableIndexes' onAction='DBActionClick' tag='" + control.Id + "' screentip='do DBAction: " + descName + "' supertip='executes Action defined in DBAction (named " + descName + ") range on " + DBModifDefColl(control.Id).Item(nodeName).Parent.Name + "!" + DBModifDefColl(control.Id).Item(nodeName).Address + "' />"
+                        xmlString = xmlString + "<button id='_" + nodeName + "' label='do " + descName + "' imageMso='TableIndexes' onAction='DBActionClick' tag='" + curWsName + "' screentip='do DBAction: " + descName + "' supertip='executes Action defined in DBAction (named " + descName + ") range on " + DBModifDefColl(curWsName).Item(nodeName).Parent.Name + "!" + DBModifDefColl(curWsName).Item(nodeName).Address + "' />"
                     End If
-                End If
-            Next
+                Next
+            End If
             xmlString += "</menu>"
             Return xmlString
         Catch ex As Exception
@@ -213,16 +206,29 @@ Public Class MenuHandler
     ''' <returns></returns>
     Public Function getDBModifMenuVisible(control As IRibbonControl) As Boolean
         Try
-            Return DBModifDefColl.ContainsKey(control.Id)
+            Return DBModifDefColl.ContainsKey(getSheetNameForMenuID(control.Id))
         Catch ex As Exception
             Return False
         End Try
     End Function
 
+    ''' <summary>get the worksheet name for a given control ID (via the index of the sheet)</summary>
+    ''' <param name="controlId"></param>
+    ''' <returns></returns>
+    Private Function getSheetNameForMenuID(controlId As String) As String
+        If controlId = "ID0" Then Return controlId
+        Dim curIndex As Integer = CInt(Replace(controlId, "ID", ""))
+        Dim curWsName As String = ""
+        For Each ws In hostApp.ActiveWorkbook.Worksheets
+            If ws.Index = curIndex Then Return ws.Name
+        Next
+        Return ""
+    End Function
+
     ''' <summary>DBMapper store button activated, save Range to DB or define existing (CtrlKey pressed)...</summary>
     Public Sub DBMapperClick(control As IRibbonControl)
         Dim nodeName As String = Right(control.Id, Len(control.Id) - 1) ' remove underscore at beginning of id
-        If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown And My.Computer.Keyboard.AltKeyDown Then
+        If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown Then
             createDBModif("DBMapper", targetRange:=DBModifDefColl(control.Tag).Item(nodeName))
         Else
             doDBMapper(DBModifDefColl(control.Tag).Item(nodeName))
@@ -232,7 +238,7 @@ Public Class MenuHandler
     ''' <summary>DBAction button activated, do DB Action or define existing (CtrlKey pressed)...</summary>
     Public Sub DBActionClick(control As IRibbonControl)
         Dim nodeName As String = Right(control.Id, Len(control.Id) - 1)
-        If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown And My.Computer.Keyboard.AltKeyDown Then
+        If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown Then
             createDBModif("DBAction", targetRange:=DBModifDefColl(control.Tag).Item(nodeName))
         Else
             doDBAction(DBModifDefColl(control.Tag).Item(nodeName))
@@ -242,7 +248,7 @@ Public Class MenuHandler
     ''' <summary>DBSequence button activated, do DB Sequence or define existing (CtrlKey pressed)...</summary>
     Public Sub DBSeqnceClick(control As IRibbonControl)
         Dim nodeName As String = Right(control.Id, Len(control.Id) - 1)
-        If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown And My.Computer.Keyboard.AltKeyDown Then
+        If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown Then
             createDBModif("DBSeqnce", targetDefName:=nodeName, DBSequenceText:=DBModifDefColl(control.Tag).Item(nodeName))
         Else
             ' DB sequence actions (the sequence to be done) are stored directly in DBMapperDefColl, so different invocation here
@@ -272,6 +278,13 @@ Public Class MenuHandler
 
     ''' <summary>context menu entries below create...: create DB function or DB Modification definition</summary>
     Public Sub clickCreateButton(control As IRibbonControl)
+        ' check for existing DBMapper or DBAction definition and allow exit
+        Dim currentDBModifName As String = Left(getDBModifNameFromRange(hostApp.ActiveCell), 8)
+        If (currentDBModifName = "DBMapper" Or currentDBModifName = "DBAction") And currentDBModifName <> control.Tag And control.Tag <> "DBSeqnce" Then
+            Dim exitMe As Boolean = True
+            ErrorMsg("Active Cell already contains definition for a " & currentDBModifName & ", inserting " & IIf(control.Tag = "DBSetQueryPivot" Or control.Tag = "DBSetQueryListObject", "DBSetQuery", control.Tag) & " here will probably cause trouble !", exitMe, "")
+            If exitMe Then Exit Sub
+        End If
         If control.Tag = "DBListFetch" Then
             createFunctionsInCells(hostApp.ActiveCell, {"RC", "=DBListFetch("""","""",R[1]C,,,TRUE,TRUE,TRUE)"})
         ElseIf control.Tag = "DBRowFetch" Then
@@ -283,27 +296,41 @@ Public Class MenuHandler
             pivotcache.CommandText = "select CURRENT_TIMESTAMP" ' this should be sufficient for most databases
             pivotcache.CommandType = Excel.XlCmdType.xlCmdSql
             Dim pivotTables As Excel.PivotTables = hostApp.ActiveSheet.PivotTables()
-            pivotTables.Add(pivotcache, hostApp.ActiveCell.Offset(1, 0), "PivotTable1")
+            Try
+                pivotTables.Add(pivotcache, hostApp.ActiveCell.Offset(1, 0), "PivotTable1")
+            Catch ex As Exception
+                LogWarn("Exception caught when adding pivot table:" & ex.Message)
+                Exit Sub
+            End Try
             createFunctionsInCells(hostApp.ActiveCell, {"RC", "=DBSetQuery("""","""",R[1]C)"})
         ElseIf control.Tag = "DBSetQueryListObject" Then
-            With hostApp.ActiveSheet.ListObjects.Add(SourceType:=Excel.XlListObjectSourceType.xlSrcQuery, Source:="OLEDB;" & Globals.ConstConnString, Destination:=hostApp.ActiveCell.Offset(0, 1)).QueryTable
-                .CommandType = Excel.XlCmdType.xlCmdSql
-                .CommandText = "select CURRENT_TIMESTAMP" ' this should be sufficient for most databases
-                .RowNumbers = False
-                .FillAdjacentFormulas = False
-                .PreserveFormatting = True
-                .BackgroundQuery = True
-                .RefreshStyle = Excel.XlCellInsertionMode.xlInsertDeleteCells
-                .SavePassword = False
-                .SaveData = True
-                .AdjustColumnWidth = True
-                .RefreshPeriod = 0
-                .PreserveColumnInfo = True
-                .Refresh(BackgroundQuery:=False)
-            End With
+            Try
+                With hostApp.ActiveSheet.ListObjects.Add(SourceType:=Excel.XlListObjectSourceType.xlSrcQuery, Source:="OLEDB;" & Globals.ConstConnString, Destination:=hostApp.ActiveCell.Offset(0, 1)).QueryTable
+                    .CommandType = Excel.XlCmdType.xlCmdSql
+                    .CommandText = "select CURRENT_TIMESTAMP" ' this should be sufficient for all ansi sql compliant databases
+                    .RowNumbers = False
+                    .FillAdjacentFormulas = False
+                    .PreserveFormatting = True
+                    .BackgroundQuery = True
+                    .RefreshStyle = Excel.XlCellInsertionMode.xlInsertDeleteCells
+                    .SavePassword = False
+                    .SaveData = True
+                    .AdjustColumnWidth = True
+                    .RefreshPeriod = 0
+                    .PreserveColumnInfo = True
+                    .Refresh(BackgroundQuery:=False)
+                End With
+            Catch ex As Exception
+                LogWarn("Exception caught when adding listobject table:" & ex.Message)
+                Exit Sub
+            End Try
             createFunctionsInCells(hostApp.ActiveCell, {"RC", "=DBSetQuery("""","""",RC[1])"})
         ElseIf control.Tag = "DBMapper" Or control.Tag = "DBAction" Or control.Tag = "DBSeqnce" Then
-            createDBModif(control.Tag)
+            If currentDBModifName = control.Tag Then                 ' edit existing definition
+                createDBModif(control.Tag, hostApp.ActiveCell)
+            Else                                                     ' create new definition
+                createDBModif(control.Tag)
+            End If
         End If
     End Sub
 

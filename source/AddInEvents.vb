@@ -202,7 +202,7 @@ Public Class AddInEvents
         End If
     End Sub
 
-    ''' <summary></summary>
+    ''' <summary>specific click handlers for the five definable commandbuttons</summary>
     Private Sub cb1_Click() Handles cb1.Click
         cbClick(cb1.Name)
     End Sub
@@ -219,6 +219,8 @@ Public Class AddInEvents
         cbClick(cb5.Name)
     End Sub
 
+    ''' <summary>common click handler for all commandbuttons</summary>
+    ''' <param name="cbName">name of command button, defines whether a DBModification is invoked (starts with DBMapper/DBAction/DBSeqnce)</param>
     Private Sub cbClick(cbName As String)
         If Left(cbName, 8) = "DBSeqnce" Then
             Dim dbseqname As String = Replace(cbName, "DBSeqnce", "")
@@ -226,7 +228,11 @@ Public Class AddInEvents
                 MsgBox("No defined DB Sequence " & cbName & " found, exiting without DBModification.")
                 Exit Sub
             Else
-                doDBSeqnce(cbName, DBModifDefColl("ID0").Item(dbseqname))
+                If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown Then
+                    createDBModif("DBSeqnce", targetDefName:=dbseqname, DBSequenceText:=DBModifDefColl("ID0").Item(dbseqname))
+                Else
+                    doDBSeqnce(cbName, DBModifDefColl("ID0").Item(dbseqname))
+                End If
             End If
         Else
             Dim targetRange As Range
@@ -237,7 +243,16 @@ Public Class AddInEvents
                 LogWarn("targetRange assignment failed: " & ex.Message)
                 Exit Sub
             End Try
-            doDBMapper(targetRange)
+            Dim DBModifName As String = getDBModifNameFromRange(targetRange)
+            If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown Then
+                createDBModif(Left(DBModifName, 8), targetRange:=targetRange)
+            Else
+                If Left(DBModifName, 8) = "DBMapper" Then
+                    doDBMapper(targetRange)
+                ElseIf Left(DBModifName, 8) = "DBAction" Then
+                    doDBAction(targetRange)
+                End If
+            End If
         End If
     End Sub
 
@@ -268,10 +283,11 @@ Public Class AddInEvents
         Next
     End Sub
 
-    ''' <summary></summary>
+    ''' <summary>assign commandbuttons new and refresh DBAddins DBModification Menu with each change of sheets</summary>
     ''' <param name="Sh"></param>
     Private Sub Application_SheetActivate(Sh As Object) Handles Application.SheetActivate
         assignHandler(Sh)
+        getDBModifDefinitions()
     End Sub
 
     ''' <summary>SheetDeactivate: gets defined named ranges for DBMapper invocation after sheet was deleted/added (changes index of sheets-> IDs!) and updates Ribbon with it</summary>

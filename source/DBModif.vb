@@ -338,9 +338,9 @@ cleanup:
                     End If
                     Dim nodeName As String = Replace(cleanname, DBModiftype, "")
 
-                    Dim i As Integer = namedrange.RefersToRange.Parent.Index
+                    Dim sheetID As String = namedrange.RefersToRange.Parent.Name
                     Dim defColl As Dictionary(Of String, Object)
-                    If Not DBModifDefColl.ContainsKey("ID" + i.ToString()) Then
+                    If Not DBModifDefColl.ContainsKey(sheetID) Then
                         ' add to new sheet "menu"
                         defColl = New Dictionary(Of String, Object)
                         defColl.Add(nodeName, namedrange.RefersToRange)
@@ -348,10 +348,10 @@ cleanup:
                             ErrorMsg("Not more than 15 sheets with DBMapper/DBAction/DBSequence definitions possible, ignoring definitions in sheet " + namedrange.Parent.Name)
                             Exit For
                         End If
-                        DBModifDefColl.Add("ID" + i.ToString(), defColl)
+                        DBModifDefColl.Add(sheetID, defColl)
                     Else
                         ' add definition to existing sheet "menu"
-                        defColl = DBModifDefColl("ID" + i.ToString())
+                        defColl = DBModifDefColl(sheetID)
                         defColl.Add(nodeName, namedrange.RefersToRange)
                     End If
                 End If
@@ -378,9 +378,11 @@ cleanup:
                                    Optional ByRef insertIfMissing As Boolean = False, Optional ByRef executeAdditionalProc As String = "", Optional ByRef ignoreColumns As String = "",
                                    Optional ByRef execOnSave As Boolean = False) As Boolean
         Dim paramText As String = ""
+        ' if no target range is set, then no parameters can be found...
+        If IsNothing(paramTarget) Then Return False
         Dim paramTargetName As String = getDBModifNameFromRange(paramTarget)
         If Left(paramTargetName, 8) <> paramType Then
-            ErrorMsg("target not matching passed DBModif type " & paramType & " !")
+            LogError("target not matching passed DBModif type " & paramType & " !")
             Return False
         End If
         For Each docproperty In paramTarget.Parent.Parent.CustomDocumentProperties
@@ -442,15 +444,13 @@ cleanup:
 
     ''' <summary>creates a DBModif at the current active cell or edits an existing one being there or after being called from ribbon + Ctrl</summary>
     Sub createDBModif(type As String, Optional targetRange As Range = Nothing, Optional targetDefName As String = "", Optional DBSequenceText As String = "")
-
-        ' get potentially existing target range name
-        If IsNothing(targetRange) Then targetRange = hostApp.ActiveCell
         ' check for clipboard
         ' legacy definition helper for copied saveRangeToDB macro calls:
         ' rename saveRangeToDB To def, 1st parameter (datarange) removed (empty), connid moved to 2nd place as database name
         If Clipboard.ContainsText() And type = "DBMapper" Then
             Dim cpbdtext As String = Clipboard.GetText()
             If Left(cpbdtext.ToLower(), 3) = "def" Then
+                If IsNothing(targetRange) Then targetRange = hostApp.ActiveCell
                 Try : targetRange.Name = "DBMapperNewFromClipboard"
                 Catch ex As Exception : ErrorMsg("Error when assigning name 'DBMapperNewFromClipboard' to active cell: " & ex.Message)
                 End Try
@@ -459,7 +459,8 @@ cleanup:
                 Catch ex As Exception : ErrorMsg("Error when adding property with DBModif parameters: " & ex.Message) : End Try
             End If
         End If
-        Dim activeCellName As String = getDBModifNameFromRange(targetRange) ' try regular defined name
+        Dim activeCellName As String = ""
+        If Not IsNothing(targetRange) Then activeCellName = getDBModifNameFromRange(targetRange) ' try regular defined name
         If type = "DBSeqnce" Then activeCellName = "DBSeqnce" & targetDefName
         If type = "DBMapper" Then
             ' try potential name to ListObject (parts), only possible if manually defined !
@@ -530,7 +531,7 @@ cleanup:
                 .IgnoreColumns.Hide()
             End If
             If type = "DBSeqnce" Then
-                If activeCellName <> "DBSeqnce" Then .DBModifName.Text = Replace(activeCellName, type, "")
+                .DBModifName.Text = targetDefName
                 ' hide controls irrelevant for DBSeqnce
                 .TargetRangeLabel.Hide()
                 .TargetRangeAddress.Hide()
@@ -574,11 +575,14 @@ cleanup:
                 .down.Hide()
                 .DBSeqenceDataGrid.Hide()
             End If
-
+            ' store DBModification type in tag for validation purposes...
+            theDBModifCreateDlg.Tag = type
             ' display dialog for parameters
             If theDBModifCreateDlg.ShowDialog() = DialogResult.Cancel Then Exit Sub
-            ' only for DBMapper or DBAction: potentially change target range name
+
+            ' only for DBMapper or DBAction: change target range name
             If type <> "DBSeqnce" Then
+                If IsNothing(targetRange) Then targetRange = hostApp.ActiveCell
                 ' set content range name: first clear name
                 If InStr(1, activeCellName, type) > 0 Then   ' fetch parameters if existing comment and DBMapper definition...
                     Try
@@ -593,30 +597,8 @@ cleanup:
                 End Try
             End If
 
-            ' check for double invocation because of execOnSave being set for DBAction/DBMapper
-            For Each docproperty In hostApp.ActiveWorkbook.CustomDocumentProperties
-                If TypeName(docproperty.Value) = "String" And Left(docproperty.Name, 8) = "DBSeqnce" Then
-                    Dim dbseqName As String = Replace(docproperty.Name, "DBSeqnce", "")
-                    Dim params() As String = Split(docproperty.Value, ",")
-                    Dim storeDBMapOnSave As Boolean = Convert.ToBoolean(params(0)) ' should DBSequence be done on Excel Saving?
-                    Dim i As Integer
-                    For i = 1 To UBound(params)
-                        Dim definition() As String = Split(params(i), ":")
-                        If DBModifDefColl.ContainsKey(definition(1)) AndAlso DBModifDefColl(definition(1)).ContainsKey(definition(2)) Then
-                            If .execOnSave.Checked And storeDBMapOnSave Then
-                                Dim DataRange As Range = DBModifDefColl(definition(1)).Item(definition(2))
-                                Dim DataRangeName As String = getDBModifNameFromRange(DataRange)
-                                ' display warning only if we are in current DBModification
-                                If DataRangeName = activeCellName Or docproperty.Name = activeCellName Then
-                                    MsgBox(DataRangeName & " in " & DataRange.Parent.Name & "!" & DataRange.Address & " will be executed twice on saving because it is part of DBSequence " & dbseqName & ", which is also done on saving. Is this really intended (change Execute on Save parameter) ?")
-                                End If
-                            End If
-                        End If
-                    Next
-                End If
-            Next
             ' create parameter definition string ...
-            Dim paramText As String
+            Dim paramText As String = ""
             If type = "DBAction" Then
                 paramText = "def(" + IIf(.envSel.SelectedIndex = -1, "", (.envSel.SelectedIndex + 1).ToString()) + "," + """" + .Database.Text + """," + .execOnSave.Checked.ToString() + ")"
             ElseIf type = "DBMapper" Then
@@ -626,7 +608,7 @@ cleanup:
                     """" + IIf(Len(.addStoredProc.Text) = 0, "", .addStoredProc.Text) + """," +
                     """" + IIf(Len(.IgnoreColumns.Text) = 0, "", .IgnoreColumns.Text) + """," +
                     .execOnSave.Checked.ToString() + ")"
-            Else
+            ElseIf type = "DBSeqnce" Then
                 paramText = .execOnSave.Checked.ToString()
                 ' need that because empty row at the end is passed along with Rows() !!
                 For i As Integer = 0 To .DBSeqenceDataGrid.Rows().Count - 2

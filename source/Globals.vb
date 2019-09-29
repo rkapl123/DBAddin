@@ -121,11 +121,11 @@ Public Module Globals
     ''' <summary>show Error message to User</summary> 
     ''' <param name="LogMessage">the message to be shown/logged</param>
     ''' <param name="exitMe">can be set to True to let the user avoid repeated error messages, returns true if cancel was clicked</param>
-    Public Sub ErrorMsg(LogMessage As String, Optional ByRef exitMe As Boolean = False)
+    Public Sub ErrorMsg(LogMessage As String, Optional ByRef exitMe As Boolean = False, Optional exitMsg As String = "(press Cancel to avoid further error messages of this kind)")
         Dim theMethod As Object = (New System.Diagnostics.StackTrace).GetFrame(1).GetMethod
         Dim caller As String = theMethod.ReflectedType.FullName & "." & theMethod.Name
         WriteToLog(LogMessage, EventLogEntryType.Warning, caller) ' to avoid popup of trace log
-        Dim retval As Integer = MsgBox(LogMessage & " in " & caller & IIf(exitMe, vbCrLf & " (press Cancel to avoid further error messages of this kind)", ""), vbExclamation + IIf(exitMe, vbOKCancel, vbOKOnly), "DBAddin Error")
+        Dim retval As Integer = MsgBox(LogMessage & IIf(exitMe, vbCrLf & exitMsg, ""), vbExclamation + IIf(exitMe, vbOKCancel, vbOKOnly), "DBAddin Error")
         If retval = vbCancel Then
             exitMe = True
         Else
