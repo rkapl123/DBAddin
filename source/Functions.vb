@@ -657,10 +657,10 @@ Public Module Functions
         If arrayRows = 0 Then arrayRows = 1  ' sane behavior of named range in case no data retrieved...
 
         ' check if formulaRange and targetRange overlap !
-        Dim possibleIntersection As Range = hostApp.Intersect(formulaRange, targetSH.Range(targetRange.Cells(1, 1), targetRange.Cells(1, 1).Offset(0, arrayCols - 1)))
+        Dim possibleIntersection As Range = hostApp.Intersect(formulaRange, targetSH.Range(targetRange.Cells(1, 1), targetRange.Cells(1, 1).Offset(arrayRows - 1, arrayCols - 1)))
         Err.Clear()
         If Not possibleIntersection Is Nothing Then
-            warning = warning & ", formulaRange and targetRange intersect (" & targetSH.Name & "!" & possibleIntersection.Address & "), formula copying disabled !!"
+            warning &= ", formulaRange and targetRange intersect (" & targetSH.Name & "!" & possibleIntersection.Address & "), formula copying disabled !!"
             formulaRange = Nothing
         End If
 
@@ -757,12 +757,12 @@ Public Module Functions
             formulaSH = formulaRange.Parent
             With formulaRange
                 If .Row < startRow + rowDataStart - 1 Then
-                    warning = "Error: formulaRange start above data-area, no formulas filled down !"
+                    warning &= "Error: formulaRange start above data-area, no formulas filled down !"
                 Else
                     ' retrieve bottom of formula range
                     ' check for excels boundaries !!
                     If .Cells.Row + arrayRows > .EntireColumn.Rows.Count + 1 Then
-                        warning = warning & ", formulas would exceed max row of excel: start row:" & formulaStart & " + row count:" & arrayRows & " > max row+1:" & .EntireColumn.Rows.Count + 1
+                        warning &= ", formulas would exceed max row of excel: start row:" & formulaStart & " + row count:" & arrayRows & " > max row+1:" & .EntireColumn.Rows.Count + 1
                         copyDown = .EntireColumn.Rows.Count
                     Else
                         'the normal end of our autofilled rows = formula start + list size,

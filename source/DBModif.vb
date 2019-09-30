@@ -204,7 +204,9 @@ Public Module DBModif
                     Catch ex As Exception
                         DataRange.Parent.Activate
                         DataRange.Cells(rowNum, colNum).Select
-                        ErrorMsg("General Error: " & ex.Message & " with Table: " & tableName & ", Field: " & fieldname & ", in sheet " & DataRange.Parent.Name & ", & row " & rowNum & ", col: " & colNum)
+
+                        ErrorMsg("Field Value Update Error: " & ex.Message & " with Table: " & tableName & ", Field: " & fieldname & ", in sheet " & DataRange.Parent.Name & ", & row " & rowNum & ", col: " & colNum)
+                        rst.CancelUpdate()
                         rst.Close()
                         GoTo cleanup
                     End Try
@@ -218,7 +220,8 @@ Public Module DBModif
             Catch ex As Exception
                 DataRange.Parent.Activate
                 DataRange.Rows(rowNum).Select
-                LogError("Table: " & rst.Source & ", Error: " & ex.Message & " in sheet " & DataRange.Parent.Name & ", & row " & rowNum)
+                ErrorMsg("Row Update Error, Table: " & rst.Source & ", Error: " & ex.Message & " in sheet " & DataRange.Parent.Name & ", & row " & rowNum)
+                rst.CancelUpdate()
                 rst.Close()
                 GoTo cleanup
             End Try

@@ -177,7 +177,7 @@ Public Module ConfigFiles
     ''' <summary>tree menu stored here</summary>
     Public ConfigMenuXML As String = vbNullString
     ''' <summary>max depth limitation by Ribbon: 5 levels: 1 top level, 1 folder level (Database foldername) -> 3 left</summary>
-    Const specialFolderMaxDepth As Integer = 3
+    Public specialFolderMaxDepth As Integer
     ''' <summary>store found submenus in this collection</summary>
     Private specialConfigFoldersTempColl As Collection
     ''' <summary>for correct display of menu</summary>
@@ -235,6 +235,8 @@ Public Module ConfigFiles
                 If spclFolder.Length > 0 Then
                     Dim firstCharLevel As Boolean = CBool(fetchSetting(spclFolder & "FirstLetterLevel", "False"))
                     Dim specialConfigStoreSeparator As String = fetchSetting(spclFolder & "Separator", String.Empty)
+                    ' max depth limitation by Ribbon: 5 levels: 1 top level, 1 folder level (Database foldername) -> 3 left
+                    specialFolderMaxDepth = IIf(fetchSetting(spclFolder & "MaxDepth", 1) <= 3, fetchSetting(spclFolder & "MaxDepth", 1), 3)
                     Dim nameParts As String
                     For i = 0 To UBound(fileList)
                         ' is current entry contained in next entry then revert order to allow for containment in next entry's hierarchy..
@@ -250,8 +252,7 @@ Public Module ConfigFiles
                                 If i > UBound(fileList) Then Exit For
                             End If
                         End If
-                        nameParts = stringParts(IIf(firstCharLevel, Left$(fileList(i).Name, 1) & " ", String.Empty) &
-                            Left$(fileList(i).Name, Len(fileList(i).Name) - 4), specialConfigStoreSeparator)
+                        nameParts = stringParts(IIf(firstCharLevel, Left$(fileList(i).Name, 1) & " ", String.Empty) & Left$(fileList(i).Name, Len(fileList(i).Name) - 4), specialConfigStoreSeparator)
                         buildFileSepMenuCtrl(nameParts, currentBar, rootPath & "\" & fileList(i).Name, spclFolder, specialFolderMaxDepth)
                     Next
                     ' normal case: just follow the path and enter all entries as buttons
@@ -260,6 +261,7 @@ Public Module ConfigFiles
                         newBar = New XElement(xnspace + "button")
                         menuID += 1
                         newBar.SetAttributeValue("id", "m" + menuID.ToString())
+                        newBar.SetAttributeValue("screentip", "click to insert DBListFetch for " & Left$(fileList(i).Name, Len(fileList(i).Name) - 4) & " in active cell")
                         newBar.SetAttributeValue("tag", rootPath + "\" & fileList(i).Name)
                         newBar.SetAttributeValue("label", Left$(fileList(i).Name, Len(fileList(i).Name) - 4))
                         newBar.SetAttributeValue("onAction", "getConfig")
@@ -302,6 +304,7 @@ Public Module ConfigFiles
                 newBar = New XElement(xnspace + "button")
                 menuID += 1
                 newBar.SetAttributeValue("id", "m" + menuID.ToString())
+                newBar.SetAttributeValue("screentip", "click to insert DBListFetch for " & Left$(entryName, Len(entryName) - 4) & " in active cell")
                 newBar.SetAttributeValue("label", Left$(entryName, Len(entryName) - 4))
                 newBar.SetAttributeValue("tag", fullPathName)
                 newBar.SetAttributeValue("onAction", "getConfig")

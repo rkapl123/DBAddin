@@ -38,7 +38,7 @@ Public Class DBModifCreate
                             If definition(0) = Me.Tag AndAlso definition(2) = Me.DBModifName.Text AndAlso
                                 DBModifDefColl.ContainsKey(definition(1)) AndAlso DBModifDefColl(definition(1)).ContainsKey(definition(2)) AndAlso
                                 Me.execOnSave.Checked AndAlso storeDBMapOnSave Then
-                                Dim retval As MsgBoxResult = MsgBox(Me.Tag & Me.DBModifName.Text & " in " & definition(1) & "!" & DBModifDefColl(definition(1)).Item(definition(2)).Address & " will be executed twice on saving because it is part of DBSequence " & dbseqName & ", which is also executed on saving. Is this really intended (change Execute on Save parameter) ?", MsgBoxStyle.Critical + vbOKCancel, "DBModification Validation")
+                                Dim retval As MsgBoxResult = MsgBox(Me.Tag & Me.DBModifName.Text & " in " & definition(1) & "!" & DBModifDefColl(definition(1)).Item(definition(2)).Address & " will be executed twice on saving, because it is part of DBSequence " & dbseqName & ", which is also executed on saving. Is this really intended?" & vbCrLf & "(disable Execute on Save here)", MsgBoxStyle.Critical + vbOKCancel, "DBModification Validation")
                                 If retval = vbCancel Then Exit Sub
                             End If
                         Next
@@ -59,7 +59,7 @@ Public Class DBModifCreate
                             End If
                             If Me.execOnSave.Checked And storeDBMapOnSave Then
                                 Dim foundDBModifName As String = definition(0) & IIf(definition(2) = "", "Unnamed " & definition(0), definition(2))
-                                MsgBox(foundDBModifName & " will be executed twice on saving because it is part of this DBSequence, which is also executed on saving. Is this really intended (change Execute on Save parameter on '" & foundDBModifName & "') ?", MsgBoxStyle.Critical, "DBModification Validation")
+                                MsgBox(foundDBModifName & " will be executed twice on saving, because it is part of this DBSequence, which is also executed on saving. Is this really intended?" & vbCrLf & "(disable Execute on Save on '" & foundDBModifName & "') ?", MsgBoxStyle.Critical, "DBModification Validation")
                             End If
                         End If
                     Next
