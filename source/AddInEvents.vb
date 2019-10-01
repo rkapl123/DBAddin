@@ -2,7 +2,6 @@
 Imports ExcelDna.Integration
 Imports Microsoft.Office.Interop
 Imports Microsoft.Office.Interop.Excel
-Imports Microsoft.Office.Core
 Imports System.Timers
 Imports System.Diagnostics
 Imports System.Runtime.InteropServices
@@ -16,15 +15,15 @@ Public Class AddInEvents
     ''' <summary>the app object needed for excel event handling (most of this class is dedicated to that)</summary>
     WithEvents Application As Excel.Application
     ''' <summary>CommandButton that can be inserted on a worksheet (name property being the same as the respective target range (for DBMapper/DBAction) or DBSeqnce Name)</summary>
-    WithEvents cb1 As Microsoft.Vbe.Interop.Forms.CommandButton
+    Shared WithEvents cb1 As Microsoft.Vbe.Interop.Forms.CommandButton
     ''' <summary>CommandButton that can be inserted on a worksheet (name property being the same as the respective target range (for DBMapper/DBAction) or DBSeqnce Name)</summary>
-    WithEvents cb2 As Microsoft.Vbe.Interop.Forms.CommandButton
+    Shared WithEvents cb2 As Microsoft.Vbe.Interop.Forms.CommandButton
     ''' <summary>CommandButton that can be inserted on a worksheet (name property being the same as the respective target range (for DBMapper/DBAction) or DBSeqnce Name)</summary>
-    WithEvents cb3 As Microsoft.Vbe.Interop.Forms.CommandButton
+    Shared WithEvents cb3 As Microsoft.Vbe.Interop.Forms.CommandButton
     ''' <summary>CommandButton that can be inserted on a worksheet (name property being the same as the respective target range (for DBMapper/DBAction) or DBSeqnce Name)</summary>
-    WithEvents cb4 As Microsoft.Vbe.Interop.Forms.CommandButton
+    Shared WithEvents cb4 As Microsoft.Vbe.Interop.Forms.CommandButton
     ''' <summary>CommandButton that can be inserted on a worksheet (name property being the same as the respective target range (for DBMapper/DBAction) or DBSeqnce Name)</summary>
-    WithEvents cb5 As Microsoft.Vbe.Interop.Forms.CommandButton
+    Shared WithEvents cb5 As Microsoft.Vbe.Interop.Forms.CommandButton
     ''' <summary>necessary to asynchronously start refresh of db functions after save event</summary>
     Private aTimer As System.Timers.Timer
 
@@ -203,25 +202,25 @@ Public Class AddInEvents
     End Sub
 
     ''' <summary>specific click handlers for the five definable commandbuttons</summary>
-    Private Sub cb1_Click() Handles cb1.Click
+    Private Shared Sub cb1_Click() Handles cb1.Click
         cbClick(cb1.Name)
     End Sub
-    Private Sub cb2_Click() Handles cb2.Click
+    Private Shared Sub cb2_Click() Handles cb2.Click
         cbClick(cb2.Name)
     End Sub
-    Private Sub cb3_Click() Handles cb3.Click
+    Private Shared Sub cb3_Click() Handles cb3.Click
         cbClick(cb3.Name)
     End Sub
-    Private Sub cb4_Click() Handles cb4.Click
+    Private Shared Sub cb4_Click() Handles cb4.Click
         cbClick(cb4.Name)
     End Sub
-    Private Sub cb5_Click() Handles cb5.Click
+    Private Shared Sub cb5_Click() Handles cb5.Click
         cbClick(cb5.Name)
     End Sub
 
     ''' <summary>common click handler for all commandbuttons</summary>
     ''' <param name="cbName">name of command button, defines whether a DBModification is invoked (starts with DBMapper/DBAction/DBSeqnce)</param>
-    Private Sub cbClick(cbName As String)
+    Private Shared Sub cbClick(cbName As String)
         If Left(cbName, 8) = "DBSeqnce" Then
             Dim dbseqname As String = Replace(cbName, "DBSeqnce", "")
             If Not DBModifDefColl("ID0").ContainsKey(dbseqname) Then
@@ -256,10 +255,11 @@ Public Class AddInEvents
         End If
     End Sub
 
-    ''' <summary></summary>
+    ''' <summary>assign click handlers to commandbuttons in passed sheet Sh, maximum 5 buttons are supported</summary>
     ''' <param name="Sh"></param>
-    Sub assignHandler(Sh As Object)
+    Public Shared Function assignHandler(Sh As Object) As Boolean
         cb1 = Nothing : cb2 = Nothing : cb3 = Nothing : cb4 = Nothing : cb5 = Nothing
+        assignHandler = True
         For Each shp As Excel.Shape In Sh.Shapes
             ' Associate clickhandler with all click events of the CommandButtons.
             Dim ctrlName As String
@@ -277,11 +277,12 @@ Public Class AddInEvents
                     cb5 = Sh.OLEObjects(shp.Name).Object
                 Else
                     MsgBox("only max. of five DBModifier Buttons allowed on a Worksheet, currently using " & cb1.Name & "," & cb2.Name & "," & cb3.Name & "," & cb4.Name & " and " & cb5.Name & " !")
+                    assignHandler = False
                     Exit For
                 End If
             End If
         Next
-    End Sub
+    End Function
 
     ''' <summary>assign commandbuttons new and refresh DBAddins DBModification Menu with each change of sheets</summary>
     ''' <param name="Sh"></param>

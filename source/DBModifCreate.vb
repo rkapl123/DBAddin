@@ -38,7 +38,7 @@ Public Class DBModifCreate
                             If definition(0) = Me.Tag AndAlso definition(2) = Me.DBModifName.Text AndAlso
                                 DBModifDefColl.ContainsKey(definition(1)) AndAlso DBModifDefColl(definition(1)).ContainsKey(definition(2)) AndAlso
                                 Me.execOnSave.Checked AndAlso storeDBMapOnSave Then
-                                Dim retval As MsgBoxResult = MsgBox(Me.Tag & Me.DBModifName.Text & " in " & definition(1) & "!" & DBModifDefColl(definition(1)).Item(definition(2)).Address & " will be executed twice on saving, because it is part of DBSequence " & dbseqName & ", which is also executed on saving. Is this really intended?" & vbCrLf & "(disable Execute on Save here)", MsgBoxStyle.Critical + vbOKCancel, "DBModification Validation")
+                                Dim retval As MsgBoxResult = MsgBox(Me.Tag & Me.DBModifName.Text & " in " & definition(1) & "!" & DBModifDefColl(definition(1)).Item(definition(2)).Address & " will be executed twice on saving, because it is part of DBSequence " & dbseqName & ", which is also executed on saving." & vbCrLf & "In case this is not intended, disable 'Execute on Save' here!", MsgBoxStyle.Critical + vbOKCancel, "DBModification Validation")
                                 If retval = vbCancel Then Exit Sub
                             End If
                         Next
@@ -59,11 +59,30 @@ Public Class DBModifCreate
                             End If
                             If Me.execOnSave.Checked And storeDBMapOnSave Then
                                 Dim foundDBModifName As String = definition(0) & IIf(definition(2) = "", "Unnamed " & definition(0), definition(2))
-                                MsgBox(foundDBModifName & " will be executed twice on saving, because it is part of this DBSequence, which is also executed on saving. Is this really intended?" & vbCrLf & "(disable Execute on Save on '" & foundDBModifName & "') ?", MsgBoxStyle.Critical, "DBModification Validation")
+                                MsgBox(foundDBModifName & " will be executed twice on saving, because it is part of this DBSequence, which is also executed on saving." & vbCrLf & "In case this is not intended, disable Execute on Save on '" & foundDBModifName & "'", MsgBoxStyle.Critical, "DBModification Validation")
                             End If
                         End If
                     Next
                 Next
+            End If
+            ' need to create a commandbutton for the current DBmodification?
+            If Me.CBCreate.Checked Then
+                Dim cbshp As Microsoft.Office.Interop.Excel.OLEObject = hostApp.ActiveSheet.OLEObjects.Add(ClassType:="Forms.CommandButton.1", Link:=False, DisplayAsIcon:=False, Left:=600, Top:=70, Width:=120, Height:=24)
+                Dim cb As Microsoft.Vbe.Interop.Forms.CommandButton = cbshp.Object
+                Dim cbName As String = Me.Tag & Me.DBModifName.Text
+                Try
+                    cb.Name = cbName
+                    cb.Caption = IIf(Me.DBModifName.Text = "", "Unnamed " & Me.Tag, Me.Tag & Me.DBModifName.Text)
+                Catch ex As Exception
+                    ErrorMsg("Couldn't name CommandButton '" & cbName & "': " & ex.Message)
+                    cbshp.Delete()
+                    Exit Sub
+                End Try
+                ' fail to assign a handler? remove commandbutton (otherwise it gets hard to edit an existing DBModification with a different name).
+                If Not AddInEvents.assignHandler(hostApp.ActiveSheet) Then
+                    cbshp.Delete()
+                    Exit Sub
+                End If
             End If
             Me.DialogResult = DialogResult.OK
             Me.Close()

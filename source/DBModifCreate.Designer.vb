@@ -49,6 +49,7 @@ Partial Class DBModifCreate
         Me.TargetRangeLabel = New System.Windows.Forms.Label()
         Me.up = New System.Windows.Forms.Button()
         Me.down = New System.Windows.Forms.Button()
+        Me.CBCreate = New System.Windows.Forms.CheckBox()
         Me.TableLayoutPanel1.SuspendLayout()
         CType(Me.DBSeqenceDataGrid, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
@@ -255,6 +256,7 @@ Partial Class DBModifCreate
         Me.TargetRangeAddress.Size = New System.Drawing.Size(108, 13)
         Me.TargetRangeAddress.TabIndex = 11
         Me.TargetRangeAddress.Text = "TargetRangeAddress"
+        Me.ToolTip1.SetToolTip(Me.TargetRangeAddress, "click to select Target Range with Data for DBMapper or SQL DML for DBAction")
         '
         'TargetRangeLabel
         '
@@ -268,21 +270,34 @@ Partial Class DBModifCreate
         'up
         '
         Me.up.Font = New System.Drawing.Font("Courier New", 9.75!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        Me.up.Location = New System.Drawing.Point(193, 388)
+        Me.up.Location = New System.Drawing.Point(126, 388)
         Me.up.Name = "up"
         Me.up.Size = New System.Drawing.Size(18, 19)
         Me.up.TabIndex = 12
         Me.up.Text = "^"
+        Me.ToolTip1.SetToolTip(Me.up, "Move selected sequence step up")
         Me.up.UseVisualStyleBackColor = True
         '
         'down
         '
-        Me.down.Location = New System.Drawing.Point(217, 388)
+        Me.down.Location = New System.Drawing.Point(150, 388)
         Me.down.Name = "down"
         Me.down.Size = New System.Drawing.Size(18, 19)
         Me.down.TabIndex = 12
         Me.down.Text = "v"
+        Me.ToolTip1.SetToolTip(Me.down, "Move selected sequence step down")
         Me.down.UseVisualStyleBackColor = True
+        '
+        'CBCreate
+        '
+        Me.CBCreate.AutoSize = True
+        Me.CBCreate.Location = New System.Drawing.Point(183, 390)
+        Me.CBCreate.Name = "CBCreate"
+        Me.CBCreate.Size = New System.Drawing.Size(74, 17)
+        Me.CBCreate.TabIndex = 13
+        Me.CBCreate.Text = "CB Create"
+        Me.ToolTip1.SetToolTip(Me.CBCreate, "Create CommandButton on active sheet for this DB Modifier")
+        Me.CBCreate.UseVisualStyleBackColor = True
         '
         'DBModifCreate
         '
@@ -291,6 +306,7 @@ Partial Class DBModifCreate
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.CancelButton = Me.Cancel_Button
         Me.ClientSize = New System.Drawing.Size(433, 423)
+        Me.Controls.Add(Me.CBCreate)
         Me.Controls.Add(Me.down)
         Me.Controls.Add(Me.up)
         Me.Controls.Add(Me.TargetRangeAddress)
@@ -350,4 +366,5 @@ Partial Class DBModifCreate
     Friend WithEvents TargetRangeLabel As Windows.Forms.Label
     Friend WithEvents up As Windows.Forms.Button
     Friend WithEvents down As Windows.Forms.Button
+    Friend WithEvents CBCreate As Windows.Forms.CheckBox
 End Class

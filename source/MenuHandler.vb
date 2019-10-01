@@ -34,14 +34,15 @@ Public Class MenuHandler
                                             "size='large' getLabel='getSheetLabel' imageMso='ApplicationOptionsDialog' " +
                                             "getScreentip='getDBModifScreentip' getContent='getDBModifMenuContent' getVisible='getDBModifMenuVisible'/>"
         Next
+        customUIXml += "<dialogBoxLauncher><button id='designmode' label='toggle design mode' onAction='toggleDesignMode' tag='4' getScreentip='getToggleDesignScreentip'/></dialogBoxLauncher></group></tab></tabs></ribbon>"
         ' Context menus for refresh, jump and creation: in cell, row, column and ListRange (area of ListObjects)
-        customUIXml += "</group></tab></tabs></ribbon>" +
-         "<contextMenus>" +
+        customUIXml += "<contextMenus>" +
          "<contextMenu idMso ='ContextMenuCell'>" +
          "<menu id='createMenu' label='Insert/Edit DBFunc/DBModif' insertBeforeMso='Cut'>" +
            "<button id='DBMapper' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
            "<button id='DBAction' tag='DBAction' label='DBAction' imageMso='TableIndexes' onAction='clickCreateButton'/>" +
            "<button id='DBSequence' tag='DBSeqnce' label='DBSequence' imageMso='ShowOnNewButton' onAction='clickCreateButton'/>" +
+           "<menuSeparator id='separator' />" +
            "<button id='DBListFetch' tag='DBListFetch' label='DBListFetch' imageMso='GroupLists' onAction='clickCreateButton'/>" +
            "<button id='DBRowFetch' tag='DBRowFetch' label='DBRowFetch' imageMso='GroupRecords' onAction='clickCreateButton'/>" +
            "<button id='DBSetQueryPivot' tag='DBSetQueryPivot' label='DBSetQueryPivot' imageMso='AddContentType' onAction='clickCreateButton'/>" +
@@ -58,6 +59,7 @@ Public Class MenuHandler
             "<button id='DBMapperCL' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
             "<button id='DBActionCL' tag='DBAction' label='DBAction' imageMso='TableIndexes' onAction='clickCreateButton'/>" +
             "<button id='DBSequenceCL' tag='DBSeqnce' label='DBSequence' imageMso='ShowOnNewButton' onAction='clickCreateButton'/>" +
+            "<menuSeparator id='separatorCL' />" +
             "<button id='DBListFetchCL' tag='DBListFetch' label='DBListFetch' imageMso='GroupLists' onAction='clickCreateButton'/>" +
             "<button id='DBRowFetchCL' tag='DBRowFetch' label='DBRowFetch' imageMso='GroupRecords' onAction='clickCreateButton'/>" +
             "<button id='DBSetQueryPivotCL' tag='DBSetQueryPivot' label='DBSetQueryPivot' imageMso='AddContentType' onAction='clickCreateButton'/>" +
@@ -84,6 +86,33 @@ Public Class MenuHandler
          "</contextMenu>" +
          "</contextMenus></customUI>"
         Return customUIXml
+    End Function
+
+    ''' <summary>toggle designmode button (actually dialogBox launcher on DBModif Menu)</summary>
+    ''' <param name="control"></param>
+    Sub toggleDesignMode(control As IRibbonControl)
+        Dim cbrs As Object = hostApp.CommandBars
+        If Not IsNothing(cbrs) AndAlso cbrs.GetEnabledMso("DesignMode") Then
+            cbrs.ExecuteMso("DesignMode")
+        Else
+            ' this should actually never be reached...
+            MsgBox("Couldn't toggle designmode, because Designmode commandbar button is not available !")
+        End If
+        ' update state of designmode in screentip
+        theRibbon.InvalidateControl(control.Id)
+    End Sub
+
+    ''' <summary>display state of designmode in screentip of dialogBox launcher</summary>
+    ''' <param name="control"></param>
+    ''' <returns>screentip and the state of designmode</returns>
+    Public Function getToggleDesignScreentip(control As IRibbonControl) As String
+        Dim cbrs As Object = hostApp.CommandBars
+        If Not IsNothing(cbrs) AndAlso cbrs.GetEnabledMso("DesignMode") Then
+            Return "Toggle design mode: Designmode is currently " & IIf(cbrs.GetPressedMso("DesignMode"), "on !", "off !")
+        Else
+            ' this should actually never be reached...
+            Return "Toggle design mode: Designmode commandbar button not available"
+        End If
     End Function
 
     ''' <summary>for environment dropdown to get the total number of the entries</summary>
