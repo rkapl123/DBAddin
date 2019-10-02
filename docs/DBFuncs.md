@@ -338,31 +338,9 @@ The DBListFetch's and DBRowFetch's target areas' extent is stored in hidden name
 Sometimes during copying and pasting DB Functions, these names can get mixed up, leading to strange results or non-functioning of the "jump" function. In these cases, there is a tool in the DBAddin menu, which may be used to "purge" these hidden named ranges in case of any strange behaviour due to multiple name assignments to the same area.
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/purgeNames.PNG)  
 
-### Known Issues / Limitations
+### Create DB Functions
 
-*   All DB getting functions (DBListfetch, DBRowFetch, etc....)
- *   A fundamental restriction for these function is that they should only exist alone in a cell with no other DB getters. This is needed because linking the functions with their cell targets is done via a hidden name in the function cell (created on first invocation)  
- *   Query composition: Composing Queries (as these sometimes tends to be quite long) can become challenging, especially when handling parameters coming from cells. There is a simple way to avoid lots of trouble by placing the parts of a query in different lines/cells and chaining all these cells together in the DB functions first argument (query).
- *   When invoking an Excel Workbook from the commandline (from a cmd script or the task scheduler) Excel may register (call the connect method of the Add-in) the Add-in later than invoking the calculation which leads to an uninitialized host application object and therefore a non-functional dbfunctions (they all rely on the caller object of the Excel application to retrieve their calling cell's address). I'm still investigating into this.
- *   The Workbook containing the DB functions may not have any VBA Code with Compile Errors, or it will return an "Application defined Error". This relates to Excel not passing the Application.Caller object correctly to UDFs when having compile errors in VBA-Code.
-
-*   DBListFetch:
- *   formulaRange and extendArea = 1 or 2: Don't place content in cells directly below the formula Range as this will be deleted when doing recalculations. One cell below is OK.
- *   In Worksheets with names like Cell references (Letter + number + blank + something else, eg. 'C701 Country') this leads to a fundamental error with the names used for the data target. Avoid using those sheet names in conjunction with DBListFetch, i.e. do not use a blank between the 'cell reference' and the rest (eg. 'C701Country' instead of 'C701 Country').
- *   GUID Columns are not displayed when working with the standard data fetching method used by DBListFetch (using an opened recordset for adding a - temporary - querytable). A workaround has been built that circumvents this problem by adding the querytable the way that excel does (using the connection string and query directly when adding the querytable). This however implicitly opens another connection, so is more resource intensive. For details see [Connection String Special Settings](#Connection_String_Special_Settings)
-
-
-## DBMapper
-
-DBMapper is a functionality that you can use to save Excel Range data to database table(s). It works by defining a name starting with "DBMapper" in a cell and adding a comment to this cell containing a "function" like:
-
-<pre lang="vb.net">saveRangeToDB(Environment, TableName, PrimaryKeys, Database, IgnoredColumns, AdditionalStoredProcedure, InsertIfMissing, StoreDBMapOnSave)</pre>
-
-Examples for the usage of DBMapper can be found in the DBMapperTests.xlsx Workbook.
-
-## Create DB Functions and DBMappers
-
-You can create the three DB Functions and DB Mappers by using the cell context menu:  
+You can create the three DB Functions by using the cell context menu:  
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/ContextMenu.PNG)  
 
 The DB functions are created with an empty query string and full feature settings (e.g. Headers displayed, autosize and autoformat switched on) and target cells directly below the current active cell (except DBSetQuery for ListObjects, the ListObjects are placed to the right).
@@ -375,20 +353,15 @@ Below the results for a DB Function created in Cell A1:
 
 DBSetQuery also creates the target Object (a Pivot Table or a ListObject) below resp. to the right of the DB Function, so it is easier to start with. In case you want to insert DB Configurations (see [Cell Config Deployment](#Cell_Config_Deployment)), just place the selection on the inserted DB function cell and select your config, the stored query will replace the empty query in the created DB function.
 
-The DBMapper creation starts following dialog (already filled, when clicked on a blank cell all entries are empty):  
-![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DbMapperCreate.PNG)  
+### Known Issues / Limitations
 
-*   DBMapper Name: Enter the name for the selected Range that will be used to identify the DBMap in the "store DBMapper Data" Group dropdowns. If no name is given here, then UnnamedDBMapper will be used to identify it.
-*   Tablename: Database Table, where Data is to be stored.
-*   Primary Keys: String containing primary Key names for updating table data, comma separated.
-*   Database: Database to store DBMaps Data into
-*   Ignore Columns: columns to be ignored (e.g. helper columns), comma separated.
-*   Additional Stored Procedure: additional stored procedure to be executed after saving
-*   Insert If Missing: if set, then insert row into table if primary key is missing there. Default = False (only update)
-*   Store DBMap on Save: should DBMap also be saved on Excel Workbook Saving? (default no)
-*   Environment: The Environment, where connection id should be taken from (if not existing, take from selected Environment in DB Addin General Settings Group)
+*   All DB getting functions (DBListfetch, DBRowFetch, etc....)
+ *   A fundamental restriction for these function is that they should only exist alone in a cell with no other DB getters. This is needed because linking the functions with their cell targets is done via a hidden name in the function cell (created on first invocation)  
+ *   Query composition: Composing Queries (as these sometimes tends to be quite long) can become challenging, especially when handling parameters coming from cells. There is a simple way to avoid lots of trouble by placing the parts of a query in different lines/cells and chaining all these cells together in the DB functions first argument (query).
+ *   When invoking an Excel Workbook from the commandline (from a cmd script or the task scheduler) Excel may register (call the connect method of the Add-in) the Add-in later than invoking the calculation which leads to an uninitialized host application object and therefore a non-functional dbfunctions (they all rely on the caller object of the Excel application to retrieve their calling cell's address). I'm still investigating into this.
+ *   The Workbook containing the DB functions may not have any VBA Code with Compile Errors, or it will return an "Application defined Error". This relates to Excel not passing the Application.Caller object correctly to UDFs when having compile errors in VBA-Code.
 
-The parameters are written as arguments of the saveRangeToDB "function" in the comment of the currently active cell. You can always edit these parameters by selecting this cell and invoking the context menu again.
-
-So for the parameters shown in above creation dialog, following comment is created (MSSQL is environment 3 in my settings):
-`saveRangeToDB(3,"TestTable","TestId,TestId2","TestDB",True,"TestProc","TestHelper,Lookup,Dummy",True)` 
+*   DBListFetch:
+ *   formulaRange and extendArea = 1 or 2: Don't place content in cells directly below the formula Range as this will be deleted when doing recalculations. One cell below is OK.
+ *   In Worksheets with names like Cell references (Letter + number + blank + something else, eg. 'C701 Country') this leads to a fundamental error with the names used for the data target. Avoid using those sheet names in conjunction with DBListFetch, i.e. do not use a blank between the 'cell reference' and the rest (eg. 'C701Country' instead of 'C701 Country').
+ *   GUID Columns are not displayed when working with the standard data fetching method used by DBListFetch (using an opened recordset for adding a - temporary - querytable). A workaround has been built that circumvents this problem by adding the querytable the way that excel does (using the connection string and query directly when adding the querytable). This however implicitly opens another connection, so is more resource intensive. For details see [Connection String Special Settings](#Connection_String_Special_Settings)
