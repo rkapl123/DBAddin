@@ -1,7 +1,7 @@
 Imports Microsoft.Office.Interop
 Imports System.IO ' for getting config files for menu
-Imports System.Xml.Linq
 Imports System.Linq
+Imports System.Xml.Linq
 
 '''<summary>procedures used for loading config files (containing DBFunctions and general sheet content) and building the config menu</summary>
 Public Module ConfigFiles

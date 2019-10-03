@@ -1,10 +1,10 @@
-﻿Imports ExcelDna.Registration
+﻿Imports Microsoft.Office.Interop
+Imports Microsoft.Vbe.Interop
 Imports ExcelDna.Integration
-Imports Microsoft.Office.Interop
-Imports Microsoft.Office.Interop.Excel
-Imports System.Timers
+Imports ExcelDna.Registration
 Imports System.Diagnostics
 Imports System.Runtime.InteropServices
+Imports System.Timers
 
 
 ''' <summary>AddIn Connection class, also handling Events from Excel (Open, Close, Activate)</summary>
@@ -15,15 +15,15 @@ Public Class AddInEvents
     ''' <summary>the app object needed for excel event handling (most of this class is dedicated to that)</summary>
     WithEvents Application As Excel.Application
     ''' <summary>CommandButton that can be inserted on a worksheet (name property being the same as the respective target range (for DBMapper/DBAction) or DBSeqnce Name)</summary>
-    Shared WithEvents cb1 As Microsoft.Vbe.Interop.Forms.CommandButton
+    Shared WithEvents cb1 As Forms.CommandButton
     ''' <summary>CommandButton that can be inserted on a worksheet (name property being the same as the respective target range (for DBMapper/DBAction) or DBSeqnce Name)</summary>
-    Shared WithEvents cb2 As Microsoft.Vbe.Interop.Forms.CommandButton
+    Shared WithEvents cb2 As Forms.CommandButton
     ''' <summary>CommandButton that can be inserted on a worksheet (name property being the same as the respective target range (for DBMapper/DBAction) or DBSeqnce Name)</summary>
-    Shared WithEvents cb3 As Microsoft.Vbe.Interop.Forms.CommandButton
+    Shared WithEvents cb3 As Forms.CommandButton
     ''' <summary>CommandButton that can be inserted on a worksheet (name property being the same as the respective target range (for DBMapper/DBAction) or DBSeqnce Name)</summary>
-    Shared WithEvents cb4 As Microsoft.Vbe.Interop.Forms.CommandButton
+    Shared WithEvents cb4 As Forms.CommandButton
     ''' <summary>CommandButton that can be inserted on a worksheet (name property being the same as the respective target range (for DBMapper/DBAction) or DBSeqnce Name)</summary>
-    Shared WithEvents cb5 As Microsoft.Vbe.Interop.Forms.CommandButton
+    Shared WithEvents cb5 As Forms.CommandButton
     ''' <summary>necessary to asynchronously start refresh of db functions after save event</summary>
     Private aTimer As System.Timers.Timer
 
@@ -71,8 +71,8 @@ Public Class AddInEvents
         Dim docproperty
         Dim DBFCContentColl As Collection, DBFCAllColl As Collection
         Dim theFunc
-        Dim ws As Worksheet, lastWs As Worksheet = Nothing
-        Dim searchCell As Range
+        Dim ws As Excel.Worksheet, lastWs As Excel.Worksheet = Nothing
+        Dim searchCell As Excel.Range
         Dim firstAddress As String
 
         ' save all DBmaps/DBActions/DBSequences on saving except Readonly is recommended on this workbook
@@ -115,12 +115,12 @@ Public Class AddInEvents
                     Exit For
                 End If
                 For Each theFunc In {"DBListFetch(", "DBRowFetch("}
-                    searchCell = ws.Cells.Find(What:=theFunc, After:=ws.Range("A1"), LookIn:=XlFindLookIn.xlFormulas, LookAt:=XlLookAt.xlPart, SearchOrder:=XlSearchOrder.xlByRows, SearchDirection:=XlSearchDirection.xlNext, MatchCase:=False)
+                    searchCell = ws.Cells.Find(What:=theFunc, After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
                     If Not (searchCell Is Nothing) Then
                         firstAddress = searchCell.Address
                         Do
                             ' get DB function target names from source names
-                            Dim targetName As String = getDBunderlyingNameFromRange(searchCell).Name
+                            Dim targetName As String = getDBunderlyingNameFromRange(searchCell)
                             targetName = Replace(targetName, "DBFsource", "DBFtarget", 1, , vbTextCompare)
                             ' check which DB functions should be content cleared (CC) or all cleared (CA)
                             Dim DBFCC As Boolean = False : Dim DBFCA As Boolean = False
@@ -128,7 +128,7 @@ Public Class AddInEvents
                             DBFCC = DBFCContentColl.Contains(searchCell.Parent.Name & "!" & Replace(searchCell.Address, "$", String.Empty)) Or DBFCC
                             DBFCA = DBFCAllColl.Contains("*")
                             DBFCA = DBFCAllColl.Contains(searchCell.Parent.Name & "!" & Replace(searchCell.Address, "$", String.Empty)) Or DBFCA
-                            Dim theTargetRange As Range = hostApp.Range(targetName)
+                            Dim theTargetRange As Excel.Range = hostApp.Range(targetName)
                             If DBFCC Then
                                 theTargetRange.Parent.Range(theTargetRange.Parent.Cells(theTargetRange.Row, theTargetRange.Column), theTargetRange.Parent.Cells(theTargetRange.Row + theTargetRange.Rows.Count - 1, theTargetRange.Column + theTargetRange.Columns.Count - 1)).ClearContents
                                 LogInfo("App_WorkbookSave/Contents of selected DB Functions targets cleared")
@@ -146,7 +146,7 @@ Public Class AddInEvents
             Next
             ' reset the cell find dialog....
             searchCell = Nothing
-            searchCell = lastWs.Cells.Find(What:="", After:=lastWs.Range("A1"), LookIn:=XlFindLookIn.xlFormulas, LookAt:=XlLookAt.xlPart, SearchOrder:=XlSearchOrder.xlByRows, SearchDirection:=XlSearchDirection.xlNext, MatchCase:=False)
+            searchCell = lastWs.Cells.Find(What:="", After:=lastWs.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
             lastWs = Nothing
             ' refresh after save event
             If doRefreshDBFuncsAfterSave And (DBFCContentColl.Count > 0 Or DBFCAllColl.Count > 0) Then
@@ -234,7 +234,7 @@ Public Class AddInEvents
                 End If
             End If
         Else
-            Dim targetRange As Range
+            Dim targetRange As Excel.Range
             Try
                 targetRange = hostApp.ActiveWorkbook.Names.Item(cbName).RefersToRange
             Catch ex As Exception

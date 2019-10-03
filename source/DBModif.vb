@@ -1,7 +1,8 @@
 Imports ADODB
-Imports Microsoft.Office.Interop.Excel
+Imports Microsoft.Office.Interop
 Imports System.Collections.Generic
 Imports System.Windows.Forms
+
 
 ''' <summary>Contains DBModif functions for storing/updating tabular excel data (DBMapper), doing DBActions, doing DBSequences (combinations of DBMapper/DBAction) and some helper functions</summary>
 Public Module DBModif
@@ -26,9 +27,22 @@ Public Module DBModif
         For i = 1 To UBound(params)
             Dim definition() As String = Split(params(i), ":")
             If definition(0) = "DBAction" Then
-                doDBAction(DataRange:=DBModifDefColl(definition(1)).Item(definition(2)), calledByDBSeq:=DBSequenceName) ' ignore storeDBMapOnSave in subtasks
+                doDBAction(DataRange:=DBModifDefColl(definition(1)).Item(definition(2)), calledByDBSeq:=DBSequenceName)
             ElseIf definition(0) = "DBMapper" Then
-                doDBMapper(DataRange:=DBModifDefColl(definition(1)).Item(definition(2)), calledByDBSeq:=DBSequenceName) ' ignore storeDBMapOnSave in subtasks
+                doDBMapper(DataRange:=DBModifDefColl(definition(1)).Item(definition(2)), calledByDBSeq:=DBSequenceName)
+            ElseIf definition(0) = "DBRefrsh" Then
+                ' reset query cache, so we really get new data !
+                queryCache = New Collection
+                StatusCollection = New Collection
+                ' refresh DBFunction in sequence
+                Dim underlyingName As String = definition(2)
+                If Not hostApp.Range(underlyingName).Parent Is hostApp.ActiveSheet Then
+                    hostApp.ScreenUpdating = False
+                    origWS = hostApp.ActiveSheet
+                    Try : hostApp.Range(underlyingName).Parent.Select : Catch ex As Exception : End Try
+                End If
+                hostApp.Range(underlyingName).Dirty()
+                If hostApp.Calculation = Excel.XlCalculation.xlCalculationManual Then hostApp.Calculate()
             End If
         Next
     End Sub
@@ -40,7 +54,7 @@ Public Module DBModif
     Public Sub doDBAction(DataRange As Object, Optional WbIsSaving As Boolean = False, Optional calledByDBSeq As String = "")
         Dim database As String = ""                          ' Database to store to
         Dim env As Integer = Globals.selectedEnvironment + 1 ' Environment where connection id should be taken from (if not existing, take from selectedEnvironment)
-        Dim execOnSave As Boolean = False              ' should DBaction be done on Excel Saving? (default no)
+        Dim execOnSave As Boolean = False                    ' should DBaction be done on Excel Saving? (default no)
 
         Dim DBActionName As String = getDBModifNameFromRange(DataRange)
         ' set up parameters
@@ -88,8 +102,8 @@ Public Module DBModif
 
         ' extend DataRange if it is only one cell ...
         If DataRange.Rows.Count = 1 And DataRange.Columns.Count = 1 Then
-            Dim rowEnd = DataRange.End(XlDirection.xlDown).Row
-            Dim colEnd = DataRange.End(XlDirection.xlToRight).Column
+            Dim rowEnd = DataRange.End(Excel.XlDirection.xlDown).Row
+            Dim colEnd = DataRange.End(Excel.XlDirection.xlToRight).Column
             DataRange = DataRange.Parent.Range(DataRange, DataRange.Parent.Cells(rowEnd, colEnd))
         End If
 
@@ -153,8 +167,9 @@ Public Module DBModif
         Dim finishLoop As Boolean
         ' walk through rows
         Do
-            Dim primKeyCompound As String = " WHERE "
 
+            ' try to find record for update, construct where clause with primary key columns
+            Dim primKeyCompound As String = " WHERE "
             For i As Integer = 0 To UBound(primKeys)
                 Dim primKeyValue
                 primKeyValue = DataRange.Cells(rowNum, i + 1).Value
@@ -168,8 +183,6 @@ Public Module DBModif
                     GoTo nextRow
                 End If
             Next
-            hostApp.StatusBar = "Inserting/Updating data, " & primKeyCompound & " in table " & tableName
-
             Try
                 rst.Open("SELECT * FROM " & tableName & primKeyCompound, dbcnn, CursorTypeEnum.adOpenDynamic, LockTypeEnum.adLockOptimistic)
             Catch ex As Exception
@@ -178,9 +191,11 @@ Public Module DBModif
                 GoTo cleanup
             End Try
 
+            ' didn't find record, so add a new record if insertIfMissing flag is set
             If rst.EOF Then
                 Dim i As Integer
                 If insertIfMissing Then
+                    hostApp.StatusBar = "Inserting " & primKeyCompound & " in table " & tableName
                     rst.AddNew()
                     For i = 0 To UBound(primKeys)
                         rst.Fields(primKeys(i)).Value = IIf(DataRange.Cells(rowNum, i + 1).ToString().Length = 0, vbNull, DataRange.Cells(rowNum, i + 1).Value)
@@ -192,9 +207,11 @@ Public Module DBModif
                     rst.Close()
                     GoTo cleanup
                 End If
+            Else
+                hostApp.StatusBar = "Updating " & primKeyCompound & " in table " & tableName
             End If
 
-            ' walk through columns and fill fields
+            ' walk through non primary columns and fill fields
             colNum = UBound(primKeys) + 1
             Do
                 Dim fieldname As String = DataRange.Cells(1, colNum).Value
@@ -230,12 +247,13 @@ nextRow:
             Try
                 finishLoop = IIf(DataRange.Cells(rowNum + 1, 1).ToString().Length = 0, True, False)
             Catch ex As Exception
-                ErrorMsg("Error in primary column: Cells(" & rowNum + 1 & ",1)" & ex.Message)
+                ErrorMsg("Error in first primary column: Cells(" & rowNum + 1 & ",1): " & ex.Message)
                 'finishLoop = True ' commented to allow erroneous data...
             End Try
             rowNum += 1
         Loop Until rowNum > DataRange.Rows.Count Or finishLoop
 
+        ' any additional stored procedures to execute?
         If executeAdditionalProc.Length > 0 Then
             Try
                 dbcnn.Execute(executeAdditionalProc)
@@ -331,7 +349,7 @@ cleanup:
                     End If
                 End If
             Next
-            For Each namedrange As Name In hostApp.ActiveWorkbook.Names
+            For Each namedrange As Excel.Name In hostApp.ActiveWorkbook.Names
                 Dim cleanname As String = Replace(namedrange.Name, namedrange.Parent.Name & "!", "")
                 If Left(cleanname, 8) = "DBMapper" Or Left(cleanname, 8) = "DBAction" Then
                     Dim DBModiftype As String = Left(cleanname, 8)
@@ -376,7 +394,7 @@ cleanup:
     ''' <param name="executeAdditionalProc">additional stored procedure to be executed after saving</param>
     ''' <param name="ignoreColumns">columns to be ignored (helper columns)</param>
     ''' <param name="execOnSave">should DBMap be saved / DBAction be done on Excel Saving? (default no)</param>
-    Function getParametersFromTargetRange(paramType As String, paramTarget As Range, ByRef env As Integer, ByRef database As String,
+    Function getParametersFromTargetRange(paramType As String, paramTarget As Excel.Range, ByRef env As Integer, ByRef database As String,
                                    Optional ByRef tableName As String = "", Optional ByRef primKeysStr As String = "",
                                    Optional ByRef insertIfMissing As Boolean = False, Optional ByRef executeAdditionalProc As String = "", Optional ByRef ignoreColumns As String = "",
                                    Optional ByRef execOnSave As Boolean = False) As Boolean
@@ -397,6 +415,7 @@ cleanup:
         If paramText = "" Then Return False
         Dim DBModifParams() As String = functionSplit(paramText, ",", """", "def", "(", ")")
         If IsNothing(DBModifParams) Then Return False
+        ' check for completeness
         If DBModifParams.Length < 4 And paramType = "DBMapper" Then
             ErrorMsg("At least environment (can be empty), database, Tablename and primary keys have to be provided as DBMapper parameters !")
             Return False
@@ -405,6 +424,7 @@ cleanup:
             ErrorMsg("At least environment (can be empty) and database have to be provided as DBAction parameters !")
             Return False
         End If
+        ' fill parameters:
         If DBModifParams(0) <> "" Then env = Convert.ToInt16(DBModifParams(0))
         database = DBModifParams(1).Replace("""", "").Trim
         If database = "" Then
@@ -413,12 +433,9 @@ cleanup:
         End If
         If paramType = "DBAction" Then
             execOnSave = False
-            If DBModifParams.Length > 2 Then
-                If DBModifParams(2) <> "" Then execOnSave = Convert.ToBoolean(DBModifParams(2))
-            End If
+            If DBModifParams.Length > 2 AndAlso DBModifParams(2) <> "" Then execOnSave = Convert.ToBoolean(DBModifParams(2))
             Return True
         End If
-
         tableName = DBModifParams(2).Replace("""", "").Trim ' remove all quotes and trim right and left
         If tableName = "" Then
             ErrorMsg("No Tablename given in " & paramType & " comment!")
@@ -429,24 +446,15 @@ cleanup:
             ErrorMsg("No primary keys given in " & paramType & " comment!")
             Return False
         End If
-
-        If DBModifParams.Length > 4 Then
-            If DBModifParams(4) <> "" Then insertIfMissing = Convert.ToBoolean(DBModifParams(4))
-        End If
-        If DBModifParams.Length > 5 Then
-            If DBModifParams(5) <> "" Then executeAdditionalProc = DBModifParams(5).Replace("""", "").Trim
-        End If
-        If DBModifParams.Length > 6 Then
-            If DBModifParams(6) <> "" Then ignoreColumns = DBModifParams(6).Replace("""", "").Trim
-        End If
-        If DBModifParams.Length > 7 Then
-            If DBModifParams(7) <> "" Then execOnSave = Convert.ToBoolean(DBModifParams(7))
-        End If
+        If DBModifParams.Length > 4 AndAlso DBModifParams(4) <> "" Then insertIfMissing = Convert.ToBoolean(DBModifParams(4))
+        If DBModifParams.Length > 5 AndAlso DBModifParams(5) <> "" Then executeAdditionalProc = DBModifParams(5).Replace("""", "").Trim
+        If DBModifParams.Length > 6 AndAlso DBModifParams(6) <> "" Then ignoreColumns = DBModifParams(6).Replace("""", "").Trim
+        If DBModifParams.Length > 7 AndAlso DBModifParams(7) <> "" Then execOnSave = Convert.ToBoolean(DBModifParams(7))
         Return True
     End Function
 
     ''' <summary>creates a DBModif at the current active cell or edits an existing one being there or after being called from ribbon + Ctrl</summary>
-    Sub createDBModif(type As String, Optional targetRange As Range = Nothing, Optional targetDefName As String = "", Optional DBSequenceText As String = "")
+    Sub createDBModif(type As String, Optional targetRange As Excel.Range = Nothing, Optional targetDefName As String = "", Optional DBSequenceText As String = "")
         ' check for clipboard
         ' legacy definition helper for copied saveRangeToDB macro calls:
         ' rename saveRangeToDB To def, 1st parameter (datarange) removed (empty), connid moved to 2nd place as database name
@@ -469,8 +477,7 @@ cleanup:
             ' try potential name to ListObject (parts), only possible if manually defined !
             If activeCellName = "" And Not IsNothing(hostApp.Selection.ListObject) Then
                 For Each listObjectCol In hostApp.Selection.ListObject.ListColumns
-                    Dim aName As Name
-                    For Each aName In hostApp.ActiveWorkbook.Names
+                    For Each aName As Excel.Name In hostApp.ActiveWorkbook.Names
                         If aName.RefersTo = "=" & hostApp.Selection.ListObject.Name & "[[#Headers],[" & hostApp.Selection.Value & "]]" Then
                             activeCellName = aName.Name
                             Exit For
@@ -496,7 +503,7 @@ cleanup:
         ElseIf type = "DBMapper" Then
             existingDefinition = getParametersFromTargetRange(paramType:=type, paramTarget:=targetRange, env:=env, database:=database, tableName:=tableName, primKeysStr:=primKeysStr, insertIfMissing:=insertIfMissing, executeAdditionalProc:=executeAdditionalProc, ignoreColumns:=ignoreColumns, execOnSave:=execOnSave)
         End If
-
+        ' prepare DBModifier Create Dialog
         Dim theDBModifCreateDlg As DBModifCreate = New DBModifCreate()
         With theDBModifCreateDlg
             .envSel.DataSource = Globals.environdefs
@@ -551,6 +558,7 @@ cleanup:
                 cb.ReadOnly = False
                 cb.ValueType() = GetType(String)
                 Dim ds As List(Of String) = New List(Of String)
+                ' first add the DBMapper and DBAction definitions available in the Workbook
                 For Each sheetId As String In DBModifDefColl.Keys
                     For Each nodeName As String In DBModifDefColl(sheetId).Keys
                         ' avoid DB Sequences (might be - indirectly - self referencing, leading to endless recursion)
@@ -560,6 +568,26 @@ cleanup:
                             ds.Add(Left(targetRangeName, 8) & ":" & sheetId & ":" & Right(targetRangeName, Len(targetRangeName) - 8))
                         End If
                     Next
+                Next
+                Dim searchCell As Excel.Range
+                ' then add DBRefresh items for allowing refreshing DBFunctions (DBListFetch and DBSetQuery) during a Sequence
+                For Each ws As Excel.Worksheet In hostApp.ActiveWorkbook.Worksheets
+                    For Each theFunc As String In {"DBListFetch(", "DBSetQuery("}
+                        searchCell = ws.Cells.Find(What:=theFunc, After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
+                        If Not (searchCell Is Nothing) Then
+                            If searchCell.Rows.Count > 1 Or searchCell.Rows.Count > 1 Then
+                                LogError(theFunc & searchCell.Parent.Name & "!" & searchCell.Address & ") has multiple " & IIf(searchCell.Rows.Count > 1, "rows !", "columns !") & ", which leads to problems in DBSequences...")
+                                Continue For
+                            End If
+                            Dim underlyingName As String = getDBunderlyingNameFromRange(searchCell)
+                            ds.Add("DBRefrsh:" & theFunc & searchCell.Parent.Name & "!" & searchCell.Address & "):" & underlyingName)
+                            ' reset the cell find dialog....
+                            searchCell = Nothing
+                        End If
+                    Next
+                    ' reset the cell find dialog....
+                    searchCell = Nothing
+                    searchCell = ws.Cells.Find(What:="", After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
                 Next
                 cb.DataSource() = ds
                 .DBSeqenceDataGrid.Columns.Add(cb)
@@ -589,7 +617,7 @@ cleanup:
                 ' set content range name: first clear name
                 If InStr(1, activeCellName, type) > 0 Then   ' fetch parameters if existing comment and DBMapper definition...
                     Try
-                        For Each DBModifName As Name In hostApp.ActiveWorkbook.Names
+                        For Each DBModifName As Excel.Name In hostApp.ActiveWorkbook.Names
                             If DBModifName.Name = activeCellName Then DBModifName.Delete()
                         Next
                     Catch ex As Exception : ErrorMsg("Error when removing name '" + activeCellName + "' from active cell: " & ex.Message) : End Try

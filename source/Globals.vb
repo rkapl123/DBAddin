@@ -1,7 +1,8 @@
 ﻿Imports ExcelDna.Integration
 Imports Microsoft.Office.Interop
-Imports System.Diagnostics
 Imports System.Collections.Generic
+Imports System.Diagnostics
+
 
 ''' <summary>Global variables and functions for DB Addin</summary>
 Public Module Globals
@@ -11,7 +12,7 @@ Public Module Globals
     ''' <summary>currently selected environment for DB Functions, zero based (env -1) !!</summary>
     Public selectedEnvironment As Integer
     ''' <summary>reference object for the Addins ribbon</summary>
-    Public theRibbon As ExcelDna.Integration.CustomUI.IRibbonUI
+    Public theRibbon As CustomUI.IRibbonUI
     ''' <summary>Excel Application object used for referencing objects</summary>
     Public hostApp As Excel.Application
     ''' <summary>environment definitions</summary>
@@ -154,11 +155,10 @@ Public Module Globals
             ' reset query cache, so we really get new data !
             queryCache = New Collection
             StatusCollection = New Collection
-            Dim underlyingName As Excel.Name
-            underlyingName = getDBunderlyingNameFromRange(hostApp.ActiveCell)
+            Dim underlyingName As String = getDBunderlyingNameFromRange(hostApp.ActiveCell)
 
             ' now for DBListfetch/DBRowfetch resetting, first outside of all db function areas...
-            If underlyingName Is Nothing Then
+            If underlyingName = "" Then
                 refreshDBFunctions(hostApp.ActiveWorkbook)
                 ' general refresh: also refresh all embedded queries and pivot tables..
                 Try
@@ -177,31 +177,29 @@ Public Module Globals
                 Catch ex As Exception
                 End Try
             Else ' then inside a db function area (target or source = function cell)
-                Dim jumpName As String
-                jumpName = underlyingName.Name
                 ' we're being called on a target functions area (additionally given in DBListFetch)
-                If Left$(jumpName, 10) = "DBFtargetF" Then
-                    jumpName = Replace(jumpName, "DBFtargetF", "DBFsource", 1, , vbTextCompare)
-                    If Not hostApp.Range(jumpName).Parent Is hostApp.ActiveSheet Then
+                If Left$(underlyingName, 10) = "DBFtargetF" Then
+                    underlyingName = Replace(underlyingName, "DBFtargetF", "DBFsource", 1, , vbTextCompare)
+                    If Not hostApp.Range(underlyingName).Parent Is hostApp.ActiveSheet Then
                         hostApp.ScreenUpdating = False
                         origWS = hostApp.ActiveSheet
-                        Try : hostApp.Range(jumpName).Parent.Select : Catch ex As Exception : End Try
+                        Try : hostApp.Range(underlyingName).Parent.Select : Catch ex As Exception : End Try
                     End If
-                    hostApp.Range(jumpName).Dirty()
+                    hostApp.Range(underlyingName).Dirty()
                     ' we're being called on a target area
-                ElseIf Left$(jumpName, 9) = "DBFtarget" Then
-                    jumpName = Replace(jumpName, "DBFtarget", "DBFsource", 1, , vbTextCompare)
+                ElseIf Left$(underlyingName, 9) = "DBFtarget" Then
+                    underlyingName = Replace(underlyingName, "DBFtarget", "DBFsource", 1, , vbTextCompare)
                     ' return to source functions sheet to work around Dirty method problem (cell's sheet needs to be selected for Dirty to work on that cell)
-                    If Not hostApp.Range(jumpName).Parent Is hostApp.ActiveSheet Then
+                    If Not hostApp.Range(underlyingName).Parent Is hostApp.ActiveSheet Then
                         hostApp.ScreenUpdating = False
                         origWS = hostApp.ActiveSheet
-                        Try : hostApp.Range(jumpName).Parent.Select : Catch ex As Exception : End Try
-                        hostApp.Range(jumpName).Parent.Select
+                        Try : hostApp.Range(underlyingName).Parent.Select : Catch ex As Exception : End Try
+                        hostApp.Range(underlyingName).Parent.Select
                     End If
-                    hostApp.Range(jumpName).Dirty()
+                    hostApp.Range(underlyingName).Dirty()
                     ' we're being called on a source (invoking function) cell
-                ElseIf Left$(jumpName, 9) = "DBFsource" Then
-                    Try : hostApp.Range(jumpName).Dirty() : Catch ex As Exception : End Try
+                ElseIf Left$(underlyingName, 9) = "DBFsource" Then
+                    Try : hostApp.Range(underlyingName).Dirty() : Catch ex As Exception : End Try
                 Else
                     refreshDBFunctions(hostApp.ActiveWorkbook)
                 End If
@@ -219,20 +217,18 @@ Public Module Globals
             Exit Sub
         End If
 
-        Dim underlyingName As Excel.Name = getDBunderlyingNameFromRange(hostApp.ActiveCell)
-        If underlyingName Is Nothing Then Exit Sub
-        Dim jumpName As String
-        jumpName = underlyingName.Name
-        If Left$(jumpName, 10) = "DBFtargetF" Then
-            jumpName = Replace(jumpName, "DBFtargetF", "DBFsource", 1, , vbTextCompare)
-        ElseIf Left$(jumpName, 9) = "DBFtarget" Then
-            jumpName = Replace(jumpName, "DBFtarget", "DBFsource", 1, , vbTextCompare)
+        Dim underlyingName As String = getDBunderlyingNameFromRange(hostApp.ActiveCell)
+        If underlyingName = "" Then Exit Sub
+        If Left$(underlyingName, 10) = "DBFtargetF" Then
+            underlyingName = Replace(underlyingName, "DBFtargetF", "DBFsource", 1, , vbTextCompare)
+        ElseIf Left$(underlyingName, 9) = "DBFtarget" Then
+            underlyingName = Replace(underlyingName, "DBFtarget", "DBFsource", 1, , vbTextCompare)
         Else
-            jumpName = Replace(jumpName, "DBFsource", "DBFtarget", 1, , vbTextCompare)
+            underlyingName = Replace(underlyingName, "DBFsource", "DBFtarget", 1, , vbTextCompare)
         End If
         Try
-            hostApp.Range(jumpName).Parent.Select()
-            hostApp.Range(jumpName).Select()
+            hostApp.Range(underlyingName).Parent.Select()
+            hostApp.Range(underlyingName).Select()
         Catch ex As Exception
             ErrorMsg("Can't jump to target/source, corresponding workbook open? " & ex.Message)
         End Try
@@ -470,11 +466,11 @@ Public Module Globals
     ''' <summary>gets underlying DBtarget/DBsource Name from theRange</summary>
     ''' <param name="theRange"></param>
     ''' <returns>the retrieved name</returns>
-    Public Function getDBunderlyingNameFromRange(theRange As Excel.Range) As Excel.Name
+    Public Function getDBunderlyingNameFromRange(theRange As Excel.Range) As String
         Dim nm As Excel.Name
         Dim rng, testRng As Excel.Range
 
-        getDBunderlyingNameFromRange = Nothing
+        getDBunderlyingNameFromRange = ""
         Try
             For Each nm In theRange.Parent.Parent.Names
                 rng = Nothing
@@ -483,7 +479,7 @@ Public Module Globals
                     testRng = Nothing
                     Try : testRng = hostApp.Intersect(theRange, rng) : Catch ex As Exception : End Try
                     If Not IsNothing(testRng) And (InStr(1, nm.Name, "DBFtarget") >= 1 Or InStr(1, nm.Name, "DBFsource") >= 1) Then
-                        getDBunderlyingNameFromRange = nm
+                        getDBunderlyingNameFromRange = nm.Name
                         Exit Function
                     End If
                 End If

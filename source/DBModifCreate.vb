@@ -1,4 +1,7 @@
-﻿Imports System.Windows.Forms
+﻿Imports Microsoft.Office.Interop
+Imports Microsoft.Vbe.Interop
+Imports System.Windows.Forms
+
 
 ''' <summary>Dialog for creating DB Modifier configurations</summary>
 Public Class DBModifCreate
@@ -67,8 +70,8 @@ Public Class DBModifCreate
             End If
             ' need to create a commandbutton for the current DBmodification?
             If Me.CBCreate.Checked Then
-                Dim cbshp As Microsoft.Office.Interop.Excel.OLEObject = hostApp.ActiveSheet.OLEObjects.Add(ClassType:="Forms.CommandButton.1", Link:=False, DisplayAsIcon:=False, Left:=600, Top:=70, Width:=120, Height:=24)
-                Dim cb As Microsoft.Vbe.Interop.Forms.CommandButton = cbshp.Object
+                Dim cbshp As Excel.OLEObject = hostApp.ActiveSheet.OLEObjects.Add(ClassType:="Forms.CommandButton.1", Link:=False, DisplayAsIcon:=False, Left:=600, Top:=70, Width:=120, Height:=24)
+                Dim cb As Forms.CommandButton = cbshp.Object
                 Dim cbName As String = Me.Tag & Me.DBModifName.Text
                 Try
                     cb.Name = cbName
