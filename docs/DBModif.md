@@ -1,4 +1,4 @@
-## DBMapper
+## DBModifications
 
 DBModifications can be used to 
 * save Excel Range data to database table(s): DBMapper
@@ -9,7 +9,7 @@ The target data referred to by DBMapper and DBAction (data is the DML SQL statem
 
 Examples for the usage of DBMapper can be found in the DBMapperTests.xlsx Workbook.
 
-### Create DB Functions and DBMappers
+### Create DBModifiers
 
 You can create the three DB Modifiers by using the cell context menu:  
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/ContextMenu.PNG)  

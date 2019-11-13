@@ -4,7 +4,7 @@ DBAddin is a ExcelDNA based Automation Add-in for Database interoperability, see
 
 DB Functions are an alternative to the Excel built-in MSQuery, which is integrated statically into the worksheet and has some limitations in terms of querying possibilities and flexibility of constructing parameterized queries (MS-Query allows parameterized queries only in simple queries that can be displayed graphically).  
 
-Other useful functions for easier creation of queries and methods for working with database data (DBModifications: DBMapper, DBAction and DBSequences) are included as well.  
+Also useful methods for working with database data ([DBModifications](DBModif.md): DBMapper, DBAction and DBSequences) are included as well.  
 
 This is the successor to the COM based DBAddin (as found on [sourceforge](https://sourceforge.net/projects/dbaddin/)).
 
