@@ -29,7 +29,7 @@ An additional cell context menu is available:
 It provides:
 *   a "jump" feature that allows to move the focus from the DB function's cell to the data area and from the data area back to the DB function's cell (useful in complex workbooks with lots of remote (not on same-sheet) target ranges)
 *   refreshing the currently selected DB function or it's data area. If no DB function or a corresponding data area is selected, then all DB Functions are refreshed.
-*   [creation of DB Functions and DB Maps](#create-db-functions-and-dbmappers)  
+*   [creation of DB Functions](#create-db-functions)  
 
 ### Using the Functions
 
