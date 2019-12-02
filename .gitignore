@@ -1,0 +1,9 @@
+ConfigStore
+_site
+/docs/HelpLocal.html
+HelpLocal-Dateien
+bin
+obj
+/source/DBaddin.vbproj.user
+/source/log.txt
+TestResults
