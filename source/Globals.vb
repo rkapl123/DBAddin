@@ -526,7 +526,7 @@ Public Module Globals
 
         ' hidden workbooks produce an error when searching for cells, this is captured by 
         If TypeName(hostApp.Calculation) = "Error" Then
-            MsgBox("hostApp.Calculation = Error, " & Wb.Path & "\" & Wb.Name)
+            MsgBox("hostApp.Calculation = Error, " & Wb.Path & "\" & Wb.Name & " (hidden workbooks produce calculation errors...)")
             Exit Sub
         End If
         Try
