@@ -166,9 +166,9 @@ Public Class MenuHandler
     Public Sub showAbout(control As IRibbonControl)
         Dim myAbout As AboutBox = New AboutBox
         myAbout.ShowDialog()
-        ' if disabling the addin was chosen, then suicide here...
+        ' if disabling the addin was chosen, then suicide here..
         If myAbout.disableAddinAfterwards Then
-            Try : hostApp.AddIns("DBAddin-AddIn-packed").Installed = False : Catch ex As Exception : End Try
+            Try : hostApp.AddIns("DBaddin").Installed = False : Catch ex As Exception : End Try
         End If
     End Sub
 
@@ -252,7 +252,6 @@ Public Class MenuHandler
     Private Function getSheetNameForMenuID(controlId As String) As String
         If controlId = "ID0" Then Return controlId
         Dim curIndex As Integer = CInt(Replace(controlId, "ID", ""))
-        Dim curWsName As String = ""
         For Each ws In hostApp.ActiveWorkbook.Worksheets
             If ws.Index = curIndex Then Return ws.Name
         Next
@@ -262,32 +261,44 @@ Public Class MenuHandler
     ''' <summary>DBMapper store button activated, save Range to DB or define existing (CtrlKey pressed)...</summary>
     Public Sub DBMapperClick(control As IRibbonControl)
         Dim nodeName As String = Right(control.Id, Len(control.Id) - 1) ' remove underscore at beginning of id
-        If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown Then
-            createDBModif("DBMapper", targetRange:=DBModifDefColl(control.Tag).Item(nodeName))
-        Else
-            doDBMapper(DBModifDefColl(control.Tag).Item(nodeName))
-        End If
+        Try
+            If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown Then
+                createDBModif("DBMapper", targetRange:=DBModifDefColl(control.Tag).Item(nodeName))
+            Else
+                doDBMapper(DBModifDefColl(control.Tag).Item(nodeName))
+            End If
+        Catch ex As Exception
+            LogError(ex.Message & ",control.Tag:" & control.Tag & ",nodeName:" & nodeName)
+        End Try
     End Sub
 
     ''' <summary>DBAction button activated, do DB Action or define existing (CtrlKey pressed)...</summary>
     Public Sub DBActionClick(control As IRibbonControl)
         Dim nodeName As String = Right(control.Id, Len(control.Id) - 1)
-        If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown Then
-            createDBModif("DBAction", targetRange:=DBModifDefColl(control.Tag).Item(nodeName))
-        Else
-            doDBAction(DBModifDefColl(control.Tag).Item(nodeName))
-        End If
+        Try
+            If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown Then
+                createDBModif("DBAction", targetRange:=DBModifDefColl(control.Tag).Item(nodeName))
+            Else
+                doDBAction(DBModifDefColl(control.Tag).Item(nodeName))
+            End If
+        Catch ex As Exception
+            LogError(ex.Message & ",control.Tag:" & control.Tag & ",nodeName:" & nodeName)
+        End Try
     End Sub
 
     ''' <summary>DBSequence button activated, do DB Sequence or define existing (CtrlKey pressed)...</summary>
     Public Sub DBSeqnceClick(control As IRibbonControl)
         Dim nodeName As String = Right(control.Id, Len(control.Id) - 1)
-        If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown Then
-            createDBModif("DBSeqnce", targetDefName:=nodeName, DBSequenceText:=DBModifDefColl(control.Tag).Item(nodeName))
-        Else
-            ' DB sequence actions (the sequence to be done) are stored directly in DBMapperDefColl, so different invocation here
-            doDBSeqnce(nodeName, DBModifDefColl(control.Tag).Item(nodeName))
-        End If
+        Try
+            If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown Then
+                createDBModif("DBSeqnce", targetDefName:=nodeName, DBSequenceText:=DBModifDefColl(control.Tag).Item(nodeName))
+            Else
+                ' DB sequence actions (the sequence to be done) are stored directly in DBMapperDefColl, so different invocation here
+                doDBSeqnce(nodeName, DBModifDefColl(control.Tag).Item(nodeName))
+            End If
+        Catch ex As Exception
+            LogError(ex.Message & ",control.Tag:" & control.Tag & ",nodeName:" & nodeName)
+        End Try
     End Sub
 
     ''' <summary>context menu entry refreshData: refresh Data in db function (if area or cell selected) or all db functions</summary>

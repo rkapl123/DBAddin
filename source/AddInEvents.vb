@@ -75,9 +75,19 @@ Public Class AddInEvents
         Dim searchCell As Excel.Range
         Dim firstAddress As String
 
+        ' ask if modifications should be done if no overriding flag is defined...
+        Dim doDBMOnSave As Boolean = False
+        Try
+            If Wb.CustomDocumentProperties("doDBMOnSave").Value Then doDBMOnSave = True
+        Catch ex As Exception : End Try
+        If Not doDBMOnSave Then
+            Dim answer As MsgBoxResult = MsgBox("do DB Modifications defined in Workbook ?", vbYesNo, "DB Modifications on Save")
+            If answer = vbYes Then doDBMOnSave = True
+        End If
+
         ' save all DBmaps/DBActions/DBSequences on saving except Readonly is recommended on this workbook
         Dim DBmapSheet As String
-        If Not Wb.ReadOnlyRecommended Then
+        If Not Wb.ReadOnlyRecommended And doDBMOnSave Then
             For Each DBmapSheet In DBModifDefColl.Keys
                 For Each dbmapdefkey In DBModifDefColl(DBmapSheet).Keys
                     If Left(dbmapdefkey, 8) = "DBSeqnce" Then
