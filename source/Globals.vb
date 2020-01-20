@@ -549,7 +549,7 @@ Public Module Globals
             Next
 done:
             If needRecalc And (hostApp.Calculation <> Excel.XlCalculation.xlCalculationManual Or ignoreCalcMode) Then
-                LogInfo("hostApp.CalculateFull called" & Wb.Path & "\" & Wb.Name)
+                LogInfo("hostApp.CalculateFull called " & Wb.Path & "\" & Wb.Name)
                 hostApp.CalculateFull()
             Else
                 LogInfo("no dbfunc found... " & Wb.Path & "\" & Wb.Name)

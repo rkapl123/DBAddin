@@ -1315,7 +1315,7 @@ err_1:
         Else
             ' return Status Containers Message as last result
             If StatusCollection.Contains(callID) Then
-                If Not IsNothing(StatusCollection(callID).statusMsg) Then checkParamsAndCache = StatusCollection(callID).statusMsg
+                If Not IsNothing(StatusCollection(callID).statusMsg) Then checkParamsAndCache = "(last result:)" & StatusCollection(callID).statusMsg
             End If
         End If
     End Function

@@ -80,7 +80,7 @@ Public Class AddInEvents
         Try
             If Wb.CustomDocumentProperties("doDBMOnSave").Value Then doDBMOnSave = True
         Catch ex As Exception : End Try
-        If Not doDBMOnSave Then
+        If Not doDBMOnSave And DBModifDefColl.Count > 0 Then
             Dim answer As MsgBoxResult = MsgBox("do DB Modifications defined in Workbook ?", vbYesNo, "DB Modifications on Save")
             If answer = vbYes Then doDBMOnSave = True
         End If
