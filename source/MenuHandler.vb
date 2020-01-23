@@ -1,4 +1,5 @@
 Imports ExcelDna.Integration.CustomUI
+Imports ExcelDna.Integration
 Imports Microsoft.Office.Interop
 Imports System.Runtime.InteropServices
 
@@ -96,7 +97,7 @@ Public Class MenuHandler
     ''' <summary>toggle designmode button (actually dialogBox launcher on DBModif Menu)</summary>
     ''' <param name="control"></param>
     Sub toggleDesignMode(control As IRibbonControl)
-        Dim cbrs As Object = hostApp.CommandBars
+        Dim cbrs As Object = ExcelDnaUtil.Application.CommandBars
         If Not IsNothing(cbrs) AndAlso cbrs.GetEnabledMso("DesignMode") Then
             cbrs.ExecuteMso("DesignMode")
         Else
@@ -111,7 +112,7 @@ Public Class MenuHandler
     ''' <param name="control"></param>
     ''' <returns>screentip and the state of designmode</returns>
     Public Function getToggleDesignScreentip(control As IRibbonControl) As String
-        Dim cbrs As Object = hostApp.CommandBars
+        Dim cbrs As Object = ExcelDnaUtil.Application.CommandBars
         If Not IsNothing(cbrs) AndAlso cbrs.GetEnabledMso("DesignMode") Then
             Return "Toggle design mode: Designmode is currently " & IIf(cbrs.GetPressedMso("DesignMode"), "on !", "off !")
         Else
@@ -168,7 +169,7 @@ Public Class MenuHandler
         myAbout.ShowDialog()
         ' if disabling the addin was chosen, then suicide here..
         If myAbout.disableAddinAfterwards Then
-            Try : hostApp.AddIns("DBaddin").Installed = False : Catch ex As Exception : End Try
+            Try : ExcelDnaUtil.Application.AddIns("DBaddin").Installed = False : Catch ex As Exception : End Try
         End If
     End Sub
 
@@ -252,7 +253,7 @@ Public Class MenuHandler
     Private Function getSheetNameForMenuID(controlId As String) As String
         If controlId = "ID0" Then Return controlId
         Dim curIndex As Integer = CInt(Replace(controlId, "ID", ""))
-        For Each ws In hostApp.ActiveWorkbook.Worksheets
+        For Each ws In ExcelDnaUtil.Application.ActiveWorkbook.Worksheets
             If ws.Index = curIndex Then Return ws.Name
         Next
         Return ""
@@ -324,33 +325,33 @@ Public Class MenuHandler
     ''' <summary>context menu entries below create...: create DB function or DB Modification definition</summary>
     Public Sub clickCreateButton(control As IRibbonControl)
         ' check for existing DBMapper or DBAction definition and allow exit
-        Dim currentDBModifName As String = Left(getDBModifNameFromRange(hostApp.ActiveCell), 8)
+        Dim currentDBModifName As String = Left(getDBModifNameFromRange(ExcelDnaUtil.Application.ActiveCell), 8)
         If (currentDBModifName = "DBMapper" Or currentDBModifName = "DBAction") And currentDBModifName <> control.Tag And control.Tag <> "DBSeqnce" Then
             Dim exitMe As Boolean = True
             ErrorMsg("Active Cell already contains definition for a " & currentDBModifName & ", inserting " & IIf(control.Tag = "DBSetQueryPivot" Or control.Tag = "DBSetQueryListObject", "DBSetQuery", control.Tag) & " here will probably cause trouble !", exitMe, "")
             If exitMe Then Exit Sub
         End If
         If control.Tag = "DBListFetch" Then
-            createFunctionsInCells(hostApp.ActiveCell, {"RC", "=DBListFetch("""","""",R[1]C,,,TRUE,TRUE,TRUE)"})
+            createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBListFetch("""","""",R[1]C,,,TRUE,TRUE,TRUE)"})
         ElseIf control.Tag = "DBRowFetch" Then
-            createFunctionsInCells(hostApp.ActiveCell, {"RC", "=DBRowFetch("""","""",TRUE,R[1]C:R[1]C[10])"})
+            createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBRowFetch("""","""",TRUE,R[1]C:R[1]C[10])"})
         ElseIf control.Tag = "DBSetQueryPivot" Then
-            Dim pivotcache As Excel.PivotCache = hostApp.ActiveWorkbook.PivotCaches().Add(Excel.XlPivotTableSourceType.xlExternal)
+            Dim pivotcache As Excel.PivotCache = ExcelDnaUtil.Application.ActiveWorkbook.PivotCaches().Add(Excel.XlPivotTableSourceType.xlExternal)
             pivotcache.Connection = "OLEDB;" & Globals.ConstConnString
             pivotcache.MaintainConnection = False
             pivotcache.CommandText = "select CURRENT_TIMESTAMP" ' this should be sufficient for most databases
             pivotcache.CommandType = Excel.XlCmdType.xlCmdSql
-            Dim pivotTables As Excel.PivotTables = hostApp.ActiveSheet.PivotTables()
+            Dim pivotTables As Excel.PivotTables = ExcelDnaUtil.Application.ActiveSheet.PivotTables()
             Try
-                pivotTables.Add(pivotcache, hostApp.ActiveCell.Offset(1, 0), "PivotTable1")
+                pivotTables.Add(pivotcache, ExcelDnaUtil.Application.ActiveCell.Offset(1, 0), "PivotTable1")
             Catch ex As Exception
                 LogWarn("Exception caught when adding pivot table:" & ex.Message)
                 Exit Sub
             End Try
-            createFunctionsInCells(hostApp.ActiveCell, {"RC", "=DBSetQuery("""","""",R[1]C)"})
+            createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBSetQuery("""","""",R[1]C)"})
         ElseIf control.Tag = "DBSetQueryListObject" Then
             Try
-                With hostApp.ActiveSheet.ListObjects.Add(SourceType:=Excel.XlListObjectSourceType.xlSrcQuery, Source:="OLEDB;" & Globals.ConstConnString, Destination:=hostApp.ActiveCell.Offset(0, 1)).QueryTable
+                With ExcelDnaUtil.Application.ActiveSheet.ListObjects.Add(SourceType:=Excel.XlListObjectSourceType.xlSrcQuery, Source:="OLEDB;" & Globals.ConstConnString, Destination:=ExcelDnaUtil.Application.ActiveCell.Offset(0, 1)).QueryTable
                     .CommandType = Excel.XlCmdType.xlCmdSql
                     .CommandText = "select CURRENT_TIMESTAMP" ' this should be sufficient for all ansi sql compliant databases
                     .RowNumbers = False
@@ -369,10 +370,10 @@ Public Class MenuHandler
                 LogWarn("Exception caught when adding listobject table:" & ex.Message)
                 Exit Sub
             End Try
-            createFunctionsInCells(hostApp.ActiveCell, {"RC", "=DBSetQuery("""","""",RC[1])"})
+            createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBSetQuery("""","""",RC[1])"})
         ElseIf control.Tag = "DBMapper" Or control.Tag = "DBAction" Or control.Tag = "DBSeqnce" Then
             If currentDBModifName = control.Tag Then                 ' edit existing definition
-                createDBModif(control.Tag, hostApp.ActiveCell)
+                createDBModif(control.Tag, ExcelDnaUtil.Application.ActiveCell)
             Else                                                     ' create new definition
                 createDBModif(control.Tag)
             End If

@@ -26,7 +26,7 @@ Public Module Functions
     Public queryCache As Collection = New Collection
     ''' <summary>prevent multiple connection retries for each function in case of error</summary>
     Public dontTryConnection As Boolean
-    ''' <summary>avoid entering dblistfetch function during clearing of listfetch areas (before saving)</summary>
+    ''' <summary>avoid entering dblistfetch/dbrowfetch functions during clearing of listfetch areas (before saving)</summary>
     Public dontCalcWhileClearing As Boolean
 
     ''' <summary>Create database compliant date, time or datetime string from excel datetype value</summary>
@@ -275,6 +275,7 @@ Public Module Functions
     ''' <param name="Query"></param>
     ''' <param name="targetRange"></param>
     ''' <param name="ConnString"></param>
+    ''' <param name="caller"></param>
     Sub DBSetQueryAction(callID As String, Query As String, targetRange As Object, ConnString As String, caller As Excel.Range)
         Dim TargetCell As Excel.Range
         Dim targetSH As Excel.Worksheet
@@ -283,8 +284,8 @@ Public Module Functions
         Dim thePivotTable As Excel.PivotTable = Nothing
         Dim theListObject As Excel.ListObject = Nothing
 
-        Dim calcMode = hostApp.Calculation
-        hostApp.Calculation = Excel.XlCalculation.xlCalculationManual
+        Dim calcMode = ExcelDnaUtil.Application.Calculation
+        ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual
         TargetCell = ToRange(targetRange)
         targetSH = TargetCell.Parent
         targetWB = TargetCell.Parent.Parent
@@ -383,7 +384,7 @@ Public Module Functions
             LogWarn(errMsg & ", caller: " & callID)
             StatusCollection(callID).statusMsg = errMsg
         End Try
-        hostApp.Calculation = calcMode
+        ExcelDnaUtil.Application.Calculation = calcMode
     End Sub
 
     ''' <summary>
@@ -513,13 +514,13 @@ Public Module Functions
 
         LogInfo("Entering DBListFetchAction: callID " & callID)
         'If Not existsStatusCont(callID) Then Exit Sub
-        Dim calcMode = hostApp.Calculation
-        hostApp.Cursor = Excel.XlMousePointer.xlWait  ' To show the hourglass
-        hostApp.Calculation = Excel.XlCalculation.xlCalculationManual
+        Dim calcMode = ExcelDnaUtil.Application.Calculation
+        ExcelDnaUtil.Application.Cursor = Excel.XlMousePointer.xlWait  ' To show the hourglass
+        ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual
         ' this works around the data validation input bug
         ' when selecting a value from a list of validated field, excel won't react to
         ' Application.Calculation changes, so just leave here...
-        If hostApp.Calculation <> Excel.XlCalculation.xlCalculationManual Then Exit Sub
+        If ExcelDnaUtil.Application.Calculation <> Excel.XlCalculation.xlCalculationManual Then Exit Sub
 
         formulaRange = formulaRange
         targetSH = targetRange.Parent
@@ -599,7 +600,7 @@ Public Module Functions
             conn.ConnectionTimeout = CnnTimeout
             conn.CommandTimeout = CmdTimeout
             conn.CursorLocation = CursorLocationEnum.adUseClient
-            hostApp.StatusBar = "Trying " & CnnTimeout & " sec. with connstring: " & ConnString
+            ExcelDnaUtil.Application.StatusBar = "Trying " & CnnTimeout & " sec. with connstring: " & ConnString
             Err.Clear()
             conn.Open(ConnString)
 
@@ -612,7 +613,7 @@ Public Module Functions
             CurrConnString = ConnString
         End If
 
-        hostApp.StatusBar = "Retrieving data for DBList: " & IIf(targetRangeName.Length > 0, targetRangeName, targetSH.Name & "!" & targetRange.Address)
+        ExcelDnaUtil.Application.StatusBar = "Retrieving data for DBList: " & IIf(targetRangeName.Length > 0, targetRangeName, targetSH.Name & "!" & targetRange.Address)
         tableRst = New ADODB.Recordset
         tableRst.Open(Query, conn, CursorTypeEnum.adOpenForwardOnly, LockTypeEnum.adLockReadOnly, CommandTypeEnum.adCmdText)
         Dim dberr As String = String.Empty
@@ -640,7 +641,7 @@ Public Module Functions
         End If
 
         ' from now on we don't propagate any errors as data is modified in sheet....
-        hostApp.StatusBar = "Displaying data for DBList: " & IIf(targetRangeName.Length > 0, targetRangeName, targetSH.Name & "!" & targetRange.Address)
+        ExcelDnaUtil.Application.StatusBar = "Displaying data for DBList: " & IIf(targetRangeName.Length > 0, targetRangeName, targetSH.Name & "!" & targetRange.Address)
         If tableRst.EOF Then warning = "Warning: No Data returned in query: " & Query
         ' set size for named range (size: arrayRows, arrayCols) used for resizing the data area (old extent)
         arrayCols = tableRst.Fields.Count
@@ -681,7 +682,7 @@ Public Module Functions
         If arrayRows = 0 Then arrayRows = 1  ' sane behavior of named range in case no data retrieved...
 
         ' check if formulaRange and targetRange overlap !
-        Dim possibleIntersection As Excel.Range = hostApp.Intersect(formulaRange, targetSH.Range(targetRange.Cells(1, 1), targetRange.Cells(1, 1).Offset(arrayRows - 1, arrayCols - 1)))
+        Dim possibleIntersection As Excel.Range = ExcelDnaUtil.Application.Intersect(formulaRange, targetSH.Range(targetRange.Cells(1, 1), targetRange.Cells(1, 1).Offset(arrayRows - 1, arrayCols - 1)))
         Err.Clear()
         If Not possibleIntersection Is Nothing Then
             warning &= ", formulaRange and targetRange intersect (" & targetSH.Name & "!" & possibleIntersection.Address & "), formula copying disabled !!"
@@ -930,8 +931,8 @@ err_0: ' errors where recordset was not opened or is already closed
     ''' <param name="callID">for logging purpose</param>
     ''' <param name="additionalLogInfo">for logging purpose</param>
     Private Sub finishAction(calcMode As Excel.XlCalculation, callID As String, Optional additionalLogInfo As String = "")
-        hostApp.Cursor = Excel.XlMousePointer.xlDefault  ' To return cursor to normal
-        hostApp.StatusBar = False
+        ExcelDnaUtil.Application.Cursor = Excel.XlMousePointer.xlDefault  ' To return cursor to normal
+        ExcelDnaUtil.Application.StatusBar = False
         LogInfo("Leaving DBAction: callID " & callID & IIf(additionalLogInfo <> "", ", additionalInfo: " & additionalLogInfo, ""))
         ' because of a strange excel behaviour with Range.Dirty (only works if the parent sheet of Range is the active sheet)
         ' we have to jump to the sheet containing the dbfunction and then activate back in case of refresh (sets relevant source/dbfunc to dirty)
@@ -939,8 +940,8 @@ err_0: ' errors where recordset was not opened or is already closed
             origWS.Select()
             origWS = Nothing
         End If
-        hostApp.ScreenUpdating = True ' coming from refresh, this might be off for dirtying "foreign" (being on a different sheet than the calling function) data targets 
-        hostApp.Calculation = calcMode
+        ExcelDnaUtil.Application.ScreenUpdating = True ' coming from refresh, this might be off for dirtying "foreign" (being on a different sheet than the calling function) data targets 
+        ExcelDnaUtil.Application.Calculation = calcMode
     End Sub
 
     ''' <summary>Fetches a row (single record) queried (defined in query) from DB (defined in ConnString) into targetArray</summary>
@@ -963,6 +964,10 @@ err_0: ' errors where recordset was not opened or is already closed
             ' calcContainers are identified by wbname + sheetname + function caller cell Address
             callID = "[" & caller.Parent.Parent.Name & "]" & caller.Parent.Name & "!" & caller.Address
             LogInfo("entering function, callID: " & callID)
+            If dontCalcWhileClearing Then
+                DBRowFetch = EnvPrefix & ", dontCalcWhileClearing = True !"
+                Exit Function
+            End If
 
             ' prepare information for action proc
             Dim i As Long
@@ -1016,7 +1021,7 @@ err_0: ' errors where recordset was not opened or is already closed
     ''' <summary>Actually do the work for DBRowFetch: Query (assumed) one row of data, write it into targetCells</summary>
     ''' <param name="callID"></param>
     ''' <param name="Query"></param>
-    ''' <param name="appCaller"></param>
+    ''' <param name="caller"></param>
     ''' <param name="targetArray"></param>
     ''' <param name="ConnString"></param>
     ''' <param name="HeaderInfo"></param>
@@ -1029,19 +1034,19 @@ err_0: ' errors where recordset was not opened or is already closed
         Dim theCell As Excel.Range, targetSlice As Excel.Range, targetSlices As Excel.Range
         Dim targetSH As Excel.Worksheet
 
-        Dim calcMode = hostApp.Calculation
-        hostApp.Calculation = Excel.XlCalculation.xlCalculationManual
+        Dim calcMode = ExcelDnaUtil.Application.Calculation
+        ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual
         ' this works around the data validation input bug
         ' when selecting a value from a list of validated field, excel won't react to
         ' Application.Calculation changes, so just leave here...
-        If hostApp.Calculation <> Excel.XlCalculation.xlCalculationManual Then Exit Sub
+        If ExcelDnaUtil.Application.Calculation <> Excel.XlCalculation.xlCalculationManual Then Exit Sub
 
-        hostApp.Cursor = Excel.XlMousePointer.xlWait  ' To show the hourglass
+        ExcelDnaUtil.Application.Cursor = Excel.XlMousePointer.xlWait  ' To show the hourglass
         targetCells = targetArray
         targetSH = targetCells(0).Parent
         StatusCollection(callID).statusMsg = ""
         On Error GoTo err_1
-        hostApp.StatusBar = "Retrieving data for DBRows: " & targetSH.Name & "!" & targetCells(0).Address
+        ExcelDnaUtil.Application.StatusBar = "Retrieving data for DBRows: " & targetSH.Name & "!" & targetCells(0).Address
 
         Dim srcExtentConnect As String, targetExtent As String
         On Error Resume Next
@@ -1071,7 +1076,7 @@ err_0: ' errors where recordset was not opened or is already closed
             conn.ConnectionTimeout = CnnTimeout
             conn.CommandTimeout = CmdTimeout
             conn.CursorLocation = CursorLocationEnum.adUseClient
-            hostApp.StatusBar = "Trying " & CnnTimeout & " sec. with connstring: " & ConnString
+            ExcelDnaUtil.Application.StatusBar = "Trying " & CnnTimeout & " sec. with connstring: " & ConnString
             Err.Clear()
             conn.Open(ConnString)
 
@@ -1144,7 +1149,7 @@ err_0: ' errors where recordset was not opened or is already closed
                         End If
                         If fieldIter = tableRst.Fields.Count - 1 Then
                             If headerFilled Then
-                                hostApp.StatusBar = "Displaying data for DBRows: " & targetSH.Name & "!" & targetCells(0).Address & ", record " & tableRst.AbsolutePosition & "/" & returnedRows
+                                ExcelDnaUtil.Application.StatusBar = "Displaying data for DBRows: " & targetSH.Name & "!" & targetCells(0).Address & ", record " & tableRst.AbsolutePosition & "/" & returnedRows
                                 tableRst.MoveNext()
                             Else
                                 headerFilled = True
@@ -1156,7 +1161,7 @@ err_0: ' errors where recordset was not opened or is already closed
                 Next
             Next
             rangeIter += 1
-            If Not rangeIter > UBound(targetCells) Then refCollector = hostApp.Union(refCollector, targetCells(rangeIter))
+            If Not rangeIter > UBound(targetCells) Then refCollector = ExcelDnaUtil.Application.Union(refCollector, targetCells(rangeIter))
         Loop Until rangeIter > UBound(targetCells)
 
         ' delete the name to have a "clean" name area (otherwise visible = false setting wont work for dataTargetRange)
@@ -1221,10 +1226,10 @@ err_1:
     ''' <returns>ConfigName of environment</returns>
     <ExcelFunction(Description:="Get the current selected Environment for DB Functions")>
     Public Function DBAddinEnvironment() As String
-        hostApp.Volatile()
+        ExcelDnaUtil.Application.Volatile()
         Try
             DBAddinEnvironment = fetchSetting("ConfigName", String.Empty)
-            If hostApp.Calculation = Excel.XlCalculation.xlCalculationManual Then DBAddinEnvironment = "calc Mode is manual, please press F9 to get current DBAddin environment !"
+            If ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual Then DBAddinEnvironment = "calc Mode is manual, please press F9 to get current DBAddin environment !"
         Catch ex As Exception
             DBAddinEnvironment = "Error happened: " & ex.Message
             LogWarn(ex.Message)
@@ -1235,12 +1240,12 @@ err_1:
     ''' <returns>Server part from connection string of environment</returns>
     <ExcelFunction(Description:="Get the server settings for the currently selected Environment for DB Functions")>
     Public Function DBAddinServerSetting() As String
-        hostApp.Volatile()
+        ExcelDnaUtil.Application.Volatile()
         Try
             Dim theConnString As String = fetchSetting("ConstConnString", String.Empty)
             Dim keywordstart As Integer = InStr(1, UCase(theConnString), "SERVER=") + Len("SERVER=")
             DBAddinServerSetting = Mid$(theConnString, keywordstart, InStr(keywordstart, theConnString, ";") - keywordstart)
-            If hostApp.Calculation = Excel.XlCalculation.xlCalculationManual Then DBAddinServerSetting = "calc Mode is manual, please press F9 to get current DBAddin server setting !"
+            If ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual Then DBAddinServerSetting = "calc Mode is manual, please press F9 to get current DBAddin server setting !"
         Catch ex As Exception
             DBAddinServerSetting = "Error happened: " & ex.Message
             LogWarn(ex.Message)
@@ -1254,7 +1259,7 @@ err_1:
     ''' <returns>Error String or cached status message (empty if OK)</returns>
     Private Function checkParamsAndCache(ByRef Query, callID, ConnString) As String
         checkParamsAndCache = ""
-        If hostApp.Calculation = Excel.XlCalculation.xlCalculationManual Then
+        If ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual Then
             checkParamsAndCache = "calc Mode is manual, please press F9 to trigger data fetching !"
         Else
             If TypeName(Query) = "ExcelEmpty" Then

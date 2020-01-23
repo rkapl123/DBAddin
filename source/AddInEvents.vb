@@ -5,7 +5,7 @@ Imports ExcelDna.Registration
 Imports System.Diagnostics
 Imports System.Runtime.InteropServices
 Imports System.Timers
-
+Imports Microsoft.Office.Interop.Excel
 
 ''' <summary>AddIn Connection class, also handling Events from Excel (Open, Close, Activate)</summary>
 <ComVisible(True)>
@@ -33,9 +33,8 @@ Public Class AddInEvents
         ExcelRegistration.GetExcelFunctions().ProcessParamsRegistrations().RegisterFunctions()
         ExcelRegistration.GetExcelCommands().RegisterCommands()
         Application = ExcelDnaUtil.Application
-        hostApp = ExcelDnaUtil.Application
         Try
-            If hostApp.AddIns("DBAddin.Functions").Installed Then
+            If ExcelDnaUtil.Application.AddIns("DBAddin.Functions").Installed Then
                 MsgBox("Attention: legacy DBAddin (DBAddin.Functions) still active, this might lead to unexpected results!")
             End If
         Catch ex As Exception : End Try
@@ -57,7 +56,6 @@ Public Class AddInEvents
     Public Sub AutoClose() Implements IExcelAddIn.AutoClose
         Try
             theMenuHandler = Nothing
-            hostApp = Nothing
             ExcelDna.IntelliSense.IntelliSenseServer.Uninstall()
         Catch ex As Exception
             LogError("DBAddin unloading error: " + ex.Message)
@@ -68,7 +66,6 @@ Public Class AddInEvents
     ''' choosing functions for removal of target data is done with custom docproperties</summary>
     Private Sub Application_WorkbookSave(Wb As Excel.Workbook, ByVal SaveAsUI As Boolean, ByRef Cancel As Boolean) Handles Application.WorkbookBeforeSave
         Dim doRefreshDBFuncsAfterSave As Boolean = True
-        Dim docproperty
         Dim DBFCContentColl As Collection, DBFCAllColl As Collection
         Dim theFunc
         Dim ws As Excel.Worksheet, lastWs As Excel.Worksheet = Nothing
@@ -107,8 +104,9 @@ Public Class AddInEvents
         DBFCContentColl = New Collection
         DBFCAllColl = New Collection
         Try
+            Dim docproperty As Microsoft.Office.Core.DocumentProperty
             For Each docproperty In Wb.CustomDocumentProperties
-                If TypeName(docproperty.Value) = "Boolean" Then
+                If docproperty.Type = Microsoft.Office.Core.MsoDocProperties.msoPropertyTypeBoolean Then
                     If Left$(docproperty.Name, 5) = "DBFCC" And docproperty.Value Then DBFCContentColl.Add(True, Mid$(docproperty.Name, 6))
                     If Left$(docproperty.Name, 5) = "DBFCA" And docproperty.Value Then DBFCAllColl.Add(True, Mid$(docproperty.Name, 6))
                     If docproperty.Name = "DBFskip" Then doRefreshDBFuncsAfterSave = Not docproperty.Value
@@ -131,22 +129,25 @@ Public Class AddInEvents
                         Do
                             ' get DB function target names from source names
                             Dim targetName As String = getDBunderlyingNameFromRange(searchCell)
-                            targetName = Replace(targetName, "DBFsource", "DBFtarget", 1, , vbTextCompare)
-                            ' check which DB functions should be content cleared (CC) or all cleared (CA)
-                            Dim DBFCC As Boolean = False : Dim DBFCA As Boolean = False
-                            DBFCC = DBFCContentColl.Contains("*")
-                            DBFCC = DBFCContentColl.Contains(searchCell.Parent.Name & "!" & Replace(searchCell.Address, "$", String.Empty)) Or DBFCC
-                            DBFCA = DBFCAllColl.Contains("*")
-                            DBFCA = DBFCAllColl.Contains(searchCell.Parent.Name & "!" & Replace(searchCell.Address, "$", String.Empty)) Or DBFCA
-                            Dim theTargetRange As Excel.Range = hostApp.Range(targetName)
-                            If DBFCC Then
-                                theTargetRange.Parent.Range(theTargetRange.Parent.Cells(theTargetRange.Row, theTargetRange.Column), theTargetRange.Parent.Cells(theTargetRange.Row + theTargetRange.Rows.Count - 1, theTargetRange.Column + theTargetRange.Columns.Count - 1)).ClearContents
-                                LogInfo("App_WorkbookSave/Contents of selected DB Functions targets cleared")
-                            End If
-                            If DBFCA Then
-                                theTargetRange.Parent.Range(theTargetRange.Parent.Cells(theTargetRange.Row + 2, theTargetRange.Column), theTargetRange.Parent.Cells(theTargetRange.Row + theTargetRange.Rows.Count - 1, theTargetRange.Column + theTargetRange.Columns.Count - 1)).Clear
-                                theTargetRange.Parent.Range(theTargetRange.Parent.Cells(theTargetRange.Row, theTargetRange.Column), theTargetRange.Parent.Cells(theTargetRange.Row + 2, theTargetRange.Column + theTargetRange.Columns.Count - 1)).ClearContents
-                                LogInfo("App_WorkbookSave/All cleared from selected DB Functions targets")
+                            ' in case of commented cells and purged db underlying names, getDBunderlyingNameFromRange doesn't return a name ...
+                            If InStr(UCase(targetName), "DBFSOURCE") > 0 Then
+                                targetName = Replace(targetName, "DBFsource", "DBFtarget", 1, , vbTextCompare)
+                                ' check which DB functions should be content cleared (CC) or all cleared (CA)
+                                Dim DBFCC As Boolean = False : Dim DBFCA As Boolean = False
+                                DBFCC = DBFCContentColl.Contains("*")
+                                DBFCC = DBFCContentColl.Contains(searchCell.Parent.Name & "!" & Replace(searchCell.Address, "$", String.Empty)) Or DBFCC
+                                DBFCA = DBFCAllColl.Contains("*")
+                                DBFCA = DBFCAllColl.Contains(searchCell.Parent.Name & "!" & Replace(searchCell.Address, "$", String.Empty)) Or DBFCA
+                                Dim theTargetRange As Excel.Range = ExcelDnaUtil.Application.Range(targetName)
+                                If DBFCC Then
+                                    theTargetRange.Parent.Range(theTargetRange.Parent.Cells(theTargetRange.Row, theTargetRange.Column), theTargetRange.Parent.Cells(theTargetRange.Row + theTargetRange.Rows.Count - 1, theTargetRange.Column + theTargetRange.Columns.Count - 1)).ClearContents
+                                    LogInfo("Contents of selected DB Functions targets cleared")
+                                End If
+                                If DBFCA Then
+                                    theTargetRange.Parent.Range(theTargetRange.Parent.Cells(theTargetRange.Row + 2, theTargetRange.Column), theTargetRange.Parent.Cells(theTargetRange.Row + theTargetRange.Rows.Count - 1, theTargetRange.Column + theTargetRange.Columns.Count - 1)).Clear
+                                    theTargetRange.Parent.Range(theTargetRange.Parent.Cells(theTargetRange.Row, theTargetRange.Column), theTargetRange.Parent.Cells(theTargetRange.Row + 2, theTargetRange.Column + theTargetRange.Columns.Count - 1)).ClearContents
+                                    LogInfo("All cleared from selected DB Functions targets")
+                                End If
                             End If
                             searchCell = ws.Cells.FindNext(searchCell)
                         Loop While Not searchCell Is Nothing And searchCell.Address <> firstAddress
@@ -160,9 +161,12 @@ Public Class AddInEvents
             lastWs = Nothing
             ' refresh after save event
             If doRefreshDBFuncsAfterSave And (DBFCContentColl.Count > 0 Or DBFCAllColl.Count > 0) Then
-                aTimer = New Timers.Timer(100)
+                aTimer = New Timers.Timer With {
+                    .Interval = 100,
+                    .AutoReset = False
+                }
                 AddHandler aTimer.Elapsed, New ElapsedEventHandler(AddressOf refreshDBFuncLater)
-                aTimer.Enabled = True
+                aTimer.Start()
             End If
         Catch ex As Exception
             LogError("Error clearing DBfunction targets: " & Wb.Name & ex.Message)
@@ -182,7 +186,7 @@ Public Class AddInEvents
             ' this is required as there is no recalculation if no dependencies have changed (usually when opening workbooks)
             ' however the most important dependency for DB functions is the database data....
             Try
-                refreshDBFuncs = Not Wb.CustomDocumentProperties("DBFskip")
+                refreshDBFuncs = Not Wb.CustomDocumentProperties("DBFskip").Value
             Catch ex As Exception
                 refreshDBFuncs = True
             End Try
@@ -204,10 +208,10 @@ Public Class AddInEvents
     Shared Sub refreshDBFuncLater(ByVal sender As Object, ByVal e As ElapsedEventArgs)
         Dim previouslySaved As Boolean
 
-        If Not hostApp.ActiveWorkbook Is Nothing Then
-            previouslySaved = hostApp.ActiveWorkbook.Saved
-            refreshDBFunctions(hostApp.ActiveWorkbook, True)
-            hostApp.ActiveWorkbook.Saved = previouslySaved
+        If Not ExcelDnaUtil.Application.ActiveWorkbook Is Nothing Then
+            previouslySaved = ExcelDnaUtil.Application.ActiveWorkbook.Saved
+            refreshDBFunctions(ExcelDnaUtil.Application.ActiveWorkbook, True)
+            ExcelDnaUtil.Application.ActiveWorkbook.Saved = previouslySaved
         End If
     End Sub
 
@@ -246,7 +250,7 @@ Public Class AddInEvents
         Else
             Dim targetRange As Excel.Range
             Try
-                targetRange = hostApp.ActiveWorkbook.Names.Item(cbName).RefersToRange
+                targetRange = ExcelDnaUtil.Application.ActiveWorkbook.Names.Item(cbName).RefersToRange
             Catch ex As Exception
                 MsgBox("No underlying " & Left(cbName, 8) & " Range named " & cbName & " found, exiting without DBModification.")
                 LogWarn("targetRange assignment failed: " & ex.Message)
@@ -297,14 +301,25 @@ Public Class AddInEvents
     ''' <summary>assign commandbuttons new and refresh DBAddins DBModification Menu with each change of sheets</summary>
     ''' <param name="Sh"></param>
     Private Sub Application_SheetActivate(Sh As Object) Handles Application.SheetActivate
-        assignHandler(Sh)
         getDBModifDefinitions()
+        ' only when needed assign button handler for this sheet ...
+        If Globals.DBModifDefColl.Count > 0 Then assignHandler(Sh)
     End Sub
 
     ''' <summary>SheetDeactivate: gets defined named ranges for DBMapper invocation after sheet was deleted/added (changes index of sheets-> IDs!) and updates Ribbon with it</summary>
     ''' <param name="Sh"></param>
     Private Sub Application_SheetDeactivate(Sh As Object) Handles Application.SheetDeactivate
-        getDBModifDefinitions()
+        'Try : Globals.DBModifDefColl.Clear() : Catch ex As Exception : End Try
+    End Sub
+
+    Private Sub Application_WorkbookAfterSave(Wb As Workbook, Success As Boolean) Handles Application.WorkbookAfterSave
+        aTimer.Dispose()
+        LogInfo("aTimer disposed...")
+    End Sub
+
+    Private Sub Application_WorkbookBeforeClose(Wb As Workbook, ByRef Cancel As Boolean) Handles Application.WorkbookBeforeClose
+        Try : Globals.DBModifDefColl.Clear() : Catch ex As Exception : End Try
+        Globals.theRibbon.Invalidate()
     End Sub
 
 End Class

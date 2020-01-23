@@ -1,5 +1,5 @@
 ﻿Imports System.Diagnostics
-
+Imports ExcelDna.Integration
 
 ''' <summary>About box: used to provide information about version/buildtime and links for local help and project homepage</summary>
 Public NotInheritable Class AboutBox
@@ -88,9 +88,9 @@ Public NotInheritable Class AboutBox
     Private Sub DisableAddin_Click(sender As Object, e As EventArgs) Handles disableAddin.Click
         ' first reactivate legacy Addin
         My.Computer.Registry.SetValue("HKEY_CURRENT_USER\Software\Microsoft\Office\Excel\Addins\DBAddin.Connection", "LoadBehavior", 3)
-        hostApp.AddIns("DBAddin.Functions").Installed = True
+        ExcelDnaUtil.Application.AddIns("DBAddin.Functions").Installed = True
         MsgBox("Please restart Excel to make changes effective...", vbOKOnly, "Disable DBAddin and re-enable Legacy DBAddin")
-        Try : hostApp.AddIns("OebfaFuncs-AddIn-packed").Installed = False : Catch ex As Exception : End Try
+        Try : ExcelDnaUtil.Application.AddIns("OebfaFuncs-AddIn-packed").Installed = False : Catch ex As Exception : End Try
         disableAddinAfterwards = True
         Me.Close()
     End Sub

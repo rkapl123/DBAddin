@@ -3,7 +3,6 @@ Imports Microsoft.Office.Interop
 Imports System.Collections.Generic
 Imports System.Diagnostics
 
-
 ''' <summary>Global variables and functions for DB Addin</summary>
 Public Module Globals
     ' general Global objects/variables
@@ -13,8 +12,6 @@ Public Module Globals
     Public selectedEnvironment As Integer
     ''' <summary>reference object for the Addins ribbon</summary>
     Public theRibbon As CustomUI.IRibbonUI
-    ''' <summary>Excel Application object used for referencing objects</summary>
-    Public hostApp As Excel.Application
     ''' <summary>environment definitions</summary>
     Public environdefs As String() = {}
     ''' <summary>DBModif definition collections (for labels (key of nested dictionary) and target ranges (value of nested dictionary))</summary>
@@ -36,16 +33,16 @@ Public Module Globals
     Public DefaultDBDateFormatting As Integer
 
     ''' <summary>encapsulates setting fetching (currently registry)</summary>
-    ''' <param name="Key"></param>
-    ''' <param name="defaultValue"></param>
+    ''' <param name="Key">registry key to take value from</param>
+    ''' <param name="defaultValue">Value that is taken if Key was not found</param>
     ''' <returns>the setting value</returns>
     Public Function fetchSetting(Key As String, defaultValue As String) As String
         fetchSetting = GetSetting("DBAddin", "Settings", Key, defaultValue)
     End Function
 
     ''' <summary>encapsulates setting storing (currently registry)</summary>
-    ''' <param name="Key"></param>
-    ''' <param name="Value"></param>
+    ''' <param name="Key">registry key to store value to</param>
+    ''' <param name="Value">value to store</param>
     Public Sub storeSetting(Key As String, Value As String)
         SaveSetting("DBAddin", "Settings", Key, Value)
     End Sub
@@ -141,7 +138,7 @@ Public Module Globals
 
         ' enable events in case there were some problems in procedure with EnableEvents = false
         Try
-            hostApp.EnableEvents = True
+            ExcelDnaUtil.Application.EnableEvents = True
         Catch ex As Exception
             ErrorMsg("Can't refresh data while lookup dropdown is open !!")
             Exit Sub
@@ -155,18 +152,18 @@ Public Module Globals
             ' reset query cache, so we really get new data !
             queryCache = New Collection
             StatusCollection = New Collection
-            Dim underlyingName As String = getDBunderlyingNameFromRange(hostApp.ActiveCell)
+            Dim underlyingName As String = getDBunderlyingNameFromRange(ExcelDnaUtil.Application.ActiveCell)
 
             ' now for DBListfetch/DBRowfetch resetting, first outside of all db function areas...
             If underlyingName = "" Then
-                refreshDBFunctions(hostApp.ActiveWorkbook)
+                refreshDBFunctions(ExcelDnaUtil.Application.ActiveWorkbook)
                 ' general refresh: also refresh all embedded queries and pivot tables..
                 Try
                     Dim ws As Excel.Worksheet
                     Dim qrytbl As Excel.QueryTable
                     Dim pivottbl As Excel.PivotTable
 
-                    For Each ws In hostApp.ActiveWorkbook.Worksheets
+                    For Each ws In ExcelDnaUtil.Application.ActiveWorkbook.Worksheets
                         For Each qrytbl In ws.QueryTables
                             qrytbl.Refresh()
                         Next
@@ -180,28 +177,28 @@ Public Module Globals
                 ' we're being called on a target functions area (additionally given in DBListFetch)
                 If Left$(underlyingName, 10) = "DBFtargetF" Then
                     underlyingName = Replace(underlyingName, "DBFtargetF", "DBFsource", 1, , vbTextCompare)
-                    If Not hostApp.Range(underlyingName).Parent Is hostApp.ActiveSheet Then
-                        hostApp.ScreenUpdating = False
-                        origWS = hostApp.ActiveSheet
-                        Try : hostApp.Range(underlyingName).Parent.Select : Catch ex As Exception : End Try
+                    If Not ExcelDnaUtil.Application.Range(underlyingName).Parent Is ExcelDnaUtil.Application.ActiveSheet Then
+                        ExcelDnaUtil.Application.ScreenUpdating = False
+                        origWS = ExcelDnaUtil.Application.ActiveSheet
+                        Try : ExcelDnaUtil.Application.Range(underlyingName).Parent.Select : Catch ex As Exception : End Try
                     End If
-                    hostApp.Range(underlyingName).Dirty()
+                    ExcelDnaUtil.Application.Range(underlyingName).Dirty()
                     ' we're being called on a target area
                 ElseIf Left$(underlyingName, 9) = "DBFtarget" Then
                     underlyingName = Replace(underlyingName, "DBFtarget", "DBFsource", 1, , vbTextCompare)
                     ' return to source functions sheet to work around Dirty method problem (cell's sheet needs to be selected for Dirty to work on that cell)
-                    If Not hostApp.Range(underlyingName).Parent Is hostApp.ActiveSheet Then
-                        hostApp.ScreenUpdating = False
-                        origWS = hostApp.ActiveSheet
-                        Try : hostApp.Range(underlyingName).Parent.Select : Catch ex As Exception : End Try
-                        hostApp.Range(underlyingName).Parent.Select
+                    If Not ExcelDnaUtil.Application.Range(underlyingName).Parent Is ExcelDnaUtil.Application.ActiveSheet Then
+                        ExcelDnaUtil.Application.ScreenUpdating = False
+                        origWS = ExcelDnaUtil.Application.ActiveSheet
+                        Try : ExcelDnaUtil.Application.Range(underlyingName).Parent.Select : Catch ex As Exception : End Try
+                        ExcelDnaUtil.Application.Range(underlyingName).Parent.Select
                     End If
-                    hostApp.Range(underlyingName).Dirty()
+                    ExcelDnaUtil.Application.Range(underlyingName).Dirty()
                     ' we're being called on a source (invoking function) cell
                 ElseIf Left$(underlyingName, 9) = "DBFsource" Then
-                    Try : hostApp.Range(underlyingName).Dirty() : Catch ex As Exception : End Try
+                    Try : ExcelDnaUtil.Application.Range(underlyingName).Dirty() : Catch ex As Exception : End Try
                 Else
-                    refreshDBFunctions(hostApp.ActiveWorkbook)
+                    refreshDBFunctions(ExcelDnaUtil.Application.ActiveWorkbook)
                 End If
             End If
         Catch ex As Exception
@@ -212,12 +209,12 @@ Public Module Globals
     ''' <summary>jumps between DB Function and target area</summary>
     <ExcelCommand(Name:="jumpButton", ShortCut:="^J")>
     Public Sub jumpButton()
-        If checkMultipleDBRangeNames(hostApp.ActiveCell) Then
+        If checkMultipleDBRangeNames(ExcelDnaUtil.Application.ActiveCell) Then
             ErrorMsg("Multiple hidden DB Function names in selected cell (making 'jump' ambigous/impossible), please use purge names tool!")
             Exit Sub
         End If
 
-        Dim underlyingName As String = getDBunderlyingNameFromRange(hostApp.ActiveCell)
+        Dim underlyingName As String = getDBunderlyingNameFromRange(ExcelDnaUtil.Application.ActiveCell)
         If underlyingName = "" Then Exit Sub
         If Left$(underlyingName, 10) = "DBFtargetF" Then
             underlyingName = Replace(underlyingName, "DBFtargetF", "DBFsource", 1, , vbTextCompare)
@@ -227,8 +224,8 @@ Public Module Globals
             underlyingName = Replace(underlyingName, "DBFsource", "DBFtarget", 1, , vbTextCompare)
         End If
         Try
-            hostApp.Range(underlyingName).Parent.Select()
-            hostApp.Range(underlyingName).Select()
+            ExcelDnaUtil.Application.Range(underlyingName).Parent.Select()
+            ExcelDnaUtil.Application.Range(underlyingName).Select()
         Catch ex As Exception
             ErrorMsg("Can't jump to target/source, corresponding workbook open? " & ex.Message)
         End Try
@@ -391,7 +388,7 @@ Public Module Globals
     Public Function existsSheet(ByRef theName As String) As Boolean
         existsSheet = True
         Try
-            Dim dummy As String = hostApp.Worksheets(theName).name
+            Dim dummy As String = ExcelDnaUtil.Application.Worksheets(theName).name
         Catch ex As Exception
             existsSheet = False
         End Try
@@ -451,7 +448,7 @@ Public Module Globals
                 Try : rng = nm.RefersToRange : Catch ex As Exception : End Try
                 If Not rng Is Nothing Then
                     testRng = Nothing
-                    Try : testRng = hostApp.Intersect(theRange, rng) : Catch ex As Exception : End Try
+                    Try : testRng = ExcelDnaUtil.Application.Intersect(theRange, rng) : Catch ex As Exception : End Try
                     If Not IsNothing(testRng) And (InStr(1, nm.Name, "DBMapper") >= 1 Or InStr(1, nm.Name, "DBAction") >= 1) Then
                         getDBModifNameFromRange = nm.Name
                         Exit Function
@@ -477,7 +474,7 @@ Public Module Globals
                 Try : rng = nm.RefersToRange : Catch ex As Exception : End Try
                 If Not rng Is Nothing Then
                     testRng = Nothing
-                    Try : testRng = hostApp.Intersect(theRange, rng) : Catch ex As Exception : End Try
+                    Try : testRng = ExcelDnaUtil.Application.Intersect(theRange, rng) : Catch ex As Exception : End Try
                     If Not IsNothing(testRng) And (InStr(1, nm.Name, "DBFtarget") >= 1 Or InStr(1, nm.Name, "DBFsource") >= 1) Then
                         getDBunderlyingNameFromRange = nm.Name
                         Exit Function
@@ -504,7 +501,7 @@ Public Module Globals
                 Try : rng = nm.RefersToRange : Catch ex As Exception : End Try
                 If Not rng Is Nothing And Not (nm.Name Like "*ExterneDaten*" Or nm.Name Like "*_FilterDatabase") Then
                     testRng = Nothing
-                    Try : testRng = hostApp.Intersect(theRange, rng) : Catch ex As Exception : End Try
+                    Try : testRng = ExcelDnaUtil.Application.Intersect(theRange, rng) : Catch ex As Exception : End Try
                     If Not IsNothing(testRng) And (InStr(1, nm.Name, "DBFtarget") >= 1 Or InStr(1, nm.Name, "DBFsource") >= 1) Then
                         foundNames += 1
                     End If
@@ -525,12 +522,29 @@ Public Module Globals
         Dim needRecalc As Boolean
 
         ' hidden workbooks produce an error when searching for cells, this is captured by 
-        If TypeName(hostApp.Calculation) = "Error" Then
-            MsgBox("hostApp.Calculation = Error, " & Wb.Path & "\" & Wb.Name & " (hidden workbooks produce calculation errors...)")
+        If TypeName(ExcelDnaUtil.Application.Calculation) = "Error" Then
+            MsgBox("ExcelDnaUtil.Application.Calculation = Error, " & Wb.Path & "\" & Wb.Name & " (hidden workbooks produce calculation errors...)")
             Exit Sub
         End If
         Try
             needRecalc = False
+            Dim cellcount As Long = 0
+            For Each ws In Wb.Worksheets
+                cellcount += ExcelDnaUtil.Application.WorksheetFunction.CountIf(ws.Range("1:" & ws.Rows.Count), "<>")
+            Next
+            If cellcount > CLng(fetchSetting("maxCellCount", "100000")) Then
+                Dim retval As MsgBoxResult = MsgBox("This large workbook (>" & CLng(fetchSetting("maxCellCount", "100000")) & " filled cells) might take long to search for DB functions to refresh, continue ?" & vbCrLf & "Click Cancel to add DBFskip to this Workbook, avoiding this search in the future...", vbQuestion + vbYesNoCancel, "Refresh DB functions")
+                If retval <> vbYes Then
+                    If retval = vbCancel Then
+                        Try
+                            Wb.CustomDocumentProperties.Add(Name:="DBFskip", LinkToContent:=False, Type:=Microsoft.Office.Core.MsoDocProperties.msoPropertyTypeBoolean, Value:=True)
+                        Catch ex As Exception
+                            LogWarn("Error when adding DBFskip to Workbook:" + ex.Message)
+                        End Try
+                    End If
+                    Exit Sub
+                End If
+            End If
             For Each ws In Wb.Worksheets
                 Dim theFunc As String
                 For Each theFunc In {"DBListFetch(", "DBRowFetch(", "DBSetQuery("}
@@ -548,9 +562,10 @@ Public Module Globals
                 searchCells = ws.Cells.Find(What:="", After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
             Next
 done:
-            If needRecalc And (hostApp.Calculation <> Excel.XlCalculation.xlCalculationManual Or ignoreCalcMode) Then
-                LogInfo("hostApp.CalculateFull called " & Wb.Path & "\" & Wb.Name)
-                hostApp.CalculateFull()
+            If needRecalc And (ExcelDnaUtil.Application.Calculation <> Excel.XlCalculation.xlCalculationManual Or ignoreCalcMode) Then
+                queryCache.Clear()
+                LogInfo("ExcelDnaUtil.Application.CalculateFull called " & Wb.Path & "\" & Wb.Name)
+                ExcelDnaUtil.Application.CalculateFull()
             Else
                 LogInfo("no dbfunc found... " & Wb.Path & "\" & Wb.Name)
             End If
@@ -564,42 +579,69 @@ done:
     Public Sub repairLegacyFunctions(Optional showReponse As Boolean = False)
         Dim searchCell As Excel.Range
         Dim foundLegacyWS As Collection = New Collection
-        Dim xlcalcmode As Long = hostApp.Calculation
-        Dim actWB As Excel.Workbook = hostApp.ActiveWorkbook
+        Dim xlcalcmode As Long = ExcelDnaUtil.Application.Calculation
+        Dim actWB As Excel.Workbook = ExcelDnaUtil.Application.ActiveWorkbook
         If IsNothing(actWB) Then
             LogWarn("no active workbook available !")
             Exit Sub
         End If
+        Dim skipLegacyCheck As Boolean
         Try
+            skipLegacyCheck = actWB.CustomDocumentProperties("DBFNoLegacyCheck").Value
+        Catch ex As Exception
+            skipLegacyCheck = False
+        End Try
+        If skipLegacyCheck Then Exit Sub
+        Try
+            ' count nonempty cells in workbook...
+            Dim cellcount As Long = 0
+            For Each ws In actWB.Worksheets
+                cellcount += ExcelDnaUtil.Application.WorksheetFunction.CountIf(ws.Range("1:" & ws.Rows.Count), "<>")
+            Next
+            ' warn if above threshold
+            If cellcount > CLng(fetchSetting("maxCellCount", "100000")) Then
+                Dim retval As MsgBoxResult = MsgBox("This large workbook (>" & CLng(fetchSetting("maxCellCount", "100000")) & " filled cells) might take long to search for legacy functions, continue ?" & vbCrLf & "Cancel to disable legacy function checking for this workbook ...", vbQuestion + MsgBoxStyle.YesNoCancel, "Legacy DBAddin functions")
+                If retval <> vbYes Then
+                    If retval = vbCancel Then
+                        Try
+                            actWB.CustomDocumentProperties.Add(Name:="DBFNoLegacyCheck", LinkToContent:=False, Type:=Microsoft.Office.Core.MsoDocProperties.msoPropertyTypeBoolean, Value:=True)
+                        Catch ex As Exception
+                            LogWarn("Error when adding NoLegacyCheck in workbook:" + ex.Message)
+                        End Try
+                    End If
+                    Exit Sub
+                End If
+            End If
             For Each ws In actWB.Worksheets
                 ' check whether legacy functions exist somewhere ...
+                ExcelDnaUtil.Application.StatusBar = "checking for legacy DB functions in active workbook (ESC to stop)"
                 searchCell = ws.Cells.Find(What:="DBAddin.Functions.", After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
                 If Not (searchCell Is Nothing) Then foundLegacyWS.Add(ws)
             Next
             If foundLegacyWS.Count > 0 Then
                 Dim retval As MsgBoxResult = MsgBox("Found legacy DBAddin functions in active workbook, should they be replaced with current addin functions (save workbook afterwards to persist) ?", vbQuestion + vbYesNo, "Legacy DBAddin functions")
                 If retval = vbYes Then
-                    hostApp.Calculation = Excel.XlCalculation.xlCalculationManual ' avoid recalculations during replace action
-                    hostApp.DisplayAlerts = False ' avoid warnings for sheet where "DBAddin.Functions." is not found
-                    'hostApp.EnableEvents = False ' avoid event triggering during replace action
+                    ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual ' avoid recalculations during replace action
+                    ExcelDnaUtil.Application.DisplayAlerts = False ' avoid warnings for sheet where "DBAddin.Functions." is not found
                     ' remove "DBAddin.Functions." in each sheet...
                     For Each ws In foundLegacyWS
+                        ExcelDnaUtil.Application.StatusBar = "Replacing legacy DB functions in active workbook (ESC to stop)"
                         ws.Cells.Replace(What:="DBAddin.Functions.", Replacement:="", LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, MatchCase:=False, SearchFormat:=False, ReplaceFormat:=False)
                     Next
-                    'hostApp.EnableEvents = True
-                    hostApp.DisplayAlerts = True
-                    hostApp.Calculation = xlcalcmode
+                    ExcelDnaUtil.Application.DisplayAlerts = True
+                    ExcelDnaUtil.Application.Calculation = xlcalcmode
+                    ExcelDnaUtil.Application.StatusBar = False
                 End If
             ElseIf showReponse Then
                 MsgBox("No legacy DBAddin functions found in active workbook.", vbExclamation + vbOKOnly, "Legacy DBAddin functions")
             End If
             ' reset the cell find dialog....
-            hostApp.ActiveSheet.Cells.Find(What:="", After:=hostApp.ActiveSheet.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
+            ExcelDnaUtil.Application.ActiveSheet.Cells.Find(What:="", After:=ExcelDnaUtil.Application.ActiveSheet.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
         Catch ex As Exception
-            LogError("Error occured in replacing DBAddin.Functions.: " & ex.Message)
-            'hostApp.EnableEvents = True
-            hostApp.DisplayAlerts = True
-            hostApp.Calculation = xlcalcmode
+            LogError("Error occured in replacing legacy DB functions: " & ex.Message)
+            ExcelDnaUtil.Application.DisplayAlerts = True
+            ExcelDnaUtil.Application.Calculation = xlcalcmode
+            ExcelDnaUtil.Application.StatusBar = False
         End Try
     End Sub
 
@@ -608,14 +650,14 @@ done:
         Dim resultingPurges As String = String.Empty
         Dim retval As MsgBoxResult = MsgBox("Should ExternalData names (from Queries) and names referring to missing references (thus containing #REF!) also be purged?", vbYesNoCancel + vbQuestion, "purge Names")
         If retval = vbCancel Then Exit Sub
-        Dim calcMode = hostApp.Calculation
-        hostApp.Calculation = Excel.XlCalculation.xlCalculationManual
+        Dim calcMode = ExcelDnaUtil.Application.Calculation
+        ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual
         Try
             Dim DBname As Excel.Name
-            For Each DBname In hostApp.ActiveWorkbook.Names
+            For Each DBname In ExcelDnaUtil.Application.ActiveWorkbook.Names
                 If DBname.Name Like "*ExterneDaten*" Or DBname.Name Like "*ExternalData*" And retval = vbYes Then
-                    resultingPurges += DBname.Name + ", "
-                    DBname.Delete()
+                    'resultingPurges += DBname.Name + ", "
+                    'DBname.Delete()
                 ElseIf DBname.Name Like "DBFtarget*" Then
                     resultingPurges += DBname.Name + ", "
                     DBname.Delete()
@@ -623,8 +665,8 @@ done:
                     resultingPurges += DBname.Name + ", "
                     DBname.Delete()
                 ElseIf InStr(1, DBname.RefersTo, "#REF!") > 0 And retval = vbYes Then
-                    resultingPurges += DBname.Name + "(refers to " + DBname.RefersTo + "), "
-                    DBname.Delete()
+                    'resultingPurges += DBname.Name + "(refers to " + DBname.RefersTo + "), "
+                    'DBname.Delete()
                 End If
             Next
             If resultingPurges = String.Empty Then
@@ -636,7 +678,7 @@ done:
         Catch ex As Exception
             LogError("Error: " & ex.Message)
         End Try
-        hostApp.Calculation = calcMode
+        ExcelDnaUtil.Application.Calculation = calcMode
     End Sub
 
 End Module

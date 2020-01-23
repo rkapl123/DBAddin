@@ -1,4 +1,5 @@
 Imports ADODB
+Imports ExcelDna.Integration
 Imports Microsoft.Office.Interop
 Imports System.Collections.Generic
 Imports System.Windows.Forms
@@ -36,13 +37,13 @@ Public Module DBModif
                 StatusCollection = New Collection
                 ' refresh DBFunction in sequence
                 Dim underlyingName As String = definition(2)
-                If Not hostApp.Range(underlyingName).Parent Is hostApp.ActiveSheet Then
-                    hostApp.ScreenUpdating = False
-                    origWS = hostApp.ActiveSheet
-                    Try : hostApp.Range(underlyingName).Parent.Select : Catch ex As Exception : End Try
+                If Not ExcelDnaUtil.Application.Range(underlyingName).Parent Is ExcelDnaUtil.Application.ActiveSheet Then
+                    ExcelDnaUtil.Application.ScreenUpdating = False
+                    origWS = ExcelDnaUtil.Application.ActiveSheet
+                    Try : ExcelDnaUtil.Application.Range(underlyingName).Parent.Select : Catch ex As Exception : End Try
                 End If
-                hostApp.Range(underlyingName).Dirty()
-                If hostApp.Calculation = Excel.XlCalculation.xlCalculationManual Then hostApp.Calculate()
+                ExcelDnaUtil.Application.Range(underlyingName).Dirty()
+                If ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual Then ExcelDnaUtil.Application.Calculate()
             End If
         Next
     End Sub
@@ -195,7 +196,7 @@ Public Module DBModif
             If rst.EOF Then
                 Dim i As Integer
                 If insertIfMissing Then
-                    hostApp.StatusBar = "Inserting " & primKeyCompound & " in table " & tableName
+                    ExcelDnaUtil.Application.StatusBar = "Inserting " & primKeyCompound & " in table " & tableName
                     rst.AddNew()
                     For i = 0 To UBound(primKeys)
                         rst.Fields(primKeys(i)).Value = IIf(DataRange.Cells(rowNum, i + 1).ToString().Length = 0, vbNull, DataRange.Cells(rowNum, i + 1).Value)
@@ -208,7 +209,7 @@ Public Module DBModif
                     GoTo cleanup
                 End If
             Else
-                hostApp.StatusBar = "Updating " & primKeyCompound & " in table " & tableName
+                ExcelDnaUtil.Application.StatusBar = "Updating " & primKeyCompound & " in table " & tableName
             End If
 
             ' walk through non primary columns and fill fields
@@ -264,7 +265,7 @@ nextRow:
         End If
 cleanup:
         dbcnn = Nothing
-        hostApp.StatusBar = False
+        ExcelDnaUtil.Application.StatusBar = False
     End Sub
 
     ''' <summary>formats theVal to fit the type of column theHead having data type dataType</summary>
@@ -311,7 +312,7 @@ cleanup:
         dbcnn = New Connection
         theConnString = Change(theConnString, dbidentifier, database, ";")
         LogInfo("open connection with " & theConnString)
-        hostApp.StatusBar = "Trying " & Globals.CnnTimeout & " sec. with connstring: " & theConnString
+        ExcelDnaUtil.Application.StatusBar = "Trying " & Globals.CnnTimeout & " sec. with connstring: " & theConnString
         Try
             dbcnn.ConnectionString = theConnString
             dbcnn.ConnectionTimeout = Globals.CnnTimeout
@@ -322,7 +323,7 @@ cleanup:
             If dbcnn.State = ADODB.ObjectStateEnum.adStateOpen Then dbcnn.Close()
             dbcnn = Nothing
         End Try
-        hostApp.StatusBar = String.Empty
+        ExcelDnaUtil.Application.StatusBar = String.Empty
         openConnection = True
     End Function
 
@@ -332,7 +333,7 @@ cleanup:
         Try
             Globals.DBModifDefColl = New Dictionary(Of String, Dictionary(Of String, Object))
             ' add DB sequences on Workbook level...
-            For Each docproperty In hostApp.ActiveWorkbook.CustomDocumentProperties
+            For Each docproperty In ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties
                 If TypeName(docproperty.Value) = "String" And Left(docproperty.Name, 8) = "DBSeqnce" Then
                     Dim nodeName As String = Replace(docproperty.Name, "DBSeqnce", "")
 
@@ -349,7 +350,7 @@ cleanup:
                     End If
                 End If
             Next
-            For Each namedrange As Excel.Name In hostApp.ActiveWorkbook.Names
+            For Each namedrange As Excel.Name In ExcelDnaUtil.Application.ActiveWorkbook.Names
                 Dim cleanname As String = Replace(namedrange.Name, namedrange.Parent.Name & "!", "")
                 If Left(cleanname, 8) = "DBMapper" Or Left(cleanname, 8) = "DBAction" Then
                     Dim DBModiftype As String = Left(cleanname, 8)
@@ -461,12 +462,12 @@ cleanup:
         If Clipboard.ContainsText() And type = "DBMapper" Then
             Dim cpbdtext As String = Clipboard.GetText()
             If Left(cpbdtext.ToLower(), 3) = "def" Then
-                If IsNothing(targetRange) Then targetRange = hostApp.ActiveCell
+                If IsNothing(targetRange) Then targetRange = ExcelDnaUtil.Application.ActiveCell
                 Try : targetRange.Name = "DBMapperNewFromClipboard"
                 Catch ex As Exception : ErrorMsg("Error when assigning name 'DBMapperNewFromClipboard' to active cell: " & ex.Message)
                 End Try
                 Try
-                    hostApp.ActiveWorkbook.CustomDocumentProperties.Add(Name:="DBMapperNewFromClipboard", LinkToContent:=False, Type:=Microsoft.Office.Core.MsoDocProperties.msoPropertyTypeString, Value:=cpbdtext)
+                    ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties.Add(Name:="DBMapperNewFromClipboard", LinkToContent:=False, Type:=Microsoft.Office.Core.MsoDocProperties.msoPropertyTypeString, Value:=cpbdtext)
                 Catch ex As Exception : ErrorMsg("Error when adding property with DBModif parameters: " & ex.Message) : End Try
             End If
         End If
@@ -475,10 +476,10 @@ cleanup:
         If type = "DBSeqnce" Then activeCellName = "DBSeqnce" & targetDefName
         If type = "DBMapper" Then
             ' try potential name to ListObject (parts), only possible if manually defined !
-            If activeCellName = "" And Not IsNothing(hostApp.Selection.ListObject) Then
-                For Each listObjectCol In hostApp.Selection.ListObject.ListColumns
-                    For Each aName As Excel.Name In hostApp.ActiveWorkbook.Names
-                        If aName.RefersTo = "=" & hostApp.Selection.ListObject.Name & "[[#Headers],[" & hostApp.Selection.Value & "]]" Then
+            If activeCellName = "" And Not IsNothing(ExcelDnaUtil.Application.Selection.ListObject) Then
+                For Each listObjectCol In ExcelDnaUtil.Application.Selection.ListObject.ListColumns
+                    For Each aName As Excel.Name In ExcelDnaUtil.Application.ActiveWorkbook.Names
+                        If aName.RefersTo = "=" & ExcelDnaUtil.Application.Selection.ListObject.Name & "[[#Headers],[" & ExcelDnaUtil.Application.Selection.Value & "]]" Then
                             activeCellName = aName.Name
                             Exit For
                         End If
@@ -571,7 +572,7 @@ cleanup:
                 Next
                 Dim searchCell As Excel.Range
                 ' then add DBRefresh items for allowing refreshing DBFunctions (DBListFetch and DBSetQuery) during a Sequence
-                For Each ws As Excel.Worksheet In hostApp.ActiveWorkbook.Worksheets
+                For Each ws As Excel.Worksheet In ExcelDnaUtil.Application.ActiveWorkbook.Worksheets
                     For Each theFunc As String In {"DBListFetch(", "DBSetQuery("}
                         searchCell = ws.Cells.Find(What:=theFunc, After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
                         If Not (searchCell Is Nothing) Then
@@ -613,11 +614,11 @@ cleanup:
 
             ' only for DBMapper or DBAction: change target range name
             If type <> "DBSeqnce" Then
-                If IsNothing(targetRange) Then targetRange = hostApp.ActiveCell
+                If IsNothing(targetRange) Then targetRange = ExcelDnaUtil.Application.ActiveCell
                 ' set content range name: first clear name
                 If InStr(1, activeCellName, type) > 0 Then   ' fetch parameters if existing comment and DBMapper definition...
                     Try
-                        For Each DBModifName As Excel.Name In hostApp.ActiveWorkbook.Names
+                        For Each DBModifName As Excel.Name In ExcelDnaUtil.Application.ActiveWorkbook.Names
                             If DBModifName.Name = activeCellName Then DBModifName.Delete()
                         Next
                     Catch ex As Exception : ErrorMsg("Error when removing name '" + activeCellName + "' from active cell: " & ex.Message) : End Try
@@ -648,10 +649,10 @@ cleanup:
             End If
             ' ... and store in docproperty (rename docproperty first to current name, might have been changed)
             Try
-                hostApp.ActiveWorkbook.CustomDocumentProperties(activeCellName).Delete
+                ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties(activeCellName).Delete
             Catch ex As Exception : End Try
             Try
-                hostApp.ActiveWorkbook.CustomDocumentProperties.Add(Name:=type + .DBModifName.Text, LinkToContent:=False, Type:=Microsoft.Office.Core.MsoDocProperties.msoPropertyTypeString, Value:=paramText)
+                ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties.Add(Name:=type + .DBModifName.Text, LinkToContent:=False, Type:=Microsoft.Office.Core.MsoDocProperties.msoPropertyTypeString, Value:=paramText)
             Catch ex As Exception : ErrorMsg("Error when adding property with DBModif parameters: " & ex.Message) : End Try
         End With
         ' refresh mapper definitions to reflect changes immediately...

@@ -1,4 +1,5 @@
-﻿Imports Microsoft.Office.Interop
+﻿Imports ExcelDna.Integration
+Imports Microsoft.Office.Interop
 Imports Microsoft.Vbe.Interop
 Imports System.Windows.Forms
 
@@ -12,12 +13,14 @@ Public Class DBModifCreate
     Private Sub OK_Button_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles OK_Button.Click
         Dim NameValidation As String = ""
         If Me.DBModifName.Text <> String.Empty Then
+            ' Add doesn't work directly with ExcelDnaUtil.Application.ActiveWorkbook.Names (late binding), so create an object here...
+            Dim NamesList As Excel.Names = ExcelDnaUtil.Application.ActiveWorkbook.Names
             Try
-                hostApp.Names.Add(Name:=Me.DBModifName.Text, RefersTo:=hostApp.ActiveCell)
+                NamesList.Add(Name:=Me.DBModifName.Text, RefersTo:=ExcelDnaUtil.Application.ActiveCell)
             Catch ex As Exception
                 NameValidation = ex.Message
             End Try
-            Try : hostApp.Names.Item(Me.DBModifName.Text).Delete() : Catch ex As Exception : End Try
+            Try : NamesList.Item(Me.DBModifName.Text).Delete() : Catch ex As Exception : End Try
         End If
         If Me.Tablename.Text = String.Empty And Me.Tablename.Visible Then
             MsgBox("Field Tablename is required, please fill in!")
@@ -26,11 +29,11 @@ Public Class DBModifCreate
         ElseIf Me.Database.Text = String.Empty And Me.Database.Visible Then
             MsgBox("Field Database is required, please fill in!")
         ElseIf NameValidation <> "" Then
-            MsgBox("Invalid " & Me.NameLabel.Text & NameValidation)
+            MsgBox("Invalid " & Me.NameLabel.Text & ", Error: " & NameValidation)
         Else
             ' check for double invocation because of execOnSave being set on DBAction/DBMapper
             If Me.Tag <> "DBSeqnce" Then
-                For Each docproperty In hostApp.ActiveWorkbook.CustomDocumentProperties
+                For Each docproperty In ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties
                     If TypeName(docproperty.Value) = "String" And Strings.Left(docproperty.Name, 8) = "DBSeqnce" Then
                         Dim dbseqName As String = Replace(docproperty.Name, "DBSeqnce", "")
                         Dim params() As String = Split(docproperty.Value, ",")
@@ -49,7 +52,7 @@ Public Class DBModifCreate
                 Next
                 ' check for double invocation because of execOnSave being set on DBSequence
             Else
-                For Each docproperty In hostApp.ActiveWorkbook.CustomDocumentProperties
+                For Each docproperty In ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties
                     For i As Integer = 0 To Me.DBSeqenceDataGrid.Rows().Count - 2
                         Dim definition() As String = Split(Me.DBSeqenceDataGrid.Rows(i).Cells(0).Value, ":")
                         If TypeName(docproperty.Value) = "String" And docproperty.Name = definition(0) & definition(2) Then
@@ -70,7 +73,7 @@ Public Class DBModifCreate
             End If
             ' need to create a commandbutton for the current DBmodification?
             If Me.CBCreate.Checked Then
-                Dim cbshp As Excel.OLEObject = hostApp.ActiveSheet.OLEObjects.Add(ClassType:="Forms.CommandButton.1", Link:=False, DisplayAsIcon:=False, Left:=600, Top:=70, Width:=120, Height:=24)
+                Dim cbshp As Excel.OLEObject = ExcelDnaUtil.Application.ActiveSheet.OLEObjects.Add(ClassType:="Forms.CommandButton.1", Link:=False, DisplayAsIcon:=False, Left:=600, Top:=70, Width:=120, Height:=24)
                 Dim cb As Forms.CommandButton = cbshp.Object
                 Dim cbName As String = Me.Tag & Me.DBModifName.Text
                 Try
@@ -82,7 +85,7 @@ Public Class DBModifCreate
                     Exit Sub
                 End Try
                 ' fail to assign a handler? remove commandbutton (otherwise it gets hard to edit an existing DBModification with a different name).
-                If Not AddInEvents.assignHandler(hostApp.ActiveSheet) Then
+                If Not AddInEvents.assignHandler(ExcelDnaUtil.Application.ActiveSheet) Then
                     cbshp.Delete()
                     Exit Sub
                 End If
@@ -114,8 +117,8 @@ Public Class DBModifCreate
         Dim rangePart() As String
         rangePart = Split(Me.TargetRangeAddress.Text, "!")
         Try
-            hostApp.Worksheets(rangePart(0)).Select()
-            hostApp.Range(rangePart(1)).Select()
+            ExcelDnaUtil.Application.Worksheets(rangePart(0)).Select()
+            ExcelDnaUtil.Application.Range(rangePart(1)).Select()
         Catch ex As Exception
             MsgBox("Couldn't select " & Me.TargetRangeAddress.Text & ":" & ex.Message)
         End Try

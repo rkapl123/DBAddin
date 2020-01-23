@@ -1,3 +1,4 @@
+Imports ExcelDna.Integration
 Imports Microsoft.Office.Interop
 Imports System.IO ' for getting config files for menu
 Imports System.Linq
@@ -19,7 +20,7 @@ Public Module ConfigFiles
         Dim srchdFunc As String = ""
         ' check whether there is any existing db function other than DBListFetch inside active cell
         For Each srchdFunc In {"DBSETQUERY", "DBROWFETCH"}
-            If Left(UCase(hostApp.ActiveCell.Formula), Len(srchdFunc) + 2) = "=" & srchdFunc & "(" Then
+            If Left(UCase(ExcelDnaUtil.Application.ActiveCell.Formula), Len(srchdFunc) + 2) = "=" & srchdFunc & "(" Then
                 Exit For
             Else
                 srchdFunc = ""
@@ -28,7 +29,7 @@ Public Module ConfigFiles
 
         retval = MsgBox("Inserting contents configured in " & theFileName, vbInformation + vbOKCancel, "DBAddin: Inserting Configuration...")
         If retval = vbCancel Then Exit Sub
-        If hostApp.ActiveWorkbook Is Nothing Then hostApp.Workbooks.Add
+        If ExcelDnaUtil.Application.ActiveWorkbook Is Nothing Then ExcelDnaUtil.Application.Workbooks.Add
 
         ' open file for reading
         Try
@@ -37,9 +38,9 @@ Public Module ConfigFiles
                 ItemLine = fileReader.ReadLine()
                 ' for existing dbfunction replace querystring in existing formula of active cell
                 If srchdFunc <> "" Then
-                    hostApp.ActiveCell.Formula = replaceQueryInFormula(Split(ItemLine, vbTab)(1), srchdFunc, hostApp.ActiveCell.Formula)
+                    ExcelDnaUtil.Application.ActiveCell.Formula = replaceQueryInFormula(Split(ItemLine, vbTab)(1), srchdFunc, ExcelDnaUtil.Application.ActiveCell.Formula)
                 Else ' for other cells simply insert the parsed information
-                    createFunctionsInCells(hostApp.ActiveCell, Split(ItemLine, vbTab))
+                    createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, Split(ItemLine, vbTab))
                 End If
             Loop Until fileReader.EndOfStream
             fileReader.Close()
@@ -70,8 +71,8 @@ Public Module ConfigFiles
     Public Sub createFunctionsInCells(originCell As Excel.Range, ByRef ItemLineDef As Object)
         Dim cellToBeStoredAddress As String, cellToBeStoredContent As String
         ' disabling calculation is necessary to avoid object errors
-        Dim calcMode As Long = hostApp.Calculation
-        hostApp.Calculation = Excel.XlCalculation.xlCalculationManual
+        Dim calcMode As Long = ExcelDnaUtil.Application.Calculation
+        ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual
         Dim i As Long
 
         ' for each defined cell address and content pair
@@ -85,9 +86,9 @@ Public Module ConfigFiles
                 If InStr(1, cellToBeStoredAddress, "!") > 0 Then
                     Dim theSheetName As String = Replace(Mid$(cellToBeStoredAddress, 1, InStr(1, cellToBeStoredAddress, "!") - 1), "'", String.Empty)
                     Try
-                        Dim testSheetExist As String = hostApp.Worksheets(theSheetName).name
+                        Dim testSheetExist As String = ExcelDnaUtil.Application.Worksheets(theSheetName).name
                     Catch ex As Exception
-                        With hostApp.Worksheets.Add(After:=originCell.Parent)
+                        With ExcelDnaUtil.Application.Worksheets.Add(After:=originCell.Parent)
                             .name = theSheetName
                         End With
                         originCell.Parent.Activate()
@@ -112,7 +113,7 @@ Public Module ConfigFiles
                 End Try
             End If
         Next
-        hostApp.Calculation = calcMode
+        ExcelDnaUtil.Application.Calculation = calcMode
     End Sub
 
     ''' <summary>gets target range in relation to origin range</summary>
@@ -158,12 +159,12 @@ Public Module ConfigFiles
            And originCell.Column + startCol > 0 And originCell.Column + startCol <= originCell.Parent.Columns.Count Then
             If InStr(1, relAddress, ":") > 0 Then
                 ' for multi cell relative ranges, final target offset is starting at the bottom right of relative range
-                theTargetRange = hostApp.Range(originCell, originCell.Offset(endRow - startRow, endCol - startCol))
+                theTargetRange = ExcelDnaUtil.Application.Range(originCell, originCell.Offset(endRow - startRow, endCol - startCol))
             Else
                 ' for single cell relative ranges, target range is just set to the offsetting row and column of the relative range.
                 theTargetRange = originCell
             End If
-            theTargetRange = hostApp.Worksheets(theSheetName).Range(theTargetRange.Offset(startRow, startCol).Address)
+            theTargetRange = ExcelDnaUtil.Application.Worksheets(theSheetName).Range(theTargetRange.Offset(startRow, startCol).Address)
             getRangeFromRelative = True
         Else
             theTargetRange = Nothing
@@ -205,7 +206,7 @@ Public Module ConfigFiles
             menuID = 0
             readAllFiles(ConfigStoreFolder, currentBar)
             specialConfigFoldersTempColl = Nothing
-            hostApp.StatusBar = String.Empty
+            ExcelDnaUtil.Application.StatusBar = String.Empty
             currentBar.SetAttributeValue("xmlns", "http://schemas.microsoft.com/office/2009/07/customui")
             ConfigMenuXML = currentBar.ToString()
         End If
@@ -275,7 +276,7 @@ Public Module ConfigFiles
             If DirList.Length = 0 Then Exit Sub
             ' recursively build branched menu structure from dirEntries
             For i = 0 To UBound(DirList)
-                hostApp.StatusBar = "Filling DBConfigs Menu: " & rootPath & "\" & DirList(i).Name
+                ExcelDnaUtil.Application.StatusBar = "Filling DBConfigs Menu: " & rootPath & "\" & DirList(i).Name
                 newBar = New XElement(xnspace + "menu")
                 menuID += 1
                 newBar.SetAttributeValue("id", "m" + menuID.ToString())
