@@ -533,7 +533,7 @@ Public Module Globals
                 cellcount += ExcelDnaUtil.Application.WorksheetFunction.CountIf(ws.Range("1:" & ws.Rows.Count), "<>")
             Next
             If cellcount > CLng(fetchSetting("maxCellCount", "100000")) Then
-                Dim retval As MsgBoxResult = MsgBox("This large workbook (>" & CLng(fetchSetting("maxCellCount", "100000")) & " filled cells) might take long to search for DB functions to refresh, continue ?" & vbCrLf & "Click Cancel to add DBFskip to this Workbook, avoiding this search in the future...", vbQuestion + vbYesNoCancel, "Refresh DB functions")
+                Dim retval As MsgBoxResult = MsgBox("This large workbook (" & cellcount.ToString() & " filled cells >" & CLng(fetchSetting("maxCellCount", "100000")) & ") might take long to search for DB functions to refresh, continue ?" & vbCrLf & "Click Cancel to add DBFskip to this Workbook, avoiding this search in the future...", vbQuestion + vbYesNoCancel, "Refresh DB functions")
                 If retval <> vbYes Then
                     If retval = vbCancel Then
                         Try
@@ -600,7 +600,7 @@ done:
             Next
             ' warn if above threshold
             If cellcount > CLng(fetchSetting("maxCellCount", "100000")) Then
-                Dim retval As MsgBoxResult = MsgBox("This large workbook (>" & CLng(fetchSetting("maxCellCount", "100000")) & " filled cells) might take long to search for legacy functions, continue ?" & vbCrLf & "Cancel to disable legacy function checking for this workbook ...", vbQuestion + MsgBoxStyle.YesNoCancel, "Legacy DBAddin functions")
+                Dim retval As MsgBoxResult = MsgBox("This large workbook (" & cellcount.ToString() & " filled cells >" & CLng(fetchSetting("maxCellCount", "100000")) & ") might take long to search for legacy functions, continue ?" & vbCrLf & "Cancel to disable legacy function checking for this workbook ...", vbQuestion + MsgBoxStyle.YesNoCancel, "Legacy DBAddin functions")
                 If retval <> vbYes Then
                     If retval = vbCancel Then
                         Try

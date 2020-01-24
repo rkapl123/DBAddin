@@ -17,13 +17,13 @@ Public Module Functions
     ''' we have to jump to the sheet containing the dbfunction and then activate back in case of refresh (sets relevant source/dbfunc to dirty)</summary>
     Public origWS As Excel.Worksheet
     ''' <summary>global collection of information transport containers between function and calc event procedure</summary>
-    Public StatusCollection As Collection = New Collection
+    Public StatusCollection As Collection
     ''' <summary>connection object: always use the same, if possible (same ConnectionString)</summary>
     Public conn As ADODB.Connection
     ''' <summary>connection string can be changed for calls with different connection strings</summary>
     Public CurrConnString As String
     ''' <summary>query cache for avoiding unnecessary recalculations/data retrievals by volatile inputs to DB Functions (now(), etc.)</summary>
-    Public queryCache As Collection = New Collection
+    Public queryCache As Collection
     ''' <summary>prevent multiple connection retries for each function in case of error</summary>
     Public dontTryConnection As Boolean
     ''' <summary>avoid entering dblistfetch/dbrowfetch functions during clearing of listfetch areas (before saving)</summary>

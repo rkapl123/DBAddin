@@ -309,17 +309,22 @@ Public Class AddInEvents
     ''' <summary>SheetDeactivate: gets defined named ranges for DBMapper invocation after sheet was deleted/added (changes index of sheets-> IDs!) and updates Ribbon with it</summary>
     ''' <param name="Sh"></param>
     Private Sub Application_SheetDeactivate(Sh As Object) Handles Application.SheetDeactivate
-        'Try : Globals.DBModifDefColl.Clear() : Catch ex As Exception : End Try
+        LogInfo("deactivated " & Sh.Name)
+        If Globals.DBModifDefColl.Count > 0 Then Globals.DBModifDefColl.Clear()
     End Sub
 
+    ''' <summary>needed to dispose timer used for delayed refreshing DB Functions (see Application_WorkbookSave)</summary>
+    ''' <param name="Wb"></param>
+    ''' <param name="Success"></param>
     Private Sub Application_WorkbookAfterSave(Wb As Workbook, Success As Boolean) Handles Application.WorkbookAfterSave
         aTimer.Dispose()
-        LogInfo("aTimer disposed...")
     End Sub
 
     Private Sub Application_WorkbookBeforeClose(Wb As Workbook, ByRef Cancel As Boolean) Handles Application.WorkbookBeforeClose
-        Try : Globals.DBModifDefColl.Clear() : Catch ex As Exception : End Try
-        Globals.theRibbon.Invalidate()
+        If Globals.DBModifDefColl.Count > 0 Then
+            Globals.DBModifDefColl.Clear()
+            Globals.theRibbon.Invalidate()
+        End If
     End Sub
 
 End Class
