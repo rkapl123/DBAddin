@@ -317,7 +317,10 @@ Public Class AddInEvents
     ''' <param name="Wb"></param>
     ''' <param name="Success"></param>
     Private Sub Application_WorkbookAfterSave(Wb As Workbook, Success As Boolean) Handles Application.WorkbookAfterSave
-        aTimer.Dispose()
+        If Not IsNothing(aTimer) Then
+            aTimer.Dispose()
+            aTimer = Nothing
+        End If
     End Sub
 
     Private Sub Application_WorkbookBeforeClose(Wb As Workbook, ByRef Cancel As Boolean) Handles Application.WorkbookBeforeClose

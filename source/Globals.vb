@@ -31,6 +31,8 @@ Public Module Globals
     Public CmdTimeout As Integer
     ''' <summary>default formatting style used in DBDate</summary>
     Public DefaultDBDateFormatting As Integer
+    '''<summary>the folder used to store predefined DB sheet definitions</summary>
+    Public DBSheetDefinitionsFolder As String
 
     ''' <summary>encapsulates setting fetching (currently registry)</summary>
     ''' <param name="Key">registry key to take value from</param>
@@ -628,9 +630,6 @@ done:
                         ExcelDnaUtil.Application.StatusBar = "Replacing legacy DB functions in active workbook (ESC to stop)"
                         ws.Cells.Replace(What:="DBAddin.Functions.", Replacement:="", LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, MatchCase:=False, SearchFormat:=False, ReplaceFormat:=False)
                     Next
-                    ExcelDnaUtil.Application.DisplayAlerts = True
-                    ExcelDnaUtil.Application.Calculation = xlcalcmode
-                    ExcelDnaUtil.Application.StatusBar = False
                 End If
             ElseIf showReponse Then
                 MsgBox("No legacy DBAddin functions found in active workbook.", vbExclamation + vbOKOnly, "Legacy DBAddin functions")
@@ -639,10 +638,10 @@ done:
             ExcelDnaUtil.Application.ActiveSheet.Cells.Find(What:="", After:=ExcelDnaUtil.Application.ActiveSheet.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
         Catch ex As Exception
             LogError("Error occured in replacing legacy DB functions: " & ex.Message)
-            ExcelDnaUtil.Application.DisplayAlerts = True
-            ExcelDnaUtil.Application.Calculation = xlcalcmode
-            ExcelDnaUtil.Application.StatusBar = False
         End Try
+        ExcelDnaUtil.Application.DisplayAlerts = True
+        ExcelDnaUtil.Application.Calculation = xlcalcmode
+        ExcelDnaUtil.Application.StatusBar = False
     End Sub
 
     ''' <summary>maintenance procedure to purge names used for dbfunctions from workbook</summary>
