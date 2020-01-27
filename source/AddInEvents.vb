@@ -81,7 +81,7 @@ Public Class AddInEvents
         If Not doDBMOnSave Then
             For Each DBmapSheet As String In DBModifDefColl.Keys
                 For Each dbmapdefkey As String In DBModifDefColl(DBmapSheet).Keys
-                    If DBModifSaveNeeded(DBmapSheet, dbmapdefkey) Then
+                    If DBModifDefColl(DBmapSheet).Item(dbmapdefkey).DBModifSaveNeeded() Then
                         Dim answer As MsgBoxResult = MsgBox("do the DB Modifications defined in Workbook ?", vbYesNo, "DB Modifications on Save")
                         If answer = vbYes Then doDBMOnSave = True
                         GoTo done
@@ -94,7 +94,7 @@ done:
         If Not Wb.ReadOnlyRecommended And doDBMOnSave Then
             For Each DBmapSheet As String In DBModifDefColl.Keys
                 For Each dbmapdefkey As String In DBModifDefColl(DBmapSheet).Keys
-                    doDBModif(DBmapSheet, dbmapdefkey)
+                    DBModifDefColl(DBmapSheet).Item(dbmapdefkey).doDBModif(WbIsSaving:=True)
                 Next
             Next
         End If
@@ -244,9 +244,9 @@ done:
                 Exit Sub
             Else
                 If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown Then
-                    createDBModif("DBSeqnce", targetDefName:=dbseqname, DBSequenceText:=DBModifDefColl("ID0").Item(dbseqname))
+                    createDBModif("DBSeqnce", targetDefName:=dbseqname, DBSequenceText:=DBModifDefColl("ID0").Item(dbseqname).paramText)
                 Else
-                    doDBSeqnce(cbName, DBModifDefColl("ID0").Item(dbseqname))
+                    DBModifDefColl("ID0").Item(dbseqname).doDBModif()
                 End If
             End If
         Else
@@ -262,11 +262,7 @@ done:
             If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown Then
                 createDBModif(Left(DBModifName, 8), targetRange:=targetRange)
             Else
-                If Left(DBModifName, 8) = "DBMapper" Then
-                    doDBMapper(targetRange)
-                ElseIf Left(DBModifName, 8) = "DBAction" Then
-                    doDBAction(targetRange)
-                End If
+                DBModifDefColl(targetRange.Parent.Name).Item(DBModifName).doDBModif()
             End If
         End If
     End Sub

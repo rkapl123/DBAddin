@@ -218,9 +218,9 @@ Public Class MenuHandler
                     Dim rngName As String = getDBModifNameFromRange(DBModifDefColl(curWsName).Item(nodeName))
                     Dim descName As String = IIf(nodeName = "", "Unnamed " + Left(rngName, 8), nodeName)
                     If Left(rngName, 8) = "DBMapper" Then
-                        xmlString = xmlString + "<button id='_" + nodeName + "' label='store " + descName + "' imageMso='TableSave' onAction='DBMapperClick' tag='" + curWsName + "' screentip='store DBMapper: " + descName + "' supertip='stores data defined in DBMapper (named " + descName + ") range on " + DBModifDefColl(curWsName).Item(nodeName).Parent.Name + "!" + DBModifDefColl(curWsName).Item(nodeName).Address + "' />"
+                        xmlString = xmlString + "<button id='_" + nodeName + "' label='store " + descName + "' imageMso='TableSave' onAction='DBMapperClick' tag='" + curWsName + "' screentip='store DBMapper: " + descName + "' supertip='stores data defined in DBMapper (named " + descName + ") range on " + DBModifDefColl(curWsName).Item(nodeName).targetRangeAddress + "' />"
                     ElseIf Left(rngName, 8) = "DBAction" Then
-                        xmlString = xmlString + "<button id='_" + nodeName + "' label='do " + descName + "' imageMso='TableIndexes' onAction='DBActionClick' tag='" + curWsName + "' screentip='do DBAction: " + descName + "' supertip='executes Action defined in DBAction (named " + descName + ") range on " + DBModifDefColl(curWsName).Item(nodeName).Parent.Name + "!" + DBModifDefColl(curWsName).Item(nodeName).Address + "' />"
+                        xmlString = xmlString + "<button id='_" + nodeName + "' label='do " + descName + "' imageMso='TableIndexes' onAction='DBActionClick' tag='" + curWsName + "' screentip='do DBAction: " + descName + "' supertip='executes Action defined in DBAction (named " + descName + ") range on " + DBModifDefColl(curWsName).Item(nodeName).targetRangeAddress + "' />"
                     End If
                 Next
             End If
@@ -264,9 +264,9 @@ Public Class MenuHandler
         Dim nodeName As String = Right(control.Id, Len(control.Id) - 1) ' remove underscore at beginning of id
         Try
             If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown Then
-                createDBModif("DBMapper", targetRange:=DBModifDefColl(control.Tag).Item(nodeName))
+                createDBModif("DBMapper", targetRange:=DBModifDefColl(control.Tag).Item(nodeName).TargetRange)
             Else
-                doDBMapper(DBModifDefColl(control.Tag).Item(nodeName))
+                DBModifDefColl(control.Tag).Item(nodeName).doDBModif()
             End If
         Catch ex As Exception
             LogError(ex.Message & ",control.Tag:" & control.Tag & ",nodeName:" & nodeName)
@@ -278,9 +278,9 @@ Public Class MenuHandler
         Dim nodeName As String = Right(control.Id, Len(control.Id) - 1)
         Try
             If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown Then
-                createDBModif("DBAction", targetRange:=DBModifDefColl(control.Tag).Item(nodeName))
+                createDBModif("DBAction", targetRange:=DBModifDefColl(control.Tag).Item(nodeName).TargetRange)
             Else
-                doDBAction(DBModifDefColl(control.Tag).Item(nodeName))
+                DBModifDefColl(control.Tag).Item(nodeName).doDBModif()
             End If
         Catch ex As Exception
             LogError(ex.Message & ",control.Tag:" & control.Tag & ",nodeName:" & nodeName)
@@ -292,10 +292,10 @@ Public Class MenuHandler
         Dim nodeName As String = Right(control.Id, Len(control.Id) - 1)
         Try
             If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown Then
-                createDBModif("DBSeqnce", targetDefName:=nodeName, DBSequenceText:=DBModifDefColl(control.Tag).Item(nodeName))
+                createDBModif("DBSeqnce", targetDefName:=nodeName, DBSequenceText:=DBModifDefColl(control.Tag).Item(nodeName).paramText)
             Else
                 ' DB sequence actions (the sequence to be done) are stored directly in DBMapperDefColl, so different invocation here
-                doDBSeqnce(nodeName, DBModifDefColl(control.Tag).Item(nodeName))
+                DBModifDefColl(control.Tag).Item(nodeName).doDBModif()
             End If
         Catch ex As Exception
             LogError(ex.Message & ",control.Tag:" & control.Tag & ",nodeName:" & nodeName)

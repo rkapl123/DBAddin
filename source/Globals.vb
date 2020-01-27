@@ -14,8 +14,8 @@ Public Module Globals
     Public theRibbon As CustomUI.IRibbonUI
     ''' <summary>environment definitions</summary>
     Public environdefs As String() = {}
-    ''' <summary>DBModif definition collections (for labels (key of nested dictionary) and target ranges (value of nested dictionary))</summary>
-    Public DBModifDefColl As Dictionary(Of String, Dictionary(Of String, Object))
+    ''' <summary>DBModif definition collections (for labels (key of nested dictionary) and DBModifiers (value of nested dictionary))</summary>
+    Public DBModifDefColl As Dictionary(Of String, Dictionary(Of String, DBModif))
     ''' <summary>the selected event level in the About box</summary>
     Public EventLevelSelected As String
     ''' <summary>the log listener</summary>
@@ -394,46 +394,6 @@ Public Module Globals
         Catch ex As Exception
             existsSheet = False
         End Try
-    End Function
-
-    ''' <summary>checks whether ADO type theType is a date or time type</summary>
-    ''' <param name="theType"></param>
-    ''' <returns>True if DateTime</returns>
-    Public Function checkIsDateTime(theType As ADODB.DataTypeEnum) As Boolean
-        checkIsDateTime = False
-        If theType = ADODB.DataTypeEnum.adDate Or theType = ADODB.DataTypeEnum.adDBDate Or theType = ADODB.DataTypeEnum.adDBTime Or theType = ADODB.DataTypeEnum.adDBTimeStamp Then
-            checkIsDateTime = True
-        End If
-    End Function
-
-    ''' <summary>checks whether ADO type theType is a date type</summary>
-    ''' <param name="theType"></param>
-    ''' <returns>True if Date</returns>
-    Public Function checkIsDate(theType As ADODB.DataTypeEnum) As Boolean
-        checkIsDate = False
-        If theType = ADODB.DataTypeEnum.adDate Or theType = ADODB.DataTypeEnum.adDBDate Then
-            checkIsDate = True
-        End If
-    End Function
-
-    ''' <summary>checks whether ADO type theType is a time type</summary>
-    ''' <param name="theType"></param>
-    ''' <returns>True if Time</returns>
-    Public Function checkIsTime(theType As ADODB.DataTypeEnum) As Boolean
-        checkIsTime = False
-        If theType = ADODB.DataTypeEnum.adDBTime Or theType = ADODB.DataTypeEnum.adDBTimeStamp Then
-            checkIsTime = True
-        End If
-    End Function
-
-    ''' <summary>checks whether ADO type theType is a numeric type</summary>
-    ''' <param name="theType"></param>
-    ''' <returns>True if numeric</returns>
-    Public Function checkIsNumeric(theType As ADODB.DataTypeEnum) As Boolean
-        checkIsNumeric = False
-        If theType = ADODB.DataTypeEnum.adNumeric Or theType = ADODB.DataTypeEnum.adInteger Or theType = ADODB.DataTypeEnum.adTinyInt Or theType = ADODB.DataTypeEnum.adSmallInt Or theType = ADODB.DataTypeEnum.adBigInt Or theType = ADODB.DataTypeEnum.adUnsignedInt Or theType = ADODB.DataTypeEnum.adUnsignedTinyInt Or theType = ADODB.DataTypeEnum.adUnsignedSmallInt Or theType = ADODB.DataTypeEnum.adDouble Or theType = ADODB.DataTypeEnum.adSingle Or theType = ADODB.DataTypeEnum.adCurrency Or theType = ADODB.DataTypeEnum.adUnsignedBigInt Then
-            checkIsNumeric = True
-        End If
     End Function
 
     ''' <summary>gets DB Modification Name (DBMapper or DBAction) from theRange</summary>

@@ -37,14 +37,14 @@ Public Class DBModifCreate
                     If TypeName(docproperty.Value) = "String" And Strings.Left(docproperty.Name, 8) = "DBSeqnce" Then
                         Dim dbseqName As String = Replace(docproperty.Name, "DBSeqnce", "")
                         Dim params() As String = Split(docproperty.Value, ",")
-                        Dim storeDBMapOnSave As Boolean = Convert.ToBoolean(params(0))
+                        Dim execSeqElemOnSave As Boolean = Convert.ToBoolean(params(0))
                         Dim i As Integer
                         For i = 1 To UBound(params)
                             Dim definition() As String = Split(params(i), ":")
                             If definition(0) = Me.Tag AndAlso definition(2) = Me.DBModifName.Text AndAlso
                                 DBModifDefColl.ContainsKey(definition(1)) AndAlso DBModifDefColl(definition(1)).ContainsKey(definition(2)) AndAlso
-                                Me.execOnSave.Checked AndAlso storeDBMapOnSave Then
-                                Dim retval As MsgBoxResult = MsgBox(Me.Tag & Me.DBModifName.Text & " in " & definition(1) & "!" & DBModifDefColl(definition(1)).Item(definition(2)).Address & " will be executed twice on saving, because it is part of DBSequence " & dbseqName & ", which is also executed on saving." & vbCrLf & "In case this is not intended, disable 'Execute on Save' here!", MsgBoxStyle.Critical + vbOKCancel, "DBModification Validation")
+                                Me.execOnSave.Checked AndAlso execSeqElemOnSave Then
+                                Dim retval As MsgBoxResult = MsgBox(Me.Tag & Me.DBModifName.Text & " in " & definition(1) & "!" & DBModifDefColl(definition(1)).Item(definition(2)).targetRangeAddress & " will be executed twice on saving, because it is part of DBSequence " & dbseqName & ", which is also executed on saving." & vbCrLf & "In case this is not intended, disable 'Execute on Save' here!", MsgBoxStyle.Critical + vbOKCancel, "DBModification Validation")
                                 If retval = vbCancel Then Exit Sub
                             End If
                         Next

@@ -109,6 +109,8 @@
     </Compile>
     <Compile Include="AddInEvents.vb" />
     <Compile Include="ConfigFiles.vb" />
+    <Compile Include="DBSheetConfig.vb" />
+    <Compile Include="DBSheetHandler.vb" />
     <Compile Include="Globals.vb" />
     <Compile Include="DBModifCreate.Designer.vb">
       <DependentUpon>DBModifCreate.vb</DependentUpon>
