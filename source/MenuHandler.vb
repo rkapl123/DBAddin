@@ -336,6 +336,7 @@ Public Class MenuHandler
         ElseIf control.Tag = "DBRowFetch" Then
             createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBRowFetch("""","""",TRUE,R[1]C:R[1]C[10])"})
         ElseIf control.Tag = "DBSetQueryPivot" Then
+            ' insert dummy cmd sql definition for pivot table
             Dim pivotcache As Excel.PivotCache = ExcelDnaUtil.Application.ActiveWorkbook.PivotCaches().Add(Excel.XlPivotTableSourceType.xlExternal)
             pivotcache.Connection = "OLEDB;" & Globals.ConstConnString
             pivotcache.MaintainConnection = False
@@ -351,6 +352,7 @@ Public Class MenuHandler
             createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBSetQuery("""","""",R[1]C)"})
         ElseIf control.Tag = "DBSetQueryListObject" Then
             Try
+                ' insert dummy cmd sql definition for listobject table
                 With ExcelDnaUtil.Application.ActiveSheet.ListObjects.Add(SourceType:=Excel.XlListObjectSourceType.xlSrcQuery, Source:="OLEDB;" & Globals.ConstConnString, Destination:=ExcelDnaUtil.Application.ActiveCell.Offset(0, 1)).QueryTable
                     .CommandType = Excel.XlCmdType.xlCmdSql
                     .CommandText = "select CURRENT_TIMESTAMP" ' this should be sufficient for all ansi sql compliant databases

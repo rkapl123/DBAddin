@@ -109,8 +109,6 @@
     </Compile>
     <Compile Include="AddInEvents.vb" />
     <Compile Include="ConfigFiles.vb" />
-    <Compile Include="DBSheetConfig.vb" />
-    <Compile Include="DBSheetHandler.vb" />
     <Compile Include="Globals.vb" />
     <Compile Include="DBModifCreate.Designer.vb">
       <DependentUpon>DBModifCreate.vb</DependentUpon>
@@ -152,6 +150,7 @@
   <ItemGroup>
     <EmbeddedResource Include="AboutBox.resx">
       <DependentUpon>AboutBox.vb</DependentUpon>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="DBModifCreate.resx">
       <DependentUpon>DBModifCreate.vb</DependentUpon>
@@ -161,6 +160,7 @@
       <CustomToolNamespace>My.Resources</CustomToolNamespace>
       <Generator>VbMyResourcesResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.vb</LastGenOutput>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />

@@ -78,33 +78,33 @@ Public Module Functions
         formatDBDate = ""
         If Int(datVal) = datVal Then
             If formatting = 0 Then
-                formatDBDate = "'" & Format$(Date.FromOADate(datVal), "yyyyMMdd") & "'"
+                formatDBDate = "'" & Format(Date.FromOADate(datVal), "yyyyMMdd") & "'"
             ElseIf formatting = 1 Then
-                formatDBDate = "DATE '" & Format$(Date.FromOADate(datVal), "yyyy-MM-dd") & "'"
+                formatDBDate = "DATE '" & Format(Date.FromOADate(datVal), "yyyy-MM-dd") & "'"
             ElseIf formatting = 2 Then
-                formatDBDate = "{d '" & Format$(Date.FromOADate(datVal), "yyyy-MM-dd") & "'}"
+                formatDBDate = "{d '" & Format(Date.FromOADate(datVal), "yyyy-MM-dd") & "'}"
             ElseIf formatting = 3 Then
-                formatDBDate = "#" & Format$(Date.FromOADate(datVal), "yyyy-MM-dd") & "#"
+                formatDBDate = "#" & Format(Date.FromOADate(datVal), "yyyy-MM-dd") & "#"
             End If
         ElseIf CInt(datVal) > 1 Then
             If formatting = 0 Then
-                formatDBDate = "'" & Format$(Date.FromOADate(datVal), "yyyyMMdd hh:mm:ss") & "'"
+                formatDBDate = "'" & Format(Date.FromOADate(datVal), "yyyyMMdd hh:mm:ss") & "'"
             ElseIf formatting = 1 Then
-                formatDBDate = "timestamp '" & Format$(Date.FromOADate(datVal), "yyyy-MM-dd hh:mm:ss") & "'"
+                formatDBDate = "timestamp '" & Format(Date.FromOADate(datVal), "yyyy-MM-dd hh:mm:ss") & "'"
             ElseIf formatting = 2 Then
-                formatDBDate = "{ts '" & Format$(Date.FromOADate(datVal), "yyyy-MM-dd hh:mm:ss") & "'}"
+                formatDBDate = "{ts '" & Format(Date.FromOADate(datVal), "yyyy-MM-dd hh:mm:ss") & "'}"
             ElseIf formatting = 3 Then
-                formatDBDate = "#" & Format$(Date.FromOADate(datVal), "yyyy-MM-dd hh:mm:ss") & "#"
+                formatDBDate = "#" & Format(Date.FromOADate(datVal), "yyyy-MM-dd hh:mm:ss") & "#"
             End If
         Else
             If formatting = 0 Then
-                formatDBDate = "'" & Format$(Date.FromOADate(datVal), "hh:mm:ss") & "'"
+                formatDBDate = "'" & Format(Date.FromOADate(datVal), "hh:mm:ss") & "'"
             ElseIf formatting = 1 Then
-                formatDBDate = "time '" & Format$(Date.FromOADate(datVal), "hh:mm:ss") & "'"
+                formatDBDate = "time '" & Format(Date.FromOADate(datVal), "hh:mm:ss") & "'"
             ElseIf formatting = 2 Then
-                formatDBDate = "{t '" & Format$(Date.FromOADate(datVal), "hh:mm:ss") & "'}"
+                formatDBDate = "{t '" & Format(Date.FromOADate(datVal), "hh:mm:ss") & "'}"
             ElseIf formatting = 3 Then
-                formatDBDate = "#" & Format$(Date.FromOADate(datVal), "hh:mm:ss") & "#"
+                formatDBDate = "#" & Format(Date.FromOADate(datVal), "hh:mm:ss") & "#"
             End If
         End If
     End Function

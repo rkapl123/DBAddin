@@ -44,12 +44,13 @@ Partial Class DBModifCreate
         Me.ToolTip1 = New System.Windows.Forms.ToolTip(Me.components)
         Me.envSel = New System.Windows.Forms.ComboBox()
         Me.DBSeqenceDataGrid = New System.Windows.Forms.DataGridView()
-        Me.EnvironmentLabel = New System.Windows.Forms.Label()
         Me.TargetRangeAddress = New System.Windows.Forms.Label()
-        Me.TargetRangeLabel = New System.Windows.Forms.Label()
         Me.up = New System.Windows.Forms.Button()
         Me.down = New System.Windows.Forms.Button()
         Me.CBCreate = New System.Windows.Forms.CheckBox()
+        Me.CUDflags = New System.Windows.Forms.CheckBox()
+        Me.EnvironmentLabel = New System.Windows.Forms.Label()
+        Me.TargetRangeLabel = New System.Windows.Forms.Label()
         Me.TableLayoutPanel1.SuspendLayout()
         CType(Me.DBSeqenceDataGrid, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
@@ -62,7 +63,7 @@ Partial Class DBModifCreate
         Me.TableLayoutPanel1.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50.0!))
         Me.TableLayoutPanel1.Controls.Add(Me.OK_Button, 0, 0)
         Me.TableLayoutPanel1.Controls.Add(Me.Cancel_Button, 1, 0)
-        Me.TableLayoutPanel1.Location = New System.Drawing.Point(275, 382)
+        Me.TableLayoutPanel1.Location = New System.Drawing.Point(315, 382)
         Me.TableLayoutPanel1.Name = "TableLayoutPanel1"
         Me.TableLayoutPanel1.RowCount = 1
         Me.TableLayoutPanel1.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50.0!))
@@ -92,7 +93,7 @@ Partial Class DBModifCreate
         '
         Me.DBModifName.Location = New System.Drawing.Point(161, 25)
         Me.DBModifName.Name = "DBModifName"
-        Me.DBModifName.Size = New System.Drawing.Size(259, 20)
+        Me.DBModifName.Size = New System.Drawing.Size(297, 20)
         Me.DBModifName.TabIndex = 1
         Me.ToolTip1.SetToolTip(Me.DBModifName, resources.GetString("DBModifName.ToolTip"))
         '
@@ -109,7 +110,7 @@ Partial Class DBModifCreate
         '
         Me.Tablename.Location = New System.Drawing.Point(161, 77)
         Me.Tablename.Name = "Tablename"
-        Me.Tablename.Size = New System.Drawing.Size(259, 20)
+        Me.Tablename.Size = New System.Drawing.Size(297, 20)
         Me.Tablename.TabIndex = 3
         Me.ToolTip1.SetToolTip(Me.Tablename, "Database Table, where Data is to be stored")
         '
@@ -117,7 +118,7 @@ Partial Class DBModifCreate
         '
         Me.PrimaryKeys.Location = New System.Drawing.Point(161, 103)
         Me.PrimaryKeys.Name = "PrimaryKeys"
-        Me.PrimaryKeys.Size = New System.Drawing.Size(259, 20)
+        Me.PrimaryKeys.Size = New System.Drawing.Size(297, 20)
         Me.PrimaryKeys.TabIndex = 4
         Me.ToolTip1.SetToolTip(Me.PrimaryKeys, "String containing primary Key names for updating table data, comma separated")
         '
@@ -125,7 +126,7 @@ Partial Class DBModifCreate
         '
         Me.Database.Location = New System.Drawing.Point(161, 51)
         Me.Database.Name = "Database"
-        Me.Database.Size = New System.Drawing.Size(259, 20)
+        Me.Database.Size = New System.Drawing.Size(297, 20)
         Me.Database.TabIndex = 2
         Me.ToolTip1.SetToolTip(Me.Database, "Database to store DBMaps Data  into/ do DBActions")
         '
@@ -133,7 +134,7 @@ Partial Class DBModifCreate
         '
         Me.IgnoreColumns.Location = New System.Drawing.Point(161, 129)
         Me.IgnoreColumns.Name = "IgnoreColumns"
-        Me.IgnoreColumns.Size = New System.Drawing.Size(259, 20)
+        Me.IgnoreColumns.Size = New System.Drawing.Size(297, 20)
         Me.IgnoreColumns.TabIndex = 5
         Me.ToolTip1.SetToolTip(Me.IgnoreColumns, "columns to be ignored (e.g. helper columns), comma separated")
         '
@@ -141,7 +142,7 @@ Partial Class DBModifCreate
         '
         Me.addStoredProc.Location = New System.Drawing.Point(161, 155)
         Me.addStoredProc.Name = "addStoredProc"
-        Me.addStoredProc.Size = New System.Drawing.Size(259, 20)
+        Me.addStoredProc.Size = New System.Drawing.Size(297, 20)
         Me.addStoredProc.TabIndex = 6
         Me.ToolTip1.SetToolTip(Me.addStoredProc, "additional stored procedure to be executed after saving")
         '
@@ -193,11 +194,11 @@ Partial Class DBModifCreate
         'insertIfMissing
         '
         Me.insertIfMissing.AutoSize = True
-        Me.insertIfMissing.Location = New System.Drawing.Point(126, 187)
+        Me.insertIfMissing.Location = New System.Drawing.Point(122, 187)
         Me.insertIfMissing.Name = "insertIfMissing"
-        Me.insertIfMissing.Size = New System.Drawing.Size(99, 17)
+        Me.insertIfMissing.Size = New System.Drawing.Size(97, 17)
         Me.insertIfMissing.TabIndex = 7
-        Me.insertIfMissing.Text = "Insert If Missing"
+        Me.insertIfMissing.Text = "Insert if missing"
         Me.ToolTip1.SetToolTip(Me.insertIfMissing, "if set, then insert row into table if primary key is missing there. Default = Fal" &
         "se (only update)")
         Me.insertIfMissing.UseVisualStyleBackColor = True
@@ -207,9 +208,9 @@ Partial Class DBModifCreate
         Me.execOnSave.AutoSize = True
         Me.execOnSave.Location = New System.Drawing.Point(12, 187)
         Me.execOnSave.Name = "execOnSave"
-        Me.execOnSave.Size = New System.Drawing.Size(108, 17)
+        Me.execOnSave.Size = New System.Drawing.Size(106, 17)
         Me.execOnSave.TabIndex = 8
-        Me.execOnSave.Text = "Execute on Save"
+        Me.execOnSave.Text = "Execute on save"
         Me.ToolTip1.SetToolTip(Me.execOnSave, "should DBMap also be saved/DBAction/DBSequence be done on Excel Workbook Saving? " &
         "(default no)")
         Me.execOnSave.UseVisualStyleBackColor = True
@@ -217,7 +218,7 @@ Partial Class DBModifCreate
         'envSel
         '
         Me.envSel.FormattingEnabled = True
-        Me.envSel.Location = New System.Drawing.Point(305, 183)
+        Me.envSel.Location = New System.Drawing.Point(343, 183)
         Me.envSel.Name = "envSel"
         Me.envSel.Size = New System.Drawing.Size(115, 21)
         Me.envSel.TabIndex = 9
@@ -232,45 +233,27 @@ Partial Class DBModifCreate
         Me.DBSeqenceDataGrid.Location = New System.Drawing.Point(12, 214)
         Me.DBSeqenceDataGrid.MultiSelect = False
         Me.DBSeqenceDataGrid.Name = "DBSeqenceDataGrid"
-        Me.DBSeqenceDataGrid.Size = New System.Drawing.Size(408, 162)
+        Me.DBSeqenceDataGrid.Size = New System.Drawing.Size(446, 162)
         Me.DBSeqenceDataGrid.TabIndex = 10
         Me.ToolTip1.SetToolTip(Me.DBSeqenceDataGrid, "Define the steps for the DB Sequence in the order of their desired execution here" &
         ". Any DBMapper and/or DBAction can be selected.")
-        '
-        'EnvironmentLabel
-        '
-        Me.EnvironmentLabel.AutoSize = True
-        Me.EnvironmentLabel.Location = New System.Drawing.Point(231, 188)
-        Me.EnvironmentLabel.Name = "EnvironmentLabel"
-        Me.EnvironmentLabel.Size = New System.Drawing.Size(69, 13)
-        Me.EnvironmentLabel.TabIndex = 6
-        Me.EnvironmentLabel.Text = "Environment:"
         '
         'TargetRangeAddress
         '
         Me.TargetRangeAddress.AutoSize = True
         Me.TargetRangeAddress.Font = New System.Drawing.Font("Microsoft Sans Serif", 8.25!, System.Drawing.FontStyle.Underline, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.TargetRangeAddress.ForeColor = System.Drawing.Color.DodgerBlue
-        Me.TargetRangeAddress.Location = New System.Drawing.Point(56, 390)
+        Me.TargetRangeAddress.Location = New System.Drawing.Point(43, 391)
         Me.TargetRangeAddress.Name = "TargetRangeAddress"
         Me.TargetRangeAddress.Size = New System.Drawing.Size(108, 13)
         Me.TargetRangeAddress.TabIndex = 11
         Me.TargetRangeAddress.Text = "TargetRangeAddress"
         Me.ToolTip1.SetToolTip(Me.TargetRangeAddress, "click to select Target Range with Data for DBMapper or SQL DML for DBAction")
         '
-        'TargetRangeLabel
-        '
-        Me.TargetRangeLabel.AutoSize = True
-        Me.TargetRangeLabel.Location = New System.Drawing.Point(9, 390)
-        Me.TargetRangeLabel.Name = "TargetRangeLabel"
-        Me.TargetRangeLabel.Size = New System.Drawing.Size(41, 13)
-        Me.TargetRangeLabel.TabIndex = 2
-        Me.TargetRangeLabel.Text = "Target:"
-        '
         'up
         '
         Me.up.Font = New System.Drawing.Font("Courier New", 9.75!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        Me.up.Location = New System.Drawing.Point(126, 388)
+        Me.up.Location = New System.Drawing.Point(161, 389)
         Me.up.Name = "up"
         Me.up.Size = New System.Drawing.Size(18, 19)
         Me.up.TabIndex = 12
@@ -280,7 +263,7 @@ Partial Class DBModifCreate
         '
         'down
         '
-        Me.down.Location = New System.Drawing.Point(150, 388)
+        Me.down.Location = New System.Drawing.Point(185, 389)
         Me.down.Name = "down"
         Me.down.Size = New System.Drawing.Size(18, 19)
         Me.down.TabIndex = 12
@@ -291,7 +274,7 @@ Partial Class DBModifCreate
         'CBCreate
         '
         Me.CBCreate.AutoSize = True
-        Me.CBCreate.Location = New System.Drawing.Point(183, 390)
+        Me.CBCreate.Location = New System.Drawing.Point(225, 391)
         Me.CBCreate.Name = "CBCreate"
         Me.CBCreate.Size = New System.Drawing.Size(74, 17)
         Me.CBCreate.TabIndex = 13
@@ -299,28 +282,59 @@ Partial Class DBModifCreate
         Me.ToolTip1.SetToolTip(Me.CBCreate, "Create CommandButton on active sheet for this DB Modifier")
         Me.CBCreate.UseVisualStyleBackColor = True
         '
+        'CUDflags
+        '
+        Me.CUDflags.AutoSize = True
+        Me.CUDflags.Location = New System.Drawing.Point(225, 187)
+        Me.CUDflags.Name = "CUDflags"
+        Me.CUDflags.Size = New System.Drawing.Size(84, 17)
+        Me.CUDflags.TabIndex = 14
+        Me.CUDflags.Text = "C/U/D flags"
+        Me.ToolTip1.SetToolTip(Me.CUDflags, "if set, then insert row into table if primary key is missing there. Default = Fal" &
+        "se (only update)")
+        Me.CUDflags.UseVisualStyleBackColor = True
+        '
+        'EnvironmentLabel
+        '
+        Me.EnvironmentLabel.AutoSize = True
+        Me.EnvironmentLabel.Location = New System.Drawing.Point(312, 188)
+        Me.EnvironmentLabel.Name = "EnvironmentLabel"
+        Me.EnvironmentLabel.Size = New System.Drawing.Size(29, 13)
+        Me.EnvironmentLabel.TabIndex = 6
+        Me.EnvironmentLabel.Text = "Env:"
+        '
+        'TargetRangeLabel
+        '
+        Me.TargetRangeLabel.AutoSize = True
+        Me.TargetRangeLabel.Location = New System.Drawing.Point(9, 391)
+        Me.TargetRangeLabel.Name = "TargetRangeLabel"
+        Me.TargetRangeLabel.Size = New System.Drawing.Size(41, 13)
+        Me.TargetRangeLabel.TabIndex = 2
+        Me.TargetRangeLabel.Text = "Target:"
+        '
         'DBModifCreate
         '
         Me.AcceptButton = Me.OK_Button
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.CancelButton = Me.Cancel_Button
-        Me.ClientSize = New System.Drawing.Size(433, 423)
+        Me.ClientSize = New System.Drawing.Size(473, 423)
+        Me.Controls.Add(Me.TargetRangeAddress)
+        Me.Controls.Add(Me.TargetRangeLabel)
+        Me.Controls.Add(Me.CUDflags)
+        Me.Controls.Add(Me.insertIfMissing)
         Me.Controls.Add(Me.CBCreate)
         Me.Controls.Add(Me.down)
         Me.Controls.Add(Me.up)
-        Me.Controls.Add(Me.TargetRangeAddress)
         Me.Controls.Add(Me.DBSeqenceDataGrid)
         Me.Controls.Add(Me.EnvironmentLabel)
         Me.Controls.Add(Me.envSel)
         Me.Controls.Add(Me.execOnSave)
-        Me.Controls.Add(Me.insertIfMissing)
         Me.Controls.Add(Me.AdditionalStoredProcLabel)
         Me.Controls.Add(Me.IgnoreColumnsLabel)
         Me.Controls.Add(Me.DatabaseLabel)
         Me.Controls.Add(Me.PrimaryKeysLabel)
         Me.Controls.Add(Me.TablenameLabel)
-        Me.Controls.Add(Me.TargetRangeLabel)
         Me.Controls.Add(Me.NameLabel)
         Me.Controls.Add(Me.addStoredProc)
         Me.Controls.Add(Me.IgnoreColumns)
@@ -367,4 +381,5 @@ Partial Class DBModifCreate
     Friend WithEvents up As Windows.Forms.Button
     Friend WithEvents down As Windows.Forms.Button
     Friend WithEvents CBCreate As Windows.Forms.CheckBox
+    Friend WithEvents CUDflags As Windows.Forms.CheckBox
 End Class

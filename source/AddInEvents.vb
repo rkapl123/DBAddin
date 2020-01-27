@@ -77,32 +77,32 @@ Public Class AddInEvents
         Try
             If Wb.CustomDocumentProperties("doDBMOnSave").Value Then doDBMOnSave = True
         Catch ex As Exception : End Try
-        If Not doDBMOnSave And DBModifDefColl.Count > 0 Then
-            Dim answer As MsgBoxResult = MsgBox("do DB Modifications defined in Workbook ?", vbYesNo, "DB Modifications on Save")
-            If answer = vbYes Then doDBMOnSave = True
-        End If
-
-        ' save all DBmaps/DBActions/DBSequences on saving except Readonly is recommended on this workbook
-        Dim DBmapSheet As String
-        If Not Wb.ReadOnlyRecommended And doDBMOnSave Then
-            For Each DBmapSheet In DBModifDefColl.Keys
-                For Each dbmapdefkey In DBModifDefColl(DBmapSheet).Keys
-                    If Left(dbmapdefkey, 8) = "DBSeqnce" Then
-                        ' DB sequence actions (the sequence to be done) are stored directly in DBMapperDefColl, so different invocation here
-                        doDBSeqnce(dbmapdefkey, DBModifDefColl(DBmapSheet).Item(dbmapdefkey), WbIsSaving:=True)
-                    Else
-                        Dim rngName As String = getDBModifNameFromRange(DBModifDefColl(DBmapSheet).Item(dbmapdefkey))
-                        If Left(rngName, 8) = "DBMapper" Then
-                            doDBMapper(DBModifDefColl(DBmapSheet).Item(dbmapdefkey), WbIsSaving:=True)
-                        ElseIf Left(rngName, 8) = "DBAction" Then
-                            doDBAction(DBModifDefColl(DBmapSheet).Item(dbmapdefkey), WbIsSaving:=True)
-                        End If
+        ' if overriding flag not given, ask for saving if this is necessary for any DBmodifier...
+        If Not doDBMOnSave Then
+            For Each DBmapSheet As String In DBModifDefColl.Keys
+                For Each dbmapdefkey As String In DBModifDefColl(DBmapSheet).Keys
+                    If DBModifSaveNeeded(DBmapSheet, dbmapdefkey) Then
+                        Dim answer As MsgBoxResult = MsgBox("do the DB Modifications defined in Workbook ?", vbYesNo, "DB Modifications on Save")
+                        If answer = vbYes Then doDBMOnSave = True
+                        GoTo done
                     End If
                 Next
             Next
         End If
+done:
+        ' save all DBmaps/DBActions/DBSequences on saving except Readonly is recommended on this workbook
+        If Not Wb.ReadOnlyRecommended And doDBMOnSave Then
+            For Each DBmapSheet As String In DBModifDefColl.Keys
+                For Each dbmapdefkey As String In DBModifDefColl(DBmapSheet).Keys
+                    doDBModif(DBmapSheet, dbmapdefkey)
+                Next
+            Next
+        End If
+
+        ' clear DB Functions content and refresh afterwards..
         DBFCContentColl = New Collection
         DBFCAllColl = New Collection
+        ' first insert docproperty information into collections for easier handling
         Try
             Dim docproperty As Microsoft.Office.Core.DocumentProperty
             For Each docproperty In Wb.CustomDocumentProperties
@@ -116,6 +116,7 @@ Public Class AddInEvents
             LogError("Error getting docproperties: " & Wb.Name & ex.Message)
         End Try
         dontCalcWhileClearing = True
+        ' now clear content/all
         Try
             For Each ws In Wb.Worksheets
                 If IsNothing(ws) Then
@@ -155,11 +156,12 @@ Public Class AddInEvents
                 Next
                 lastWs = ws
             Next
-            ' reset the cell find dialog....
+            ' always reset the cell find dialog....
             searchCell = Nothing
             searchCell = lastWs.Cells.Find(What:="", After:=lastWs.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
             lastWs = Nothing
-            ' refresh after save event
+
+            ' refresh content area of dbfunctions after save event, requires execution out of context of Application_WorkbookSave
             If doRefreshDBFuncsAfterSave And (DBFCContentColl.Count > 0 Or DBFCAllColl.Count > 0) Then
                 aTimer = New Timers.Timer With {
                     .Interval = 100,

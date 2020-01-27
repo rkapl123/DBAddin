@@ -11,6 +11,51 @@ Public Module DBModif
     ''' <summary>main db connection For mapper</summary>
     Public dbcnn As ADODB.Connection
 
+    ''' <summary>do abstraction procedure for a given DBModifier in current workbook defined by DBmapSheet/dbmapdefkey</summary>
+    ''' <param name="DBmapSheet">sheet of DBModifier</param>
+    ''' <param name="dbmapdefkey">key (name) of of DBModifier</param>
+    Public Sub doDBModif(DBmapSheet As String, dbmapdefkey As String, Optional WbIsSaving As Boolean = True)
+        If Left(dbmapdefkey, 8) = "DBSeqnce" Then
+            ' DB sequence actions (the sequence to be done) are stored directly in DBMapperDefColl, so different invocation here
+            doDBSeqnce(dbmapdefkey, DBModifDefColl(DBmapSheet).Item(dbmapdefkey), WbIsSaving:=WbIsSaving)
+        Else
+            Dim rngName As String = getDBModifNameFromRange(DBModifDefColl(DBmapSheet).Item(dbmapdefkey))
+            If Left(rngName, 8) = "DBMapper" Then
+                doDBMapper(DBModifDefColl(DBmapSheet).Item(dbmapdefkey), WbIsSaving:=WbIsSaving)
+            ElseIf Left(rngName, 8) = "DBAction" Then
+                doDBAction(DBModifDefColl(DBmapSheet).Item(dbmapdefkey), WbIsSaving:=WbIsSaving)
+            End If
+        End If
+    End Sub
+
+    ''' <summary>is saving needed for the DBModifier defined by DBmapSheet/dbmapdefkey</summary>
+    ''' <param name="DBmapSheet">sheet of DBModifier</param>
+    ''' <param name="dbmapdefkey">key (name) of of DBModifier</param>
+    ''' <returns>true for saving necessary</returns>
+    Public Function DBModifSaveNeeded(DBmapSheet As String, dbmapdefkey As String) As Boolean
+        DBModifSaveNeeded = False
+        If Left(dbmapdefkey, 8) = "DBSeqnce" Then
+            DBModifSaveNeeded = Convert.ToBoolean(Split(DBModifDefColl(DBmapSheet).Item(dbmapdefkey), ",")(0))
+        Else
+            Dim paramTargetName As String = getDBModifNameFromRange(DBModifDefColl(DBmapSheet).Item(dbmapdefkey))
+            Dim tableName As String = ""                         ' Database Table, where Data is to be stored
+            Dim primKeysStr As String = ""                       ' String containing primary Key names for updating table data, comma separated
+            Dim database As String = ""                          ' Database to store to
+            Dim env As Integer = Globals.selectedEnvironment + 1 ' Environment where connection id should be taken from (if not existing, take from selectedEnvironment)
+            Dim insertIfMissing As Boolean = False               ' if set, then insert row into table if primary key is missing there. Default = False (only update)
+            Dim executeAdditionalProc As String = ""             ' additional stored procedure to be executed after saving
+            Dim ignoreColumns As String = ""                     ' columns to be ignored (helper columns)
+            Dim execOnSave As Boolean = False                    ' should DBMap be saved on Excel Saving? (default no)
+            Dim paramText As String = ""
+            Try
+                paramText = DBModifDefColl(DBmapSheet).Item(dbmapdefkey).Parent.Parent.CustomDocumentProperties(paramTargetName).Value
+            Catch ex As Exception : End Try
+            ' set up parameters
+            If Not getParametersFromParamText(paramText, paramType:=Left(dbmapdefkey, 8), env:=env, database:=database, tableName:=tableName, primKeysStr:=primKeysStr, insertIfMissing:=insertIfMissing, executeAdditionalProc:=executeAdditionalProc, ignoreColumns:=ignoreColumns, execOnSave:=execOnSave) Then Exit Function
+            DBModifSaveNeeded = execOnSave
+        End If
+    End Function
+
     ''' <summary>execute sequence of DBAction and DBMapper invocations defined in DBSequenceText</summary>
     ''' <param name="DBSequenceName">Name of DB Sequence</param>
     ''' <param name="DBSequenceText">Definition of DB Sequence: (storeDBMapOnSave flag),(Type1:WsheetID1:Name1),(Type2:WsheetID2:Name2)...</param>
@@ -59,7 +104,8 @@ Public Module DBModif
 
         Dim DBActionName As String = getDBModifNameFromRange(DataRange)
         ' set up parameters
-        If Not getParametersFromTargetRange(paramType:="DBAction", paramTarget:=DataRange, env:=env, database:=database, execOnSave:=execOnSave) Then Exit Sub
+        Dim paramText As String = getParamTextFromTargetRange(paramTarget:=DataRange, paramType:="DBAction")
+        If Not getParametersFromParamText(paramText:=paramText, paramType:="DBAction", env:=env, database:=database, execOnSave:=execOnSave) Then Exit Sub
         If DataRange.Cells(1, 1).Text = "" Then
             ErrorMsg("No Action defined in " + DBActionName)
             Exit Sub
@@ -109,7 +155,8 @@ Public Module DBModif
         End If
 
         ' set up parameters
-        If Not getParametersFromTargetRange(paramType:="DBMapper", paramTarget:=DataRange, env:=env, database:=database, tableName:=tableName, primKeysStr:=primKeysStr, insertIfMissing:=insertIfMissing, executeAdditionalProc:=executeAdditionalProc, ignoreColumns:=ignoreColumns, execOnSave:=execOnSave) Then Exit Sub
+        Dim paramText As String = getParamTextFromTargetRange(paramTarget:=DataRange, paramType:="DBAction")
+        If Not getParametersFromParamText(paramText:=paramText, paramType:="DBMapper", env:=env, database:=database, tableName:=tableName, primKeysStr:=primKeysStr, insertIfMissing:=insertIfMissing, executeAdditionalProc:=executeAdditionalProc, ignoreColumns:=ignoreColumns, execOnSave:=execOnSave) Then Exit Sub
         If WbIsSaving And Not execOnSave Then Exit Sub
         primKeys = Split(primKeysStr, ",")
         ignoreColumns = LCase(ignoreColumns) + "," ' lowercase and add comma for better retrieval
@@ -277,9 +324,9 @@ cleanup:
         If dataType = CheckTypeFld.checkIsNumericFld Then ' only decimal points allowed in numeric data
             dbFormatType = Replace(CStr(theVal), ",", ".")
         ElseIf dataType = CheckTypeFld.checkIsDateFld Then
-            dbFormatType = "'" & Format$(theVal, "YYYYMMDD") & "'" ' standard SQL Date formatting
+            dbFormatType = "'" & Format(theVal, "yyyyMMdd") & "'" ' standard SQL Date formatting
         ElseIf dataType = CheckTypeFld.checkIsTimeFld Then
-            dbFormatType = "'" & Format$(theVal, "YYYYMMDD HH:MM:SS") & "'" ' standard SQL Date/time formatting
+            dbFormatType = "'" & Format(theVal, "yyyyMMdd hh:mm:ss") & "'" ' standard SQL Date/time formatting
         ElseIf TypeName(theVal) = "Boolean" Then
             dbFormatType = IIf(theVal, 1, 0)
         ElseIf dataType = CheckTypeFld.checkIsStringFld Then ' quote Strings
@@ -384,9 +431,22 @@ cleanup:
         End Try
     End Sub
 
+    Function getParamTextFromTargetRange(paramTarget As Excel.Range, paramType As String) As String
+        getParamTextFromTargetRange = ""
+        ' if no target range is set, then no parameters can be found...
+        If IsNothing(paramTarget) Then Return False
+        Dim paramTargetName As String = getDBModifNameFromRange(paramTarget)
+        If Left(paramTargetName, 8) <> paramType Then
+            LogError("target not matching passed DBModif type " & paramType & " !")
+            Return False
+        End If
+        Try
+            getParamTextFromTargetRange = paramTarget.Parent.Parent.CustomDocumentProperties(paramTargetName).Value
+        Catch ex As Exception : End Try
+    End Function
+
     ''' <summary>get parameters for passed target Range paramTarget (stored in custom doc properties having the same DBModif Name)</summary>
     ''' <param name="paramType">DBMapper or DBAction</param>
-    ''' <param name="paramTarget">target range of DBMapper or DBAction</param>
     ''' <param name="env">Environment (integer) where connection id should be taken from (if not existing, take from selectedEnvironment)</param>
     ''' <param name="database">Database to store to</param>
     ''' <param name="tableName">Database Table, where Data is to be stored</param>
@@ -395,25 +455,11 @@ cleanup:
     ''' <param name="executeAdditionalProc">additional stored procedure to be executed after saving</param>
     ''' <param name="ignoreColumns">columns to be ignored (helper columns)</param>
     ''' <param name="execOnSave">should DBMap be saved / DBAction be done on Excel Saving? (default no)</param>
-    Function getParametersFromTargetRange(paramType As String, paramTarget As Excel.Range, ByRef env As Integer, ByRef database As String,
+    Function getParametersFromParamText(paramText As String, paramType As String, ByRef env As Integer, ByRef database As String,
                                    Optional ByRef tableName As String = "", Optional ByRef primKeysStr As String = "",
                                    Optional ByRef insertIfMissing As Boolean = False, Optional ByRef executeAdditionalProc As String = "", Optional ByRef ignoreColumns As String = "",
-                                   Optional ByRef execOnSave As Boolean = False) As Boolean
-        Dim paramText As String = ""
-        ' if no target range is set, then no parameters can be found...
-        If IsNothing(paramTarget) Then Return False
-        Dim paramTargetName As String = getDBModifNameFromRange(paramTarget)
-        If Left(paramTargetName, 8) <> paramType Then
-            LogError("target not matching passed DBModif type " & paramType & " !")
-            Return False
-        End If
-        For Each docproperty In paramTarget.Parent.Parent.CustomDocumentProperties
-            If TypeName(docproperty.Value) = "String" And docproperty.Name = paramTargetName Then
-                paramText = docproperty.Value
-                Exit For
-            End If
-        Next
-        If paramText = "" Then Return False
+                                   Optional ByRef execOnSave As Boolean = False, Optional ByRef CUDFlags As Boolean = False) As Boolean
+
         Dim DBModifParams() As String = functionSplit(paramText, ",", """", "def", "(", ")")
         If IsNothing(DBModifParams) Then Return False
         ' check for completeness
@@ -451,26 +497,54 @@ cleanup:
         If DBModifParams.Length > 5 AndAlso DBModifParams(5) <> "" Then executeAdditionalProc = DBModifParams(5).Replace("""", "").Trim
         If DBModifParams.Length > 6 AndAlso DBModifParams(6) <> "" Then ignoreColumns = DBModifParams(6).Replace("""", "").Trim
         If DBModifParams.Length > 7 AndAlso DBModifParams(7) <> "" Then execOnSave = Convert.ToBoolean(DBModifParams(7))
+        If DBModifParams.Length > 8 AndAlso DBModifParams(8) <> "" Then CUDFlags = Convert.ToBoolean(DBModifParams(8))
         Return True
     End Function
 
     ''' <summary>creates a DBModif at the current active cell or edits an existing one being there or after being called from ribbon + Ctrl</summary>
     Sub createDBModif(type As String, Optional targetRange As Excel.Range = Nothing, Optional targetDefName As String = "", Optional DBSequenceText As String = "")
-        ' check for clipboard
-        ' legacy definition helper for copied saveRangeToDB macro calls:
-        ' rename saveRangeToDB To def, 1st parameter (datarange) removed (empty), connid moved to 2nd place as database name
+        ' clipboard helper for legacy definitions:
+        ' if saveRangeToDB macro calls were copied, rename saveRangeToDB<Single> To def, 1st parameter (datarange) removed (empty), connid moved to 2nd place as database name (remove MSSQL)
+        'mapper.saveRangeToDBSingle(Range("DB_DefName"), "tableName", "primKey1,primKey2,primKey3", "MSSQLDB_NAME", True)
+        '--> def(, "DB_NAME", "tableName", "primKey1,primKey2,primKey3", True)    DBMapperName = DB_DefName
+        'mapper.saveRangeToDBSingle(Range("DB_DefName"), "tableName", "primKey1,primKey2,primKey3", "MSSQLDB_NAME")
+        '--> def(, "DB_NAME", "tableName", "primKey1,primKey2,primKey3")          DBMapperName = DB_DefName
+        'def(, "DB_NAME", True), "tableName", "primKey1,primKey2,primKey3", "MSSQLDB_NAME", True)", "MSSQLDB_NAME", True)
+        Dim createdDBMapperFromClipboard As Boolean = False
         If Clipboard.ContainsText() And type = "DBMapper" Then
             Dim cpbdtext As String = Clipboard.GetText()
-            If Left(cpbdtext.ToLower(), 3) = "def" Then
+            If InStr(cpbdtext.ToLower(), "saverangetodb") > 0 Then
+                Dim firstBracket As Integer = InStr(cpbdtext, "(")
+                Dim firstComma As Integer = InStr(cpbdtext, ",")
+                Dim connDefStart As Integer = InStrRev(cpbdtext, """MSSQL")
+                Dim commaBeforeConnDef As Integer = InStrRev(cpbdtext, ",", connDefStart)
+                ' after conndef, all parameters are optional, so in case there is no comma afterwards, set this to end of whole definition string
+                Dim commaAfterConnDef As Integer = IIf(InStr(connDefStart, cpbdtext, ",") > 0, InStr(connDefStart, cpbdtext, ","), Len(cpbdtext))
+                Dim DB_DefName, newDefString As String
+                Try : DB_DefName = "DBMapper" + Replace(Replace(Mid(cpbdtext, firstBracket + 1, firstComma - firstBracket - 1), "Range(""", ""), """)", "")
+                Catch ex As Exception : ErrorMsg("Error when retrieving DB_DefName from clipboard: " & ex.Message) : Exit Sub : End Try
+                Try : newDefString = "def(" + Replace(Mid(cpbdtext, commaBeforeConnDef, commaAfterConnDef - commaBeforeConnDef), "MSSQL", "") + Mid(cpbdtext, firstComma, commaBeforeConnDef - firstComma - 1) + Mid(cpbdtext, commaAfterConnDef - 1)
+                Catch ex As Exception : ErrorMsg("Error when building new definition from clipboard: " & ex.Message) : Exit Sub : End Try
                 If IsNothing(targetRange) Then targetRange = ExcelDnaUtil.Application.ActiveCell
-                Try : targetRange.Name = "DBMapperNewFromClipboard"
-                Catch ex As Exception : ErrorMsg("Error when assigning name 'DBMapperNewFromClipboard' to active cell: " & ex.Message)
+                Try : targetRange.Name = DB_DefName
+                Catch ex As Exception
+                    ErrorMsg("Error when assigning name '" & DB_DefName & "' to active cell: " & ex.Message)
+                    targetRange.Name.Delete
+                    Exit Sub
                 End Try
+                Try : ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties(DB_DefName).Delete : Catch ex As Exception : End Try
                 Try
-                    ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties.Add(Name:="DBMapperNewFromClipboard", LinkToContent:=False, Type:=Microsoft.Office.Core.MsoDocProperties.msoPropertyTypeString, Value:=cpbdtext)
-                Catch ex As Exception : ErrorMsg("Error when adding property with DBModif parameters: " & ex.Message) : End Try
+                    ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties.Add(Name:=DB_DefName, LinkToContent:=False, Type:=Microsoft.Office.Core.MsoDocProperties.msoPropertyTypeString, Value:=newDefString)
+                Catch ex As Exception
+                    ErrorMsg("Error when adding CustomDocumentProperty with DBModif parameters (Name:" & DB_DefName & ",content: " & newDefString & "): " & ex.Message)
+                    ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties(DB_DefName).Delete
+                    Exit Sub
+                End Try
+                createdDBMapperFromClipboard = True
+                Clipboard.Clear()
             End If
         End If
+        ' start normal creation
         Dim activeCellName As String = ""
         If Not IsNothing(targetRange) Then activeCellName = getDBModifNameFromRange(targetRange) ' try regular defined name
         If type = "DBSeqnce" Then activeCellName = "DBSeqnce" & targetDefName
@@ -498,11 +572,13 @@ cleanup:
         Dim executeAdditionalProc As String = ""             ' additional stored procedure to be executed after saving
         Dim ignoreColumns As String = ""                     ' columns to be ignored (helper columns)
         Dim execOnSave As Boolean = False                    ' should DBMap be saved / DBAction be done on Excel Saving? (default no)
+        Dim CUDFlags As Boolean = False                      ' respect C/U/D Flags (DBSheet functionality)
         Dim existingDefinition As Boolean = False
+        Dim paramText = getParamTextFromTargetRange(paramTarget:=targetRange, paramType:=type)
         If type = "DBAction" Then
-            existingDefinition = getParametersFromTargetRange(paramType:=type, paramTarget:=targetRange, env:=env, database:=database, execOnSave:=execOnSave)
+            existingDefinition = getParametersFromParamText(paramText:=paramText, paramType:=type, env:=env, database:=database, execOnSave:=execOnSave)
         ElseIf type = "DBMapper" Then
-            existingDefinition = getParametersFromTargetRange(paramType:=type, paramTarget:=targetRange, env:=env, database:=database, tableName:=tableName, primKeysStr:=primKeysStr, insertIfMissing:=insertIfMissing, executeAdditionalProc:=executeAdditionalProc, ignoreColumns:=ignoreColumns, execOnSave:=execOnSave)
+            existingDefinition = getParametersFromParamText(paramText:=paramText, paramType:=type, env:=env, database:=database, tableName:=tableName, primKeysStr:=primKeysStr, insertIfMissing:=insertIfMissing, executeAdditionalProc:=executeAdditionalProc, ignoreColumns:=ignoreColumns, execOnSave:=execOnSave, CUDFlags:=CUDFlags)
         End If
         ' prepare DBModifier Create Dialog
         Dim theDBModifCreateDlg As DBModifCreate = New DBModifCreate()
@@ -525,6 +601,7 @@ cleanup:
                     .insertIfMissing.Checked = insertIfMissing
                     .addStoredProc.Text = executeAdditionalProc
                     .IgnoreColumns.Text = ignoreColumns
+                    .CUDflags.Checked = CUDFlags
                 End If
                 .TargetRangeAddress.Text = targetRange.Parent.Name & "!" & targetRange.Address
             End If
@@ -540,6 +617,7 @@ cleanup:
                 .insertIfMissing.Hide()
                 .addStoredProc.Hide()
                 .IgnoreColumns.Hide()
+                .CUDflags.Hide()
             End If
             If type = "DBSeqnce" Then
                 .DBModifName.Text = targetDefName
@@ -610,7 +688,16 @@ cleanup:
             ' store DBModification type in tag for validation purposes...
             theDBModifCreateDlg.Tag = type
             ' display dialog for parameters
-            If theDBModifCreateDlg.ShowDialog() = DialogResult.Cancel Then Exit Sub
+            If theDBModifCreateDlg.ShowDialog() = DialogResult.Cancel Then
+                ' remove name and customdocproperty created in clipboard helper
+                If createdDBMapperFromClipboard Then
+                    Try
+                        targetRange.Name.Delete()
+                        ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties(activeCellName).Delete
+                    Catch ex As Exception : End Try
+                End If
+                Exit Sub
+            End If
 
             ' only for DBMapper or DBAction: change target range name
             If type <> "DBSeqnce" Then
@@ -630,29 +717,27 @@ cleanup:
             End If
 
             ' create parameter definition string ...
-            Dim paramText As String = ""
+            Dim newParamText As String = ""
             If type = "DBAction" Then
-                paramText = "def(" + IIf(.envSel.SelectedIndex = -1, "", (.envSel.SelectedIndex + 1).ToString()) + "," + """" + .Database.Text + """," + .execOnSave.Checked.ToString() + ")"
+                newParamText = "def(" + IIf(.envSel.SelectedIndex = -1, "", (.envSel.SelectedIndex + 1).ToString()) + "," + """" + .Database.Text + """," + .execOnSave.Checked.ToString() + ")"
             ElseIf type = "DBMapper" Then
-                paramText = "def(" +
+                newParamText = "def(" +
                     IIf(.envSel.SelectedIndex = -1, "", (.envSel.SelectedIndex + 1).ToString()) + "," +
                     """" + .Database.Text + """," + """" + .Tablename.Text + """," + """" + .PrimaryKeys.Text + """," + .insertIfMissing.Checked.ToString() + "," +
                     """" + IIf(Len(.addStoredProc.Text) = 0, "", .addStoredProc.Text) + """," +
                     """" + IIf(Len(.IgnoreColumns.Text) = 0, "", .IgnoreColumns.Text) + """," +
-                    .execOnSave.Checked.ToString() + ")"
+                    .execOnSave.Checked.ToString() + "," + .CUDflags.Checked.ToString() + ")"
             ElseIf type = "DBSeqnce" Then
-                paramText = .execOnSave.Checked.ToString()
+                newParamText = .execOnSave.Checked.ToString()
                 ' need that because empty row at the end is passed along with Rows() !!
                 For i As Integer = 0 To .DBSeqenceDataGrid.Rows().Count - 2
-                    paramText += "," + .DBSeqenceDataGrid.Rows(i).Cells(0).Value
+                    newParamText += "," + .DBSeqenceDataGrid.Rows(i).Cells(0).Value
                 Next
             End If
             ' ... and store in docproperty (rename docproperty first to current name, might have been changed)
+            Try : ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties(activeCellName).Delete : Catch ex As Exception : End Try
             Try
-                ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties(activeCellName).Delete
-            Catch ex As Exception : End Try
-            Try
-                ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties.Add(Name:=type + .DBModifName.Text, LinkToContent:=False, Type:=Microsoft.Office.Core.MsoDocProperties.msoPropertyTypeString, Value:=paramText)
+                ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties.Add(Name:=type + .DBModifName.Text, LinkToContent:=False, Type:=Microsoft.Office.Core.MsoDocProperties.msoPropertyTypeString, Value:=newParamText)
             Catch ex As Exception : ErrorMsg("Error when adding property with DBModif parameters: " & ex.Message) : End Try
         End With
         ' refresh mapper definitions to reflect changes immediately...
