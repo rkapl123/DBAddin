@@ -12,7 +12,6 @@ Friend Enum CheckTypeFld
 End Enum
 
 Public MustInherit Class DBModif
-
     ''' <summary>main db connection For mapper</summary>
     Friend dbcnn As ADODB.Connection
     '''<summary>unique key of DBModif</summary>
@@ -827,7 +826,7 @@ Public Module DBModifs
                     If Not DBModifDefColl.ContainsKey(sheetID) Then
                         ' add to new sheet "menu"
                         defColl = New Dictionary(Of String, DBModif)
-                        defColl.Add(nodeName, namedrange.RefersToRange)
+                        defColl.Add(nodeName, IIf(DBModiftype = "DBMapper", New DBMapper(sheetID, nodeName, namedrange.RefersToRange), New DBAction(sheetID, nodeName, namedrange.RefersToRange)))
                         If DBModifDefColl.Count = 15 Then
                             ErrorMsg("Not more than 15 sheets with DBMapper/DBAction/DBSequence definitions possible, ignoring definitions in sheet " + namedrange.Parent.Name)
                             Exit For
