@@ -12,22 +12,33 @@ Friend Enum CheckTypeFld
 End Enum
 
 Public MustInherit Class DBModif
-    ''' <summary>main db connection For mapper</summary>
-    Friend dbcnn As ADODB.Connection
-    '''<summary>unique key of DBModif</summary>
-    Friend dbmapdefkey As String
-    '''<summary>sheet where DBModif is defined (only DBMapper and DBAction)</summary>
-    Friend DBmapSheet As String
-    '''<summary>address of targetRange (only DBMapper and DBAction)</summary>
-    Friend targetRangeAddress As String
-    ''' <summary>Range where DBMapper data is located (only DBMapper and DBAction; paramText is stored in custom doc properties having the same Name)</summary>
-    Friend TargetRange As Excel.Range
-    '''<summary>parameter text for DBModif (def(...)</summary>
-    Friend paramText As String
-    '''<summary>should DBMap be saved / DBAction be done on Excel Saving? (default no)</summary>
-    Friend execOnSave As Boolean = False
 
-    Public Overridable Sub doDBModif(Optional WbIsSaving As Boolean = True, Optional calledByDBSeq As String = "")
+    '''<summary>unique key of DBModif</summary>
+    Protected dbmapdefkey As String
+    '''<summary>sheet where DBModif is defined (only DBMapper and DBAction)</summary>
+    Protected DBmapSheet As String
+    '''<summary>address of targetRange (only DBMapper and DBAction)</summary>
+    Protected targetRangeAddress As String
+    ''' <summary>Range where DBMapper data is located (only DBMapper and DBAction; paramText is stored in custom doc properties having the same Name)</summary>
+    Protected TargetRange As Excel.Range
+    '''<summary>parameter text for DBModif (def(...)</summary>
+    Protected paramText As String
+    '''<summary>should DBMap be saved / DBAction be done on Excel Saving? (default no)</summary>
+    Protected execOnSave As Boolean = False
+
+    Public Function getTargetRangeAddress() As String
+        getTargetRangeAddress = targetRangeAddress
+    End Function
+
+    Public Function getTargetRange() As Excel.Range
+        getTargetRange = TargetRange
+    End Function
+
+    Public  Function getParamText() As String
+        getParamText = paramText
+    End Function
+
+    Public Overridable Sub doDBModif(Optional WbIsSaving As Boolean = False, Optional calledByDBSeq As String = "")
         Throw New NotImplementedException()
     End Sub
 
@@ -104,42 +115,6 @@ Public MustInherit Class DBModif
         End If
     End Function
 
-    ''' <summary>opens a database connection</summary>
-    ''' <param name="env">number of the environment as given in the settings</param>
-    ''' <param name="database">database to replace database selection parameter in connection string of environment</param>
-    ''' <returns>True on success</returns>
-    Friend Function openConnection(env As Integer, database As String) As Boolean
-        openConnection = False
-
-        Dim theConnString As String = fetchSetting("ConstConnString" & env, String.Empty)
-        If theConnString = String.Empty Then
-            ErrorMsg("No Connectionstring given for environment: " & env & ", please correct and rerun.")
-            Exit Function
-        End If
-        Dim dbidentifier As String = fetchSetting("DBidentifierCCS" & env, String.Empty)
-        If dbidentifier = String.Empty Then
-            ErrorMsg("No DB identifier given for environment: " & env & ", please correct and rerun.")
-            Exit Function
-        End If
-
-        dbcnn = New Connection
-        theConnString = Change(theConnString, dbidentifier, database, ";")
-        LogInfo("open connection with " & theConnString)
-        ExcelDnaUtil.Application.StatusBar = "Trying " & Globals.CnnTimeout & " sec. with connstring: " & theConnString
-        Try
-            dbcnn.ConnectionString = theConnString
-            dbcnn.ConnectionTimeout = Globals.CnnTimeout
-            dbcnn.CommandTimeout = Globals.CmdTimeout
-            dbcnn.Open()
-        Catch ex As Exception
-            LogError("Error connecting to DB: " & ex.Message & ", connection string: " & theConnString)
-            If dbcnn.State = ADODB.ObjectStateEnum.adStateOpen Then dbcnn.Close()
-            dbcnn = Nothing
-        End Try
-        ExcelDnaUtil.Application.StatusBar = String.Empty
-        openConnection = True
-    End Function
-
 End Class
 
 Public Class DBMapper : Inherits DBModif
@@ -147,7 +122,7 @@ Public Class DBMapper : Inherits DBModif
     ''' <summary>DBModif name of target range</summary>
     Private paramTargetName As String
     ''' <summary>Environment (integer) where connection id should be taken from (if not existing, take from selectedEnvironment)</summary>
-    Private env As Integer
+    Private env As Integer = 0
     ''' <summary>Database to store to</summary>
     Private database As String
     ''' <summary>Database Table, where Data is to be stored</summary>
@@ -170,7 +145,7 @@ Public Class DBMapper : Inherits DBModif
         If IsNothing(paramTarget) Then Exit Sub
         paramTargetName = getDBModifNameFromRange(paramTarget)
         If Left(paramTargetName, 8) <> "DBMapper" Then
-            LogError("target not matching passed DBModif type DBMapper !")
+            LogError("target " & paramTargetName & " not matching passed DBModif type DBMapper for " & DBmapSheet & "/" & dbmapdefkey & "!")
             Exit Sub
         End If
         Try
@@ -220,22 +195,8 @@ Public Class DBMapper : Inherits DBModif
         DBModifSaveNeeded = execOnSave
     End Function
 
-    Public Overrides Sub doDBModif(Optional WbIsSaving As Boolean = True, Optional calledByDBSeq As String = "")
-        Dim tableName As String = ""                         ' Database Table, where Data is to be stored
-        Dim primKeysStr As String = ""                       ' String containing primary Key names for updating table data, comma separated
-        Dim database As String = ""                          ' Database to store to
-        Dim env As Integer = Globals.selectedEnvironment + 1 ' Environment where connection id should be taken from (if not existing, take from selectedEnvironment)
-        Dim insertIfMissing As Boolean = False               ' if set, then insert row into table if primary key is missing there. Default = False (only update)
-        Dim executeAdditionalProc As String = ""             ' additional stored procedure to be executed after saving
-        Dim ignoreColumns As String = ""                     ' columns to be ignored (helper columns)
-        Dim execOnSave As Boolean = False                    ' should DBMap be saved on Excel Saving? (default no)
-        Dim CUDflags As Boolean = False
-
-        Dim rst As ADODB.Recordset
-        Dim checkrst As ADODB.Recordset
-        Dim primKeys() As String
-        Dim rowNum As Long, colNum As Long
-
+    Public Overrides Sub doDBModif(Optional WbIsSaving As Boolean = False, Optional calledByDBSeq As String = "")
+        If env = 0 Then env = Globals.selectedEnvironment + 1 ' if Environment is not existing, take from selectedEnvironment
         ' extend DataRange if it is only one cell ...
         If TargetRange.Rows.Count = 1 And TargetRange.Columns.Count = 1 Then
             Dim rowEnd = TargetRange.End(Excel.XlDirection.xlDown).Row
@@ -245,15 +206,15 @@ Public Class DBMapper : Inherits DBModif
 
         ' set up parameters
         If WbIsSaving And Not execOnSave Then Exit Sub
-        primKeys = Split(primKeysStr, ",")
+        Dim primKeys() As String = Split(primKeysStr, ",")
         ignoreColumns = LCase(ignoreColumns) + "," ' lowercase and add comma for better retrieval
 
         'now create/get a connection (dbcnn) for env(ironment)
         If Not openConnection(env, database) Then Exit Sub
 
         'checkrst is opened to get information about table schema (field types)
-        checkrst = New ADODB.Recordset
-        rst = New ADODB.Recordset
+        Dim checkrst As ADODB.Recordset = New ADODB.Recordset
+        Dim rst As ADODB.Recordset = New ADODB.Recordset
         Try
             checkrst.Open(tableName, dbcnn, CursorTypeEnum.adOpenForwardOnly, LockTypeEnum.adLockReadOnly, CommandTypeEnum.adCmdTableDirect)
         Catch ex As Exception
@@ -278,7 +239,7 @@ Public Class DBMapper : Inherits DBModif
             End If
         Next
         ' check if all column names (except ignored) of DBMapper Range exist in table
-        colNum = 1
+        Dim colNum As Long = 1
         Do
             Dim fieldname As String = Trim(TargetRange.Cells(1, colNum).Value)
             ' only if not ignored...
@@ -296,7 +257,7 @@ Public Class DBMapper : Inherits DBModif
         Loop Until colNum > TargetRange.Columns.Count
         checkrst.Close()
 
-        rowNum = 2
+        Dim rowNum As Long = 2
         dbcnn.CursorLocation = CursorLocationEnum.adUseServer
 
         Dim finishLoop As Boolean
@@ -393,12 +354,13 @@ nextRow:
             Try
                 dbcnn.Execute(executeAdditionalProc)
             Catch ex As Exception
-                ErrorMsg("Error in executing additional stored procedure:" & ex.Message)
+                ErrorMsg("Error in executing additional stored procedure: " & ex.Message)
                 GoTo cleanup
             End Try
         End If
 cleanup:
-        dbcnn = Nothing
+        ' close connection to return it to the pool...
+        dbcnn.Close()
         ExcelDnaUtil.Application.StatusBar = False
     End Sub
 
@@ -410,6 +372,7 @@ cleanup:
                 ErrorMsg("Error setting environment " & env & " (correct environment manually in docproperty " & paramTargetName & "): " & ex.Message)
                 Exit Sub
             End Try
+            .TargetRangeAddress.Text = targetRangeAddress
             .Database.Text = database
             .execOnSave.Checked = execOnSave
             .Tablename.Text = tableName
@@ -426,7 +389,7 @@ Public Class DBAction
     Inherits DBModif
 
     ''' <summary>Environment (integer) where connection id should be taken from (if not existing, take from selectedEnvironment)</summary>
-    Private env As Integer
+    Private env As Integer = 0
     ''' <summary>Database to store to</summary>
     Private database As String
     ''' <summary>DBModif name of target range</summary>
@@ -439,7 +402,7 @@ Public Class DBAction
         If IsNothing(paramTarget) Then Exit Sub
         paramTargetName = getDBModifNameFromRange(paramTarget)
         If Left(paramTargetName, 8) <> "DBAction" Then
-            LogError("target not matching passed DBModif type DBAction !")
+            LogError("target " & paramTargetName & " not matching passed DBModif type DBAction for " & DBmapSheet & "/" & dbmapdefkey & " !")
             Exit Sub
         End If
         ' set up parameters
@@ -469,7 +432,6 @@ Public Class DBAction
             Exit Sub
         End If
         If DBModifParams.Length > 2 AndAlso DBModifParams(2) <> "" Then execOnSave = Convert.ToBoolean(DBModifParams(2))
-
     End Sub
 
     ''' <summary>is saving needed for this DBModifier</summary>
@@ -478,12 +440,8 @@ Public Class DBAction
         DBModifSaveNeeded = execOnSave
     End Function
 
-    Public Overrides Sub doDBModif(Optional WbIsSaving As Boolean = True, Optional calledByDBSeq As String = "")
-        Dim database As String = ""                          ' Database to store to
-        Dim env As Integer = Globals.selectedEnvironment + 1 ' Environment where connection id should be taken from (if not existing, take from selectedEnvironment)
-        Dim execOnSave As Boolean = False                    ' should DBaction be done on Excel Saving? (default no)
-
-
+    Public Overrides Sub doDBModif(Optional WbIsSaving As Boolean = False, Optional calledByDBSeq As String = "")
+        If env = 0 Then env = Globals.selectedEnvironment + 1 ' if Environment is not existing, take from selectedEnvironment
         If WbIsSaving And Not execOnSave Then Exit Sub
         'now create/get a connection (dbcnn) for env(ironment)
         If Not openConnection(env, database) Then Exit Sub
@@ -491,12 +449,14 @@ Public Class DBAction
         Try
             dbcnn.Execute(TargetRange.Cells(1, 1).Text, result, Options:=CommandTypeEnum.adCmdText)
         Catch ex As Exception
-            ErrorMsg("Error: " & paramTargetName & ":" & ex.Message)
+            ErrorMsg("Error: " & paramTargetName & ": " & ex.Message)
             Exit Sub
         End Try
         If Not WbIsSaving Then
             MsgBox("DBAction " & paramTargetName & " executed, affected records: " & result)
         End If
+        ' close connection to return it to the pool...
+        dbcnn.Close()
     End Sub
 
     Public Overrides Sub setDBModifCreateFields(ByRef theDBModifCreateDlg As DBModifCreate)
@@ -507,6 +467,7 @@ Public Class DBAction
                 ErrorMsg("Error setting environment " & env & " (correct environment manually in docproperty " & paramTargetName & "): " & ex.Message)
                 Exit Sub
             End Try
+            .TargetRangeAddress.Text = targetRangeAddress
             .Database.Text = database
             .execOnSave.Checked = execOnSave
         End With
@@ -537,7 +498,7 @@ Public Class DBSeqnce
         DBModifSaveNeeded = execOnSave
     End Function
 
-    Public Overrides Sub doDBModif(Optional WbIsSaving As Boolean = True, Optional calledByDBSeq As String = "")
+    Public Overrides Sub doDBModif(Optional WbIsSaving As Boolean = False, Optional calledByDBSeq As String = "")
         If WbIsSaving And Not execOnSave Then Exit Sub
         Dim i As Integer
         For i = 1 To UBound(sequenceParams)
@@ -568,6 +529,46 @@ End Class
 
 ''' <summary>Contains DBModif functions for storing/updating tabular excel data (DBMapper), doing DBActions, doing DBSequences (combinations of DBMapper/DBAction) and some helper functions</summary>
 Public Module DBModifs
+
+    ''' <summary>main db connection For mapper</summary>
+    Public dbcnn As ADODB.Connection
+
+    ''' <summary>opens a database connection</summary>
+    ''' <param name="env">number of the environment as given in the settings</param>
+    ''' <param name="database">database to replace database selection parameter in connection string of environment</param>
+    ''' <returns>True on success</returns>
+    Public Function openConnection(env As Integer, database As String) As Boolean
+        openConnection = False
+
+        Dim theConnString As String = fetchSetting("ConstConnString" & env, String.Empty)
+        If theConnString = String.Empty Then
+            ErrorMsg("No Connectionstring given for environment: " & env & ", please correct and rerun.")
+            Exit Function
+        End If
+        Dim dbidentifier As String = fetchSetting("DBidentifierCCS" & env, String.Empty)
+        If dbidentifier = String.Empty Then
+            ErrorMsg("No DB identifier given for environment: " & env & ", please correct and rerun.")
+            Exit Function
+        End If
+
+        ' connections are pooled by ADO depending on the connection string:
+        dbcnn = New Connection
+        theConnString = Change(theConnString, dbidentifier, database, ";")
+        LogInfo("open connection with " & theConnString)
+        ExcelDnaUtil.Application.StatusBar = "Trying " & Globals.CnnTimeout & " sec. with connstring: " & theConnString
+        Try
+            dbcnn.ConnectionString = theConnString
+            dbcnn.ConnectionTimeout = Globals.CnnTimeout
+            dbcnn.CommandTimeout = Globals.CmdTimeout
+            dbcnn.Open()
+        Catch ex As Exception
+            LogError("Error connecting to DB: " & ex.Message & ", connection string: " & theConnString)
+            If dbcnn.State = ADODB.ObjectStateEnum.adStateOpen Then dbcnn.Close()
+            dbcnn = Nothing
+        End Try
+        ExcelDnaUtil.Application.StatusBar = String.Empty
+        openConnection = True
+    End Function
 
     ''' <summary>creates a DBModif at the current active cell or edits an existing one being there or after being called from ribbon + Ctrl</summary>
     Sub createDBModif(type As String, Optional targetRange As Excel.Range = Nothing, Optional targetDefName As String = "", Optional DBSequenceText As String = "")
@@ -635,7 +636,15 @@ Public Module DBModifs
         ' fetch parameters if existing target range and matching definition...
         Dim existingDBModif As DBModif = Nothing
         Try
-            existingDBModif = IIf(type = "DBMapper", New DBMapper("", "", targetRange), IIf(type = "DBAction", New DBAction("", "", targetRange), New DBSeqnce(targetDefName, DBSequenceText)))
+            If type = "DBMapper" Then
+                existingDBModif = New DBMapper("", "", targetRange)
+            ElseIf type = "DBAction" Then
+                existingDBModif = New DBAction("", "", targetRange)
+            ElseIf type = "DBSeqnce" Then
+                existingDBModif = New DBSeqnce(targetDefName, DBSequenceText)
+            Else
+                LogError("Error, not supported DBModiftype: " & type)
+            End If
         Catch ex As Exception : End Try
 
         ' prepare DBModifier Create Dialog
@@ -647,7 +656,6 @@ Public Module DBModifs
                 If InStr(1, activeCellName, type) > 0 Then .DBModifName.Text = Replace(activeCellName, type, "")
                 ' delegate filling of dialog fields to created DBModif object
                 existingDBModif.setDBModifCreateFields(theDBModifCreateDlg)
-                .TargetRangeAddress.Text = targetRange.Parent.Name & "!" & targetRange.Address
             End If
             .NameLabel.Text = IIf(type = "DBSeqnce", "DBSequence", type) & " Name:"
             .Text = "Edit " & IIf(type = "DBSeqnce", "DBSequence", type) & " definition"
@@ -687,7 +695,7 @@ Public Module DBModifs
                         ' avoid DB Sequences (might be - indirectly - self referencing, leading to endless recursion)
                         If sheetId <> "ID0" Then
                             ' for DBMapper and DBAction, full name is only available from the target range name
-                            Dim targetRangeName As String = getDBModifNameFromRange(DBModifDefColl(sheetId).Item(nodeName))
+                            Dim targetRangeName As String = getDBModifNameFromRange(DBModifDefColl(sheetId).Item(nodeName).getTargetRange())
                             ds.Add(Left(targetRangeName, 8) & ":" & sheetId & ":" & Right(targetRangeName, Len(targetRangeName) - 8))
                         End If
                     Next
@@ -823,10 +831,19 @@ Public Module DBModifs
 
                     Dim sheetID As String = namedrange.RefersToRange.Parent.Name
                     Dim defColl As Dictionary(Of String, DBModif)
+                    Dim newDBModif As DBModif
+                    If DBModiftype = "DBMapper" Then
+                        newDBModif = New DBMapper(sheetID, nodeName, namedrange.RefersToRange)
+                    ElseIf DBModiftype = "DBAction" Then
+                        newDBModif = New DBAction(sheetID, nodeName, namedrange.RefersToRange)
+                    Else
+                        LogError("Error, not supported DBModiftype: " & DBModiftype)
+                        newDBModif = Nothing
+                    End If
                     If Not DBModifDefColl.ContainsKey(sheetID) Then
                         ' add to new sheet "menu"
                         defColl = New Dictionary(Of String, DBModif)
-                        defColl.Add(nodeName, IIf(DBModiftype = "DBMapper", New DBMapper(sheetID, nodeName, namedrange.RefersToRange), New DBAction(sheetID, nodeName, namedrange.RefersToRange)))
+                        defColl.Add(nodeName, newDBModif)
                         If DBModifDefColl.Count = 15 Then
                             ErrorMsg("Not more than 15 sheets with DBMapper/DBAction/DBSequence definitions possible, ignoring definitions in sheet " + namedrange.Parent.Name)
                             Exit For
@@ -835,7 +852,7 @@ Public Module DBModifs
                     Else
                         ' add definition to existing sheet "menu"
                         defColl = DBModifDefColl(sheetID)
-                        defColl.Add(nodeName, IIf(DBModiftype = "DBMapper", New DBMapper(sheetID, nodeName, namedrange.RefersToRange), New DBAction(sheetID, nodeName, namedrange.RefersToRange)))
+                        defColl.Add(nodeName, newDBModif)
                     End If
                 End If
             Next

@@ -11,14 +11,14 @@ Public Class DBModifCreate
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub OK_Button_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles OK_Button.Click
-        Dim NameValidation As String = ""
+        Dim NameValidationResult As String = ""
         If Me.DBModifName.Text <> String.Empty Then
             ' Add doesn't work directly with ExcelDnaUtil.Application.ActiveWorkbook.Names (late binding), so create an object here...
             Dim NamesList As Excel.Names = ExcelDnaUtil.Application.ActiveWorkbook.Names
             Try
                 NamesList.Add(Name:=Me.DBModifName.Text, RefersTo:=ExcelDnaUtil.Application.ActiveCell)
             Catch ex As Exception
-                NameValidation = ex.Message
+                NameValidationResult = ex.Message
             End Try
             Try : NamesList.Item(Me.DBModifName.Text).Delete() : Catch ex As Exception : End Try
         End If
@@ -28,8 +28,8 @@ Public Class DBModifCreate
             MsgBox("Field Primary Keys is required, please fill in!")
         ElseIf Me.Database.Text = String.Empty And Me.Database.Visible Then
             MsgBox("Field Database is required, please fill in!")
-        ElseIf NameValidation <> "" Then
-            MsgBox("Invalid " & Me.NameLabel.Text & ", Error: " & NameValidation)
+        ElseIf NameValidationResult <> "" Then
+            MsgBox("Invalid " & Me.NameLabel.Text & ", Error: " & NameValidationResult)
         Else
             ' check for double invocation because of execOnSave being set on DBAction/DBMapper
             If Me.Tag <> "DBSeqnce" Then
@@ -42,10 +42,10 @@ Public Class DBModifCreate
                         For i = 1 To UBound(params)
                             Dim definition() As String = Split(params(i), ":")
                             If definition(0) = Me.Tag AndAlso definition(2) = Me.DBModifName.Text AndAlso
-                                DBModifDefColl.ContainsKey(definition(1)) AndAlso DBModifDefColl(definition(1)).ContainsKey(definition(2)) AndAlso
-                                Me.execOnSave.Checked AndAlso execSeqElemOnSave Then
-                                Dim retval As MsgBoxResult = MsgBox(Me.Tag & Me.DBModifName.Text & " in " & definition(1) & "!" & DBModifDefColl(definition(1)).Item(definition(2)).targetRangeAddress & " will be executed twice on saving, because it is part of DBSequence " & dbseqName & ", which is also executed on saving." & vbCrLf & "In case this is not intended, disable 'Execute on Save' here!", MsgBoxStyle.Critical + vbOKCancel, "DBModification Validation")
-                                If retval = vbCancel Then Exit Sub
+                            DBModifDefColl.ContainsKey(definition(1)) AndAlso DBModifDefColl(definition(1)).ContainsKey(definition(2)) AndAlso
+                            Me.execOnSave.Checked AndAlso execSeqElemOnSave Then
+                                Dim retval As MsgBoxResult = MsgBox(Me.Tag & Me.DBModifName.Text & " in " & definition(1) & "!" & DBModifDefColl(definition(1)).Item(definition(2)).getTargetRangeAddress() & " will be executed twice on saving, because it is part of DBSequence " & dbseqName & ", which is also executed on saving." & vbCrLf & "Please disable 'Execute on save' either here or on " & dbseqName & " !", MsgBoxStyle.Critical + vbOKCancel, "DBModification Validation")
+                                Exit Sub
                             End If
                         Next
                     End If
@@ -65,7 +65,8 @@ Public Class DBModifCreate
                             End If
                             If Me.execOnSave.Checked And storeDBMapOnSave Then
                                 Dim foundDBModifName As String = definition(0) & IIf(definition(2) = "", "Unnamed " & definition(0), definition(2))
-                                MsgBox(foundDBModifName & " will be executed twice on saving, because it is part of this DBSequence, which is also executed on saving." & vbCrLf & "In case this is not intended, disable Execute on Save on '" & foundDBModifName & "'", MsgBoxStyle.Critical, "DBModification Validation")
+                                Dim retval As MsgBoxResult = MsgBox(foundDBModifName & " will be executed twice on saving, because it is part of this DBSequence, which is also executed on saving." & vbCrLf & "Please disable Execute on save either here or on '" & foundDBModifName & "'", MsgBoxStyle.Critical + MsgBoxStyle.OkOnly, "DBModification Validation")
+                                Exit Sub
                             End If
                         End If
                     Next

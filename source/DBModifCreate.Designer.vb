@@ -229,6 +229,7 @@ Partial Class DBModifCreate
         '
         Me.DBSeqenceDataGrid.AllowDrop = True
         Me.DBSeqenceDataGrid.AllowUserToResizeRows = False
+        Me.DBSeqenceDataGrid.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.AllCells
         Me.DBSeqenceDataGrid.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize
         Me.DBSeqenceDataGrid.Location = New System.Drawing.Point(12, 214)
         Me.DBSeqenceDataGrid.MultiSelect = False
@@ -243,7 +244,7 @@ Partial Class DBModifCreate
         Me.TargetRangeAddress.AutoSize = True
         Me.TargetRangeAddress.Font = New System.Drawing.Font("Microsoft Sans Serif", 8.25!, System.Drawing.FontStyle.Underline, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.TargetRangeAddress.ForeColor = System.Drawing.Color.DodgerBlue
-        Me.TargetRangeAddress.Location = New System.Drawing.Point(43, 391)
+        Me.TargetRangeAddress.Location = New System.Drawing.Point(47, 391)
         Me.TargetRangeAddress.Name = "TargetRangeAddress"
         Me.TargetRangeAddress.Size = New System.Drawing.Size(108, 13)
         Me.TargetRangeAddress.TabIndex = 11
@@ -274,7 +275,7 @@ Partial Class DBModifCreate
         'CBCreate
         '
         Me.CBCreate.AutoSize = True
-        Me.CBCreate.Location = New System.Drawing.Point(225, 391)
+        Me.CBCreate.Location = New System.Drawing.Point(235, 391)
         Me.CBCreate.Name = "CBCreate"
         Me.CBCreate.Size = New System.Drawing.Size(74, 17)
         Me.CBCreate.TabIndex = 13
@@ -290,8 +291,8 @@ Partial Class DBModifCreate
         Me.CUDflags.Size = New System.Drawing.Size(84, 17)
         Me.CUDflags.TabIndex = 14
         Me.CUDflags.Text = "C/U/D flags"
-        Me.ToolTip1.SetToolTip(Me.CUDflags, "if set, then insert row into table if primary key is missing there. Default = Fal" &
-        "se (only update)")
+        Me.ToolTip1.SetToolTip(Me.CUDflags, "if set, then only insert/update/delete row if special CUDFlags column contains i," &
+        " u or d. Default = False (only update)")
         Me.CUDflags.UseVisualStyleBackColor = True
         '
         'EnvironmentLabel

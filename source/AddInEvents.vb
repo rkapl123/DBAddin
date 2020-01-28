@@ -65,13 +65,6 @@ Public Class AddInEvents
     ''' <summary>Workbook_Save: saves defined DBMaps (depending on configuration), also used to remove contents of DBListfunction results (data safety/space consumption)
     ''' choosing functions for removal of target data is done with custom docproperties</summary>
     Private Sub Application_WorkbookSave(Wb As Excel.Workbook, ByVal SaveAsUI As Boolean, ByRef Cancel As Boolean) Handles Application.WorkbookBeforeSave
-        Dim doRefreshDBFuncsAfterSave As Boolean = True
-        Dim DBFCContentColl As Collection, DBFCAllColl As Collection
-        Dim theFunc
-        Dim ws As Excel.Worksheet, lastWs As Excel.Worksheet = Nothing
-        Dim searchCell As Excel.Range
-        Dim firstAddress As String
-
         ' ask if modifications should be done if no overriding flag is defined...
         Dim doDBMOnSave As Boolean = False
         Try
@@ -100,33 +93,37 @@ done:
         End If
 
         ' clear DB Functions content and refresh afterwards..
-        DBFCContentColl = New Collection
-        DBFCAllColl = New Collection
+        Dim DBFCContentColl As Collection = New Collection
+        Dim DBFCAllColl As Collection = New Collection
+        Dim doRefreshDBFuncsAfterSave As Boolean = True
         ' first insert docproperty information into collections for easier handling
         Try
             Dim docproperty As Microsoft.Office.Core.DocumentProperty
             For Each docproperty In Wb.CustomDocumentProperties
                 If docproperty.Type = Microsoft.Office.Core.MsoDocProperties.msoPropertyTypeBoolean Then
-                    If Left$(docproperty.Name, 5) = "DBFCC" And docproperty.Value Then DBFCContentColl.Add(True, Mid$(docproperty.Name, 6))
-                    If Left$(docproperty.Name, 5) = "DBFCA" And docproperty.Value Then DBFCAllColl.Add(True, Mid$(docproperty.Name, 6))
+                    If Left$(docproperty.Name, 5) = "DBFCC" And docproperty.Value Then DBFCContentColl.Add(True, Mid(docproperty.Name, 6))
+                    If Left$(docproperty.Name, 5) = "DBFCA" And docproperty.Value Then DBFCAllColl.Add(True, Mid(docproperty.Name, 6))
                     If docproperty.Name = "DBFskip" Then doRefreshDBFuncsAfterSave = Not docproperty.Value
                 End If
             Next
         Catch ex As Exception
             LogError("Error getting docproperties: " & Wb.Name & ex.Message)
         End Try
-        dontCalcWhileClearing = True
+
         ' now clear content/all
+        Dim searchCell As Excel.Range
+        dontCalcWhileClearing = True
         Try
+            Dim ws As Excel.Worksheet, lastWs As Excel.Worksheet = Nothing
             For Each ws In Wb.Worksheets
                 If IsNothing(ws) Then
                     LogWarn("no worksheet in saving workbook...")
                     Exit For
                 End If
-                For Each theFunc In {"DBListFetch(", "DBRowFetch("}
+                For Each theFunc As String In {"DBListFetch(", "DBRowFetch("}
                     searchCell = ws.Cells.Find(What:=theFunc, After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
                     If Not (searchCell Is Nothing) Then
-                        firstAddress = searchCell.Address
+                        Dim firstAddress As String = searchCell.Address
                         Do
                             ' get DB function target names from source names
                             Dim targetName As String = getDBunderlyingNameFromRange(searchCell)
@@ -244,7 +241,7 @@ done:
                 Exit Sub
             Else
                 If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown Then
-                    createDBModif("DBSeqnce", targetDefName:=dbseqname, DBSequenceText:=DBModifDefColl("ID0").Item(dbseqname).paramText)
+                    createDBModif("DBSeqnce", targetDefName:=dbseqname, DBSequenceText:=DBModifDefColl("ID0").Item(dbseqname).getParamText())
                 Else
                     DBModifDefColl("ID0").Item(dbseqname).doDBModif()
                 End If
@@ -262,7 +259,7 @@ done:
             If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown Then
                 createDBModif(Left(DBModifName, 8), targetRange:=targetRange)
             Else
-                DBModifDefColl(targetRange.Parent.Name).Item(DBModifName).doDBModif()
+                DBModifDefColl(targetRange.Parent.Name).Item(Replace(DBModifName, Left(DBModifName, 8), "")).doDBModif()
             End If
         End If
     End Sub
