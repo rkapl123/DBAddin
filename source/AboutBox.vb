@@ -90,7 +90,7 @@ Public NotInheritable Class AboutBox
         My.Computer.Registry.SetValue("HKEY_CURRENT_USER\Software\Microsoft\Office\Excel\Addins\DBAddin.Connection", "LoadBehavior", 3)
         ExcelDnaUtil.Application.AddIns("DBAddin.Functions").Installed = True
         MsgBox("Please restart Excel to make changes effective...", vbOKOnly, "Disable DBAddin and re-enable Legacy DBAddin")
-        Try : ExcelDnaUtil.Application.AddIns("OebfaFuncs-AddIn-packed").Installed = False : Catch ex As Exception : End Try
+        Try : ExcelDnaUtil.Application.AddIns("OebfaFuncs").Installed = False : Catch ex As Exception : End Try
         disableAddinAfterwards = True
         Me.Close()
     End Sub

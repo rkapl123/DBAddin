@@ -72,9 +72,9 @@ Public Class AddInEvents
         Catch ex As Exception : End Try
         ' if overriding flag not given, ask for saving if this is necessary for any DBmodifier...
         If Not doDBMOnSave Then
-            For Each DBmapSheet As String In DBModifDefColl.Keys
-                For Each dbmapdefkey As String In DBModifDefColl(DBmapSheet).Keys
-                    If DBModifDefColl(DBmapSheet).Item(dbmapdefkey).DBModifSaveNeeded() Then
+            For Each DBmodifType As String In DBModifDefColl.Keys
+                For Each dbmapdefkey As String In DBModifDefColl(DBmodifType).Keys
+                    If DBModifDefColl(DBmodifType).Item(dbmapdefkey).DBModifSaveNeeded() Then
                         Dim answer As MsgBoxResult = MsgBox("do the DB Modifications defined in Workbook ?", vbYesNo, "DB Modifications on Save")
                         If answer = vbYes Then doDBMOnSave = True
                         GoTo done
@@ -85,9 +85,9 @@ Public Class AddInEvents
 done:
         ' save all DBmaps/DBActions/DBSequences on saving except Readonly is recommended on this workbook
         If Not Wb.ReadOnlyRecommended And doDBMOnSave Then
-            For Each DBmapSheet As String In DBModifDefColl.Keys
-                For Each dbmapdefkey As String In DBModifDefColl(DBmapSheet).Keys
-                    DBModifDefColl(DBmapSheet).Item(dbmapdefkey).doDBModif(WbIsSaving:=True)
+            For Each DBmodifType As String In DBModifDefColl.Keys
+                For Each dbmapdefkey As String In DBModifDefColl(DBmodifType).Keys
+                    DBModifDefColl(DBmodifType).Item(dbmapdefkey).doDBModif(WbIsSaving:=True)
                 Next
             Next
         End If
@@ -234,19 +234,8 @@ done:
     ''' <summary>common click handler for all commandbuttons</summary>
     ''' <param name="cbName">name of command button, defines whether a DBModification is invoked (starts with DBMapper/DBAction/DBSeqnce)</param>
     Private Shared Sub cbClick(cbName As String)
-        If Left(cbName, 8) = "DBSeqnce" Then
-            Dim dbseqname As String = Replace(cbName, "DBSeqnce", "")
-            If Not DBModifDefColl("ID0").ContainsKey(dbseqname) Then
-                MsgBox("No defined DB Sequence " & cbName & " found, exiting without DBModification.")
-                Exit Sub
-            Else
-                If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown Then
-                    createDBModif("DBSeqnce", targetDefName:=dbseqname, DBSequenceText:=DBModifDefColl("ID0").Item(dbseqname).getParamText())
-                Else
-                    DBModifDefColl("ID0").Item(dbseqname).doDBModif()
-                End If
-            End If
-        Else
+        Dim DBModifType As String = Left(cbName, 8)
+        If DBModifType <> "DBSeqnce" Then
             Dim targetRange As Excel.Range
             Try
                 targetRange = ExcelDnaUtil.Application.ActiveWorkbook.Names.Item(cbName).RefersToRange
@@ -256,11 +245,11 @@ done:
                 Exit Sub
             End Try
             Dim DBModifName As String = getDBModifNameFromRange(targetRange)
-            If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown Then
-                createDBModif(Left(DBModifName, 8), targetRange:=targetRange)
-            Else
-                DBModifDefColl(targetRange.Parent.Name).Item(Replace(DBModifName, Left(DBModifName, 8), "")).doDBModif()
-            End If
+        End If
+        If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown Then
+            createDBModif(DBModifType, targetDefName:=cbName)
+        Else
+            DBModifDefColl(DBModifType).Item(cbName).doDBModif()
         End If
     End Sub
 

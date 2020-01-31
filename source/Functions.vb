@@ -833,19 +833,23 @@ Public Module Functions
             End If
             ' set the new hidden targetExtent name...
             newTargetRange = targetSH.Range(targetSH.Cells(startRow, startCol), targetSH.Cells(startRow + arrayRows - 1, startCol + targetColumns))
-            storedNames = removeRangeName(newTargetRange, targetExtent)
+            'storedNames = removeRangeName(newTargetRange, targetExtent)
+            targetRange.Parent.Parent.Names(targetExtent).Delete
+            Err.Clear()
             newTargetRange.Name = targetExtent
             newTargetRange.Name.Visible = False
-            restoreRangeNames(newTargetRange, storedNames)
+            'restoreRangeNames(newTargetRange, storedNames)
             ' now set the name for the total area
             targetSH.Range(targetSH.Cells(startRow, startCol), targetSH.Cells(startRow + arrayRows - 1, startCol + targetColumns + additionalFormulaColumns)).Name = targetRangeName
         Else
             ' set the new hidden targetExtent name...
             newTargetRange = targetSH.Range(targetSH.Cells(startRow, startCol), targetSH.Cells(startRow + arrayRows - 1, startCol + targetColumns))
-            storedNames = removeRangeName(newTargetRange, targetExtent)
+            'storedNames = removeRangeName(newTargetRange, targetExtent)
+            targetRange.Parent.Parent.Names(targetExtent).Delete
+            Err.Clear()
             newTargetRange.Name = targetExtent
             newTargetRange.Name.Visible = False
-            restoreRangeNames(newTargetRange, storedNames)
+            'restoreRangeNames(newTargetRange, storedNames)
         End If
         If Err.Number <> 0 Then
             errMsg = "Error in (re)assigning data target name: " & Err.Description & " (maybe known issue with 'cell like' sheetnames, e.g. 'C701 country' ?) in query: " & Query

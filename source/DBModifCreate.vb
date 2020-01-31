@@ -2,10 +2,14 @@
 Imports Microsoft.Office.Interop
 Imports Microsoft.Vbe.Interop
 Imports System.Windows.Forms
+Imports System.Collections.Generic
 
 
 ''' <summary>Dialog for creating DB Modifier configurations</summary>
 Public Class DBModifCreate
+    Private DBSeqStepValidationErrors As String = ""
+    Private DBSeqStepValidationErrorsShown As Boolean = False
+
 
     ''' <summary>check for required fields before closing</summary>
     ''' <param name="sender"></param>
@@ -16,11 +20,11 @@ Public Class DBModifCreate
             ' Add doesn't work directly with ExcelDnaUtil.Application.ActiveWorkbook.Names (late binding), so create an object here...
             Dim NamesList As Excel.Names = ExcelDnaUtil.Application.ActiveWorkbook.Names
             Try
-                NamesList.Add(Name:=Me.DBModifName.Text, RefersTo:=ExcelDnaUtil.Application.ActiveCell)
+                NamesList.Add(Name:=Me.Tag & Me.DBModifName.Text, RefersTo:=ExcelDnaUtil.Application.ActiveCell)
             Catch ex As Exception
                 NameValidationResult = ex.Message
             End Try
-            Try : NamesList.Item(Me.DBModifName.Text).Delete() : Catch ex As Exception : End Try
+            Try : NamesList.Item(Me.Tag & Me.DBModifName.Text).Delete() : Catch ex As Exception : End Try
         End If
         If Me.Tablename.Text = String.Empty And Me.Tablename.Visible Then
             MsgBox("Field Tablename is required, please fill in!")
@@ -41,10 +45,10 @@ Public Class DBModifCreate
                         Dim i As Integer
                         For i = 1 To UBound(params)
                             Dim definition() As String = Split(params(i), ":")
-                            If definition(0) = Me.Tag AndAlso definition(2) = Me.DBModifName.Text AndAlso
-                            DBModifDefColl.ContainsKey(definition(1)) AndAlso DBModifDefColl(definition(1)).ContainsKey(definition(2)) AndAlso
+                            If definition(0) = Me.Tag AndAlso definition(1) = Me.DBModifName.Text AndAlso
+                            DBModifDefColl.ContainsKey(definition(0)) AndAlso DBModifDefColl(definition(0)).ContainsKey(definition(1)) AndAlso
                             Me.execOnSave.Checked AndAlso execSeqElemOnSave Then
-                                Dim retval As MsgBoxResult = MsgBox(Me.Tag & Me.DBModifName.Text & " in " & definition(1) & "!" & DBModifDefColl(definition(1)).Item(definition(2)).getTargetRangeAddress() & " will be executed twice on saving, because it is part of DBSequence " & dbseqName & ", which is also executed on saving." & vbCrLf & "Please disable 'Execute on save' either here or on " & dbseqName & " !", MsgBoxStyle.Critical + vbOKCancel, "DBModification Validation")
+                                Dim retval As MsgBoxResult = MsgBox(Me.Tag & Me.DBModifName.Text & " in " & DBModifDefColl(definition(0)).Item(definition(1)).getTargetRangeAddress() & " will be executed twice on saving, because it is part of DBSequence " & dbseqName & ", which is also executed on saving." & vbCrLf & "Please disable 'Execute on save' either here or on " & dbseqName & " !", MsgBoxStyle.Critical + vbOKCancel, "DBModification Validation")
                                 Exit Sub
                             End If
                         Next
@@ -55,7 +59,7 @@ Public Class DBModifCreate
                 For Each docproperty In ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties
                     For i As Integer = 0 To Me.DBSeqenceDataGrid.Rows().Count - 2
                         Dim definition() As String = Split(Me.DBSeqenceDataGrid.Rows(i).Cells(0).Value, ":")
-                        If TypeName(docproperty.Value) = "String" And docproperty.Name = definition(0) & definition(2) Then
+                        If TypeName(docproperty.Value) = "String" And docproperty.Name = definition(0) & definition(1) Then
                             Dim DBModifParams() As String = functionSplit(docproperty.Value, ",", """", "def", "(", ")")
                             Dim storeDBMapOnSave As Boolean = False
                             If definition(0) = "DBAction" Then
@@ -64,7 +68,7 @@ Public Class DBModifCreate
                                 If DBModifParams(7) <> "" Then storeDBMapOnSave = Convert.ToBoolean(DBModifParams(7))
                             End If
                             If Me.execOnSave.Checked And storeDBMapOnSave Then
-                                Dim foundDBModifName As String = definition(0) & IIf(definition(2) = "", "Unnamed " & definition(0), definition(2))
+                                Dim foundDBModifName As String = definition(0) & IIf(definition(1) = "", "Unnamed " & definition(0), definition(1))
                                 Dim retval As MsgBoxResult = MsgBox(foundDBModifName & " will be executed twice on saving, because it is part of this DBSequence, which is also executed on saving." & vbCrLf & "Please disable Execute on save either here or on '" & foundDBModifName & "'", MsgBoxStyle.Critical + MsgBoxStyle.OkOnly, "DBModification Validation")
                                 Exit Sub
                             End If
@@ -108,7 +112,9 @@ Public Class DBModifCreate
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub DBSeqenceDataGrid_DataError(sender As Object, e As DataGridViewDataErrorEventArgs) Handles DBSeqenceDataGrid.DataError
-        LogWarn(e.Exception.Message & ":" & e.RowIndex & ":" & e.Context.ToString())
+        If Not DBSeqStepValidationErrorsShown Then
+            DBSeqStepValidationErrors += "Error in row " & e.RowIndex + 1 & ",content: " & Me.DBSeqenceDataGrid.Rows(e.RowIndex).Cells(0).Value & vbCrLf
+        End If
     End Sub
 
     ''' <summary>the DBMapper and DBAction Target Range Address is displayed as a hyperlink, simulate this link here</summary>
@@ -153,4 +159,23 @@ Public Class DBModifCreate
         DBSeqenceDataGrid.Rows(selIndex + 1).Cells(0).Selected = True
     End Sub
 
+    Private Sub DBModifCreate_Shown(sender As Object, e As EventArgs) Handles Me.Shown
+        If DBSeqStepValidationErrors <> "" Then
+            Dim cb As DataGridViewComboBoxColumn = DBSeqenceDataGrid.Columns(0)
+            Dim ds As List(Of String) = cb.DataSource()
+            Dim allowedValues As String = ""
+            For Each def As String In ds
+                allowedValues += def + vbCrLf
+            Next
+            Me.RepairDBSeqnce.Text = DBSeqStepValidationErrors & vbCrLf & "allowed Entries are:" & vbCrLf & allowedValues & vbCrLf & "modify existing definition below and remove everything else to repair (clicking OK):" & vbCrLf & Me.RepairDBSeqnce.Text
+            Me.RepairDBSeqnce.Show()
+            Me.RepairDBSeqnce.Width = Me.DBSeqenceDataGrid.Width
+            Me.RepairDBSeqnce.Height = 325
+            Me.RepairDBSeqnce.Top = Me.DatabaseLabel.Top
+            Me.DBSeqenceDataGrid.Hide()
+            Me.Tag = "repaired"
+            MsgBox("Defined DBSequence steps did not fit definitions." & vbCrLf & "Please follow the instructions in textbox to repair it...", MsgBoxStyle.Critical, "DBSequence definition Insert error")
+        End If
+        DBSeqStepValidationErrorsShown = True
+    End Sub
 End Class

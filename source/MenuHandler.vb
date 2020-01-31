@@ -28,11 +28,11 @@ Public Class MenuHandler
               "<button id='showLog' label='show log' screentip='shows Database Addins Diagnostic Display' imageMso='ZoomOnePage' onAction='clickShowLog'/>" +
               "</buttonGroup>" +
               "<dialogBoxLauncher><button id='dialog' label='About DBAddin' onAction='showAbout' tag='3' screentip='Show Aboutbox with help, version information, homepage and access to log'/></dialogBoxLauncher></group>"
-        ' DBModif Group: max. 15 sheets with DBModif definitions possible: 
+        ' DBModif Group: maximum three DBModif types possible (depending on existence in current workbook): 
         customUIXml += "<group id='DBModifGroup' label='Store DBModif Data'>"
-        For i As Integer = 0 To 14
-            customUIXml += "<dynamicMenu id='ID" + i.ToString() + "' " +
-                                            "size='large' getLabel='getSheetLabel' imageMso='ApplicationOptionsDialog' " +
+        For Each DBModifType As String In {"DBSeqnce", "DBMapper", "DBAction"}
+            customUIXml += "<dynamicMenu id='" + DBModifType + "' " +
+                                            "size='large' getLabel='getDBModifTypeLabel' imageMso='ApplicationOptionsDialog' " +
                                             "getScreentip='getDBModifScreentip' getContent='getDBModifMenuContent' getVisible='getDBModifMenuVisible'/>"
         Next
         customUIXml += "<dialogBoxLauncher><button id='designmode' label='toggle design mode' onAction='toggleDesignMode' tag='4' getScreentip='getToggleDesignScreentip'/></dialogBoxLauncher></group></tab></tabs></ribbon>"
@@ -42,14 +42,14 @@ Public Class MenuHandler
          "<button id='refreshDataC' label='refresh data (Ctrl-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
          "<button id='gotoDBFuncC' label='jump to DBFunc/target (Ctrl-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
          "<menu id='createMenu' label='Insert/Edit DBFunc/DBModif' insertBeforeMso='Cut'>" +
-           "<button id='DBMapper' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
-           "<button id='DBAction' tag='DBAction' label='DBAction' imageMso='TableIndexes' onAction='clickCreateButton'/>" +
-           "<button id='DBSequence' tag='DBSeqnce' label='DBSequence' imageMso='ShowOnNewButton' onAction='clickCreateButton'/>" +
+           "<button id='DBMapperC' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
+           "<button id='DBActionC' tag='DBAction' label='DBAction' imageMso='TableIndexes' onAction='clickCreateButton'/>" +
+           "<button id='DBSequenceC' tag='DBSeqnce' label='DBSequence' imageMso='ShowOnNewButton' onAction='clickCreateButton'/>" +
            "<menuSeparator id='separator' />" +
-           "<button id='DBListFetch' tag='DBListFetch' label='DBListFetch' imageMso='GroupLists' onAction='clickCreateButton'/>" +
-           "<button id='DBRowFetch' tag='DBRowFetch' label='DBRowFetch' imageMso='GroupRecords' onAction='clickCreateButton'/>" +
-           "<button id='DBSetQueryPivot' tag='DBSetQueryPivot' label='DBSetQueryPivot' imageMso='AddContentType' onAction='clickCreateButton'/>" +
-           "<button id='DBSetQueryListObject' tag='DBSetQueryListObject' label='DBSetQueryListObject' imageMso='AddContentType' onAction='clickCreateButton'/>" +
+           "<button id='DBListFetchC' tag='DBListFetch' label='DBListFetch' imageMso='GroupLists' onAction='clickCreateButton'/>" +
+           "<button id='DBRowFetchC' tag='DBRowFetch' label='DBRowFetch' imageMso='GroupRecords' onAction='clickCreateButton'/>" +
+           "<button id='DBSetQueryPivotC' tag='DBSetQueryPivot' label='DBSetQueryPivot' imageMso='AddContentType' onAction='clickCreateButton'/>" +
+           "<button id='DBSetQueryListObjectC' tag='DBSetQueryListObject' label='DBSetQueryListObject' imageMso='AddContentType' onAction='clickCreateButton'/>" +
          "</menu>" +
          "<menuSeparator id='MySeparatorC' insertBeforeMso='Cut'/>" +
          "</contextMenu>" +
@@ -193,10 +193,10 @@ Public Class MenuHandler
         loadConfig(control.Tag)
     End Sub
 
-    ''' <summary>set the name of the WB/sheet dropdown to the sheet name (for the WB dropdown this is the WB name)</summary>
+    ''' <summary>set the name of the DBModifType dropdown to the sheet name (for the WB dropdown this is the WB name)</summary>
     ''' <returns></returns>
-    Public Function getSheetLabel(control As IRibbonControl) As String
-        getSheetLabel = IIf(getSheetNameForMenuID(control.Id) = "ID0", "DBSequences", getSheetNameForMenuID(control.Id))
+    Public Function getDBModifTypeLabel(control As IRibbonControl) As String
+        getDBModifTypeLabel = IIf(control.Id = "DBSeqnce", "DBSequences", control.Id)
     End Function
 
     ''' <summary>create the buttons in the DBModif sheet dropdown menu</summary>
@@ -204,26 +204,14 @@ Public Class MenuHandler
     Public Function getDBModifMenuContent(control As IRibbonControl) As String
         Dim xmlString As String = "<menu xmlns='http://schemas.microsoft.com/office/2009/07/customui'>"
         Try
-            If control.Id = "ID0" Then
-                ' special menu for sequences
-                For Each nodeName As String In DBModifDefColl(control.Id).Keys
-                    Dim descName As String = IIf(nodeName = "", "Unnamed DBSequence", nodeName)
-                    xmlString = xmlString + "<button id='_" + nodeName + "' label='do " + descName + "' imageMso='ShowOnNewButton' onAction='DBSeqnceClick' tag='" + control.Id + "' screentip='do Sequence: " + descName + "' supertip='executes DB Sequence defined in docproperty DBSeqnce: " + descName + "' />"
-                Next
-            Else
-                Dim curWsName As String = getSheetNameForMenuID(control.Id)
-                If Not DBModifDefColl.ContainsKey(curWsName) Then Return ""
-
-                For Each nodeName As String In DBModifDefColl(curWsName).Keys
-                    Dim rngName As String = getDBModifNameFromRange(DBModifDefColl(curWsName).Item(nodeName).getTargetRange())
-                    Dim descName As String = IIf(nodeName = "", "Unnamed " + Left(rngName, 8), nodeName)
-                    If Left(rngName, 8) = "DBMapper" Then
-                        xmlString = xmlString + "<button id='_" + nodeName + "' label='store " + descName + "' imageMso='TableSave' onAction='DBMapperClick' tag='" + curWsName + "' screentip='store DBMapper: " + descName + "' supertip='stores data defined in DBMapper (named " + descName + ") range on " + DBModifDefColl(curWsName).Item(nodeName).getTargetRangeAddress() + "' />"
-                    ElseIf Left(rngName, 8) = "DBAction" Then
-                        xmlString = xmlString + "<button id='_" + nodeName + "' label='do " + descName + "' imageMso='TableIndexes' onAction='DBActionClick' tag='" + curWsName + "' screentip='do DBAction: " + descName + "' supertip='executes Action defined in DBAction (named " + descName + ") range on " + DBModifDefColl(curWsName).Item(nodeName).getTargetRangeAddress() + "' />"
-                    End If
-                Next
-            End If
+            If Not DBModifDefColl.ContainsKey(control.Id) Then Return ""
+            Dim DBModifTypeName As String = IIf(control.Id = "DBSeqnce", "DBSequences", IIf(control.Id = "DBMapper", "DB Mapper", IIf(control.Id = "DBAction", "DB Action", "undefined DBModifTypeName")))
+            For Each nodeName As String In DBModifDefColl(control.Id).Keys
+                Dim descName As String = IIf(nodeName = control.Id, "Unnamed " + DBModifTypeName, Replace(nodeName, DBModifTypeName, ""))
+                Dim imageMsoStr As String = IIf(control.Id = "DBSeqnce", "ShowOnNewButton", IIf(control.Id = "DBMapper", "TableSave", IIf(control.Id = "DBAction", "TableIndexes", "undefined imageMso")))
+                Dim superTipStr As String = IIf(control.Id = "DBSeqnce", "executes " + DBModifTypeName + " defined in docproperty: " + nodeName, IIf(control.Id = "DBMapper", "stores data defined in DBMapper (named " + nodeName + ") range on " + DBModifDefColl(control.Id).Item(nodeName).getTargetRangeAddress(), IIf(control.Id = "DBAction", "executes Action defined in DBAction (named " + nodeName + ") range on " + DBModifDefColl(control.Id).Item(nodeName).getTargetRangeAddress(), "undefined superTip")))
+                xmlString = xmlString + "<button id='_" + nodeName + "' label='do " + descName + "' imageMso='" & imageMsoStr & "' onAction='DBModifClick' tag='" + control.Id + "' screentip='do " & DBModifTypeName & ": " + descName + "' supertip='" + superTipStr + "' />"
+            Next
             xmlString += "</menu>"
             Return xmlString
         Catch ex As Exception
@@ -241,58 +229,18 @@ Public Class MenuHandler
     ''' <returns></returns>
     Public Function getDBModifMenuVisible(control As IRibbonControl) As Boolean
         Try
-            Return DBModifDefColl.ContainsKey(getSheetNameForMenuID(control.Id))
+            Return DBModifDefColl.ContainsKey(control.Id)
         Catch ex As Exception
             Return False
         End Try
     End Function
 
-    ''' <summary>get the worksheet name for a given control ID (via the index of the sheet)</summary>
-    ''' <param name="controlId"></param>
-    ''' <returns></returns>
-    Private Function getSheetNameForMenuID(controlId As String) As String
-        If controlId = "ID0" Then Return controlId
-        Dim curIndex As Integer = CInt(Replace(controlId, "ID", ""))
-        For Each ws In ExcelDnaUtil.Application.ActiveWorkbook.Worksheets
-            If ws.Index = curIndex Then Return ws.Name
-        Next
-        Return ""
-    End Function
-
-    ''' <summary>DBMapper store button activated, save Range to DB or define existing (CtrlKey pressed)...</summary>
-    Public Sub DBMapperClick(control As IRibbonControl)
-        Dim nodeName As String = Right(control.Id, Len(control.Id) - 1) ' remove underscore at beginning of id
-        Try
-            If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown Then
-                createDBModif("DBMapper", targetRange:=DBModifDefColl(control.Tag).Item(nodeName).getTargetRange())
-            Else
-                DBModifDefColl(control.Tag).Item(nodeName).doDBModif()
-            End If
-        Catch ex As Exception
-            LogError(ex.Message & ",control.Tag:" & control.Tag & ",nodeName:" & nodeName)
-        End Try
-    End Sub
-
-    ''' <summary>DBAction button activated, do DB Action or define existing (CtrlKey pressed)...</summary>
-    Public Sub DBActionClick(control As IRibbonControl)
+    ''' <summary>DBModif button activated, do DB Mapper/DB Action/DB Sequence or define existing (CtrlKey pressed)...</summary>
+    Public Sub DBModifClick(control As IRibbonControl)
         Dim nodeName As String = Right(control.Id, Len(control.Id) - 1)
         Try
             If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown Then
-                createDBModif("DBAction", targetRange:=DBModifDefColl(control.Tag).Item(nodeName).getTargetRange())
-            Else
-                DBModifDefColl(control.Tag).Item(nodeName).doDBModif()
-            End If
-        Catch ex As Exception
-            LogError(ex.Message & ",control.Tag:" & control.Tag & ",nodeName:" & nodeName)
-        End Try
-    End Sub
-
-    ''' <summary>DBSequence button activated, do DB Sequence or define existing (CtrlKey pressed)...</summary>
-    Public Sub DBSeqnceClick(control As IRibbonControl)
-        Dim nodeName As String = Right(control.Id, Len(control.Id) - 1)
-        Try
-            If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown Then
-                createDBModif("DBSeqnce", targetDefName:=nodeName, DBSequenceText:=DBModifDefColl(control.Tag).Item(nodeName).getParamText())
+                createDBModif(control.Tag, targetDefName:=nodeName)
             Else
                 ' DB sequence actions (the sequence to be done) are stored directly in DBMapperDefColl, so different invocation here
                 DBModifDefColl(control.Tag).Item(nodeName).doDBModif()
@@ -325,11 +273,12 @@ Public Class MenuHandler
     ''' <summary>context menu entries below create...: create DB function or DB Modification definition</summary>
     Public Sub clickCreateButton(control As IRibbonControl)
         ' check for existing DBMapper or DBAction definition and allow exit
-        Dim currentDBModifName As String = Left(getDBModifNameFromRange(ExcelDnaUtil.Application.ActiveCell), 8)
-        If (currentDBModifName = "DBMapper" Or currentDBModifName = "DBAction") And currentDBModifName <> control.Tag And control.Tag <> "DBSeqnce" Then
+        Dim activeCellDBModifName As String = getDBModifNameFromRange(ExcelDnaUtil.Application.ActiveCell)
+        Dim activeCellDBModifType As String = Left(activeCellDBModifName, 8)
+        If (activeCellDBModifType = "DBMapper" Or activeCellDBModifType = "DBAction") And activeCellDBModifType <> control.Tag And control.Tag <> "DBSeqnce" Then
             Dim exitMe As Boolean = True
-            ErrorMsg("Active Cell already contains definition for a " & currentDBModifName & ", inserting " & IIf(control.Tag = "DBSetQueryPivot" Or control.Tag = "DBSetQueryListObject", "DBSetQuery", control.Tag) & " here will probably cause trouble !", exitMe, "")
-            If exitMe Then Exit Sub
+            MsgBox("Active Cell already contains definition for a " & activeCellDBModifType & ", inserting " & IIf(control.Tag = "DBSetQueryPivot" Or control.Tag = "DBSetQueryListObject", "DBSetQuery", control.Tag) & " here will cause trouble !", vbCritical, "Inserting not allowed")
+            Exit Sub
         End If
         If control.Tag = "DBListFetch" Then
             createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBListFetch("""","""",R[1]C,,,TRUE,TRUE,TRUE)"})
@@ -374,8 +323,8 @@ Public Class MenuHandler
             End Try
             createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBSetQuery("""","""",RC[1])"})
         ElseIf control.Tag = "DBMapper" Or control.Tag = "DBAction" Or control.Tag = "DBSeqnce" Then
-            If currentDBModifName = control.Tag Then                 ' edit existing definition
-                createDBModif(control.Tag, ExcelDnaUtil.Application.ActiveCell)
+            If activeCellDBModifType = control.Tag Then                 ' edit existing definition
+                createDBModif(control.Tag, targetDefName:=activeCellDBModifName)
             Else                                                     ' create new definition
                 createDBModif(control.Tag)
             End If

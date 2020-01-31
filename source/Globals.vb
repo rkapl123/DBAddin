@@ -14,7 +14,7 @@ Public Module Globals
     Public theRibbon As CustomUI.IRibbonUI
     ''' <summary>environment definitions</summary>
     Public environdefs As String() = {}
-    ''' <summary>DBModif definition collections (for labels (key of nested dictionary) and DBModifiers (value of nested dictionary))</summary>
+    ''' <summary>DBModif definition collections of DBmodif types (key of top level dictionary) with values beinig collections of DBModifierNames (key of contained dictionaries) and DBModifiers (value of contained dictionaries))</summary>
     Public DBModifDefColl As Dictionary(Of String, Dictionary(Of String, DBModif))
     ''' <summary>the selected event level in the About box</summary>
     Public EventLevelSelected As String
@@ -393,32 +393,6 @@ Public Module Globals
             Dim dummy As String = ExcelDnaUtil.Application.Worksheets(theName).name
         Catch ex As Exception
             existsSheet = False
-        End Try
-    End Function
-
-    ''' <summary>gets DB Modification Name (DBMapper or DBAction) from theRange</summary>
-    ''' <param name="theRange"></param>
-    ''' <returns>the retrieved name as a string (not name object !)</returns>
-    Public Function getDBModifNameFromRange(theRange As Excel.Range) As String
-        Dim nm As Excel.Name
-        Dim rng, testRng As Excel.Range
-
-        getDBModifNameFromRange = ""
-        Try
-            For Each nm In theRange.Parent.Parent.Names
-                rng = Nothing
-                Try : rng = nm.RefersToRange : Catch ex As Exception : End Try
-                If Not rng Is Nothing Then
-                    testRng = Nothing
-                    Try : testRng = ExcelDnaUtil.Application.Intersect(theRange, rng) : Catch ex As Exception : End Try
-                    If Not IsNothing(testRng) And (InStr(1, nm.Name, "DBMapper") >= 1 Or InStr(1, nm.Name, "DBAction") >= 1) Then
-                        getDBModifNameFromRange = nm.Name
-                        Exit Function
-                    End If
-                End If
-            Next
-        Catch ex As Exception
-            LogError("Error: " & ex.Message)
         End Try
     End Function
 

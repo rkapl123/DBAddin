@@ -61,9 +61,9 @@ Public MustInherit Class DBModif
         If dataType = CheckTypeFld.checkIsNumericFld Then ' only decimal points allowed in numeric data
             dbFormatType = Replace(CStr(theVal), ",", ".")
         ElseIf dataType = CheckTypeFld.checkIsDateFld Then
-            dbFormatType = "'" & Format(theVal, "yyyyMMdd") & "'" ' standard SQL Date formatting
+            dbFormatType = "'" & Format(theVal, "yyyy-MM-dd") & "'" ' ISO 8601 standard SQL Date formatting
         ElseIf dataType = CheckTypeFld.checkIsTimeFld Then
-            dbFormatType = "'" & Format(theVal, "yyyyMMdd hh:mm:ss") & "'" ' standard SQL Date/time formatting
+            dbFormatType = "'" & Format(theVal, "yyyy-MM-dd HH:mm:ss.fff") & "'" ' ISO 8601 standard SQL Date/time formatting, 24h format...
         ElseIf TypeName(theVal) = "Boolean" Then
             dbFormatType = IIf(theVal, 1, 0)
         ElseIf dataType = CheckTypeFld.checkIsStringFld Then ' quote Strings
@@ -138,49 +138,41 @@ Public Class DBMapper : Inherits DBModif
     ''' <summary>respect C/U/D Flags (DBSheet functionality)</summary>
     Private CUDFlags As Boolean = False
 
-    Public Sub New(sheetName As String, defkey As String, paramTarget As Excel.Range)
+    Public Sub New(defkey As String, paramDefs As String, paramTarget As Excel.Range)
         dbmapdefkey = defkey
-        DBmapSheet = sheetName
         ' if no target range is set, then no parameters can be found...
-        If IsNothing(paramTarget) Then Exit Sub
-        paramTargetName = getDBModifNameFromRange(paramTarget)
-        If Left(paramTargetName, 8) <> "DBMapper" Then
-            LogError("target " & paramTargetName & " not matching passed DBModif type DBMapper for " & DBmapSheet & "/" & dbmapdefkey & "!")
-            Exit Sub
+        If IsNothing(paramTarget) Then
+            Throw New Exception("paramTarget is Nothing")
         End If
-        Try
-            paramText = paramTarget.Parent.Parent.CustomDocumentProperties(paramTargetName).Value
-        Catch ex As Exception
-            ErrorMsg("No paramText found in CustomDocumentProperties for " + paramTargetName)
-            Exit Sub
-        End Try
+        paramTargetName = getDBModifNameFromRange(paramTarget)
+        DBmapSheet = paramTarget.Parent.Name
+        targetRangeAddress = DBmapSheet + "!" + paramTarget.Address
+        If Left(paramTargetName, 8) <> "DBMapper" Then
+            Throw New Exception("target " & paramTargetName & " not matching passed DBModif type DBMapper for " & targetRangeAddress & "/" & dbmapdefkey & "!")
+        End If
+        paramText = paramDefs
         TargetRange = paramTarget
-        targetRangeAddress = paramTarget.Parent.Name + "!" + paramTarget.Address
 
         Dim DBModifParams() As String = functionSplit(paramText, ",", """", "def", "(", ")")
         If IsNothing(DBModifParams) Then Exit Sub
         ' check for completeness
         If DBModifParams.Length < 4 Then
-            ErrorMsg("At least environment (can be empty), database, Tablename and primary keys have to be provided as DBMapper parameters !")
-            Exit Sub
+            Throw New Exception("At least environment (can be empty), database, Tablename and primary keys have to be provided as DBMapper parameters !")
         End If
 
         ' fill parameters:
         If DBModifParams(0) <> "" Then env = Convert.ToInt16(DBModifParams(0))
         database = DBModifParams(1).Replace("""", "").Trim
         If database = "" Then
-            ErrorMsg("No database given in DBMapper paramText!")
-            Exit Sub
+            Throw New Exception("No database given in DBMapper paramText!")
         End If
         tableName = DBModifParams(2).Replace("""", "").Trim ' remove all quotes and trim right and left
         If tableName = "" Then
-            ErrorMsg("No Tablename given in DBMapper paramText!")
-            Exit Sub
+            Throw New Exception("No Tablename given in DBMapper paramText!")
         End If
         primKeysStr = DBModifParams(3).Replace("""", "").Trim
         If primKeysStr = "" Then
-            ErrorMsg("No primary keys given in DBMapper paramText!")
-            Exit Sub
+            Throw New Exception("No primary keys given in DBMapper paramText!")
         End If
         If DBModifParams.Length > 4 AndAlso DBModifParams(4) <> "" Then insertIfMissing = Convert.ToBoolean(DBModifParams(4))
         If DBModifParams.Length > 5 AndAlso DBModifParams(5) <> "" Then executeAdditionalProc = DBModifParams(5).Replace("""", "").Trim
@@ -197,12 +189,23 @@ Public Class DBMapper : Inherits DBModif
 
     Public Overrides Sub doDBModif(Optional WbIsSaving As Boolean = False, Optional calledByDBSeq As String = "")
         If env = 0 Then env = Globals.selectedEnvironment + 1 ' if Environment is not existing, take from selectedEnvironment
-        ' extend DataRange if it is only one cell ...
-        If TargetRange.Rows.Count = 1 And TargetRange.Columns.Count = 1 Then
-            Dim rowEnd = TargetRange.End(Excel.XlDirection.xlDown).Row
-            Dim colEnd = TargetRange.End(Excel.XlDirection.xlToRight).Column
-            TargetRange = TargetRange.Parent.Range(TargetRange, TargetRange.Parent.Cells(rowEnd, colEnd))
-        End If
+        ' extend DataRange to whole area ...
+        Dim rowEnd = TargetRange.Cells(1, 1).End(Excel.XlDirection.xlDown).Row
+        Dim colEnd = TargetRange.Cells(1, 1).End(Excel.XlDirection.xlToRight).Column
+        For Each DBModifName As Excel.Name In TargetRange.Parent.Parent.Names
+            If DBModifName.Name = paramTargetName Then
+                ' then set name to offset function covering the whole area...
+                Try
+                    DBModifName.RefersTo = TargetRange.Parent.Range(TargetRange, TargetRange.Parent.Cells(rowEnd, colEnd))
+                    Exit For
+                Catch ex As Exception
+                    ErrorMsg("Error when assigning name '" & paramTargetName & "': " & ex.Message)
+                    Exit Sub
+                End Try
+            End If
+        Next
+        TargetRange = TargetRange.Parent.Range(paramTargetName)
+        targetRangeAddress = TargetRange.Parent.Name + "!" + TargetRange.Address
 
         ' set up parameters
         If WbIsSaving And Not execOnSave Then Exit Sub
@@ -218,7 +221,7 @@ Public Class DBMapper : Inherits DBModif
         Try
             checkrst.Open(tableName, dbcnn, CursorTypeEnum.adOpenForwardOnly, LockTypeEnum.adLockReadOnly, CommandTypeEnum.adCmdTableDirect)
         Catch ex As Exception
-            LogError("Table: " & tableName & " caused error: " & ex.Message & " in sheet " & TargetRange.Parent.Name)
+            MsgBox("Opening table '" & tableName & "' caused following error: " & ex.Message & " for DBMapper " & paramTargetName, MsgBoxStyle.Critical, "DBMapper Error")
             checkrst.Close()
             GoTo cleanup
         End Try
@@ -263,89 +266,99 @@ Public Class DBMapper : Inherits DBModif
         Dim finishLoop As Boolean
         ' walk through rows
         Do
-
-            ' try to find record for update, construct where clause with primary key columns
-            Dim primKeyCompound As String = " WHERE "
-            For i As Integer = 0 To UBound(primKeys)
-                Dim primKeyValue
-                primKeyValue = TargetRange.Cells(rowNum, i + 1).Value
-                primKeyCompound = primKeyCompound & primKeys(i) & " = " & dbFormatType(primKeyValue, checkTypes(i)) & IIf(i = UBound(primKeys), "", " AND ")
-                If IsError(primKeyValue) Then
-                    ErrorMsg("Error in primary key value, cell (" & rowNum & "," & i + 1 & ") in sheet " & TargetRange.Parent.Name & ", & row " & rowNum)
-                    GoTo nextRow
-                End If
-                If primKeyValue.ToString().Length = 0 Then
-                    ErrorMsg("Empty primary key value, cell (" & rowNum & "," & i + 1 & ") in sheet " & TargetRange.Parent.Name & ", & row " & rowNum)
-                    GoTo nextRow
-                End If
-            Next
-            Try
-                rst.Open("SELECT * FROM " & tableName & primKeyCompound, dbcnn, CursorTypeEnum.adOpenDynamic, LockTypeEnum.adLockOptimistic)
-            Catch ex As Exception
-                LogError("Problem getting recordset, Error: " & ex.Message & " in sheet " & TargetRange.Parent.Name & ", & row " & rowNum)
-                rst.Close()
-                GoTo cleanup
-            End Try
-
-            ' didn't find record, so add a new record if insertIfMissing flag is set
-            If rst.EOF Then
-                Dim i As Integer
-                If insertIfMissing Then
-                    ExcelDnaUtil.Application.StatusBar = "Inserting " & primKeyCompound & " in table " & tableName
-                    rst.AddNew()
-                    For i = 0 To UBound(primKeys)
-                        rst.Fields(primKeys(i)).Value = IIf(TargetRange.Cells(rowNum, i + 1).ToString().Length = 0, vbNull, TargetRange.Cells(rowNum, i + 1).Value)
-                    Next
-                Else
-                    TargetRange.Parent.Activate
-                    TargetRange.Cells(rowNum, i + 1).Select
-                    LogError("Problem getting recordset " & primKeyCompound & " from table '" & tableName & "', insertIfMissing = " & insertIfMissing & " in sheet " & TargetRange.Parent.Name & ", & row " & rowNum)
+            ' if CUDFlags are set, only insert/update/delete if CUDFlags column (right to DBMapper range) is filled...
+            If Not CUDFlags Or (CUDFlags And TargetRange.Cells(rowNum, TargetRange.Columns.Count + 1).Value <> "") Then
+                Dim rowCUDFlag As String = TargetRange.Cells(rowNum, TargetRange.Columns.Count + 1).Value
+                ' try to find record for update, construct where clause with primary key columns
+                Dim primKeyCompound As String = " WHERE "
+                For i As Integer = 0 To UBound(primKeys)
+                    Dim primKeyValue
+                    primKeyValue = TargetRange.Cells(rowNum, i + 1).Value
+                    primKeyCompound = primKeyCompound & primKeys(i) & " = " & dbFormatType(primKeyValue, checkTypes(i)) & IIf(i = UBound(primKeys), "", " AND ")
+                    If IsError(primKeyValue) Then
+                        ErrorMsg("Error in primary key value, cell (" & rowNum & "," & i + 1 & ") in sheet " & TargetRange.Parent.Name & ", & row " & rowNum)
+                        GoTo nextRow
+                    End If
+                    If primKeyValue.ToString().Length = 0 Then
+                        ErrorMsg("Empty primary key value, cell (" & rowNum & "," & i + 1 & ") in sheet " & TargetRange.Parent.Name & ", & row " & rowNum)
+                        GoTo nextRow
+                    End If
+                Next
+                Dim getStmt As String = "SELECT * FROM " & tableName & primKeyCompound
+                Try
+                    rst.Open(getStmt, dbcnn, CursorTypeEnum.adOpenDynamic, LockTypeEnum.adLockOptimistic)
+                Catch ex As Exception
+                    LogError("Problem getting recordset, Error: " & ex.Message & " in sheet " & TargetRange.Parent.Name & ", & row " & rowNum)
                     rst.Close()
                     GoTo cleanup
-                End If
-            Else
-                ExcelDnaUtil.Application.StatusBar = "Updating " & primKeyCompound & " in table " & tableName
-            End If
+                End Try
 
-            ' walk through non primary columns and fill fields
-            colNum = UBound(primKeys) + 1
-            Do
-                Dim fieldname As String = TargetRange.Cells(1, colNum).Value
-                If InStr(1, ignoreColumns, LCase(fieldname) + ",") = 0 Then
+                ' didn't find record, so add a new record if insertIfMissing flag is set
+                If rst.EOF Then
+                    Dim i As Integer
+                    If insertIfMissing Or rowCUDFlag = "i" Then
+                        ExcelDnaUtil.Application.StatusBar = "Inserting " & primKeyCompound & " in table " & tableName
+                        rst.AddNew()
+                        For i = 0 To UBound(primKeys)
+                            rst.Fields(primKeys(i)).Value = IIf(TargetRange.Cells(rowNum, i + 1).ToString().Length = 0, vbNull, TargetRange.Cells(rowNum, i + 1).Value)
+                        Next
+                    Else
+                        TargetRange.Parent.Activate
+                        TargetRange.Cells(rowNum, i + 1).Select
+                        LogError("Did not find recordset with statement '" & getStmt & "', insertIfMissing = " & insertIfMissing & " in sheet " & TargetRange.Parent.Name & ", & row " & rowNum)
+                        rst.Close()
+                        GoTo cleanup
+                    End If
+                Else
+                    ExcelDnaUtil.Application.StatusBar = "Updating " & primKeyCompound & " in table " & tableName
+                End If
+
+                If Not CUDFlags Or (rowCUDFlag = "u") Then
+                    ' walk through non primary columns and fill fields
+                    colNum = UBound(primKeys) + 1
+                    Do
+                        Dim fieldname As String = TargetRange.Cells(1, colNum).Value
+                        If InStr(1, ignoreColumns, LCase(fieldname) + ",") = 0 Then
+                            Try
+                                rst.Fields(fieldname).Value = IIf(TargetRange.Cells(rowNum, colNum).ToString().Length = 0, vbNull, TargetRange.Cells(rowNum, colNum).Value)
+                            Catch ex As Exception
+                                TargetRange.Parent.Activate
+                                TargetRange.Cells(rowNum, colNum).Select
+
+                                ErrorMsg("Field Value Update Error: " & ex.Message & " with Table: " & tableName & ", Field: " & fieldname & ", in sheet " & TargetRange.Parent.Name & ", & row " & rowNum & ", col: " & colNum)
+                                rst.CancelUpdate()
+                                rst.Close()
+                                GoTo cleanup
+                            End Try
+                        End If
+                        colNum += 1
+                    Loop Until colNum > TargetRange.Columns.Count
+
+                    ' now do the update/insert in the DB
                     Try
-                        rst.Fields(fieldname).Value = IIf(TargetRange.Cells(rowNum, colNum).ToString().Length = 0, vbNull, TargetRange.Cells(rowNum, colNum).Value)
+                        rst.Update()
                     Catch ex As Exception
                         TargetRange.Parent.Activate
-                        TargetRange.Cells(rowNum, colNum).Select
-
-                        ErrorMsg("Field Value Update Error: " & ex.Message & " with Table: " & tableName & ", Field: " & fieldname & ", in sheet " & TargetRange.Parent.Name & ", & row " & rowNum & ", col: " & colNum)
+                        TargetRange.Rows(rowNum).Select
+                        ErrorMsg("Row Update Error, Table: " & rst.Source & ", Error: " & ex.Message & " in sheet " & TargetRange.Parent.Name & ", & row " & rowNum)
                         rst.CancelUpdate()
                         rst.Close()
                         GoTo cleanup
                     End Try
                 End If
-                colNum += 1
-            Loop Until colNum > TargetRange.Columns.Count
-
-            ' now do the update/insert in the DB
-            Try
-                rst.Update()
-            Catch ex As Exception
-                TargetRange.Parent.Activate
-                TargetRange.Rows(rowNum).Select
-                ErrorMsg("Row Update Error, Table: " & rst.Source & ", Error: " & ex.Message & " in sheet " & TargetRange.Parent.Name & ", & row " & rowNum)
-                rst.CancelUpdate()
+                If (CUDFlags And rowCUDFlag = "d") Then
+                    ExcelDnaUtil.Application.StatusBar = "Deleting " & primKeyCompound & " in table " & tableName
+                    rst.Delete(AffectEnum.adAffectCurrent)
+                End If
                 rst.Close()
-                GoTo cleanup
-            End Try
-            rst.Close()
 nextRow:
-            Try
-                finishLoop = IIf(TargetRange.Cells(rowNum + 1, 1).ToString().Length = 0, True, False)
-            Catch ex As Exception
-                ErrorMsg("Error in first primary column: Cells(" & rowNum + 1 & ",1): " & ex.Message)
-                'finishLoop = True ' commented to allow erroneous data...
-            End Try
+                Try
+                    finishLoop = IIf(TargetRange.Cells(rowNum + 1, 1).ToString().Length = 0, True, False)
+                Catch ex As Exception
+                    ErrorMsg("Error in first primary column: Cells(" & rowNum + 1 & ",1): " & ex.Message)
+                    'finishLoop = True ' commented to allow erroneous data...
+                End Try
+            End If
             rowNum += 1
         Loop Until rowNum > TargetRange.Rows.Count Or finishLoop
 
@@ -395,27 +408,23 @@ Public Class DBAction
     ''' <summary>DBModif name of target range</summary>
     Private paramTargetName As String
 
-    Public Sub New(sheetName As String, defkey As String, paramTarget As Excel.Range)
-        DBmapSheet = sheetName
+    Public Sub New(defkey As String, paramDefs As String, paramTarget As Excel.Range)
         dbmapdefkey = defkey
         ' if no target range is set, then no parameters can be found...
         If IsNothing(paramTarget) Then Exit Sub
         paramTargetName = getDBModifNameFromRange(paramTarget)
+        DBmapSheet = paramTarget.Parent.Name
+        targetRangeAddress = DBmapSheet + "!" + paramTarget.Address
         If Left(paramTargetName, 8) <> "DBAction" Then
-            LogError("target " & paramTargetName & " not matching passed DBModif type DBAction for " & DBmapSheet & "/" & dbmapdefkey & " !")
+            LogError("target " & paramTargetName & " not matching passed DBModif type DBAction for " & targetRangeAddress & "/" & dbmapdefkey & " !")
             Exit Sub
         End If
         ' set up parameters
         If paramTarget.Cells(1, 1).Text = "" Then
-            ErrorMsg("No Action defined in " + paramTargetName)
+            ErrorMsg("No Action defined in " + paramTargetName + "(" + targetRangeAddress + ")")
             Exit Sub
         End If
-        Try
-            paramText = paramTarget.Parent.Parent.CustomDocumentProperties(paramTargetName).Value
-        Catch ex As Exception
-            ErrorMsg("No paramText found in CustomDocumentProperties for " + paramTargetName)
-            Exit Sub
-        End Try
+        paramText = paramDefs
         TargetRange = paramTarget
         Dim DBModifParams() As String = functionSplit(paramText, ",", """", "def", "(", ")")
         If IsNothing(DBModifParams) Then Exit Sub
@@ -487,7 +496,7 @@ Public Class DBSeqnce
             ErrorMsg("No Sequence defined in " + dbmapdefkey)
             Exit Sub
         End If
-        ' parse parameters: 1st item is execOnSave, rest defines sequence (tripletts of Type:WsheetID:Name)
+        ' parse parameters: 1st item is execOnSave, rest defines sequence (tripletts of DBModifType:DBModifName)
         sequenceParams = Split(paramText, ",")
         execOnSave = Convert.ToBoolean(sequenceParams(0)) ' should DBSequence be done on Excel Saving?
     End Sub
@@ -504,13 +513,13 @@ Public Class DBSeqnce
         For i = 1 To UBound(sequenceParams)
             Dim definition() As String = Split(sequenceParams(i), ":")
             If definition(0) <> "DBRefrsh" Then
-                DBModifDefColl(definition(1)).Item(definition(2)).doDBModif(WbIsSaving, calledByDBSeq:=dbmapdefkey)
+                DBModifDefColl(definition(0)).Item(definition(1)).doDBModif(WbIsSaving, calledByDBSeq:=dbmapdefkey)
             Else
                 ' reset query cache, so we really get new data !
                 Functions.queryCache.Clear()
                 Functions.StatusCollection.Clear()
                 ' refresh DBFunction in sequence
-                Dim underlyingName As String = definition(2)
+                Dim underlyingName As String = definition(1)
                 If Not ExcelDnaUtil.Application.Range(underlyingName).Parent Is ExcelDnaUtil.Application.ActiveSheet Then
                     ExcelDnaUtil.Application.ScreenUpdating = False
                     origWS = ExcelDnaUtil.Application.ActiveSheet
@@ -570,8 +579,8 @@ Public Module DBModifs
         openConnection = True
     End Function
 
-    ''' <summary>creates a DBModif at the current active cell or edits an existing one being there or after being called from ribbon + Ctrl</summary>
-    Sub createDBModif(type As String, Optional targetRange As Excel.Range = Nothing, Optional targetDefName As String = "", Optional DBSequenceText As String = "")
+    ''' <summary>creates a DBModif at the current active cell or edits an existing one defined in targetDefName (after being called in defined range or from ribbon + Ctrl + Shift)</summary>
+    Sub createDBModif(type As String, Optional targetDefName As String = "")
         ' clipboard helper for legacy definitions:
         ' if saveRangeToDB macro calls were copied, rename saveRangeToDB<Single> To def, 1st parameter (datarange) removed (empty), connid moved to 2nd place as database name (remove MSSQL)
         'mapper.saveRangeToDBSingle(Range("DB_DefName"), "tableName", "primKey1,primKey2,primKey3", "MSSQLDB_NAME", True)
@@ -579,6 +588,8 @@ Public Module DBModifs
         'mapper.saveRangeToDBSingle(Range("DB_DefName"), "tableName", "primKey1,primKey2,primKey3", "MSSQLDB_NAME")
         '--> def(, "DB_NAME", "tableName", "primKey1,primKey2,primKey3")          DBMapperName = DB_DefName
         'def(, "DB_NAME", True), "tableName", "primKey1,primKey2,primKey3", "MSSQLDB_NAME", True)", "MSSQLDB_NAME", True)
+        Dim existingDBModif As DBModif = Nothing
+        Dim activeCellName As String = targetDefName
         Dim createdDBMapperFromClipboard As Boolean = False
         If Clipboard.ContainsText() And type = "DBMapper" Then
             Dim cpbdtext As String = Clipboard.GetText()
@@ -594,13 +605,15 @@ Public Module DBModifs
                 Catch ex As Exception : ErrorMsg("Error when retrieving DB_DefName from clipboard: " & ex.Message) : Exit Sub : End Try
                 Try : newDefString = "def(" + Replace(Mid(cpbdtext, commaBeforeConnDef, commaAfterConnDef - commaBeforeConnDef), "MSSQL", "") + Mid(cpbdtext, firstComma, commaBeforeConnDef - firstComma - 1) + Mid(cpbdtext, commaAfterConnDef - 1)
                 Catch ex As Exception : ErrorMsg("Error when building new definition from clipboard: " & ex.Message) : Exit Sub : End Try
-                If IsNothing(targetRange) Then targetRange = ExcelDnaUtil.Application.ActiveCell
-                Try : targetRange.Name = DB_DefName
+                ' assign new name to active cell
+                ' Add doesn't work directly with ExcelDnaUtil.Application.ActiveWorkbook.Names (late binding), so create an object here...
+                Dim NamesList As Excel.Names = ExcelDnaUtil.Application.ActiveWorkbook.Names
+                Try : NamesList.Add(Name:=DB_DefName, RefersTo:=ExcelDnaUtil.Application.ActiveCell)
                 Catch ex As Exception
                     ErrorMsg("Error when assigning name '" & DB_DefName & "' to active cell: " & ex.Message)
-                    targetRange.Name.Delete
                     Exit Sub
                 End Try
+                ' store parameters in same named docproperty
                 Try : ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties(DB_DefName).Delete : Catch ex As Exception : End Try
                 Try
                     ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties.Add(Name:=DB_DefName, LinkToContent:=False, Type:=Microsoft.Office.Core.MsoDocProperties.msoPropertyTypeString, Value:=newDefString)
@@ -609,17 +622,15 @@ Public Module DBModifs
                     ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties(DB_DefName).Delete
                     Exit Sub
                 End Try
+                existingDBModif = New DBMapper(defkey:=DB_DefName, paramDefs:=newDefString, paramTarget:=ExcelDnaUtil.Application.ActiveCell)
+                activeCellName = DB_DefName
                 createdDBMapperFromClipboard = True
                 Clipboard.Clear()
             End If
         End If
 
-        ' start normal creation
-        Dim activeCellName As String = ""
-        If Not IsNothing(targetRange) Then activeCellName = getDBModifNameFromRange(targetRange) ' try regular defined name
-        If type = "DBSeqnce" Then activeCellName = "DBSeqnce" & targetDefName
+        ' for DBMappers defined in ListObjects, try potential name to ListObject (parts), only possible if manually defined !
         If type = "DBMapper" Then
-            ' try potential name to ListObject (parts), only possible if manually defined !
             If activeCellName = "" And Not IsNothing(ExcelDnaUtil.Application.Selection.ListObject) Then
                 For Each listObjectCol In ExcelDnaUtil.Application.Selection.ListObject.ListColumns
                     For Each aName As Excel.Name In ExcelDnaUtil.Application.ActiveWorkbook.Names
@@ -633,30 +644,22 @@ Public Module DBModifs
             End If
         End If
 
-        ' fetch parameters if existing target range and matching definition...
-        Dim existingDBModif As DBModif = Nothing
-        Try
-            If type = "DBMapper" Then
-                existingDBModif = New DBMapper("", "", targetRange)
-            ElseIf type = "DBAction" Then
-                existingDBModif = New DBAction("", "", targetRange)
-            ElseIf type = "DBSeqnce" Then
-                existingDBModif = New DBSeqnce(targetDefName, DBSequenceText)
-            Else
-                LogError("Error, not supported DBModiftype: " & type)
-            End If
-        Catch ex As Exception : End Try
+        ' fetch parameters if there is an existing definition...
+        If DBModifDefColl.ContainsKey(type) AndAlso DBModifDefColl(type).ContainsKey(targetDefName) Then existingDBModif = DBModifDefColl(type).Item(targetDefName)
 
         ' prepare DBModifier Create Dialog
         Dim theDBModifCreateDlg As DBModifCreate = New DBModifCreate()
         With theDBModifCreateDlg
+            ' store DBModification type in tag for validation purposes...
+            .Tag = type
             .envSel.DataSource = Globals.environdefs
             .envSel.SelectedIndex = -1
+            .DBModifName.Text = Replace(activeCellName, type, "")
             If Not IsNothing(existingDBModif) Then
-                If InStr(1, activeCellName, type) > 0 Then .DBModifName.Text = Replace(activeCellName, type, "")
                 ' delegate filling of dialog fields to created DBModif object
                 existingDBModif.setDBModifCreateFields(theDBModifCreateDlg)
             End If
+            .RepairDBSeqnce.Hide()
             .NameLabel.Text = IIf(type = "DBSeqnce", "DBSequence", type) & " Name:"
             .Text = "Edit " & IIf(type = "DBSeqnce", "DBSequence", type) & " definition"
             If type <> "DBMapper" Then
@@ -672,7 +675,6 @@ Public Module DBModifs
                 .CUDflags.Hide()
             End If
             If type = "DBSeqnce" Then
-                .DBModifName.Text = targetDefName
                 ' hide controls irrelevant for DBSeqnce
                 .TargetRangeLabel.Hide()
                 .TargetRangeAddress.Hide()
@@ -689,19 +691,19 @@ Public Module DBModifs
                 cb.ReadOnly = False
                 cb.ValueType() = GetType(String)
                 Dim ds As List(Of String) = New List(Of String)
+
                 ' first add the DBMapper and DBAction definitions available in the Workbook
-                For Each sheetId As String In DBModifDefColl.Keys
-                    For Each nodeName As String In DBModifDefColl(sheetId).Keys
-                        ' avoid DB Sequences (might be - indirectly - self referencing, leading to endless recursion)
-                        If sheetId <> "ID0" Then
-                            ' for DBMapper and DBAction, full name is only available from the target range name
-                            Dim targetRangeName As String = getDBModifNameFromRange(DBModifDefColl(sheetId).Item(nodeName).getTargetRange())
-                            ds.Add(Left(targetRangeName, 8) & ":" & sheetId & ":" & Right(targetRangeName, Len(targetRangeName) - 8))
-                        End If
-                    Next
+                For Each DBModiftype As String In DBModifDefColl.Keys
+                    ' avoid DB Sequences (might be - indirectly - self referencing, leading to endless recursion)
+                    If DBModiftype <> "DBSeqnce" Then
+                        For Each nodeName As String In DBModifDefColl(DBModiftype).Keys
+                            ds.Add(DBModiftype & ":" & nodeName)
+                        Next
+                    End If
                 Next
-                Dim searchCell As Excel.Range
+
                 ' then add DBRefresh items for allowing refreshing DBFunctions (DBListFetch and DBSetQuery) during a Sequence
+                Dim searchCell As Excel.Range
                 For Each ws As Excel.Worksheet In ExcelDnaUtil.Application.ActiveWorkbook.Worksheets
                     For Each theFunc As String In {"DBListFetch(", "DBSetQuery("}
                         searchCell = ws.Cells.Find(What:=theFunc, After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
@@ -711,7 +713,7 @@ Public Module DBModifs
                                 Continue For
                             End If
                             Dim underlyingName As String = getDBunderlyingNameFromRange(searchCell)
-                            ds.Add("DBRefrsh:" & theFunc & searchCell.Parent.Name & "!" & searchCell.Address & "):" & underlyingName)
+                            ds.Add("DBRefrsh:" & underlyingName & ":" & theFunc & "in " & searchCell.Parent.Name & "!" & searchCell.Address & ")")
                             ' reset the cell find dialog....
                             searchCell = Nothing
                         End If
@@ -722,8 +724,12 @@ Public Module DBModifs
                 Next
                 cb.DataSource() = ds
                 .DBSeqenceDataGrid.Columns.Add(cb)
-                ' fill possible existing sequence definitions into form/Datagridview
+
+                ' at last fill possible existing sequence definitions into form/Datagridview
+                Dim DBSequenceText As String = ""
+                Try : DBSequenceText = existingDBModif.getParamText() : Catch Ex As Exception : End Try
                 If Len(DBSequenceText) > 0 Then
+                    .RepairDBSeqnce.Text = DBSequenceText
                     Dim params() As String = Split(DBSequenceText, ",")
                     .execOnSave.Checked = Convert.ToBoolean(params(0))
                     For i As Integer = 1 To UBound(params)
@@ -737,14 +743,13 @@ Public Module DBModifs
                 .down.Hide()
                 .DBSeqenceDataGrid.Hide()
             End If
-            ' store DBModification type in tag for validation purposes...
-            theDBModifCreateDlg.Tag = type
+
             ' display dialog for parameters
             If theDBModifCreateDlg.ShowDialog() = DialogResult.Cancel Then
-                ' remove name and customdocproperty created in clipboard helper
+                ' remove targetRange Name and customdocproperty created in clipboard helper
                 If createdDBMapperFromClipboard Then
                     Try
-                        targetRange.Name.Delete()
+                        ExcelDnaUtil.Application.ActiveWorkbook.Names(activeCellName).Delete
                         ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties(activeCellName).Delete
                     Catch ex As Exception : End Try
                 End If
@@ -753,17 +758,14 @@ Public Module DBModifs
 
             ' only for DBMapper or DBAction: change target range name
             If type <> "DBSeqnce" Then
+                Dim targetRange As Excel.Range = existingDBModif.getTargetRange()
                 If IsNothing(targetRange) Then targetRange = ExcelDnaUtil.Application.ActiveCell
                 ' set content range name: first clear name
-                If InStr(1, activeCellName, type) > 0 Then   ' fetch parameters if existing comment and DBMapper definition...
-                    Try
-                        For Each DBModifName As Excel.Name In ExcelDnaUtil.Application.ActiveWorkbook.Names
-                            If DBModifName.Name = activeCellName Then DBModifName.Delete()
-                        Next
-                    Catch ex As Exception : ErrorMsg("Error when removing name '" + activeCellName + "' from active cell: " & ex.Message) : End Try
-                End If
+                Try : ExcelDnaUtil.Application.ActiveWorkbook.Names(activeCellName).Delete : Catch ex As Exception : End Try
                 ' then (re)set name
-                Try : targetRange.Name = type + .DBModifName.Text
+                Dim NamesList As Excel.Names = ExcelDnaUtil.Application.ActiveWorkbook.Names
+                Try
+                    NamesList.Add(Name:=type + .DBModifName.Text, RefersTo:=targetRange)
                 Catch ex As Exception : ErrorMsg("Error when assigning name '" & type & .DBModifName.Text & "' to active cell: " & ex.Message)
                 End Try
             End If
@@ -780,11 +782,16 @@ Public Module DBModifs
                     """" + IIf(Len(.IgnoreColumns.Text) = 0, "", .IgnoreColumns.Text) + """," +
                     .execOnSave.Checked.ToString() + "," + .CUDflags.Checked.ToString() + ")"
             ElseIf type = "DBSeqnce" Then
-                newParamText = .execOnSave.Checked.ToString()
-                ' need that because empty row at the end is passed along with Rows() !!
-                For i As Integer = 0 To .DBSeqenceDataGrid.Rows().Count - 2
-                    newParamText += "," + .DBSeqenceDataGrid.Rows(i).Cells(0).Value
-                Next
+                If .Tag = "repaired" Then
+                    newParamText = .RepairDBSeqnce.Text
+                Else
+                    newParamText = .execOnSave.Checked.ToString()
+                    ' need that because empty row at the end is passed along with Rows() !!
+                    For i As Integer = 0 To .DBSeqenceDataGrid.Rows().Count - 2
+                        newParamText += "," + .DBSeqenceDataGrid.Rows(i).Cells(0).Value
+                    Next
+
+                End If
             End If
             ' ... and store in docproperty (rename docproperty first to current name, might have been changed)
             Try : ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties(activeCellName).Delete : Catch ex As Exception : End Try
@@ -798,69 +805,91 @@ Public Module DBModifs
 
     ''' <summary>gets defined names for DBModifier (DBMapper/DBAction/DBSeqnce) invocation in the current workbook and updates Ribbon with it</summary>
     Public Sub getDBModifDefinitions()
-        ' load DBModifier definitions
+        ' load DBModifier definitions (objects) into Global collection DBModifDefColl
         Try
             Globals.DBModifDefColl = New Dictionary(Of String, Dictionary(Of String, DBModif))
-            ' add DB sequences on Workbook level...
+            ' get DBModifier definitions from docproperties
             For Each docproperty In ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties
-                If TypeName(docproperty.Value) = "String" And Left(docproperty.Name, 8) = "DBSeqnce" Then
-                    Dim nodeName As String = Replace(docproperty.Name, "DBSeqnce", "")
-
-                    Dim defColl As Dictionary(Of String, DBModif)
-                    If Not DBModifDefColl.ContainsKey("ID0") Then
-                        ' add to new sheet "menu"
-                        defColl = New Dictionary(Of String, DBModif)
-                        defColl.Add(nodeName, New DBSeqnce(nodeName, docproperty.Value))
-                        DBModifDefColl.Add("ID0", defColl)
-                    Else
-                        ' add definition to existing sheet "menu"
-                        defColl = DBModifDefColl("ID0")
-                        defColl.Add(nodeName, New DBSeqnce(nodeName, docproperty.Value))
+                Dim DBModiftype As String = Left(docproperty.Name, 8)
+                If TypeName(docproperty.Value) = "String" And (DBModiftype = "DBSeqnce" Or DBModiftype = "DBMapper" Or DBModiftype = "DBAction") Then
+                    Dim nodeName As String = docproperty.Name
+                    Dim targetRange As Excel.Range = Nothing
+                    ' for DBMappers and DBActions the data of the DBModification is stored in Ranges, so check for those and get the Range
+                    If DBModiftype = "DBMapper" Or DBModiftype = "DBAction" Then
+                        For Each rangename As Excel.Name In ExcelDnaUtil.Application.ActiveWorkbook.Names
+                            Dim rangenameName As String = Replace(rangename.Name, rangename.Parent.Name & "!", "")
+                            If rangenameName = nodeName And InStr(rangename.RefersTo, "#REF!") > 0 Then
+                                ErrorMsg(DBModiftype + " definitions range [" + rangename.Parent.Name + "]" + rangename.Name + " contains #REF!")
+                                Continue For
+                            ElseIf rangenameName = nodeName Then
+                                targetRange = rangename.RefersToRange
+                            End If
+                        Next
                     End If
-                End If
-            Next
-            For Each namedrange As Excel.Name In ExcelDnaUtil.Application.ActiveWorkbook.Names
-                Dim cleanname As String = Replace(namedrange.Name, namedrange.Parent.Name & "!", "")
-                Dim DBModiftype As String = Left(cleanname, 8)
-                If DBModiftype = "DBMapper" Or DBModiftype = "DBAction" Then
-                    If InStr(namedrange.RefersTo, "#REF!") > 0 Then
-                        ErrorMsg(DBModiftype + " definitions range " + namedrange.Parent.Name + "!" + namedrange.Name + " contains #REF!")
-                        Continue For
-                    End If
-                    Dim nodeName As String = Replace(cleanname, DBModiftype, "")
-
-                    Dim sheetID As String = namedrange.RefersToRange.Parent.Name
-                    Dim defColl As Dictionary(Of String, DBModif)
+                    ' finally create the DBModif Object ...
                     Dim newDBModif As DBModif
-                    If DBModiftype = "DBMapper" Then
-                        newDBModif = New DBMapper(sheetID, nodeName, namedrange.RefersToRange)
-                    ElseIf DBModiftype = "DBAction" Then
-                        newDBModif = New DBAction(sheetID, nodeName, namedrange.RefersToRange)
+                    If DBModiftype = "DBMapper" And Not IsNothing(targetRange) Then
+                        newDBModif = New DBMapper(docproperty.Name, docproperty.Value, targetRange)
+                    ElseIf DBModiftype = "DBAction" And Not IsNothing(targetRange) Then
+                        newDBModif = New DBAction(docproperty.Name, docproperty.Value, targetRange)
+                    ElseIf DBModiftype = "DBSeqnce" Then
+                        newDBModif = New DBSeqnce(docproperty.Name, docproperty.Value)
+                    ElseIf IsNothing(targetRange) Then
+                        MsgBox("Error, required target range named '" & nodeName & "' not existing. " & vbCrLf & "either create target range or delete docproperty named  '" & nodeName & "' !", vbCritical)
+                        newDBModif = Nothing
                     Else
-                        LogError("Error, not supported DBModiftype: " & DBModiftype)
+                        MsgBox("Error, not supported DBModiftype: " & DBModiftype, vbCritical)
                         newDBModif = Nothing
                     End If
-                    If Not DBModifDefColl.ContainsKey(sheetID) Then
-                        ' add to new sheet "menu"
+                    ' ... and add it to the collection DBModifDefColl
+                    Dim defColl As Dictionary(Of String, DBModif) ' definition lookup collection for DBModifiername -> object
+                    If Not DBModifDefColl.ContainsKey(DBModiftype) Then
+                        ' add to new DBModiftype "menu"
                         defColl = New Dictionary(Of String, DBModif)
-                        defColl.Add(nodeName, newDBModif)
-                        If DBModifDefColl.Count = 15 Then
-                            ErrorMsg("Not more than 15 sheets with DBMapper/DBAction/DBSequence definitions possible, ignoring definitions in sheet " + namedrange.Parent.Name)
-                            Exit For
-                        End If
-                        DBModifDefColl.Add(sheetID, defColl)
+                        defColl.Add(docproperty.Name, newDBModif)
+                        DBModifDefColl.Add(DBModiftype, defColl)
                     Else
-                        ' add definition to existing sheet "menu"
-                        defColl = DBModifDefColl(sheetID)
-                        defColl.Add(nodeName, newDBModif)
+                        ' add definition to existing DBModiftype "menu"
+                        defColl = DBModifDefColl(DBModiftype)
+                        defColl.Add(docproperty.Name, newDBModif)
                     End If
-                End If
+                    End If
             Next
             Globals.theRibbon.Invalidate()
         Catch ex As Exception
             LogError("Error: " & ex.Message)
         End Try
     End Sub
+
+    ''' <summary>gets DB Modification Name (DBMapper or DBAction) from theRange</summary>
+    ''' <param name="theRange"></param>
+    ''' <returns>the retrieved name as a string (not name object !)</returns>
+    Public Function getDBModifNameFromRange(theRange As Excel.Range) As String
+        Dim nm As Excel.Name
+        Dim rng, testRng As Excel.Range
+
+        getDBModifNameFromRange = ""
+        Try
+            ' try all names in workbook
+            For Each nm In theRange.Parent.Parent.Names
+                rng = Nothing
+                ' test whether range referring to that name (if it is a real range)...
+                Try : rng = nm.RefersToRange : Catch ex As Exception : End Try
+                If Not rng Is Nothing Then
+                    testRng = Nothing
+                    ' ...intersects with the passed range
+                    Try : testRng = ExcelDnaUtil.Application.Intersect(theRange, rng) : Catch ex As Exception : End Try
+                    If Not IsNothing(testRng) And (InStr(1, nm.Name, "DBMapper") >= 1 Or InStr(1, nm.Name, "DBAction") >= 1) Then
+                        ' and pass back the name if it does and is a DBMapper or a DBAction
+                        getDBModifNameFromRange = nm.Name
+                        Exit Function
+                    End If
+                End If
+            Next
+        Catch ex As Exception
+            LogError("Error: " & ex.Message)
+        End Try
+    End Function
 
 End Module
 
