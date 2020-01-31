@@ -246,13 +246,13 @@ Public Class DBMapper : Inherits DBModif
         Do
             Dim fieldname As String = Trim(TargetRange.Cells(1, colNum).Value)
             ' only if not ignored...
-            If InStr(1, LCase(fieldname) + ",", ignoreColumns) = 0 Then
+            If InStr(1, ignoreColumns, LCase(fieldname) + ",") = 0 Then
                 Try
                     Dim testExist As String = checkrst.Fields(fieldname).Name
                 Catch ex As Exception
                     TargetRange.Parent.Activate
                     TargetRange.Cells(1, colNum).Select
-                    LogError("Field '" & fieldname & "' does not exist in Table '" & tableName & "' and is not in ignoreColumns, Error in sheet " & TargetRange.Parent.Name)
+                    MsgBox("Field '" & fieldname & "' does not exist in Table '" & tableName & "' and is not in ignoreColumns, Error in sheet " & TargetRange.Parent.Name, MsgBoxStyle.Critical, "DBMapper Error")
                     GoTo cleanup
                 End Try
             End If
@@ -276,11 +276,11 @@ Public Class DBMapper : Inherits DBModif
                     primKeyValue = TargetRange.Cells(rowNum, i + 1).Value
                     primKeyCompound = primKeyCompound & primKeys(i) & " = " & dbFormatType(primKeyValue, checkTypes(i)) & IIf(i = UBound(primKeys), "", " AND ")
                     If IsError(primKeyValue) Then
-                        ErrorMsg("Error in primary key value, cell (" & rowNum & "," & i + 1 & ") in sheet " & TargetRange.Parent.Name & ", & row " & rowNum)
+                        MsgBox("Error in primary key value, cell (" & rowNum & "," & i + 1 & ") in sheet " & TargetRange.Parent.Name & ", & row " & rowNum, MsgBoxStyle.Critical, "DBMapper Error")
                         GoTo nextRow
                     End If
                     If primKeyValue.ToString().Length = 0 Then
-                        ErrorMsg("Empty primary key value, cell (" & rowNum & "," & i + 1 & ") in sheet " & TargetRange.Parent.Name & ", & row " & rowNum)
+                        MsgBox("Empty primary key value, cell (" & rowNum & "," & i + 1 & ") in sheet " & TargetRange.Parent.Name & ", & row " & rowNum, MsgBoxStyle.Critical, "DBMapper Error")
                         GoTo nextRow
                     End If
                 Next
@@ -288,7 +288,7 @@ Public Class DBMapper : Inherits DBModif
                 Try
                     rst.Open(getStmt, dbcnn, CursorTypeEnum.adOpenDynamic, LockTypeEnum.adLockOptimistic)
                 Catch ex As Exception
-                    LogError("Problem getting recordset, Error: " & ex.Message & " in sheet " & TargetRange.Parent.Name & ", & row " & rowNum)
+                    MsgBox("Problem getting recordset, Error: " & ex.Message & " in sheet " & TargetRange.Parent.Name & ", & row " & rowNum)
                     rst.Close()
                     GoTo cleanup
                 End Try
@@ -305,7 +305,7 @@ Public Class DBMapper : Inherits DBModif
                     Else
                         TargetRange.Parent.Activate
                         TargetRange.Cells(rowNum, i + 1).Select
-                        LogError("Did not find recordset with statement '" & getStmt & "', insertIfMissing = " & insertIfMissing & " in sheet " & TargetRange.Parent.Name & ", & row " & rowNum)
+                        MsgBox("Did not find recordset with statement '" & getStmt & "', insertIfMissing = " & insertIfMissing & " in sheet " & TargetRange.Parent.Name & ", & row " & rowNum, MsgBoxStyle.Critical, "DBMapper Error")
                         rst.Close()
                         GoTo cleanup
                     End If
@@ -325,7 +325,7 @@ Public Class DBMapper : Inherits DBModif
                                 TargetRange.Parent.Activate
                                 TargetRange.Cells(rowNum, colNum).Select
 
-                                ErrorMsg("Field Value Update Error: " & ex.Message & " with Table: " & tableName & ", Field: " & fieldname & ", in sheet " & TargetRange.Parent.Name & ", & row " & rowNum & ", col: " & colNum)
+                                MsgBox("Field Value Update Error: " & ex.Message & " with Table: " & tableName & ", Field: " & fieldname & ", in sheet " & TargetRange.Parent.Name & ", & row " & rowNum & ", col: " & colNum, MsgBoxStyle.Critical, "DBMapper Error")
                                 rst.CancelUpdate()
                                 rst.Close()
                                 GoTo cleanup
@@ -340,7 +340,7 @@ Public Class DBMapper : Inherits DBModif
                     Catch ex As Exception
                         TargetRange.Parent.Activate
                         TargetRange.Rows(rowNum).Select
-                        ErrorMsg("Row Update Error, Table: " & rst.Source & ", Error: " & ex.Message & " in sheet " & TargetRange.Parent.Name & ", & row " & rowNum)
+                        MsgBox("Row Update Error, Table: " & rst.Source & ", Error: " & ex.Message & " in sheet " & TargetRange.Parent.Name & ", & row " & rowNum, MsgBoxStyle.Critical, "DBMapper Error")
                         rst.CancelUpdate()
                         rst.Close()
                         GoTo cleanup
@@ -355,7 +355,7 @@ nextRow:
                 Try
                     finishLoop = IIf(TargetRange.Cells(rowNum + 1, 1).ToString().Length = 0, True, False)
                 Catch ex As Exception
-                    ErrorMsg("Error in first primary column: Cells(" & rowNum + 1 & ",1): " & ex.Message)
+                    MsgBox("Error in first primary column: Cells(" & rowNum + 1 & ",1): " & ex.Message, MsgBoxStyle.Critical, "DBMapper Error")
                     'finishLoop = True ' commented to allow erroneous data...
                 End Try
             End If
@@ -367,7 +367,7 @@ nextRow:
             Try
                 dbcnn.Execute(executeAdditionalProc)
             Catch ex As Exception
-                ErrorMsg("Error in executing additional stored procedure: " & ex.Message)
+                MsgBox("Error in executing additional stored procedure: " & ex.Message, MsgBoxStyle.Critical, "DBMapper Error")
                 GoTo cleanup
             End Try
         End If
@@ -379,6 +379,9 @@ cleanup:
 
     Public Overrides Sub setDBModifCreateFields(ByRef theDBModifCreateDlg As DBModifCreate)
         With theDBModifCreateDlg
+            Dim DBModifParams() As String = functionSplit(paramText, ",", """", "def", "(", ")")
+            env = 0
+            If DBModifParams(0) <> "" Then env = Convert.ToInt16(DBModifParams(0))
             Try
                 If env > 0 Then .envSel.SelectedIndex = env - 1
             Catch ex As Exception
@@ -470,6 +473,9 @@ Public Class DBAction
 
     Public Overrides Sub setDBModifCreateFields(ByRef theDBModifCreateDlg As DBModifCreate)
         With theDBModifCreateDlg
+            Dim DBModifParams() As String = functionSplit(paramText, ",", """", "def", "(", ")")
+            env = 0
+            If DBModifParams(0) <> "" Then env = Convert.ToInt16(DBModifParams(0))
             Try
                 If env > 0 Then .envSel.SelectedIndex = env - 1
             Catch ex As Exception
@@ -820,9 +826,10 @@ Public Module DBModifs
                             Dim rangenameName As String = Replace(rangename.Name, rangename.Parent.Name & "!", "")
                             If rangenameName = nodeName And InStr(rangename.RefersTo, "#REF!") > 0 Then
                                 ErrorMsg(DBModiftype + " definitions range [" + rangename.Parent.Name + "]" + rangename.Name + " contains #REF!")
-                                Continue For
+                                Exit For
                             ElseIf rangenameName = nodeName Then
                                 targetRange = rangename.RefersToRange
+                                Exit For
                             End If
                         Next
                     End If

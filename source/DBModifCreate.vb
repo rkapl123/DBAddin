@@ -85,10 +85,15 @@ Public Class DBModifCreate
                     cb.Name = cbName
                     cb.Caption = IIf(Me.DBModifName.Text = "", "Unnamed " & Me.Tag, Me.Tag & Me.DBModifName.Text)
                 Catch ex As Exception
-                    ErrorMsg("Couldn't name CommandButton '" & cbName & "': " & ex.Message)
+                    MsgBox("Couldn't name CommandButton '" & cbName & "': " & ex.Message, MsgBoxStyle.Critical, "CommandButton create Error")
                     cbshp.Delete()
                     Exit Sub
                 End Try
+                If Len(cbName) > 31 Then
+                    MsgBox("CommandButton codenames cannot be longer than 31 characters ! '" & cbName & "': ", MsgBoxStyle.Critical, "CommandButton create Error")
+                    cbshp.Delete()
+                    Exit Sub
+                End If
                 ' fail to assign a handler? remove commandbutton (otherwise it gets hard to edit an existing DBModification with a different name).
                 If Not AddInEvents.assignHandler(ExcelDnaUtil.Application.ActiveSheet) Then
                     cbshp.Delete()
@@ -178,4 +183,5 @@ Public Class DBModifCreate
         End If
         DBSeqStepValidationErrorsShown = True
     End Sub
+
 End Class

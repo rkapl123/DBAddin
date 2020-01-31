@@ -88,23 +88,23 @@ Public Module Functions
             End If
         ElseIf CInt(datVal) > 1 Then
             If formatting = 0 Then
-                formatDBDate = "'" & Format(Date.FromOADate(datVal), "yyyyMMdd hh:mm:ss") & "'"
+                formatDBDate = "'" & Format(Date.FromOADate(datVal), "yyyyMMdd HH:mm:ss") & "'"
             ElseIf formatting = 1 Then
-                formatDBDate = "timestamp '" & Format(Date.FromOADate(datVal), "yyyy-MM-dd hh:mm:ss") & "'"
+                formatDBDate = "timestamp '" & Format(Date.FromOADate(datVal), "yyyy-MM-dd HH:mm:ss") & "'"
             ElseIf formatting = 2 Then
-                formatDBDate = "{ts '" & Format(Date.FromOADate(datVal), "yyyy-MM-dd hh:mm:ss") & "'}"
+                formatDBDate = "{ts '" & Format(Date.FromOADate(datVal), "yyyy-MM-dd HH:mm:ss") & "'}"
             ElseIf formatting = 3 Then
-                formatDBDate = "#" & Format(Date.FromOADate(datVal), "yyyy-MM-dd hh:mm:ss") & "#"
+                formatDBDate = "#" & Format(Date.FromOADate(datVal), "yyyy-MM-dd HH:mm:ss") & "#"
             End If
         Else
             If formatting = 0 Then
-                formatDBDate = "'" & Format(Date.FromOADate(datVal), "hh:mm:ss") & "'"
+                formatDBDate = "'" & Format(Date.FromOADate(datVal), "HH:mm:ss") & "'"
             ElseIf formatting = 1 Then
-                formatDBDate = "time '" & Format(Date.FromOADate(datVal), "hh:mm:ss") & "'"
+                formatDBDate = "time '" & Format(Date.FromOADate(datVal), "HH:mm:ss") & "'"
             ElseIf formatting = 2 Then
-                formatDBDate = "{t '" & Format(Date.FromOADate(datVal), "hh:mm:ss") & "'}"
+                formatDBDate = "{t '" & Format(Date.FromOADate(datVal), "HH:mm:ss") & "'}"
             ElseIf formatting = 3 Then
-                formatDBDate = "#" & Format(Date.FromOADate(datVal), "hh:mm:ss") & "#"
+                formatDBDate = "#" & Format(Date.FromOADate(datVal), "HH:mm:ss") & "#"
             End If
         End If
     End Function

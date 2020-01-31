@@ -49,9 +49,9 @@ Partial Class DBModifCreate
         Me.down = New System.Windows.Forms.Button()
         Me.CBCreate = New System.Windows.Forms.CheckBox()
         Me.CUDflags = New System.Windows.Forms.CheckBox()
+        Me.RepairDBSeqnce = New System.Windows.Forms.TextBox()
         Me.EnvironmentLabel = New System.Windows.Forms.Label()
         Me.TargetRangeLabel = New System.Windows.Forms.Label()
-        Me.RepairDBSeqnce = New System.Windows.Forms.TextBox()
         Me.TableLayoutPanel1.SuspendLayout()
         CType(Me.DBSeqenceDataGrid, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
@@ -296,6 +296,16 @@ Partial Class DBModifCreate
         " u or d. Default = False (only update)")
         Me.CUDflags.UseVisualStyleBackColor = True
         '
+        'RepairDBSeqnce
+        '
+        Me.RepairDBSeqnce.Location = New System.Drawing.Point(12, 214)
+        Me.RepairDBSeqnce.Multiline = True
+        Me.RepairDBSeqnce.Name = "RepairDBSeqnce"
+        Me.RepairDBSeqnce.ScrollBars = System.Windows.Forms.ScrollBars.Vertical
+        Me.RepairDBSeqnce.Size = New System.Drawing.Size(458, 162)
+        Me.RepairDBSeqnce.TabIndex = 15
+        Me.ToolTip1.SetToolTip(Me.RepairDBSeqnce, "use this textbox to repair DB Sequence entries...")
+        '
         'EnvironmentLabel
         '
         Me.EnvironmentLabel.AutoSize = True
@@ -313,16 +323,6 @@ Partial Class DBModifCreate
         Me.TargetRangeLabel.Size = New System.Drawing.Size(41, 13)
         Me.TargetRangeLabel.TabIndex = 2
         Me.TargetRangeLabel.Text = "Target:"
-        '
-        'RepairDBSeqnce
-        '
-        Me.RepairDBSeqnce.Location = New System.Drawing.Point(12, 214)
-        Me.RepairDBSeqnce.Multiline = True
-        Me.RepairDBSeqnce.Name = "RepairDBSeqnce"
-        Me.RepairDBSeqnce.ScrollBars = System.Windows.Forms.ScrollBars.Vertical
-        Me.RepairDBSeqnce.Size = New System.Drawing.Size(458, 162)
-        Me.RepairDBSeqnce.TabIndex = 15
-        Me.ToolTip1.SetToolTip(Me.RepairDBSeqnce, "use this textbox to repair DB Sequence entries...")
         '
         'DBModifCreate
         '
