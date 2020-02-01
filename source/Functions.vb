@@ -38,11 +38,12 @@ Public Module Functions
     ''' formatting = 1: An ANSI compliant Date string (format date 'YYYY-MM-DD'), datetime values are converted to timestamp 'YYYY-MM-DD HH:MM:SS' and time values are converted to time time 'HH:MM:SS'.
     ''' formatting = 2: An ODBC compliant Date string (format {d 'YYYY-MM-DD'}), datetime values are converted to {ts 'YYYY-MM-DD HH:MM:SS'} and time values are converted to {t 'HH:MM:SS'}.
     ''' formatting = 3: An Access/JetDB compliant Date string (format #YYYY-MM-DD#), datetime values are converted to #YYYY-MM-DD HH:MM:SS# and time values are converted to #HH:MM:SS#.
-    ''' formatting >3 or empty (99=default value): take the formatting option from setting DefaultDBDateFormatting (0 if not given)
+    ''' add 10 to formatting to include fractions of a second (1000) 
+    ''' formatting >13 or empty (99=default value): take the formatting option from setting DefaultDBDateFormatting (0 if not given)
     ''' </remarks>
     <ExcelFunction(Description:="Create database compliant date, time or datetime string from excel datetype value")>
     Public Function DBDate(<ExcelArgument(Description:="date/time/datetime")> ByVal DatePart As Object,
-                           <ExcelArgument(Description:="formatting option, 0: simple datestring (format 'YYYYMMDD'), 1: ANSI compliant Date string (format date 'YYYY-MM-DD'), 2: ODBC compliant Date string (format {d 'YYYY-MM-DD'}),3: Access/JetDB compliant Date string (format #DD/MM/YYYY#)")> Optional formatting As Integer = 99) As String
+                           <ExcelArgument(Description:="formatting option, 0:'YYYYMMDD', 1:'YYYY-MM-DD'), 2:{d 'YYYY-MM-DD'},3:Access/JetDB #DD/MM/YYYY#, add 10 to formatting to include fractions of a second (1000)")> Optional formatting As Integer = 99) As String
         DBDate = ""
         Try
             If formatting > 3 Then formatting = DefaultDBDateFormatting
@@ -95,6 +96,14 @@ Public Module Functions
                 formatDBDate = "{ts '" & Format(Date.FromOADate(datVal), "yyyy-MM-dd HH:mm:ss") & "'}"
             ElseIf formatting = 3 Then
                 formatDBDate = "#" & Format(Date.FromOADate(datVal), "yyyy-MM-dd HH:mm:ss") & "#"
+            ElseIf formatting = 10 Then
+                formatDBDate = "'" & Format(Date.FromOADate(datVal), "yyyyMMdd HH:mm:ss.fff") & "'"
+            ElseIf formatting = 11 Then
+                formatDBDate = "timestamp '" & Format(Date.FromOADate(datVal), "yyyy-MM-dd HH:mm:ss.fff") & "'"
+            ElseIf formatting = 12 Then
+                formatDBDate = "{ts '" & Format(Date.FromOADate(datVal), "yyyy-MM-dd HH:mm:ss.fff") & "'}"
+            ElseIf formatting = 13 Then
+                formatDBDate = "#" & Format(Date.FromOADate(datVal), "yyyy-MM-dd HH:mm:ss.fff") & "#"
             End If
         Else
             If formatting = 0 Then
@@ -105,6 +114,14 @@ Public Module Functions
                 formatDBDate = "{t '" & Format(Date.FromOADate(datVal), "HH:mm:ss") & "'}"
             ElseIf formatting = 3 Then
                 formatDBDate = "#" & Format(Date.FromOADate(datVal), "HH:mm:ss") & "#"
+            ElseIf formatting = 10 Then
+                formatDBDate = "'" & Format(Date.FromOADate(datVal), "HH:mm:ss.fff") & "'"
+            ElseIf formatting = 11 Then
+                formatDBDate = "time '" & Format(Date.FromOADate(datVal), "HH:mm:ss.fff") & "'"
+            ElseIf formatting = 12 Then
+                formatDBDate = "{t '" & Format(Date.FromOADate(datVal), "HH:mm:ss.fff") & "'}"
+            ElseIf formatting = 13 Then
+                formatDBDate = "#" & Format(Date.FromOADate(datVal), "HH:mm:ss.fff") & "#"
             End If
         End If
     End Function

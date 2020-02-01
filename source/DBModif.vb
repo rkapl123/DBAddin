@@ -4,14 +4,16 @@ Imports Microsoft.Office.Interop
 Imports System.Windows.Forms
 Imports System.Collections.Generic
 
-Friend Enum CheckTypeFld
-    checkIsNumericFld = 0
-    checkIsDateFld = 1
-    checkIsTimeFld = 2
-    checkIsStringFld = 3
-End Enum
-
+''' <summary>Abstraction of a DB Modification Object (concrete classes DB Mapper, DB Action or DB Sequence)</summary>
 Public MustInherit Class DBModif
+
+    ''' <summary>needed for field formatting in DB Mapper</summary>
+    Protected Enum CheckTypeFld
+        checkIsNumericFld = 0
+        checkIsDateFld = 1
+        checkIsTimeFld = 2
+        checkIsStringFld = 3
+    End Enum
 
     '''<summary>unique key of DBModif</summary>
     Protected dbmapdefkey As String
@@ -25,6 +27,10 @@ Public MustInherit Class DBModif
     Protected paramText As String
     '''<summary>should DBMap be saved / DBAction be done on Excel Saving? (default no)</summary>
     Protected execOnSave As Boolean = False
+    ''' <summary>the original stored parameters from the definition string</summary>
+    Protected DBModifParams() As String
+    ''' <summary>ask for confirmation before executtion of DBModif</summary>
+    Protected askBeforeExecute As Boolean = True
 
     Public Function getTargetRangeAddress() As String
         getTargetRangeAddress = targetRangeAddress
@@ -34,30 +40,41 @@ Public MustInherit Class DBModif
         getTargetRange = TargetRange
     End Function
 
-    Public  Function getParamText() As String
+    Public Function getParamText() As String
         getParamText = paramText
     End Function
 
+    ''' <summary>Environment (integer) where connection id should be taken from (if not existing, take from selectedEnvironment)</summary>
+    Protected Function getEnv(Optional defaultEnv As Integer = 0) As Integer
+        getEnv = defaultEnv
+        If TypeName(Me.GetType()) = "DBSeqnce" Then Throw New NotImplementedException()
+        If DBModifParams(0) <> "" Then getEnv = Convert.ToInt16(DBModifParams(0))
+    End Function
+
+    ''' <summary>does the actual DB Modification</summary>
+    ''' <param name="WbIsSaving"></param>
+    ''' <param name="calledByDBSeq"></param>
     Public Overridable Sub doDBModif(Optional WbIsSaving As Boolean = False, Optional calledByDBSeq As String = "")
         Throw New NotImplementedException()
     End Sub
 
     ''' <summary>is saving needed for this DBModifier</summary>
     ''' <returns>true for saving necessary</returns>
-    Public Overridable Function DBModifSaveNeeded() As Boolean
-        Throw New NotImplementedException()
+    Public Function DBModifSaveNeeded() As Boolean
+        Return execOnSave
     End Function
 
+    ''' <summary>sets the content of the DBModif Create/Edit Dialog</summary>
+    ''' <param name="theDBModifCreateDlg"></param>
     Public Overridable Sub setDBModifCreateFields(ByRef theDBModifCreateDlg As DBModifCreate)
         Throw New NotImplementedException()
     End Sub
 
-    ''' <summary>formats theVal to fit the type of column theHead having data type dataType</summary>
+    ''' <summary>formats theVal to fit the type of record column having data type dataType</summary>
     ''' <param name="theVal"></param>
     ''' <param name="dataType"></param>
     ''' <returns>the formatted value</returns>
-    Friend Function dbFormatType(ByVal theVal As Object, dataType As CheckTypeFld) As String
-
+    Protected Function dbFormatType(ByVal theVal As Object, dataType As CheckTypeFld) As String
         If dataType = CheckTypeFld.checkIsNumericFld Then ' only decimal points allowed in numeric data
             dbFormatType = Replace(CStr(theVal), ",", ".")
         ElseIf dataType = CheckTypeFld.checkIsDateFld Then
@@ -78,7 +95,7 @@ Public MustInherit Class DBModif
     ''' <summary>checks whether ADO type theType is a date or time type</summary>
     ''' <param name="theType"></param>
     ''' <returns>True if DateTime</returns>
-    Friend Function checkIsDateTime(theType As ADODB.DataTypeEnum) As Boolean
+    Protected Function checkIsDateTime(theType As ADODB.DataTypeEnum) As Boolean
         checkIsDateTime = False
         If theType = ADODB.DataTypeEnum.adDate Or theType = ADODB.DataTypeEnum.adDBDate Or theType = ADODB.DataTypeEnum.adDBTime Or theType = ADODB.DataTypeEnum.adDBTimeStamp Then
             checkIsDateTime = True
@@ -121,8 +138,6 @@ Public Class DBMapper : Inherits DBModif
 
     ''' <summary>DBModif name of target range</summary>
     Private paramTargetName As String
-    ''' <summary>Environment (integer) where connection id should be taken from (if not existing, take from selectedEnvironment)</summary>
-    Private env As Integer = 0
     ''' <summary>Database to store to</summary>
     Private database As String
     ''' <summary>Database Table, where Data is to be stored</summary>
@@ -153,7 +168,7 @@ Public Class DBMapper : Inherits DBModif
         paramText = paramDefs
         TargetRange = paramTarget
 
-        Dim DBModifParams() As String = functionSplit(paramText, ",", """", "def", "(", ")")
+        DBModifParams = functionSplit(paramText, ",", """", "def", "(", ")")
         If IsNothing(DBModifParams) Then Exit Sub
         ' check for completeness
         If DBModifParams.Length < 4 Then
@@ -161,7 +176,6 @@ Public Class DBMapper : Inherits DBModif
         End If
 
         ' fill parameters:
-        If DBModifParams(0) <> "" Then env = Convert.ToInt16(DBModifParams(0))
         database = DBModifParams(1).Replace("""", "").Trim
         If database = "" Then
             Throw New Exception("No database given in DBMapper paramText!")
@@ -179,16 +193,17 @@ Public Class DBMapper : Inherits DBModif
         If DBModifParams.Length > 6 AndAlso DBModifParams(6) <> "" Then ignoreColumns = DBModifParams(6).Replace("""", "").Trim
         If DBModifParams.Length > 7 AndAlso DBModifParams(7) <> "" Then execOnSave = Convert.ToBoolean(DBModifParams(7))
         If DBModifParams.Length > 8 AndAlso DBModifParams(8) <> "" Then CUDFlags = Convert.ToBoolean(DBModifParams(8))
+        If DBModifParams.Length > 9 AndAlso DBModifParams(9) <> "" Then askBeforeExecute = Convert.ToBoolean(DBModifParams(9))
     End Sub
 
-    ''' <summary>is saving needed for this DBModifier</summary>
-    ''' <returns>true for saving necessary</returns>
-    Public Overrides Function DBModifSaveNeeded() As Boolean
-        DBModifSaveNeeded = execOnSave
-    End Function
-
     Public Overrides Sub doDBModif(Optional WbIsSaving As Boolean = False, Optional calledByDBSeq As String = "")
-        If env = 0 Then env = Globals.selectedEnvironment + 1 ' if Environment is not existing, take from selectedEnvironment
+        If WbIsSaving And Not execOnSave Then Exit Sub
+        If Not WbIsSaving And askBeforeExecute And calledByDBSeq = "" Then
+            Dim retval As MsgBoxResult = MsgBox("Really execute DB Mapper " & dbmapdefkey & "?", MsgBoxStyle.Question + vbOKCancel, "Execute DB Mapper")
+            If retval = vbCancel Then Exit Sub
+        End If
+        ' if Environment is not existing, take from selectedEnvironment
+        Dim env As Integer = getEnv(Globals.selectedEnvironment + 1)
         ' extend DataRange to whole area ...
         Dim rowEnd = TargetRange.Cells(1, 1).End(Excel.XlDirection.xlDown).Row
         Dim colEnd = TargetRange.Cells(1, 1).End(Excel.XlDirection.xlToRight).Column
@@ -207,11 +222,7 @@ Public Class DBMapper : Inherits DBModif
         TargetRange = TargetRange.Parent.Range(paramTargetName)
         targetRangeAddress = TargetRange.Parent.Name + "!" + TargetRange.Address
 
-        ' set up parameters
-        If WbIsSaving And Not execOnSave Then Exit Sub
         Dim primKeys() As String = Split(primKeysStr, ",")
-        ignoreColumns = LCase(ignoreColumns) + "," ' lowercase and add comma for better retrieval
-
         'now create/get a connection (dbcnn) for env(ironment)
         If Not openConnection(env, database) Then Exit Sub
 
@@ -246,7 +257,7 @@ Public Class DBMapper : Inherits DBModif
         Do
             Dim fieldname As String = Trim(TargetRange.Cells(1, colNum).Value)
             ' only if not ignored...
-            If InStr(1, ignoreColumns, LCase(fieldname) + ",") = 0 Then
+            If InStr(1, LCase(ignoreColumns) + ",", LCase(fieldname) + ",") = 0 Then
                 Try
                     Dim testExist As String = checkrst.Fields(fieldname).Name
                 Catch ex As Exception
@@ -318,7 +329,7 @@ Public Class DBMapper : Inherits DBModif
                     colNum = UBound(primKeys) + 1
                     Do
                         Dim fieldname As String = TargetRange.Cells(1, colNum).Value
-                        If InStr(1, ignoreColumns, LCase(fieldname) + ",") = 0 Then
+                        If InStr(1, LCase(ignoreColumns) + ",", LCase(fieldname) + ",") = 0 Then
                             Try
                                 rst.Fields(fieldname).Value = IIf(TargetRange.Cells(rowNum, colNum).ToString().Length = 0, vbNull, TargetRange.Cells(rowNum, colNum).Value)
                             Catch ex As Exception
@@ -379,15 +390,7 @@ cleanup:
 
     Public Overrides Sub setDBModifCreateFields(ByRef theDBModifCreateDlg As DBModifCreate)
         With theDBModifCreateDlg
-            Dim DBModifParams() As String = functionSplit(paramText, ",", """", "def", "(", ")")
-            env = 0
-            If DBModifParams(0) <> "" Then env = Convert.ToInt16(DBModifParams(0))
-            Try
-                If env > 0 Then .envSel.SelectedIndex = env - 1
-            Catch ex As Exception
-                ErrorMsg("Error setting environment " & env & " (correct environment manually in docproperty " & paramTargetName & "): " & ex.Message)
-                Exit Sub
-            End Try
+            .envSel.SelectedIndex = getEnv() - 1
             .TargetRangeAddress.Text = targetRangeAddress
             .Database.Text = database
             .execOnSave.Checked = execOnSave
@@ -397,15 +400,13 @@ cleanup:
             .addStoredProc.Text = executeAdditionalProc
             .IgnoreColumns.Text = ignoreColumns
             .CUDflags.Checked = CUDFlags
+            .AskForExecute.Checked = askBeforeExecute
         End With
     End Sub
 End Class
 
-Public Class DBAction
-    Inherits DBModif
+Public Class DBAction : Inherits DBModif
 
-    ''' <summary>Environment (integer) where connection id should be taken from (if not existing, take from selectedEnvironment)</summary>
-    Private env As Integer = 0
     ''' <summary>Database to store to</summary>
     Private database As String
     ''' <summary>DBModif name of target range</summary>
@@ -429,7 +430,7 @@ Public Class DBAction
         End If
         paramText = paramDefs
         TargetRange = paramTarget
-        Dim DBModifParams() As String = functionSplit(paramText, ",", """", "def", "(", ")")
+        DBModifParams = functionSplit(paramText, ",", """", "def", "(", ")")
         If IsNothing(DBModifParams) Then Exit Sub
         ' check for completeness
         If DBModifParams.Length < 2 Then
@@ -437,24 +438,23 @@ Public Class DBAction
             Exit Sub
         End If
         ' fill parameters:
-        If DBModifParams(0) <> "" Then env = Convert.ToInt16(DBModifParams(0))
         database = DBModifParams(1).Replace("""", "").Trim
         If database = "" Then
             ErrorMsg("No database given in DBAction paramText!")
             Exit Sub
         End If
         If DBModifParams.Length > 2 AndAlso DBModifParams(2) <> "" Then execOnSave = Convert.ToBoolean(DBModifParams(2))
+        If DBModifParams.Length > 3 AndAlso DBModifParams(3) <> "" Then askBeforeExecute = Convert.ToBoolean(DBModifParams(3))
     End Sub
 
-    ''' <summary>is saving needed for this DBModifier</summary>
-    ''' <returns>true for saving necessary</returns>
-    Public Overrides Function DBModifSaveNeeded() As Boolean
-        DBModifSaveNeeded = execOnSave
-    End Function
-
     Public Overrides Sub doDBModif(Optional WbIsSaving As Boolean = False, Optional calledByDBSeq As String = "")
-        If env = 0 Then env = Globals.selectedEnvironment + 1 ' if Environment is not existing, take from selectedEnvironment
         If WbIsSaving And Not execOnSave Then Exit Sub
+        If Not WbIsSaving And askBeforeExecute And calledByDBSeq = "" Then
+            Dim retval As MsgBoxResult = MsgBox("Really execute DB Action " & dbmapdefkey & "?", MsgBoxStyle.Question + vbOKCancel, "Execute DB Action")
+            If retval = vbCancel Then Exit Sub
+        End If
+        ' if Environment is not existing, take from selectedEnvironment
+        Dim env As Integer = getEnv(Globals.selectedEnvironment + 1)
         'now create/get a connection (dbcnn) for env(ironment)
         If Not openConnection(env, database) Then Exit Sub
         Dim result As Long = 0
@@ -473,27 +473,19 @@ Public Class DBAction
 
     Public Overrides Sub setDBModifCreateFields(ByRef theDBModifCreateDlg As DBModifCreate)
         With theDBModifCreateDlg
-            Dim DBModifParams() As String = functionSplit(paramText, ",", """", "def", "(", ")")
-            env = 0
-            If DBModifParams(0) <> "" Then env = Convert.ToInt16(DBModifParams(0))
-            Try
-                If env > 0 Then .envSel.SelectedIndex = env - 1
-            Catch ex As Exception
-                ErrorMsg("Error setting environment " & env & " (correct environment manually in docproperty " & paramTargetName & "): " & ex.Message)
-                Exit Sub
-            End Try
+            .envSel.SelectedIndex = getEnv() - 1
             .TargetRangeAddress.Text = targetRangeAddress
             .Database.Text = database
             .execOnSave.Checked = execOnSave
+            .AskForExecute.Checked = askBeforeExecute
         End With
     End Sub
 End Class
 
-Public Class DBSeqnce
-    Inherits DBModif
+Public Class DBSeqnce : Inherits DBModif
 
-    ''' <summary>sequence of DBModifiers being executed in this sequence</summary>
-    Private sequenceParams() As String
+    ''' <summary>sequence of DB Mappers, DB Actions and DB Refreshes being executed in this sequence</summary>
+    Private sequenceParams() As String = {}
 
     Public Sub New(defkey As String, DBSequenceText As String)
         dbmapdefkey = defkey
@@ -502,21 +494,26 @@ Public Class DBSeqnce
             ErrorMsg("No Sequence defined in " + dbmapdefkey)
             Exit Sub
         End If
-        ' parse parameters: 1st item is execOnSave, rest defines sequence (tripletts of DBModifType:DBModifName)
-        sequenceParams = Split(paramText, ",")
-        execOnSave = Convert.ToBoolean(sequenceParams(0)) ' should DBSequence be done on Excel Saving?
+        ' parse parameters: 1st item is execOnSave, 2nd askBeforeExecute, rest defines sequence (tripletts of DBModifType:DBModifName)
+        DBModifParams = Split(paramText, ",")
+        execOnSave = Convert.ToBoolean(DBModifParams(0)) ' should DBSequence be done on Excel Saving?
+        If Boolean.TryParse(value:=DBModifParams(1), result:=askBeforeExecute) Then
+            ReDim sequenceParams(DBModifParams.Length() - 3)
+            Array.Copy(DBModifParams, 2, sequenceParams, 0, DBModifParams.Length() - 2)
+        Else
+            ReDim sequenceParams(DBModifParams.Length() - 2)
+            Array.Copy(DBModifParams, 1, sequenceParams, 0, DBModifParams.Length() - 1)
+        End If
     End Sub
-
-    ''' <summary>is saving needed for this DBModifier</summary>
-    ''' <returns>true for saving necessary</returns>
-    Public Overrides Function DBModifSaveNeeded() As Boolean
-        DBModifSaveNeeded = execOnSave
-    End Function
 
     Public Overrides Sub doDBModif(Optional WbIsSaving As Boolean = False, Optional calledByDBSeq As String = "")
         If WbIsSaving And Not execOnSave Then Exit Sub
-        Dim i As Integer
-        For i = 1 To UBound(sequenceParams)
+        If Not WbIsSaving And askBeforeExecute Then
+            Dim retval As MsgBoxResult = MsgBox("Really execute DB Sequence " & dbmapdefkey & "?", MsgBoxStyle.Question + vbOKCancel, "Execute DB Sequence")
+            If retval = vbCancel Then Exit Sub
+        End If
+
+        For i As Integer = 0 To UBound(sequenceParams)
             Dim definition() As String = Split(sequenceParams(i), ":")
             If definition(0) <> "DBRefrsh" Then
                 DBModifDefColl(definition(0)).Item(definition(1)).doDBModif(WbIsSaving, calledByDBSeq:=dbmapdefkey)
@@ -538,8 +535,16 @@ Public Class DBSeqnce
     End Sub
 
     Public Overrides Sub setDBModifCreateFields(ByRef theDBModifCreateDlg As DBModifCreate)
-        theDBModifCreateDlg.execOnSave.Checked = execOnSave
+        With theDBModifCreateDlg
+            .RepairDBSeqnce.Text = paramText
+            .execOnSave.Checked = execOnSave
+            .AskForExecute.Checked = askBeforeExecute
+            For i As Integer = 0 To UBound(sequenceParams)
+                .DBSeqenceDataGrid.Rows.Add(sequenceParams(i))
+            Next
+        End With
     End Sub
+
 End Class
 
 ''' <summary>Contains DBModif functions for storing/updating tabular excel data (DBMapper), doing DBActions, doing DBSequences (combinations of DBMapper/DBAction) and some helper functions</summary>
@@ -661,10 +666,6 @@ Public Module DBModifs
             .envSel.DataSource = Globals.environdefs
             .envSel.SelectedIndex = -1
             .DBModifName.Text = Replace(activeCellName, type, "")
-            If Not IsNothing(existingDBModif) Then
-                ' delegate filling of dialog fields to created DBModif object
-                existingDBModif.setDBModifCreateFields(theDBModifCreateDlg)
-            End If
             .RepairDBSeqnce.Hide()
             .NameLabel.Text = IIf(type = "DBSeqnce", "DBSequence", type) & " Name:"
             .Text = "Edit " & IIf(type = "DBSeqnce", "DBSequence", type) & " definition"
@@ -691,6 +692,7 @@ Public Module DBModifs
                 .DBSeqenceDataGrid.Top = 55
                 .DBSeqenceDataGrid.Height = 320
                 .execOnSave.Top = .TargetRangeLabel.Top
+                .AskForExecute.Top = .TargetRangeLabel.Top
                 ' fill Datagridview for DBSequence
                 Dim cb As DataGridViewComboBoxColumn = New DataGridViewComboBoxColumn()
                 cb.HeaderText = "Sequence Step"
@@ -730,18 +732,6 @@ Public Module DBModifs
                 Next
                 cb.DataSource() = ds
                 .DBSeqenceDataGrid.Columns.Add(cb)
-
-                ' at last fill possible existing sequence definitions into form/Datagridview
-                Dim DBSequenceText As String = ""
-                Try : DBSequenceText = existingDBModif.getParamText() : Catch Ex As Exception : End Try
-                If Len(DBSequenceText) > 0 Then
-                    .RepairDBSeqnce.Text = DBSequenceText
-                    Dim params() As String = Split(DBSequenceText, ",")
-                    .execOnSave.Checked = Convert.ToBoolean(params(0))
-                    For i As Integer = 1 To UBound(params)
-                        .DBSeqenceDataGrid.Rows.Add(params(i))
-                    Next
-                End If
                 .DBSeqenceDataGrid.Columns(0).Width = 200
             Else
                 ' hide controls irrelevant for DBMapper and DBAction
@@ -749,6 +739,9 @@ Public Module DBModifs
                 .down.Hide()
                 .DBSeqenceDataGrid.Hide()
             End If
+
+            ' delegate filling of dialog fields to created DBModif object
+            If Not IsNothing(existingDBModif) Then existingDBModif.setDBModifCreateFields(theDBModifCreateDlg)
 
             ' display dialog for parameters
             If theDBModifCreateDlg.ShowDialog() = DialogResult.Cancel Then
@@ -779,19 +772,20 @@ Public Module DBModifs
             ' create parameter definition string ...
             Dim newParamText As String = ""
             If type = "DBAction" Then
-                newParamText = "def(" + IIf(.envSel.SelectedIndex = -1, "", (.envSel.SelectedIndex + 1).ToString()) + "," + """" + .Database.Text + """," + .execOnSave.Checked.ToString() + ")"
+                newParamText = "def(" + IIf(.envSel.SelectedIndex = -1, "", (.envSel.SelectedIndex + 1).ToString()) + "," + """" + .Database.Text + """," +
+                    .execOnSave.Checked.ToString() + "," + .AskForExecute.Checked.ToString() + ")"
             ElseIf type = "DBMapper" Then
                 newParamText = "def(" +
                     IIf(.envSel.SelectedIndex = -1, "", (.envSel.SelectedIndex + 1).ToString()) + "," +
                     """" + .Database.Text + """," + """" + .Tablename.Text + """," + """" + .PrimaryKeys.Text + """," + .insertIfMissing.Checked.ToString() + "," +
                     """" + IIf(Len(.addStoredProc.Text) = 0, "", .addStoredProc.Text) + """," +
                     """" + IIf(Len(.IgnoreColumns.Text) = 0, "", .IgnoreColumns.Text) + """," +
-                    .execOnSave.Checked.ToString() + "," + .CUDflags.Checked.ToString() + ")"
+                    .execOnSave.Checked.ToString() + "," + .CUDflags.Checked.ToString() + "," + .AskForExecute.Checked.ToString() + ")"
             ElseIf type = "DBSeqnce" Then
                 If .Tag = "repaired" Then
                     newParamText = .RepairDBSeqnce.Text
                 Else
-                    newParamText = .execOnSave.Checked.ToString()
+                    newParamText = .execOnSave.Checked.ToString() + "," + .AskForExecute.Checked.ToString()
                     ' need that because empty row at the end is passed along with Rows() !!
                     For i As Integer = 0 To .DBSeqenceDataGrid.Rows().Count - 2
                         newParamText += "," + .DBSeqenceDataGrid.Rows(i).Cells(0).Value
@@ -832,18 +826,19 @@ Public Module DBModifs
                                 Exit For
                             End If
                         Next
+                        If IsNothing(targetRange) Then
+                            MsgBox("Error, required target range named '" & nodeName & "' not existing for " & DBModiftype & "." & vbCrLf & "either create target range or delete docproperty named  '" & nodeName & "' !", vbCritical)
+                            Continue For
+                        End If
                     End If
                     ' finally create the DBModif Object ...
                     Dim newDBModif As DBModif
-                    If DBModiftype = "DBMapper" And Not IsNothing(targetRange) Then
+                    If DBModiftype = "DBMapper" Then
                         newDBModif = New DBMapper(docproperty.Name, docproperty.Value, targetRange)
-                    ElseIf DBModiftype = "DBAction" And Not IsNothing(targetRange) Then
+                    ElseIf DBModiftype = "DBAction" Then
                         newDBModif = New DBAction(docproperty.Name, docproperty.Value, targetRange)
                     ElseIf DBModiftype = "DBSeqnce" Then
                         newDBModif = New DBSeqnce(docproperty.Name, docproperty.Value)
-                    ElseIf IsNothing(targetRange) Then
-                        MsgBox("Error, required target range named '" & nodeName & "' not existing. " & vbCrLf & "either create target range or delete docproperty named  '" & nodeName & "' !", vbCritical)
-                        newDBModif = Nothing
                     Else
                         MsgBox("Error, not supported DBModiftype: " & DBModiftype, vbCritical)
                         newDBModif = Nothing
@@ -860,7 +855,7 @@ Public Module DBModifs
                         defColl = DBModifDefColl(DBModiftype)
                         defColl.Add(docproperty.Name, newDBModif)
                     End If
-                    End If
+                End If
             Next
             Globals.theRibbon.Invalidate()
         Catch ex As Exception

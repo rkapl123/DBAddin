@@ -7,9 +7,10 @@ Imports System.Collections.Generic
 
 ''' <summary>Dialog for creating DB Modifier configurations</summary>
 Public Class DBModifCreate
+    ''' <summary>on loading of Form catch Data Errors produced when filling DBSeqenceDataGrid here</summary>
     Private DBSeqStepValidationErrors As String = ""
+    ''' <summary>only catch errors until Form is displayed</summary>
     Private DBSeqStepValidationErrorsShown As Boolean = False
-
 
     ''' <summary>check for required fields before closing</summary>
     ''' <param name="sender"></param>
@@ -76,30 +77,7 @@ Public Class DBModifCreate
                     Next
                 Next
             End If
-            ' need to create a commandbutton for the current DBmodification?
-            If Me.CBCreate.Checked Then
-                Dim cbshp As Excel.OLEObject = ExcelDnaUtil.Application.ActiveSheet.OLEObjects.Add(ClassType:="Forms.CommandButton.1", Link:=False, DisplayAsIcon:=False, Left:=600, Top:=70, Width:=120, Height:=24)
-                Dim cb As Forms.CommandButton = cbshp.Object
-                Dim cbName As String = Me.Tag & Me.DBModifName.Text
-                Try
-                    cb.Name = cbName
-                    cb.Caption = IIf(Me.DBModifName.Text = "", "Unnamed " & Me.Tag, Me.Tag & Me.DBModifName.Text)
-                Catch ex As Exception
-                    MsgBox("Couldn't name CommandButton '" & cbName & "': " & ex.Message, MsgBoxStyle.Critical, "CommandButton create Error")
-                    cbshp.Delete()
-                    Exit Sub
-                End Try
-                If Len(cbName) > 31 Then
-                    MsgBox("CommandButton codenames cannot be longer than 31 characters ! '" & cbName & "': ", MsgBoxStyle.Critical, "CommandButton create Error")
-                    cbshp.Delete()
-                    Exit Sub
-                End If
-                ' fail to assign a handler? remove commandbutton (otherwise it gets hard to edit an existing DBModification with a different name).
-                If Not AddInEvents.assignHandler(ExcelDnaUtil.Application.ActiveSheet) Then
-                    cbshp.Delete()
-                    Exit Sub
-                End If
-            End If
+
             Me.DialogResult = DialogResult.OK
             Me.Close()
         End If
@@ -164,6 +142,9 @@ Public Class DBModifCreate
         DBSeqenceDataGrid.Rows(selIndex + 1).Cells(0).Selected = True
     End Sub
 
+    ''' <summary>Shown Event to display Data Errors when adding DBSequence Grid elements</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
     Private Sub DBModifCreate_Shown(sender As Object, e As EventArgs) Handles Me.Shown
         If DBSeqStepValidationErrors <> "" Then
             Dim cb As DataGridViewComboBoxColumn = DBSeqenceDataGrid.Columns(0)
@@ -184,4 +165,30 @@ Public Class DBModifCreate
         DBSeqStepValidationErrorsShown = True
     End Sub
 
+    ''' <summary>Create Commandbutton Click event</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub CreateCB_Click(sender As Object, e As EventArgs) Handles CreateCB.Click
+        ' create a commandbutton for the current DBmodification?
+        Dim cbshp As Excel.OLEObject = ExcelDnaUtil.Application.ActiveSheet.OLEObjects.Add(ClassType:="Forms.CommandButton.1", Link:=False, DisplayAsIcon:=False, Left:=600, Top:=70, Width:=120, Height:=24)
+        Dim cb As Forms.CommandButton = cbshp.Object
+        Dim cbName As String = Me.Tag & Me.DBModifName.Text
+        Try
+            cb.Name = cbName
+            cb.Caption = IIf(Me.DBModifName.Text = "", "Unnamed " & Me.Tag, Me.Tag & Me.DBModifName.Text)
+        Catch ex As Exception
+            cbshp.Delete()
+            MsgBox("Couldn't name CommandButton '" & cbName & "': " & ex.Message, MsgBoxStyle.Critical, "CommandButton create Error")
+            Exit Sub
+        End Try
+        If Len(cbName) > 31 Then
+            cbshp.Delete()
+            MsgBox("CommandButton codenames cannot be longer than 31 characters ! '" & cbName & "': ", MsgBoxStyle.Critical, "CommandButton create Error")
+            Exit Sub
+        End If
+        ' fail to assign a handler? remove commandbutton (otherwise it gets hard to edit an existing DBModification with a different name).
+        If Not AddInEvents.assignHandler(ExcelDnaUtil.Application.ActiveSheet) Then
+            cbshp.Delete()
+        End If
+    End Sub
 End Class
