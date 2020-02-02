@@ -211,7 +211,7 @@ Public Class DBMapper : Inherits DBModif
             If DBModifName.Name = paramTargetName Then
                 ' then set name to offset function covering the whole area...
                 Try
-                    DBModifName.RefersTo = TargetRange.Parent.Range(TargetRange, TargetRange.Parent.Cells(rowEnd, colEnd))
+                    DBModifName.RefersTo = TargetRange.Parent.Range(TargetRange.Cells(1, 1), TargetRange.Parent.Cells(rowEnd, colEnd))
                     Exit For
                 Catch ex As Exception
                     ErrorMsg("Error when assigning name '" & paramTargetName & "': " & ex.Message)
@@ -290,6 +290,7 @@ Public Class DBMapper : Inherits DBModif
                         MsgBox("Error in primary key value, cell (" & rowNum & "," & i + 1 & ") in sheet " & TargetRange.Parent.Name & ", & row " & rowNum, MsgBoxStyle.Critical, "DBMapper Error")
                         GoTo nextRow
                     End If
+                    If IsNothing(primKeyValue) Then primKeyValue = ""
                     If primKeyValue.ToString().Length = 0 Then
                         MsgBox("Empty primary key value, cell (" & rowNum & "," & i + 1 & ") in sheet " & TargetRange.Parent.Name & ", & row " & rowNum, MsgBoxStyle.Critical, "DBMapper Error")
                         GoTo nextRow
@@ -376,6 +377,7 @@ nextRow:
         ' any additional stored procedures to execute?
         If executeAdditionalProc.Length > 0 Then
             Try
+                ExcelDnaUtil.Application.StatusBar = "executing stored procedure " & executeAdditionalProc
                 dbcnn.Execute(executeAdditionalProc)
             Catch ex As Exception
                 MsgBox("Error in executing additional stored procedure: " & ex.Message, MsgBoxStyle.Critical, "DBMapper Error")
@@ -383,9 +385,9 @@ nextRow:
             End Try
         End If
 cleanup:
+        ExcelDnaUtil.Application.StatusBar = False
         ' close connection to return it to the pool...
         dbcnn.Close()
-        ExcelDnaUtil.Application.StatusBar = False
     End Sub
 
     Public Overrides Sub setDBModifCreateFields(ByRef theDBModifCreateDlg As DBModifCreate)
@@ -403,6 +405,7 @@ cleanup:
             .AskForExecute.Checked = askBeforeExecute
         End With
     End Sub
+
 End Class
 
 Public Class DBAction : Inherits DBModif
@@ -420,12 +423,12 @@ Public Class DBAction : Inherits DBModif
         DBmapSheet = paramTarget.Parent.Name
         targetRangeAddress = DBmapSheet + "!" + paramTarget.Address
         If Left(paramTargetName, 8) <> "DBAction" Then
-            LogError("target " & paramTargetName & " not matching passed DBModif type DBAction for " & targetRangeAddress & "/" & dbmapdefkey & " !")
+            MsgBox("target " & paramTargetName & " not matching passed DBModif type DBAction for " & targetRangeAddress & "/" & dbmapdefkey & " !", vbCritical, "DBAction Error")
             Exit Sub
         End If
         ' set up parameters
         If paramTarget.Cells(1, 1).Text = "" Then
-            ErrorMsg("No Action defined in " + paramTargetName + "(" + targetRangeAddress + ")")
+            MsgBox("No Action defined in " + paramTargetName + "(" + targetRangeAddress + ")", vbCritical, "DBAction Error")
             Exit Sub
         End If
         paramText = paramDefs
@@ -434,13 +437,13 @@ Public Class DBAction : Inherits DBModif
         If IsNothing(DBModifParams) Then Exit Sub
         ' check for completeness
         If DBModifParams.Length < 2 Then
-            ErrorMsg("At least environment (can be empty) and database have to be provided as DBAction parameters !")
+            MsgBox("At least environment (can be empty) and database have to be provided as DBAction parameters !", vbCritical, "DBAction Error")
             Exit Sub
         End If
         ' fill parameters:
         database = DBModifParams(1).Replace("""", "").Trim
         If database = "" Then
-            ErrorMsg("No database given in DBAction paramText!")
+            MsgBox("No database given in DBAction paramText!", vbCritical, "DBAction Error")
             Exit Sub
         End If
         If DBModifParams.Length > 2 AndAlso DBModifParams(2) <> "" Then execOnSave = Convert.ToBoolean(DBModifParams(2))
@@ -459,15 +462,17 @@ Public Class DBAction : Inherits DBModif
         If Not openConnection(env, database) Then Exit Sub
         Dim result As Long = 0
         Try
+            ExcelDnaUtil.Application.StatusBar = "executing DBAction " & paramTargetName
             dbcnn.Execute(TargetRange.Cells(1, 1).Text, result, Options:=CommandTypeEnum.adCmdText)
         Catch ex As Exception
-            ErrorMsg("Error: " & paramTargetName & ": " & ex.Message)
+            MsgBox("Error: " & paramTargetName & ": " & ex.Message, vbCritical, "DBAction Error")
             Exit Sub
         End Try
-        If Not WbIsSaving Then
+        If Not WbIsSaving And calledByDBSeq = "" Then
             MsgBox("DBAction " & paramTargetName & " executed, affected records: " & result)
         End If
         ' close connection to return it to the pool...
+        ExcelDnaUtil.Application.StatusBar = False
         dbcnn.Close()
     End Sub
 
@@ -491,7 +496,7 @@ Public Class DBSeqnce : Inherits DBModif
         dbmapdefkey = defkey
         paramText = DBSequenceText
         If paramText = "" Then
-            ErrorMsg("No Sequence defined in " + dbmapdefkey)
+            MsgBox("No Sequence defined in " + dbmapdefkey, vbCritical, "DB Sequence Error")
             Exit Sub
         End If
         ' parse parameters: 1st item is execOnSave, 2nd askBeforeExecute, rest defines sequence (tripletts of DBModifType:DBModifName)
@@ -562,12 +567,12 @@ Public Module DBModifs
 
         Dim theConnString As String = fetchSetting("ConstConnString" & env, String.Empty)
         If theConnString = String.Empty Then
-            ErrorMsg("No Connectionstring given for environment: " & env & ", please correct and rerun.")
+            MsgBox("No Connectionstring given for environment: " & env & ", please correct and rerun.", vbCritical, "Open Connection Error")
             Exit Function
         End If
         Dim dbidentifier As String = fetchSetting("DBidentifierCCS" & env, String.Empty)
         If dbidentifier = String.Empty Then
-            ErrorMsg("No DB identifier given for environment: " & env & ", please correct and rerun.")
+            MsgBox("No DB identifier given for environment: " & env & ", please correct and rerun.", vbCritical, "Open Connection Error")
             Exit Function
         End If
 
@@ -582,7 +587,7 @@ Public Module DBModifs
             dbcnn.CommandTimeout = Globals.CmdTimeout
             dbcnn.Open()
         Catch ex As Exception
-            LogError("Error connecting to DB: " & ex.Message & ", connection string: " & theConnString)
+            MsgBox("Error connecting to DB: " & ex.Message & ", connection string: " & theConnString, vbCritical, "Open Connection Error")
             If dbcnn.State = ADODB.ObjectStateEnum.adStateOpen Then dbcnn.Close()
             dbcnn = Nothing
         End Try
@@ -621,7 +626,7 @@ Public Module DBModifs
                 Dim NamesList As Excel.Names = ExcelDnaUtil.Application.ActiveWorkbook.Names
                 Try : NamesList.Add(Name:=DB_DefName, RefersTo:=ExcelDnaUtil.Application.ActiveCell)
                 Catch ex As Exception
-                    ErrorMsg("Error when assigning name '" & DB_DefName & "' to active cell: " & ex.Message)
+                    MsgBox("Error when assigning name '" & DB_DefName & "' to active cell: " & ex.Message, vbCritical, "DBMapper Legacy Creation Error")
                     Exit Sub
                 End Try
                 ' store parameters in same named docproperty
@@ -629,7 +634,7 @@ Public Module DBModifs
                 Try
                     ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties.Add(Name:=DB_DefName, LinkToContent:=False, Type:=Microsoft.Office.Core.MsoDocProperties.msoPropertyTypeString, Value:=newDefString)
                 Catch ex As Exception
-                    ErrorMsg("Error when adding CustomDocumentProperty with DBModif parameters (Name:" & DB_DefName & ",content: " & newDefString & "): " & ex.Message)
+                    MsgBox("Error when adding CustomDocumentProperty with DBModif parameters (Name:" & DB_DefName & ",content: " & newDefString & "): " & ex.Message, vbCritical, "DBMapper Legacy Creation Error")
                     ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties(DB_DefName).Delete
                     Exit Sub
                 End Try
@@ -797,7 +802,7 @@ Public Module DBModifs
             Try : ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties(activeCellName).Delete : Catch ex As Exception : End Try
             Try
                 ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties.Add(Name:=type + .DBModifName.Text, LinkToContent:=False, Type:=Microsoft.Office.Core.MsoDocProperties.msoPropertyTypeString, Value:=newParamText)
-            Catch ex As Exception : ErrorMsg("Error when adding property with DBModif parameters: " & ex.Message) : End Try
+            Catch ex As Exception : MsgBox("Error when adding property with DBModif parameters: " & ex.Message, vbCritical, "DBModif Creation Error") : End Try
         End With
         ' refresh mapper definitions to reflect changes immediately...
         getDBModifDefinitions()
@@ -819,7 +824,7 @@ Public Module DBModifs
                         For Each rangename As Excel.Name In ExcelDnaUtil.Application.ActiveWorkbook.Names
                             Dim rangenameName As String = Replace(rangename.Name, rangename.Parent.Name & "!", "")
                             If rangenameName = nodeName And InStr(rangename.RefersTo, "#REF!") > 0 Then
-                                ErrorMsg(DBModiftype + " definitions range [" + rangename.Parent.Name + "]" + rangename.Name + " contains #REF!")
+                                MsgBox(DBModiftype + " definitions range [" + rangename.Parent.Name + "]" + rangename.Name + " contains #REF!", vbCritical, "DBModifier Definitions Error")
                                 Exit For
                             ElseIf rangenameName = nodeName Then
                                 targetRange = rangename.RefersToRange
@@ -827,7 +832,7 @@ Public Module DBModifs
                             End If
                         Next
                         If IsNothing(targetRange) Then
-                            MsgBox("Error, required target range named '" & nodeName & "' not existing for " & DBModiftype & "." & vbCrLf & "either create target range or delete docproperty named  '" & nodeName & "' !", vbCritical)
+                            MsgBox("Error, required target range named '" & nodeName & "' not existing for " & DBModiftype & "." & vbCrLf & "either create target range or delete docproperty named  '" & nodeName & "' !", vbCritical, "DBModifier Definitions Error")
                             Continue For
                         End If
                     End If
@@ -840,7 +845,7 @@ Public Module DBModifs
                     ElseIf DBModiftype = "DBSeqnce" Then
                         newDBModif = New DBSeqnce(docproperty.Name, docproperty.Value)
                     Else
-                        MsgBox("Error, not supported DBModiftype: " & DBModiftype, vbCritical)
+                        MsgBox("Error, not supported DBModiftype: " & DBModiftype, vbCritical, "DBModifier Definitions Error")
                         newDBModif = Nothing
                     End If
                     ' ... and add it to the collection DBModifDefColl
