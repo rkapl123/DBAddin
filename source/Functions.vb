@@ -320,9 +320,7 @@ Public Module Functions
                 caller.Name = srcExtentConnect
                 caller.Parent.Parent.Names(srcExtentConnect).Visible = False
             Catch ex As Exception
-                errMsg = "Error in setting srcExtentConnect name: " & ex.Message & " in query: " & Query
-                LogWarn(errMsg & ", caller: " & callID)
-                StatusCollection(callID).statusMsg = errMsg
+                Throw New Exception("Error in setting srcExtentConnect name: " & ex.Message & " in query: " & Query)
             End Try
         End If
 
@@ -332,6 +330,7 @@ Public Module Functions
 
         Dim connType As String
         Dim bgQuery As Boolean
+        DBModifs.preventChangeWhileFetching = True
         Try
             StatusCollection(callID).statusMsg = ""
             If Not thePivotTable Is Nothing Then
@@ -387,10 +386,21 @@ Public Module Functions
                 ' give hidden name to target range of listobject (jump function)
                 theListObject.Range.Name = Replace(srcExtentConnect, "DBFsource", "DBFtarget")
                 theListObject.Range.Name.Visible = False
+                ' in case there is a defined DBMapper underlying the ListObject then change the extent of that to the new area...
+                Dim dbMapperRangeName As String = getDBModifNameFromRange(theListObject.Range)
+                If Left(dbMapperRangeName, 8) = "DBMapper" Then
+                    Dim NamesList As Excel.Names = ExcelDnaUtil.Application.ActiveWorkbook.Names
+                    Try : NamesList.Add(Name:=dbMapperRangeName, RefersTo:=theListObject.Range)
+                    Catch ex As Exception
+                        Throw New Exception("Error when assigning name '" & dbMapperRangeName & "' to ListObject Range: " & ex.Message)
+                    End Try
+                    ' notify DBMapper object of new target range
+                    Globals.DBModifDefColl("DBMapper").Item(dbMapperRangeName).setTargetRange(theListObject.Range)
+                End If
             End If
+            ' neither PivotTable or ListObject could be found in TargetCell
             If StatusCollection(callID).statusMsg = "" Then
-                TargetCell.Cells(1, 1).Value = IIf(TargetCell.Cells(1, 1).Value = "", " ", "") ' recalculate to trigger return of error messages to calling function
-                LogWarn("No PivotTable or ListObject with external data connection could be found in TargetRange " & TargetCell.Address & ", caller: " & callID)
+                TargetCell.Cells(1, 1).Value = IIf(TargetCell.Cells(1, 1).Value = "", " ", "") ' trigger recalculation to return below error message to calling function
                 StatusCollection(callID).statusMsg = "No PivotTable or ListObject with external data connection could be found in TargetRange " & TargetCell.Address
             End If
         Catch ex As Exception
@@ -401,6 +411,7 @@ Public Module Functions
             LogWarn(errMsg & ", caller: " & callID)
             StatusCollection(callID).statusMsg = errMsg
         End Try
+        DBModifs.preventChangeWhileFetching = False
         ExcelDnaUtil.Application.Calculation = calcMode
     End Sub
 
@@ -572,6 +583,7 @@ Public Module Functions
             GoTo err_0
         End If
 
+        DBModifs.preventChangeWhileFetching = True
         On Error Resume Next
         oldRows = targetSH.Parent.Names(targetExtent).RefersToRange.Rows.Count
         oldCols = targetSH.Parent.Names(targetExtent).RefersToRange.Columns.Count
@@ -813,19 +825,17 @@ Public Module Functions
                     End If
                     ' sanity check not to fill upwards !
                     If copyDown > .Cells.Row Then .Cells.AutoFill(Destination:=formulaSH.Range(.Cells, formulaSH.Cells(copyDown, .Column + .Columns.Count - 1)))
-                    ' restore filters in formulaSheet, calculate explicitly or we wouldn't filter correctly !
                     formulaFilledRange = formulaSH.Range(formulaSH.Cells(.Row, .Column), formulaSH.Cells(copyDown, .Column + .Columns.Count - 1))
-                    formulaFilledRange.Calculate()
 
                     ' reassign internal name to changed formula area
                     ' delete the name to have a "clean" name area (otherwise visible = false setting wont work for dataTargetRange)
-                    storedNames = removeRangeName(formulaFilledRange, targetExtentF)
+                    formulaFilledRange.Parent.Parent.Names(targetExtentF).Delete
+                    Err.Clear() ' might not exist, so ignore errors here...
                     formulaFilledRange.Name = targetExtentF
                     formulaFilledRange.Name.Visible = False
-                    restoreRangeNames(formulaFilledRange, storedNames)
                     ' reassign visible defined name to changed formula area only if defined...
                     If formulaRangeName.Length > 0 Then
-                        formulaFilledRange.Name = formulaRangeName    ' DO NOT use formulaFilledRange.Name.Visible = True, or hidden range will also be visible...
+                        formulaFilledRange.Name = formulaRangeName    ' NOT USING formulaFilledRange.Name.Visible = True, or hidden range will also be visible...
                     End If
                     If Err.Number <> 0 Then
                         errMsg = "Error in (re)assigning formula range name: " & Err.Description & " in query: " & Query
@@ -841,36 +851,41 @@ Public Module Functions
 
         Dim newTargetRange As Excel.Range
         ' reassign name to changed data area
-        If targetRangeName.Length > 0 Then
-            ' if formulas are adjacent to data extend name to formula range !
-            Dim additionalFormulaColumns As Long : additionalFormulaColumns = 0
-            ' need this as excel throws errors when comparing nonexistent formulaSH !!
-            If Not formulaRange Is Nothing Then
-                If targetSH Is formulaSH And formulaRange.Column = startCol + targetColumns + 1 Then additionalFormulaColumns = formulaRange.Columns.Count
-            End If
-            ' set the new hidden targetExtent name...
-            newTargetRange = targetSH.Range(targetSH.Cells(startRow, startCol), targetSH.Cells(startRow + arrayRows - 1, startCol + targetColumns))
-            'storedNames = removeRangeName(newTargetRange, targetExtent)
-            targetRange.Parent.Parent.Names(targetExtent).Delete
-            Err.Clear()
-            newTargetRange.Name = targetExtent
-            newTargetRange.Name.Visible = False
-            'restoreRangeNames(newTargetRange, storedNames)
-            ' now set the name for the total area
-            targetSH.Range(targetSH.Cells(startRow, startCol), targetSH.Cells(startRow + arrayRows - 1, startCol + targetColumns + additionalFormulaColumns)).Name = targetRangeName
-        Else
-            ' set the new hidden targetExtent name...
-            newTargetRange = targetSH.Range(targetSH.Cells(startRow, startCol), targetSH.Cells(startRow + arrayRows - 1, startCol + targetColumns))
-            'storedNames = removeRangeName(newTargetRange, targetExtent)
-            targetRange.Parent.Parent.Names(targetExtent).Delete
-            Err.Clear()
-            newTargetRange.Name = targetExtent
-            newTargetRange.Name.Visible = False
-            'restoreRangeNames(newTargetRange, storedNames)
+        ' set the new hidden targetExtent name...
+        newTargetRange = targetSH.Range(targetSH.Cells(startRow, startCol), targetSH.Cells(startRow + arrayRows - 1, startCol + targetColumns))
+        targetRange.Parent.Parent.Names(targetExtent).Delete
+        Err.Clear() ' might not exist, so ignore errors here...
+        newTargetRange.Name = targetExtent
+        newTargetRange.Name.Visible = False
+
+        ' if formulas are adjacent to data extend name to formula range !
+        Dim additionalFormulaColumns As Integer = 0
+        ' need this as excel throws errors when comparing nonexistent formulaSH !!
+        If Not formulaRange Is Nothing Then
+            If targetSH Is formulaSH And formulaRange.Column = startCol + targetColumns + 1 Then additionalFormulaColumns = formulaRange.Columns.Count
         End If
+        ' now set the name for the total area
+        newTargetRange = targetSH.Range(targetSH.Cells(startRow, startCol), targetSH.Cells(startRow + arrayRows - 1, startCol + targetColumns + additionalFormulaColumns))
+
+        ' reassign visible name, if given
+        If targetRangeName.Length > 0 Then newTargetRange.Name = targetRangeName
+
         If Err.Number <> 0 Then
             errMsg = "Error in (re)assigning data target name: " & Err.Description & " (maybe known issue with 'cell like' sheetnames, e.g. 'C701 country' ?) in query: " & Query
             GoTo err_0
+        End If
+
+        ' in case there is a defined DBMapper underlying the ListObject then change the extent of that to the new area...
+        Dim dbMapperRangeName As String = getDBModifNameFromRange(newTargetRange)
+        If Left(dbMapperRangeName, 8) = "DBMapper" Then
+            Dim NamesList As Excel.Names = ExcelDnaUtil.Application.ActiveWorkbook.Names
+            NamesList.Add(Name:=dbMapperRangeName, RefersTo:=newTargetRange)
+            If Err.Number <> 0 Then
+                errMsg = "Error when assigning name '" & dbMapperRangeName & "' to ListObject Range: " & Err.Description
+                GoTo err_0
+            End If
+            ' notify DBMapper object of new target range
+            Globals.DBModifDefColl("DBMapper").Item(dbMapperRangeName).setTargetRange(newTargetRange)
         End If
 
         '''' any warnings, errors ?
@@ -952,6 +967,7 @@ err_0: ' errors where recordset was not opened or is already closed
     ''' <param name="callID">for logging purpose</param>
     ''' <param name="additionalLogInfo">for logging purpose</param>
     Private Sub finishAction(calcMode As Excel.XlCalculation, callID As String, Optional additionalLogInfo As String = "")
+        DBModifs.preventChangeWhileFetching = False
         ExcelDnaUtil.Application.Cursor = Excel.XlMousePointer.xlDefault  ' To return cursor to normal
         ExcelDnaUtil.Application.StatusBar = False
         LogInfo("Leaving DBAction: callID " & callID & IIf(additionalLogInfo <> "", ", additionalInfo: " & additionalLogInfo, ""))
@@ -1084,6 +1100,7 @@ err_0: ' errors where recordset was not opened or is already closed
             End If
         End If
         targetExtent = Replace(srcExtentConnect, "DBFsource", "DBFtarget")
+        DBModifs.preventChangeWhileFetching = True
         ' remove old data in case we changed the target range array
         targetSH.Range(targetExtent).ClearContents()
 

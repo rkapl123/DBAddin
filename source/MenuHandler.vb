@@ -204,12 +204,12 @@ Public Class MenuHandler
     Public Function getDBModifMenuContent(control As IRibbonControl) As String
         Dim xmlString As String = "<menu xmlns='http://schemas.microsoft.com/office/2009/07/customui'>"
         Try
-            If Not DBModifDefColl.ContainsKey(control.Id) Then Return ""
+            If Not Globals.DBModifDefColl.ContainsKey(control.Id) Then Return ""
             Dim DBModifTypeName As String = IIf(control.Id = "DBSeqnce", "DBSequences", IIf(control.Id = "DBMapper", "DB Mapper", IIf(control.Id = "DBAction", "DB Action", "undefined DBModifTypeName")))
-            For Each nodeName As String In DBModifDefColl(control.Id).Keys
+            For Each nodeName As String In Globals.DBModifDefColl(control.Id).Keys
                 Dim descName As String = IIf(nodeName = control.Id, "Unnamed " + DBModifTypeName, Replace(nodeName, DBModifTypeName, ""))
                 Dim imageMsoStr As String = IIf(control.Id = "DBSeqnce", "ShowOnNewButton", IIf(control.Id = "DBMapper", "TableSave", IIf(control.Id = "DBAction", "TableIndexes", "undefined imageMso")))
-                Dim superTipStr As String = IIf(control.Id = "DBSeqnce", "executes " + DBModifTypeName + " defined in docproperty: " + nodeName, IIf(control.Id = "DBMapper", "stores data defined in DBMapper (named " + nodeName + ") range on " + DBModifDefColl(control.Id).Item(nodeName).getTargetRangeAddress(), IIf(control.Id = "DBAction", "executes Action defined in DBAction (named " + nodeName + ") range on " + DBModifDefColl(control.Id).Item(nodeName).getTargetRangeAddress(), "undefined superTip")))
+                Dim superTipStr As String = IIf(control.Id = "DBSeqnce", "executes " + DBModifTypeName + " defined in docproperty: " + nodeName, IIf(control.Id = "DBMapper", "stores data defined in DBMapper (named " + nodeName + ") range on " + Globals.DBModifDefColl(control.Id).Item(nodeName).getTargetRangeAddress(), IIf(control.Id = "DBAction", "executes Action defined in DBAction (named " + nodeName + ") range on " + Globals.DBModifDefColl(control.Id).Item(nodeName).getTargetRangeAddress(), "undefined superTip")))
                 xmlString = xmlString + "<button id='_" + nodeName + "' label='do " + descName + "' imageMso='" & imageMsoStr & "' onAction='DBModifClick' tag='" + control.Id + "' screentip='do " & DBModifTypeName & ": " + descName + "' supertip='" + superTipStr + "' />"
             Next
             xmlString += "</menu>"
@@ -229,7 +229,7 @@ Public Class MenuHandler
     ''' <returns></returns>
     Public Function getDBModifMenuVisible(control As IRibbonControl) As Boolean
         Try
-            Return DBModifDefColl.ContainsKey(control.Id)
+            Return Globals.DBModifDefColl.ContainsKey(control.Id)
         Catch ex As Exception
             Return False
         End Try
@@ -243,7 +243,7 @@ Public Class MenuHandler
                 createDBModif(control.Tag, targetDefName:=nodeName)
             Else
                 ' DB sequence actions (the sequence to be done) are stored directly in DBMapperDefColl, so different invocation here
-                DBModifDefColl(control.Tag).Item(nodeName).doDBModif()
+                Globals.DBModifDefColl(control.Tag).Item(nodeName).doDBModif()
             End If
         Catch ex As Exception
             LogError(ex.Message & ",control.Tag:" & control.Tag & ",nodeName:" & nodeName)

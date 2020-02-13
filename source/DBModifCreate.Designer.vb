@@ -25,8 +25,9 @@ Partial Class DBModifCreate
         Me.components = New System.ComponentModel.Container()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(DBModifCreate))
         Me.TableLayoutPanel1 = New System.Windows.Forms.TableLayoutPanel()
-        Me.OK_Button = New System.Windows.Forms.Button()
         Me.Cancel_Button = New System.Windows.Forms.Button()
+        Me.OK_Button = New System.Windows.Forms.Button()
+        Me.CreateCB = New System.Windows.Forms.Button()
         Me.DBModifName = New System.Windows.Forms.TextBox()
         Me.NameLabel = New System.Windows.Forms.Label()
         Me.Tablename = New System.Windows.Forms.TextBox()
@@ -51,8 +52,6 @@ Partial Class DBModifCreate
         Me.RepairDBSeqnce = New System.Windows.Forms.TextBox()
         Me.AskForExecute = New System.Windows.Forms.CheckBox()
         Me.EnvironmentLabel = New System.Windows.Forms.Label()
-        Me.TargetRangeLabel = New System.Windows.Forms.Label()
-        Me.CreateCB = New System.Windows.Forms.Button()
         Me.TableLayoutPanel1.SuspendLayout()
         CType(Me.DBSeqenceDataGrid, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
@@ -61,42 +60,53 @@ Partial Class DBModifCreate
         '
         Me.TableLayoutPanel1.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.TableLayoutPanel1.ColumnCount = 3
-        Me.TableLayoutPanel1.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50.0!))
-        Me.TableLayoutPanel1.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50.0!))
-        Me.TableLayoutPanel1.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 73.0!))
-        Me.TableLayoutPanel1.Controls.Add(Me.CreateCB, 0, 0)
+        Me.TableLayoutPanel1.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 65.80645!))
+        Me.TableLayoutPanel1.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 34.19355!))
+        Me.TableLayoutPanel1.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 74.0!))
         Me.TableLayoutPanel1.Controls.Add(Me.Cancel_Button, 2, 0)
         Me.TableLayoutPanel1.Controls.Add(Me.OK_Button, 1, 0)
-        Me.TableLayoutPanel1.Location = New System.Drawing.Point(232, 382)
+        Me.TableLayoutPanel1.Controls.Add(Me.CreateCB, 0, 0)
+        Me.TableLayoutPanel1.Location = New System.Drawing.Point(272, 382)
         Me.TableLayoutPanel1.Name = "TableLayoutPanel1"
         Me.TableLayoutPanel1.RowCount = 1
         Me.TableLayoutPanel1.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50.0!))
-        Me.TableLayoutPanel1.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20.0!))
-        Me.TableLayoutPanel1.Size = New System.Drawing.Size(229, 29)
+        Me.TableLayoutPanel1.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 29.0!))
+        Me.TableLayoutPanel1.Size = New System.Drawing.Size(196, 29)
         Me.TableLayoutPanel1.TabIndex = 0
+        '
+        'Cancel_Button
+        '
+        Me.Cancel_Button.Anchor = System.Windows.Forms.AnchorStyles.None
+        Me.Cancel_Button.DialogResult = System.Windows.Forms.DialogResult.Cancel
+        Me.Cancel_Button.Location = New System.Drawing.Point(125, 3)
+        Me.Cancel_Button.Name = "Cancel_Button"
+        Me.Cancel_Button.Size = New System.Drawing.Size(67, 23)
+        Me.Cancel_Button.TabIndex = 0
+        Me.Cancel_Button.Text = "Abbrechen"
         '
         'OK_Button
         '
         Me.OK_Button.Anchor = System.Windows.Forms.AnchorStyles.None
         Me.OK_Button.Location = New System.Drawing.Point(83, 3)
         Me.OK_Button.Name = "OK_Button"
-        Me.OK_Button.Size = New System.Drawing.Size(67, 23)
+        Me.OK_Button.Size = New System.Drawing.Size(35, 23)
         Me.OK_Button.TabIndex = 0
         Me.OK_Button.Text = "OK"
         '
-        'Cancel_Button
+        'CreateCB
         '
-        Me.Cancel_Button.Anchor = System.Windows.Forms.AnchorStyles.None
-        Me.Cancel_Button.DialogResult = System.Windows.Forms.DialogResult.Cancel
-        Me.Cancel_Button.Location = New System.Drawing.Point(159, 3)
-        Me.Cancel_Button.Name = "Cancel_Button"
-        Me.Cancel_Button.Size = New System.Drawing.Size(67, 23)
-        Me.Cancel_Button.TabIndex = 0
-        Me.Cancel_Button.Text = "Abbrechen"
+        Me.CreateCB.Anchor = System.Windows.Forms.AnchorStyles.None
+        Me.CreateCB.Location = New System.Drawing.Point(6, 3)
+        Me.CreateCB.Name = "CreateCB"
+        Me.CreateCB.Size = New System.Drawing.Size(68, 23)
+        Me.CreateCB.TabIndex = 1
+        Me.CreateCB.Text = "Create CB"
+        Me.ToolTip1.SetToolTip(Me.CreateCB, "Create a Commandbutton for the DB Modifier Definition (max. 5 Buttons possible pe" &
+        "r Workbook)")
         '
         'DBModifName
         '
-        Me.DBModifName.Location = New System.Drawing.Point(161, 3)
+        Me.DBModifName.Location = New System.Drawing.Point(167, 3)
         Me.DBModifName.Name = "DBModifName"
         Me.DBModifName.Size = New System.Drawing.Size(297, 20)
         Me.DBModifName.TabIndex = 1
@@ -113,7 +123,7 @@ Partial Class DBModifCreate
         '
         'Tablename
         '
-        Me.Tablename.Location = New System.Drawing.Point(161, 55)
+        Me.Tablename.Location = New System.Drawing.Point(167, 55)
         Me.Tablename.Name = "Tablename"
         Me.Tablename.Size = New System.Drawing.Size(297, 20)
         Me.Tablename.TabIndex = 3
@@ -121,7 +131,7 @@ Partial Class DBModifCreate
         '
         'PrimaryKeys
         '
-        Me.PrimaryKeys.Location = New System.Drawing.Point(161, 81)
+        Me.PrimaryKeys.Location = New System.Drawing.Point(167, 81)
         Me.PrimaryKeys.Name = "PrimaryKeys"
         Me.PrimaryKeys.Size = New System.Drawing.Size(297, 20)
         Me.PrimaryKeys.TabIndex = 4
@@ -129,7 +139,7 @@ Partial Class DBModifCreate
         '
         'Database
         '
-        Me.Database.Location = New System.Drawing.Point(161, 29)
+        Me.Database.Location = New System.Drawing.Point(167, 29)
         Me.Database.Name = "Database"
         Me.Database.Size = New System.Drawing.Size(297, 20)
         Me.Database.TabIndex = 2
@@ -137,7 +147,7 @@ Partial Class DBModifCreate
         '
         'IgnoreColumns
         '
-        Me.IgnoreColumns.Location = New System.Drawing.Point(161, 107)
+        Me.IgnoreColumns.Location = New System.Drawing.Point(167, 107)
         Me.IgnoreColumns.Name = "IgnoreColumns"
         Me.IgnoreColumns.Size = New System.Drawing.Size(297, 20)
         Me.IgnoreColumns.TabIndex = 5
@@ -145,7 +155,7 @@ Partial Class DBModifCreate
         '
         'addStoredProc
         '
-        Me.addStoredProc.Location = New System.Drawing.Point(161, 133)
+        Me.addStoredProc.Location = New System.Drawing.Point(167, 133)
         Me.addStoredProc.Name = "addStoredProc"
         Me.addStoredProc.Size = New System.Drawing.Size(297, 20)
         Me.addStoredProc.TabIndex = 6
@@ -199,7 +209,7 @@ Partial Class DBModifCreate
         'insertIfMissing
         '
         Me.insertIfMissing.AutoSize = True
-        Me.insertIfMissing.Location = New System.Drawing.Point(124, 186)
+        Me.insertIfMissing.Location = New System.Drawing.Point(216, 163)
         Me.insertIfMissing.Name = "insertIfMissing"
         Me.insertIfMissing.Size = New System.Drawing.Size(97, 17)
         Me.insertIfMissing.TabIndex = 7
@@ -213,18 +223,18 @@ Partial Class DBModifCreate
         Me.execOnSave.AutoSize = True
         Me.execOnSave.Location = New System.Drawing.Point(12, 163)
         Me.execOnSave.Name = "execOnSave"
-        Me.execOnSave.Size = New System.Drawing.Size(106, 17)
+        Me.execOnSave.Size = New System.Drawing.Size(91, 17)
         Me.execOnSave.TabIndex = 8
-        Me.execOnSave.Text = "Execute on save"
+        Me.execOnSave.Text = "Exec on save"
         Me.ToolTip1.SetToolTip(Me.execOnSave, "should DB Modifier automatically be done on Excel Workbook Saving? (default no)")
         Me.execOnSave.UseVisualStyleBackColor = True
         '
         'envSel
         '
         Me.envSel.FormattingEnabled = True
-        Me.envSel.Location = New System.Drawing.Point(343, 159)
+        Me.envSel.Location = New System.Drawing.Point(351, 159)
         Me.envSel.Name = "envSel"
-        Me.envSel.Size = New System.Drawing.Size(115, 21)
+        Me.envSel.Size = New System.Drawing.Size(113, 21)
         Me.envSel.TabIndex = 9
         Me.ToolTip1.SetToolTip(Me.envSel, "The Environment, where connection id should be taken from (if not existing, take " &
         "from selected Environment in DB Addin General Settings Group)")
@@ -238,27 +248,26 @@ Partial Class DBModifCreate
         Me.DBSeqenceDataGrid.Location = New System.Drawing.Point(12, 209)
         Me.DBSeqenceDataGrid.MultiSelect = False
         Me.DBSeqenceDataGrid.Name = "DBSeqenceDataGrid"
-        Me.DBSeqenceDataGrid.Size = New System.Drawing.Size(446, 167)
+        Me.DBSeqenceDataGrid.Size = New System.Drawing.Size(452, 167)
         Me.DBSeqenceDataGrid.TabIndex = 10
         Me.ToolTip1.SetToolTip(Me.DBSeqenceDataGrid, "Define the steps for the DB Sequence in the order of their desired execution here" &
         ". Any DBMapper and/or DBAction can be selected.")
         '
         'TargetRangeAddress
         '
-        Me.TargetRangeAddress.AutoSize = True
         Me.TargetRangeAddress.Font = New System.Drawing.Font("Microsoft Sans Serif", 8.25!, System.Drawing.FontStyle.Underline, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.TargetRangeAddress.ForeColor = System.Drawing.Color.DodgerBlue
-        Me.TargetRangeAddress.Location = New System.Drawing.Point(47, 391)
+        Me.TargetRangeAddress.Location = New System.Drawing.Point(108, 187)
         Me.TargetRangeAddress.Name = "TargetRangeAddress"
-        Me.TargetRangeAddress.Size = New System.Drawing.Size(108, 13)
+        Me.TargetRangeAddress.Size = New System.Drawing.Size(356, 16)
         Me.TargetRangeAddress.TabIndex = 11
-        Me.TargetRangeAddress.Text = "TargetRangeAddress"
+        Me.TargetRangeAddress.TextAlign = System.Drawing.ContentAlignment.TopRight
         Me.ToolTip1.SetToolTip(Me.TargetRangeAddress, "click to select Target Range with Data for DBMapper or SQL DML for DBAction")
         '
         'up
         '
         Me.up.Font = New System.Drawing.Font("Courier New", 9.75!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        Me.up.Location = New System.Drawing.Point(161, 389)
+        Me.up.Location = New System.Drawing.Point(217, 387)
         Me.up.Name = "up"
         Me.up.Size = New System.Drawing.Size(18, 19)
         Me.up.TabIndex = 12
@@ -268,7 +277,7 @@ Partial Class DBModifCreate
         '
         'down
         '
-        Me.down.Location = New System.Drawing.Point(185, 389)
+        Me.down.Location = New System.Drawing.Point(241, 387)
         Me.down.Name = "down"
         Me.down.Size = New System.Drawing.Size(18, 19)
         Me.down.TabIndex = 12
@@ -301,7 +310,7 @@ Partial Class DBModifCreate
         'AskForExecute
         '
         Me.AskForExecute.AutoSize = True
-        Me.AskForExecute.Location = New System.Drawing.Point(124, 163)
+        Me.AskForExecute.Location = New System.Drawing.Point(102, 163)
         Me.AskForExecute.Name = "AskForExecute"
         Me.AskForExecute.Size = New System.Drawing.Size(108, 17)
         Me.AskForExecute.TabIndex = 16
@@ -312,31 +321,11 @@ Partial Class DBModifCreate
         'EnvironmentLabel
         '
         Me.EnvironmentLabel.AutoSize = True
-        Me.EnvironmentLabel.Location = New System.Drawing.Point(312, 164)
+        Me.EnvironmentLabel.Location = New System.Drawing.Point(316, 164)
         Me.EnvironmentLabel.Name = "EnvironmentLabel"
         Me.EnvironmentLabel.Size = New System.Drawing.Size(29, 13)
         Me.EnvironmentLabel.TabIndex = 6
         Me.EnvironmentLabel.Text = "Env:"
-        '
-        'TargetRangeLabel
-        '
-        Me.TargetRangeLabel.AutoSize = True
-        Me.TargetRangeLabel.Location = New System.Drawing.Point(9, 391)
-        Me.TargetRangeLabel.Name = "TargetRangeLabel"
-        Me.TargetRangeLabel.Size = New System.Drawing.Size(41, 13)
-        Me.TargetRangeLabel.TabIndex = 2
-        Me.TargetRangeLabel.Text = "Target:"
-        '
-        'CreateCB
-        '
-        Me.CreateCB.Anchor = System.Windows.Forms.AnchorStyles.None
-        Me.CreateCB.Location = New System.Drawing.Point(3, 3)
-        Me.CreateCB.Name = "CreateCB"
-        Me.CreateCB.Size = New System.Drawing.Size(72, 23)
-        Me.CreateCB.TabIndex = 1
-        Me.CreateCB.Text = "Create CB"
-        Me.ToolTip1.SetToolTip(Me.CreateCB, "Create a Commandbutton for the DB Modifier Definition (max. 5 Buttons possible pe" &
-        "r Workbook)")
         '
         'DBModifCreate
         '
@@ -344,16 +333,14 @@ Partial Class DBModifCreate
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.CancelButton = Me.Cancel_Button
-        Me.ClientSize = New System.Drawing.Size(473, 423)
+        Me.ClientSize = New System.Drawing.Size(480, 423)
+        Me.Controls.Add(Me.EnvironmentLabel)
         Me.Controls.Add(Me.AskForExecute)
-        Me.Controls.Add(Me.TargetRangeAddress)
-        Me.Controls.Add(Me.TargetRangeLabel)
         Me.Controls.Add(Me.CUDflags)
         Me.Controls.Add(Me.insertIfMissing)
         Me.Controls.Add(Me.down)
         Me.Controls.Add(Me.up)
         Me.Controls.Add(Me.DBSeqenceDataGrid)
-        Me.Controls.Add(Me.EnvironmentLabel)
         Me.Controls.Add(Me.envSel)
         Me.Controls.Add(Me.execOnSave)
         Me.Controls.Add(Me.AdditionalStoredProcLabel)
@@ -370,7 +357,9 @@ Partial Class DBModifCreate
         Me.Controls.Add(Me.DBModifName)
         Me.Controls.Add(Me.TableLayoutPanel1)
         Me.Controls.Add(Me.RepairDBSeqnce)
+        Me.Controls.Add(Me.TargetRangeAddress)
         Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog
+        Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.MaximizeBox = False
         Me.MinimizeBox = False
         Me.Name = "DBModifCreate"

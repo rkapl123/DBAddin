@@ -72,9 +72,9 @@ Public Class AddInEvents
         Catch ex As Exception : End Try
         ' if overriding flag not given, ask for saving if this is necessary for any DBmodifier...
         If Not doDBMOnSave Then
-            For Each DBmodifType As String In DBModifDefColl.Keys
-                For Each dbmapdefkey As String In DBModifDefColl(DBmodifType).Keys
-                    If DBModifDefColl(DBmodifType).Item(dbmapdefkey).DBModifSaveNeeded() Then
+            For Each DBmodifType As String In Globals.DBModifDefColl.Keys
+                For Each dbmapdefkey As String In Globals.DBModifDefColl(DBmodifType).Keys
+                    If Globals.DBModifDefColl(DBmodifType).Item(dbmapdefkey).DBModifSaveNeeded() Then
                         Dim answer As MsgBoxResult = MsgBox("do the DB Modifications defined in Workbook ?", vbYesNo, "DB Modifications on Save")
                         If answer = vbYes Then doDBMOnSave = True
                         GoTo done
@@ -85,9 +85,9 @@ Public Class AddInEvents
 done:
         ' save all DBmaps/DBActions/DBSequences on saving except Readonly is recommended on this workbook
         If Not Wb.ReadOnlyRecommended And doDBMOnSave Then
-            For Each DBmodifType As String In DBModifDefColl.Keys
-                For Each dbmapdefkey As String In DBModifDefColl(DBmodifType).Keys
-                    DBModifDefColl(DBmodifType).Item(dbmapdefkey).doDBModif(WbIsSaving:=True)
+            For Each DBmodifType As String In Globals.DBModifDefColl.Keys
+                For Each dbmapdefkey As String In Globals.DBModifDefColl(DBmodifType).Keys
+                    Globals.DBModifDefColl(DBmodifType).Item(dbmapdefkey).doDBModif(WbIsSaving:=True)
                 Next
             Next
         End If
@@ -249,7 +249,7 @@ done:
         If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown Then
             createDBModif(DBModifType, targetDefName:=cbName)
         Else
-            DBModifDefColl(DBModifType).Item(cbName).doDBModif()
+            Globals.DBModifDefColl(DBModifType).Item(cbName).doDBModif()
         End If
     End Sub
 
@@ -313,5 +313,10 @@ done:
             Globals.theRibbon.Invalidate()
         End If
     End Sub
-
+    Private Sub Application_SheetChange(Sh As Object, Target As Range) Handles Application.SheetChange
+        If Globals.DBModifDefColl.ContainsKey("DBMapper") And Not DBModifs.preventChangeWhileFetching Then
+            Dim targetName As String = getDBModifNameFromRange(Target)
+            If Left(targetName, 8) = "DBMapper" Then Globals.DBModifDefColl("DBMapper").Item(targetName).doCUDMarks(Target)
+        End If
+    End Sub
 End Class

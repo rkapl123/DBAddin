@@ -47,9 +47,9 @@ Public Class DBModifCreate
                         For i = 1 To UBound(params)
                             Dim definition() As String = Split(params(i), ":")
                             If definition(0) = Me.Tag AndAlso definition(1) = Me.DBModifName.Text AndAlso
-                            DBModifDefColl.ContainsKey(definition(0)) AndAlso DBModifDefColl(definition(0)).ContainsKey(definition(1)) AndAlso
+                            Globals.DBModifDefColl.ContainsKey(definition(0)) AndAlso Globals.DBModifDefColl(definition(0)).ContainsKey(definition(1)) AndAlso
                             Me.execOnSave.Checked AndAlso execSeqElemOnSave Then
-                                Dim retval As MsgBoxResult = MsgBox(Me.Tag & Me.DBModifName.Text & " in " & DBModifDefColl(definition(0)).Item(definition(1)).getTargetRangeAddress() & " will be executed twice on saving, because it is part of DBSequence " & dbseqName & ", which is also executed on saving." & vbCrLf & "Please disable 'Execute on save' either here or on " & dbseqName & " !", MsgBoxStyle.Critical + vbOKCancel, "DBModification Validation")
+                                Dim retval As MsgBoxResult = MsgBox(Me.Tag & Me.DBModifName.Text & " in " & Globals.DBModifDefColl(definition(0)).Item(definition(1)).getTargetRangeAddress() & " will be executed twice on saving, because it is part of DBSequence " & dbseqName & ", which is also executed on saving." & vbCrLf & "Please disable 'Execute on save' either here or on " & dbseqName & " !", MsgBoxStyle.Critical + vbOKCancel, "DBModification Validation")
                                 Exit Sub
                             End If
                         Next
@@ -104,8 +104,8 @@ Public Class DBModifCreate
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub TargetRangeAddress_Click(sender As Object, e As EventArgs) Handles TargetRangeAddress.Click
-        Dim rangePart() As String
-        rangePart = Split(Me.TargetRangeAddress.Text, "!")
+        If Me.TargetRangeAddress.Text = "" Then Exit Sub
+        Dim rangePart() As String = Split(Me.TargetRangeAddress.Text, "!")
         Try
             ExcelDnaUtil.Application.Worksheets(rangePart(0)).Select()
             ExcelDnaUtil.Application.Range(rangePart(1)).Select()
