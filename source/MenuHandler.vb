@@ -39,8 +39,9 @@ Public Class MenuHandler
         ' Context menus for refresh, jump and creation: in cell, row, column and ListRange (area of ListObjects)
         customUIXml += "<contextMenus>" +
          "<contextMenu idMso ='ContextMenuCell'>" +
-         "<button id='refreshDataC' label='refresh data (Ctrl-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
-         "<button id='gotoDBFuncC' label='jump to DBFunc/target (Ctrl-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
+         "<button id='refreshDataC' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
+         "<button id='gotoDBFuncC' label='jump to DBFunc/target (Ctl-Sh-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
+         "<button id='DeleteRowC' label='delete Row (Ctl-Sh-D)' imageMso='SlicerDelete' onAction='deleteRowButton' insertBeforeMso='Cut'/>" +
          "<menu id='createMenu' label='Insert/Edit DBFunc/DBModif' insertBeforeMso='Cut'>" +
            "<button id='DBMapperC' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
            "<button id='DBActionC' tag='DBAction' label='DBAction' imageMso='TableIndexes' onAction='clickCreateButton'/>" +
@@ -54,13 +55,14 @@ Public Class MenuHandler
          "<menuSeparator id='MySeparatorC' insertBeforeMso='Cut'/>" +
          "</contextMenu>" +
          "<contextMenu idMso ='ContextMenuPivotTable'>" +
-         "<button id='refreshDataPT' label='refresh data (Ctrl-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Copy'/>" +
-         "<button id='gotoDBFuncPT' label='jump to DBFunc/target (Ctrl-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Copy'/>" +
+         "<button id='refreshDataPT' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Copy'/>" +
+         "<button id='gotoDBFuncPT' label='jump to DBFunc/target (Ctl-Sh-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Copy'/>" +
          "<menuSeparator id='MySeparatorPT' insertBeforeMso='Copy'/>" +
          "</contextMenu>" +
          "<contextMenu idMso ='ContextMenuCellLayout'>" +
-         "<button id='refreshDataCL' label='refresh data (Ctrl-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
-         "<button id='gotoDBFuncCL' label='jump to DBFunc/target (Ctrl-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
+         "<button id='refreshDataCL' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
+         "<button id='gotoDBFuncCL' label='jump to DBFunc/target (Ctl-Sh-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
+         "<button id='DeleteRowCL' label='delete Row (Ctl-Sh-D)' imageMso='SlicerDelete' onAction='deleteRowButton' insertBeforeMso='Cut'/>" +
          "<menu id='createMenuCL' label='Insert/Edit DBFunc/DBModif' insertBeforeMso='Cut'>" +
             "<button id='DBMapperCL' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
             "<button id='DBActionCL' tag='DBAction' label='DBAction' imageMso='TableIndexes' onAction='clickCreateButton'/>" +
@@ -74,16 +76,18 @@ Public Class MenuHandler
          "<menuSeparator id='MySeparatorCL' insertBeforeMso='Cut'/>" +
          "</contextMenu>" +
          "<contextMenu idMso='ContextMenuRow'>" +
-         "<button id='refreshDataR' label='refresh data (Ctrl-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
+         "<button id='refreshDataR' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
+         "<button id='DeleteRowR' label='delete Row (Ctl-Sh-D)' imageMso='SlicerDelete' onAction='deleteRowButton' insertBeforeMso='Cut'/>" +
          "<menuSeparator id='MySeparatorR' insertBeforeMso='Cut'/>" +
          "</contextMenu>" +
          "<contextMenu idMso='ContextMenuColumn'>" +
-         "<button id='refreshDataZ' label='refresh data (Ctrl-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
+         "<button id='refreshDataZ' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
          "<menuSeparator id='MySeparatorZ' insertBeforeMso='Cut'/>" +
          "</contextMenu>" +
          "<contextMenu idMso='ContextMenuListRange'>" +
-             "<button id='refreshDataL' label='refresh data (Ctrl-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
-             "<button id='gotoDBFuncL' label='jump to DBFunc/target (Ctrl-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
+             "<button id='refreshDataL' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
+             "<button id='gotoDBFuncL' label='jump to DBFunc/target (Ctl-Sh-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
+             "<button id='DeleteRowL' label='delete Row (Ctl-Sh-D)' imageMso='SlicerDelete' onAction='deleteRowButton' insertBeforeMso='Cut'/>" +
              "<menu id='createMenuL' label='Insert/Edit DBFunc/DBModif' insertBeforeMso='Cut'>" +
                "<button id='DBMapperL' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
                "<button id='DBSequenceL' tag='DBSeqnce' label='DBSequence' imageMso='ShowOnNewButton' onAction='clickCreateButton'/>" +
@@ -158,9 +162,10 @@ Public Class MenuHandler
         storeSetting("ConfigStoreFolder", fetchSetting("ConfigStoreFolder" & env, String.Empty))
         storeSetting("ConfigName", fetchSetting("ConfigName" & env, String.Empty))
         initSettings()
-        MsgBox("ConstConnString" & ConstConnString & vbCrLf & "ConfigStoreFolder:" & ConfigStoreFolder & vbCrLf & vbCrLf & "Please refresh DBFunctions to see effects...", vbOKOnly, "set defaults to: ")
+        Dim retval As MsgBoxResult = MsgBox("ConstConnString" & ConstConnString & vbCrLf & "ConfigStoreFolder:" & ConfigStoreFolder & vbCrLf & vbCrLf & "Refresh DBFunctions to see effects?", vbOKCancel, "Changed environment to: " & fetchSetting("ConfigName" & env, String.Empty))
         ' provide a chance to reconnect when switching environment...
         conn = Nothing
+        If retval = vbOK Then Globals.refreshData()
     End Sub
 
     ''' <summary>dialogBoxLauncher of leftmost group: activate about box</summary>
@@ -248,6 +253,11 @@ Public Class MenuHandler
         Catch ex As Exception
             LogError(ex.Message & ",control.Tag:" & control.Tag & ",nodeName:" & nodeName)
         End Try
+    End Sub
+
+    ''' <summary>context menu entry refreshData: refresh Data in db function (if area or cell selected) or all db functions</summary>
+    Public Sub deleteRowButton(control As IRibbonControl)
+        deleteRow()
     End Sub
 
     ''' <summary>context menu entry refreshData: refresh Data in db function (if area or cell selected) or all db functions</summary>

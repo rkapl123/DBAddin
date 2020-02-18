@@ -82,9 +82,9 @@ Public MustInherit Class DBModif
         ElseIf dataType = CheckTypeFld.checkIsNumericFld Then ' only decimal points allowed in numeric data
             dbFormatType = Replace(CStr(theVal), ",", ".")
         ElseIf dataType = CheckTypeFld.checkIsDateFld Then
-            dbFormatType = "'" & Format(theVal, "yyyy-MM-dd") & "'" ' ISO 8601 standard SQL Date formatting
+            dbFormatType = "'" & Format(Date.FromOADate(theVal), "yyyy-MM-dd") & "'" ' ISO 8601 standard SQL Date formatting
         ElseIf dataType = CheckTypeFld.checkIsTimeFld Then
-            dbFormatType = "'" & Format(theVal, "yyyy-MM-dd HH:mm:ss.fff") & "'" ' ISO 8601 standard SQL Date/time formatting, 24h format...
+            dbFormatType = "'" & Format(Date.FromOADate(theVal), "yyyy-MM-dd HH:mm:ss.fff") & "'" ' ISO 8601 standard SQL Date/time formatting, 24h format...
         ElseIf TypeName(theVal) = "Boolean" Then
             dbFormatType = IIf(theVal, 1, 0)
         ElseIf dataType = CheckTypeFld.checkIsStringFld Then ' quote Strings
@@ -215,30 +215,36 @@ Public Class DBMapper : Inherits DBModif
 
     Public Overrides Sub doCUDMarks(changedRange As Excel.Range, Optional deleteFlag As Boolean = False)
         If Not CUDFlags Then Exit Sub
+        ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = False ' to prevent automatic creation of new column
         ' DBMapper ranges always have a header row, so changedRange.Row - 1...
         If deleteFlag Then
-            TargetRange.Cells(changedRange.Row - 1, TargetRange.Columns.Count + 1).Value = "d"
+            For Each changedRow As Excel.Range In changedRange.Rows
+                TargetRange.Cells(changedRow.Row - 1, TargetRange.Columns.Count + 1).Value = "d"
+                TargetRange.Rows(changedRow.Row - 1).Font.Strikethrough = True
+            Next
         Else
-            ' change only if not already set
-            If TargetRange.Cells(changedRange.Row - 1, TargetRange.Columns.Count + 1).Value = "" Then
-                Dim RowContainsData As Boolean = False
-                For Each containedCell As Excel.Range In TargetRange.Rows(changedRange.Row - 1).Cells
-                    ' check if whole row is empty (except for the changedRange)
-                    If Not IsNothing(containedCell.Value) AndAlso containedCell.Address <> changedRange.Address Then
-                        RowContainsData = True
-                        Exit For
+            For Each changedRow As Excel.Range In changedRange.Rows
+                ' change only if not already set
+                If TargetRange.Cells(changedRow.Row - 1, TargetRange.Columns.Count + 1).Value = "" Then
+                    Dim RowContainsData As Boolean = False
+                    For Each containedCell As Excel.Range In TargetRange.Rows(changedRow.Row - 1).Cells
+                        ' check if whole row is empty (except for the changedRange)
+                        If Not IsNothing(containedCell.Value) AndAlso containedCell.Address <> changedRange.Address Then
+                            RowContainsData = True
+                            Exit For
+                        End If
+                    Next
+                    ' if Row Contains Data (not every cell empty except currently modified (changedRange), this is for adding rows below data range) then "u"pdate
+                    If RowContainsData Then
+                        TargetRange.Cells(changedRow.Row - 1, TargetRange.Columns.Count + 1).Value = "u"
+                        TargetRange.Rows(changedRow.Row - 1).Font.Italic = True
+                    Else ' else "i"nsert
+                        TargetRange.Cells(changedRow.Row - 1, TargetRange.Columns.Count + 1).Value = "i"
                     End If
-                Next
-                ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = False ' to prevent automatic creation of new column
-                ' if Row Contains Data (not every cell empty except currently modified (changedRange), this is for adding rows below data range) then "u"pdate
-                If RowContainsData Then
-                    TargetRange.Cells(changedRange.Row - 1, TargetRange.Columns.Count + 1).Value = "u"
-                Else ' else "i"nsert
-                    TargetRange.Cells(changedRange.Row - 1, TargetRange.Columns.Count + 1).Value = "i"
                 End If
-                ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = True
-            End If
+            Next
         End If
+        ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = True
     End Sub
 
     ''' <summary>extend DataRange to "whole" DBMApper area (first row (field names) to the right and first column (primary key) down)</summary>
@@ -259,6 +265,15 @@ Public Class DBMapper : Inherits DBModif
         ' even if CUD Flags are present, the Data range might have been extended (by inserting rows), so reassign it to the TargetRange
         TargetRange = TargetRange.Parent.Range(paramTargetName)
         targetRangeAddress = TargetRange.Parent.Name + "!" + TargetRange.Address
+    End Sub
+
+    ''' <summary>reset CUD FLags, either after completion of doDBModif or on request (refresh)</summary>
+    Public Sub resetCUDFlags()
+        If CUDFlags Then
+            ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = False ' to prevent automatic creation of new column
+            TargetRange.Columns(TargetRange.Columns.Count + 1).ClearContents
+            ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = True ' to prevent automatic creation of new column
+        End If
     End Sub
 
     Public Overrides Sub doDBModif(Optional WbIsSaving As Boolean = False, Optional calledByDBSeq As String = "")
@@ -332,8 +347,13 @@ Public Class DBMapper : Inherits DBModif
 
                 ' try to find record for update, construct where clause with primary key columns
                 Dim primKeyCompound As String = " WHERE "
+                Dim primKeyDisplay As String
                 For i As Integer = 0 To UBound(primKeys)
                     Dim primKeyValue
+                    If primKeys(i) <> TargetRange.Cells(1, i + 1).Value Then
+                        MsgBox("Defined primary key " & primKeys(i) & " does not match primary key " & TargetRange.Cells(1, i + 1).Value & " in DBMapper Data Range, cell (1," & i + 1 & ") !" & vbCrLf & "Primary keys have to be defined in the same order as in the Data Range", MsgBoxStyle.Critical, "DBMapper Error")
+                        GoTo cleanup
+                    End If
                     primKeyValue = TargetRange.Cells(rowNum, i + 1).Value
                     primKeyCompound = primKeyCompound & primKeys(i) & " = " & dbFormatType(primKeyValue, checkTypes(i)) & IIf(i = UBound(primKeys), "", " AND ")
                     If IsError(primKeyValue) Then
@@ -350,17 +370,18 @@ Public Class DBMapper : Inherits DBModif
                 Dim getStmt As String = "SELECT * FROM " & tableName & primKeyCompound
                 Try
                     rst.Open(getStmt, dbcnn, CursorTypeEnum.adOpenDynamic, LockTypeEnum.adLockOptimistic)
+                    Dim check As Boolean = rst.EOF
                 Catch ex As Exception
-                    MsgBox("Problem getting recordset, Error: " & ex.Message & " in sheet " & TargetRange.Parent.Name & ", & row " & rowNum)
-                    rst.Close()
+                    MsgBox("Problem getting recordset, Error: " & ex.Message & " in sheet " & TargetRange.Parent.Name & " and row " & rowNum & ", doing " & getStmt)
                     GoTo cleanup
                 End Try
+                primKeyDisplay = Replace(Mid(primKeyCompound, 7), " AND ", ";")
 
                 ' If we didn't find record, add a new record if insertIfMissing flag is set or CUD Flag insert is given
                 If rst.EOF Then
                     Dim i As Integer
                     If insertIfMissing Or rowCUDFlag = "i" Then
-                        ExcelDnaUtil.Application.StatusBar = "Inserting " & primKeyCompound & " in table " & tableName
+                        ExcelDnaUtil.Application.StatusBar = Left("Inserting " & primKeyDisplay & " into " & tableName, 255)
                         rst.AddNew()
                         For i = 0 To UBound(primKeys)
                             Try
@@ -376,11 +397,10 @@ Public Class DBMapper : Inherits DBModif
                         TargetRange.Parent.Activate
                         TargetRange.Cells(rowNum, i + 1).Select
                         MsgBox("Did not find recordset with statement '" & getStmt & "', insertIfMissing = " & insertIfMissing & " in sheet " & TargetRange.Parent.Name & ", & row " & rowNum, MsgBoxStyle.Critical, "DBMapper Error")
-                        rst.Close()
                         GoTo cleanup
                     End If
                 Else
-                    ExcelDnaUtil.Application.StatusBar = "Updating " & primKeyCompound & " in table " & tableName
+                    ExcelDnaUtil.Application.StatusBar = Left("Updating " & primKeyDisplay & " in " & tableName, 255)
                 End If
 
                 If Not CUDFlags Or (CUDFlags And (rowCUDFlag = "i" Or rowCUDFlag = "u")) Then
@@ -397,7 +417,6 @@ Public Class DBMapper : Inherits DBModif
 
                                 MsgBox("Field Value Update Error: " & ex.Message & " with Table: " & tableName & ", Field: " & fieldname & ", in sheet " & TargetRange.Parent.Name & ", & row " & rowNum & ", col: " & colNum, MsgBoxStyle.Critical, "DBMapper Error")
                                 rst.CancelUpdate()
-                                rst.Close()
                                 GoTo cleanup
                             End Try
                         End If
@@ -412,15 +431,13 @@ Public Class DBMapper : Inherits DBModif
                         TargetRange.Rows(rowNum).Select
                         MsgBox("Row Update Error, Table: " & rst.Source & ", Error: " & ex.Message & " in sheet " & TargetRange.Parent.Name & ", & row " & rowNum, MsgBoxStyle.Critical, "DBMapper Error")
                         rst.CancelUpdate()
-                        rst.Close()
                         GoTo cleanup
                     End Try
                 End If
                 If (CUDFlags And rowCUDFlag = "d") Then
-                    ExcelDnaUtil.Application.StatusBar = "Deleting " & primKeyCompound & " in table " & tableName
+                    ExcelDnaUtil.Application.StatusBar = Left("Deleting " & primKeyDisplay & " in " & tableName, 255)
                     rst.Delete(AffectEnum.adAffectCurrent)
                 End If
-
                 rst.Close()
 nextRow:
                 Try
@@ -433,11 +450,7 @@ nextRow:
             rowNum += 1
         Loop Until rowNum > TargetRange.Rows.Count Or (finishLoop And Not CUDFlags)
         ' clear CUD marks after completion
-        If CUDFlags Then
-            ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = False ' to prevent automatic creation of new column
-            TargetRange.Columns(TargetRange.Columns.Count + 1).ClearContents
-            ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = True ' to prevent automatic creation of new column
-        End If
+        resetCUDFlags()
 
         ' any additional stored procedures to execute?
         If executeAdditionalProc.Length > 0 Then
@@ -451,8 +464,16 @@ nextRow:
         End If
 cleanup:
         ExcelDnaUtil.Application.StatusBar = False
-        ' close connection to return it to the pool...
+        ' close connection to return it to the pool (automatically closes recordset object)...
         dbcnn.Close()
+        ' DBSheet surrogate (CUDFlags), ask for refresh after DB Modification was done
+        If CUDFlags And askBeforeExecute And calledByDBSeq = "" Then
+            Dim retval As MsgBoxResult = MsgBox("Refresh DBListfetch/DBSetQuery for Data Range of DB Mapper?", MsgBoxStyle.Question + vbOKCancel, "Refresh DB Mapper")
+            If retval = vbOK Then
+                TargetRange.Cells(1, 1).Select()
+                Globals.refreshData()
+            End If
+        End If
     End Sub
 
     Public Overrides Sub setDBModifCreateFields(ByRef theDBModifCreateDlg As DBModifCreate)
@@ -658,9 +679,26 @@ Public Module DBModifs
             If dbcnn.State = ADODB.ObjectStateEnum.adStateOpen Then dbcnn.Close()
             dbcnn = Nothing
         End Try
-        ExcelDnaUtil.Application.StatusBar = String.Empty
         openConnection = True
     End Function
+
+    ''' <summary>in case there is a defined DBMapper underlying the DBListFetch/DBSetQuery target area then change the extent of that to the new area given in theRange</summary>
+    ''' <param name="theRange"></param>
+    Public Sub resizeDBMapperRange(theRange As Excel.Range)
+        Dim dbMapperRangeName As String = getDBModifNameFromRange(theRange)
+        If Left(dbMapperRangeName, 8) = "DBMapper" Then
+            Dim NamesList As Excel.Names = ExcelDnaUtil.Application.ActiveWorkbook.Names
+            Try : NamesList.Add(Name:=dbMapperRangeName, RefersTo:=theRange)
+            Catch ex As Exception
+                Throw New Exception("Error when assigning name '" & dbMapperRangeName & "' to ListObject Range: " & ex.Message)
+            End Try
+            Dim theDBMapper As DBMapper = Globals.DBModifDefColl("DBMapper").Item(dbMapperRangeName)
+            ' notify DBMapper object of new target range
+            theDBMapper.setTargetRange(theRange)
+            ' in case of CUDFlags, reset them now...
+            theDBMapper.resetCUDFlags()
+        End If
+    End Sub
 
     ''' <summary>creates a DBModif at the current active cell or edits an existing one defined in targetDefName (after being called in defined range or from ribbon + Ctrl + Shift)</summary>
     Sub createDBModif(type As String, Optional targetDefName As String = "")
@@ -903,7 +941,8 @@ Public Module DBModifs
                                 MsgBox(DBModiftype + " definitions range [" + rangename.Parent.Name + "]" + rangename.Name + " contains #REF!", vbCritical, "DBModifier Definitions Error")
                                 Exit For
                             ElseIf rangenameName = nodeName Then
-                                targetRange = rangename.RefersToRange
+                                ' might fail...
+                                Try : targetRange = rangename.RefersToRange : Catch ex As Exception : End Try
                                 Exit For
                             End If
                         Next

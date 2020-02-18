@@ -386,17 +386,8 @@ Public Module Functions
                 ' give hidden name to target range of listobject (jump function)
                 theListObject.Range.Name = Replace(srcExtentConnect, "DBFsource", "DBFtarget")
                 theListObject.Range.Name.Visible = False
-                ' in case there is a defined DBMapper underlying the ListObject then change the extent of that to the new area...
-                Dim dbMapperRangeName As String = getDBModifNameFromRange(theListObject.Range)
-                If Left(dbMapperRangeName, 8) = "DBMapper" Then
-                    Dim NamesList As Excel.Names = ExcelDnaUtil.Application.ActiveWorkbook.Names
-                    Try : NamesList.Add(Name:=dbMapperRangeName, RefersTo:=theListObject.Range)
-                    Catch ex As Exception
-                        Throw New Exception("Error when assigning name '" & dbMapperRangeName & "' to ListObject Range: " & ex.Message)
-                    End Try
-                    ' notify DBMapper object of new target range
-                    Globals.DBModifDefColl("DBMapper").Item(dbMapperRangeName).setTargetRange(theListObject.Range)
-                End If
+                ' if refreshed range is a DBMapper, resize it
+                DBModifs.resizeDBMapperRange(theListObject.Range)
             End If
             ' neither PivotTable or ListObject could be found in TargetCell
             If StatusCollection(callID).statusMsg = "" Then
@@ -875,18 +866,8 @@ Public Module Functions
             GoTo err_0
         End If
 
-        ' in case there is a defined DBMapper underlying the ListObject then change the extent of that to the new area...
-        Dim dbMapperRangeName As String = getDBModifNameFromRange(newTargetRange)
-        If Left(dbMapperRangeName, 8) = "DBMapper" Then
-            Dim NamesList As Excel.Names = ExcelDnaUtil.Application.ActiveWorkbook.Names
-            NamesList.Add(Name:=dbMapperRangeName, RefersTo:=newTargetRange)
-            If Err.Number <> 0 Then
-                errMsg = "Error when assigning name '" & dbMapperRangeName & "' to ListObject Range: " & Err.Description
-                GoTo err_0
-            End If
-            ' notify DBMapper object of new target range
-            Globals.DBModifDefColl("DBMapper").Item(dbMapperRangeName).setTargetRange(newTargetRange)
-        End If
+        ' if refreshed range is a DBMapper, resize it
+        DBModifs.resizeDBMapperRange(newTargetRange)
 
         '''' any warnings, errors ?
         If warning.Length > 0 Then
