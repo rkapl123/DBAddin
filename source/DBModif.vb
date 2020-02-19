@@ -31,19 +31,40 @@ Public MustInherit Class DBModif
     Protected DBModifParams() As String
     ''' <summary>ask for confirmation before executtion of DBModif</summary>
     Protected askBeforeExecute As Boolean = True
+    ''' <summary>environment specific for the DBModif object, if left empty then set to default environment (either 0 or currently selected environment)</summary>
+    Protected env As String = ""
 
-    ''' <summary>public accessor functions: getTargetRangeAddress, getTargetRange, getParamText</summary>
-    ''' <returns>return the respective values</returns>
+    ''' <summary>public accessor function</summary>
+    ''' <returns>the targetRangeAddress</returns>
     Public Function getTargetRangeAddress() As String
         getTargetRangeAddress = targetRangeAddress
     End Function
 
+    ''' <summary>public accessor function</summary>
+    ''' <returns>the targetRange itself</returns>
     Public Function getTargetRange() As Excel.Range
         getTargetRange = TargetRange
     End Function
 
-    Public Function getParamText() As String
-        getParamText = paramText
+    ''' <summary>public accessor function: get Environment (integer) where connection id should be taken from (if not existing, take from selectedEnvironment being passed in defaultEnv)</summary>
+    ''' <param name="defaultEnv">optionally passed selected Environment</param>
+    ''' <returns>the Environment of the DBModif</returns>
+    Protected Function getEnv(Optional defaultEnv As Integer = 0) As Integer
+        getEnv = defaultEnv
+        If TypeName(Me.GetType()) = "DBSeqnce" Then Throw New NotImplementedException()
+        If env <> "" Then getEnv = Convert.ToInt16(env)
+    End Function
+
+    ''' <summary>get the DBModifparameters for legacy conversion in DBModifs.getDBModifDefinitions</summary>
+    ''' <returns>the DBModif parameters</returns>
+    Public Function GetDBModifParams() As String()
+        Return DBModifParams
+    End Function
+
+    ''' <summary>is saving needed for this DBModifier</summary>
+    ''' <returns>true for saving necessary</returns>
+    Public Function DBModifSaveNeeded() As Boolean
+        Return execOnSave
     End Function
 
     ''' <summary>does the actual DB Modification</summary>
@@ -53,24 +74,17 @@ Public MustInherit Class DBModif
         Throw New NotImplementedException()
     End Sub
 
-    ''' <summary>is saving needed for this DBModifier</summary>
-    ''' <returns>true for saving necessary</returns>
-    Public Function DBModifSaveNeeded() As Boolean
-        Return execOnSave
-    End Function
-
     ''' <summary>sets the content of the DBModif Create/Edit Dialog</summary>
     ''' <param name="theDBModifCreateDlg"></param>
     Public Overridable Sub setDBModifCreateFields(ByRef theDBModifCreateDlg As DBModifCreate)
         Throw New NotImplementedException()
     End Sub
 
-    ''' <summary>Environment (integer) where connection id should be taken from (if not existing, take from selectedEnvironment)</summary>
-    Protected Function getEnv(Optional defaultEnv As Integer = 0) As Integer
-        getEnv = defaultEnv
-        If TypeName(Me.GetType()) = "DBSeqnce" Then Throw New NotImplementedException()
-        If DBModifParams(0) <> "" Then getEnv = Convert.ToInt16(DBModifParams(0))
-    End Function
+    ''' <summary>when resizing target ranges from functions as DBListFetch and DBSetQuery, need to notify also DBModif objects (DBMapper)</summary>
+    ''' <param name="newTargetRange"></param>
+    Public Sub setTargetRange(newTargetRange As Excel.Range)
+        TargetRange = newTargetRange
+    End Sub
 
     ''' <summary>formats theVal to fit the type of record column having data type dataType</summary>
     ''' <param name="theVal"></param>
@@ -136,19 +150,6 @@ Public MustInherit Class DBModif
         End If
     End Function
 
-    ''' <summary>inserts CUD (Create/Update/Delete) Marks at the right end of the DBMapper range</summary>
-    ''' <param name="changedRange">passed TargetRange by Change Event or delete button</param>
-    ''' <param name="deleteFlag">if delete button was pressed, this is true</param>
-    Public Overridable Sub doCUDMarks(changedRange As Excel.Range, Optional deleteFlag As Boolean = False)
-        Throw New NotImplementedException()
-    End Sub
-
-    ''' <summary>when resizing target ranges from functions as DBListFetch and DBSetQuery, need to notify also DBModif objects (DBMapper)</summary>
-    ''' <param name="newTargetRange"></param>
-    Public Sub setTargetRange(newTargetRange As Excel.Range)
-        TargetRange = newTargetRange
-    End Sub
-
 End Class
 
 Public Class DBMapper : Inherits DBModif
@@ -193,6 +194,7 @@ Public Class DBMapper : Inherits DBModif
         End If
 
         ' fill parameters:
+        env = DBModifParams(0)
         database = DBModifParams(1).Replace("""", "").Trim
         If database = "" Then
             Throw New Exception("No database given in DBMapper paramText!")
@@ -213,7 +215,36 @@ Public Class DBMapper : Inherits DBModif
         If DBModifParams.Length > 9 AndAlso DBModifParams(9) <> "" Then askBeforeExecute = Convert.ToBoolean(DBModifParams(9))
     End Sub
 
-    Public Overrides Sub doCUDMarks(changedRange As Excel.Range, Optional deleteFlag As Boolean = False)
+    Public Sub New(definitionXML As Microsoft.Office.Core.CustomXMLNode, paramTarget As Excel.Range)
+        dbmapdefkey = definitionXML.BaseName
+        ' if no target range is set, then no parameters can be found...
+        If IsNothing(paramTarget) Then Throw New Exception("paramTarget is Nothing")
+        paramTargetName = getDBModifNameFromRange(paramTarget)
+        DBmapSheet = paramTarget.Parent.Name
+        targetRangeAddress = DBmapSheet + "!" + paramTarget.Address
+        If Left(paramTargetName, 8) <> "DBMapper" Then Throw New Exception("target " & paramTargetName & " not matching passed DBModif type DBMapper for " & targetRangeAddress & "/" & dbmapdefkey & "!")
+        TargetRange = paramTarget
+
+        ' fill parameters from definition
+        env = definitionXML.SelectSingleNode("env").Text
+        database = definitionXML.SelectSingleNode("database").Text
+        If database = "" Then Throw New Exception("No database given in DBMapper definition!")
+        tableName = definitionXML.SelectSingleNode("tableName").Text
+        If tableName = "" Then Throw New Exception("No Tablename given in DBMapper definition!")
+        primKeysStr = definitionXML.SelectSingleNode("primKeysStr").Text
+        If primKeysStr = "" Then Throw New Exception("No primary keys given in DBMapper definition!")
+        If Not IsNothing(definitionXML.SelectSingleNode("execOnSave")) Then execOnSave = Convert.ToBoolean(definitionXML.SelectSingleNode("execOnSave").Text)
+        If Not IsNothing(definitionXML.SelectSingleNode("askBeforeExecute")) Then askBeforeExecute = Convert.ToBoolean(definitionXML.SelectSingleNode("askBeforeExecute").Text)
+        If Not IsNothing(definitionXML.SelectSingleNode("insertIfMissing")) Then insertIfMissing = Convert.ToBoolean(definitionXML.SelectSingleNode("insertIfMissing").Text)
+        If Not IsNothing(definitionXML.SelectSingleNode("executeAdditionalProc")) Then executeAdditionalProc = definitionXML.SelectSingleNode("executeAdditionalProc").Text
+        If Not IsNothing(definitionXML.SelectSingleNode("ignoreColumns")) Then ignoreColumns = definitionXML.SelectSingleNode("ignoreColumns").Text
+        If Not IsNothing(definitionXML.SelectSingleNode("CUDFlags")) Then CUDFlags = Convert.ToBoolean(definitionXML.SelectSingleNode("CUDFlags").Text)
+    End Sub
+
+    ''' <summary>inserts CUD (Create/Update/Delete) Marks at the right end of the DBMapper range</summary>
+    ''' <param name="changedRange">passed TargetRange by Change Event or delete button</param>
+    ''' <param name="deleteFlag">if delete button was pressed, this is true</param>
+    Public Sub doCUDMarks(changedRange As Excel.Range, Optional deleteFlag As Boolean = False)
         If Not CUDFlags Then Exit Sub
         ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = False ' to prevent automatic creation of new column
         ' DBMapper ranges always have a header row, so changedRange.Row - 1...
@@ -508,32 +539,42 @@ Public Class DBAction : Inherits DBModif
         paramTargetName = getDBModifNameFromRange(paramTarget)
         DBmapSheet = paramTarget.Parent.Name
         targetRangeAddress = DBmapSheet + "!" + paramTarget.Address
-        If Left(paramTargetName, 8) <> "DBAction" Then
-            MsgBox("target " & paramTargetName & " not matching passed DBModif type DBAction for " & targetRangeAddress & "/" & dbmapdefkey & " !", vbCritical, "DBAction Error")
-            Exit Sub
-        End If
-        ' set up parameters
-        If paramTarget.Cells(1, 1).Text = "" Then
-            MsgBox("No Action defined in " + paramTargetName + "(" + targetRangeAddress + ")", vbCritical, "DBAction Error")
-            Exit Sub
-        End If
+        If Left(paramTargetName, 8) <> "DBAction" Then Throw New Exception("target " & paramTargetName & " not matching passed DBModif type DBAction for " & targetRangeAddress & "/" & dbmapdefkey & " !")
+        If paramTarget.Cells(1, 1).Text = "" Then Throw New Exception("No Action defined in " + paramTargetName + "(" + targetRangeAddress + ")")
         paramText = paramDefs
         TargetRange = paramTarget
+
+        ' fill parameters:
         DBModifParams = functionSplit(paramText, ",", """", "def", "(", ")")
         If IsNothing(DBModifParams) Then Exit Sub
         ' check for completeness
-        If DBModifParams.Length < 2 Then
-            MsgBox("At least environment (can be empty) and database have to be provided as DBAction parameters !", vbCritical, "DBAction Error")
-            Exit Sub
-        End If
-        ' fill parameters:
+        If DBModifParams.Length < 2 Then Throw New Exception("At least environment (can be empty) and database have to be provided as DBAction parameters !")
+        env = DBModifParams(0)
         database = DBModifParams(1).Replace("""", "").Trim
         If database = "" Then
-            MsgBox("No database given in DBAction paramText!", vbCritical, "DBAction Error")
-            Exit Sub
+            Throw New Exception("No database given in DBAction paramText!")
         End If
         If DBModifParams.Length > 2 AndAlso DBModifParams(2) <> "" Then execOnSave = Convert.ToBoolean(DBModifParams(2))
         If DBModifParams.Length > 3 AndAlso DBModifParams(3) <> "" Then askBeforeExecute = Convert.ToBoolean(DBModifParams(3))
+    End Sub
+
+    Public Sub New(definitionXML As Microsoft.Office.Core.CustomXMLNode, paramTarget As Excel.Range)
+        dbmapdefkey = definitionXML.BaseName
+        ' if no target range is set, then no parameters can be found...
+        If IsNothing(paramTarget) Then Exit Sub
+        paramTargetName = getDBModifNameFromRange(paramTarget)
+        DBmapSheet = paramTarget.Parent.Name
+        targetRangeAddress = DBmapSheet + "!" + paramTarget.Address
+        If Left(paramTargetName, 8) <> "DBAction" Then Throw New Exception("target " & paramTargetName & " not matching passed DBModif type DBAction for " & targetRangeAddress & "/" & dbmapdefkey & " !")
+        If paramTarget.Cells(1, 1).Text = "" Then Throw New Exception("No Action defined in " + paramTargetName + "(" + targetRangeAddress + ")")
+        TargetRange = paramTarget
+
+        ' fill parameters from definition
+        env = definitionXML.SelectSingleNode("env").Text
+        database = definitionXML.SelectSingleNode("database").Text
+        If database = "" Then Throw New Exception("No database given in DBAction definition!")
+        If Not IsNothing(definitionXML.SelectSingleNode("execOnSave")) Then execOnSave = Convert.ToBoolean(definitionXML.SelectSingleNode("execOnSave").Text)
+        If Not IsNothing(definitionXML.SelectSingleNode("askBeforeExecute")) Then askBeforeExecute = Convert.ToBoolean(definitionXML.SelectSingleNode("askBeforeExecute").Text)
     End Sub
 
     Public Overrides Sub doDBModif(Optional WbIsSaving As Boolean = False, Optional calledByDBSeq As String = "")
@@ -581,10 +622,7 @@ Public Class DBSeqnce : Inherits DBModif
     Public Sub New(defkey As String, DBSequenceText As String)
         dbmapdefkey = defkey
         paramText = DBSequenceText
-        If paramText = "" Then
-            MsgBox("No Sequence defined in " + dbmapdefkey, vbCritical, "DB Sequence Error")
-            Exit Sub
-        End If
+        If paramText = "" Then Throw New Exception("No Sequence defined in " + dbmapdefkey)
         ' parse parameters: 1st item is execOnSave, 2nd askBeforeExecute, rest defines sequence (tripletts of DBModifType:DBModifName)
         DBModifParams = Split(paramText, ",")
         execOnSave = Convert.ToBoolean(DBModifParams(0)) ' should DBSequence be done on Excel Saving?
@@ -595,6 +633,20 @@ Public Class DBSeqnce : Inherits DBModif
             ReDim sequenceParams(DBModifParams.Length() - 2)
             Array.Copy(DBModifParams, 1, sequenceParams, 0, DBModifParams.Length() - 1)
         End If
+    End Sub
+
+    Public Sub New(definitionXML As Microsoft.Office.Core.CustomXMLNode)
+        dbmapdefkey = definitionXML.BaseName
+        Try
+            execOnSave = Convert.ToBoolean(definitionXML.SelectSingleNode("execOnSave").Text) ' should DBSequence be done on Excel Saving?
+            askBeforeExecute = Convert.ToBoolean(definitionXML.SelectSingleNode("askBeforeExecute").Text) ' should DBSequence be done on Excel Saving?
+        Catch ex As Exception
+            Throw New Exception("problem with setting execOnSave or askBeforeExecute: " + ex.Message)
+        End Try
+        For Each seqNode As Microsoft.Office.Core.CustomXMLNode In definitionXML.SelectNodes("seqStep")
+            ReDim sequenceParams(sequenceParams.Length + 1)
+            sequenceParams(sequenceParams.Length) = seqNode.Text
+        Next
     End Sub
 
     Public Overrides Sub doDBModif(Optional WbIsSaving As Boolean = False, Optional calledByDBSeq As String = "")
@@ -927,56 +979,151 @@ Public Module DBModifs
         ' load DBModifier definitions (objects) into Global collection DBModifDefColl
         Try
             Globals.DBModifDefColl = New Dictionary(Of String, Dictionary(Of String, DBModif))
-            ' get DBModifier definitions from docproperties
-            For Each docproperty In ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties
-                Dim DBModiftype As String = Left(docproperty.Name, 8)
-                If TypeName(docproperty.Value) = "String" And (DBModiftype = "DBSeqnce" Or DBModiftype = "DBMapper" Or DBModiftype = "DBAction") Then
-                    Dim nodeName As String = docproperty.Name
-                    Dim targetRange As Excel.Range = Nothing
-                    ' for DBMappers and DBActions the data of the DBModification is stored in Ranges, so check for those and get the Range
-                    If DBModiftype = "DBMapper" Or DBModiftype = "DBAction" Then
-                        For Each rangename As Excel.Name In ExcelDnaUtil.Application.ActiveWorkbook.Names
-                            Dim rangenameName As String = Replace(rangename.Name, rangename.Parent.Name & "!", "")
-                            If rangenameName = nodeName And InStr(rangename.RefersTo, "#REF!") > 0 Then
-                                MsgBox(DBModiftype + " definitions range [" + rangename.Parent.Name + "]" + rangename.Name + " contains #REF!", vbCritical, "DBModifier Definitions Error")
-                                Exit For
-                            ElseIf rangenameName = nodeName Then
-                                ' might fail...
-                                Try : targetRange = rangename.RefersToRange : Catch ex As Exception : End Try
-                                Exit For
+            Dim xmlParts As Microsoft.Office.Core.CustomXMLPart = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
+            Dim dbModifDefRoot As Microsoft.Office.Core.CustomXMLNode
+            If IsNothing(xmlParts) Then
+                ' create CustomXMLPart to migrate docproperty definitions
+                xmlParts = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.Add("<root xmlns=""DBModifDef""></root>")
+                dbModifDefRoot = xmlParts.SelectSingleNode("/root")
+                ' get DBModifier definitions from docproperties
+                For Each docproperty As Excel.CustomProperty In ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties
+                    Dim DBModiftype As String = Left(docproperty.Name, 8)
+                    If TypeName(docproperty.Value) = "String" And (DBModiftype = "DBSeqnce" Or DBModiftype = "DBMapper" Or DBModiftype = "DBAction") Then
+                        Dim nodeName As String = docproperty.Name
+                        Dim targetRange As Excel.Range = Nothing
+                        ' for DBMappers and DBActions the data of the DBModification is stored in Ranges, so check for those and get the Range
+                        If DBModiftype = "DBMapper" Or DBModiftype = "DBAction" Then
+                            For Each rangename As Excel.Name In ExcelDnaUtil.Application.ActiveWorkbook.Names
+                                Dim rangenameName As String = Replace(rangename.Name, rangename.Parent.Name & "!", "")
+                                If rangenameName = nodeName And InStr(rangename.RefersTo, "#REF!") > 0 Then
+                                    MsgBox(DBModiftype + " definitions range [" + rangename.Parent.Name + "]" + rangename.Name + " contains #REF!", vbCritical, "DBModifier Definitions Error")
+                                    Exit For
+                                ElseIf rangenameName = nodeName Then
+                                    ' might fail...
+                                    Try : targetRange = rangename.RefersToRange : Catch ex As Exception : End Try
+                                    Exit For
+                                End If
+                            Next
+                            If IsNothing(targetRange) Then
+                                MsgBox("Error, required target range named '" & nodeName & "' not existing for " & DBModiftype & "." & vbCrLf & "either create target range or delete docproperty named  '" & nodeName & "' !", vbCritical, "DBModifier Definitions Error")
+                                Continue For
                             End If
-                        Next
-                        If IsNothing(targetRange) Then
-                            MsgBox("Error, required target range named '" & nodeName & "' not existing for " & DBModiftype & "." & vbCrLf & "either create target range or delete docproperty named  '" & nodeName & "' !", vbCritical, "DBModifier Definitions Error")
-                            Continue For
+                        End If
+                        ' finally create the DBModif Object ...
+                        Dim newDBModif As DBModif
+                        Dim DBModifParams() As String
+                        ' fill parameters into CustomXMLPart:
+                        dbModifDefRoot.AppendChildNode(docproperty.Name)
+                        Dim dbModifNode As Microsoft.Office.Core.CustomXMLNode = dbModifDefRoot.SelectSingleNode(docproperty.Name)
+                        If DBModiftype = "DBMapper" Then
+                            newDBModif = New DBMapper(docproperty.Name, docproperty.Value, targetRange)
+                            DBModifParams = newDBModif.GetDBModifParams()
+                            dbModifNode.AppendChildNode("env", NodeValue:=DBModifParams(0))
+                            dbModifNode.AppendChildNode("database", NodeValue:=DBModifParams(1).Replace("""", "").Trim)
+                            dbModifNode.AppendChildNode("tableName", NodeValue:=DBModifParams(2).Replace("""", "").Trim)
+                            dbModifNode.AppendChildNode("primKeysStr", NodeValue:=DBModifParams(3).Replace("""", "").Trim)
+                            If DBModifParams.Length > 4 AndAlso DBModifParams(4) <> "" Then dbModifNode.AppendChildNode("insertIfMissing", NodeValue:=DBModifParams(4))
+                            If DBModifParams.Length > 5 AndAlso DBModifParams(5) <> "" Then dbModifNode.AppendChildNode("executeAdditionalProc", NodeValue:=DBModifParams(5).Replace("""", "").Trim)
+                            If DBModifParams.Length > 6 AndAlso DBModifParams(6) <> "" Then dbModifNode.AppendChildNode("ignoreColumns", NodeValue:=DBModifParams(6).Replace("""", "").Trim)
+                            If DBModifParams.Length > 7 AndAlso DBModifParams(7) <> "" Then dbModifNode.AppendChildNode("execOnSave", NodeValue:=DBModifParams(7))
+                            If DBModifParams.Length > 8 AndAlso DBModifParams(8) <> "" Then dbModifNode.AppendChildNode("CUDFlags", NodeValue:=DBModifParams(8))
+                            If DBModifParams.Length > 9 AndAlso DBModifParams(9) <> "" Then dbModifNode.AppendChildNode("askBeforeExecute", NodeValue:=DBModifParams(9))
+                        ElseIf DBModiftype = "DBAction" Then
+                            newDBModif = New DBAction(docproperty.Name, docproperty.Value, targetRange)
+                            DBModifParams = newDBModif.GetDBModifParams()
+                            dbModifNode.AppendChildNode("env", NodeValue:=DBModifParams(0))
+                            dbModifNode.AppendChildNode("database", NodeValue:=DBModifParams(1).Replace("""", "").Trim)
+                            If DBModifParams.Length > 2 AndAlso DBModifParams(2) <> "" Then dbModifNode.AppendChildNode("execOnSave", NodeValue:=DBModifParams(2))
+                            If DBModifParams.Length > 3 AndAlso DBModifParams(3) <> "" Then dbModifNode.AppendChildNode("askBeforeExecute", NodeValue:=DBModifParams(3))
+                        ElseIf DBModiftype = "DBSeqnce" Then
+                            newDBModif = New DBSeqnce(docproperty.Name, docproperty.Value)
+                            DBModifParams = newDBModif.GetDBModifParams()
+                            dbModifNode.AppendChildNode("execOnSave", NodeValue:=DBModifParams(0)) ' should DBSequence be done on Excel Saving?
+                            If DBModifParams(1) = Boolean.FalseString Or DBModifParams(1) = Boolean.TrueString Then
+                                dbModifNode.AppendChildNode("askBeforeExecute", NodeValue:=DBModifParams(1)) ' should DBSequence be done on Excel Saving?
+                                For i As Integer = 2 To UBound(DBModifParams)
+                                    dbModifNode.AppendChildNode("seqStep", NodeValue:=DBModifParams(i))
+                                Next
+                            Else ' legacy: no askBeforeExecute in old versions ...
+                                dbModifNode.AppendChildNode("askBeforeExecute", NodeValue:="True")
+                                For i As Integer = 3 To UBound(DBModifParams)
+                                    dbModifNode.AppendChildNode("seqStep", NodeValue:=DBModifParams(i))
+                                Next
+                            End If
+                        Else
+                            MsgBox("Error, not supported DBModiftype: " & DBModiftype, vbCritical, "DBModifier Definitions Error")
+                            newDBModif = Nothing
+                        End If
+                        ' ... and add it to the collection DBModifDefColl
+                        Dim defColl As Dictionary(Of String, DBModif) ' definition lookup collection for DBModifiername -> object
+                        If Not DBModifDefColl.ContainsKey(DBModiftype) Then
+                            ' add to new DBModiftype "menu"
+                            defColl = New Dictionary(Of String, DBModif)
+                            defColl.Add(docproperty.Name, newDBModif)
+                            DBModifDefColl.Add(DBModiftype, defColl)
+                        Else
+                            ' add definition to existing DBModiftype "menu"
+                            defColl = DBModifDefColl(DBModiftype)
+                            defColl.Add(docproperty.Name, newDBModif)
                         End If
                     End If
-                    ' finally create the DBModif Object ...
-                    Dim newDBModif As DBModif
-                    If DBModiftype = "DBMapper" Then
-                        newDBModif = New DBMapper(docproperty.Name, docproperty.Value, targetRange)
-                    ElseIf DBModiftype = "DBAction" Then
-                        newDBModif = New DBAction(docproperty.Name, docproperty.Value, targetRange)
-                    ElseIf DBModiftype = "DBSeqnce" Then
-                        newDBModif = New DBSeqnce(docproperty.Name, docproperty.Value)
-                    Else
-                        MsgBox("Error, not supported DBModiftype: " & DBModiftype, vbCritical, "DBModifier Definitions Error")
-                        newDBModif = Nothing
+                Next
+            Else
+                ' read definitions from CustomXMLParts
+                dbModifDefRoot = xmlParts.SelectSingleNode("/root")
+                ' get DBModifier definitions from docproperties
+                For Each docproperty As Microsoft.Office.Core.CustomXMLNode In dbModifDefRoot.ChildNodes
+                    Dim DBModiftype As String = Left(docproperty.BaseName, 8)
+                    If DBModiftype = "DBSeqnce" Or DBModiftype = "DBMapper" Or DBModiftype = "DBAction" Then
+                        Dim nodeName As String = docproperty.BaseName
+                        Dim targetRange As Excel.Range = Nothing
+                        ' for DBMappers and DBActions the data of the DBModification is stored in Ranges, so check for those and get the Range
+                        If DBModiftype = "DBMapper" Or DBModiftype = "DBAction" Then
+                            For Each rangename As Excel.Name In ExcelDnaUtil.Application.ActiveWorkbook.Names
+                                Dim rangenameName As String = Replace(rangename.Name, rangename.Parent.Name & "!", "")
+                                If rangenameName = nodeName And InStr(rangename.RefersTo, "#REF!") > 0 Then
+                                    MsgBox(DBModiftype + " definitions range [" + rangename.Parent.Name + "]" + rangename.Name + " contains #REF!", vbCritical, "DBModifier Definitions Error")
+                                    Exit For
+                                ElseIf rangenameName = nodeName Then
+                                    ' might fail...
+                                    Try : targetRange = rangename.RefersToRange : Catch ex As Exception : End Try
+                                    Exit For
+                                End If
+                            Next
+                            If IsNothing(targetRange) Then
+                                MsgBox("Error, required target range named '" & nodeName & "' not existing for " & DBModiftype & "." & vbCrLf & "either create target range or delete docproperty named  '" & nodeName & "' !", vbCritical, "DBModifier Definitions Error")
+                                Continue For
+                            End If
+                        End If
+                        ' finally create the DBModif Object ...
+                        Dim newDBModif As DBModif
+                        ' fill parameters into CustomXMLPart:
+                        If DBModiftype = "DBMapper" Then
+                            newDBModif = New DBMapper(docproperty, targetRange)
+                        ElseIf DBModiftype = "DBAction" Then
+                            newDBModif = New DBAction(docproperty, targetRange)
+                        ElseIf DBModiftype = "DBSeqnce" Then
+                            newDBModif = New DBSeqnce(docproperty)
+                        Else
+                            MsgBox("Error, not supported DBModiftype: " & DBModiftype, vbCritical, "DBModifier Definitions Error")
+                            newDBModif = Nothing
+                        End If
+                        ' ... and add it to the collection DBModifDefColl
+                        Dim defColl As Dictionary(Of String, DBModif) ' definition lookup collection for DBModifiername -> object
+                        If Not DBModifDefColl.ContainsKey(DBModiftype) Then
+                            ' add to new DBModiftype "menu"
+                            defColl = New Dictionary(Of String, DBModif)
+                            defColl.Add(docproperty.BaseName, newDBModif)
+                            DBModifDefColl.Add(DBModiftype, defColl)
+                        Else
+                            ' add definition to existing DBModiftype "menu"
+                            defColl = DBModifDefColl(DBModiftype)
+                            defColl.Add(docproperty.BaseName, newDBModif)
+                        End If
                     End If
-                    ' ... and add it to the collection DBModifDefColl
-                    Dim defColl As Dictionary(Of String, DBModif) ' definition lookup collection for DBModifiername -> object
-                    If Not DBModifDefColl.ContainsKey(DBModiftype) Then
-                        ' add to new DBModiftype "menu"
-                        defColl = New Dictionary(Of String, DBModif)
-                        defColl.Add(docproperty.Name, newDBModif)
-                        DBModifDefColl.Add(DBModiftype, defColl)
-                    Else
-                        ' add definition to existing DBModiftype "menu"
-                        defColl = DBModifDefColl(DBModiftype)
-                        defColl.Add(docproperty.Name, newDBModif)
-                    End If
-                End If
-            Next
+                Next
+            End If
+
             Globals.theRibbon.Invalidate()
         Catch ex As Exception
             LogError("Error: " & ex.Message)

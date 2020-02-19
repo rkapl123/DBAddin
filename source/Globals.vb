@@ -238,7 +238,7 @@ Public Module Globals
     Public Sub deleteRow()
         If Globals.DBModifDefColl.ContainsKey("DBMapper") Then
             Dim targetName As String = getDBModifNameFromRange(ExcelDnaUtil.Application.Selection)
-            If Left(targetName, 8) = "DBMapper" Then Globals.DBModifDefColl("DBMapper").Item(targetName).doCUDMarks(ExcelDnaUtil.Application.Selection, True)
+            If Left(targetName, 8) = "DBMapper" Then DirectCast(Globals.DBModifDefColl("DBMapper").Item(targetName), DBMapper).doCUDMarks(ExcelDnaUtil.Application.Selection, True)
         End If
     End Sub
 
