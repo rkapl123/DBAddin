@@ -1,6 +1,7 @@
 ﻿Imports System.Diagnostics
 Imports ExcelDna.Integration
 
+
 ''' <summary>About box: used to provide information about version/buildtime and links for local help and project homepage</summary>
 Public NotInheritable Class AboutBox
     Public disableAddinAfterwards As Boolean = False

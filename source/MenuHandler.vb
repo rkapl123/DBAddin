@@ -101,6 +101,11 @@ Public Class MenuHandler
     ''' <summary>toggle designmode button (actually dialogBox launcher on DBModif Menu)</summary>
     ''' <param name="control"></param>
     Sub toggleDesignMode(control As IRibbonControl)
+        If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown Then
+            Dim theEditDBModifDefDlg As EditDBModifDef = New EditDBModifDef()
+            theEditDBModifDefDlg.Show()
+            Exit Sub
+        End If
         Dim cbrs As Object = ExcelDnaUtil.Application.CommandBars
         If Not IsNothing(cbrs) AndAlso cbrs.GetEnabledMso("DesignMode") Then
             cbrs.ExecuteMso("DesignMode")

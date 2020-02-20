@@ -1,11 +1,13 @@
-﻿Imports Microsoft.Office.Interop
-Imports Microsoft.Vbe.Interop
-Imports ExcelDna.Integration
+﻿Imports ExcelDna.Integration
 Imports ExcelDna.Registration
+Imports Microsoft.Office.Interop
+Imports Microsoft.Office.Interop.Excel
+Imports Microsoft.Office.Core
+Imports Microsoft.Vbe.Interop
 Imports System.Diagnostics
 Imports System.Runtime.InteropServices
 Imports System.Timers
-Imports Microsoft.Office.Interop.Excel
+
 
 ''' <summary>AddIn Connection class, also handling Events from Excel (Open, Close, Activate)</summary>
 <ComVisible(True)>
@@ -98,9 +100,9 @@ done:
         Dim doRefreshDBFuncsAfterSave As Boolean = True
         ' first insert docproperty information into collections for easier handling
         Try
-            Dim docproperty As Microsoft.Office.Core.DocumentProperty
+            Dim docproperty As DocumentProperty
             For Each docproperty In Wb.CustomDocumentProperties
-                If docproperty.Type = Microsoft.Office.Core.MsoDocProperties.msoPropertyTypeBoolean Then
+                If docproperty.Type = MsoDocProperties.msoPropertyTypeBoolean Then
                     If Left$(docproperty.Name, 5) = "DBFCC" And docproperty.Value Then DBFCContentColl.Add(True, Mid(docproperty.Name, 6))
                     If Left$(docproperty.Name, 5) = "DBFCA" And docproperty.Value Then DBFCAllColl.Add(True, Mid(docproperty.Name, 6))
                     If docproperty.Name = "DBFskip" Then doRefreshDBFuncsAfterSave = Not docproperty.Value

@@ -1,7 +1,9 @@
 ﻿Imports ExcelDna.Integration
+Imports Microsoft.Office.Core
 Imports Microsoft.Office.Interop
 Imports System.Collections.Generic
 Imports System.Diagnostics
+
 
 ''' <summary>Global variables and functions for DB Addin</summary>
 Public Module Globals
@@ -482,7 +484,7 @@ Public Module Globals
                 If retval <> vbYes Then
                     If retval = vbCancel Then
                         Try
-                            Wb.CustomDocumentProperties.Add(Name:="DBFskip", LinkToContent:=False, Type:=Microsoft.Office.Core.MsoDocProperties.msoPropertyTypeBoolean, Value:=True)
+                            Wb.CustomDocumentProperties.Add(Name:="DBFskip", LinkToContent:=False, Type:=MsoDocProperties.msoPropertyTypeBoolean, Value:=True)
                         Catch ex As Exception
                             LogWarn("Error when adding DBFskip to Workbook:" + ex.Message)
                         End Try
@@ -549,7 +551,7 @@ done:
                 If retval <> vbYes Then
                     If retval = vbCancel Then
                         Try
-                            actWB.CustomDocumentProperties.Add(Name:="DBFNoLegacyCheck", LinkToContent:=False, Type:=Microsoft.Office.Core.MsoDocProperties.msoPropertyTypeBoolean, Value:=True)
+                            actWB.CustomDocumentProperties.Add(Name:="DBFNoLegacyCheck", LinkToContent:=False, Type:=MsoDocProperties.msoPropertyTypeBoolean, Value:=True)
                         Catch ex As Exception
                             LogWarn("Error when adding NoLegacyCheck in workbook:" + ex.Message)
                         End Try
@@ -583,7 +585,8 @@ done:
             LogError("Error occured in replacing legacy DB functions: " & ex.Message)
         End Try
         ExcelDnaUtil.Application.DisplayAlerts = True
-        ExcelDnaUtil.Application.Calculation = xlcalcmode
+        ' only set this back if it was changed to manual as otherwise it would change the (else unchanged) workbook, forcing a confirmation for saving...
+        If ExcelDnaUtil.Application.Calculation <> xlcalcmode Then ExcelDnaUtil.Application.Calculation = xlcalcmode
         ExcelDnaUtil.Application.StatusBar = False
     End Sub
 

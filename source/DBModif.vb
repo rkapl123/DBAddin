@@ -3,6 +3,7 @@ Imports ExcelDna.Integration
 Imports Microsoft.Office.Interop
 Imports System.Windows.Forms
 Imports System.Collections.Generic
+Imports Microsoft.Office.Core
 
 ''' <summary>Abstraction of a DB Modification Object (concrete classes DB Mapper, DB Action or DB Sequence)</summary>
 Public MustInherit Class DBModif
@@ -215,7 +216,7 @@ Public Class DBMapper : Inherits DBModif
         If DBModifParams.Length > 9 AndAlso DBModifParams(9) <> "" Then askBeforeExecute = Convert.ToBoolean(DBModifParams(9))
     End Sub
 
-    Public Sub New(definitionXML As Microsoft.Office.Core.CustomXMLNode, paramTarget As Excel.Range)
+    Public Sub New(definitionXML As CustomXMLNode, paramTarget As Excel.Range)
         dbmapdefkey = definitionXML.BaseName
         ' if no target range is set, then no parameters can be found...
         If IsNothing(paramTarget) Then Throw New Exception("paramTarget is Nothing")
@@ -558,7 +559,7 @@ Public Class DBAction : Inherits DBModif
         If DBModifParams.Length > 3 AndAlso DBModifParams(3) <> "" Then askBeforeExecute = Convert.ToBoolean(DBModifParams(3))
     End Sub
 
-    Public Sub New(definitionXML As Microsoft.Office.Core.CustomXMLNode, paramTarget As Excel.Range)
+    Public Sub New(definitionXML As CustomXMLNode, paramTarget As Excel.Range)
         dbmapdefkey = definitionXML.BaseName
         ' if no target range is set, then no parameters can be found...
         If IsNothing(paramTarget) Then Exit Sub
@@ -635,7 +636,7 @@ Public Class DBSeqnce : Inherits DBModif
         End If
     End Sub
 
-    Public Sub New(definitionXML As Microsoft.Office.Core.CustomXMLNode)
+    Public Sub New(definitionXML As CustomXMLNode)
         dbmapdefkey = definitionXML.BaseName
         Try
             execOnSave = Convert.ToBoolean(definitionXML.SelectSingleNode("execOnSave").Text) ' should DBSequence be done on Excel Saving?
@@ -643,7 +644,7 @@ Public Class DBSeqnce : Inherits DBModif
         Catch ex As Exception
             Throw New Exception("problem with setting execOnSave or askBeforeExecute: " + ex.Message)
         End Try
-        For Each seqNode As Microsoft.Office.Core.CustomXMLNode In definitionXML.SelectNodes("seqStep")
+        For Each seqNode As CustomXMLNode In definitionXML.SelectNodes("seqStep")
             ReDim sequenceParams(sequenceParams.Length + 1)
             sequenceParams(sequenceParams.Length) = seqNode.Text
         Next
@@ -789,7 +790,7 @@ Public Module DBModifs
                 ' store parameters in same named docproperty
                 Try : ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties(DB_DefName).Delete : Catch ex As Exception : End Try
                 Try
-                    ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties.Add(Name:=DB_DefName, LinkToContent:=False, Type:=Microsoft.Office.Core.MsoDocProperties.msoPropertyTypeString, Value:=newDefString)
+                    ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties.Add(Name:=DB_DefName, LinkToContent:=False, Type:=MsoDocProperties.msoPropertyTypeString, Value:=newDefString)
                 Catch ex As Exception
                     MsgBox("Error when adding CustomDocumentProperty with DBModif parameters (Name:" & DB_DefName & ",content: " & newDefString & "): " & ex.Message, vbCritical, "DBMapper Legacy Creation Error")
                     ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties(DB_DefName).Delete
@@ -962,7 +963,7 @@ Public Module DBModifs
             ' ... and store in docproperty (rename docproperty first to current name, might have been changed)
             Try : ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties(activeCellName).Delete : Catch ex As Exception : End Try
             Try
-                ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties.Add(Name:=type + .DBModifName.Text, LinkToContent:=False, Type:=Microsoft.Office.Core.MsoDocProperties.msoPropertyTypeString, Value:=newParamText)
+                ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties.Add(Name:=type + .DBModifName.Text, LinkToContent:=False, Type:=MsoDocProperties.msoPropertyTypeString, Value:=newParamText)
             Catch ex As Exception : MsgBox("Error when adding property with DBModif parameters: " & ex.Message, vbCritical, "DBModif Creation Error") : End Try
             ' refresh mapper definitions to reflect changes immediately...
             getDBModifDefinitions()
@@ -979,14 +980,13 @@ Public Module DBModifs
         ' load DBModifier definitions (objects) into Global collection DBModifDefColl
         Try
             Globals.DBModifDefColl = New Dictionary(Of String, Dictionary(Of String, DBModif))
-            Dim xmlParts As Microsoft.Office.Core.CustomXMLPart = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
-            Dim dbModifDefRoot As Microsoft.Office.Core.CustomXMLNode
-            If IsNothing(xmlParts) Then
-                ' create CustomXMLPart to migrate docproperty definitions
-                xmlParts = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.Add("<root xmlns=""DBModifDef""></root>")
-                dbModifDefRoot = xmlParts.SelectSingleNode("/root")
+            Dim enumerator As System.Collections.IEnumerator = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef").GetEnumerator
+            enumerator.Reset()
+            Dim xmlParts As CustomXMLPart
+            Dim dbModifDefRoot As CustomXMLNode
+            If Not enumerator.MoveNext() Then
                 ' get DBModifier definitions from docproperties
-                For Each docproperty As Excel.CustomProperty In ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties
+                For Each docproperty As DocumentProperty In ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties
                     Dim DBModiftype As String = Left(docproperty.Name, 8)
                     If TypeName(docproperty.Value) = "String" And (DBModiftype = "DBSeqnce" Or DBModiftype = "DBMapper" Or DBModiftype = "DBAction") Then
                         Dim nodeName As String = docproperty.Name
@@ -1013,8 +1013,14 @@ Public Module DBModifs
                         Dim newDBModif As DBModif
                         Dim DBModifParams() As String
                         ' fill parameters into CustomXMLPart:
+                        ' create CustomXMLPart to migrate docproperty definitions
+                        ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.Add("<root xmlns=""DBModifDef""></root>")
+                        enumerator = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef").GetEnumerator
+                        enumerator.Reset()
+                        xmlParts = DirectCast(enumerator, CustomXMLPart).Current
+                        dbModifDefRoot = xmlParts.SelectSingleNode("/")
                         dbModifDefRoot.AppendChildNode(docproperty.Name)
-                        Dim dbModifNode As Microsoft.Office.Core.CustomXMLNode = dbModifDefRoot.SelectSingleNode(docproperty.Name)
+                        Dim dbModifNode As CustomXMLNode = dbModifDefRoot.SelectSingleNode(docproperty.Name)
                         If DBModiftype = "DBMapper" Then
                             newDBModif = New DBMapper(docproperty.Name, docproperty.Value, targetRange)
                             DBModifParams = newDBModif.GetDBModifParams()
@@ -1070,9 +1076,10 @@ Public Module DBModifs
                 Next
             Else
                 ' read definitions from CustomXMLParts
+                xmlParts = DirectCast(enumerator, CustomXMLPart).Current
                 dbModifDefRoot = xmlParts.SelectSingleNode("/root")
                 ' get DBModifier definitions from docproperties
-                For Each docproperty As Microsoft.Office.Core.CustomXMLNode In dbModifDefRoot.ChildNodes
+                For Each docproperty As CustomXMLNode In dbModifDefRoot.ChildNodes
                     Dim DBModiftype As String = Left(docproperty.BaseName, 8)
                     If DBModiftype = "DBSeqnce" Or DBModiftype = "DBMapper" Or DBModiftype = "DBAction" Then
                         Dim nodeName As String = docproperty.BaseName
@@ -1123,7 +1130,6 @@ Public Module DBModifs
                     End If
                 Next
             End If
-
             Globals.theRibbon.Invalidate()
         Catch ex As Exception
             LogError("Error: " & ex.Message)
