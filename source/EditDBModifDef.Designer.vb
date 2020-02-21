@@ -26,11 +26,16 @@ Partial Class EditDBModifDef
         Me.EditBox = New System.Windows.Forms.TextBox()
         Me.OKBtn = New System.Windows.Forms.Button()
         Me.CancelBtn = New System.Windows.Forms.Button()
+        Me.PosIndex = New System.Windows.Forms.Label()
         Me.SuspendLayout()
         '
         'EditBox
         '
+        Me.EditBox.Anchor = CType((((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
+            Or System.Windows.Forms.AnchorStyles.Left) _
+            Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.EditBox.Location = New System.Drawing.Point(13, 13)
+        Me.EditBox.MaxLength = 1000000
         Me.EditBox.Multiline = True
         Me.EditBox.Name = "EditBox"
         Me.EditBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical
@@ -39,6 +44,7 @@ Partial Class EditDBModifDef
         '
         'OKBtn
         '
+        Me.OKBtn.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.OKBtn.Location = New System.Drawing.Point(664, 415)
         Me.OKBtn.Name = "OKBtn"
         Me.OKBtn.Size = New System.Drawing.Size(55, 23)
@@ -48,6 +54,7 @@ Partial Class EditDBModifDef
         '
         'CancelBtn
         '
+        Me.CancelBtn.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.CancelBtn.Location = New System.Drawing.Point(725, 415)
         Me.CancelBtn.Name = "CancelBtn"
         Me.CancelBtn.Size = New System.Drawing.Size(55, 23)
@@ -55,17 +62,27 @@ Partial Class EditDBModifDef
         Me.CancelBtn.Text = "Cancel"
         Me.CancelBtn.UseVisualStyleBackColor = True
         '
+        'PosIndex
+        '
+        Me.PosIndex.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
+        Me.PosIndex.AutoSize = True
+        Me.PosIndex.Location = New System.Drawing.Point(13, 415)
+        Me.PosIndex.Name = "PosIndex"
+        Me.PosIndex.Size = New System.Drawing.Size(0, 13)
+        Me.PosIndex.TabIndex = 3
+        '
         'EditDBModifDef
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.ClientSize = New System.Drawing.Size(800, 450)
+        Me.Controls.Add(Me.PosIndex)
         Me.Controls.Add(Me.CancelBtn)
         Me.Controls.Add(Me.OKBtn)
         Me.Controls.Add(Me.EditBox)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.Name = "EditDBModifDef"
-        Me.Text = "EditDBModifDef"
+        Me.Text = "Edit DBModifier Definitions (CustomXML)"
         Me.ResumeLayout(False)
         Me.PerformLayout()
 
@@ -74,4 +91,5 @@ Partial Class EditDBModifDef
     Friend WithEvents EditBox As Windows.Forms.TextBox
     Friend WithEvents OKBtn As Windows.Forms.Button
     Friend WithEvents CancelBtn As Windows.Forms.Button
+    Friend WithEvents PosIndex As Windows.Forms.Label
 End Class

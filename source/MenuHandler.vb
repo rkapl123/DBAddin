@@ -35,7 +35,7 @@ Public Class MenuHandler
                                             "size='large' getLabel='getDBModifTypeLabel' imageMso='ApplicationOptionsDialog' " +
                                             "getScreentip='getDBModifScreentip' getContent='getDBModifMenuContent' getVisible='getDBModifMenuVisible'/>"
         Next
-        customUIXml += "<dialogBoxLauncher><button id='designmode' label='toggle design mode' onAction='toggleDesignMode' tag='4' getScreentip='getToggleDesignScreentip'/></dialogBoxLauncher></group></tab></tabs></ribbon>"
+        customUIXml += "<dialogBoxLauncher><button id='designmode' label='DBModif design' onAction='toggleDesignMode' tag='4' getScreentip='getToggleDesignScreentip'/></dialogBoxLauncher></group></tab></tabs></ribbon>"
         ' Context menus for refresh, jump and creation: in cell, row, column and ListRange (area of ListObjects)
         customUIXml += "<contextMenus>" +
          "<contextMenu idMso ='ContextMenuCell'>" +
@@ -101,11 +101,14 @@ Public Class MenuHandler
     ''' <summary>toggle designmode button (actually dialogBox launcher on DBModif Menu)</summary>
     ''' <param name="control"></param>
     Sub toggleDesignMode(control As IRibbonControl)
+
+        ' Ctrl-Shift starts the CustomXML display
         If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown Then
             Dim theEditDBModifDefDlg As EditDBModifDef = New EditDBModifDef()
-            theEditDBModifDefDlg.Show()
+            If theEditDBModifDefDlg.ShowDialog() = System.Windows.Forms.DialogResult.OK Then DBModifs.getDBModifDefinitions()
             Exit Sub
         End If
+
         Dim cbrs As Object = ExcelDnaUtil.Application.CommandBars
         If Not IsNothing(cbrs) AndAlso cbrs.GetEnabledMso("DesignMode") Then
             cbrs.ExecuteMso("DesignMode")
@@ -123,10 +126,10 @@ Public Class MenuHandler
     Public Function getToggleDesignScreentip(control As IRibbonControl) As String
         Dim cbrs As Object = ExcelDnaUtil.Application.CommandBars
         If Not IsNothing(cbrs) AndAlso cbrs.GetEnabledMso("DesignMode") Then
-            Return "Toggle design mode: Designmode is currently " & IIf(cbrs.GetPressedMso("DesignMode"), "on !", "off !")
+            Return "Designmode is currently " & IIf(cbrs.GetPressedMso("DesignMode"), "on !", "off !") & "; Ctrl-Shift-click to inspect/edit DBModifier definitions here"
         Else
             ' this should actually never be reached...
-            Return "Toggle design mode: Designmode commandbar button not available"
+            Return "Designmode commandbar button not available; Ctrl-Shift-click to inspect/edit DBModifier definitions here"
         End If
     End Function
 
