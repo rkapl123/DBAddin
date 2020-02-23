@@ -6,6 +6,9 @@ Imports ExcelDna.Integration
 Public Class EditDBModifDef
     Private CustomXmlParts As Object
 
+    ''' <summary>store the displayed/edited textbox content back into the custom xml definition, indluding validation feedback</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
     Private Sub OKBtn_Click(sender As Object, e As EventArgs) Handles OKBtn.Click
         Using sw As New System.IO.StringWriter()
             ' Make the XmlTextWriter to format the XML.
@@ -30,11 +33,17 @@ Public Class EditDBModifDef
         Me.Close()
     End Sub
 
+    ''' <summary>no change was made to definition</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
     Private Sub CancelBtn_Click(sender As Object, e As EventArgs) Handles CancelBtn.Click
         Me.DialogResult = DialogResult.Cancel
         Me.Close()
     End Sub
 
+    ''' <summary>put the costom xml definition in the edit box for display/editing</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
     Private Sub EditDBModifDef_Shown(sender As Object, e As EventArgs) Handles Me.Shown
         CustomXmlParts = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
         If CustomXmlParts.Count = 0 Then
@@ -59,11 +68,10 @@ Public Class EditDBModifDef
         End If
     End Sub
 
-    Private Sub EditBox_Click(sender As Object, e As EventArgs) Handles EditBox.Click
-        Me.PosIndex.Text = "Line: " & (Me.EditBox.GetLineFromCharIndex(Me.EditBox.SelectionStart) + 1).ToString() & ", Column: " & (Me.EditBox.SelectionStart - Me.EditBox.GetFirstCharIndexOfCurrentLine + 1).ToString()
-    End Sub
-
-    Private Sub EditBox_KeyDown(sender As Object, e As KeyEventArgs) Handles EditBox.KeyDown
+    ''' <summary>show the current line and column for easier detection of problems in xml document</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub EditBox_SelectionChanged(sender As Object, e As EventArgs) Handles EditBox.SelectionChanged
         Me.PosIndex.Text = "Line: " & (Me.EditBox.GetLineFromCharIndex(Me.EditBox.SelectionStart) + 1).ToString() & ", Column: " & (Me.EditBox.SelectionStart - Me.EditBox.GetFirstCharIndexOfCurrentLine + 1).ToString()
     End Sub
 

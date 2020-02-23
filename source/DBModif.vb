@@ -288,6 +288,7 @@ Public Class DBMapper : Inherits DBModif
     End Sub
 
     ''' <summary>extend DataRange to "whole" DBMApper area (first row (field names) to the right and first column (primary key) down)</summary>
+    ''' <param name="ignoreCUDFlag"></param>
     Public Sub extendDataRange(Optional ignoreCUDFlag As Boolean = False)
         ' only extend if no CUD Flags present (may have non existing first (primary) columns -> auto identity columns !)
         If Not CUDFlags And Not ignoreCUDFlag Then
@@ -390,7 +391,7 @@ Public Class DBMapper : Inherits DBModif
                 Dim primKeyDisplay As String
                 For i As Integer = 0 To UBound(primKeys)
                     Dim primKeyValue
-                    If primKeys(i) <> TargetRange.Cells(1, i + 1).Value Then
+                    If primKeys(i).ToUpper <> TargetRange.Cells(1, i + 1).Value.ToString.ToUpper Then
                         MsgBox("Defined primary key " & primKeys(i) & " does not match primary key " & TargetRange.Cells(1, i + 1).Value & " in DBMapper Data Range, cell (1," & i + 1 & ") !" & vbCrLf & "Primary keys have to be defined in the same order as in the Data Range", MsgBoxStyle.Critical, "DBMapper Error")
                         GoTo cleanup
                     End If
@@ -450,11 +451,13 @@ Public Class DBMapper : Inherits DBModif
                         Dim fieldname As String = TargetRange.Cells(1, colNum).Value
                         If InStr(1, LCase(ignoreColumns) + ",", LCase(fieldname) + ",") = 0 Then
                             Try
-                                rst.Fields(fieldname).Value = IIf(TargetRange.Cells(rowNum, colNum).Value.ToString().Length = 0, vbNull, TargetRange.Cells(rowNum, colNum).Value)
+                                Dim fieldval As Object = TargetRange.Cells(rowNum, colNum).Value
+                                If Not IsNothing(fieldval) Then
+                                    rst.Fields(fieldname).Value = IIf(fieldval.ToString().Length = 0, vbNull, fieldval)
+                                End If
                             Catch ex As Exception
                                 TargetRange.Parent.Activate
                                 TargetRange.Cells(rowNum, colNum).Select
-
                                 MsgBox("Field Value Update Error: " & ex.Message & " with Table: " & tableName & ", Field: " & fieldname & ", in sheet " & TargetRange.Parent.Name & ", & row " & rowNum & ", col: " & colNum, MsgBoxStyle.Critical, "DBMapper Error")
                                 rst.CancelUpdate()
                                 GoTo cleanup

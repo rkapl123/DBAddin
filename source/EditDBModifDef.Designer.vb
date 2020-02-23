@@ -23,24 +23,11 @@ Partial Class EditDBModifDef
     <System.Diagnostics.DebuggerStepThrough()> _
     Private Sub InitializeComponent()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(EditDBModifDef))
-        Me.EditBox = New System.Windows.Forms.TextBox()
         Me.OKBtn = New System.Windows.Forms.Button()
         Me.CancelBtn = New System.Windows.Forms.Button()
         Me.PosIndex = New System.Windows.Forms.Label()
+        Me.EditBox = New System.Windows.Forms.RichTextBox()
         Me.SuspendLayout()
-        '
-        'EditBox
-        '
-        Me.EditBox.Anchor = CType((((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
-            Or System.Windows.Forms.AnchorStyles.Left) _
-            Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.EditBox.Location = New System.Drawing.Point(13, 13)
-        Me.EditBox.MaxLength = 1000000
-        Me.EditBox.Multiline = True
-        Me.EditBox.Name = "EditBox"
-        Me.EditBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical
-        Me.EditBox.Size = New System.Drawing.Size(767, 396)
-        Me.EditBox.TabIndex = 0
         '
         'OKBtn
         '
@@ -71,15 +58,26 @@ Partial Class EditDBModifDef
         Me.PosIndex.Size = New System.Drawing.Size(0, 13)
         Me.PosIndex.TabIndex = 3
         '
+        'EditBox
+        '
+        Me.EditBox.Anchor = CType((((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
+            Or System.Windows.Forms.AnchorStyles.Left) _
+            Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
+        Me.EditBox.Location = New System.Drawing.Point(12, 12)
+        Me.EditBox.Name = "EditBox"
+        Me.EditBox.Size = New System.Drawing.Size(768, 397)
+        Me.EditBox.TabIndex = 4
+        Me.EditBox.Text = ""
+        '
         'EditDBModifDef
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.ClientSize = New System.Drawing.Size(800, 450)
+        Me.Controls.Add(Me.EditBox)
         Me.Controls.Add(Me.PosIndex)
         Me.Controls.Add(Me.CancelBtn)
         Me.Controls.Add(Me.OKBtn)
-        Me.Controls.Add(Me.EditBox)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.Name = "EditDBModifDef"
         Me.Text = "Edit DBModifier Definitions (CustomXML)"
@@ -87,9 +85,8 @@ Partial Class EditDBModifDef
         Me.PerformLayout()
 
     End Sub
-
-    Friend WithEvents EditBox As Windows.Forms.TextBox
     Friend WithEvents OKBtn As Windows.Forms.Button
     Friend WithEvents CancelBtn As Windows.Forms.Button
     Friend WithEvents PosIndex As Windows.Forms.Label
+    Friend WithEvents EditBox As Windows.Forms.RichTextBox
 End Class

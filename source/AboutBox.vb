@@ -16,7 +16,7 @@ Public NotInheritable Class AboutBox
         ' get module info for buildtime (FileDateTime of xll):
         For Each tModule As ProcessModule In Process.GetCurrentProcess().Modules
             Dim sModule As String = tModule.FileName
-            If sModule.ToUpper.Contains("DBADDIN.XLL") Then
+            If sModule.ToUpper.Contains("DBADDIN") Then
                 sModuleInfo = FileDateTime(sModule).ToString()
             End If
         Next
