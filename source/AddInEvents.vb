@@ -7,7 +7,7 @@ Imports Microsoft.Vbe.Interop
 Imports System.Diagnostics
 Imports System.Runtime.InteropServices
 Imports System.Timers
-
+Imports System.Collections
 
 ''' <summary>AddIn Connection class, also handling Events from Excel (Open, Close, Activate)</summary>
 <ComVisible(True)>
@@ -44,6 +44,8 @@ Public Class AddInEvents
         ExcelDna.IntelliSense.IntelliSenseServer.Install()
         theMenuHandler = New MenuHandler
         LogInfo("initialize configuration settings")
+        queryCache = New Collections.Hashtable
+        StatusCollection = New Collections.Hashtable
         initSettings()
         Dim srchdListener As Object
         For Each srchdListener In Trace.Listeners
@@ -179,10 +181,18 @@ done:
     ''' <param name="Wb"></param>
     Private Sub Application_WorkbookOpen(Wb As Excel.Workbook) Handles Application.WorkbookOpen
         If Not Wb.IsAddin Then
-            ' reset query cache !
-            queryCache = New Collection
-            StatusCollection = New Collection
             Dim refreshDBFuncs As Boolean
+            ' in case of reopening workbooks, look for old query caches and status collections (returned error messages) and reset them
+            Try
+                For Each resetkey As String In queryCache.Keys
+                    If InStr(resetkey, "[" & Wb.Name & "]") > 0 Then queryCache.Remove(resetkey)
+                Next
+                For Each resetkey As String In StatusCollection.Keys
+                    If InStr(resetkey, "[" & Wb.Name & "]") > 0 Then StatusCollection.Remove(resetkey)
+                Next
+            Catch ex As Exception
+                ' catch enumeration was changed error messages...
+            End Try
             ' when opening, force recalculation of DB functions in workbook.
             ' this is required as there is no recalculation if no dependencies have changed (usually when opening workbooks)
             ' however the most important dependency for DB functions is the database data....
@@ -292,12 +302,6 @@ done:
         If Globals.DBModifDefColl.Count > 0 Then assignHandler(Sh)
     End Sub
 
-    ''' <summary>SheetDeactivate: gets defined named ranges for DBMapper invocation after sheet was deleted/added (changes index of sheets-> IDs!) and updates Ribbon with it</summary>
-    ''' <param name="Sh"></param>
-    Private Sub Application_SheetDeactivate(Sh As Object) Handles Application.SheetDeactivate
-        LogInfo("deactivated " & Sh.Name)
-        If Globals.DBModifDefColl.Count > 0 Then Globals.DBModifDefColl.Clear()
-    End Sub
 
     ''' <summary>needed to dispose timer used for delayed refreshing DB Functions (see Application_WorkbookSave)</summary>
     ''' <param name="Wb"></param>
@@ -315,6 +319,7 @@ done:
             Globals.theRibbon.Invalidate()
         End If
     End Sub
+
     Private Sub Application_SheetChange(Sh As Object, Target As Range) Handles Application.SheetChange
         If Globals.DBModifDefColl.ContainsKey("DBMapper") And Not DBModifs.preventChangeWhileFetching Then
             Dim targetName As String = getDBModifNameFromRange(Target)

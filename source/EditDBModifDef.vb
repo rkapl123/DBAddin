@@ -1,6 +1,7 @@
 ﻿Imports System.Xml
 Imports System.Windows.Forms
 Imports ExcelDna.Integration
+Imports Microsoft.Office.Core
 
 ''' <summary>Dialog used to display and edit the CustomXMLPart utilized for storing the DBModif definitions</summary>
 Public Class EditDBModifDef
@@ -19,7 +20,7 @@ Public Class EditDBModifDef
                 Try
                     doc.LoadXml(Me.EditBox.Text)
                 Catch ex As Exception
-                    MsgBox("Problems with parsing changed definition: " & ex.Message)
+                    MsgBox("Problems with parsing changed definition: " & ex.Message, MsgBoxStyle.Critical)
                     Exit Sub
                 End Try
                 doc.WriteTo(xml_writer)
@@ -29,6 +30,24 @@ Public Class EditDBModifDef
                 CustomXmlParts.Add(sw.ToString())
             End Using
         End Using
+        ' add/change the tickboxes doDBMOnSave and DBFskip
+        If Not Me.DBFskip.CheckState = CheckState.Indeterminate Then
+            Try
+                Try : ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties("DBFskip").Delete : Catch ex As Exception : End Try
+                ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties.Add(Name:="DBFskip", LinkToContent:=False, Type:=MsoDocProperties.msoPropertyTypeBoolean, Value:=Me.DBFskip.Checked)
+            Catch ex As Exception
+                MsgBox("Error when adding DBFskip to Workbook:" + ex.Message, MsgBoxStyle.Critical)
+            End Try
+        End If
+        If Not Me.doDBMOnSave.CheckState = CheckState.Indeterminate Then
+            Try
+                Try : ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties("doDBMOnSave").Delete : Catch ex As Exception : End Try
+                ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties.Add(Name:="doDBMOnSave", LinkToContent:=False, Type:=MsoDocProperties.msoPropertyTypeBoolean, Value:=Me.doDBMOnSave.Checked)
+            Catch ex As Exception
+                MsgBox("Error when adding doDBMOnSave to Workbook:" + ex.Message, MsgBoxStyle.Critical)
+            End Try
+        End If
+
         Me.DialogResult = DialogResult.OK
         Me.Close()
     End Sub
@@ -66,6 +85,16 @@ Public Class EditDBModifDef
                 End Using
             End Using
         End If
+        Try
+            Me.DBFskip.Checked = ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties("DBFskip").Value
+        Catch ex As Exception
+            Me.DBFskip.CheckState = CheckState.Indeterminate
+        End Try
+        Try
+            Me.doDBMOnSave.Checked = ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties("doDBMOnSave").Value
+        Catch ex As Exception
+            Me.doDBMOnSave.CheckState = CheckState.Indeterminate
+        End Try
     End Sub
 
     ''' <summary>show the current line and column for easier detection of problems in xml document</summary>

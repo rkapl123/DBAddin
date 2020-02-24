@@ -318,7 +318,7 @@ Public Class DBMapper : Inherits DBModif
     End Sub
 
     Public Overrides Sub doDBModif(Optional WbIsSaving As Boolean = False, Optional calledByDBSeq As String = "")
-        If WbIsSaving And Not execOnSave Then Exit Sub
+        If WbIsSaving And Not execOnSave And calledByDBSeq = "" Then Exit Sub
         If Not WbIsSaving And askBeforeExecute And calledByDBSeq = "" Then
             Dim retval As MsgBoxResult = MsgBox("Really execute DB Mapper " & dbmapdefkey & "?", MsgBoxStyle.Question + vbOKCancel, "Execute DB Mapper")
             If retval = vbCancel Then Exit Sub
@@ -590,7 +590,7 @@ Public Class DBAction : Inherits DBModif
     End Sub
 
     Public Overrides Sub doDBModif(Optional WbIsSaving As Boolean = False, Optional calledByDBSeq As String = "")
-        If WbIsSaving And Not execOnSave Then Exit Sub
+        If WbIsSaving And Not execOnSave And calledByDBSeq = "" Then Exit Sub
         If Not WbIsSaving And askBeforeExecute And calledByDBSeq = "" Then
             Dim retval As MsgBoxResult = MsgBox("Really execute DB Action " & dbmapdefkey & "?", MsgBoxStyle.Question + vbOKCancel, "Execute DB Action")
             If retval = vbCancel Then Exit Sub
@@ -667,6 +667,11 @@ Public Class DBSeqnce : Inherits DBModif
     End Sub
 
     Public Overrides Sub doDBModif(Optional WbIsSaving As Boolean = False, Optional calledByDBSeq As String = "")
+        If calledByDBSeq <> "" Then
+            MsgBox("DB Sequence '" & dbmapdefkey & "' is being called by another DB Sequence (" & calledByDBSeq & "), this should not occur as infinite recursions are possible !", MsgBoxStyle.Critical, "Execute DB Sequence")
+            Exit Sub
+        End If
+
         If WbIsSaving And Not execOnSave Then Exit Sub
         If Not WbIsSaving And askBeforeExecute Then
             Dim retval As MsgBoxResult = MsgBox("Really execute DB Sequence " & dbmapdefkey & "?", MsgBoxStyle.Question + vbOKCancel, "Execute DB Sequence")
@@ -754,18 +759,21 @@ Public Module DBModifs
     ''' <summary>in case there is a defined DBMapper underlying the DBListFetch/DBSetQuery target area then change the extent of that to the new area given in theRange</summary>
     ''' <param name="theRange"></param>
     Public Sub resizeDBMapperRange(theRange As Excel.Range)
-        Dim dbMapperRangeName As String = getDBModifNameFromRange(theRange)
-        If Left(dbMapperRangeName, 8) = "DBMapper" Then
-            Dim NamesList As Excel.Names = ExcelDnaUtil.Application.ActiveWorkbook.Names
-            Try : NamesList.Add(Name:=dbMapperRangeName, RefersTo:=theRange)
-            Catch ex As Exception
-                Throw New Exception("Error when assigning name '" & dbMapperRangeName & "' to ListObject Range: " & ex.Message)
-            End Try
-            Dim theDBMapper As DBMapper = Globals.DBModifDefColl("DBMapper").Item(dbMapperRangeName)
-            ' notify DBMapper object of new target range
-            theDBMapper.setTargetRange(theRange)
-            ' in case of CUDFlags, reset them now...
-            theDBMapper.resetCUDFlags()
+        ' only do this for the active workbook...
+        If theRange.Parent.Parent Is ExcelDnaUtil.Application.Activeworkbook Then
+            Dim dbMapperRangeName As String = getDBModifNameFromRange(theRange)
+            If Left(dbMapperRangeName, 8) = "DBMapper" Then
+                Dim NamesList As Excel.Names = theRange.Parent.Parent.Names
+                Try : NamesList.Add(Name:=dbMapperRangeName, RefersTo:=theRange)
+                Catch ex As Exception
+                    Throw New Exception("Error when assigning name '" & dbMapperRangeName & "' to ListObject Range: " & ex.Message)
+                End Try
+                Dim extendedMapper As DBMapper = Globals.DBModifDefColl("DBMapper").Item(dbMapperRangeName)
+                ' notify DBMapper object of new target range
+                extendedMapper.setTargetRange(theRange)
+                ' in case of CUDFlags, reset them now...
+                extendedMapper.resetCUDFlags()
+            End If
         End If
     End Sub
 

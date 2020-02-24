@@ -27,6 +27,8 @@ Partial Class EditDBModifDef
         Me.CancelBtn = New System.Windows.Forms.Button()
         Me.PosIndex = New System.Windows.Forms.Label()
         Me.EditBox = New System.Windows.Forms.RichTextBox()
+        Me.doDBMOnSave = New System.Windows.Forms.CheckBox()
+        Me.DBFskip = New System.Windows.Forms.CheckBox()
         Me.SuspendLayout()
         '
         'OKBtn
@@ -69,11 +71,33 @@ Partial Class EditDBModifDef
         Me.EditBox.TabIndex = 4
         Me.EditBox.Text = ""
         '
+        'doDBMOnSave
+        '
+        Me.doDBMOnSave.AutoSize = True
+        Me.doDBMOnSave.Location = New System.Drawing.Point(519, 419)
+        Me.doDBMOnSave.Name = "doDBMOnSave"
+        Me.doDBMOnSave.Size = New System.Drawing.Size(139, 17)
+        Me.doDBMOnSave.TabIndex = 5
+        Me.doDBMOnSave.Text = "do DBModifiers on save"
+        Me.doDBMOnSave.UseVisualStyleBackColor = True
+        '
+        'DBFskip
+        '
+        Me.DBFskip.AutoSize = True
+        Me.DBFskip.Location = New System.Drawing.Point(356, 419)
+        Me.DBFskip.Name = "DBFskip"
+        Me.DBFskip.Size = New System.Drawing.Size(157, 17)
+        Me.DBFskip.TabIndex = 6
+        Me.DBFskip.Text = "skip DBFunctions on open?"
+        Me.DBFskip.UseVisualStyleBackColor = True
+        '
         'EditDBModifDef
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.ClientSize = New System.Drawing.Size(800, 450)
+        Me.Controls.Add(Me.DBFskip)
+        Me.Controls.Add(Me.doDBMOnSave)
         Me.Controls.Add(Me.EditBox)
         Me.Controls.Add(Me.PosIndex)
         Me.Controls.Add(Me.CancelBtn)
@@ -89,4 +113,6 @@ Partial Class EditDBModifDef
     Friend WithEvents CancelBtn As Windows.Forms.Button
     Friend WithEvents PosIndex As Windows.Forms.Label
     Friend WithEvents EditBox As Windows.Forms.RichTextBox
+    Friend WithEvents doDBMOnSave As Windows.Forms.CheckBox
+    Friend WithEvents DBFskip As Windows.Forms.CheckBox
 End Class

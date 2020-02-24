@@ -1,6 +1,7 @@
 Imports ADODB
 Imports ExcelDna.Integration
 Imports Microsoft.Office.Interop
+Imports System.Collections
 Imports System.Linq
 
 
@@ -17,13 +18,13 @@ Public Module Functions
     ''' we have to jump to the sheet containing the dbfunction and then activate back in case of refresh (sets relevant source/dbfunc to dirty)</summary>
     Public origWS As Excel.Worksheet
     ''' <summary>global collection of information transport containers between function and calc event procedure</summary>
-    Public StatusCollection As Collection
+    Public StatusCollection As Hashtable
     ''' <summary>connection object: always use the same, if possible (same ConnectionString)</summary>
     Public conn As ADODB.Connection
     ''' <summary>connection string can be changed for calls with different connection strings</summary>
     Public CurrConnString As String
     ''' <summary>query cache for avoiding unnecessary recalculations/data retrievals by volatile inputs to DB Functions (now(), etc.)</summary>
-    Public queryCache As Collection
+    Public queryCache As Hashtable
     ''' <summary>prevent multiple connection retries for each function in case of error</summary>
     Public dontTryConnection As Boolean
     ''' <summary>avoid entering dblistfetch/dbrowfetch functions during clearing of listfetch areas (before saving)</summary>
@@ -273,7 +274,7 @@ Public Module Functions
             ' first call: actually perform query
             If Not StatusCollection.Contains(callID) Then
                 Dim statusCont As ContainedStatusMsg = New ContainedStatusMsg
-                StatusCollection.Add(statusCont, callID)
+                StatusCollection.Add(callID, statusCont)
                 StatusCollection(callID).statusMsg = "" ' need this to prevent object not set errors in checkCache
                 ExcelAsyncUtil.QueueAsMacro(Sub()
                                                 DBSetQueryAction(callID, Query, targetRange, ConnString, caller)
@@ -386,7 +387,7 @@ Public Module Functions
                 ' give hidden name to target range of listobject (jump function)
                 theListObject.Range.Name = Replace(srcExtentConnect, "DBFsource", "DBFtarget")
                 theListObject.Range.Name.Visible = False
-                ' if refreshed range is a DBMapper, resize it
+                ' if refreshed range is a DBMapper and it is in the current workbook, resize it
                 DBModifs.resizeDBMapperRange(theListObject.Range)
             End If
             ' neither PivotTable or ListObject could be found in TargetCell
@@ -396,6 +397,7 @@ Public Module Functions
             End If
         Catch ex As Exception
             ' excel doesn't like pivottables to be set, so make caller dirty instead
+            If caller.Parent.Parent.Name <> ExcelDnaUtil.Application.ActiveWorkbook.Name Then caller.Parent.Parent.Activate()
             caller.Parent.Select() 'required, as Dirty doesn't work without it
             caller.Dirty()
             errMsg = ex.Message & " in query: " & Query
@@ -480,8 +482,7 @@ Public Module Functions
             ' first call: Status Container not set, actually perform query
             If Not StatusCollection.Contains(callID) Then
                 Dim statusCont As ContainedStatusMsg = New ContainedStatusMsg
-                StatusCollection.Add(statusCont, callID)
-                'StatusCollection(callID).statusMsg = "" ' need this to prevent object not set errors in checkParamsAndCache
+                StatusCollection.Add(callID, statusCont)
                 ExcelAsyncUtil.QueueAsMacro(Sub()
                                                 DBListFetchAction(callID, CStr(Query), caller, ToRange(targetRange), CStr(ConnString), ToRange(formulaRange), extendDataArea, HeaderInfo, AutoFit, autoformat, ShowRowNums, targetRangeName, formulaRangeName)
                                             End Sub)
@@ -866,7 +867,7 @@ Public Module Functions
             GoTo err_0
         End If
 
-        ' if refreshed range is a DBMapper, resize it
+        ' if refreshed range is a DBMapper and it is in the current workbook, resize it
         DBModifs.resizeDBMapperRange(newTargetRange)
 
         '''' any warnings, errors ?
@@ -955,6 +956,7 @@ err_0: ' errors where recordset was not opened or is already closed
         ' because of a strange excel behaviour with Range.Dirty (only works if the parent sheet of Range is the active sheet)
         ' we have to jump to the sheet containing the dbfunction and then activate back in case of refresh (sets relevant source/dbfunc to dirty)
         If Not IsNothing(origWS) Then
+            If origWS.Parent.Name <> ExcelDnaUtil.Application.ActiveWorkbook.Name Then origWS.Parent.Activate()
             origWS.Select()
             origWS = Nothing
         End If
@@ -1023,7 +1025,7 @@ err_0: ' errors where recordset was not opened or is already closed
             ' first call: actually perform query
             If Not StatusCollection.Contains(callID) Then
                 Dim statusCont As ContainedStatusMsg = New ContainedStatusMsg
-                StatusCollection.Add(statusCont, callID)
+                StatusCollection.Add(callID, statusCont)
                 StatusCollection(callID).statusMsg = "" ' need this to prevent object not set errors in checkCache
                 ExcelAsyncUtil.QueueAsMacro(Sub()
                                                 DBRowFetchAction(callID, CStr(Query), caller, tempArray, CStr(ConnString), HeaderInfo)
@@ -1204,7 +1206,7 @@ err_1:
         finishAction(calcMode, callID, "Error")
     End Sub
 
-    ''' <summary>remove alle names from Range Target except the passed name (theName) and store them into list storedNames</summary>
+    ''' <summary>remove all names from Range Target except the passed name (theName) and store them into list storedNames</summary>
     ''' <param name="Target"></param>
     ''' <param name="theName"></param>
     ''' <returns>the removed names as a string list for restoring them later (see restoreRangeNames)</returns>
@@ -1328,9 +1330,9 @@ err_1:
             doFetching = (ConnString & Query <> queryCache(callID))
             ' refresh the query cache with new query/connstring ...
             queryCache.Remove(callID)
-            queryCache.Add(ConnString & Query, callID)
+            queryCache.Add(callID, ConnString & Query)
         Else
-            queryCache.Add(ConnString & Query, callID)
+            queryCache.Add(callID, ConnString & Query)
             doFetching = True
         End If
         If doFetching Then

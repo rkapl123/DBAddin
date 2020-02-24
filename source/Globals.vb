@@ -153,9 +153,17 @@ Public Module Globals
         conn = Nothing
         dontTryConnection = False
         Try
-            ' reset query cache, so we really get new data !
-            queryCache = New Collection
-            StatusCollection = New Collection
+            ' reset query cache for current workbook, so we really get new data !
+            Try
+                For Each resetkey As String In queryCache.Keys
+                    If InStr(resetkey, "[" & ExcelDnaUtil.Application.ActiveWorkbook.Name & "]") > 0 Then queryCache.Remove(resetkey)
+                Next
+                For Each resetkey As String In StatusCollection.Keys
+                    If InStr(resetkey, "[" & ExcelDnaUtil.Application.ActiveWorkbook.Name & "]") > 0 Then StatusCollection.Remove(resetkey)
+                Next
+            Catch ex As Exception
+                ' catch enumeration was changed error messages...
+            End Try
             Dim underlyingName As String = getDBunderlyingNameFromRange(ExcelDnaUtil.Application.ActiveCell)
 
             ' now for DBListfetch/DBRowfetch resetting, first outside of all db function areas...
@@ -184,7 +192,10 @@ Public Module Globals
                     If Not ExcelDnaUtil.Application.Range(underlyingName).Parent Is ExcelDnaUtil.Application.ActiveSheet Then
                         ExcelDnaUtil.Application.ScreenUpdating = False
                         origWS = ExcelDnaUtil.Application.ActiveSheet
-                        Try : ExcelDnaUtil.Application.Range(underlyingName).Parent.Select : Catch ex As Exception : End Try
+                        Try
+                            ExcelDnaUtil.Application.Range(underlyingName).Parent.Parent.Activate
+                            ExcelDnaUtil.Application.Range(underlyingName).Parent.Select
+                        Catch ex As Exception : End Try
                     End If
                     ExcelDnaUtil.Application.Range(underlyingName).Dirty()
                     ' we're being called on a target area
@@ -194,8 +205,10 @@ Public Module Globals
                     If Not ExcelDnaUtil.Application.Range(underlyingName).Parent Is ExcelDnaUtil.Application.ActiveSheet Then
                         ExcelDnaUtil.Application.ScreenUpdating = False
                         origWS = ExcelDnaUtil.Application.ActiveSheet
-                        Try : ExcelDnaUtil.Application.Range(underlyingName).Parent.Select : Catch ex As Exception : End Try
-                        ExcelDnaUtil.Application.Range(underlyingName).Parent.Select
+                        Try
+                            ExcelDnaUtil.Application.Range(underlyingName).Parent.Parent.Activate
+                            ExcelDnaUtil.Application.Range(underlyingName).Parent.Select
+                        Catch ex As Exception : End Try
                     End If
                     ExcelDnaUtil.Application.Range(underlyingName).Dirty()
                     ' we're being called on a source (invoking function) cell
