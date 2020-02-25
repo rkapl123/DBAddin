@@ -62,7 +62,7 @@ Partial Class DBModifCreate
         Me.TableLayoutPanel1.ColumnCount = 3
         Me.TableLayoutPanel1.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 65.80645!))
         Me.TableLayoutPanel1.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 34.19355!))
-        Me.TableLayoutPanel1.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 74.0!))
+        Me.TableLayoutPanel1.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 75.0!))
         Me.TableLayoutPanel1.Controls.Add(Me.Cancel_Button, 2, 0)
         Me.TableLayoutPanel1.Controls.Add(Me.OK_Button, 1, 0)
         Me.TableLayoutPanel1.Controls.Add(Me.CreateCB, 0, 0)
@@ -78,7 +78,7 @@ Partial Class DBModifCreate
         '
         Me.Cancel_Button.Anchor = System.Windows.Forms.AnchorStyles.None
         Me.Cancel_Button.DialogResult = System.Windows.Forms.DialogResult.Cancel
-        Me.Cancel_Button.Location = New System.Drawing.Point(125, 3)
+        Me.Cancel_Button.Location = New System.Drawing.Point(124, 3)
         Me.Cancel_Button.Name = "Cancel_Button"
         Me.Cancel_Button.Size = New System.Drawing.Size(67, 23)
         Me.Cancel_Button.TabIndex = 0
@@ -87,7 +87,7 @@ Partial Class DBModifCreate
         'OK_Button
         '
         Me.OK_Button.Anchor = System.Windows.Forms.AnchorStyles.None
-        Me.OK_Button.Location = New System.Drawing.Point(83, 3)
+        Me.OK_Button.Location = New System.Drawing.Point(82, 3)
         Me.OK_Button.Name = "OK_Button"
         Me.OK_Button.Size = New System.Drawing.Size(35, 23)
         Me.OK_Button.TabIndex = 0
@@ -96,7 +96,7 @@ Partial Class DBModifCreate
         'CreateCB
         '
         Me.CreateCB.Anchor = System.Windows.Forms.AnchorStyles.None
-        Me.CreateCB.Location = New System.Drawing.Point(6, 3)
+        Me.CreateCB.Location = New System.Drawing.Point(5, 3)
         Me.CreateCB.Name = "CreateCB"
         Me.CreateCB.Size = New System.Drawing.Size(68, 23)
         Me.CreateCB.TabIndex = 1
@@ -117,9 +117,9 @@ Partial Class DBModifCreate
         Me.NameLabel.AutoSize = True
         Me.NameLabel.Location = New System.Drawing.Point(9, 6)
         Me.NameLabel.Name = "NameLabel"
-        Me.NameLabel.Size = New System.Drawing.Size(93, 13)
+        Me.NameLabel.Size = New System.Drawing.Size(91, 13)
         Me.NameLabel.TabIndex = 2
-        Me.NameLabel.Text = "DBModifier Name:"
+        Me.NameLabel.Text = "DBModifier name:"
         '
         'Tablename
         '
@@ -135,7 +135,7 @@ Partial Class DBModifCreate
         Me.PrimaryKeys.Name = "PrimaryKeys"
         Me.PrimaryKeys.Size = New System.Drawing.Size(297, 20)
         Me.PrimaryKeys.TabIndex = 4
-        Me.ToolTip1.SetToolTip(Me.PrimaryKeys, "String containing primary Key names for updating table data, comma separated")
+        Me.ToolTip1.SetToolTip(Me.PrimaryKeys, "Number of primary keys in DBMapper datatable (starting from the left)")
         '
         'Database
         '
@@ -175,9 +175,9 @@ Partial Class DBModifCreate
         Me.PrimaryKeysLabel.AutoSize = True
         Me.PrimaryKeysLabel.Location = New System.Drawing.Point(9, 84)
         Me.PrimaryKeysLabel.Name = "PrimaryKeysLabel"
-        Me.PrimaryKeysLabel.Size = New System.Drawing.Size(70, 13)
+        Me.PrimaryKeysLabel.Size = New System.Drawing.Size(99, 13)
         Me.PrimaryKeysLabel.TabIndex = 2
-        Me.PrimaryKeysLabel.Text = "Primary Keys:"
+        Me.PrimaryKeysLabel.Text = "Primary keys count:"
         '
         'DatabaseLabel
         '
@@ -193,18 +193,18 @@ Partial Class DBModifCreate
         Me.IgnoreColumnsLabel.AutoSize = True
         Me.IgnoreColumnsLabel.Location = New System.Drawing.Point(9, 110)
         Me.IgnoreColumnsLabel.Name = "IgnoreColumnsLabel"
-        Me.IgnoreColumnsLabel.Size = New System.Drawing.Size(83, 13)
+        Me.IgnoreColumnsLabel.Size = New System.Drawing.Size(82, 13)
         Me.IgnoreColumnsLabel.TabIndex = 2
-        Me.IgnoreColumnsLabel.Text = "Ignore Columns:"
+        Me.IgnoreColumnsLabel.Text = "Ignore columns:"
         '
         'AdditionalStoredProcLabel
         '
         Me.AdditionalStoredProcLabel.AutoSize = True
         Me.AdditionalStoredProcLabel.Location = New System.Drawing.Point(9, 136)
         Me.AdditionalStoredProcLabel.Name = "AdditionalStoredProcLabel"
-        Me.AdditionalStoredProcLabel.Size = New System.Drawing.Size(142, 13)
+        Me.AdditionalStoredProcLabel.Size = New System.Drawing.Size(139, 13)
         Me.AdditionalStoredProcLabel.TabIndex = 2
-        Me.AdditionalStoredProcLabel.Text = "Additional Stored Procedure:"
+        Me.AdditionalStoredProcLabel.Text = "Additional stored procedure:"
         '
         'insertIfMissing
         '

@@ -8,14 +8,6 @@ Imports Microsoft.Office.Core
 ''' <summary>Abstraction of a DB Modification Object (concrete classes DB Mapper, DB Action or DB Sequence)</summary>
 Public MustInherit Class DBModif
 
-    ''' <summary>needed for field formatting in DB Mapper</summary>
-    Protected Enum CheckTypeFld
-        checkIsNumericFld = 0
-        checkIsDateFld = 1
-        checkIsTimeFld = 2
-        checkIsStringFld = 3
-    End Enum
-
     '''<summary>unique key of DBModif</summary>
     Protected dbmapdefkey As String
     '''<summary>sheet where DBModif is defined (only DBMapper and DBAction)</summary>
@@ -89,30 +81,6 @@ Public MustInherit Class DBModif
         TargetRange = newTargetRange
     End Sub
 
-    ''' <summary>formats theVal to fit the type of record column having data type dataType</summary>
-    ''' <param name="theVal"></param>
-    ''' <param name="dataType"></param>
-    ''' <returns>the formatted value</returns>
-    Protected Function dbFormatType(ByVal theVal As Object, dataType As CheckTypeFld) As String
-        If IsNothing(theVal) Then
-            dbFormatType = "NULL"
-        ElseIf dataType = CheckTypeFld.checkIsNumericFld Then ' only decimal points allowed in numeric data
-            dbFormatType = Replace(CStr(theVal), ",", ".")
-        ElseIf dataType = CheckTypeFld.checkIsDateFld Then
-            dbFormatType = "'" & Format(Date.FromOADate(theVal), "yyyy-MM-dd") & "'" ' ISO 8601 standard SQL Date formatting
-        ElseIf dataType = CheckTypeFld.checkIsTimeFld Then
-            dbFormatType = "'" & Format(Date.FromOADate(theVal), "yyyy-MM-dd HH:mm:ss.fff") & "'" ' ISO 8601 standard SQL Date/time formatting, 24h format...
-        ElseIf TypeName(theVal) = "Boolean" Then
-            dbFormatType = IIf(theVal, 1, 0)
-        ElseIf dataType = CheckTypeFld.checkIsStringFld Then ' quote Strings
-            theVal = Replace(theVal, "'", "''") ' quote quotes inside Strings
-            dbFormatType = "'" & theVal & "'"
-        Else
-            ErrorMsg("Error: unknown data type '" & dataType)
-            dbFormatType = String.Empty
-        End If
-    End Function
-
     ''' <summary>checks whether ADO type theType is a date or time type</summary>
     ''' <param name="theType"></param>
     ''' <returns>True if DateTime</returns>
@@ -163,8 +131,8 @@ Public Class DBMapper : Inherits DBModif
     Private database As String
     ''' <summary>Database Table, where Data is to be stored</summary>
     Private tableName As String = ""
-    ''' <summary>String containing primary Key names for updating table data, comma separated</summary>
-    Private primKeysStr As String = ""
+    ''' <summary>count of primary keys in datatable, starting from the leftmost column</summary>
+    Private primKeysCount As Integer = 0
     ''' <summary>if set, then insert row into table if primary key is missing there. Default = False (only update)</summary>
     Private insertIfMissing As Boolean = False
     ''' <summary>additional stored procedure to be executed after saving</summary>
@@ -212,10 +180,11 @@ Public Class DBMapper : Inherits DBModif
         If tableName = "" Then
             Throw New Exception("No Tablename given in DBMapper paramText!")
         End If
-        primKeysStr = DBModifParams(3).Replace("""", "").Trim
-        If primKeysStr = "" Then
-            Throw New Exception("No primary keys given in DBMapper paramText!")
-        End If
+        Try
+            primKeysCount = Convert.ToInt32(DBModifParams(3))
+        Catch ex As Exception
+            Throw New Exception("couldn't get primary key count given in DBMapper paramText!")
+        End Try
         If DBModifParams.Length > 4 AndAlso DBModifParams(4) <> "" Then insertIfMissing = Convert.ToBoolean(DBModifParams(4))
         If DBModifParams.Length > 5 AndAlso DBModifParams(5) <> "" Then executeAdditionalProc = DBModifParams(5).Replace("""", "").Trim
         If DBModifParams.Length > 6 AndAlso DBModifParams(6) <> "" Then ignoreColumns = DBModifParams(6).Replace("""", "").Trim
@@ -240,8 +209,12 @@ Public Class DBMapper : Inherits DBModif
         If database = "" Then Throw New Exception("No database given in DBMapper definition!")
         tableName = definitionXML.SelectSingleNode("ns0:tableName").Text
         If tableName = "" Then Throw New Exception("No Tablename given in DBMapper definition!")
-        primKeysStr = definitionXML.SelectSingleNode("ns0:primKeysStr").Text
-        If primKeysStr = "" Then Throw New Exception("No primary keys given in DBMapper definition!")
+
+        Try
+            primKeysCount = Convert.ToInt32(definitionXML.SelectSingleNode("ns0:primKeysStr").Text)
+        Catch ex As Exception
+            Throw New Exception("couldn't get primary key count given in DBMapper definition!")
+        End Try
         execOnSave = Convert.ToBoolean(definitionXML.SelectSingleNode("ns0:execOnSave").Text)
         askBeforeExecute = Convert.ToBoolean(definitionXML.SelectSingleNode("ns0:askBeforeExecute").Text)
         insertIfMissing = Convert.ToBoolean(definitionXML.SelectSingleNode("ns0:insertIfMissing").Text)
@@ -327,7 +300,6 @@ Public Class DBMapper : Inherits DBModif
         Dim env As Integer = getEnv(Globals.selectedEnvironment + 1)
         extendDataRange()
 
-        Dim primKeys() As String = Split(primKeysStr, ",")
         'now create/get a connection (dbcnn) for env(ironment)
         If Not openConnection(env, database) Then Exit Sub
 
@@ -342,21 +314,6 @@ Public Class DBMapper : Inherits DBModif
             GoTo cleanup
         End Try
 
-        ' to find the record to be updated, get types for primKeyCompound to build WHERE Clause with it
-        Dim checkTypes() As CheckTypeFld = Nothing
-        For i = 0 To UBound(primKeys)
-            ReDim Preserve checkTypes(i)
-
-            If checkIsNumeric(checkrst.Fields(primKeys(i)).Type) Then
-                checkTypes(i) = CheckTypeFld.checkIsNumericFld
-            ElseIf checkIsDate(checkrst.Fields(primKeys(i)).Type) Then
-                checkTypes(i) = CheckTypeFld.checkIsDateFld
-            ElseIf checkIsTime(checkrst.Fields(primKeys(i)).Type) Then
-                checkTypes(i) = CheckTypeFld.checkIsTimeFld
-            Else
-                checkTypes(i) = CheckTypeFld.checkIsStringFld
-            End If
-        Next
         ' check if all column names (except ignored) of DBMapper Range exist in table
         Dim colNum As Long = 1
         Do
@@ -386,17 +343,11 @@ Public Class DBMapper : Inherits DBModif
             Dim rowCUDFlag As String = TargetRange.Cells(rowNum, TargetRange.Columns.Count + 1).Value
             If Not CUDFlags Or (CUDFlags And rowCUDFlag <> "") Then
 
-                ' try to find record for update, construct where clause with primary key columns
+                ' try to find record for update, construct WHERE clause with primary key columns
                 Dim primKeyCompound As String = " WHERE "
                 Dim primKeyDisplay As String
-                For i As Integer = 0 To UBound(primKeys)
-                    Dim primKeyValue
-                    If primKeys(i).ToUpper <> TargetRange.Cells(1, i + 1).Value.ToString.ToUpper Then
-                        MsgBox("Defined primary key " & primKeys(i) & " does not match primary key " & TargetRange.Cells(1, i + 1).Value & " in DBMapper Data Range, cell (1," & i + 1 & ") !" & vbCrLf & "Primary keys have to be defined in the same order as in the Data Range", MsgBoxStyle.Critical, "DBMapper Error")
-                        GoTo cleanup
-                    End If
-                    primKeyValue = TargetRange.Cells(rowNum, i + 1).Value
-                    primKeyCompound = primKeyCompound & primKeys(i) & " = " & dbFormatType(primKeyValue, checkTypes(i)) & IIf(i = UBound(primKeys), "", " AND ")
+                For i As Integer = 1 To primKeysCount
+                    Dim primKeyValue = TargetRange.Cells(rowNum, i).Value
                     If IsError(primKeyValue) Then
                         MsgBox("Error in primary key value, cell (" & rowNum & "," & i + 1 & ") in sheet " & TargetRange.Parent.Name & ", & row " & rowNum, MsgBoxStyle.Critical, "DBMapper Error")
                         GoTo nextRow
@@ -407,6 +358,25 @@ Public Class DBMapper : Inherits DBModif
                         MsgBox("Empty primary key value, cell (" & rowNum & "," & i + 1 & ") in sheet " & TargetRange.Parent.Name & ", & row " & rowNum, MsgBoxStyle.Critical, "DBMapper Error")
                         GoTo nextRow
                     End If
+                    ' now format the primary key value and construct the WHERE clause
+                    Dim primKey = TargetRange.Cells(1, i).Value
+                    Dim primKeyFormatted As String
+                    If IsNothing(primKeyValue) Then
+                        primKeyFormatted = "NULL"
+                    ElseIf checkIsNumeric(checkrst.Fields(primKey).Type) Then ' only decimal points allowed in numeric data
+                        primKeyFormatted = Replace(CStr(primKeyValue), ",", ".")
+                    ElseIf checkIsDate(checkrst.Fields(primKey).Type) Then
+                        primKeyFormatted = "'" & Format(Date.FromOADate(primKeyValue), "yyyy-MM-dd") & "'" ' ISO 8601 standard SQL Date formatting
+                    ElseIf checkIsTime(checkrst.Fields(primKey).Type) Then
+                        primKeyFormatted = "'" & Format(Date.FromOADate(primKeyValue), "yyyy-MM-dd HH:mm:ss.fff") & "'" ' ISO 8601 standard SQL Date/time formatting, 24h format...
+                    ElseIf TypeName(primKeyValue) = "Boolean" Then
+                        primKeyFormatted = IIf(primKeyValue, "1", "0")
+                    Else
+                        primKeyValue = Replace(primKeyValue, "'", "''") ' quote quotes inside Strings
+                        primKeyFormatted = "'" & primKeyValue & "'"
+                    End If
+                    primKeyCompound = primKeyCompound & primKey & " = " & primKeyFormatted & IIf(i = primKeysCount, "", " AND ")
+
                 Next
                 Dim getStmt As String = "SELECT * FROM " & tableName & primKeyCompound
                 Try
@@ -424,11 +394,11 @@ Public Class DBMapper : Inherits DBModif
                     If insertIfMissing Or rowCUDFlag = "i" Then
                         ExcelDnaUtil.Application.StatusBar = Left("Inserting " & primKeyDisplay & " into " & tableName, 255)
                         rst.AddNew()
-                        For i = 0 To UBound(primKeys)
+                        For i = 1 To primKeysCount
                             Try
                                 ' ignore empty primary field values for identity fields (error message from DB later)..
-                                If Not (IsNothing(TargetRange.Cells(rowNum, i + 1).Value) OrElse TargetRange.Cells(rowNum, i + 1).Value.ToString().Length = 0) Then
-                                    rst.Fields(primKeys(i)).Value = TargetRange.Cells(rowNum, i + 1).Value
+                                If Not (IsNothing(TargetRange.Cells(rowNum, i).Value) OrElse TargetRange.Cells(rowNum, i).Value.ToString().Length = 0) Then
+                                    rst.Fields(TargetRange.Cells(1, i).Value).Value = TargetRange.Cells(rowNum, i).Value
                                 End If
                             Catch ex As Exception
                                 MsgBox("Error inserting primary key value into table " & tableName & ": " & dbcnn.Errors(0).Description, MsgBoxStyle.Critical, "DBMapper Error")
@@ -436,8 +406,8 @@ Public Class DBMapper : Inherits DBModif
                         Next
                     Else
                         TargetRange.Parent.Activate
-                        TargetRange.Cells(rowNum, i + 1).Select
-                        MsgBox("Did not find recordset with statement '" & getStmt & "', insertIfMissing = " & insertIfMissing & " in sheet " & TargetRange.Parent.Name & ", & row " & rowNum, MsgBoxStyle.Critical, "DBMapper Error")
+                        TargetRange.Cells(rowNum, i).Select
+                        MsgBox("Did not find recordset with statement '" & getStmt & "', insertIfMissing = " & insertIfMissing.ToString() & " in sheet " & TargetRange.Parent.Name & " and row " & rowNum, MsgBoxStyle.Critical, "DBMapper Error")
                         GoTo cleanup
                     End If
                 Else
@@ -446,7 +416,7 @@ Public Class DBMapper : Inherits DBModif
 
                 If Not CUDFlags Or (CUDFlags And (rowCUDFlag = "i" Or rowCUDFlag = "u")) Then
                     ' walk through non primary columns and fill fields
-                    colNum = primKeys.Length() + 1
+                    colNum = primKeysCount + 1
                     Do
                         Dim fieldname As String = TargetRange.Cells(1, colNum).Value
                         If InStr(1, LCase(ignoreColumns) + ",", LCase(fieldname) + ",") = 0 Then
@@ -526,7 +496,7 @@ cleanup:
             .Database.Text = database
             .execOnSave.Checked = execOnSave
             .Tablename.Text = tableName
-            .PrimaryKeys.Text = primKeysStr
+            .PrimaryKeys.Text = primKeysCount.ToString()
             .insertIfMissing.Checked = insertIfMissing
             .addStoredProc.Text = executeAdditionalProc
             .IgnoreColumns.Text = ignoreColumns
