@@ -160,7 +160,7 @@ Public Class DBModifCreate
             Me.RepairDBSeqnce.Top = Me.DatabaseLabel.Top
             Me.DBSeqenceDataGrid.Hide()
             Me.Tag = "repaired"
-            MsgBox("Defined DBSequence steps did not fit definitions." & vbCrLf & "Please follow the instructions in textbox to repair it...", MsgBoxStyle.Critical, "DBSequence definition Insert error")
+            MsgBox("Defined DBSequence steps did not match allowed values." & vbCrLf & "Please follow the instructions in textbox to repair it...", MsgBoxStyle.Critical, "DBSequence definition Insert error")
         End If
         DBSeqStepValidationErrorsShown = True
     End Sub
