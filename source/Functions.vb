@@ -1,7 +1,7 @@
 Imports ADODB
 Imports ExcelDna.Integration
 Imports Microsoft.Office.Interop
-Imports System.Collections
+Imports System.Collections.Generic
 Imports System.Linq
 
 
@@ -18,13 +18,13 @@ Public Module Functions
     ''' we have to jump to the sheet containing the dbfunction and then activate back in case of refresh (sets relevant source/dbfunc to dirty)</summary>
     Public origWS As Excel.Worksheet
     ''' <summary>global collection of information transport containers between function and calc event procedure</summary>
-    Public StatusCollection As Hashtable
+    Public StatusCollection As Dictionary(Of String, ContainedStatusMsg)
     ''' <summary>connection object: always use the same, if possible (same ConnectionString)</summary>
     Public conn As ADODB.Connection
     ''' <summary>connection string can be changed for calls with different connection strings</summary>
     Public CurrConnString As String
     ''' <summary>query cache for avoiding unnecessary recalculations/data retrievals by volatile inputs to DB Functions (now(), etc.)</summary>
-    Public queryCache As Hashtable
+    Public queryCache As Dictionary(Of String, String)
     ''' <summary>prevent multiple connection retries for each function in case of error</summary>
     Public dontTryConnection As Boolean
     ''' <summary>avoid entering dblistfetch/dbrowfetch functions during clearing of listfetch areas (before saving)</summary>
@@ -272,7 +272,7 @@ Public Module Functions
             End If
 
             ' first call: actually perform query
-            If Not StatusCollection.Contains(callID) Then
+            If Not StatusCollection.ContainsKey(callID) Then
                 Dim statusCont As ContainedStatusMsg = New ContainedStatusMsg
                 StatusCollection.Add(callID, statusCont)
                 StatusCollection(callID).statusMsg = "" ' need this to prevent object not set errors in checkCache
@@ -480,7 +480,7 @@ Public Module Functions
             HeaderInfo = convertToBool(HeaderInfo) : AutoFit = convertToBool(AutoFit) : autoformat = convertToBool(autoformat) : ShowRowNums = convertToBool(ShowRowNums)
 
             ' first call: Status Container not set, actually perform query
-            If Not StatusCollection.Contains(callID) Then
+            If Not StatusCollection.ContainsKey(callID) Then
                 Dim statusCont As ContainedStatusMsg = New ContainedStatusMsg
                 StatusCollection.Add(callID, statusCont)
                 ExcelAsyncUtil.QueueAsMacro(Sub()
@@ -1023,7 +1023,7 @@ err_0: ' errors where recordset was not opened or is already closed
             End If
 
             ' first call: actually perform query
-            If Not StatusCollection.Contains(callID) Then
+            If Not StatusCollection.ContainsKey(callID) Then
                 Dim statusCont As ContainedStatusMsg = New ContainedStatusMsg
                 StatusCollection.Add(callID, statusCont)
                 StatusCollection(callID).statusMsg = "" ' need this to prevent object not set errors in checkCache
@@ -1320,13 +1320,13 @@ err_1:
         End If
         If checkParamsAndCache.Length > 0 Then
             ' refresh the query cache ...
-            If queryCache.Contains(callID) Then queryCache.Remove(callID)
+            If queryCache.ContainsKey(callID) Then queryCache.Remove(callID)
             Exit Function
         End If
 
         ' caching check mechanism to avoid unnecessary recalculations/refetching
         Dim doFetching As Boolean
-        If queryCache.Contains(callID) Then
+        If queryCache.ContainsKey(callID) Then
             doFetching = (ConnString & Query <> queryCache(callID))
             ' refresh the query cache with new query/connstring ...
             queryCache.Remove(callID)
@@ -1337,10 +1337,10 @@ err_1:
         End If
         If doFetching Then
             ' remove Status Container to signal a new calculation request
-            If StatusCollection.Contains(callID) Then StatusCollection.Remove(callID)
+            If StatusCollection.ContainsKey(callID) Then StatusCollection.Remove(callID)
         Else
             ' return Status Containers Message as last result
-            If StatusCollection.Contains(callID) Then
+            If StatusCollection.ContainsKey(callID) Then
                 If Not IsNothing(StatusCollection(callID).statusMsg) Then checkParamsAndCache = "(last result:)" & StatusCollection(callID).statusMsg
             End If
         End If

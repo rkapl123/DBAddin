@@ -7,7 +7,7 @@ Imports Microsoft.Vbe.Interop
 Imports System.Diagnostics
 Imports System.Runtime.InteropServices
 Imports System.Timers
-Imports System.Collections
+Imports System.Collections.Generic
 
 ''' <summary>AddIn Connection class, also handling Events from Excel (Open, Close, Activate)</summary>
 <ComVisible(True)>
@@ -44,8 +44,8 @@ Public Class AddInEvents
         ExcelDna.IntelliSense.IntelliSenseServer.Install()
         theMenuHandler = New MenuHandler
         LogInfo("initialize configuration settings")
-        queryCache = New Collections.Hashtable
-        StatusCollection = New Collections.Hashtable
+        queryCache = New Dictionary(Of String, String)
+        StatusCollection = New Dictionary(Of String, ContainedStatusMsg)
         initSettings()
         Dim srchdListener As Object
         For Each srchdListener In Trace.Listeners
@@ -91,7 +91,9 @@ done:
         If Not Wb.ReadOnlyRecommended And doDBMOnSave Then
             For Each DBmodifType As String In Globals.DBModifDefColl.Keys
                 For Each dbmapdefkey As String In Globals.DBModifDefColl(DBmodifType).Keys
-                    Globals.DBModifDefColl(DBmodifType).Item(dbmapdefkey).doDBModif(WbIsSaving:=True)
+                    With Globals.DBModifDefColl(DBmodifType).Item(dbmapdefkey)
+                        If .DBModifSaveNeeded Then .doDBModif(WbIsSaving:=True)
+                    End With
                 Next
             Next
         End If
@@ -183,16 +185,15 @@ done:
         If Not Wb.IsAddin Then
             Dim refreshDBFuncs As Boolean
             ' in case of reopening workbooks, look for old query caches and status collections (returned error messages) and reset them
-            Try
-                For Each resetkey As String In queryCache.Keys
-                    If InStr(resetkey, "[" & Wb.Name & "]") > 0 Then queryCache.Remove(resetkey)
-                Next
-                For Each resetkey As String In StatusCollection.Keys
-                    If InStr(resetkey, "[" & Wb.Name & "]") > 0 Then StatusCollection.Remove(resetkey)
-                Next
-            Catch ex As Exception
-                ' catch enumeration was changed error messages...
-            End Try
+            Dim tempColl1 As Dictionary(Of String, String) = New Dictionary(Of String, String)(queryCache) ' clone dictionary to be able to remove items...
+            For Each resetkey As String In tempColl1.Keys
+                If InStr(resetkey, "[" & Wb.Name & "]") > 0 Then queryCache.Remove(resetkey)
+            Next
+            Dim tempColl2 As Dictionary(Of String, ContainedStatusMsg) = New Dictionary(Of String, ContainedStatusMsg)(StatusCollection)
+            For Each resetkey As String In tempColl2.Keys
+                If InStr(resetkey, "[" & Wb.Name & "]") > 0 Then StatusCollection.Remove(resetkey)
+            Next
+
             ' when opening, force recalculation of DB functions in workbook.
             ' this is required as there is no recalculation if no dependencies have changed (usually when opening workbooks)
             ' however the most important dependency for DB functions is the database data....

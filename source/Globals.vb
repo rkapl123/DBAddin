@@ -154,16 +154,14 @@ Public Module Globals
         dontTryConnection = False
         Try
             ' reset query cache for current workbook, so we really get new data !
-            Try
-                For Each resetkey As String In queryCache.Keys
-                    If InStr(resetkey, "[" & ExcelDnaUtil.Application.ActiveWorkbook.Name & "]") > 0 Then queryCache.Remove(resetkey)
-                Next
-                For Each resetkey As String In StatusCollection.Keys
-                    If InStr(resetkey, "[" & ExcelDnaUtil.Application.ActiveWorkbook.Name & "]") > 0 Then StatusCollection.Remove(resetkey)
-                Next
-            Catch ex As Exception
-                ' catch enumeration was changed error messages...
-            End Try
+            Dim tempColl1 As Dictionary(Of String, String) = New Dictionary(Of String, String)(queryCache) ' clone dictionary to be able to remove items...
+            For Each resetkey As String In tempColl1.Keys
+                If InStr(resetkey, "[" & ExcelDnaUtil.Application.ActiveWorkbook.Name & "]") > 0 Then queryCache.Remove(resetkey)
+            Next
+            Dim tempColl2 As Dictionary(Of String, ContainedStatusMsg) = New Dictionary(Of String, ContainedStatusMsg)(StatusCollection)
+            For Each resetkey As String In tempColl2.Keys
+                If InStr(resetkey, "[" & ExcelDnaUtil.Application.ActiveWorkbook.Name & "]") > 0 Then StatusCollection.Remove(resetkey)
+            Next
             Dim underlyingName As String = getDBunderlyingNameFromRange(ExcelDnaUtil.Application.ActiveCell)
 
             ' now for DBListfetch/DBRowfetch resetting, first outside of all db function areas...

@@ -181,9 +181,9 @@ Public Class DBMapper : Inherits DBModif
             Throw New Exception("No Tablename given in DBMapper paramText!")
         End If
         Try
-            primKeysCount = Convert.ToInt32(DBModifParams(3))
+            primKeysCount = DBModifParams(3).Split(",").Length
         Catch ex As Exception
-            Throw New Exception("couldn't get primary key count given in DBMapper paramText!")
+            Throw New Exception("couldn't get primary key count given in DBMapper paramText (should be a comma separated list)!")
         End Try
         If DBModifParams.Length > 4 AndAlso DBModifParams(4) <> "" Then insertIfMissing = Convert.ToBoolean(DBModifParams(4))
         If DBModifParams.Length > 5 AndAlso DBModifParams(5) <> "" Then executeAdditionalProc = DBModifParams(5).Replace("""", "").Trim
@@ -291,7 +291,7 @@ Public Class DBMapper : Inherits DBModif
     End Sub
 
     Public Overrides Sub doDBModif(Optional WbIsSaving As Boolean = False, Optional calledByDBSeq As String = "")
-        If WbIsSaving And Not execOnSave And calledByDBSeq = "" Then Exit Sub
+        ' ask for saving only if a) is not done on WorkbookSave b) is set to ask and c) is not called by a DBSequence (asks already for saving)
         If Not WbIsSaving And askBeforeExecute And calledByDBSeq = "" Then
             Dim retval As MsgBoxResult = MsgBox("Really execute DB Mapper " & dbmapdefkey & "?", MsgBoxStyle.Question + vbOKCancel, "Execute DB Mapper")
             If retval = vbCancel Then Exit Sub
@@ -331,7 +331,6 @@ Public Class DBMapper : Inherits DBModif
             End If
             colNum += 1
         Loop Until colNum > TargetRange.Columns.Count
-        checkrst.Close()
 
         Dim rowNum As Long = 2
         dbcnn.CursorLocation = CursorLocationEnum.adUseServer
@@ -349,13 +348,13 @@ Public Class DBMapper : Inherits DBModif
                 For i As Integer = 1 To primKeysCount
                     Dim primKeyValue = TargetRange.Cells(rowNum, i).Value
                     If IsError(primKeyValue) Then
-                        MsgBox("Error in primary key value, cell (" & rowNum & "," & i + 1 & ") in sheet " & TargetRange.Parent.Name & ", & row " & rowNum, MsgBoxStyle.Critical, "DBMapper Error")
+                        MsgBox("Error in primary key value, cell (" & rowNum & "," & i + 1 & ") in sheet " & TargetRange.Parent.Name & " and row " & rowNum, MsgBoxStyle.Critical, "DBMapper Error")
                         GoTo nextRow
                     End If
                     If IsNothing(primKeyValue) Then primKeyValue = ""
                     ' with CUDFlags there can be empty primary keys (auto identity columns), leave error checking to database in this case ...
                     If (Not CUDFlags Or (CUDFlags And rowCUDFlag = "u")) And primKeyValue.ToString().Length = 0 Then
-                        MsgBox("Empty primary key value, cell (" & rowNum & "," & i + 1 & ") in sheet " & TargetRange.Parent.Name & ", & row " & rowNum, MsgBoxStyle.Critical, "DBMapper Error")
+                        MsgBox("Empty primary key value, cell (" & rowNum & "," & i + 1 & ") in sheet " & TargetRange.Parent.Name & " and row " & rowNum, MsgBoxStyle.Critical, "DBMapper Error")
                         GoTo nextRow
                     End If
                     ' now format the primary key value and construct the WHERE clause
@@ -428,7 +427,7 @@ Public Class DBMapper : Inherits DBModif
                             Catch ex As Exception
                                 TargetRange.Parent.Activate
                                 TargetRange.Cells(rowNum, colNum).Select
-                                MsgBox("Field Value Update Error: " & ex.Message & " with Table: " & tableName & ", Field: " & fieldname & ", in sheet " & TargetRange.Parent.Name & ", & row " & rowNum & ", col: " & colNum, MsgBoxStyle.Critical, "DBMapper Error")
+                                MsgBox("Field Value Update Error: " & ex.Message & " with Table: " & tableName & ", Field: " & fieldname & ", in sheet " & TargetRange.Parent.Name & " and row " & rowNum & ", col: " & colNum, MsgBoxStyle.Critical, "DBMapper Error")
                                 rst.CancelUpdate()
                                 GoTo cleanup
                             End Try
@@ -442,7 +441,7 @@ Public Class DBMapper : Inherits DBModif
                     Catch ex As Exception
                         TargetRange.Parent.Activate
                         TargetRange.Rows(rowNum).Select
-                        MsgBox("Row Update Error, Table: " & rst.Source & ", Error: " & ex.Message & " in sheet " & TargetRange.Parent.Name & ", & row " & rowNum, MsgBoxStyle.Critical, "DBMapper Error")
+                        MsgBox("Row Update Error, Table: " & rst.Source & ", Error: " & ex.Message & " in sheet " & TargetRange.Parent.Name & " and row " & rowNum, MsgBoxStyle.Critical, "DBMapper Error")
                         rst.CancelUpdate()
                         GoTo cleanup
                     End Try
@@ -462,6 +461,8 @@ nextRow:
             End If
             rowNum += 1
         Loop Until rowNum > TargetRange.Rows.Count Or (finishLoop And Not CUDFlags)
+        checkrst.Close()
+
         ' clear CUD marks after completion
         resetCUDFlags()
 
@@ -560,7 +561,7 @@ Public Class DBAction : Inherits DBModif
     End Sub
 
     Public Overrides Sub doDBModif(Optional WbIsSaving As Boolean = False, Optional calledByDBSeq As String = "")
-        If WbIsSaving And Not execOnSave And calledByDBSeq = "" Then Exit Sub
+        ' ask for saving only if a) is not done on WorkbookSave b) is set to ask and c) is not called by a DBSequence (asks already for saving)
         If Not WbIsSaving And askBeforeExecute And calledByDBSeq = "" Then
             Dim retval As MsgBoxResult = MsgBox("Really execute DB Action " & dbmapdefkey & "?", MsgBoxStyle.Question + vbOKCancel, "Execute DB Action")
             If retval = vbCancel Then Exit Sub
@@ -637,12 +638,12 @@ Public Class DBSeqnce : Inherits DBModif
     End Sub
 
     Public Overrides Sub doDBModif(Optional WbIsSaving As Boolean = False, Optional calledByDBSeq As String = "")
+        ' warning against recursions (should not happen...)
         If calledByDBSeq <> "" Then
             MsgBox("DB Sequence '" & dbmapdefkey & "' is being called by another DB Sequence (" & calledByDBSeq & "), this should not occur as infinite recursions are possible !", MsgBoxStyle.Critical, "Execute DB Sequence")
             Exit Sub
         End If
-
-        If WbIsSaving And Not execOnSave Then Exit Sub
+        ' ask for saving only if a) is not done on WorkbookSave b) is set to ask and c) is not called by a DBSequence (asks already for saving)
         If Not WbIsSaving And askBeforeExecute Then
             Dim retval As MsgBoxResult = MsgBox("Really execute DB Sequence " & dbmapdefkey & "?", MsgBoxStyle.Question + vbOKCancel, "Execute DB Sequence")
             If retval = vbCancel Then Exit Sub
@@ -650,22 +651,25 @@ Public Class DBSeqnce : Inherits DBModif
 
         For i As Integer = 0 To UBound(sequenceParams)
             Dim definition() As String = Split(sequenceParams(i), ":")
-            If definition(0) <> "DBRefrsh" Then
-                DBModifDefColl(definition(0)).Item(definition(1)).doDBModif(WbIsSaving, calledByDBSeq:=dbmapdefkey)
-            Else
-                ' reset query cache, so we really get new data !
-                Functions.queryCache.Clear()
-                Functions.StatusCollection.Clear()
-                ' refresh DBFunction in sequence
-                Dim underlyingName As String = definition(1)
-                If Not ExcelDnaUtil.Application.Range(underlyingName).Parent Is ExcelDnaUtil.Application.ActiveSheet Then
-                    ExcelDnaUtil.Application.ScreenUpdating = False
-                    origWS = ExcelDnaUtil.Application.ActiveSheet
-                    Try : ExcelDnaUtil.Application.Range(underlyingName).Parent.Select : Catch ex As Exception : End Try
-                End If
-                ExcelDnaUtil.Application.Range(underlyingName).Dirty()
-                If ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual Then ExcelDnaUtil.Application.Calculate()
-            End If
+            Select Case definition(0)
+                Case "DBMapper", "DBAction"
+                    DBModifDefColl(definition(0)).Item(definition(1)).doDBModif(WbIsSaving, calledByDBSeq:=dbmapdefkey)
+                Case "DBCommitTrans"
+                    conn.CommitTrans()
+                Case "DBBeginTrans"
+                    conn.BeginTrans()
+                Case Else
+                    ' Refresh DB Function
+                    ' reset query cache, so we really get new data !
+                    Functions.queryCache.Clear()
+                    Functions.StatusCollection.Clear()
+                    ' refresh DBFunction in sequence
+                    Dim underlyingName As String = definition(1)
+                    ' make target "dirty" to trigger recalculation
+                    ExcelDnaUtil.Application.Range(underlyingName).Cells(1, 1).Value = IIf(ExcelDnaUtil.Application.Range(underlyingName).Cells(1, 1).Value = "", " ", "")
+                    ' if set to manual, trigger calculation here...
+                    If ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual Then ExcelDnaUtil.Application.Calculate()
+            End Select
         Next
     End Sub
 
@@ -733,16 +737,21 @@ Public Module DBModifs
         If theRange.Parent.Parent Is ExcelDnaUtil.Application.Activeworkbook Then
             Dim dbMapperRangeName As String = getDBModifNameFromRange(theRange)
             If Left(dbMapperRangeName, 8) = "DBMapper" Then
+                ' (re)assign db mapper range name to the passed (changed) DBListFetch/DBSetQuery function target range
                 Dim NamesList As Excel.Names = theRange.Parent.Parent.Names
                 Try : NamesList.Add(Name:=dbMapperRangeName, RefersTo:=theRange)
                 Catch ex As Exception
-                    Throw New Exception("Error when assigning name '" & dbMapperRangeName & "' to ListObject Range: " & ex.Message)
+                    Throw New Exception("Error when assigning name '" & dbMapperRangeName & "' to DBListFetch/DBSetQuery target range: " & ex.Message)
                 End Try
-                Dim extendedMapper As DBMapper = Globals.DBModifDefColl("DBMapper").Item(dbMapperRangeName)
-                ' notify DBMapper object of new target range
-                extendedMapper.setTargetRange(theRange)
-                ' in case of CUDFlags, reset them now...
-                extendedMapper.resetCUDFlags()
+                ' notify associated DBMapper object of new target range
+                Try
+                    Dim extendedMapper As DBMapper = Globals.DBModifDefColl("DBMapper").Item(dbMapperRangeName)
+                    extendedMapper.setTargetRange(theRange)
+                    ' in case of CUDFlags, reset them now...
+                    extendedMapper.resetCUDFlags()
+                Catch ex As Exception
+                    Throw New Exception("Error notifying the associated DBMapper object when extending '" & dbMapperRangeName & "' to DBListFetch/DBSetQuery target range: " & ex.Message)
+                End Try
             End If
         End If
     End Sub
@@ -879,6 +888,9 @@ Public Module DBModifs
                     searchCell = Nothing
                     searchCell = ws.Cells.Find(What:="", After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
                 Next
+                ' at last add special items DBBeginTrans and DBCommitTrans for setting DB Transaction brackets
+                ds.Add("DBBeginTrans:Begin DB Transaction:(only works in same environment)")
+                ds.Add("DBCommitTrans:Commit DB Transaction:(only works in same environment)")
                 cb.DataSource() = ds
                 .DBSeqenceDataGrid.Columns.Add(cb)
                 .DBSeqenceDataGrid.Columns(0).Width = 200
@@ -1092,29 +1104,35 @@ Public Module DBModifs
                             End If
                         End If
                         ' finally create the DBModif Object ...
-                        Dim newDBModif As DBModif
-                        ' fill parameters into CustomXMLPart:
-                        If DBModiftype = "DBMapper" Then
-                            newDBModif = New DBMapper(customXMLNodeDef, targetRange)
-                        ElseIf DBModiftype = "DBAction" Then
-                            newDBModif = New DBAction(customXMLNodeDef, targetRange)
-                        ElseIf DBModiftype = "DBSeqnce" Then
-                            newDBModif = New DBSeqnce(customXMLNodeDef)
-                        Else
-                            MsgBox("Error, not supported DBModiftype: " & DBModiftype, vbCritical, "DBModifier Definitions Error")
-                            newDBModif = Nothing
-                        End If
+                        Dim newDBModif As DBModif = Nothing
+                        Try
+                            ' fill parameters into CustomXMLPart:
+                            If DBModiftype = "DBMapper" Then
+                                newDBModif = New DBMapper(customXMLNodeDef, targetRange)
+                            ElseIf DBModiftype = "DBAction" Then
+                                newDBModif = New DBAction(customXMLNodeDef, targetRange)
+                            ElseIf DBModiftype = "DBSeqnce" Then
+                                newDBModif = New DBSeqnce(customXMLNodeDef)
+                            Else
+                                MsgBox("Error, not supported DBModiftype: " & DBModiftype, vbCritical, "DBModifier Definitions Error")
+                                newDBModif = Nothing
+                            End If
+                        Catch ex As Exception
+                            MsgBox("Error when creating " & DBModiftype & " '" & customXMLNodeDef.BaseName & "': " & ex.Message, vbCritical, "DBModifier Definitions Error")
+                        End Try
                         ' ... and add it to the collection DBModifDefColl
                         Dim defColl As Dictionary(Of String, DBModif) ' definition lookup collection for DBModifiername -> object
-                        If Not DBModifDefColl.ContainsKey(DBModiftype) Then
-                            ' add to new DBModiftype "menu"
-                            defColl = New Dictionary(Of String, DBModif)
-                            defColl.Add(customXMLNodeDef.BaseName, newDBModif)
-                            DBModifDefColl.Add(DBModiftype, defColl)
-                        Else
-                            ' add definition to existing DBModiftype "menu"
-                            defColl = DBModifDefColl(DBModiftype)
-                            defColl.Add(customXMLNodeDef.BaseName, newDBModif)
+                        If Not IsNothing(newDBModif) Then
+                            If Not DBModifDefColl.ContainsKey(DBModiftype) Then
+                                ' add to new DBModiftype "menu"
+                                defColl = New Dictionary(Of String, DBModif)
+                                defColl.Add(customXMLNodeDef.BaseName, newDBModif)
+                                DBModifDefColl.Add(DBModiftype, defColl)
+                            Else
+                                ' add definition to existing DBModiftype "menu"
+                                defColl = DBModifDefColl(DBModiftype)
+                                defColl.Add(customXMLNodeDef.BaseName, newDBModif)
+                            End If
                         End If
                     End If
                 Next
