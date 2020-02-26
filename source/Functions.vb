@@ -530,7 +530,6 @@ Public Module Functions
         Dim headingOffset As Long, rowDataStart As Long, startRow As Long, startCol As Long, arrayCols As Long, arrayRows As Long, copyDown As Long
         Dim oldRows As Long = 0, oldCols As Long = 0, oldFRows As Long = 0, oldFCols As Long = 0, retrievedRows As Long, targetColumns As Long, formulaStart As Long
         Dim warning As String, errMsg As String, tmpname As String
-        Dim storedNames() As String
 
         LogInfo("Entering DBListFetchAction: callID " & callID)
         'If Not existsStatusCont(callID) Then Exit Sub
@@ -841,26 +840,32 @@ Public Module Functions
             GoTo err_0
         End If
 
-        Dim newTargetRange As Excel.Range
         ' reassign name to changed data area
         ' set the new hidden targetExtent name...
-        newTargetRange = targetSH.Range(targetSH.Cells(startRow, startCol), targetSH.Cells(startRow + arrayRows - 1, startCol + targetColumns))
+        Dim newTargetRange As Excel.Range = targetSH.Range(targetSH.Cells(startRow, startCol), targetSH.Cells(startRow + arrayRows - 1, startCol + targetColumns))
+        ' remove old hidden targetExtent name
         targetRange.Parent.Parent.Names(targetExtent).Delete
         Err.Clear() ' might not exist, so ignore errors here...
-        newTargetRange.Name = targetExtent
-        newTargetRange.Name.Visible = False
+
+        Dim additionalFormulaColumns As Integer = 0
 
         ' if formulas are adjacent to data extend name to formula range !
-        Dim additionalFormulaColumns As Integer = 0
         ' need this as excel throws errors when comparing nonexistent formulaSH !!
         If Not formulaRange Is Nothing Then
             If targetSH Is formulaSH And formulaRange.Column = startCol + targetColumns + 1 Then additionalFormulaColumns = formulaRange.Columns.Count
         End If
-        ' now set the name for the total area
-        newTargetRange = targetSH.Range(targetSH.Cells(startRow, startCol), targetSH.Cells(startRow + arrayRows - 1, startCol + targetColumns + additionalFormulaColumns))
 
-        ' reassign visible name, if given
-        If targetRangeName.Length > 0 Then newTargetRange.Name = targetRangeName
+        ' delete the name to have a "clean" name area (otherwise visible = false setting wont work for dataTargetRange)
+        Dim storedNames() As String
+        storedNames = removeRangeNames(newTargetRange, targetExtent)
+        newTargetRange.Name = targetExtent
+        newTargetRange.Name.Visible = False
+        restoreRangeNames(newTargetRange, storedNames)
+
+        ' (re)assign visible name for the total area, if given
+        If targetRangeName.Length > 0 Then
+            targetSH.Range(targetSH.Cells(startRow, startCol), targetSH.Cells(startRow + arrayRows - 1, startCol + targetColumns + additionalFormulaColumns)).Name = targetRangeName
+        End If
 
         If Err.Number <> 0 Then
             errMsg = "Error in (re)assigning data target name: " & Err.Description & " (maybe known issue with 'cell like' sheetnames, e.g. 'C701 country' ?) in query: " & Query
@@ -952,7 +957,7 @@ err_0: ' errors where recordset was not opened or is already closed
         DBModifs.preventChangeWhileFetching = False
         ExcelDnaUtil.Application.Cursor = Excel.XlMousePointer.xlDefault  ' To return cursor to normal
         ExcelDnaUtil.Application.StatusBar = False
-        LogInfo("Leaving DBAction: callID " & callID & IIf(additionalLogInfo <> "", ", additionalInfo: " & additionalLogInfo, ""))
+        LogInfo("callID: " & callID & IIf(additionalLogInfo <> "", ", additionalInfo: " & additionalLogInfo, ""))
         ' because of a strange excel behaviour with Range.Dirty (only works if the parent sheet of Range is the active sheet)
         ' we have to jump to the sheet containing the dbfunction and then activate back in case of refresh (sets relevant source/dbfunc to dirty)
         If Not IsNothing(origWS) Then
@@ -1187,7 +1192,7 @@ err_0: ' errors where recordset was not opened or is already closed
 
         ' delete the name to have a "clean" name area (otherwise visible = false setting wont work for dataTargetRange)
         Dim storedNames() As String
-        storedNames = removeRangeName(refCollector, targetExtent)
+        storedNames = removeRangeNames(refCollector, targetExtent)
         refCollector.Name = targetExtent
         refCollector.Name.Visible = False
         restoreRangeNames(refCollector, storedNames)
@@ -1210,7 +1215,7 @@ err_1:
     ''' <param name="Target"></param>
     ''' <param name="theName"></param>
     ''' <returns>the removed names as a string list for restoring them later (see restoreRangeNames)</returns>
-    Private Function removeRangeName(Target As Excel.Range, theName As String) As String()
+    Private Function removeRangeNames(Target As Excel.Range, theName As String) As String()
         Dim storedNames() As String = {}
         Dim i As Long
         Dim nextName As String
@@ -1228,7 +1233,7 @@ err_1:
             nextName = Target.Name.Name
         Loop Until Err.Number <> 0
         Err.Clear()
-        removeRangeName = storedNames
+        removeRangeNames = storedNames
     End Function
 
     ''' <summary>restore the passed storedNames into Range Target</summary>

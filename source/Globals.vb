@@ -153,15 +153,8 @@ Public Module Globals
         conn = Nothing
         dontTryConnection = False
         Try
-            ' reset query cache for current workbook, so we really get new data !
-            Dim tempColl1 As Dictionary(Of String, String) = New Dictionary(Of String, String)(queryCache) ' clone dictionary to be able to remove items...
-            For Each resetkey As String In tempColl1.Keys
-                If InStr(resetkey, "[" & ExcelDnaUtil.Application.ActiveWorkbook.Name & "]") > 0 Then queryCache.Remove(resetkey)
-            Next
-            Dim tempColl2 As Dictionary(Of String, ContainedStatusMsg) = New Dictionary(Of String, ContainedStatusMsg)(StatusCollection)
-            For Each resetkey As String In tempColl2.Keys
-                If InStr(resetkey, "[" & ExcelDnaUtil.Application.ActiveWorkbook.Name & "]") > 0 Then StatusCollection.Remove(resetkey)
-            Next
+            ' look for old query caches and status collections (returned error messages) in active workbook and reset them to get new data
+            resetCachesForWorkbook(ExcelDnaUtil.Application.ActiveWorkbook.Name)
             Dim underlyingName As String = getDBunderlyingNameFromRange(ExcelDnaUtil.Application.ActiveCell)
 
             ' now for DBListfetch/DBRowfetch resetting, first outside of all db function areas...
@@ -186,33 +179,17 @@ Public Module Globals
             Else ' then inside a db function area (target or source = function cell)
                 ' we're being called on a target functions area (additionally given in DBListFetch)
                 If Left$(underlyingName, 10) = "DBFtargetF" Then
-                    underlyingName = Replace(underlyingName, "DBFtargetF", "DBFsource", 1, , vbTextCompare)
-                    If Not ExcelDnaUtil.Application.Range(underlyingName).Parent Is ExcelDnaUtil.Application.ActiveSheet Then
-                        ExcelDnaUtil.Application.ScreenUpdating = False
-                        origWS = ExcelDnaUtil.Application.ActiveSheet
-                        Try
-                            ExcelDnaUtil.Application.Range(underlyingName).Parent.Parent.Activate
-                            ExcelDnaUtil.Application.Range(underlyingName).Parent.Select
-                        Catch ex As Exception : End Try
-                    End If
-                    ExcelDnaUtil.Application.Range(underlyingName).Dirty()
+                    underlyingName = Replace(underlyingName, "DBFtargetF", "DBFtarget", 1, , vbTextCompare)
+                    ExcelDnaUtil.Application.Range(underlyingName).Cells(1, 1).Value = IIf(ExcelDnaUtil.Application.Range(underlyingName).Cells(1, 1).Value = "", " ", "")
                     ' we're being called on a target area
                 ElseIf Left$(underlyingName, 9) = "DBFtarget" Then
-                    underlyingName = Replace(underlyingName, "DBFtarget", "DBFsource", 1, , vbTextCompare)
-                    ' return to source functions sheet to work around Dirty method problem (cell's sheet needs to be selected for Dirty to work on that cell)
-                    If Not ExcelDnaUtil.Application.Range(underlyingName).Parent Is ExcelDnaUtil.Application.ActiveSheet Then
-                        ExcelDnaUtil.Application.ScreenUpdating = False
-                        origWS = ExcelDnaUtil.Application.ActiveSheet
-                        Try
-                            ExcelDnaUtil.Application.Range(underlyingName).Parent.Parent.Activate
-                            ExcelDnaUtil.Application.Range(underlyingName).Parent.Select
-                        Catch ex As Exception : End Try
-                    End If
-                    ExcelDnaUtil.Application.Range(underlyingName).Dirty()
+                    ExcelDnaUtil.Application.Range(underlyingName).Cells(1, 1).Value = IIf(ExcelDnaUtil.Application.Range(underlyingName).Cells(1, 1).Value = "", " ", "")
                     ' we're being called on a source (invoking function) cell
                 ElseIf Left$(underlyingName, 9) = "DBFsource" Then
-                    Try : ExcelDnaUtil.Application.Range(underlyingName).Dirty() : Catch ex As Exception : End Try
+                    underlyingName = Replace(underlyingName, "DBFsource", "DBFtarget", 1, , vbTextCompare)
+                    ExcelDnaUtil.Application.Range(underlyingName).Cells(1, 1).Value = IIf(ExcelDnaUtil.Application.Range(underlyingName).Cells(1, 1).Value = "", " ", "")
                 Else
+                    LogError("Error in refreshData, conflicting underlyingName given: " & underlyingName)
                     refreshDBFunctions(ExcelDnaUtil.Application.ActiveWorkbook)
                 End If
             End If
@@ -490,8 +467,8 @@ Public Module Globals
             For Each ws In Wb.Worksheets
                 cellcount += ExcelDnaUtil.Application.WorksheetFunction.CountIf(ws.Range("1:" & ws.Rows.Count), "<>")
             Next
-            If cellcount > CLng(fetchSetting("maxCellCount", "100000")) Then
-                Dim retval As MsgBoxResult = MsgBox("This large workbook (" & cellcount.ToString() & " filled cells >" & CLng(fetchSetting("maxCellCount", "100000")) & ") might take long to search for DB functions to refresh, continue ?" & vbCrLf & "Click Cancel to add DBFskip to this Workbook, avoiding this search in the future...", vbQuestion + vbYesNoCancel, "Refresh DB functions")
+            If cellcount > CLng(fetchSetting("maxCellCount", "200000")) Then
+                Dim retval As MsgBoxResult = MsgBox("This large workbook (" & cellcount.ToString() & " filled cells >" & CLng(fetchSetting("maxCellCount", "200000")) & ") might take long to search for DB functions to refresh, continue ?" & vbCrLf & "Click Cancel to add DBFskip to this Workbook, avoiding this search in the future...", vbQuestion + vbYesNoCancel, "Refresh DB functions")
                 If retval <> vbYes Then
                     If retval = vbCancel Then
                         Try
@@ -532,6 +509,19 @@ done:
         End Try
     End Sub
 
+    ''' <summary>resets the caches for given workbook</summary>
+    ''' <param name="WBname"></param>
+    Sub resetCachesForWorkbook(WBname As String)
+        ' reset query cache for current workbook, so we really get new data !
+        Dim tempColl1 As Dictionary(Of String, String) = New Dictionary(Of String, String)(queryCache) ' clone dictionary to be able to remove items...
+        For Each resetkey As String In tempColl1.Keys
+            If InStr(resetkey, "[" & WBname & "]") > 0 Then queryCache.Remove(resetkey)
+        Next
+        Dim tempColl2 As Dictionary(Of String, ContainedStatusMsg) = New Dictionary(Of String, ContainedStatusMsg)(StatusCollection)
+        For Each resetkey As String In tempColl2.Keys
+            If InStr(resetkey, "[" & WBname & "]") > 0 Then StatusCollection.Remove(resetkey)
+        Next
+    End Sub
     ''' <summary>"repairs" legacy functions from old VB6-COM Addin by removing "DBAddin.Functions." before function name</summary>
     ''' <param name="showReponse">in case this is called interactively, provide a response in case of no legacy functions there</param>
     Public Sub repairLegacyFunctions(Optional showReponse As Boolean = False)

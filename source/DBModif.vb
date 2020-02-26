@@ -4,6 +4,8 @@ Imports Microsoft.Office.Interop
 Imports System.Windows.Forms
 Imports System.Collections.Generic
 Imports Microsoft.Office.Core
+Imports System.Data
+Imports System.Data.SqlClient
 
 ''' <summary>Abstraction of a DB Modification Object (concrete classes DB Mapper, DB Action or DB Sequence)</summary>
 Public MustInherit Class DBModif
@@ -28,8 +30,6 @@ Public MustInherit Class DBModif
     Protected askBeforeExecute As Boolean = True
     ''' <summary>environment specific for the DBModif object, if left empty then set to default environment (either 0 or currently selected environment)</summary>
     Protected env As String = ""
-    ''' <summary>indicates an error in execution</summary>
-    Protected hadError As Boolean
 
     ''' <summary>public accessor function</summary>
     ''' <returns>the targetRangeAddress</returns>
@@ -64,17 +64,10 @@ Public MustInherit Class DBModif
         Return execOnSave
     End Function
 
-    ''' <summary>for DB Sequences we need to check for errors in the sequence steps</summary>
-    ''' <returns>whether there was an error during dbModif</returns>
-    Public Function hadAnError() As Boolean
-        Return hadError
-    End Function
-
-
     ''' <summary>does the actual DB Modification</summary>
     ''' <param name="WbIsSaving"></param>
     ''' <param name="calledByDBSeq"></param>
-    Public Overridable Sub doDBModif(Optional WbIsSaving As Boolean = False, Optional calledByDBSeq As String = "")
+    Public Overridable Sub doDBModif(Optional WbIsSaving As Boolean = False, Optional calledByDBSeq As String = "", Optional TransactionOpen As Boolean = False)
         Throw New NotImplementedException()
     End Sub
 
@@ -241,6 +234,7 @@ Public Class DBMapper : Inherits DBModif
     ''' <summary>simply open a database connection, required for DBBegin Transaction (from next step)</summary>
     ''' <returns></returns>
     Public Overrides Function openDatabase() As Boolean
+        Dim env As Integer = getEnv(Globals.selectedEnvironment + 1)
         openDatabase = True
         If IsNothing(dbcnn) Then
             Return openConnection(env, database)
@@ -310,12 +304,13 @@ Public Class DBMapper : Inherits DBModif
         If CUDFlags Then
             ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = False ' to prevent automatic creation of new column
             TargetRange.Columns(TargetRange.Columns.Count + 1).ClearContents
+            TargetRange.Font.Italic = False
+            TargetRange.Font.Strikethrough = False
             ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = True ' to prevent automatic creation of new column
         End If
     End Sub
 
-    Public Overrides Sub doDBModif(Optional WbIsSaving As Boolean = False, Optional calledByDBSeq As String = "")
-        hadError = False
+    Public Overrides Sub doDBModif(Optional WbIsSaving As Boolean = False, Optional calledByDBSeq As String = "", Optional TransactionOpen As Boolean = False)
         ' ask for saving only if a) is not done on WorkbookSave b) is set to ask and c) is not called by a DBSequence (asks already for saving)
         If Not WbIsSaving And askBeforeExecute And calledByDBSeq = "" Then
             Dim retval As MsgBoxResult = MsgBox("Really execute DB Mapper " & dbmapdefkey & "?", MsgBoxStyle.Question + vbOKCancel, "Execute DB Mapper")
@@ -326,7 +321,7 @@ Public Class DBMapper : Inherits DBModif
         extendDataRange()
 
         'now create/get a connection (dbcnn) for env(ironment) in case it was not already created by a step in the sequence before (transactions!)
-        If IsNothing(dbcnn) Then
+        If Not TransactionOpen Then
             If Not openConnection(env, database) Then Exit Sub
         End If
 
@@ -334,7 +329,7 @@ Public Class DBMapper : Inherits DBModif
         Dim checkrst As ADODB.Recordset = New ADODB.Recordset
         Dim rst As ADODB.Recordset = New ADODB.Recordset
         Try
-            checkrst.Open(tableName, dbcnn, CursorTypeEnum.adOpenForwardOnly, LockTypeEnum.adLockReadOnly, CommandTypeEnum.adCmdTableDirect)
+            checkrst.Open(tableName, dbcnn, CursorTypeEnum.adOpenDynamic, LockTypeEnum.adLockReadOnly, CommandTypeEnum.adCmdTableDirect)
         Catch ex As Exception
             hadError = True
             MsgBox("Opening table '" & tableName & "' caused following error: " & ex.Message & " for DBMapper " & paramTargetName, MsgBoxStyle.Critical, "DBMapper Error")
@@ -607,8 +602,7 @@ Public Class DBAction : Inherits DBModif
         End If
     End Function
 
-    Public Overrides Sub doDBModif(Optional WbIsSaving As Boolean = False, Optional calledByDBSeq As String = "")
-        hadError = False
+    Public Overrides Sub doDBModif(Optional WbIsSaving As Boolean = False, Optional calledByDBSeq As String = "", Optional TransactionOpen As Boolean = False)
         ' ask for saving only if a) is not done on WorkbookSave b) is set to ask and c) is not called by a DBSequence (asks already for saving)
         If Not WbIsSaving And askBeforeExecute And calledByDBSeq = "" Then
             Dim retval As MsgBoxResult = MsgBox("Really execute DB Action " & dbmapdefkey & "?", MsgBoxStyle.Question + vbOKCancel, "Execute DB Action")
@@ -616,6 +610,30 @@ Public Class DBAction : Inherits DBModif
         End If
         ' if Environment is not existing, take from selectedEnvironment
         Dim env As Integer = getEnv(Globals.selectedEnvironment + 1)
+
+        'Dim ds As DataSet = New DataSet()
+        'Dim dataAdapter As SqlDataAdapter = New SqlDataAdapter()
+        'Dim theConnString As String = fetchSetting("ConstConnString" & env, String.Empty)
+        'Dim dbidentifier As String = fetchSetting("DBidentifierCCS" & env, String.Empty)
+        'theConnString = Change(theConnString, dbidentifier, database, ";")
+        'Dim cn As SqlConnection = New SqlConnection(theConnString)
+        'cn.Open()
+
+        'Dim trans As SqlTransaction = cn.BeginTransaction
+
+        'dataAdapter.InsertCommand.Transaction = trans
+        'dataAdapter.UpdateCommand.Transaction = trans
+        'dataAdapter.DeleteCommand.Transaction = trans
+
+        'Try
+        '    dataAdapter.Update(ds)
+        '    trans.Commit()
+        'Catch ex As Exception
+        '    trans.Rollback()
+        'End Try
+        'cn.Close()
+        'Exit Sub
+
         'now create/get a connection (dbcnn) for env(ironment) in case it was not already created by the sequence (transactions!)
         If IsNothing(dbcnn) Then
             If Not openConnection(env, database) Then Exit Sub
@@ -688,7 +706,8 @@ Public Class DBSeqnce : Inherits DBModif
         End If
     End Sub
 
-    Public Overrides Sub doDBModif(Optional WbIsSaving As Boolean = False, Optional calledByDBSeq As String = "")
+    Public Overrides Sub doDBModif(Optional WbIsSaving As Boolean = False, Optional calledByDBSeq As String = "", Optional TransactionOpen As Boolean = False)
+        Dim TransactionIsOpen As Boolean = False
         hadError = False
         ' warning against recursions (should not happen...)
         If calledByDBSeq <> "" Then
@@ -701,36 +720,49 @@ Public Class DBSeqnce : Inherits DBModif
             If retval = vbCancel Then Exit Sub
         End If
         ' reset the db connection in any case to allow for new connections at DBBegin
-        'TODO: migrate ADODB to ADO.net
         dbcnn = Nothing
         For i As Integer = 0 To UBound(sequenceParams)
             Dim definition() As String = Split(sequenceParams(i), ":")
             Select Case definition(0)
                 Case "DBMapper", "DBAction"
-                    DBModifDefColl(definition(0)).Item(definition(1)).doDBModif(WbIsSaving, calledByDBSeq:=dbmapdefkey)
-                    If Not hadError Then hadError = DBModifDefColl(definition(0)).Item(definition(1)).hadAnError
+                    DBModifDefColl(definition(0)).Item(definition(1)).doDBModif(WbIsSaving, calledByDBSeq:=dbmapdefkey, TransactionOpen:=TransactionIsOpen)
                 Case "DBBegin"
                     If IsNothing(dbcnn) Then
                         ' take database connection properties from next sequence step
                         Dim nextdefinition() As String = Split(sequenceParams(i + 1), ":")
                         If Not DBModifDefColl(nextdefinition(0)).Item(nextdefinition(1)).openDatabase() Then Exit Sub
                     End If
+                    'TODO: migrate ADODB to ADO.net
                     dbcnn.BeginTrans()
+                    TransactionIsOpen = True
                 Case "DBCommitRollback"
                     If Not hadError Then
                         dbcnn.CommitTrans()
                     Else
                         dbcnn.RollbackTrans()
                     End If
+                    TransactionIsOpen = False
                 Case Else
-                    ' Refresh DB Function
-                    ' reset query cache, so we really get new data !
-                    Functions.queryCache.Clear()
-                    Functions.StatusCollection.Clear()
+                    If hadError Then
+                        Dim retval = MsgBox("Error(s) occured during sequence, really refresh Targetrange? This could lead to loss of entries.", MsgBoxStyle.Question + MsgBoxStyle.OkCancel, "Refresh DB Functions in DB Sequence")
+                        If retval = vbCancel Then Continue For
+                    End If
                     ' refresh DBFunction in sequence
                     Dim underlyingName As String = definition(1)
+                    ' reset query cache, so we really get new data !
+                    Dim callID As String
+                    Try
+                        ' get the callID of the underlying name of the target (key of the queryCache and StatusCollection)
+                        callID = "[" & ExcelDnaUtil.Application.Range(underlyingName).Parent.Parent.Name & "]" & ExcelDnaUtil.Application.Range(underlyingName).Parent.Name & "!" & ExcelDnaUtil.Application.Range(underlyingName).Address
+                    Catch ex As Exception
+                        MsgBox("Didn't find target of DBRefresh !", MsgBoxStyle.Critical)
+                        Continue For
+                    End Try
+                    Functions.queryCache.Remove(callID)
+                    Functions.StatusCollection.Remove(callID)
+                    Dim DBFuncTargetName = Replace(underlyingName, "DBFsource", "DBFtarget", 1, , vbTextCompare)
                     ' make target "dirty" to trigger recalculation
-                    ExcelDnaUtil.Application.Range(underlyingName).Cells(1, 1).Value = IIf(ExcelDnaUtil.Application.Range(underlyingName).Cells(1, 1).Value = "", " ", "")
+                    ExcelDnaUtil.Application.Range(DBFuncTargetName).Cells(1, 1).Value = IIf(ExcelDnaUtil.Application.Range(DBFuncTargetName).Cells(1, 1).Value = "", " ", "")
                     ' if set to manual, trigger calculation here...
                     If ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual Then ExcelDnaUtil.Application.Calculate()
             End Select
@@ -759,6 +791,8 @@ Public Module DBModifs
     Public dbcnn As ADODB.Connection
     ''' <summary>avoid entering Application.SheetChange Event handler during listfetch/setquery</summary>
     Public preventChangeWhileFetching As Boolean = False
+    ''' <summary>indicates an error in execution, used for commit/rollback</summary>
+    Public hadError As Boolean
 
     ''' <summary>opens a database connection</summary>
     ''' <param name="env">number of the environment as given in the settings</param>
@@ -1002,7 +1036,7 @@ Public Module DBModifs
             If CustomXmlParts.Count = 0 Then ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.Add("<root xmlns=""DBModifDef""></root>")
             CustomXmlParts = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
             ' remove old node in case of renaming DBModifier...
-            CustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:" + activeCellName).Delete
+            Try : CustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:" + activeCellName).Delete : Catch ex As Exception : End Try
             ' NamespaceURI:="DBModifDef" is required to avoid adding a xmlns attribute to each element.
             CustomXmlParts(1).SelectSingleNode("/ns0:root").AppendChildNode(createdDBModifType + .DBModifName.Text, NamespaceURI:="DBModifDef")
             Dim dbModifNode As CustomXMLNode = CustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:" + createdDBModifType + .DBModifName.Text)

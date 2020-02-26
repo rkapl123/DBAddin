@@ -142,7 +142,15 @@ done:
                                 DBFCC = DBFCContentColl.Contains(searchCell.Parent.Name & "!" & Replace(searchCell.Address, "$", String.Empty)) Or DBFCC
                                 DBFCA = DBFCAllColl.Contains("*")
                                 DBFCA = DBFCAllColl.Contains(searchCell.Parent.Name & "!" & Replace(searchCell.Address, "$", String.Empty)) Or DBFCA
-                                Dim theTargetRange As Excel.Range = ExcelDnaUtil.Application.Range(targetName)
+                                Dim theTargetRange As Excel.Range
+                                Try : theTargetRange = ExcelDnaUtil.Application.Range(targetName)
+                                Catch ex As Exception
+                                    MsgBox("Error in finding target range of DB Function " & theFunc & "in " & firstAddress & "), refreshing all DB functions should solve this.", MsgBoxStyle.Critical)
+                                    searchCell = Nothing
+                                    searchCell = lastWs.Cells.Find(What:="", After:=lastWs.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
+                                    dontCalcWhileClearing = False
+                                    Exit Sub
+                                End Try
                                 If DBFCC Then
                                     theTargetRange.Parent.Range(theTargetRange.Parent.Cells(theTargetRange.Row, theTargetRange.Column), theTargetRange.Parent.Cells(theTargetRange.Row + theTargetRange.Rows.Count - 1, theTargetRange.Column + theTargetRange.Columns.Count - 1)).ClearContents
                                     LogInfo("Contents of selected DB Functions targets cleared")
@@ -184,15 +192,8 @@ done:
     Private Sub Application_WorkbookOpen(Wb As Excel.Workbook) Handles Application.WorkbookOpen
         If Not Wb.IsAddin Then
             Dim refreshDBFuncs As Boolean
-            ' in case of reopening workbooks, look for old query caches and status collections (returned error messages) and reset them
-            Dim tempColl1 As Dictionary(Of String, String) = New Dictionary(Of String, String)(queryCache) ' clone dictionary to be able to remove items...
-            For Each resetkey As String In tempColl1.Keys
-                If InStr(resetkey, "[" & Wb.Name & "]") > 0 Then queryCache.Remove(resetkey)
-            Next
-            Dim tempColl2 As Dictionary(Of String, ContainedStatusMsg) = New Dictionary(Of String, ContainedStatusMsg)(StatusCollection)
-            For Each resetkey As String In tempColl2.Keys
-                If InStr(resetkey, "[" & Wb.Name & "]") > 0 Then StatusCollection.Remove(resetkey)
-            Next
+            ' in case of reopening workbooks with dbfunctions, look for old query caches and status collections (returned error messages) and reset them to get new data
+            resetCachesForWorkbook(Wb.Name)
 
             ' when opening, force recalculation of DB functions in workbook.
             ' this is required as there is no recalculation if no dependencies have changed (usually when opening workbooks)

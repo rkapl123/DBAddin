@@ -251,6 +251,10 @@ Public Class MenuHandler
     ''' <summary>DBModif button activated, do DB Mapper/DB Action/DB Sequence or define existing (CtrlKey pressed)...</summary>
     Public Sub DBModifClick(control As IRibbonControl)
         Dim nodeName As String = Right(control.Id, Len(control.Id) - 1)
+        If Not ExcelDnaUtil.Application.CommandBars.GetEnabledMso("FileNewDefault") Then
+            MsgBox("Cannot execute DB Modifier while cell editing active !", MsgBoxStyle.Critical)
+            Exit Sub
+        End If
         Try
             If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown Then
                 createDBModif(control.Tag, targetDefName:=nodeName)
