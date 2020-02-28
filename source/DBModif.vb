@@ -6,6 +6,7 @@ Imports System.Collections.Generic
 Imports Microsoft.Office.Core
 Imports System.Data
 Imports System.Data.SqlClient
+Imports System.Timers
 
 ''' <summary>Abstraction of a DB Modification Object (concrete classes DB Mapper, DB Action or DB Sequence)</summary>
 Public MustInherit Class DBModif
@@ -149,6 +150,8 @@ Public Class DBMapper : Inherits DBModif
     Private ignoreColumns As String = ""
     ''' <summary>respect C/U/D Flags (DBSheet functionality)</summary>
     Private CUDFlags As Boolean = False
+    ''' <summary>if set, don't notify error values in cells during update/insert</summary>
+    Private IgnoreDataErrors As Boolean = False
 
     ''' <summary>legacy constructor for mapping existing DBMapper macro calls (copy in clipboard)</summary>
     ''' <param name="defkey"></param>
@@ -370,7 +373,7 @@ Public Class DBMapper : Inherits DBModif
                 Dim primKeyDisplay As String
                 For i As Integer = 1 To primKeysCount
                     Dim primKeyValue = TargetRange.Cells(rowNum, i).Value
-                    If IsError(primKeyValue) Then
+                    If IsXLCVErr(primKeyValue) Then
                         hadError = True
                         MsgBox("Error in primary key value, cell (" & rowNum & "," & i + 1 & ") in sheet " & TargetRange.Parent.Name & " and row " & rowNum, MsgBoxStyle.Critical, "DBMapper Error")
                         GoTo nextRow
@@ -450,7 +453,18 @@ Public Class DBMapper : Inherits DBModif
                             Try
                                 Dim fieldval As Object = TargetRange.Cells(rowNum, colNum).Value
                                 If Not IsNothing(fieldval) Then
-                                    rst.Fields(fieldname).Value = IIf(fieldval.ToString().Length = 0, vbNull, fieldval)
+                                    If IsXLCVErr(fieldval) Then
+                                        If IgnoreDataErrors Then
+                                            rst.Fields(fieldname).Value = vbNull
+                                        Else
+                                            hadError = True
+                                            TargetRange.Parent.Activate
+                                            TargetRange.Cells(rowNum, colNum).Select
+                                            MsgBox("Field Value Update Error with Table: " & tableName & ", Field: " & fieldname & ", in sheet " & TargetRange.Parent.Name & " and row " & rowNum & ", col: " & colNum, MsgBoxStyle.Critical, "DBMapper Error")
+                                        End If
+                                    Else
+                                        rst.Fields(fieldname).Value = IIf(fieldval.ToString().Length = 0, vbNull, fieldval)
+                                    End If
                                 End If
                             Catch ex As Exception
                                 hadError = True
@@ -535,6 +549,7 @@ cleanup:
             .addStoredProc.Text = executeAdditionalProc
             .IgnoreColumns.Text = ignoreColumns
             .CUDflags.Checked = CUDFlags
+            .IgnoreDataErrors.Checked = IgnoreDataErrors
             .AskForExecute.Checked = askBeforeExecute
         End With
     End Sub
@@ -725,8 +740,10 @@ Public Class DBSeqnce : Inherits DBModif
             Dim definition() As String = Split(sequenceParams(i), ":")
             Select Case definition(0)
                 Case "DBMapper", "DBAction"
+                    LogInfo(definition(1) & "... ")
                     DBModifDefColl(definition(0)).Item(definition(1)).doDBModif(WbIsSaving, calledByDBSeq:=dbmapdefkey, TransactionOpen:=TransactionIsOpen)
                 Case "DBBegin"
+                    LogInfo("DBBegin... ")
                     If IsNothing(dbcnn) Then
                         ' take database connection properties from next sequence step
                         Dim nextdefinition() As String = Split(sequenceParams(i + 1), ":")
@@ -737,8 +754,10 @@ Public Class DBSeqnce : Inherits DBModif
                     TransactionIsOpen = True
                 Case "DBCommitRollback"
                     If Not hadError Then
+                        LogInfo("DBCommitTrans... ")
                         dbcnn.CommitTrans()
                     Else
+                        LogInfo("DBRollbackTrans... ")
                         dbcnn.RollbackTrans()
                     End If
                     TransactionIsOpen = False
@@ -747,24 +766,84 @@ Public Class DBSeqnce : Inherits DBModif
                         Dim retval = MsgBox("Error(s) occured during sequence, really refresh Targetrange? This could lead to loss of entries.", MsgBoxStyle.Question + MsgBoxStyle.OkCancel, "Refresh DB Functions in DB Sequence")
                         If retval = vbCancel Then Continue For
                     End If
-                    ' refresh DBFunction in sequence
-                    Dim underlyingName As String = definition(1)
+                    ' refresh DBFunction in sequence, invoke this "manually", simulating the call of the user defined function by excel
+                    Dim srcExtent As String = definition(1)
+                    Dim caller As Excel.Range
+                    Try : caller = ExcelDnaUtil.Application.Range(srcExtent)
+                    Catch ex As Exception
+                        MsgBox("Didn't find caller cell of DBRefresh using srcExtent " & srcExtent & "!", MsgBoxStyle.Critical)
+                        Continue For
+                    End Try
+                    Dim targetExtent = Replace(srcExtent, "DBFsource", "DBFtarget")
+                    Dim target As Excel.Range
+                    Try : target = ExcelDnaUtil.Application.Range(targetExtent)
+                    Catch ex As Exception
+                        MsgBox("Didn't find target of DBRefresh using targetExtent " & targetExtent & "!", MsgBoxStyle.Critical)
+                        Continue For
+                    End Try
+                    Dim targetExtentF = Replace(srcExtent, "DBFsource", "DBFtargetF")
                     ' reset query cache, so we really get new data !
                     Dim callID As String
                     Try
                         ' get the callID of the underlying name of the target (key of the queryCache and StatusCollection)
-                        callID = "[" & ExcelDnaUtil.Application.Range(underlyingName).Parent.Parent.Name & "]" & ExcelDnaUtil.Application.Range(underlyingName).Parent.Name & "!" & ExcelDnaUtil.Application.Range(underlyingName).Address
+                        callID = "[" & caller.Parent.Parent.Name & "]" & caller.Parent.Name & "!" & caller.Address
                     Catch ex As Exception
                         MsgBox("Didn't find target of DBRefresh !", MsgBoxStyle.Critical)
                         Continue For
                     End Try
-                    Functions.queryCache.Remove(callID)
-                    Functions.StatusCollection.Remove(callID)
-                    Dim DBFuncTargetName = Replace(underlyingName, "DBFsource", "DBFtarget", 1, , vbTextCompare)
-                    ' make target "dirty" to trigger recalculation
-                    ExcelDnaUtil.Application.Range(DBFuncTargetName).Cells(1, 1).Value = IIf(ExcelDnaUtil.Application.Range(DBFuncTargetName).Cells(1, 1).Value = "", " ", "")
-                    ' if set to manual, trigger calculation here...
-                    If ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual Then ExcelDnaUtil.Application.Calculate()
+                    LogInfo("DBRefresh..." & callID)
+
+                    If UCase(Left(ExcelDnaUtil.Application.Range(srcExtent).Formula, 12)) = "=DBLISTFETCH" Then
+                        Dim functionArgs = functionSplit(ExcelDnaUtil.Application.Range(srcExtent).Formula, ",", """", "DBListFetch", "(", ")")
+                        Dim Query As String = ExcelDnaUtil.Application.Evaluate(functionArgs(0))
+                        Dim EnvPrefix As String = ""
+                        Dim ConnString As Object = ExcelDnaUtil.Application.Evaluate(functionArgs(1))
+                        resolveConnstring(ConnString, EnvPrefix)
+
+                        Dim targetRangeName As String : targetRangeName = functionArgs(2)
+                        ' check if fetched argument targetRangeName is really a name or just a plain range address
+                        If Not existsNameInWb(targetRangeName, caller.Parent.Parent) And Not existsNameInSheet(targetRangeName, caller.Parent) Then targetRangeName = ""
+                        Dim formulaRangeName As String
+                        If UBound(functionArgs) > 2 Then
+                            formulaRangeName = functionArgs(3)
+                            If Not existsNameInWb(formulaRangeName, caller.Parent.Parent) And Not existsNameInSheet(formulaRangeName, caller.Parent) Then formulaRangeName = ""
+                        Else
+                            formulaRangeName = ""
+                        End If
+                        Dim extendDataArea As Integer = 0
+                        If UBound(functionArgs) > 3 AndAlso functionArgs(4) <> "" Then
+                            extendDataArea = Convert.ToInt16(functionArgs(4))
+                        End If
+                        Dim HeaderInfo As Boolean = False
+                        If UBound(functionArgs) > 4 AndAlso functionArgs(5) <> "" Then
+                            HeaderInfo = convertToBool(functionArgs(5))
+                        End If
+                        Dim AutoFit As Boolean = False
+                        If UBound(functionArgs) > 5 AndAlso functionArgs(6) <> "" Then
+                            AutoFit = convertToBool(functionArgs(6))
+                        End If
+                        Dim autoformat As Boolean = False
+                        If UBound(functionArgs) > 6 AndAlso functionArgs(7) <> "" Then
+                            autoformat = convertToBool(functionArgs(7))
+                        End If
+                        Dim ShowRowNums As Boolean = False
+                        If UBound(functionArgs) > 7 AndAlso functionArgs(8) <> "" Then
+                            ShowRowNums = convertToBool(functionArgs(8))
+                        End If
+                        Dim formulaRange As Excel.Range = Nothing
+                        ' formulaRange might not exist
+                        Try : formulaRange = ExcelDnaUtil.Application.Range(targetExtentF) : Catch ex As Exception : End Try
+                        ' call action procedure directly as we can avoid the external context required in the UDF
+                        DBListFetchAction(callID, Query, caller, target, CStr(ConnString), formulaRange, extendDataArea, HeaderInfo, AutoFit, autoformat, ShowRowNums, targetRangeName, formulaRangeName)
+                    ElseIf UCase(Left(ExcelDnaUtil.Application.Range(srcExtent).Formula, 11)) = "=DBSETQUERY" Then
+                        Dim functionArgs = functionSplit(ExcelDnaUtil.Application.Range(srcExtent).Formula, ",", """", "DBSetQuery", "(", ")")
+                        Dim Query As String = ExcelDnaUtil.Application.Evaluate(functionArgs(0))
+                        Dim EnvPrefix As String = ""
+                        Dim ConnString As Object = ExcelDnaUtil.Application.Evaluate(functionArgs(1))
+                        resolveConnstring(ConnString, EnvPrefix)
+                        Dim targetRangeName As String : targetRangeName = functionArgs(2)
+                        DBSetQueryAction(callID, Query, target, ConnString, caller)
+                    End If
             End Select
         Next
     End Sub
@@ -783,6 +862,7 @@ Public Class DBSeqnce : Inherits DBModif
     End Sub
 
 End Class
+
 
 ''' <summary>Contains DBModif functions for storing/updating tabular excel data (DBMapper), doing DBActions, doing DBSequences (combinations of DBMapper/DBAction) and some helper functions</summary>
 Public Module DBModifs
@@ -834,11 +914,12 @@ Public Module DBModifs
     Public Sub resizeDBMapperRange(theRange As Excel.Range)
         ' only do this for the active workbook...
         If theRange.Parent.Parent Is ExcelDnaUtil.Application.Activeworkbook Then
+            ' getDBModifNameFromRange gets any DBModifName (starting with DBMapper/DBAction...) intersecting theRange, so we can reassign it to the changed range with this...
             Dim dbMapperRangeName As String = getDBModifNameFromRange(theRange)
             If Left(dbMapperRangeName, 8) = "DBMapper" Then
                 ' (re)assign db mapper range name to the passed (changed) DBListFetch/DBSetQuery function target range
-                Dim NamesList As Excel.Names = theRange.Parent.Parent.Names
-                Try : NamesList.Add(Name:=dbMapperRangeName, RefersTo:=theRange)
+                'Dim NamesList As Excel.Names = theRange.Parent.Parent.Names
+                Try : theRange.Name = dbMapperRangeName 'NamesList.Add(Name:=dbMapperRangeName, RefersTo:=theRange)
                 Catch ex As Exception
                     Throw New Exception("Error when assigning name '" & dbMapperRangeName & "' to DBListFetch/DBSetQuery target range: " & ex.Message)
                 End Try
@@ -938,6 +1019,7 @@ Public Module DBModifs
                 .addStoredProc.Hide()
                 .IgnoreColumns.Hide()
                 .CUDflags.Hide()
+                .IgnoreDataErrors.Hide()
             End If
             If createdDBModifType = "DBSeqnce" Then
                 ' hide controls irrelevant for DBSeqnce
@@ -972,16 +1054,14 @@ Public Module DBModifs
                 For Each ws As Excel.Worksheet In ExcelDnaUtil.Application.ActiveWorkbook.Worksheets
                     For Each theFunc As String In {"DBListFetch(", "DBSetQuery("}
                         searchCell = ws.Cells.Find(What:=theFunc, After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
-                        If Not (searchCell Is Nothing) Then
-                            'If searchCell.Rows.Count > 1 Or searchCell.Rows.Count > 1 Then
-                            '    MsgBox(theFunc & "in " & searchCell.Parent.Name & "!" & searchCell.Address & ") has multiple " & IIf(searchCell.Rows.Count > 1, "rows !", "columns !") & ", which leads to problems in DBSequences...", vbCritical, "DB Sequence Creation Error")
-                            '    Continue For
-                            'End If
+                        Dim firstFoundAddress As String = ""
+                        If Not IsNothing(searchCell) Then firstFoundAddress = searchCell.Address
+                        While Not IsNothing(searchCell)
                             Dim underlyingName As String = getDBunderlyingNameFromRange(searchCell)
                             ds.Add("DBRefrsh:" & underlyingName & ":" & theFunc & "in " & searchCell.Parent.Name & "!" & searchCell.Address & ")")
-                            ' reset the cell find dialog....
-                            searchCell = Nothing
-                        End If
+                            searchCell = ws.Cells.FindNext(searchCell)
+                            If searchCell.Address = firstFoundAddress Then Exit While
+                        End While
                     Next
                     ' reset the cell find dialog....
                     searchCell = Nothing
@@ -1049,6 +1129,7 @@ Public Module DBModifs
                 dbModifNode.AppendChildNode("executeAdditionalProc", NamespaceURI:="DBModifDef", NodeValue:= .addStoredProc.Text)
                 dbModifNode.AppendChildNode("ignoreColumns", NamespaceURI:="DBModifDef", NodeValue:= .IgnoreColumns.Text)
                 dbModifNode.AppendChildNode("CUDFlags", NamespaceURI:="DBModifDef", NodeValue:= .CUDflags.Checked.ToString())
+                dbModifNode.AppendChildNode("IgnoreDataErrors", NamespaceURI:="DBModifDef", NodeValue:= .IgnoreDataErrors.Checked.ToString())
                 dbModifNode.AppendChildNode("execOnSave", NamespaceURI:="DBModifDef", NodeValue:= .execOnSave.Checked.ToString())
                 dbModifNode.AppendChildNode("askBeforeExecute", NamespaceURI:="DBModifDef", NodeValue:= .AskForExecute.Checked.ToString())
             ElseIf createdDBModifType = "DBAction" Then
@@ -1274,6 +1355,24 @@ Public Module DBModifs
             LogError("Error: " & ex.Message)
         End Try
     End Function
+
+    ''' <summary>To check for errors in passed range obj, makes use of the fact that Range.Value never passes Integer Values back except for Errors</summary>
+    ''' <param name="rangeval">Range.Value to be checked for errors</param>
+    ''' <returns>true if error</returns>
+    Public Function IsXLCVErr(rangeval As Object) As Boolean
+        Return TypeOf (rangeval) Is Int32
+    End Function
+
+    ''' <summary>execute given DBModifier, used for VBA call by Application.Run)</summary>
+    <ExcelCommand(Name:="executeDBModif")>
+    Public Sub executeDBModif(DBModifName As String)
+        Dim DBModiftype As String = Left(DBModifName, 8)
+        If DBModiftype = "DBSeqnce" Or DBModiftype = "DBMapper" Or DBModiftype = "DBAction" Then
+            Globals.DBModifDefColl(DBModiftype).Item(DBModifName).doDBModif()
+        Else
+            MsgBox("No valid type in passed DB Modifier " & DBModifName & "(" & DBModiftype & ") !", vbCritical, "executeDBModif Error")
+        End If
+    End Sub
 
 End Module
 

@@ -174,18 +174,16 @@ done:
 
             ' refresh content area of dbfunctions after save event, requires execution out of context of Application_WorkbookSave
             If doRefreshDBFuncsAfterSave And (DBFCContentColl.Count > 0 Or DBFCAllColl.Count > 0) Then
-                aTimer = New Timers.Timer With {
-                    .Interval = 100,
-                    .AutoReset = False
-                }
-                AddHandler aTimer.Elapsed, New ElapsedEventHandler(AddressOf refreshDBFuncLater)
-                aTimer.Start()
+                ExcelAsyncUtil.QueueAsMacro(Sub()
+                                                Globals.refreshDBFuncLater()
+                                            End Sub)
             End If
         Catch ex As Exception
             LogError("Error clearing DBfunction targets: " & Wb.Name & ex.Message)
         End Try
         dontCalcWhileClearing = False
     End Sub
+
 
     ''' <summary>open workbook: reset query cache, refresh DB functions and repair legacy functions if existing</summary>
     ''' <param name="Wb"></param>
@@ -213,19 +211,6 @@ done:
         getDBModifDefinitions()
         ' unfortunately, Excel doesn't fire SheetActivate when opening workbooks, so do that here...
         assignHandler(Wb.ActiveSheet)
-    End Sub
-
-    ''' <summary>"OnTime" event function to "escape" workbook_save: event procedure to refetch DB functions results after saving</summary>
-    ''' <param name="sender">the sending object (ourselves)</param>
-    ''' <param name="e">Data for the Timer.Elapsed event</param>
-    Shared Sub refreshDBFuncLater(ByVal sender As Object, ByVal e As ElapsedEventArgs)
-        Dim previouslySaved As Boolean
-
-        If Not ExcelDnaUtil.Application.ActiveWorkbook Is Nothing Then
-            previouslySaved = ExcelDnaUtil.Application.ActiveWorkbook.Saved
-            refreshDBFunctions(ExcelDnaUtil.Application.ActiveWorkbook, True)
-            ExcelDnaUtil.Application.ActiveWorkbook.Saved = previouslySaved
-        End If
     End Sub
 
     ''' <summary>specific click handlers for the five definable commandbuttons</summary>
@@ -302,17 +287,6 @@ done:
         getDBModifDefinitions()
         ' only when needed assign button handler for this sheet ...
         If Globals.DBModifDefColl.Count > 0 Then assignHandler(Sh)
-    End Sub
-
-
-    ''' <summary>needed to dispose timer used for delayed refreshing DB Functions (see Application_WorkbookSave)</summary>
-    ''' <param name="Wb"></param>
-    ''' <param name="Success"></param>
-    Private Sub Application_WorkbookAfterSave(Wb As Workbook, Success As Boolean) Handles Application.WorkbookAfterSave
-        If Not IsNothing(aTimer) Then
-            aTimer.Dispose()
-            aTimer = Nothing
-        End If
     End Sub
 
     Private Sub Application_WorkbookBeforeClose(Wb As Workbook, ByRef Cancel As Boolean) Handles Application.WorkbookBeforeClose

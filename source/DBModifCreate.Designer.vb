@@ -52,6 +52,7 @@ Partial Class DBModifCreate
         Me.RepairDBSeqnce = New System.Windows.Forms.TextBox()
         Me.AskForExecute = New System.Windows.Forms.CheckBox()
         Me.EnvironmentLabel = New System.Windows.Forms.Label()
+        Me.IgnoreDataErrors = New System.Windows.Forms.CheckBox()
         Me.TableLayoutPanel1.SuspendLayout()
         CType(Me.DBSeqenceDataGrid, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
@@ -62,7 +63,7 @@ Partial Class DBModifCreate
         Me.TableLayoutPanel1.ColumnCount = 3
         Me.TableLayoutPanel1.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 65.80645!))
         Me.TableLayoutPanel1.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 34.19355!))
-        Me.TableLayoutPanel1.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 75.0!))
+        Me.TableLayoutPanel1.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 76.0!))
         Me.TableLayoutPanel1.Controls.Add(Me.Cancel_Button, 2, 0)
         Me.TableLayoutPanel1.Controls.Add(Me.OK_Button, 1, 0)
         Me.TableLayoutPanel1.Controls.Add(Me.CreateCB, 0, 0)
@@ -87,7 +88,7 @@ Partial Class DBModifCreate
         'OK_Button
         '
         Me.OK_Button.Anchor = System.Windows.Forms.AnchorStyles.None
-        Me.OK_Button.Location = New System.Drawing.Point(82, 3)
+        Me.OK_Button.Location = New System.Drawing.Point(81, 3)
         Me.OK_Button.Name = "OK_Button"
         Me.OK_Button.Size = New System.Drawing.Size(35, 23)
         Me.OK_Button.TabIndex = 0
@@ -257,9 +258,9 @@ Partial Class DBModifCreate
         '
         Me.TargetRangeAddress.Font = New System.Drawing.Font("Microsoft Sans Serif", 8.25!, System.Drawing.FontStyle.Underline, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.TargetRangeAddress.ForeColor = System.Drawing.Color.DodgerBlue
-        Me.TargetRangeAddress.Location = New System.Drawing.Point(108, 187)
+        Me.TargetRangeAddress.Location = New System.Drawing.Point(204, 187)
         Me.TargetRangeAddress.Name = "TargetRangeAddress"
-        Me.TargetRangeAddress.Size = New System.Drawing.Size(356, 16)
+        Me.TargetRangeAddress.Size = New System.Drawing.Size(260, 16)
         Me.TargetRangeAddress.TabIndex = 11
         Me.TargetRangeAddress.TextAlign = System.Drawing.ContentAlignment.TopRight
         Me.ToolTip1.SetToolTip(Me.TargetRangeAddress, "click to select Target Range with Data for DBMapper or SQL DML for DBAction")
@@ -327,6 +328,17 @@ Partial Class DBModifCreate
         Me.EnvironmentLabel.TabIndex = 6
         Me.EnvironmentLabel.Text = "Env:"
         '
+        'IgnoreDataErrors
+        '
+        Me.IgnoreDataErrors.AutoSize = True
+        Me.IgnoreDataErrors.Location = New System.Drawing.Point(101, 186)
+        Me.IgnoreDataErrors.Name = "IgnoreDataErrors"
+        Me.IgnoreDataErrors.Size = New System.Drawing.Size(109, 17)
+        Me.IgnoreDataErrors.TabIndex = 17
+        Me.IgnoreDataErrors.Text = "Ignore data errors"
+        Me.ToolTip1.SetToolTip(Me.IgnoreDataErrors, "if set, don't notify error values in cells during update/insert")
+        Me.IgnoreDataErrors.UseVisualStyleBackColor = True
+        '
         'DBModifCreate
         '
         Me.AcceptButton = Me.OK_Button
@@ -334,6 +346,7 @@ Partial Class DBModifCreate
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.CancelButton = Me.Cancel_Button
         Me.ClientSize = New System.Drawing.Size(480, 423)
+        Me.Controls.Add(Me.IgnoreDataErrors)
         Me.Controls.Add(Me.EnvironmentLabel)
         Me.Controls.Add(Me.AskForExecute)
         Me.Controls.Add(Me.CUDflags)
@@ -400,4 +413,5 @@ Partial Class DBModifCreate
     Friend WithEvents RepairDBSeqnce As Windows.Forms.TextBox
     Friend WithEvents AskForExecute As Windows.Forms.CheckBox
     Friend WithEvents CreateCB As Windows.Forms.Button
+    Friend WithEvents IgnoreDataErrors As Windows.Forms.CheckBox
 End Class

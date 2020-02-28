@@ -308,18 +308,18 @@ Public Module Functions
         targetSH = TargetCell.Parent
         targetWB = TargetCell.Parent.Parent
         Dim callerFormula As String = caller.Formula
-        Dim srcExtentConnect As String = ""
+        Dim srcExtent As String = ""
         Dim errHappened As Boolean = False
         Try
-            srcExtentConnect = caller.Name.Name
+            srcExtent = caller.Name.Name
         Catch ex As Exception
             errHappened = True
         End Try
-        If errHappened Or InStr(1, srcExtentConnect, "DBFsource") = 0 Then
-            srcExtentConnect = "DBFsource" & Replace(Replace(CDbl(Now.ToOADate()), ",", String.Empty), ".", String.Empty)
+        If errHappened Or InStr(1, srcExtent, "DBFsource") = 0 Then
+            srcExtent = "DBFsource" & Replace(Replace(CDbl(Now.ToOADate()), ",", String.Empty), ".", String.Empty)
             Try
-                caller.Name = srcExtentConnect
-                caller.Parent.Parent.Names(srcExtentConnect).Visible = False
+                caller.Name = srcExtent
+                caller.Parent.Parent.Names(srcExtent).Visible = False
             Catch ex As Exception
                 Throw New Exception("Error in setting srcExtentConnect name: " & ex.Message & " in query: " & Query)
             End Try
@@ -333,6 +333,7 @@ Public Module Functions
         Dim bgQuery As Boolean
         DBModifs.preventChangeWhileFetching = True
         Try
+            Dim targetExtent As String = Replace(srcExtent, "DBFsource", "DBFtarget")
             StatusCollection(callID).statusMsg = ""
             If Not thePivotTable Is Nothing Then
                 Try
@@ -349,8 +350,8 @@ Public Module Functions
                 StatusCollection(callID).statusMsg = "Set " & connType & " PivotTable to (bgQuery= " & bgQuery & "): " & Query
                 thePivotTable.PivotCache.BackgroundQuery = bgQuery
                 ' give hidden name to target range of pivot query (jump function)
-                thePivotTable.TableRange1.Name = Replace(srcExtentConnect, "DBFsource", "DBFtarget")
-                thePivotTable.TableRange1.Name.Visible = False
+                thePivotTable.TableRange1.Name = targetExtent
+                thePivotTable.TableRange1.Parent.Parent.Names(targetExtent).Visible = False
             End If
 
             If Not theListObject Is Nothing Then
@@ -385,8 +386,8 @@ Public Module Functions
                     caller.Formula = callerFormula ' restore formula as excel deletes target range when changing query fundamentally
                 End Try
                 ' give hidden name to target range of listobject (jump function)
-                theListObject.Range.Name = Replace(srcExtentConnect, "DBFsource", "DBFtarget")
-                theListObject.Range.Name.Visible = False
+                theListObject.Range.Name = targetExtent
+                theListObject.Range.Parent.Parent.Names(targetExtent).Visible = False
                 ' if refreshed range is a DBMapper and it is in the current workbook, resize it
                 DBModifs.resizeDBMapperRange(theListObject.Range)
             End If
@@ -545,21 +546,21 @@ Public Module Functions
         targetSH = targetRange.Parent
         warning = String.Empty
 
-        Dim srcExtentConnect As String, targetExtent As String, targetExtentF As String
+        Dim srcExtent As String, targetExtent As String, targetExtentF As String
         On Error Resume Next
-        srcExtentConnect = caller.Name.Name
-        If Err.Number <> 0 Or InStr(1, srcExtentConnect, "DBFsource") = 0 Then
+        srcExtent = caller.Name.Name
+        If Err.Number <> 0 Or InStr(1, srcExtent, "DBFsource") = 0 Then
             Err.Clear()
-            srcExtentConnect = "DBFsource" & Replace(Replace(CDbl(Now.ToOADate()), ",", String.Empty), ".", String.Empty)
-            caller.Name = srcExtentConnect
-            caller.Parent.Parent.Names(srcExtentConnect).Visible = False
+            srcExtent = "DBFsource" & Replace(Replace(CDbl(Now.ToOADate()), ",", String.Empty), ".", String.Empty)
+            caller.Name = srcExtent
+            caller.Parent.Parent.Names(srcExtent).Visible = False
             If Err.Number <> 0 Then
                 errMsg = "Error in setting srcExtentConnect name: " & Err.Description & " in query: " & Query
                 GoTo err_0
             End If
         End If
-        targetExtent = Replace(srcExtentConnect, "DBFsource", "DBFtarget")
-        targetExtentF = Replace(srcExtentConnect, "DBFsource", "DBFtargetF")
+        targetExtent = Replace(srcExtent, "DBFsource", "DBFtarget")
+        targetExtentF = Replace(srcExtent, "DBFsource", "DBFtargetF")
 
         If Not formulaRange Is Nothing Then
             formulaSH = formulaRange.Parent
@@ -715,11 +716,13 @@ Public Module Functions
             ' either cells/rows are shifted down (old data area was smaller than current) ...
             If oldRows < arrayRows Then
                 'prevent insertion from heading row if headings are present (to not get the header formats..)
-                Dim headingFirstRowPrevent As Long = IIf(HeaderInfo And oldRows = 1 And arrayRows > 2, 1, 0)
+                Dim headingFirstRowPrevent As Integer = IIf(HeaderInfo And oldRows = 1 And arrayRows > 2, 1, 0)
                 '1: add cells (not whole rows)
                 If extendArea = 1 Then
                     targetSH.Range(targetSH.Cells(startRow + oldRows + headingFirstRowPrevent, startCol), targetSH.Cells(startRow + arrayRows - 1, startCol + oldCols - 1)).Insert(Shift:=Excel.XlDirection.xlDown)
-                    If Not formulaRange Is Nothing Then formulaSH.Range(formulaSH.Cells(startRow + oldFRows + headingOffset, formulaRange.Column), formulaSH.Cells(startRow + arrayRows - 1 - headingFirstRowPrevent, formulaRange.Column + oldFCols - 1)).Insert(Shift:=Excel.XlDirection.xlDown)
+                    If Not formulaRange Is Nothing Then
+                        formulaSH.Range(formulaSH.Cells(startRow + oldFRows + headingOffset, formulaRange.Column), formulaSH.Cells(startRow + arrayRows - 1 - headingFirstRowPrevent, formulaRange.Column + oldFCols - 1)).Insert(Shift:=Excel.XlDirection.xlDown)
+                    End If
                     '2: add whole rows
                 ElseIf extendArea = 2 Then
                     targetSH.Rows(startRow + oldRows + headingFirstRowPrevent & ":" & startRow + arrayRows - 1).Insert(Shift:=Excel.XlDirection.xlDown)
@@ -733,7 +736,7 @@ Public Module Functions
                 ' .... or cells/rows are shifted up (old data area was larger than current)
             ElseIf oldRows > arrayRows Then
                 'prevent deletion of last row if headings are present (to not get the header formats, lose formulas, etc..)
-                Dim headingLastRowPrevent As Long = IIf(HeaderInfo And arrayRows = 1 And oldRows > 2, 1, 0)
+                Dim headingLastRowPrevent As Integer = IIf(HeaderInfo And arrayRows = 1 And oldRows > 2, 1, 0)
                 '1: add cells (not whole rows)
                 If extendArea = 1 Then
                     targetSH.Range(targetSH.Cells(startRow + arrayRows + headingLastRowPrevent, startCol), targetSH.Cells(startRow + oldRows - 1, startCol + oldCols - 1)).Delete(Shift:=Excel.XlDirection.xlUp)
@@ -844,7 +847,7 @@ Public Module Functions
         ' set the new hidden targetExtent name...
         Dim newTargetRange As Excel.Range = targetSH.Range(targetSH.Cells(startRow, startCol), targetSH.Cells(startRow + arrayRows - 1, startCol + targetColumns))
         ' remove old hidden targetExtent name
-        targetRange.Parent.Parent.Names(targetExtent).Delete
+        'targetRange.Parent.Parent.Names(targetExtent).Delete
         Err.Clear() ' might not exist, so ignore errors here...
 
         Dim additionalFormulaColumns As Integer = 0
@@ -856,11 +859,8 @@ Public Module Functions
         End If
 
         ' delete the name to have a "clean" name area (otherwise visible = false setting wont work for dataTargetRange)
-        Dim storedNames() As String
-        storedNames = removeRangeNames(newTargetRange, targetExtent)
         newTargetRange.Name = targetExtent
-        newTargetRange.Name.Visible = False
-        restoreRangeNames(newTargetRange, storedNames)
+        newTargetRange.Parent.Parent.Names(targetExtent).Visible = False
 
         ' (re)assign visible name for the total area, if given
         If targetRangeName.Length > 0 Then
@@ -1073,21 +1073,21 @@ err_0: ' errors where recordset was not opened or is already closed
         On Error GoTo err_1
         ExcelDnaUtil.Application.StatusBar = "Retrieving data for DBRows: " & targetSH.Name & "!" & targetCells(0).Address
 
-        Dim srcExtentConnect As String, targetExtent As String
+        Dim srcExtent As String, targetExtent As String
         On Error Resume Next
-        srcExtentConnect = caller.Name.Name
-        If Err.Number <> 0 Or InStr(1, UCase$(srcExtentConnect), "DBFSOURCE") = 0 Then
+        srcExtent = caller.Name.Name
+        If Err.Number <> 0 Or InStr(1, UCase$(srcExtent), "DBFSOURCE") = 0 Then
             Err.Clear()
-            srcExtentConnect = "DBFsource" & Replace(Replace(CDbl(Now().ToOADate()), ",", String.Empty), ".", String.Empty)
-            caller.Name = srcExtentConnect
+            srcExtent = "DBFsource" & Replace(Replace(CDbl(Now().ToOADate()), ",", String.Empty), ".", String.Empty)
+            caller.Name = srcExtent
             ' dbfsource is a workbook name
-            caller.Parent.Parent.Names(srcExtentConnect).Visible = False
+            caller.Parent.Parent.Names(srcExtent).Visible = False
             If Err.Number <> 0 Then
                 errMsg = "Error in setting srcExtentConnect name: " & Err.Description & " in query: " & Query
                 GoTo err_1
             End If
         End If
-        targetExtent = Replace(srcExtentConnect, "DBFsource", "DBFtarget")
+        targetExtent = Replace(srcExtent, "DBFsource", "DBFtarget")
         DBModifs.preventChangeWhileFetching = True
         ' remove old data in case we changed the target range array
         targetSH.Range(targetExtent).ClearContents()
@@ -1191,11 +1191,8 @@ err_0: ' errors where recordset was not opened or is already closed
         Loop Until rangeIter > UBound(targetCells)
 
         ' delete the name to have a "clean" name area (otherwise visible = false setting wont work for dataTargetRange)
-        Dim storedNames() As String
-        storedNames = removeRangeNames(refCollector, targetExtent)
         refCollector.Name = targetExtent
-        refCollector.Name.Visible = False
-        restoreRangeNames(refCollector, storedNames)
+        refCollector.Parent.Parent.Names(targetExtent).Visible = False
 
         tableRst.Close()
         If StatusCollection(callID).statusMsg.Length = 0 Then StatusCollection(callID).statusMsg = "Retrieved " & returnedRows & " record" & IIf(returnedRows > 1, "s", String.Empty) & " from: " & Query
@@ -1355,7 +1352,7 @@ err_1:
     ''' <summary>create a final connection string from passed String or number (environment), as well as a EnvPrefix for showing the environment (or set ConnString)</summary>
     ''' <param name="ConnString">passed connection string or environment number, resolved (=returned) to actual connection string</param>
     ''' <param name="EnvPrefix">prefix for showing environment (ConnString set if no environment)</param>
-    Private Sub resolveConnstring(ByRef ConnString As Object, ByRef EnvPrefix As String)
+    Public Sub resolveConnstring(ByRef ConnString As Object, ByRef EnvPrefix As String)
         If Left(TypeName(ConnString), 10) = "ExcelError" Then Exit Sub
         If TypeName(ConnString) = "ExcelReference" Then ConnString = ConnString.Value
         If TypeName(ConnString) = "ExcelMissing" Then ConnString = ""
@@ -1377,7 +1374,7 @@ err_1:
     ''' <param name="theName"></param>
     ''' <param name="theWb"></param>
     ''' <returns>true if it exists</returns>
-    Private Function existsNameInWb(ByRef theName As String, theWb As Excel.Workbook) As Boolean
+    Public Function existsNameInWb(ByRef theName As String, theWb As Excel.Workbook) As Boolean
         existsNameInWb = False
         For Each aName In theWb.Names()
             If aName.Name = theName Then
@@ -1391,7 +1388,7 @@ err_1:
     ''' <param name="theName"></param>
     ''' <param name="theWs"></param>
     ''' <returns>true if it exists</returns>
-    Private Function existsNameInSheet(ByRef theName As String, theWs As Excel.Worksheet) As Boolean
+    Public Function existsNameInSheet(ByRef theName As String, theWs As Excel.Worksheet) As Boolean
         existsNameInSheet = False
         For Each aName In theWs.Names()
             If aName.Name = theWs.Name & "!" & theName Then

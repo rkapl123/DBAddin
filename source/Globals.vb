@@ -3,7 +3,7 @@ Imports Microsoft.Office.Core
 Imports Microsoft.Office.Interop
 Imports System.Collections.Generic
 Imports System.Diagnostics
-
+Imports System.Timers
 
 ''' <summary>Global variables and functions for DB Addin</summary>
 Public Module Globals
@@ -189,7 +189,7 @@ Public Module Globals
                     underlyingName = Replace(underlyingName, "DBFsource", "DBFtarget", 1, , vbTextCompare)
                     ExcelDnaUtil.Application.Range(underlyingName).Cells(1, 1).Value = IIf(ExcelDnaUtil.Application.Range(underlyingName).Cells(1, 1).Value = "", " ", "")
                 Else
-                    LogError("Error in refreshData, conflicting underlyingName given: " & underlyingName)
+                    LogError("Error in refreshData, underlyingName does not begin with DBFtarget, DBFtargetF or DBFsource: " & underlyingName)
                     refreshDBFunctions(ExcelDnaUtil.Application.ActiveWorkbook)
                 End If
             End If
@@ -509,9 +509,24 @@ done:
         End Try
     End Sub
 
+    ''' <summary>"OnTime" event function to "escape" current (main) thread: event procedure to refetch DB functions results after triggering a recalculation inside Application.WorkbookBeforeSave</summary>
+    Public Sub refreshDBFuncLater()
+        Dim previouslySaved As Boolean
+        Try
+            If Not ExcelDnaUtil.Application.ActiveWorkbook Is Nothing Then
+                previouslySaved = ExcelDnaUtil.Application.ActiveWorkbook.Saved
+                LogInfo("clearing DBfunction targets: refreshDBFunctions after clearing")
+                refreshDBFunctions(ExcelDnaUtil.Application.ActiveWorkbook, True)
+                ExcelDnaUtil.Application.ActiveWorkbook.Saved = previouslySaved
+            End If
+        Catch ex As Exception
+            LogError(ex.Message)
+        End Try
+    End Sub
+
     ''' <summary>resets the caches for given workbook</summary>
     ''' <param name="WBname"></param>
-    Sub resetCachesForWorkbook(WBname As String)
+    Public Sub resetCachesForWorkbook(WBname As String)
         ' reset query cache for current workbook, so we really get new data !
         Dim tempColl1 As Dictionary(Of String, String) = New Dictionary(Of String, String)(queryCache) ' clone dictionary to be able to remove items...
         For Each resetkey As String In tempColl1.Keys
