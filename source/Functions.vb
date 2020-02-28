@@ -304,7 +304,13 @@ Public Module Functions
 
         Dim calcMode = ExcelDnaUtil.Application.Calculation
         ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual
-        TargetCell = ToRange(targetRange)
+        ' when being called from DBSequence.doDBModif, targetRange is an Excel.Range, otherwise it's a reference
+        If TypeName(targetRange) = "ExcelReference" Then
+            TargetCell = ToRange(targetRange)
+        Else
+            TargetCell = targetRange
+        End If
+
         targetSH = TargetCell.Parent
         targetWB = TargetCell.Parent.Parent
         Dim callerFormula As String = caller.Formula

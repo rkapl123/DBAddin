@@ -6,7 +6,7 @@ Imports System.Collections.Generic
 Imports Microsoft.Office.Core
 Imports System.Data
 Imports System.Data.SqlClient
-Imports System.Timers
+
 
 ''' <summary>Abstraction of a DB Modification Object (concrete classes DB Mapper, DB Action or DB Sequence)</summary>
 Public MustInherit Class DBModif
@@ -452,10 +452,12 @@ Public Class DBMapper : Inherits DBModif
                         If InStr(1, LCase(ignoreColumns) + ",", LCase(fieldname) + ",") = 0 Then
                             Try
                                 Dim fieldval As Object = TargetRange.Cells(rowNum, colNum).Value
-                                If Not IsNothing(fieldval) Then
+                                If IsNothing(fieldval) Then
+                                    rst.Fields(fieldname).Value = Nothing
+                                Else
                                     If IsXLCVErr(fieldval) Then
                                         If IgnoreDataErrors Then
-                                            rst.Fields(fieldname).Value = vbNull
+                                            rst.Fields(fieldname).Value = Nothing
                                         Else
                                             hadError = True
                                             TargetRange.Parent.Activate
@@ -463,7 +465,7 @@ Public Class DBMapper : Inherits DBModif
                                             MsgBox("Field Value Update Error with Table: " & tableName & ", Field: " & fieldname & ", in sheet " & TargetRange.Parent.Name & " and row " & rowNum & ", col: " & colNum, MsgBoxStyle.Critical, "DBMapper Error")
                                         End If
                                     Else
-                                        rst.Fields(fieldname).Value = IIf(fieldval.ToString().Length = 0, vbNull, fieldval)
+                                        rst.Fields(fieldname).Value = IIf(fieldval.ToString().Length = 0, Nothing, fieldval)
                                     End If
                                 End If
                             Catch ex As Exception
@@ -792,7 +794,8 @@ Public Class DBSeqnce : Inherits DBModif
                         Continue For
                     End Try
                     LogInfo("DBRefresh..." & callID)
-
+                    ' StatusCollection doesn't necessarily have the callID contained
+                    If Not StatusCollection.ContainsKey(callID) Then StatusCollection.Add(callID, New ContainedStatusMsg)
                     If UCase(Left(ExcelDnaUtil.Application.Range(srcExtent).Formula, 12)) = "=DBLISTFETCH" Then
                         Dim functionArgs = functionSplit(ExcelDnaUtil.Application.Range(srcExtent).Formula, ",", """", "DBListFetch", "(", ")")
                         Dim Query As String = ExcelDnaUtil.Application.Evaluate(functionArgs(0))

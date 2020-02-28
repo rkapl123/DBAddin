@@ -6,8 +6,8 @@ Imports Microsoft.Office.Core
 Imports Microsoft.Vbe.Interop
 Imports System.Diagnostics
 Imports System.Runtime.InteropServices
-Imports System.Timers
 Imports System.Collections.Generic
+
 
 ''' <summary>AddIn Connection class, also handling Events from Excel (Open, Close, Activate)</summary>
 <ComVisible(True)>
