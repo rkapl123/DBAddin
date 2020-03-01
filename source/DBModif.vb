@@ -1368,14 +1368,16 @@ Public Module DBModifs
 
     ''' <summary>execute given DBModifier, used for VBA call by Application.Run)</summary>
     <ExcelCommand(Name:="executeDBModif")>
-    Public Sub executeDBModif(DBModifName As String)
+    Public Function executeDBModif(DBModifName As String) As Boolean
         Dim DBModiftype As String = Left(DBModifName, 8)
         If DBModiftype = "DBSeqnce" Or DBModiftype = "DBMapper" Or DBModiftype = "DBAction" Then
             Globals.DBModifDefColl(DBModiftype).Item(DBModifName).doDBModif()
+            Return hadError
         Else
             MsgBox("No valid type in passed DB Modifier " & DBModifName & "(" & DBModiftype & ") !", vbCritical, "executeDBModif Error")
+            Return True
         End If
-    End Sub
+    End Function
 
 End Module
 

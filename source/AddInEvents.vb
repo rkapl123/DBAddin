@@ -145,9 +145,9 @@ done:
                                 Dim theTargetRange As Excel.Range
                                 Try : theTargetRange = ExcelDnaUtil.Application.Range(targetName)
                                 Catch ex As Exception
-                                    MsgBox("Error in finding target range of DB Function " & theFunc & "in " & firstAddress & "), refreshing all DB functions should solve this.", MsgBoxStyle.Critical)
+                                    LogWarn("Error in finding target range of DB Function " & theFunc & "in " & firstAddress & "), refreshing all DB functions should solve this.")
                                     searchCell = Nothing
-                                    searchCell = lastWs.Cells.Find(What:="", After:=lastWs.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
+                                    searchCell = ws.Cells.Find(What:="", After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
                                     dontCalcWhileClearing = False
                                     Exit Sub
                                 End Try
@@ -179,7 +179,7 @@ done:
                                             End Sub)
             End If
         Catch ex As Exception
-            LogError("Error clearing DBfunction targets: " & Wb.Name & ex.Message)
+            LogError("Error clearing DBfunction targets in Workbook " & Wb.Name & ": " & ex.Message)
         End Try
         dontCalcWhileClearing = False
     End Sub

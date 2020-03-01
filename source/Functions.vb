@@ -14,9 +14,6 @@ End Class
 ''' <summary>Contains the public callable DB functions and helper functions</summary>
 Public Module Functions
     ' Global objects/variables for DBFuncs
-    ''' <summary>because of a strange excel behaviour with Range.Dirty (only works if the parent sheet of Range is the active sheet)
-    ''' we have to jump to the sheet containing the dbfunction and then activate back in case of refresh (sets relevant source/dbfunc to dirty)</summary>
-    Public origWS As Excel.Worksheet
     ''' <summary>global collection of information transport containers between function and calc event procedure</summary>
     Public StatusCollection As Dictionary(Of String, ContainedStatusMsg)
     ''' <summary>connection object: always use the same, if possible (same ConnectionString)</summary>
@@ -298,7 +295,6 @@ Public Module Functions
         Dim TargetCell As Excel.Range
         Dim targetSH As Excel.Worksheet
         Dim targetWB As Excel.Workbook
-        Dim errMsg As String
         Dim thePivotTable As Excel.PivotTable = Nothing
         Dim theListObject As Excel.ListObject = Nothing
 
@@ -338,9 +334,9 @@ Public Module Functions
         Dim connType As String
         Dim bgQuery As Boolean
         DBModifs.preventChangeWhileFetching = True
+        Dim targetExtent As String = Replace(srcExtent, "DBFsource", "DBFtarget")
+        StatusCollection(callID).statusMsg = ""
         Try
-            Dim targetExtent As String = Replace(srcExtent, "DBFsource", "DBFtarget")
-            StatusCollection(callID).statusMsg = ""
             If Not thePivotTable Is Nothing Then
                 Try
                     connType = Left$(thePivotTable.PivotCache.Connection, InStr(1, thePivotTable.PivotCache.Connection, ";"))
@@ -359,7 +355,6 @@ Public Module Functions
                 thePivotTable.TableRange1.Name = targetExtent
                 thePivotTable.TableRange1.Parent.Parent.Names(targetExtent).Visible = False
             End If
-
             If Not theListObject Is Nothing Then
                 Try
                     connType = Left$(theListObject.QueryTable.Connection, InStr(1, theListObject.QueryTable.Connection, ";"))
@@ -397,22 +392,18 @@ Public Module Functions
                 ' if refreshed range is a DBMapper and it is in the current workbook, resize it
                 DBModifs.resizeDBMapperRange(theListObject.Range)
             End If
-            ' neither PivotTable or ListObject could be found in TargetCell
-            If StatusCollection(callID).statusMsg = "" Then
-                TargetCell.Cells(1, 1).Value = IIf(TargetCell.Cells(1, 1).Value = "", " ", "") ' trigger recalculation to return below error message to calling function
-                StatusCollection(callID).statusMsg = "No PivotTable or ListObject with external data connection could be found in TargetRange " & TargetCell.Address
-            End If
         Catch ex As Exception
-            ' excel doesn't like pivottables to be set, so make caller dirty instead
-            If caller.Parent.Parent.Name <> ExcelDnaUtil.Application.ActiveWorkbook.Name Then caller.Parent.Parent.Activate()
-            caller.Parent.Select() 'required, as Dirty doesn't work without it
-            caller.Dirty()
-            errMsg = ex.Message & " in query: " & Query
-            LogWarn(errMsg & ", caller: " & callID)
-            StatusCollection(callID).statusMsg = errMsg
+            LogWarn(ex.Message & " in query: " & Query & ", caller: " & callID)
+            StatusCollection(callID).statusMsg = ex.Message & " in query: " & Query
         End Try
+
+        ' neither PivotTable or ListObject could be found in TargetCell
+        If StatusCollection(callID).statusMsg = "" Then
+            StatusCollection(callID).statusMsg = "No PivotTable or ListObject with external data connection could be found in TargetRange " & TargetCell.Address
+        End If
         DBModifs.preventChangeWhileFetching = False
         ExcelDnaUtil.Application.Calculation = calcMode
+        caller.Formula += " " ' trigger recalculation to return below error message to calling function
     End Sub
 
     ''' <summary>
@@ -582,6 +573,8 @@ Public Module Functions
         End If
 
         DBModifs.preventChangeWhileFetching = True
+        ' to prevent flickering...
+        ExcelDnaUtil.Application.ScreenUpdating = False
         On Error Resume Next
         oldRows = targetSH.Parent.Names(targetExtent).RefersToRange.Rows.Count
         oldCols = targetSH.Parent.Names(targetExtent).RefersToRange.Columns.Count
@@ -762,6 +755,8 @@ Public Module Functions
                 GoTo err_1
             End If
         End If
+        Dim curSheet As Excel.Worksheet = ExcelDnaUtil.Application.ActiveSheet
+        targetSH.Activate()
         ' now fill in the data from the query
         If ODBCconnString.Length > 0 Then
             With targetSH.QueryTables.Add(Connection:=ODBCconnString, Destination:=targetRange)
@@ -800,11 +795,9 @@ Public Module Functions
             GoTo err_2
         End If
         tableRst.Close()
-
-        ' sometimes excel doesn't delete the querytable given name
-        targetSH.Names(tmpname).Delete
-        targetSH.Parent.Names(tmpname).Delete
-        Err.Clear()
+        ' excel doesn't delete the querytable name if it is not on the active sheet, 
+        ' so Switch to the querytables sheet and back again:
+        curSheet.Activate
 
         '''' formulas recreation (removal and autofill new ones)
         If Not formulaRange Is Nothing Then
@@ -852,8 +845,6 @@ Public Module Functions
         ' reassign name to changed data area
         ' set the new hidden targetExtent name...
         Dim newTargetRange As Excel.Range = targetSH.Range(targetSH.Cells(startRow, startCol), targetSH.Cells(startRow + arrayRows - 1, startCol + targetColumns))
-        ' remove old hidden targetExtent name
-        'targetRange.Parent.Parent.Names(targetExtent).Delete
         Err.Clear() ' might not exist, so ignore errors here...
 
         Dim additionalFormulaColumns As Integer = 0
@@ -948,11 +939,12 @@ err_2: ' errors where recordset was opened and QueryTables were already added, b
 err_1: ' errors where recordset was opened
         If tableRst.State <> 0 Then tableRst.Close()
 err_0: ' errors where recordset was not opened or is already closed
-        targetRange.Cells(1, 1).Value = IIf(targetRange.Cells(1, 1).Value = "", " ", "") ' recalculate to trigger return of error messages to calling function
+        'targetRange.Cells(1, 1).Value = IIf(targetRange.Cells(1, 1).Value = "", " ", "")
         If errMsg.Length = 0 Then errMsg = Err.Description & " in query: " & Query
         LogWarn(errMsg & ", caller: " & callID)
         StatusCollection(callID).statusMsg = errMsg
         finishAction(calcMode, callID, "Error")
+        caller.Formula += " " ' recalculate to trigger return of error messages to calling function
     End Sub
 
     ''' <summary>common sub to finish the action procedures, resetting anything (Cursor, calcmode, statusbar, screenupdating) that was set otherwise...</summary>
@@ -964,13 +956,6 @@ err_0: ' errors where recordset was not opened or is already closed
         ExcelDnaUtil.Application.Cursor = Excel.XlMousePointer.xlDefault  ' To return cursor to normal
         ExcelDnaUtil.Application.StatusBar = False
         LogInfo("callID: " & callID & IIf(additionalLogInfo <> "", ", additionalInfo: " & additionalLogInfo, ""))
-        ' because of a strange excel behaviour with Range.Dirty (only works if the parent sheet of Range is the active sheet)
-        ' we have to jump to the sheet containing the dbfunction and then activate back in case of refresh (sets relevant source/dbfunc to dirty)
-        If Not IsNothing(origWS) Then
-            If origWS.Parent.Name <> ExcelDnaUtil.Application.ActiveWorkbook.Name Then origWS.Parent.Activate()
-            origWS.Select()
-            origWS = Nothing
-        End If
         ExcelDnaUtil.Application.ScreenUpdating = True ' coming from refresh, this might be off for dirtying "foreign" (being on a different sheet than the calling function) data targets 
         ExcelDnaUtil.Application.Calculation = calcMode
     End Sub
@@ -1095,6 +1080,8 @@ err_0: ' errors where recordset was not opened or is already closed
         End If
         targetExtent = Replace(srcExtent, "DBFsource", "DBFtarget")
         DBModifs.preventChangeWhileFetching = True
+        ' to prevent flickering...
+        ExcelDnaUtil.Application.ScreenUpdating = False
         ' remove old data in case we changed the target range array
         targetSH.Range(targetExtent).ClearContents()
 
@@ -1206,12 +1193,12 @@ err_0: ' errors where recordset was not opened or is already closed
         Exit Sub
 
 err_1:
-        targetCells(0).Cells(1, 1).Value = IIf(targetCells(0).Cells(1, 1).Value = "", " ", "") ' recalculate to trigger return of error messages to calling function
         If errMsg.Length = 0 Then errMsg = Err.Description & " in query: " & Query
         If tableRst.State <> 0 Then tableRst.Close()
         LogWarn(errMsg & ", caller: " & callID)
         StatusCollection(callID).statusMsg = errMsg
         finishAction(calcMode, callID, "Error")
+        caller.Formula += " " ' recalculate to trigger return of error messages to calling function
     End Sub
 
     ''' <summary>remove all names from Range Target except the passed name (theName) and store them into list storedNames</summary>

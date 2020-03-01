@@ -22,6 +22,8 @@ Public Module Globals
     Public EventLevelSelected As String
     ''' <summary>the log listener</summary>
     Public theLogListener As TraceListener
+    ''' <summary>Folder where db sheet definitions (xml) are stored</summary>
+    Public DBSheetDefinitionsFolder As String
 
     ' Global settings
     Public DebugAddin As Boolean
@@ -33,8 +35,6 @@ Public Module Globals
     Public CmdTimeout As Integer
     ''' <summary>default formatting style used in DBDate</summary>
     Public DefaultDBDateFormatting As Integer
-    '''<summary>the folder used to store predefined DB sheet definitions</summary>
-    Public DBSheetDefinitionsFolder As String
 
     ''' <summary>encapsulates setting fetching (currently registry)</summary>
     ''' <param name="Key">registry key to take value from</param>
@@ -179,18 +179,17 @@ Public Module Globals
             Else ' then inside a db function area (target or source = function cell)
                 ' we're being called on a target functions area (additionally given in DBListFetch)
                 If Left$(underlyingName, 10) = "DBFtargetF" Then
-                    underlyingName = Replace(underlyingName, "DBFtargetF", "DBFtarget", 1, , vbTextCompare)
-                    ExcelDnaUtil.Application.Range(underlyingName).Cells(1, 1).Value = IIf(ExcelDnaUtil.Application.Range(underlyingName).Cells(1, 1).Value = "", " ", "")
+                    underlyingName = Replace(underlyingName, "DBFtargetF", "DBFsource", 1, , vbTextCompare)
+                    ExcelDnaUtil.Application.Range(underlyingName).Formula += " "
                     ' we're being called on a target area
                 ElseIf Left$(underlyingName, 9) = "DBFtarget" Then
-                    ExcelDnaUtil.Application.Range(underlyingName).Cells(1, 1).Value = IIf(ExcelDnaUtil.Application.Range(underlyingName).Cells(1, 1).Value = "", " ", "")
+                    underlyingName = Replace(underlyingName, "DBFtarget", "DBFsource", 1, , vbTextCompare)
+                    ExcelDnaUtil.Application.Range(underlyingName).Formula += " "
                     ' we're being called on a source (invoking function) cell
                 ElseIf Left$(underlyingName, 9) = "DBFsource" Then
-                    underlyingName = Replace(underlyingName, "DBFsource", "DBFtarget", 1, , vbTextCompare)
-                    ExcelDnaUtil.Application.Range(underlyingName).Cells(1, 1).Value = IIf(ExcelDnaUtil.Application.Range(underlyingName).Cells(1, 1).Value = "", " ", "")
+                    ExcelDnaUtil.Application.Range(underlyingName).Formula += " "
                 Else
                     LogError("Error in refreshData, underlyingName does not begin with DBFtarget, DBFtargetF or DBFsource: " & underlyingName)
-                    refreshDBFunctions(ExcelDnaUtil.Application.ActiveWorkbook)
                 End If
             End If
         Catch ex As Exception
@@ -448,7 +447,7 @@ Public Module Globals
         End Try
     End Function
 
-    ''' <summary>find out whether to recalc full (and do it), if we have DBFuncs in the workbook somewhere</summary>
+    ''' <summary>recalc fully the DB functions, if we have DBFuncs in the workbook somewhere</summary>
     ''' <param name="Wb">workbook to refresh DB Functions in</param>
     ''' <param name="ignoreCalcMode">when calling refreshDBFunctions time delayed (when saving a workbook and DBFC* is set), need to trigger calculation regardless of calculation mode being manual, otherwise data is not refreshed</param>
     Public Sub refreshDBFunctions(Wb As Excel.Workbook, Optional ignoreCalcMode As Boolean = False)
@@ -480,29 +479,38 @@ Public Module Globals
                     Exit Sub
                 End If
             End If
+            ' walk through all worksheets and all cells there to find DB Functions and change their formula, adding " " to trigger recalculation
             For Each ws In Wb.Worksheets
                 Dim theFunc As String
                 For Each theFunc In {"DBListFetch(", "DBRowFetch(", "DBSetQuery("}
                     searchCells = ws.Cells.Find(What:=theFunc, After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
-                    If Not (searchCells Is Nothing) Then
-                        ' reset the cell find dialog....
-                        searchCells = Nothing
-                        searchCells = ws.Cells.Find(What:="", After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
-                        needRecalc = True
-                        GoTo done
-                    End If
+                    Dim firstFoundAddress As String = ""
+                    If Not IsNothing(searchCells) Then firstFoundAddress = searchCells.Address
+                    While Not IsNothing(searchCells)
+                        Dim callID As String
+                        Try
+                            ' get the callID of the underlying name of the target (key of the queryCache and StatusCollection)
+                            callID = "[" & searchCells.Parent.Parent.Name & "]" & searchCells.Parent.Name & "!" & searchCells.Address
+                        Catch ex As Exception
+                            LogError("getting callID for searchCells in refreshing DB Function " & theFunc & "): " + ex.Message)
+                            Continue While
+                        End Try
+                        ' remove query cache to force refetching
+                        queryCache.Remove(callID)
+                        ' trigger recalculation by changing formula of DB Function
+                        Dim underlyingName As String = getDBunderlyingNameFromRange(searchCells)
+                        ExcelDnaUtil.Application.Range(underlyingName).Formula += " "
+                        searchCells = ws.Cells.FindNext(searchCells)
+                        If searchCells.Address = firstFoundAddress Then Exit While
+                    End While
                 Next
                 ' reset the cell find dialog....
                 searchCells = Nothing
                 searchCells = ws.Cells.Find(What:="", After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
             Next
-done:
-            If needRecalc And (ExcelDnaUtil.Application.Calculation <> Excel.XlCalculation.xlCalculationManual Or ignoreCalcMode) Then
-                queryCache.Clear()
-                LogInfo("ExcelDnaUtil.Application.CalculateFull called " & Wb.Path & "\" & Wb.Name)
+            If ignoreCalcMode Then
+                LogInfo("ignoreCalcMode = True, ExcelDnaUtil.Application.CalculateFull called " & Wb.Path & "\" & Wb.Name)
                 ExcelDnaUtil.Application.CalculateFull()
-            Else
-                LogInfo("no dbfunc found... " & Wb.Path & "\" & Wb.Name)
             End If
         Catch ex As Exception
             LogError("Error: " & ex.Message & ", " & Wb.Path & "\" & Wb.Name)
@@ -537,6 +545,7 @@ done:
             If InStr(resetkey, "[" & WBname & "]") > 0 Then StatusCollection.Remove(resetkey)
         Next
     End Sub
+
     ''' <summary>"repairs" legacy functions from old VB6-COM Addin by removing "DBAddin.Functions." before function name</summary>
     ''' <param name="showReponse">in case this is called interactively, provide a response in case of no legacy functions there</param>
     Public Sub repairLegacyFunctions(Optional showReponse As Boolean = False)
