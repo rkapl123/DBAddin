@@ -367,10 +367,10 @@ Public Class DBMapper : Inherits DBModif
             ' if CUDFlags are set, only insert/update/delete if CUDFlags column (right to DBMapper range) is filled...
             Dim rowCUDFlag As String = TargetRange.Cells(rowNum, TargetRange.Columns.Count + 1).Value
             If Not CUDFlags Or (CUDFlags And rowCUDFlag <> "") Then
-
+                Dim AutoIncrement As Boolean = False
                 ' try to find record for update, construct WHERE clause with primary key columns
                 Dim primKeyCompound As String = " WHERE "
-                Dim primKeyDisplay As String
+                Dim primKeyDisplay As String = ""
                 For i As Integer = 1 To primKeysCount
                     Dim primKeyValue = TargetRange.Cells(rowNum, i).Value
                     If IsXLCVErr(primKeyValue) Then
@@ -387,6 +387,10 @@ Public Class DBMapper : Inherits DBModif
                     End If
                     ' now format the primary key value and construct the WHERE clause
                     Dim primKey = TargetRange.Cells(1, i).Value
+                    If primKeysCount = 1 And CUDFlags And primKeyValue = "" And checkrst.Fields(primKey).Properties("IsAutoIncrement").Value Then
+                        AutoIncrement = True
+                        Exit For
+                    End If
                     Dim primKeyFormatted As String
                     If IsNothing(primKeyValue) Then
                         primKeyFormatted = "NULL"
@@ -403,28 +407,32 @@ Public Class DBMapper : Inherits DBModif
                         primKeyFormatted = "'" & primKeyValue & "'"
                     End If
                     primKeyCompound = primKeyCompound & primKey & " = " & primKeyFormatted & IIf(i = primKeysCount, "", " AND ")
-
                 Next
                 Dim getStmt As String = "SELECT * FROM " & tableName & primKeyCompound
-                Try
-                    rst.Open(getStmt, dbcnn, CursorTypeEnum.adOpenDynamic, LockTypeEnum.adLockOptimistic)
-                    Dim check As Boolean = rst.EOF
-                Catch ex As Exception
-                    hadError = True
-                    MsgBox("Problem getting recordset, Error: " & ex.Message & " in sheet " & TargetRange.Parent.Name & " and row " & rowNum & ", doing " & getStmt)
-                    GoTo cleanup
-                End Try
-                primKeyDisplay = Replace(Mid(primKeyCompound, 7), " AND ", ";")
+                If Not AutoIncrement Then ' avoid opening recordset with empty primary key value if autoincrement is given...
+                    Try
+                        rst.Open(getStmt, dbcnn, CursorTypeEnum.adOpenDynamic, LockTypeEnum.adLockOptimistic)
+                        Dim check As Boolean = rst.EOF
+                    Catch ex As Exception
+                        hadError = True
+                        MsgBox("Problem getting recordset, Error: " & ex.Message & " in sheet " & TargetRange.Parent.Name & " and row " & rowNum & ", doing " & getStmt)
+                        GoTo cleanup
+                    End Try
+                    primKeyDisplay = Replace(Mid(primKeyCompound, 7), " AND ", ";")
+                Else
+                    ' just open the table if autoincrement set and empty primary key
+                    rst.Open(tableName, dbcnn, CursorTypeEnum.adOpenDynamic, LockTypeEnum.adLockOptimistic)
+                End If
 
-                ' If we didn't find record, add a new record if insertIfMissing flag is set or CUD Flag insert is given
-                If rst.EOF Then
+                ' If we have an autoincrementing primary key (empty primary key value !) or didn't find record on given primary key (rst.EOF), add a new record if insertIfMissing flag is set or CUD Flag insert is given
+                If AutoIncrement OrElse rst.EOF Then
                     Dim i As Integer
                     If insertIfMissing Or rowCUDFlag = "i" Then
                         ExcelDnaUtil.Application.StatusBar = Left("Inserting " & primKeyDisplay & " into " & tableName, 255)
                         rst.AddNew()
                         For i = 1 To primKeysCount
                             Try
-                                ' ignore empty primary field values for identity fields (error message from DB later)..
+                                ' skip empty primary field values for autoincrementing identity fields ..
                                 If Not (IsNothing(TargetRange.Cells(rowNum, i).Value) OrElse TargetRange.Cells(rowNum, i).Value.ToString().Length = 0) Then
                                     rst.Fields(TargetRange.Cells(1, i).Value).Value = TargetRange.Cells(rowNum, i).Value
                                 End If
