@@ -299,7 +299,14 @@ done:
     Private Sub Application_SheetChange(Sh As Object, Target As Range) Handles Application.SheetChange
         If Globals.DBModifDefColl.ContainsKey("DBMapper") And Not DBModifs.preventChangeWhileFetching Then
             Dim targetName As String = getDBModifNameFromRange(Target)
-            If Left(targetName, 8) = "DBMapper" Then DirectCast(Globals.DBModifDefColl("DBMapper").Item(targetName), DBMapper).doCUDMarks(Target)
+            Dim targetNameBelow As String = ""
+            If Target.Row > 1 Then targetNameBelow = getDBModifNameFromRange(Target.Offset(-1, 0))
+            If Left(targetName, 8) = "DBMapper" Then
+                DirectCast(Globals.DBModifDefColl("DBMapper").Item(targetName), DBMapper).doCUDMarks(Target)
+            ElseIf Left(targetNameBelow, 8) = "DBMapper" Then
+                'TODO: extend DB Functions formats and validations and extend TargetRange of DBMapper
+                DirectCast(Globals.DBModifDefColl("DBMapper").Item(targetNameBelow), DBMapper).doCUDMarks(Target)
+            End If
         End If
     End Sub
 End Class

@@ -858,10 +858,13 @@ Public Module Functions
         ' delete the name to have a "clean" name area (otherwise visible = false setting wont work for dataTargetRange)
         newTargetRange.Name = targetExtent
         newTargetRange.Parent.Parent.Names(targetExtent).Visible = False
-
+        Dim totalTargetRange As Excel.Range = newTargetRange
+        If additionalFormulaColumns > 0 Then
+            totalTargetRange = targetSH.Range(targetSH.Cells(startRow, startCol), targetSH.Cells(startRow + arrayRows - 1, startCol + targetColumns + additionalFormulaColumns))
+        End If
         ' (re)assign visible name for the total area, if given
         If targetRangeName.Length > 0 Then
-            targetSH.Range(targetSH.Cells(startRow, startCol), targetSH.Cells(startRow + arrayRows - 1, startCol + targetColumns + additionalFormulaColumns)).Name = targetRangeName
+            totalTargetRange.Name = targetRangeName
         End If
 
         If Err.Number <> 0 Then
@@ -870,7 +873,7 @@ Public Module Functions
         End If
 
         ' if refreshed range is a DBMapper and it is in the current workbook, resize it
-        DBModifs.resizeDBMapperRange(newTargetRange)
+        DBModifs.resizeDBMapperRange(totalTargetRange)
 
         '''' any warnings, errors ?
         If warning.Length > 0 Then
@@ -886,25 +889,16 @@ Public Module Functions
             StatusCollection(callID).statusMsg = "Retrieved " & retrievedRows & " record" & IIf(retrievedRows > 1, "s", String.Empty) & " from: " & Query
         End If
 
-        ' autoformat: restore format of 1st row...
+        ' autoformat: restore formats
         If autoformat Then
             For i = 0 To UBound(copyFormat)
-                newTargetRange.Rows(rowDataStart).Cells(i + 1).NumberFormat = copyFormat(i)
+                newTargetRange.Columns(i + 1).NumberFormat = copyFormat(i)
             Next
             ' now for the calculated cells...
             If Not formulaRange Is Nothing Then
                 For i = 0 To UBound(copyFormatF)
-                    formulaSH.Cells(targetRange.Row + rowDataStart - 1, formulaRange.Column + i).NumberFormat = copyFormatF(i)
+                    formulaFilledRange.Columns(i + 1).NumberFormat = copyFormatF(i)
                 Next
-            End If
-            'auto format 1st rows down...
-            If arrayRows > rowDataStart Then
-                'This doesn't work anymore:
-                'newTargetRange.Rows(rowDataStart).AutoFill(Destination:=newTargetRange.Rows(rowDataStart & ":" & arrayRows), Type:=XlAutoFillType.xlFillFormats)
-                targetSH.Range(targetSH.Cells(targetRange.Row + rowDataStart - 1, newTargetRange.Column), targetSH.Cells(targetRange.Row + rowDataStart - 1, newTargetRange.Column + newTargetRange.Columns.Count - 1)).AutoFill(Destination:=targetSH.Range(targetSH.Cells(targetRange.Row + rowDataStart - 1, newTargetRange.Column), targetSH.Cells(targetRange.Row + arrayRows - 1, newTargetRange.Column + newTargetRange.Columns.Count - 1)), Type:=Excel.XlAutoFillType.xlFillFormats)
-                If Not formulaRange Is Nothing Then
-                    formulaSH.Range(formulaSH.Cells(targetRange.Row + rowDataStart - 1, formulaRange.Column), formulaSH.Cells(targetRange.Row + rowDataStart - 1, formulaRange.Column + formulaRange.Columns.Count - 1)).AutoFill(Destination:=formulaSH.Range(formulaSH.Cells(targetRange.Row + rowDataStart - 1, formulaRange.Column), formulaSH.Cells(targetRange.Row + arrayRows - 1, formulaRange.Column + formulaRange.Columns.Count - 1)), Type:=Excel.XlAutoFillType.xlFillFormats)
-                End If
             End If
         End If
 
