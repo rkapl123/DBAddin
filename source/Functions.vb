@@ -566,7 +566,7 @@ Public Module Functions
         End If
         Err.Clear()
 
-        startRow = targetRange.Cells.Row : startCol = targetRange.Cells.Column
+        startRow = targetRange.Cells(1, 1).Row : startCol = targetRange.Cells(1, 1).Column
         If Err.Number <> 0 Then
             errMsg = "Error in setting startRow/startCol: " & Err.Description & " in query: " & Query
             GoTo err_0
@@ -674,28 +674,28 @@ Public Module Functions
         ' check rows
         If targetRange.Row + arrayRows > (targetRange.EntireColumn.Rows.Count + 1) Then
             warning = "row count" & " of returned data exceeds max row of excel: start row:" & targetRange.Row & " + row count:" & arrayRows & " > max row+1:" & targetRange.EntireColumn.Rows.Count + 1
-            arrayRows = targetRange.EntireColumn.Rows.Count - targetRange.Row + 1
+            arrayRows = targetRange.EntireColumn.Rows.Count - startRow + 1
         End If
         ' check columns
         If targetRange.Column + arrayCols > (targetRange.EntireRow.Columns.Count + 1) Then
             warning = warning & ", column count" & " of returned data exceed max column of excel: start column:" & targetRange.Column & " + column count:" & arrayCols & " > max column+1:" & targetRange.EntireRow.Columns.Count + 1
-            arrayCols = targetRange.EntireRow.Columns.Count - targetRange.Column + 1
+            arrayCols = targetRange.EntireRow.Columns.Count - startCol + 1
         End If
 
-        ' autoformat: copy 1st rows formats range to reinsert them afterwards
+        ' autoformat: copy 1st rows formats range to apply them afterwards to whole column(s)
         targetColumns = arrayCols - IIf(ShowRowNumbers, 0, 1)
         If autoformat Then
             arrayRows += IIf(HeaderInfo And arrayRows = 1, 1, 0)  ' need special case for autoformat
             Dim i As Long
             For i = 0 To targetColumns
                 ReDim Preserve copyFormat(i)
-                copyFormat(i) = targetSH.Cells(targetRange.Row + rowDataStart - 1, targetRange.Column + i).NumberFormat
+                copyFormat(i) = targetSH.Cells(startRow + rowDataStart - 1, startCol + i).NumberFormat
             Next
             ' now for the calculated data area
             If Not formulaRange Is Nothing Then
                 For i = 0 To formulaRange.Columns.Count - 1
                     ReDim Preserve copyFormatF(i)
-                    copyFormatF(i) = formulaSH.Cells(targetRange.Row + rowDataStart - 1, formulaRange.Column + i).NumberFormat
+                    copyFormatF(i) = formulaSH.Cells(startRow + rowDataStart - 1, formulaRange.Column + i).NumberFormat
                 Next
             End If
         End If
@@ -709,7 +709,8 @@ Public Module Functions
             formulaRange = Nothing
         End If
 
-        '''' data list and formula range extension (ignored in first call after creation -> no defined name is set -> oldRows=0)...
+        ' data list and formula range extension (ignored in first call after creation -> no defined name is set -> oldRows=0)...
+        'TODO: check problems with shifting formula ranges in case of shifting mode 1 (cells)
         headingOffset = IIf(HeaderInfo, 1, 0)  ' use that for generally regarding headings !!
         If oldRows > 0 Then
             ' either cells/rows are shifted down (old data area was smaller than current) ...

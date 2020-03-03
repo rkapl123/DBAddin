@@ -374,37 +374,48 @@ Public Class DBMapper : Inherits DBModif
                 For i As Integer = 1 To primKeysCount
                     Dim primKeyValue = TargetRange.Cells(rowNum, i).Value
                     If IsXLCVErr(primKeyValue) Then
-                        hadError = True
-                        MsgBox("Error in primary key value, cell (" & rowNum & "," & i + 1 & ") in sheet " & TargetRange.Parent.Name & " and row " & rowNum, MsgBoxStyle.Critical, "DBMapper Error")
+                        notifyUserOfDataError("Error in primary key value, cell (" & rowNum.ToString & "," & i.ToString & ") in sheet " & TargetRange.Parent.Name & " and row " & rowNum.ToString, rowNum, i)
                         GoTo nextRow
                     End If
                     If IsNothing(primKeyValue) Then primKeyValue = ""
-                    ' with CUDFlags there can be empty primary keys (auto identity columns), leave error checking to database in this case ...
-                    If (Not CUDFlags Or (CUDFlags And rowCUDFlag = "u")) And primKeyValue.ToString().Length = 0 Then
-                        hadError = True
-                        MsgBox("Empty primary key value, cell (" & rowNum & "," & i + 1 & ") in sheet " & TargetRange.Parent.Name & " and row " & rowNum, MsgBoxStyle.Critical, "DBMapper Error")
-                        GoTo nextRow
-                    End If
-                    ' now format the primary key value and construct the WHERE clause
                     Dim primKey = TargetRange.Cells(1, i).Value
-                    If primKeysCount = 1 And CUDFlags And primKeyValue = "" And checkrst.Fields(primKey).Properties("IsAutoIncrement").Value Then
+                    If primKeysCount = 1 And CUDFlags And primKeyValue.ToString().Length = 0 And checkrst.Fields(primKey).Properties("IsAutoIncrement").Value Then
                         AutoIncrement = True
                         Exit For
                     End If
+                    ' with CUDFlags there can be empty primary keys (auto identity columns), leave error checking to database in this case ...
+                    If (Not CUDFlags Or (CUDFlags And rowCUDFlag = "u")) And primKeyValue.ToString().Length = 0 Then
+                        notifyUserOfDataError("Empty primary key value, cell (" & rowNum.ToString & "," & i.ToString & ") in sheet " & TargetRange.Parent.Name & " and row " & rowNum.ToString, rowNum, i)
+                        GoTo nextRow
+                    End If
+                    ' now format the primary key value and construct the WHERE clause
                     Dim primKeyFormatted As String
                     If IsNothing(primKeyValue) Then
                         primKeyFormatted = "NULL"
                     ElseIf checkIsNumeric(checkrst.Fields(primKey).Type) Then ' only decimal points allowed in numeric data
                         primKeyFormatted = Replace(CStr(primKeyValue), ",", ".")
                     ElseIf checkIsDate(checkrst.Fields(primKey).Type) Then
-                        primKeyFormatted = "'" & Format(Date.FromOADate(primKeyValue), "yyyy-MM-dd") & "'" ' ISO 8601 standard SQL Date formatting
+                        If TypeName(primKeyValue) = "Date" Then ' received as a Date value already
+                            primKeyFormatted = "'" & Format(primKeyValue, "yyyy-MM-dd") & "'" ' ISO 8601 standard SQL Date formatting
+                        ElseIf TypeName(primKeyValue) = "Double" Then ' got a double
+                            primKeyFormatted = "'" & Format(Date.FromOADate(primKeyValue), "yyyy-MM-dd") & "'" ' ISO 8601 standard SQL Date formatting
+                        Else
+                            notifyUserOfDataError("provided value neither Date nor Double, cannot convert into formatted primary key for lookup !", rowNum, i)
+                            GoTo cleanup
+                        End If
                     ElseIf checkIsTime(checkrst.Fields(primKey).Type) Then
-                        primKeyFormatted = "'" & Format(Date.FromOADate(primKeyValue), "yyyy-MM-dd HH:mm:ss.fff") & "'" ' ISO 8601 standard SQL Date/time formatting, 24h format...
+                        If TypeName(primKeyValue) = "Date" Then
+                            primKeyFormatted = "'" & Format(primKeyValue, "yyyy-MM-dd HH:mm:ss.fff") & "'" ' ISO 8601 standard SQL Date/time formatting, 24h format...
+                        ElseIf TypeName(primKeyValue) = "Double" Then
+                            primKeyFormatted = "'" & Format(Date.FromOADate(primKeyValue), "yyyy-MM-dd HH:mm:ss.fff") & "'" ' ISO 8601 standard SQL Date/time formatting, 24h format...
+                        Else
+                            notifyUserOfDataError("provided value neither Date nor Double, cannot convert into formatted primary key for lookup !", rowNum, i)
+                            GoTo cleanup
+                        End If
                     ElseIf TypeName(primKeyValue) = "Boolean" Then
                         primKeyFormatted = IIf(primKeyValue, "1", "0")
                     Else
-                        primKeyValue = Replace(primKeyValue, "'", "''") ' quote quotes inside Strings
-                        primKeyFormatted = "'" & primKeyValue & "'"
+                        primKeyFormatted = "'" & Replace(primKeyValue, "'", "''") & "'" ' quote quotes inside Strings and surround result with quotes
                     End If
                     primKeyCompound = primKeyCompound & primKey & " = " & primKeyFormatted & IIf(i = primKeysCount, "", " AND ")
                 Next
@@ -414,8 +425,7 @@ Public Class DBMapper : Inherits DBModif
                         rst.Open(getStmt, dbcnn, CursorTypeEnum.adOpenDynamic, LockTypeEnum.adLockOptimistic)
                         Dim check As Boolean = rst.EOF
                     Catch ex As Exception
-                        hadError = True
-                        MsgBox("Problem getting recordset, Error: " & ex.Message & " in sheet " & TargetRange.Parent.Name & " and row " & rowNum & ", doing " & getStmt)
+                        notifyUserOfDataError("Problem getting recordset, Error: " & ex.Message & " in sheet " & TargetRange.Parent.Name & " and row " & rowNum.ToString & ", doing " & getStmt, rowNum)
                         GoTo cleanup
                     End Try
                     primKeyDisplay = Replace(Mid(primKeyCompound, 7), " AND ", ";")
@@ -437,15 +447,12 @@ Public Class DBMapper : Inherits DBModif
                                     rst.Fields(TargetRange.Cells(1, i).Value).Value = TargetRange.Cells(rowNum, i).Value
                                 End If
                             Catch ex As Exception
-                                hadError = True
-                                MsgBox("Error inserting primary key value into table " & tableName & ": " & dbcnn.Errors(0).Description, MsgBoxStyle.Critical, "DBMapper Error")
+                                notifyUserOfDataError("Error inserting primary key value into table " & tableName & ": " & dbcnn.Errors(0).Description, rowNum, i)
+                                GoTo cleanup
                             End Try
                         Next
                     Else
-                        hadError = True
-                        TargetRange.Parent.Activate
-                        TargetRange.Cells(rowNum, i).Select
-                        MsgBox("Did not find recordset with statement '" & getStmt & "', insertIfMissing = " & insertIfMissing.ToString() & " in sheet " & TargetRange.Parent.Name & " and row " & rowNum, MsgBoxStyle.Critical, "DBMapper Error")
+                        notifyUserOfDataError("Did not find recordset with statement '" & getStmt & "', insertIfMissing = " & insertIfMissing.ToString() & " in sheet " & TargetRange.Parent.Name & " and row " & rowNum.ToString, rowNum, i)
                         GoTo cleanup
                     End If
                 Else
@@ -467,20 +474,16 @@ Public Class DBMapper : Inherits DBModif
                                         If IgnoreDataErrors Then
                                             rst.Fields(fieldname).Value = Nothing
                                         Else
-                                            hadError = True
-                                            TargetRange.Parent.Activate
-                                            TargetRange.Cells(rowNum, colNum).Select
-                                            MsgBox("Field Value Update Error with Table: " & tableName & ", Field: " & fieldname & ", in sheet " & TargetRange.Parent.Name & " and row " & rowNum & ", col: " & colNum, MsgBoxStyle.Critical, "DBMapper Error")
+                                            If Not notifyUserOfDataError("Field Value Update Error with Table: " & tableName & ", Field: " & fieldname & ", in sheet " & TargetRange.Parent.Name & " and row " & rowNum.ToString & ", col: " & colNum.ToString, rowNum, colNum) Then
+                                                GoTo cleanup
+                                            End If
                                         End If
                                     Else
                                         rst.Fields(fieldname).Value = IIf(fieldval.ToString().Length = 0, Nothing, fieldval)
                                     End If
                                 End If
                             Catch ex As Exception
-                                hadError = True
-                                TargetRange.Parent.Activate
-                                TargetRange.Cells(rowNum, colNum).Select
-                                MsgBox("Field Value Update Error: " & ex.Message & " with Table: " & tableName & ", Field: " & fieldname & ", in sheet " & TargetRange.Parent.Name & " and row " & rowNum & ", col: " & colNum, MsgBoxStyle.Critical, "DBMapper Error")
+                                notifyUserOfDataError("Field Value Update Error: " & ex.Message & " with Table: " & tableName & ", Field: " & fieldname & ", in sheet " & TargetRange.Parent.Name & " and row " & rowNum.ToString & ", col: " & colNum.ToString, rowNum, colNum)
                                 rst.CancelUpdate()
                                 GoTo cleanup
                             End Try
@@ -492,25 +495,27 @@ Public Class DBMapper : Inherits DBModif
                     Try
                         rst.Update()
                     Catch ex As Exception
-                        hadError = True
-                        TargetRange.Parent.Activate
-                        TargetRange.Rows(rowNum).Select
-                        MsgBox("Row Update Error, Table: " & rst.Source & ", Error: " & ex.Message & " in sheet " & TargetRange.Parent.Name & " and row " & rowNum, MsgBoxStyle.Critical, "DBMapper Error")
+                        notifyUserOfDataError("Row Update Error, Table: " & rst.Source & ", Error: " & ex.Message & " in sheet " & TargetRange.Parent.Name & " and row " & rowNum.ToString, rowNum)
                         rst.CancelUpdate()
                         GoTo cleanup
                     End Try
                 End If
                 If (CUDFlags And rowCUDFlag = "d") Then
                     ExcelDnaUtil.Application.StatusBar = Left("Deleting " & primKeyDisplay & " in " & tableName, 255)
-                    rst.Delete(AffectEnum.adAffectCurrent)
+                    Try
+                        rst.Delete(AffectEnum.adAffectCurrent)
+                    Catch ex As Exception
+                        If Not notifyUserOfDataError("Error deleting row " & rowNum.ToString & " in sheet " & TargetRange.Parent.Name & ": " & ex.Message, rowNum) Then
+                            GoTo cleanup
+                        End If
+                    End Try
                 End If
                 rst.Close()
 nextRow:
                 Try
                     If IsNothing(TargetRange.Cells(rowNum + 1, 1).Value) OrElse TargetRange.Cells(rowNum + 1, 1).Value.ToString().Length = 0 Then finishLoop = True
                 Catch ex As Exception
-                    hadError = True
-                    MsgBox("Error in first primary column: Cells(" & rowNum + 1 & ",1): " & ex.Message, MsgBoxStyle.Critical, "DBMapper Error")
+                    notifyUserOfDataError("Error in first primary column: Cells(" & rowNum + 1 & ",1): " & ex.Message, rowNum + 1)
                     'finishLoop = True '-> do not finish to allow erroneous data  !!
                 End Try
             End If
@@ -546,6 +551,19 @@ cleanup:
             End If
         End If
     End Sub
+
+    Private Function notifyUserOfDataError(message As String, rowNum As Long, Optional colNum As Integer = -1) As Boolean
+        hadError = True
+        TargetRange.Parent.Activate
+        If colNum = -1 Then
+            TargetRange.Rows(rowNum).Select
+        Else
+            TargetRange.Cells(rowNum, colNum).Select
+        End If
+        Dim retval As MsgBoxResult = MsgBox(message, MsgBoxStyle.Critical + MsgBoxStyle.OkCancel, "DBMapper Error")
+        If retval = vbCancel Then Return False
+        Return True
+    End Function
 
     Public Overrides Sub setDBModifCreateFields(ByRef theDBModifCreateDlg As DBModifCreate)
         With theDBModifCreateDlg
@@ -913,11 +931,12 @@ Public Module DBModifs
             dbcnn.ConnectionTimeout = Globals.CnnTimeout
             dbcnn.CommandTimeout = Globals.CmdTimeout
             dbcnn.Open()
+            openConnection = True
         Catch ex As Exception
             MsgBox("Error connecting to DB: " & ex.Message & ", connection string: " & theConnString, vbCritical, "Open Connection Error")
             dbcnn = Nothing
         End Try
-        openConnection = True
+        ExcelDnaUtil.Application.StatusBar = False
     End Function
 
     ''' <summary>in case there is a defined DBMapper underlying the DBListFetch/DBSetQuery target area then change the extent of that to the new area given in theRange</summary>
@@ -929,8 +948,7 @@ Public Module DBModifs
             Dim dbMapperRangeName As String = getDBModifNameFromRange(theRange)
             If Left(dbMapperRangeName, 8) = "DBMapper" Then
                 ' (re)assign db mapper range name to the passed (changed) DBListFetch/DBSetQuery function target range
-                'Dim NamesList As Excel.Names = theRange.Parent.Parent.Names
-                Try : theRange.Name = dbMapperRangeName 'NamesList.Add(Name:=dbMapperRangeName, RefersTo:=theRange)
+                Try : theRange.Name = dbMapperRangeName
                 Catch ex As Exception
                     Throw New Exception("Error when assigning name '" & dbMapperRangeName & "' to DBListFetch/DBSetQuery target range: " & ex.Message)
                 End Try
@@ -1175,7 +1193,7 @@ Public Module DBModifs
     Public Sub getDBModifDefinitions()
         ' load DBModifier definitions (objects) into Global collection DBModifDefColl
         Try
-            Globals.DBModifDefColl = New Dictionary(Of String, Dictionary(Of String, DBModif))
+            Globals.DBModifDefColl.Clear()
             Dim CustomXmlParts As Object = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
             If CustomXmlParts.Count = 0 Then
                 ' get DBModifier definitions from docproperties

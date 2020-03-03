@@ -466,8 +466,8 @@ Public Module Globals
             For Each ws In Wb.Worksheets
                 cellcount += ExcelDnaUtil.Application.WorksheetFunction.CountIf(ws.Range("1:" & ws.Rows.Count), "<>")
             Next
-            If cellcount > CLng(fetchSetting("maxCellCount", "200000")) Then
-                Dim retval As MsgBoxResult = MsgBox("This large workbook (" & cellcount.ToString() & " filled cells >" & CLng(fetchSetting("maxCellCount", "200000")) & ") might take long to search for DB functions to refresh, continue ?" & vbCrLf & "Click Cancel to add DBFskip to this Workbook, avoiding this search in the future...", vbQuestion + vbYesNoCancel, "Refresh DB functions")
+            If cellcount > CLng(fetchSetting("maxCellCount", "300000")) Then
+                Dim retval As MsgBoxResult = MsgBox("This large workbook (" & cellcount.ToString() & " filled cells >" & CLng(fetchSetting("maxCellCount", "300000")) & ") might take long to search for DB functions to refresh, continue ?" & vbCrLf & "Click Cancel to add DBFskip to this Workbook, avoiding this search in the future...", vbQuestion + vbYesNoCancel, "Refresh DB functions")
                 If retval <> vbYes Then
                     If retval = vbCancel Then
                         Try
@@ -487,19 +487,18 @@ Public Module Globals
                     Dim firstFoundAddress As String = ""
                     If Not IsNothing(searchCells) Then firstFoundAddress = searchCells.Address
                     While Not IsNothing(searchCells)
-                        Dim callID As String
+                        Dim callID As String = "" : Dim underlyingName As String = ""
                         Try
                             ' get the callID of the underlying name of the target (key of the queryCache and StatusCollection)
                             callID = "[" & searchCells.Parent.Parent.Name & "]" & searchCells.Parent.Name & "!" & searchCells.Address
+                            ' remove query cache to force refetching
+                            queryCache.Remove(callID)
+                            ' trigger recalculation by changing formula of DB Function
+                            underlyingName = getDBunderlyingNameFromRange(searchCells)
+                            ExcelDnaUtil.Application.Range(underlyingName).Formula += " "
                         Catch ex As Exception
-                            LogError("getting callID for searchCells in refreshing DB Function " & theFunc & "): " + ex.Message)
-                            Continue While
+                            LogWarn("Exception when setting Formula or getting callID (" & callID & ") of DB Function " & theFunc & ") in searchCells (" & searchCells.Address & ") with underlyingName " & underlyingName & ": " + ex.Message)
                         End Try
-                        ' remove query cache to force refetching
-                        queryCache.Remove(callID)
-                        ' trigger recalculation by changing formula of DB Function
-                        Dim underlyingName As String = getDBunderlyingNameFromRange(searchCells)
-                        ExcelDnaUtil.Application.Range(underlyingName).Formula += " "
                         searchCells = ws.Cells.FindNext(searchCells)
                         If searchCells.Address = firstFoundAddress Then Exit While
                     End While
@@ -571,8 +570,8 @@ Public Module Globals
                 cellcount += ExcelDnaUtil.Application.WorksheetFunction.CountIf(ws.Range("1:" & ws.Rows.Count), "<>")
             Next
             ' warn if above threshold
-            If cellcount > CLng(fetchSetting("maxCellCount", "100000")) Then
-                Dim retval As MsgBoxResult = MsgBox("This large workbook (" & cellcount.ToString() & " filled cells >" & CLng(fetchSetting("maxCellCount", "100000")) & ") might take long to search for legacy functions, continue ?" & vbCrLf & "Cancel to disable legacy function checking for this workbook ...", vbQuestion + MsgBoxStyle.YesNoCancel, "Legacy DBAddin functions")
+            If cellcount > CLng(fetchSetting("maxCellCount", "300000")) Then
+                Dim retval As MsgBoxResult = MsgBox("This large workbook (" & cellcount.ToString() & " filled cells >" & CLng(fetchSetting("maxCellCount", "300000")) & ") might take long to search for legacy functions, continue ?" & vbCrLf & "Cancel to disable legacy function checking for this workbook ...", vbQuestion + MsgBoxStyle.YesNoCancel, "Legacy DBAddin functions")
                 If retval <> vbYes Then
                     If retval = vbCancel Then
                         Try

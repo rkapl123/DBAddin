@@ -42,13 +42,13 @@ Public Class AddInEvents
         Catch ex As Exception : End Try
         Trace.Listeners.Add(New ExcelDna.Logging.LogDisplayTraceListener())
         ExcelDna.IntelliSense.IntelliSenseServer.Install()
-        theMenuHandler = New MenuHandler
+        Globals.theMenuHandler = New MenuHandler
         LogInfo("initialize configuration settings")
-        queryCache = New Dictionary(Of String, String)
-        StatusCollection = New Dictionary(Of String, ContainedStatusMsg)
-        initSettings()
-        Dim srchdListener As Object
-        For Each srchdListener In Trace.Listeners
+        Functions.queryCache = New Dictionary(Of String, String)
+        Functions.StatusCollection = New Dictionary(Of String, ContainedStatusMsg)
+        Globals.DBModifDefColl = New Dictionary(Of String, Dictionary(Of String, DBModif))
+        Globals.initSettings()
+        For Each srchdListener As Object In Trace.Listeners
             If srchdListener.ToString() = "ExcelDna.Logging.LogDisplayTraceListener" Then
                 Globals.theLogListener = srchdListener
                 Exit For
@@ -208,9 +208,12 @@ done:
 
     ''' <summary>WorkbookActivate: gets defined named ranges for DBMapper invocation in the current workbook after activation and updates Ribbon with it</summary>
     Private Sub Application_WorkbookActivate(Wb As Excel.Workbook) Handles Application.WorkbookActivate
-        getDBModifDefinitions()
-        ' unfortunately, Excel doesn't fire SheetActivate when opening workbooks, so do that here...
-        assignHandler(Wb.ActiveSheet)
+        ' avoid when being activated by DBFuncsAction 
+        If Not DBModifs.preventChangeWhileFetching Then
+            getDBModifDefinitions()
+            ' unfortunately, Excel doesn't fire SheetActivate when opening workbooks, so do that here...
+            assignHandler(Wb.ActiveSheet)
+        End If
     End Sub
 
     ''' <summary>specific click handlers for the five definable commandbuttons</summary>
@@ -284,9 +287,12 @@ done:
     ''' <summary>assign commandbuttons new and refresh DBAddins DBModification Menu with each change of sheets</summary>
     ''' <param name="Sh"></param>
     Private Sub Application_SheetActivate(Sh As Object) Handles Application.SheetActivate
-        getDBModifDefinitions()
-        ' only when needed assign button handler for this sheet ...
-        If Globals.DBModifDefColl.Count > 0 Then assignHandler(Sh)
+        ' avoid when being activated by DBFuncsAction 
+        If Not DBModifs.preventChangeWhileFetching Then
+            getDBModifDefinitions()
+            ' only when needed assign button handler for this sheet ...
+            If Globals.DBModifDefColl.Count > 0 Then assignHandler(Sh)
+        End If
     End Sub
 
     Private Sub Application_WorkbookBeforeClose(Wb As Workbook, ByRef Cancel As Boolean) Handles Application.WorkbookBeforeClose

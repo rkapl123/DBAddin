@@ -170,10 +170,10 @@ Public Class MenuHandler
         storeSetting("ConfigStoreFolder", fetchSetting("ConfigStoreFolder" & env, String.Empty))
         storeSetting("ConfigName", fetchSetting("ConfigName" & env, String.Empty))
         initSettings()
-        Dim retval As MsgBoxResult = MsgBox("ConstConnString" & ConstConnString & vbCrLf & "ConfigStoreFolder:" & ConfigStoreFolder & vbCrLf & vbCrLf & "Refresh DBFunctions to see effects?", vbOKCancel, "Changed environment to: " & fetchSetting("ConfigName" & env, String.Empty))
+        Dim retval As MsgBoxResult = MsgBox("ConstConnString" & ConstConnString & vbCrLf & "ConfigStoreFolder:" & ConfigStoreFolder & vbCrLf & vbCrLf & "Refresh DBFunctions to see effects?", vbYesNo, "Changed environment to: " & fetchSetting("ConfigName" & env, String.Empty))
         ' provide a chance to reconnect when switching environment...
         conn = Nothing
-        If retval = vbOK Then Globals.refreshData()
+        If retval = vbYes Then Globals.refreshData()
     End Sub
 
     ''' <summary>dialogBoxLauncher of leftmost group: activate about box</summary>
