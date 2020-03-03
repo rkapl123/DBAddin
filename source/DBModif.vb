@@ -232,6 +232,16 @@ Public Class DBMapper : Inherits DBModif
         executeAdditionalProc = definitionXML.SelectSingleNode("ns0:executeAdditionalProc").Text
         ignoreColumns = definitionXML.SelectSingleNode("ns0:ignoreColumns").Text
         CUDFlags = Convert.ToBoolean(definitionXML.SelectSingleNode("ns0:CUDFlags").Text)
+
+        If Not IsNothing(TargetRange.ListObject) Then
+            ' special grey table style for CUDFlags DBMapper
+            If CUDFlags Then
+                TargetRange.ListObject.TableStyle = "TableStyleLight11"
+                ' otherwise blue
+            Else
+                TargetRange.ListObject.TableStyle = "TableStyleLight9"
+            End If
+        End If
     End Sub
 
     ''' <summary>simply open a database connection, required for DBBegin Transaction (from next step)</summary>
@@ -1115,7 +1125,7 @@ Public Module DBModifs
 
             ' display dialog for parameters
             If theDBModifCreateDlg.ShowDialog() = DialogResult.Cancel Then
-                ' remove targetRange Name and customdocproperty created in clipboard helper
+                ' remove targetRange Name created in clipboard helper
                 If createdDBMapperFromClipboard Then
                     Try : ExcelDnaUtil.Application.ActiveWorkbook.Names(activeCellName).Delete : Catch ex As Exception : End Try
                 End If
@@ -1137,10 +1147,13 @@ Public Module DBModifs
                 Dim NamesList As Excel.Names = ExcelDnaUtil.Application.ActiveWorkbook.Names
                 Try
                     NamesList.Add(Name:=createdDBModifType + .DBModifName.Text, RefersTo:=targetRange)
-                Catch ex As Exception : MsgBox("Error when assigning name '" & createdDBModifType & .DBModifName.Text & "' to active cell: " & ex.Message, vbCritical, "DB Sequence Creation Error")
+                Catch ex As Exception
+                    MsgBox("Error when assigning name '" & createdDBModifType & .DBModifName.Text & "' to active cell: " & ex.Message, vbCritical, "DBModifier Creation Error")
+                    Exit Sub
                 End Try
             End If
 
+            'TODO: prevent duplicate definitions!
             Dim CustomXmlParts As Object = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
             If CustomXmlParts.Count = 0 Then ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.Add("<root xmlns=""DBModifDef""></root>")
             CustomXmlParts = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
