@@ -252,7 +252,7 @@ Public Class MenuHandler
     Public Sub DBModifClick(control As IRibbonControl)
         Dim nodeName As String = Right(control.Id, Len(control.Id) - 1)
         If Not ExcelDnaUtil.Application.CommandBars.GetEnabledMso("FileNewDefault") Then
-            MsgBox("Cannot execute DB Modifier while cell editing active !", MsgBoxStyle.Critical)
+            MsgBox("Cannot execute DB Modifier while cell editing active !", MsgBoxStyle.Exclamation, "DB Modifier execution")
             Exit Sub
         End If
         Try
@@ -260,7 +260,11 @@ Public Class MenuHandler
                 createDBModif(control.Tag, targetDefName:=nodeName)
             Else
                 ' DB sequence actions (the sequence to be done) are stored directly in DBMapperDefColl, so different invocation here
-                Globals.DBModifDefColl(control.Tag).Item(nodeName).doDBModif()
+                If Not (ExcelDnaUtil.Application.ActiveWorkbook.ReadOnlyRecommended And ExcelDnaUtil.Application.ActiveWorkbook.ReadOnly) Then
+                    Globals.DBModifDefColl(control.Tag).Item(nodeName).doDBModif()
+                Else
+                    MsgBox("ReadOnlyRecommended is set on active workbook (being readonly), therefore all DB Modifiers are disabled !", MsgBoxStyle.Exclamation, "DB Modifier execution")
+                End If
             End If
         Catch ex As Exception
             LogError(ex.Message & ",control.Tag:" & control.Tag & ",nodeName:" & nodeName)

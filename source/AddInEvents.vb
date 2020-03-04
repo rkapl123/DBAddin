@@ -74,8 +74,9 @@ Public Class AddInEvents
         Try
             If Wb.CustomDocumentProperties("doDBMOnSave").Value Then doDBMOnSave = True
         Catch ex As Exception : End Try
-        ' if overriding flag not given, ask for saving if this is necessary for any DBmodifier...
-        If Not doDBMOnSave Then
+        ' if overriding flag not given and Readonly is NOT recommended on this workbook and workbook IS NOT Readonly, ...
+        ' ...ask for saving if it is necessary for any DBmodifier...
+        If Not (Wb.ReadOnlyRecommended And Wb.ReadOnly) And Not doDBMOnSave Then
             For Each DBmodifType As String In Globals.DBModifDefColl.Keys
                 For Each dbmapdefkey As String In Globals.DBModifDefColl(DBmodifType).Keys
                     If Globals.DBModifDefColl(DBmodifType).Item(dbmapdefkey).DBModifSaveNeeded() Then
@@ -87,8 +88,8 @@ Public Class AddInEvents
             Next
         End If
 done:
-        ' save all DBmaps/DBActions/DBSequences on saving except Readonly is recommended on this workbook
-        If Not Wb.ReadOnlyRecommended And doDBMOnSave Then
+        ' save all DBmaps/DBActions/DBSequences on saving if above resulted in YES!
+        If doDBMOnSave Then
             For Each DBmodifType As String In Globals.DBModifDefColl.Keys
                 For Each dbmapdefkey As String In Globals.DBModifDefColl(DBmodifType).Keys
                     With Globals.DBModifDefColl(DBmodifType).Item(dbmapdefkey)

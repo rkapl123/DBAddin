@@ -259,6 +259,11 @@ Public Class DBMapper : Inherits DBModif
     ''' <param name="deleteFlag">if delete button was pressed, this is true</param>
     Public Sub doCUDMarks(changedRange As Excel.Range, Optional deleteFlag As Boolean = False)
         If Not CUDFlags Then Exit Sub
+        ' sanity check for single cell DB Mappers..
+        If TargetRange.Columns.Count = 1 And TargetRange.Rows.Count = 1 Then
+            Dim retval As MsgBoxResult = MsgBox("DB Mapper Range with CUD Flags is only one cell, really set CUD Flags ?", MsgBoxStyle.Question + vbOKCancel, "Set CUD Flags for DB Mapper")
+            If retval = vbCancel Then Exit Sub
+        End If
         ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = False ' to prevent automatic creation of new column
         ' DBMapper ranges always have a header row, so changedRange.Row - 1...
         If deleteFlag Then
@@ -292,10 +297,10 @@ Public Class DBMapper : Inherits DBModif
     End Sub
 
     ''' <summary>extend DataRange to "whole" DBMApper area (first row (field names) to the right and first column (primary key) down)</summary>
-    ''' <param name="ignoreCUDFlag"></param>
+    ''' <param name="ignoreCUDFlag">right after creation every DBMapper Data Range is extended, in this case ignore the CUD Flag setting on it</param>
     Public Sub extendDataRange(Optional ignoreCUDFlag As Boolean = False)
         ' only extend if no CUD Flags present (may have non existing first (primary) columns -> auto identity columns !)
-        If Not CUDFlags And Not ignoreCUDFlag Then
+        If Not CUDFlags Or ignoreCUDFlag Then
             preventChangeWhileFetching = True
             Dim rowEnd = TargetRange.Cells(1, 1).End(Excel.XlDirection.xlDown).Row
             Dim colEnd = TargetRange.Cells(1, 1).End(Excel.XlDirection.xlToRight).Column
@@ -314,7 +319,8 @@ Public Class DBMapper : Inherits DBModif
 
     ''' <summary>reset CUD FLags, either after completion of doDBModif or on request (refresh)</summary>
     Public Sub resetCUDFlags()
-        If CUDFlags Then
+        ' in case CUDFlags was set to a single cell DBMapper avoid resetting CUDFlags
+        If CUDFlags And TargetRange.Columns.Count > 1 And TargetRange.Rows.Count > 1 Then
             ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = False ' to prevent automatic creation of new column
             TargetRange.Columns(TargetRange.Columns.Count + 1).ClearContents
             TargetRange.Font.Italic = False
@@ -533,7 +539,11 @@ nextRow:
         Loop Until rowNum > TargetRange.Rows.Count Or (finishLoop And Not CUDFlags)
 
         ' clear CUD marks after completion
-        resetCUDFlags()
+        Try
+            resetCUDFlags()
+        Catch ex As Exception
+            MsgBox("Error in resetting CUD Flags: " & ex.Message, MsgBoxStyle.Critical, "DBMapper Error")
+        End Try
 
         ' any additional stored procedures to execute?
         If executeAdditionalProc.Length > 0 Then
@@ -552,8 +562,9 @@ cleanup:
         If calledByDBSeq = "" Then
             dbcnn.Close()
         End If
-        ' DBSheet surrogate (CUDFlags), ask for refresh after DB Modification was done
-        If CUDFlags And askBeforeExecute And calledByDBSeq = "" Then
+        Dim testDBFunctionArea = getDBunderlyingNameFromRange(TargetRange)
+        ' DBSheet surrogate (CUDFlags), ask for refresh after DB Modification was done 
+        If CUDFlags And askBeforeExecute And calledByDBSeq = "" And testDBFunctionArea <> "" Then
             Dim retval As MsgBoxResult = MsgBox("Refresh DBListfetch/DBSetQuery for Data Range of DB Mapper?", MsgBoxStyle.Question + vbOKCancel, "Refresh DB Mapper")
             If retval = vbOK Then
                 TargetRange.Cells(1, 1).Select()
@@ -984,6 +995,9 @@ Public Module DBModifs
         'mapper.saveRangeToDBSingle(Range("DB_DefName"), "tableName", "primKey1,primKey2,primKey3", "MSSQLDB_NAME")
         '--> def(, "DB_NAME", "tableName", "primKey1,primKey2,primKey3")          DBMapperName = DB_DefName
         'def(, "DB_NAME", True), "tableName", "primKey1,primKey2,primKey3", "MSSQLDB_NAME", True)", "MSSQLDB_NAME", True)
+        '
+        ' for saveRangeToDB(DataRange As Excel.Range, tableNamesStr As String, primKeysStr As String, primKeyColumnsStr As String, startDataColumn As Integer, connid As String, ParamArray optionalArray() As Variant)
+        ' remove primKeyColumnsStr As String and startDataColumn As Integer before copying to clipboard...
         Dim existingDBModif As DBModif = Nothing
         Dim activeCellName As String = targetDefName
         Dim createdDBMapperFromClipboard As Boolean = False
@@ -996,8 +1010,9 @@ Public Module DBModifs
                 Dim commaBeforeConnDef As Integer = InStrRev(cpbdtext, ",", connDefStart)
                 ' after conndef, all parameters are optional, so in case there is no comma afterwards, set this to end of whole definition string
                 Dim commaAfterConnDef As Integer = IIf(InStr(connDefStart, cpbdtext, ",") > 0, InStr(connDefStart, cpbdtext, ","), Len(cpbdtext))
-                Dim DB_DefName, newDefString As String
-                Try : DB_DefName = "DBMapper" + Replace(Replace(Mid(cpbdtext, firstBracket + 1, firstComma - firstBracket - 1), "Range(""", ""), """)", "")
+                Dim DB_DefName, newDefString, RangeDefName As String
+                RangeDefName = Mid(cpbdtext, firstBracket + 1, firstComma - firstBracket - 1)
+                Try : DB_DefName = "DBMapper" + Replace(Replace(Mid(RangeDefName, InStr(RangeDefName, "Range(""") + 7), """)", ""), ":", "")
                 Catch ex As Exception : MsgBox("Error when retrieving DB_DefName from clipboard: " & ex.Message, vbCritical, "DBMapper Legacy Creation Error") : Exit Sub : End Try
                 Try : newDefString = "def(" + Replace(Mid(cpbdtext, commaBeforeConnDef, commaAfterConnDef - commaBeforeConnDef), "MSSQL", "") + Mid(cpbdtext, firstComma, commaBeforeConnDef - firstComma - 1) + Mid(cpbdtext, commaAfterConnDef - 1)
                 Catch ex As Exception : MsgBox("Error when building new definition from clipboard: " & ex.Message, vbCritical, "DBMapper Legacy Creation Error") : Exit Sub : End Try
@@ -1250,7 +1265,8 @@ Public Module DBModifs
                             dbModifNode.AppendChildNode("env", NamespaceURI:="DBModifDef", NodeValue:=DBModifParams(0))
                             dbModifNode.AppendChildNode("database", NamespaceURI:="DBModifDef", NodeValue:=DBModifParams(1).Replace("""", "").Trim)
                             dbModifNode.AppendChildNode("tableName", NamespaceURI:="DBModifDef", NodeValue:=DBModifParams(2).Replace("""", "").Trim)
-                            dbModifNode.AppendChildNode("primKeysStr", NamespaceURI:="DBModifDef", NodeValue:=DBModifParams(3).Replace("""", "").Trim)
+                            ' primary keys are now just a count...
+                            dbModifNode.AppendChildNode("primKeysStr", NamespaceURI:="DBModifDef", NodeValue:=DBModifParams(3).Replace("""", "").Trim.Split(",").Length)
                             dbModifNode.AppendChildNode("insertIfMissing", NamespaceURI:="DBModifDef", NodeValue:=If(DBModifParams.Length > 4, DBModifParams(4), "False"))
                             dbModifNode.AppendChildNode("executeAdditionalProc", NamespaceURI:="DBModifDef", NodeValue:=If(DBModifParams.Length > 5, DBModifParams(5).Replace("""", "").Trim, ""))
                             dbModifNode.AppendChildNode("ignoreColumns", NamespaceURI:="DBModifDef", NodeValue:=If(DBModifParams.Length > 6, DBModifParams(6).Replace("""", "").Trim, ""))
@@ -1406,15 +1422,17 @@ Public Module DBModifs
     End Function
 
     ''' <summary>execute given DBModifier, used for VBA call by Application.Run)</summary>
+    ''' <param name="DBModifName">Full name of DB Modifier, including type at beginning</param>
+    ''' <returns>True on success, False otherwise</returns>
     <ExcelCommand(Name:="executeDBModif")>
     Public Function executeDBModif(DBModifName As String) As Boolean
         Dim DBModiftype As String = Left(DBModifName, 8)
         If DBModiftype = "DBSeqnce" Or DBModiftype = "DBMapper" Or DBModiftype = "DBAction" Then
             Globals.DBModifDefColl(DBModiftype).Item(DBModifName).doDBModif()
-            Return hadError
+            Return Not hadError
         Else
-            MsgBox("No valid type in passed DB Modifier " & DBModifName & "(" & DBModiftype & ") !", vbCritical, "executeDBModif Error")
-            Return True
+            MsgBox("No valid type (" & DBModiftype & ") in passed DB Modifier '" & DBModifName & "', DB Modifier name must start with 'DBSeqnce', 'DBMapper' Or 'DBAction' !", vbCritical, "executeDBModif Error")
+            Return False
         End If
     End Function
 
