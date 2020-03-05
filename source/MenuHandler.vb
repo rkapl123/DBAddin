@@ -228,6 +228,7 @@ Public Class MenuHandler
             xmlString += "</menu>"
             Return xmlString
         Catch ex As Exception
+            LogWarn("Exception caught while building xml: " & ex.Message)
             Return String.Empty
         End Try
     End Function

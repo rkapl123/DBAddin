@@ -310,9 +310,6 @@ done:
             If Target.Row > 1 Then targetNameBelow = getDBModifNameFromRange(Target.Offset(-1, 0))
             If Left(targetName, 8) = "DBMapper" Then
                 DirectCast(Globals.DBModifDefColl("DBMapper").Item(targetName), DBMapper).doCUDMarks(Target)
-            ElseIf Left(targetNameBelow, 8) = "DBMapper" Then
-                'TODO: extend DB Functions formats and validations and extend TargetRange of DBMapper for DBListfetch DBMappers
-                DirectCast(Globals.DBModifDefColl("DBMapper").Item(targetNameBelow), DBMapper).doCUDMarks(Target)
             End If
         End If
     End Sub

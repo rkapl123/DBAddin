@@ -387,10 +387,11 @@ Public Module Functions
                     caller.Formula = callerFormula ' restore formula as excel deletes target range when changing query fundamentally
                 End Try
                 ' give hidden name to target range of listobject (jump function)
+                Dim oldRange As Excel.Range = theListObject.Range.Parent.Parent.Names(targetExtent).RefersToRange
                 theListObject.Range.Name = targetExtent
                 theListObject.Range.Parent.Parent.Names(targetExtent).Visible = False
                 ' if refreshed range is a DBMapper and it is in the current workbook, resize it
-                DBModifs.resizeDBMapperRange(theListObject.Range)
+                DBModifs.resizeDBMapperRange(theListObject.Range, oldRange)
             End If
         Catch ex As Exception
             LogWarn(ex.Message & " in query: " & Query & ", caller: " & callID)
@@ -524,9 +525,9 @@ Public Module Functions
         Dim tableRst As ADODB.Recordset
         Dim formulaFilledRange As Excel.Range = Nothing
         Dim targetSH As Excel.Worksheet, formulaSH As Excel.Worksheet = Nothing
-        Dim copyFormat() As String = Nothing, copyFormatF() As String = Nothing
+        Dim NumFormat() As String = Nothing, NumFormatF() As String = Nothing
         Dim headingOffset As Long, rowDataStart As Long, startRow As Long, startCol As Long, arrayCols As Long, arrayRows As Long, copyDown As Long
-        Dim oldRows As Long = 0, oldCols As Long = 0, oldFRows As Long = 0, oldFCols As Long = 0, retrievedRows As Long, targetColumns As Long, formulaStart As Long
+        Dim oldRows As Long, oldCols As Long, oldFRows As Long, oldFCols As Long, retrievedRows As Long, targetColumns As Long, formulaStart As Long
         Dim warning As String, errMsg As String, tmpname As String
 
         LogInfo("Entering DBListFetchAction: callID " & callID)
@@ -688,14 +689,14 @@ Public Module Functions
             arrayRows += IIf(HeaderInfo And arrayRows = 1, 1, 0)  ' need special case for autoformat
             Dim i As Long
             For i = 0 To targetColumns
-                ReDim Preserve copyFormat(i)
-                copyFormat(i) = targetSH.Cells(startRow + rowDataStart - 1, startCol + i).NumberFormat
+                ReDim Preserve NumFormat(i)
+                NumFormat(i) = targetSH.Cells(startRow + rowDataStart - 1, startCol + i).NumberFormat
             Next
             ' now for the calculated data area
             If Not formulaRange Is Nothing Then
                 For i = 0 To formulaRange.Columns.Count - 1
-                    ReDim Preserve copyFormatF(i)
-                    copyFormatF(i) = formulaSH.Cells(startRow + rowDataStart - 1, formulaRange.Column + i).NumberFormat
+                    ReDim Preserve NumFormatF(i)
+                    NumFormatF(i) = formulaSH.Cells(startRow + rowDataStart - 1, formulaRange.Column + i).NumberFormat
                 Next
             End If
         End If
@@ -798,7 +799,7 @@ Public Module Functions
         tableRst.Close()
         ' excel doesn't delete the querytable name if it is not on the active sheet, 
         ' so Switch to the querytables sheet and back again:
-        curSheet.Activate
+        curSheet.Activate()
 
         '''' formulas recreation (removal and autofill new ones)
         If Not formulaRange Is Nothing Then
@@ -874,7 +875,7 @@ Public Module Functions
         End If
 
         ' if refreshed range is a DBMapper and it is in the current workbook, resize it
-        DBModifs.resizeDBMapperRange(totalTargetRange)
+        DBModifs.resizeDBMapperRange(totalTargetRange, targetRange)
 
         '''' any warnings, errors ?
         If warning.Length > 0 Then
@@ -892,13 +893,13 @@ Public Module Functions
 
         ' autoformat: restore formats
         If autoformat Then
-            For i = 0 To UBound(copyFormat)
-                newTargetRange.Columns(i + 1).NumberFormat = copyFormat(i)
+            For i = 0 To UBound(NumFormat)
+                newTargetRange.Columns(i + 1).NumberFormat = NumFormat(i)
             Next
             ' now for the calculated cells...
             If Not formulaRange Is Nothing Then
-                For i = 0 To UBound(copyFormatF)
-                    formulaFilledRange.Columns(i + 1).NumberFormat = copyFormatF(i)
+                For i = 0 To UBound(NumFormatF)
+                    formulaFilledRange.Columns(i + 1).NumberFormat = NumFormatF(i)
                 Next
             End If
         End If
