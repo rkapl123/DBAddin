@@ -34,7 +34,7 @@ Public Module ConfigFiles
 
         ' open file for reading
         Try
-            Dim fileReader As System.IO.StreamReader = My.Computer.FileSystem.OpenTextFileReader(theFileName)
+            Dim fileReader As System.IO.StreamReader = My.Computer.FileSystem.OpenTextFileReader(theFileName, Text.Encoding.Default)
             Do
                 ItemLine = fileReader.ReadLine()
                 ' for existing dbfunction replace querystring in existing formula of active cell

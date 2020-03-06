@@ -299,7 +299,18 @@ Public Module Functions
         Dim theListObject As Excel.ListObject = Nothing
 
         Dim calcMode = ExcelDnaUtil.Application.Calculation
-        ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual
+        Try
+            ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual
+        Catch ex As Exception : End Try
+        ' this works around the data validation input bug and being called when COM Model is not ready
+        ' when selecting a value from a list of a validated field or being invoked from a hyperlink (e.g. word), excel won't react to
+        ' Application.Calculation changes, so just leave here...
+        If ExcelDnaUtil.Application.Calculation <> Excel.XlCalculation.xlCalculationManual Then
+            LogWarn("Error in setting Application.Calculation to Manual in query: " & Query & ", caller: " & callID)
+            StatusCollection(callID).statusMsg = "Error in setting Application.Calculation to Manual in query: " & Query
+            caller.Formula += " " ' trigger recalculation to return error message to calling function
+            Exit Sub
+        End If
         ' when being called from DBSequence.doDBModif, targetRange is an Excel.Range, otherwise it's a reference
         If TypeName(targetRange) = "ExcelReference" Then
             TargetCell = ToRange(targetRange)
@@ -318,12 +329,12 @@ Public Module Functions
             errHappened = True
         End Try
         If errHappened Or InStr(1, srcExtent, "DBFsource") = 0 Then
-            srcExtent = "DBFsource" & Replace(Replace(CDbl(Now.ToOADate()), ",", String.Empty), ".", String.Empty)
+            srcExtent = "DBFsource" & Replace(Guid.NewGuid().ToString, "-", "")
             Try
                 caller.Name = srcExtent
                 caller.Parent.Parent.Names(srcExtent).Visible = False
             Catch ex As Exception
-                Throw New Exception("Error in setting srcExtentConnect name: " & ex.Message & " in query: " & Query)
+                Throw New Exception("Error in setting srcExtent name: " & ex.Message & " in query: " & Query)
             End Try
         End If
 
@@ -387,10 +398,13 @@ Public Module Functions
                     caller.Formula = callerFormula ' restore formula as excel deletes target range when changing query fundamentally
                 End Try
                 ' give hidden name to target range of listobject (jump function)
-                Dim oldRange As Excel.Range = theListObject.Range.Parent.Parent.Names(targetExtent).RefersToRange
+                Dim oldRange As Excel.Range = Nothing
+                ' first invocation of DBSetQuery will have no defined targetExtent Range name, so this will fail:
+                Try : oldRange = theListObject.Range.Parent.Parent.Names(targetExtent).RefersToRange : Catch ex As Exception : End Try
+                If IsNothing(oldRange) Then oldRange = theListObject.Range
                 theListObject.Range.Name = targetExtent
                 theListObject.Range.Parent.Parent.Names(targetExtent).Visible = False
-                ' if refreshed range is a DBMapper and it is in the current workbook, resize it
+                ' if refreshed range is a DBMapper and it is in the current workbook, resize it, but ONLY if it the DBMapper is the same area as the old range
                 DBModifs.resizeDBMapperRange(theListObject.Range, oldRange)
             End If
         Catch ex As Exception
@@ -526,34 +540,36 @@ Public Module Functions
         Dim formulaFilledRange As Excel.Range = Nothing
         Dim targetSH As Excel.Worksheet, formulaSH As Excel.Worksheet = Nothing
         Dim NumFormat() As String = Nothing, NumFormatF() As String = Nothing
-        Dim headingOffset As Long, rowDataStart As Long, startRow As Long, startCol As Long, arrayCols As Long, arrayRows As Long, copyDown As Long
-        Dim oldRows As Long, oldCols As Long, oldFRows As Long, oldFCols As Long, retrievedRows As Long, targetColumns As Long, formulaStart As Long
+        Dim headingOffset, rowDataStart, startRow, startCol, arrayCols, arrayRows, copyDown As Integer
+        Dim oldRows, oldCols, oldFRows, oldFCols, retrievedRows, targetColumns, formulaStart As Integer
         Dim warning As String, errMsg As String, tmpname As String
 
         LogInfo("Entering DBListFetchAction: callID " & callID)
-        'If Not existsStatusCont(callID) Then Exit Sub
-        Dim calcMode = ExcelDnaUtil.Application.Calculation
-        ExcelDnaUtil.Application.Cursor = Excel.XlMousePointer.xlWait  ' To show the hourglass
-        ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual
-        ' this works around the data validation input bug
-        ' when selecting a value from a list of validated field, excel won't react to
-        ' Application.Calculation changes, so just leave here...
-        If ExcelDnaUtil.Application.Calculation <> Excel.XlCalculation.xlCalculationManual Then Exit Sub
 
+        On Error Resume Next
+        Dim calcMode = ExcelDnaUtil.Application.Calculation
+        ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual
+        ' this works around the data validation input bug and being called when COM Model is not ready
+        ' when selecting a value from a list of a validated field or being invoked from a hyperlink (e.g. word), excel won't react to
+        ' Application.Calculation changes, so just leave here...
+        If ExcelDnaUtil.Application.Calculation <> Excel.XlCalculation.xlCalculationManual Then
+            errMsg = "Error in setting Application.Calculation to Manual: " & Err.Description & " in query: " & Query
+            GoTo err_0
+        End If
+        ExcelDnaUtil.Application.Cursor = Excel.XlMousePointer.xlWait  ' show the hourglass
         formulaRange = formulaRange
         targetSH = targetRange.Parent
-        warning = String.Empty
+        warning = ""
 
         Dim srcExtent As String, targetExtent As String, targetExtentF As String
-        On Error Resume Next
         srcExtent = caller.Name.Name
         If Err.Number <> 0 Or InStr(1, srcExtent, "DBFsource") = 0 Then
             Err.Clear()
-            srcExtent = "DBFsource" & Replace(Replace(CDbl(Now.ToOADate()), ",", String.Empty), ".", String.Empty)
+            srcExtent = "DBFsource" & Replace(Guid.NewGuid().ToString, "-", "")
             caller.Name = srcExtent
             caller.Parent.Parent.Names(srcExtent).Visible = False
             If Err.Number <> 0 Then
-                errMsg = "Error in setting srcExtentConnect name: " & Err.Description & " in query: " & Query
+                errMsg = "Error in setting srcExtent name: " & Err.Description & " in query: " & Query
                 GoTo err_0
             End If
         End If
@@ -576,11 +592,9 @@ Public Module Functions
         DBModifs.preventChangeWhileFetching = True
         ' to prevent flickering...
         ExcelDnaUtil.Application.ScreenUpdating = False
-        On Error Resume Next
         oldRows = targetSH.Parent.Names(targetExtent).RefersToRange.Rows.Count
         oldCols = targetSH.Parent.Names(targetExtent).RefersToRange.Columns.Count
         If Err.Number = 0 Then
-            Err.Clear()
             ' clear old data area
             targetSH.Parent.Names(targetExtent).RefersToRange.ClearContents
             If Err.Number <> 0 Then
@@ -589,6 +603,15 @@ Public Module Functions
             End If
         End If
         Err.Clear()
+        ' if formulas are adjacent to data extend total range to formula range ! total range is used to extend DBMappers defined under the DB Function target...
+        Dim additionalFormulaColumns As Integer = 0
+        If Not formulaRange Is Nothing Then
+            If targetSH Is formulaSH And formulaRange.Column = startCol + oldCols Then additionalFormulaColumns = formulaRange.Columns.Count
+        End If
+        Dim oldTotalTargetRange As Excel.Range = targetRange
+        If additionalFormulaColumns > 0 Then
+            oldTotalTargetRange = targetSH.Range(targetSH.Cells(startRow, startCol), targetSH.Cells(startRow + oldRows - 1, startCol + oldCols + additionalFormulaColumns))
+        End If
 
         On Error Resume Next
         oldFRows = formulaSH.Parent.Names(targetExtentF).RefersToRange.Rows.Count
@@ -849,14 +872,6 @@ Public Module Functions
         Dim newTargetRange As Excel.Range = targetSH.Range(targetSH.Cells(startRow, startCol), targetSH.Cells(startRow + arrayRows - 1, startCol + targetColumns))
         Err.Clear() ' might not exist, so ignore errors here...
 
-        Dim additionalFormulaColumns As Integer = 0
-
-        ' if formulas are adjacent to data extend name to formula range !
-        ' need this as excel throws errors when comparing nonexistent formulaSH !!
-        If Not formulaRange Is Nothing Then
-            If targetSH Is formulaSH And formulaRange.Column = startCol + targetColumns + 1 Then additionalFormulaColumns = formulaRange.Columns.Count
-        End If
-
         ' delete the name to have a "clean" name area (otherwise visible = false setting wont work for dataTargetRange)
         newTargetRange.Name = targetExtent
         newTargetRange.Parent.Parent.Names(targetExtent).Visible = False
@@ -875,7 +890,7 @@ Public Module Functions
         End If
 
         ' if refreshed range is a DBMapper and it is in the current workbook, resize it
-        DBModifs.resizeDBMapperRange(totalTargetRange, targetRange)
+        DBModifs.resizeDBMapperRange(totalTargetRange, oldTotalTargetRange)
 
         '''' any warnings, errors ?
         If warning.Length > 0 Then
@@ -1046,14 +1061,18 @@ err_0: ' errors where recordset was not opened or is already closed
         Dim theCell As Excel.Range, targetSlice As Excel.Range, targetSlices As Excel.Range
         Dim targetSH As Excel.Worksheet
 
+        On Error Resume Next
         Dim calcMode = ExcelDnaUtil.Application.Calculation
         ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual
-        ' this works around the data validation input bug
-        ' when selecting a value from a list of validated field, excel won't react to
+        ' this works around the data validation input bug and being called when COM Model is not ready
+        ' when selecting a value from a list of a validated field or being invoked from a hyperlink (e.g. word), excel won't react to
         ' Application.Calculation changes, so just leave here...
-        If ExcelDnaUtil.Application.Calculation <> Excel.XlCalculation.xlCalculationManual Then Exit Sub
+        If ExcelDnaUtil.Application.Calculation <> Excel.XlCalculation.xlCalculationManual Then
+            errMsg = "Error in setting Application.Calculation to Manual: " & Err.Description & " in query: " & Query
+            GoTo err_1
+        End If
+        ExcelDnaUtil.Application.Cursor = Excel.XlMousePointer.xlWait  ' show the hourglass
 
-        ExcelDnaUtil.Application.Cursor = Excel.XlMousePointer.xlWait  ' To show the hourglass
         targetCells = targetArray
         targetSH = targetCells(0).Parent
         StatusCollection(callID).statusMsg = ""
@@ -1063,14 +1082,14 @@ err_0: ' errors where recordset was not opened or is already closed
         Dim srcExtent As String, targetExtent As String
         On Error Resume Next
         srcExtent = caller.Name.Name
-        If Err.Number <> 0 Or InStr(1, UCase$(srcExtent), "DBFSOURCE") = 0 Then
+        If Err.Number <> 0 Or InStr(1, srcExtent, "DBFsource") = 0 Then
             Err.Clear()
-            srcExtent = "DBFsource" & Replace(Replace(CDbl(Now().ToOADate()), ",", String.Empty), ".", String.Empty)
+            srcExtent = "DBFsource" & Replace(Guid.NewGuid().ToString, "-", "")
             caller.Name = srcExtent
             ' dbfsource is a workbook name
             caller.Parent.Parent.Names(srcExtent).Visible = False
             If Err.Number <> 0 Then
-                errMsg = "Error in setting srcExtentConnect name: " & Err.Description & " in query: " & Query
+                errMsg = "Error in setting srcExtent name: " & Err.Description & " in query: " & Query
                 GoTo err_1
             End If
         End If

@@ -265,7 +265,8 @@ Public Class DBMapper : Inherits DBModif
                     TargetRange.ListObject.TableStyle = fetchSetting("DBMapperStandardStyle", "TableStyleLight9")
                 End If
             End If
-            If CUDFlags And IsNothing(TargetRange.ListObject) Then
+            ' only allow CUDFlags only on DBMappers that have underlying Listobjects that were created with a query
+            If CUDFlags And (IsNothing(TargetRange.ListObject) OrElse TargetRange.ListObject.SourceType <> Excel.XlListObjectSourceType.xlSrcQuery) Then
                 CUDFlags = False
                 definitionXML.SelectSingleNode("ns0:CUDFlags").Delete()
                 definitionXML.AppendChildNode("CUDFlags", NamespaceURI:="DBModifDef", NodeValue:="False")
@@ -297,18 +298,20 @@ Public Class DBMapper : Inherits DBModif
             If retval = vbCancel Then Exit Sub
         End If
         ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = False ' to prevent automatic creation of new column
-        ' DBMapper ranges always have a header row, so changedRange.Row - 1...
+        ' DBMapper ranges relative to start of TargetRange and respecting a header row, so CUDMarkRow = changedRange.Row - TargetRange.Row + 1 ...
         If deleteFlag Then
             For Each changedRow As Excel.Range In changedRange.Rows
-                TargetRange.Cells(changedRow.Row - 1, TargetRange.Columns.Count + 1).Value = "d"
-                TargetRange.Rows(changedRow.Row - 1).Font.Strikethrough = True
+                Dim CUDMarkRow As Integer = changedRow.Row - TargetRange.Row + 1
+                TargetRange.Cells(CUDMarkRow, TargetRange.Columns.Count + 1).Value = "d"
+                TargetRange.Rows(CUDMarkRow).Font.Strikethrough = True
             Next
         Else
             For Each changedRow As Excel.Range In changedRange.Rows
+                Dim CUDMarkRow As Integer = changedRow.Row - TargetRange.Row + 1
                 ' change only if not already set
-                If TargetRange.Cells(changedRow.Row - 1, TargetRange.Columns.Count + 1).Value = "" Then
+                If TargetRange.Cells(CUDMarkRow, TargetRange.Columns.Count + 1).Value = "" Then
                     Dim RowContainsData As Boolean = False
-                    For Each containedCell As Excel.Range In TargetRange.Rows(changedRow.Row - 1).Cells
+                    For Each containedCell As Excel.Range In TargetRange.Rows(CUDMarkRow).Cells
                         ' check if whole row is empty (except for the changedRange)
                         If Not IsNothing(containedCell.Value) AndAlso containedCell.Address <> changedRange.Address Then
                             RowContainsData = True
@@ -317,10 +320,10 @@ Public Class DBMapper : Inherits DBModif
                     Next
                     ' if Row Contains Data (not every cell empty except currently modified (changedRange), this is for adding rows below data range) then "u"pdate
                     If RowContainsData Then
-                        TargetRange.Cells(changedRow.Row - 1, TargetRange.Columns.Count + 1).Value = "u"
-                        TargetRange.Rows(changedRow.Row - 1).Font.Italic = True
+                        TargetRange.Cells(CUDMarkRow, TargetRange.Columns.Count + 1).Value = "u"
+                        TargetRange.Rows(CUDMarkRow).Font.Italic = True
                     Else ' else "i"nsert
-                        TargetRange.Cells(changedRow.Row - 1, TargetRange.Columns.Count + 1).Value = "i"
+                        TargetRange.Cells(CUDMarkRow, TargetRange.Columns.Count + 1).Value = "i"
                     End If
                 End If
             Next
@@ -370,12 +373,15 @@ Public Class DBMapper : Inherits DBModif
         ' if Environment is not existing, take from selectedEnvironment
         Dim env As Integer = getEnv(Globals.selectedEnvironment + 1)
         extendDataRange()
-
-        Dim maxMassChanges As Integer = CInt(fetchSetting("maxNumberMassChange", "30"))
-        Dim changesToBeDone As Integer = ExcelDnaUtil.Application.WorksheetFunction.CountIf(TargetRange.Columns(TargetRange.Columns.Count + 1).Address, "<>")
-        If CUDFlags And changesToBeDone > maxMassChanges Then
-            Dim retval As MsgBoxResult = MsgBox("About to modify more rows than the defined warning limit (" & maxMassChanges & ", changes: " & changesToBeDone & "), continue?", MsgBoxStyle.Question + vbOKCancel, "Execute DB Mapper")
-            If retval = vbCancel Then Exit Sub
+        ' check for mass changes and warn if necessary
+        If CUDFlags Then
+            Dim maxMassChanges As Integer = CInt(fetchSetting("maxNumberMassChange", "30"))
+            Dim curWs As Excel.Worksheet = TargetRange.Parent ' this is necessary because using TargetRange directly deletes the content of the CUD area !!
+            Dim changesToBeDone As Integer = ExcelDnaUtil.Application.WorksheetFunction.CountIf(curWs.Range(TargetRange.Columns(TargetRange.Columns.Count + 1).Address), "<>")
+            If changesToBeDone > maxMassChanges Then
+                Dim retval As MsgBoxResult = MsgBox("Modifying more rows (" & changesToBeDone & ") than defined warning limit (" & maxMassChanges & "), continue?", MsgBoxStyle.Question + vbOKCancel, "Execute DB Mapper")
+                If retval = vbCancel Then Exit Sub
+            End If
         End If
         'now create/get a connection (dbcnn) for env(ironment) in case it was not already created by a step in the sequence before (transactions!)
         If Not TransactionOpen Then
@@ -501,15 +507,12 @@ Public Class DBMapper : Inherits DBModif
                                     rst.Fields(TargetRange.Cells(1, i).Value).Value = TargetRange.Cells(rowNum, i).Value
                                 End If
                             Catch ex As Exception
-                                notifyUserOfDataError("Error inserting primary key value into table " & tableName & ": " & dbcnn.Errors(0).Description, rowNum, i)
-                                GoTo cleanup
+                                If Not notifyUserOfDataError("Error inserting primary key value into table " & tableName & ": " & dbcnn.Errors(0).Description, rowNum, i) Then GoTo cleanup
                             End Try
                         Next
                     Else
-                        notifyUserOfDataError("Did not find recordset with statement '" & getStmt & "', insertIfMissing = " & insertIfMissing.ToString() & " in sheet " & TargetRange.Parent.Name & " and row " & rowNum.ToString, rowNum, i)
-                        GoTo cleanup
+                        If Not notifyUserOfDataError("Did not find recordset with statement '" & getStmt & "', insertIfMissing = " & insertIfMissing.ToString() & " in sheet " & TargetRange.Parent.Name & " and row " & rowNum.ToString, rowNum, i) Then GoTo cleanup
                     End If
-                Else
                     ExcelDnaUtil.Application.StatusBar = Left("Updating " & primKeyDisplay & " in " & tableName, 255)
                 End If
 
@@ -528,18 +531,15 @@ Public Class DBMapper : Inherits DBModif
                                         If IgnoreDataErrors Then
                                             rst.Fields(fieldname).Value = Nothing
                                         Else
-                                            If Not notifyUserOfDataError("Field Value Update Error with Table: " & tableName & ", Field: " & fieldname & ", in sheet " & TargetRange.Parent.Name & " and row " & rowNum.ToString & ", col: " & colNum.ToString, rowNum, colNum) Then
-                                                GoTo cleanup
-                                            End If
+                                            If Not notifyUserOfDataError("Field Value Update Error with Table: " & tableName & ", Field: " & fieldname & ", in sheet " & TargetRange.Parent.Name & " and row " & rowNum.ToString & ", col: " & colNum.ToString, rowNum, colNum) Then GoTo cleanup
                                         End If
                                     Else
                                         rst.Fields(fieldname).Value = IIf(fieldval.ToString().Length = 0, Nothing, fieldval)
                                     End If
                                 End If
                             Catch ex As Exception
-                                notifyUserOfDataError("Field Value Update Error: " & ex.Message & " with Table: " & tableName & ", Field: " & fieldname & ", in sheet " & TargetRange.Parent.Name & " and row " & rowNum.ToString & ", col: " & colNum.ToString, rowNum, colNum)
                                 rst.CancelUpdate()
-                                GoTo cleanup
+                                If Not notifyUserOfDataError("Field Value Update Error: " & ex.Message & " with Table: " & tableName & ", Field: " & fieldname & ", in sheet " & TargetRange.Parent.Name & " and row " & rowNum.ToString & ", col: " & colNum.ToString, rowNum, colNum) Then GoTo cleanup
                             End Try
                         End If
                         colNum += 1
@@ -549,9 +549,8 @@ Public Class DBMapper : Inherits DBModif
                     Try
                         rst.Update()
                     Catch ex As Exception
-                        notifyUserOfDataError("Row Update Error, Table: " & rst.Source & ", Error: " & ex.Message & " in sheet " & TargetRange.Parent.Name & " and row " & rowNum.ToString, rowNum)
                         rst.CancelUpdate()
-                        GoTo cleanup
+                        If Not notifyUserOfDataError("Row Update Error, Table: " & rst.Source & ", Error: " & ex.Message & " in sheet " & TargetRange.Parent.Name & " and row " & rowNum.ToString, rowNum) Then GoTo cleanup
                     End Try
                 End If
                 If (CUDFlags And rowCUDFlag = "d") Then
@@ -559,9 +558,7 @@ Public Class DBMapper : Inherits DBModif
                     Try
                         rst.Delete(AffectEnum.adAffectCurrent)
                     Catch ex As Exception
-                        If Not notifyUserOfDataError("Error deleting row " & rowNum.ToString & " in sheet " & TargetRange.Parent.Name & ": " & ex.Message, rowNum) Then
-                            GoTo cleanup
-                        End If
+                        If Not notifyUserOfDataError("Error deleting row " & rowNum.ToString & " in sheet " & TargetRange.Parent.Name & ": " & ex.Message, rowNum) Then GoTo cleanup
                     End Try
                 End If
                 rst.Close()
@@ -569,7 +566,7 @@ nextRow:
                 Try
                     If IsNothing(TargetRange.Cells(rowNum + 1, 1).Value) OrElse TargetRange.Cells(rowNum + 1, 1).Value.ToString().Length = 0 Then finishLoop = True
                 Catch ex As Exception
-                    notifyUserOfDataError("Error in first primary column: Cells(" & rowNum + 1 & ",1): " & ex.Message, rowNum + 1)
+                    If Not notifyUserOfDataError("Error in first primary column: Cells(" & rowNum + 1 & ",1): " & ex.Message, rowNum + 1) Then GoTo cleanup
                     'finishLoop = True '-> do not finish to allow erroneous data  !!
                 End Try
             End If
@@ -853,6 +850,7 @@ Public Class DBSeqnce : Inherits DBModif
                     End If
                     TransactionIsOpen = False
                 Case Else
+                    'TODO: check if we can prevent hangup (and if not then forbid) of DBRefresh within a Transaction
                     If hadError Then
                         Dim retval = MsgBox("Error(s) occured during sequence, really refresh Targetrange? This could lead to loss of entries.", MsgBoxStyle.Question + MsgBoxStyle.OkCancel, "Refresh DB Functions in DB Sequence")
                         If retval = vbCancel Then Continue For
@@ -1076,21 +1074,6 @@ Public Module DBModifs
             End If
         End If
 
-        ' for DBMappers defined in ListObjects, try potential name to ListObject (parts), only possible if manually defined DBMapper name!
-        If createdDBModifType = "DBMapper" Then
-            If existingDefName = "" And Not IsNothing(ExcelDnaUtil.Application.Selection.ListObject) Then
-                For Each listObjectCol In ExcelDnaUtil.Application.Selection.ListObject.ListColumns
-                    For Each aName As Excel.Name In ExcelDnaUtil.Application.ActiveWorkbook.Names
-                        If aName.RefersTo = "=" & ExcelDnaUtil.Application.Selection.ListObject.Name & "[[#Headers],[" & ExcelDnaUtil.Application.Selection.Value & "]]" Then
-                            existingDefName = aName.Name
-                            Exit For
-                        End If
-                    Next
-                    If Left(existingDefName, 8) = "DBMapper" Then Exit For
-                Next
-            End If
-        End If
-
         ' fetch parameters if there is an existing definition...
         If DBModifDefColl.ContainsKey(createdDBModifType) AndAlso DBModifDefColl(createdDBModifType).ContainsKey(existingDefName) Then
             existingDBModif = DBModifDefColl(createdDBModifType).Item(existingDefName)
@@ -1133,6 +1116,7 @@ Public Module DBModifs
                 .DBSeqenceDataGrid.Height = 320
                 .execOnSave.Top = .up.Top
                 .AskForExecute.Top = .up.Top
+
                 ' fill Datagridview for DBSequence
                 Dim cb As DataGridViewComboBoxColumn = New DataGridViewComboBoxColumn()
                 cb.HeaderText = "Sequence Step"
@@ -1207,6 +1191,16 @@ Public Module DBModifs
                 Try : ExcelDnaUtil.Application.ActiveWorkbook.Names(existingDefName).Delete : Catch ex As Exception : End Try
                 ' then (re)set name
                 Dim NamesList As Excel.Names = ExcelDnaUtil.Application.ActiveWorkbook.Names
+                Dim alreadyExists As Boolean = False
+                Try
+                    Dim testExist As String = NamesList.Item(createdDBModifType + .DBModifName.Text).ToString
+                Catch ex As Exception
+                    alreadyExists = True
+                End Try
+                If Not alreadyExists Then
+                    MsgBox("Error adding DBModifier '" & createdDBModifType & .DBModifName.Text & "', Name already exists in Workbook!", vbCritical, "DBModifier Creation Error")
+                    Exit Sub
+                End If
                 Try
                     NamesList.Add(Name:=createdDBModifType + .DBModifName.Text, RefersTo:=targetRange)
                 Catch ex As Exception
@@ -1215,7 +1209,6 @@ Public Module DBModifs
                 End Try
             End If
 
-            'TODO: prevent duplicate definitions!
             Dim CustomXmlParts As Object = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
             If CustomXmlParts.Count = 0 Then ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.Add("<root xmlns=""DBModifDef""></root>")
             CustomXmlParts = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")

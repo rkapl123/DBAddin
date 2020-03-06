@@ -453,15 +453,14 @@ Public Module Globals
     Public Sub refreshDBFunctions(Wb As Excel.Workbook, Optional ignoreCalcMode As Boolean = False)
         Dim searchCells As Excel.Range
         Dim ws As Excel.Worksheet
-        Dim needRecalc As Boolean
 
         ' hidden workbooks produce an error when searching for cells, this is captured by 
         If TypeName(ExcelDnaUtil.Application.Calculation) = "Error" Then
             MsgBox("ExcelDnaUtil.Application.Calculation = Error, " & Wb.Path & "\" & Wb.Name & " (hidden workbooks produce calculation errors...)")
             Exit Sub
         End If
+        DBModifs.preventChangeWhileFetching = True
         Try
-            needRecalc = False
             Dim cellcount As Long = 0
             For Each ws In Wb.Worksheets
                 cellcount += ExcelDnaUtil.Application.WorksheetFunction.CountIf(ws.Range("1:" & ws.Rows.Count), "<>")
@@ -514,6 +513,7 @@ Public Module Globals
         Catch ex As Exception
             LogError("Error: " & ex.Message & ", " & Wb.Path & "\" & Wb.Name)
         End Try
+        DBModifs.preventChangeWhileFetching = False
     End Sub
 
     ''' <summary>"OnTime" event function to "escape" current (main) thread: event procedure to refetch DB functions results after triggering a recalculation inside Application.WorkbookBeforeSave</summary>
@@ -563,6 +563,7 @@ Public Module Globals
             skipLegacyCheck = False
         End Try
         If skipLegacyCheck Then Exit Sub
+        DBModifs.preventChangeWhileFetching = True ' WorksheetFunction.CountIf trigger Change event with target in argument 1, so make sure this doesn't change anything)
         Try
             ' count nonempty cells in workbook...
             Dim cellcount As Long = 0
@@ -612,6 +613,7 @@ Public Module Globals
         ' only set this back if it was changed to manual as otherwise it would change the (else unchanged) workbook, forcing a confirmation for saving...
         If ExcelDnaUtil.Application.Calculation <> xlcalcmode Then ExcelDnaUtil.Application.Calculation = xlcalcmode
         ExcelDnaUtil.Application.StatusBar = False
+        DBModifs.preventChangeWhileFetching = False
     End Sub
 
     ''' <summary>maintenance procedure to purge names used for dbfunctions from workbook</summary>

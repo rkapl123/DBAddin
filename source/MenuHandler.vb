@@ -21,7 +21,7 @@ Public Class MenuHandler
         Dim customUIXml As String = "<customUI xmlns='http://schemas.microsoft.com/office/2009/07/customui' onLoad='ribbonLoaded' ><ribbon><tabs><tab id='DBaddinTab' label='DB Addin'>"
         ' DBAddin Group: environment choice, DBConfics selection tree, purge names tool button and dialogBoxLauncher for AboutBox
         customUIXml += "<group id='DBAddinGroup' label='General settings'>" +
-              "<dropDown id='envDropDown' label='Environment:' sizeString='123456789012345' getSelectedItemIndex='GetSelItem' getItemCount='GetItemCount' getItemID='GetItemID' getItemLabel='GetItemLabel' onAction='selectItem'/>" +
+              "<dropDown id='envDropDown' label='Environment:' sizeString='123456789012345' getSelectedItemIndex='GetSelectedEnvironment' getItemCount='GetItemCount' getItemID='GetItemID' getItemLabel='GetItemLabel' onAction='selectEnvironment'/>" +
               "<dynamicMenu id='DBConfigs' size='normal' label='DB Configs' imageMso='QueryShowTable' screentip='DB Function Configuration Files quick access' getContent='getDBConfigMenu'/>" +
               "<buttonGroup id='buttonGroup'>" +
               "<button id='purgetool' label='purge tool' screentip='purges underlying DBtarget/DBsource Names' imageMso='BorderErase' onAction='clickpurgetoolbutton'/>" +
@@ -151,14 +151,14 @@ Public Class MenuHandler
         Return Globals.environdefs(index)
     End Function
 
-    ''' <summary>after selection of environment (using selectItem) used to return the selected environment</summary>
+    ''' <summary>after selection of environment (using selectEnvironment) used to return the selected environment</summary>
     ''' <returns></returns>
-    Public Function GetSelItem(control As IRibbonControl) As Integer
+    Public Function GetSelectedEnvironment(control As IRibbonControl) As Integer
         Return Globals.selectedEnvironment
     End Function
 
     ''' <summary>Choose environment (configured in registry with ConstConnString(N), ConfigStoreFolder(N))</summary>
-    Public Sub selectItem(control As IRibbonControl, id As String, index As Integer)
+    Public Sub selectEnvironment(control As IRibbonControl, id As String, index As Integer)
         Globals.selectedEnvironment = index
         Dim env As String = (index + 1).ToString()
 
@@ -173,7 +173,7 @@ Public Class MenuHandler
         Dim retval As MsgBoxResult = MsgBox("ConstConnString" & ConstConnString & vbCrLf & "ConfigStoreFolder:" & ConfigStoreFolder & vbCrLf & vbCrLf & "Refresh DBFunctions to see effects?", vbYesNo, "Changed environment to: " & fetchSetting("ConfigName" & env, String.Empty))
         ' provide a chance to reconnect when switching environment...
         conn = Nothing
-        If retval = vbYes Then Globals.refreshData()
+        If retval = vbYes Then Globals.refreshDBFunctions(ExcelDnaUtil.Application.ActiveWorkbook)
     End Sub
 
     ''' <summary>dialogBoxLauncher of leftmost group: activate about box</summary>
