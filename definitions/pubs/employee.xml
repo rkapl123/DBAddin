@@ -1,0 +1,21 @@
+﻿<DBSheetConfig>
+<connID>TESTDB</connID>
+<table>employee</table>
+<query>SELECT T1.emp_id, T1.fname, T1.minit, T1.lname, T6.job_desc AS job_id, T1.job_lvl, T8.pub_name AS pub_id
+FROM pubs.dbo.employee T1 INNER JOIN 
+pubs.dbo.jobs T6 ON T1.job_id = T6.job_id INNER JOIN 
+pubs.dbo.publishers T8 ON T1.pub_id = T8.pub_id
+</query>
+<whereClause></whereClause>
+<calcedcols>0</calcedcols>
+<primcols>1</primcols>
+<columns>
+<field><name>*emp_id</name><primkey>Y</primkey></field>
+<field><name>*fname</name></field>
+<field><name>minit</name></field>
+<field><name>*lname</name></field>
+<field><name>*job_id</name><ftable>pubs.dbo.jobs</ftable><fkey>job_id</fkey><flookup>job_desc</flookup><lookup>SELECT job_desc,job_id FROM  pubs.dbo.jobs ORDER BY job_desc DESC</lookup></field>
+<field><name>job_lvl</name></field>
+<field><name>*pub_id</name><ftable>pubs.dbo.publishers</ftable><fkey>pub_id</fkey><flookup>pub_name</flookup><lookup>SELECT pub_name,pub_id FROM  pubs.dbo.publishers ORDER BY pub_name DESC</lookup></field>
+</columns>
+</DBSheetConfig>

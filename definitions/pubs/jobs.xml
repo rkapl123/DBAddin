@@ -1,0 +1,17 @@
+<DBsheetConfig>
+<connID>TESTDB</connID>
+<table>jobs</table>
+<query>SELECT T1.job_id, T1.job_desc, T1.min_lvl, T1.max_lvl
+FROM pubs.dbo.jobs T1
+</query>
+<whereClause></whereClause>
+<timeout>15</timeout>
+<calcedcols>0</calcedcols>
+<primcols>1</primcols>
+<columns>
+<field><name>*job_id</name><primkey>1</primkey></field>
+<field><name>*job_desc</name></field>
+<field><name>*min_lvl</name></field>
+<field><name>*max_lvl</name></field>
+</columns>
+</DBsheetConfig>

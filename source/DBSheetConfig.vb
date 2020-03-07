@@ -1,4 +1,6 @@
 Imports Microsoft.Office.Interop
+
+
 '''<summary>Helper class for DBSheetHandler and DBSheetConnection for easier manipulation of DBSheet definition / Connection configuration data</summary> 
 Public Class DBSheetConfig
     ''' <summary>current Sheet configuration as XML string</summary>

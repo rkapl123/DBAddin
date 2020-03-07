@@ -1,0 +1,16 @@
+﻿<DBSheetConfig>
+<connID>TESTDB</connID>
+<table>publishers</table>
+<query>SELECT T1.pub_id, T1.pub_name, T1.city, T1.state, T1.country
+FROM pubs.dbo.publishers T1
+</query>
+<calcedcols>0</calcedcols>
+<primcols>1</primcols>
+<columns>
+<field><name>*pub_id</name><primkey>Y</primkey></field>
+<field><name>pub_name</name></field>
+<field><name>city</name></field>
+<field><name>state</name></field>
+<field><name>country</name></field>
+</columns>
+</DBSheetConfig>

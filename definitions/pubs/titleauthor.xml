@@ -1,0 +1,18 @@
+﻿<DBSheetConfig>
+<connID>TESTDB</connID>
+<table>titleauthor</table>
+<query>SELECT isnull(T2.au_lname + ' ' + T2.au_fname, T1.au_id) au_id, T3.title AS title_id, T1.au_ord, T1.royaltyper
+FROM pubs.dbo.titleauthor T1 LEFT JOIN 
+pubs.dbo.authors T2 ON T1.au_id = T2.au_id LEFT JOIN 
+pubs.dbo.titles T3 ON T1.title_id = T3.title_id
+</query>
+<whereClause></whereClause>
+<calcedcols>0</calcedcols>
+<primcols>2</primcols>
+<columns>
+<field><name>*au_id</name><ftable>pubs.dbo.authors</ftable><fkey>au_id</fkey><flookup>au_lname</flookup><outer>1</outer><primkey>1</primkey><lookup>SELECT !T!.au_lname + ' ' + !T!.au_fname au_id,!T!.au_id FROM pubs.dbo.authors !T! ORDER BY !T!.au_lname</lookup></field>
+<field><name>*title_id</name><ftable>pubs.dbo.titles</ftable><fkey>title_id</fkey><flookup>title</flookup><outer>1</outer><primkey>1</primkey><lookup>SELECT title,title_id FROM pubs.dbo.titles ORDER BY title</lookup></field>
+<field><name>au_ord</name></field>
+<field><name>royaltyper</name></field>
+</columns>
+</DBSheetConfig>

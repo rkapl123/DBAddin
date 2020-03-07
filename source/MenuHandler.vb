@@ -29,7 +29,7 @@ Public Class MenuHandler
               "</buttonGroup>" +
               "<dialogBoxLauncher><button id='dialog' label='About DBAddin' onAction='showAbout' tag='3' screentip='Show Aboutbox with help, version information, homepage and access to log'/></dialogBoxLauncher></group>"
         ' DBModif Group: maximum three DBModif types possible (depending on existence in current workbook): 
-        customUIXml += "<group id='DBModifGroup' label='Store DBModif Data'>"
+        customUIXml += "<group id='DBModifGroup' label='Execute DBModifier'>"
         For Each DBModifType As String In {"DBSeqnce", "DBMapper", "DBAction"}
             customUIXml += "<dynamicMenu id='" + DBModifType + "' " +
                                             "size='large' getLabel='getDBModifTypeLabel' imageMso='ApplicationOptionsDialog' " +

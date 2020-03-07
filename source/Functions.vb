@@ -268,13 +268,18 @@ Public Module Functions
                 Exit Function
             End If
 
+            ' needed for check whether target range is actually a table Listobject reference
+            Dim functionArgs = functionSplit(caller.Formula, ",", """", "DBSetQuery", "(", ")")
+            Dim targetRangeName As String = functionArgs(2)
+            If UBound(functionArgs) = 3 Then targetRangeName += "," + functionArgs(3)
+
             ' first call: actually perform query
             If Not StatusCollection.ContainsKey(callID) Then
                 Dim statusCont As ContainedStatusMsg = New ContainedStatusMsg
                 StatusCollection.Add(callID, statusCont)
                 StatusCollection(callID).statusMsg = "" ' need this to prevent object not set errors in checkCache
                 ExcelAsyncUtil.QueueAsMacro(Sub()
-                                                DBSetQueryAction(callID, Query, targetRange, ConnString, caller)
+                                                DBSetQueryAction(callID, Query, targetRange, ConnString, caller, targetRangeName)
                                             End Sub)
             End If
 
@@ -291,7 +296,7 @@ Public Module Functions
     ''' <param name="targetRange"></param>
     ''' <param name="ConnString"></param>
     ''' <param name="caller"></param>
-    Sub DBSetQueryAction(callID As String, Query As String, targetRange As Object, ConnString As String, caller As Excel.Range)
+    Sub DBSetQueryAction(callID As String, Query As String, targetRange As Object, ConnString As String, caller As Excel.Range, targetRangeName As String)
         Dim TargetCell As Excel.Range
         Dim targetSH As Excel.Worksheet
         Dim targetWB As Excel.Workbook
@@ -375,9 +380,6 @@ Public Module Functions
                 bgQuery = theListObject.QueryTable.BackgroundQuery
                 ' check whether target range is actually a table Listobject reference, if so, replace with simple address as this doesn't produce a #REF! error on QueryTable.Refresh
                 ' this simple address is below being set to caller.Formula
-                Dim functionArgs = functionSplit(caller.Formula, ",", """", "DBSetQuery", "(", ")")
-                Dim targetRangeName As String = functionArgs(2)
-                If UBound(functionArgs) = 3 Then targetRangeName += "," + functionArgs(3)
                 If InStr(targetRangeName, theListObject.Name) > 0 Then callerFormula = Replace(callerFormula, targetRangeName, Replace(TargetCell.Cells(1, 1).Address, "$", ""))
 
                 ' Attention Dirty Hack ! This works only for SQLOLEDB driver to ODBC driver setting change...

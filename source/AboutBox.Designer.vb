@@ -167,12 +167,12 @@ Partial Class AboutBox
         'OKButton
         '
         Me.OKButton.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.OKButton.DialogResult = System.Windows.Forms.DialogResult.Cancel
+        Me.OKButton.DialogResult = System.Windows.Forms.DialogResult.OK
         Me.OKButton.Location = New System.Drawing.Point(438, 242)
         Me.OKButton.Name = "OKButton"
         Me.OKButton.Size = New System.Drawing.Size(58, 21)
-        Me.OKButton.TabIndex = 0
-        Me.OKButton.Text = "&OK"
+        Me.OKButton.TabIndex = 4
+        Me.OKButton.Text = "OK"
         '
         'EventLevels
         '
@@ -190,7 +190,7 @@ Partial Class AboutBox
         Me.FixLegacyFunctions.Location = New System.Drawing.Point(137, 241)
         Me.FixLegacyFunctions.Name = "FixLegacyFunctions"
         Me.FixLegacyFunctions.Size = New System.Drawing.Size(116, 21)
-        Me.FixLegacyFunctions.TabIndex = 4
+        Me.FixLegacyFunctions.TabIndex = 1
         Me.FixLegacyFunctions.Text = "Fix Legacy Functions"
         Me.ToolTip1.SetToolTip(Me.FixLegacyFunctions, "fix legacy functions from old VB6 DBAddin")
         Me.FixLegacyFunctions.UseVisualStyleBackColor = True
@@ -200,8 +200,10 @@ Partial Class AboutBox
         Me.disableAddin.Location = New System.Drawing.Point(259, 241)
         Me.disableAddin.Name = "disableAddin"
         Me.disableAddin.Size = New System.Drawing.Size(84, 21)
-        Me.disableAddin.TabIndex = 5
+        Me.disableAddin.TabIndex = 2
         Me.disableAddin.Text = "disable Addin"
+        Me.ToolTip1.SetToolTip(Me.disableAddin, "disable this Addin (uninstall and reactivate old DB Addin), needs restart of Exce" &
+        "l to reactivate the old VB6 Addin")
         Me.disableAddin.UseVisualStyleBackColor = True
         '
         'AboutBox
@@ -209,10 +211,10 @@ Partial Class AboutBox
         Me.AcceptButton = Me.OKButton
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.CancelButton = Me.OKButton
         Me.ClientSize = New System.Drawing.Size(517, 284)
         Me.Controls.Add(Me.TableLayoutPanel)
         Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog
+        Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.MaximizeBox = False
         Me.MinimizeBox = False
         Me.Name = "AboutBox"

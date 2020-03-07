@@ -1,0 +1,23 @@
+<DBSheetConfig>
+<connID>TESTDB</connID>
+<table>titles</table>
+<query>SELECT T1.title_id, T1.title, T1.type, T5.pub_name AS pub_id, T1.price, T1.advance, T1.royalty, T1.ytd_sales, T1.notes, T1.pubdate
+FROM pubs.dbo.titles T1 LEFT JOIN 
+pubs.dbo.publishers T5 ON T1.pub_id = T5.pub_id
+</query>
+<whereClause></whereClause>
+<calcedcols>0</calcedcols>
+<primcols>1</primcols>
+<columns>
+<field><name>*title_id</name><primkey>Y</primkey></field>
+<field><name>*title</name></field>
+<field><name>*type</name><lookup>mod_cook||psychology||popular_comp||business||trad_cook</lookup></field>
+<field><name>pub_id</name><ftable>pubs.dbo.publishers</ftable><fkey>pub_id</fkey><flookup>pub_name</flookup><outer>Y</outer><lookup>SELECT pub_name,pub_id FROM pubs.dbo.publishers ORDER BY pub_name</lookup></field>
+<field><name>price</name></field>
+<field><name>advance</name></field>
+<field><name>royalty</name></field>
+<field><name>ytd_sales</name></field>
+<field><name>notes</name></field>
+<field><name>*pubdate</name></field>
+</columns>
+</DBSheetConfig>

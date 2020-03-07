@@ -51,8 +51,8 @@ Partial Class DBModifCreate
         Me.CUDflags = New System.Windows.Forms.CheckBox()
         Me.RepairDBSeqnce = New System.Windows.Forms.TextBox()
         Me.AskForExecute = New System.Windows.Forms.CheckBox()
-        Me.EnvironmentLabel = New System.Windows.Forms.Label()
         Me.IgnoreDataErrors = New System.Windows.Forms.CheckBox()
+        Me.EnvironmentLabel = New System.Windows.Forms.Label()
         Me.TableLayoutPanel1.SuspendLayout()
         CType(Me.DBSeqenceDataGrid, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
@@ -63,7 +63,7 @@ Partial Class DBModifCreate
         Me.TableLayoutPanel1.ColumnCount = 3
         Me.TableLayoutPanel1.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 65.80645!))
         Me.TableLayoutPanel1.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 34.19355!))
-        Me.TableLayoutPanel1.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 76.0!))
+        Me.TableLayoutPanel1.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 78.0!))
         Me.TableLayoutPanel1.Controls.Add(Me.Cancel_Button, 2, 0)
         Me.TableLayoutPanel1.Controls.Add(Me.OK_Button, 1, 0)
         Me.TableLayoutPanel1.Controls.Add(Me.CreateCB, 0, 0)
@@ -73,31 +73,35 @@ Partial Class DBModifCreate
         Me.TableLayoutPanel1.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50.0!))
         Me.TableLayoutPanel1.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 29.0!))
         Me.TableLayoutPanel1.Size = New System.Drawing.Size(196, 29)
-        Me.TableLayoutPanel1.TabIndex = 0
+        Me.TableLayoutPanel1.TabIndex = 17
         '
         'Cancel_Button
         '
         Me.Cancel_Button.Anchor = System.Windows.Forms.AnchorStyles.None
         Me.Cancel_Button.DialogResult = System.Windows.Forms.DialogResult.Cancel
-        Me.Cancel_Button.Location = New System.Drawing.Point(124, 3)
+        Me.Cancel_Button.Location = New System.Drawing.Point(123, 3)
         Me.Cancel_Button.Name = "Cancel_Button"
         Me.Cancel_Button.Size = New System.Drawing.Size(67, 23)
-        Me.Cancel_Button.TabIndex = 0
-        Me.Cancel_Button.Text = "Abbrechen"
+        Me.Cancel_Button.TabIndex = 3
+        Me.Cancel_Button.Text = "Cancel"
+        Me.ToolTip1.SetToolTip(Me.Cancel_Button, "discard changes in DB Modifier Creation")
         '
         'OK_Button
         '
         Me.OK_Button.Anchor = System.Windows.Forms.AnchorStyles.None
-        Me.OK_Button.Location = New System.Drawing.Point(81, 3)
+        Me.OK_Button.DialogResult = System.Windows.Forms.DialogResult.OK
+        Me.OK_Button.Location = New System.Drawing.Point(80, 3)
         Me.OK_Button.Name = "OK_Button"
-        Me.OK_Button.Size = New System.Drawing.Size(35, 23)
-        Me.OK_Button.TabIndex = 0
+        Me.OK_Button.Size = New System.Drawing.Size(34, 23)
+        Me.OK_Button.TabIndex = 2
         Me.OK_Button.Text = "OK"
+        Me.ToolTip1.SetToolTip(Me.OK_Button, "use changes done in DB Modifier Creation")
+        Me.OK_Button.UseVisualStyleBackColor = True
         '
         'CreateCB
         '
         Me.CreateCB.Anchor = System.Windows.Forms.AnchorStyles.None
-        Me.CreateCB.Location = New System.Drawing.Point(5, 3)
+        Me.CreateCB.Location = New System.Drawing.Point(4, 3)
         Me.CreateCB.Name = "CreateCB"
         Me.CreateCB.Size = New System.Drawing.Size(68, 23)
         Me.CreateCB.TabIndex = 1
@@ -213,7 +217,7 @@ Partial Class DBModifCreate
         Me.insertIfMissing.Location = New System.Drawing.Point(216, 163)
         Me.insertIfMissing.Name = "insertIfMissing"
         Me.insertIfMissing.Size = New System.Drawing.Size(97, 17)
-        Me.insertIfMissing.TabIndex = 7
+        Me.insertIfMissing.TabIndex = 9
         Me.insertIfMissing.Text = "Insert if missing"
         Me.ToolTip1.SetToolTip(Me.insertIfMissing, "if set, then insert row into table if primary key is missing there. Default = Fal" &
         "se (only update)")
@@ -225,7 +229,7 @@ Partial Class DBModifCreate
         Me.execOnSave.Location = New System.Drawing.Point(12, 163)
         Me.execOnSave.Name = "execOnSave"
         Me.execOnSave.Size = New System.Drawing.Size(91, 17)
-        Me.execOnSave.TabIndex = 8
+        Me.execOnSave.TabIndex = 7
         Me.execOnSave.Text = "Exec on save"
         Me.ToolTip1.SetToolTip(Me.execOnSave, "should DB Modifier automatically be done on Excel Workbook Saving? (default no)")
         Me.execOnSave.UseVisualStyleBackColor = True
@@ -236,7 +240,7 @@ Partial Class DBModifCreate
         Me.envSel.Location = New System.Drawing.Point(351, 159)
         Me.envSel.Name = "envSel"
         Me.envSel.Size = New System.Drawing.Size(113, 21)
-        Me.envSel.TabIndex = 9
+        Me.envSel.TabIndex = 10
         Me.ToolTip1.SetToolTip(Me.envSel, "The Environment, where connection id should be taken from (if not existing, take " &
         "from selected Environment in DB Addin General Settings Group)")
         '
@@ -250,7 +254,7 @@ Partial Class DBModifCreate
         Me.DBSeqenceDataGrid.MultiSelect = False
         Me.DBSeqenceDataGrid.Name = "DBSeqenceDataGrid"
         Me.DBSeqenceDataGrid.Size = New System.Drawing.Size(452, 167)
-        Me.DBSeqenceDataGrid.TabIndex = 10
+        Me.DBSeqenceDataGrid.TabIndex = 13
         Me.ToolTip1.SetToolTip(Me.DBSeqenceDataGrid, "Define the steps for the DB Sequence in the order of their desired execution here" &
         ". Any DBMapper and/or DBAction can be selected.")
         '
@@ -271,7 +275,7 @@ Partial Class DBModifCreate
         Me.up.Location = New System.Drawing.Point(217, 387)
         Me.up.Name = "up"
         Me.up.Size = New System.Drawing.Size(18, 19)
-        Me.up.TabIndex = 12
+        Me.up.TabIndex = 15
         Me.up.Text = "^"
         Me.ToolTip1.SetToolTip(Me.up, "Move selected sequence step up")
         Me.up.UseVisualStyleBackColor = True
@@ -281,7 +285,7 @@ Partial Class DBModifCreate
         Me.down.Location = New System.Drawing.Point(241, 387)
         Me.down.Name = "down"
         Me.down.Size = New System.Drawing.Size(18, 19)
-        Me.down.TabIndex = 12
+        Me.down.TabIndex = 16
         Me.down.Text = "v"
         Me.ToolTip1.SetToolTip(Me.down, "Move selected sequence step down")
         Me.down.UseVisualStyleBackColor = True
@@ -292,7 +296,7 @@ Partial Class DBModifCreate
         Me.CUDflags.Location = New System.Drawing.Point(12, 186)
         Me.CUDflags.Name = "CUDflags"
         Me.CUDflags.Size = New System.Drawing.Size(84, 17)
-        Me.CUDflags.TabIndex = 14
+        Me.CUDflags.TabIndex = 11
         Me.CUDflags.Text = "C/U/D flags"
         Me.ToolTip1.SetToolTip(Me.CUDflags, "if set, then only insert/update/delete row if special CUDFlags column contains i," &
         " u or d. Default = False (only update)")
@@ -305,7 +309,7 @@ Partial Class DBModifCreate
         Me.RepairDBSeqnce.Name = "RepairDBSeqnce"
         Me.RepairDBSeqnce.ScrollBars = System.Windows.Forms.ScrollBars.Vertical
         Me.RepairDBSeqnce.Size = New System.Drawing.Size(459, 167)
-        Me.RepairDBSeqnce.TabIndex = 15
+        Me.RepairDBSeqnce.TabIndex = 14
         Me.ToolTip1.SetToolTip(Me.RepairDBSeqnce, "use this textbox to repair DB Sequence entries...")
         '
         'AskForExecute
@@ -314,10 +318,22 @@ Partial Class DBModifCreate
         Me.AskForExecute.Location = New System.Drawing.Point(102, 163)
         Me.AskForExecute.Name = "AskForExecute"
         Me.AskForExecute.Size = New System.Drawing.Size(108, 17)
-        Me.AskForExecute.TabIndex = 16
+        Me.AskForExecute.TabIndex = 8
         Me.AskForExecute.Text = "Ask for execution"
         Me.ToolTip1.SetToolTip(Me.AskForExecute, "ask for confirmation before execution?")
         Me.AskForExecute.UseVisualStyleBackColor = True
+        '
+        'IgnoreDataErrors
+        '
+        Me.IgnoreDataErrors.AutoSize = True
+        Me.IgnoreDataErrors.Location = New System.Drawing.Point(101, 186)
+        Me.IgnoreDataErrors.Name = "IgnoreDataErrors"
+        Me.IgnoreDataErrors.Size = New System.Drawing.Size(109, 17)
+        Me.IgnoreDataErrors.TabIndex = 12
+        Me.IgnoreDataErrors.Text = "Ignore data errors"
+        Me.ToolTip1.SetToolTip(Me.IgnoreDataErrors, "if set, don't notify user of error values in cells during update/insert, null val" &
+        "ues are used instead")
+        Me.IgnoreDataErrors.UseVisualStyleBackColor = True
         '
         'EnvironmentLabel
         '
@@ -327,17 +343,6 @@ Partial Class DBModifCreate
         Me.EnvironmentLabel.Size = New System.Drawing.Size(29, 13)
         Me.EnvironmentLabel.TabIndex = 6
         Me.EnvironmentLabel.Text = "Env:"
-        '
-        'IgnoreDataErrors
-        '
-        Me.IgnoreDataErrors.AutoSize = True
-        Me.IgnoreDataErrors.Location = New System.Drawing.Point(101, 186)
-        Me.IgnoreDataErrors.Name = "IgnoreDataErrors"
-        Me.IgnoreDataErrors.Size = New System.Drawing.Size(109, 17)
-        Me.IgnoreDataErrors.TabIndex = 17
-        Me.IgnoreDataErrors.Text = "Ignore data errors"
-        Me.ToolTip1.SetToolTip(Me.IgnoreDataErrors, "if set, don't notify error values in cells during update/insert")
-        Me.IgnoreDataErrors.UseVisualStyleBackColor = True
         '
         'DBModifCreate
         '

@@ -1,0 +1,22 @@
+<DBsheetParams>
+<connID>ORACLE</connID>
+<table>DEPARTMENTS</table>
+<query>SELECT T1.DEPARTMENT_ID, T1.DEPARTMENT_NAME, T1.MANAGER_ID, T2.TESTNAME AS LOCATION_ID
+FROM hr.DEPARTMENTS T1 LEFT JOIN 
+BUMSTI.TEST T2 ON T1.LOCATION_ID = T2.TESTID
+</query>
+<timeout>15</timeout>
+<freezeHeader>Wahr</freezeHeader>
+<freezePrimCols>Wahr</freezePrimCols>
+<enforceAllCalcCols>Falsch</enforceAllCalcCols>
+<centralStore></centralStore>
+<calcedcols>0</calcedcols>
+<primcols>1</primcols>
+<columns>
+<field><name>*DEPARTMENT_ID</name><primkey>Y</primkey></field>
+<field><name>*DEPARTMENT_NAME</name></field>
+<field><name>MANAGER_ID</name><ftable>HR.EMPLOYEES</ftable><fkey>EMPLOYEE_ID</fkey><flookup>FIRST_NAME</flookup><outer>Y</outer><lookup>SELECT LAST_NAME || ' ' || FIRST_NAME EMP_NAME,EMPLOYEE_ID FROM HR.EMPLOYEES ORDER BY FIRST_NAME</lookup></field>
+<field><name>LOCATION_ID</name><ftable>BUMSTI.TEST</ftable><fkey>TESTID</fkey><flookup>TESTNAME</flookup><outer>Y</outer><lookup>SELECT TESTNAME,TESTID FROM BUMSTI.TEST ORDER BY TESTNAME</lookup></field>
+</columns>
+<dontSaveWB></dontSaveWB>
+</DBsheetParams>

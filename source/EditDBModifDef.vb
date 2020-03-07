@@ -11,8 +11,9 @@ Public Class EditDBModifDef
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub OKBtn_Click(sender As Object, e As EventArgs) Handles OKBtn.Click
+        ' Make a StringWriter to reformat the indented XML.
         Using sw As New System.IO.StringWriter()
-            ' Make the XmlTextWriter to format the XML.
+            ' Make a XmlTextWriter to (un)format the XML.
             Using xml_writer As New XmlTextWriter(sw)
                 ' revert indentation...
                 xml_writer.Formatting = Formatting.None
@@ -25,7 +26,7 @@ Public Class EditDBModifDef
                 End Try
                 doc.WriteTo(xml_writer)
                 xml_writer.Flush()
-                ' store the result.
+                ' store the result in CustomXmlParts
                 CustomXmlParts(1).Delete
                 CustomXmlParts.Add(sw.ToString())
             End Using
@@ -47,7 +48,6 @@ Public Class EditDBModifDef
                 MsgBox("Error when adding doDBMOnSave to Workbook:" + ex.Message, MsgBoxStyle.Critical)
             End Try
         End If
-
         Me.DialogResult = DialogResult.OK
         Me.Close()
     End Sub
@@ -66,14 +66,13 @@ Public Class EditDBModifDef
     Private Sub EditDBModifDef_Shown(sender As Object, e As EventArgs) Handles Me.Shown
         CustomXmlParts = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
         If CustomXmlParts.Count = 0 Then
-            MsgBox("No DBModifDef CustomXMLPart contained in Workbook " & ExcelDnaUtil.Application.ActiveWorkbook.Name)
+            MsgBox("No DB Modifier Definition (CustomXMLPart) contained in Workbook " & ExcelDnaUtil.Application.ActiveWorkbook.Name)
             Me.DialogResult = DialogResult.Cancel
             Me.Close()
         Else
-            ' Use an XmlTextWriter to format.
             ' Make a StringWriter to hold the result.
             Using sw As New System.IO.StringWriter()
-                ' Make the XmlTextWriter to format the XML.
+                ' Make a XmlTextWriter to format the XML.
                 Using xml_writer As New XmlTextWriter(sw)
                     xml_writer.Formatting = Formatting.Indented
                     Dim doc As New XmlDocument()
