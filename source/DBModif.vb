@@ -915,6 +915,7 @@ Public Class DBAction : Inherits DBModif
         End If
         Dim result As Long = 0
         Try
+            'TODO: extend DB Action text to the whole given TargetRange
             ExcelDnaUtil.Application.StatusBar = "executing DBAction " & paramTargetName
             dbcnn.Execute(TargetRange.Cells(1, 1).Text, result, Options:=CommandTypeEnum.adCmdText)
         Catch ex As Exception

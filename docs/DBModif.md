@@ -33,8 +33,9 @@ The DBModifier creation/editing is shown below (examples already filled, when cl
 *   C/U/D Flags: special mode used for row-by-row editing (inserting, updating and deleting rows). Only edited rows will be done when executing. Deleting rows is node with the special context menu item "delete Row" (or pressing Ctrl-Shift-D)
 *   Ignore data errors: replace excel errors like #VALUE! with null on updating/inserting. Otherwise an error message is passed and execution is skipped for that row.
 *   Create CB: create a commandbutton for the DB Sequence in the current Worksheet.
+*   Hyperlink: click on it to highlight/select the DB Mapper area
 
-You can always edit these parameters by selecting this cell and invoking the context menu again.
+You can always edit these parameters by selecting a cell in the DB Mapper area and invoking the context menu again.
 
 #### DB Actions are created/edited with following dialog:  
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DbActionCreate.PNG)  
@@ -46,6 +47,9 @@ You can always edit these parameters by selecting this cell and invoking the con
 *   Ask for execution: Before execution of the DBAction, ask for confirmation? A custom text can be given in the CustomXML definition element confirmText (see below)
 *   The actual DBAction to be done is defined in a range that is named like the DBAction definition (the hyperlink takes you there). This range can be dynamically computed as all ranges in excel.
 *   Create CB: create a commandbutton for the DB Sequence in the current Worksheet.
+*   Hyperlink: click on it to highlight/select the DB Action range
+
+You can always edit these parameters by selecting the Range of the DB Action area and invoking the context menu again.
 
 #### DB Sequences are created/edited with following dialog:  
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DbSequenceCreate.PNG)  
@@ -54,8 +58,11 @@ You can always edit these parameters by selecting this cell and invoking the con
 *   Exec on Save: Should the DBSequence be executed when the workbook is being saved?
 *   Ask for execution: Before execution of the DBSequence, ask for confirmation? A custom text can be given in the CustomXML definition element confirmText (see below)
 *   Sequence Step Datagrid: here the available DBMappers, DBActions and DBFunctions (DBListfetch/DBRowFetch/DBSetQuery) can be added that are then executed in Sequence. If you are executing all sequence steps in the same environment, its possible to run the sequence in a transaction context by placing DBBegin at the top and DBCommitRollback at the bottom of the sequence.
-*   Create CB: create a commandbutton for the DB Sequence in the current Worksheet.
 *   ^/v buttons: used to move the sequence steps up and down.
+*   Create CB: create a commandbutton for the DB Sequence in the current Worksheet.
+
+As DB Sequences have no Range with data/definitions, invoking the context menu always creates new DB Sequences. You can edit existing DB Sequences 
+by Ctrl-Shift clicking the Execute DBModifier Groups dropdown menus or by Ctrl-Shift clicking the created commandbuttons.
 
 #### Edit DBModifier Definitions  
 
