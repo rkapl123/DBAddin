@@ -37,7 +37,7 @@ Partial Class EditDBModifDef
         '
         Me.OKBtn.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.OKBtn.DialogResult = System.Windows.Forms.DialogResult.OK
-        Me.OKBtn.Location = New System.Drawing.Point(664, 415)
+        Me.OKBtn.Location = New System.Drawing.Point(538, 396)
         Me.OKBtn.Name = "OKBtn"
         Me.OKBtn.Size = New System.Drawing.Size(55, 23)
         Me.OKBtn.TabIndex = 4
@@ -49,7 +49,7 @@ Partial Class EditDBModifDef
         '
         Me.CancelBtn.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.CancelBtn.DialogResult = System.Windows.Forms.DialogResult.Cancel
-        Me.CancelBtn.Location = New System.Drawing.Point(725, 415)
+        Me.CancelBtn.Location = New System.Drawing.Point(599, 396)
         Me.CancelBtn.Name = "CancelBtn"
         Me.CancelBtn.Size = New System.Drawing.Size(55, 23)
         Me.CancelBtn.TabIndex = 0
@@ -61,7 +61,7 @@ Partial Class EditDBModifDef
         '
         Me.PosIndex.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
         Me.PosIndex.AutoSize = True
-        Me.PosIndex.Location = New System.Drawing.Point(13, 415)
+        Me.PosIndex.Location = New System.Drawing.Point(13, 396)
         Me.PosIndex.Name = "PosIndex"
         Me.PosIndex.Size = New System.Drawing.Size(0, 13)
         Me.PosIndex.TabIndex = 3
@@ -73,15 +73,16 @@ Partial Class EditDBModifDef
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.EditBox.Location = New System.Drawing.Point(12, 12)
         Me.EditBox.Name = "EditBox"
-        Me.EditBox.Size = New System.Drawing.Size(768, 397)
+        Me.EditBox.Size = New System.Drawing.Size(642, 378)
         Me.EditBox.TabIndex = 1
         Me.EditBox.Text = ""
         Me.ToolTip1.SetToolTip(Me.EditBox, "Edit the DB Modifier Definition CustomXML here.")
         '
         'doDBMOnSave
         '
+        Me.doDBMOnSave.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.doDBMOnSave.AutoSize = True
-        Me.doDBMOnSave.Location = New System.Drawing.Point(519, 419)
+        Me.doDBMOnSave.Location = New System.Drawing.Point(393, 400)
         Me.doDBMOnSave.Name = "doDBMOnSave"
         Me.doDBMOnSave.Size = New System.Drawing.Size(139, 17)
         Me.doDBMOnSave.TabIndex = 3
@@ -92,8 +93,9 @@ Partial Class EditDBModifDef
         '
         'DBFskip
         '
+        Me.DBFskip.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.DBFskip.AutoSize = True
-        Me.DBFskip.Location = New System.Drawing.Point(356, 419)
+        Me.DBFskip.Location = New System.Drawing.Point(230, 400)
         Me.DBFskip.Name = "DBFskip"
         Me.DBFskip.Size = New System.Drawing.Size(157, 17)
         Me.DBFskip.TabIndex = 2
@@ -108,7 +110,8 @@ Partial Class EditDBModifDef
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.CancelButton = Me.CancelBtn
-        Me.ClientSize = New System.Drawing.Size(800, 450)
+        Me.ClientSize = New System.Drawing.Size(674, 431)
+        Me.ControlBox = False
         Me.Controls.Add(Me.DBFskip)
         Me.Controls.Add(Me.doDBMOnSave)
         Me.Controls.Add(Me.EditBox)
@@ -116,6 +119,7 @@ Partial Class EditDBModifDef
         Me.Controls.Add(Me.CancelBtn)
         Me.Controls.Add(Me.OKBtn)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
+        Me.MinimumSize = New System.Drawing.Size(690, 470)
         Me.Name = "EditDBModifDef"
         Me.Text = "Edit DBModifier Definitions (CustomXML)"
         Me.ResumeLayout(False)

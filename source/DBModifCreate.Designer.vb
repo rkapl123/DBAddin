@@ -24,7 +24,6 @@ Partial Class DBModifCreate
     Private Sub InitializeComponent()
         Me.components = New System.ComponentModel.Container()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(DBModifCreate))
-        Me.TableLayoutPanel1 = New System.Windows.Forms.TableLayoutPanel()
         Me.Cancel_Button = New System.Windows.Forms.Button()
         Me.OK_Button = New System.Windows.Forms.Button()
         Me.CreateCB = New System.Windows.Forms.Button()
@@ -53,33 +52,14 @@ Partial Class DBModifCreate
         Me.AskForExecute = New System.Windows.Forms.CheckBox()
         Me.IgnoreDataErrors = New System.Windows.Forms.CheckBox()
         Me.EnvironmentLabel = New System.Windows.Forms.Label()
-        Me.TableLayoutPanel1.SuspendLayout()
         CType(Me.DBSeqenceDataGrid, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
-        'TableLayoutPanel1
-        '
-        Me.TableLayoutPanel1.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.TableLayoutPanel1.ColumnCount = 3
-        Me.TableLayoutPanel1.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 65.80645!))
-        Me.TableLayoutPanel1.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 34.19355!))
-        Me.TableLayoutPanel1.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 78.0!))
-        Me.TableLayoutPanel1.Controls.Add(Me.Cancel_Button, 2, 0)
-        Me.TableLayoutPanel1.Controls.Add(Me.OK_Button, 1, 0)
-        Me.TableLayoutPanel1.Controls.Add(Me.CreateCB, 0, 0)
-        Me.TableLayoutPanel1.Location = New System.Drawing.Point(272, 382)
-        Me.TableLayoutPanel1.Name = "TableLayoutPanel1"
-        Me.TableLayoutPanel1.RowCount = 1
-        Me.TableLayoutPanel1.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50.0!))
-        Me.TableLayoutPanel1.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 29.0!))
-        Me.TableLayoutPanel1.Size = New System.Drawing.Size(196, 29)
-        Me.TableLayoutPanel1.TabIndex = 17
-        '
         'Cancel_Button
         '
-        Me.Cancel_Button.Anchor = System.Windows.Forms.AnchorStyles.None
+        Me.Cancel_Button.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.Cancel_Button.DialogResult = System.Windows.Forms.DialogResult.Cancel
-        Me.Cancel_Button.Location = New System.Drawing.Point(123, 3)
+        Me.Cancel_Button.Location = New System.Drawing.Point(401, 434)
         Me.Cancel_Button.Name = "Cancel_Button"
         Me.Cancel_Button.Size = New System.Drawing.Size(67, 23)
         Me.Cancel_Button.TabIndex = 3
@@ -88,9 +68,9 @@ Partial Class DBModifCreate
         '
         'OK_Button
         '
-        Me.OK_Button.Anchor = System.Windows.Forms.AnchorStyles.None
+        Me.OK_Button.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.OK_Button.DialogResult = System.Windows.Forms.DialogResult.OK
-        Me.OK_Button.Location = New System.Drawing.Point(80, 3)
+        Me.OK_Button.Location = New System.Drawing.Point(361, 434)
         Me.OK_Button.Name = "OK_Button"
         Me.OK_Button.Size = New System.Drawing.Size(34, 23)
         Me.OK_Button.TabIndex = 2
@@ -100,8 +80,8 @@ Partial Class DBModifCreate
         '
         'CreateCB
         '
-        Me.CreateCB.Anchor = System.Windows.Forms.AnchorStyles.None
-        Me.CreateCB.Location = New System.Drawing.Point(4, 3)
+        Me.CreateCB.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
+        Me.CreateCB.Location = New System.Drawing.Point(287, 434)
         Me.CreateCB.Name = "CreateCB"
         Me.CreateCB.Size = New System.Drawing.Size(68, 23)
         Me.CreateCB.TabIndex = 1
@@ -248,31 +228,35 @@ Partial Class DBModifCreate
         '
         Me.DBSeqenceDataGrid.AllowDrop = True
         Me.DBSeqenceDataGrid.AllowUserToResizeRows = False
+        Me.DBSeqenceDataGrid.Anchor = CType((((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
+            Or System.Windows.Forms.AnchorStyles.Left) _
+            Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.DBSeqenceDataGrid.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.AllCells
         Me.DBSeqenceDataGrid.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize
         Me.DBSeqenceDataGrid.Location = New System.Drawing.Point(12, 209)
         Me.DBSeqenceDataGrid.MultiSelect = False
         Me.DBSeqenceDataGrid.Name = "DBSeqenceDataGrid"
-        Me.DBSeqenceDataGrid.Size = New System.Drawing.Size(452, 167)
+        Me.DBSeqenceDataGrid.Size = New System.Drawing.Size(452, 219)
         Me.DBSeqenceDataGrid.TabIndex = 13
         Me.ToolTip1.SetToolTip(Me.DBSeqenceDataGrid, "Define the steps for the DB Sequence in the order of their desired execution here" &
         ". Any DBMapper and/or DBAction can be selected.")
         '
         'TargetRangeAddress
         '
+        Me.TargetRangeAddress.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.TargetRangeAddress.Font = New System.Drawing.Font("Microsoft Sans Serif", 8.25!, System.Drawing.FontStyle.Underline, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.TargetRangeAddress.ForeColor = System.Drawing.Color.DodgerBlue
-        Me.TargetRangeAddress.Location = New System.Drawing.Point(204, 187)
+        Me.TargetRangeAddress.Location = New System.Drawing.Point(12, 439)
         Me.TargetRangeAddress.Name = "TargetRangeAddress"
-        Me.TargetRangeAddress.Size = New System.Drawing.Size(260, 16)
+        Me.TargetRangeAddress.Size = New System.Drawing.Size(269, 16)
         Me.TargetRangeAddress.TabIndex = 11
-        Me.TargetRangeAddress.TextAlign = System.Drawing.ContentAlignment.TopRight
         Me.ToolTip1.SetToolTip(Me.TargetRangeAddress, "click to select Target Range with Data for DBMapper or SQL DML for DBAction")
         '
         'up
         '
+        Me.up.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.up.Font = New System.Drawing.Font("Courier New", 9.75!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        Me.up.Location = New System.Drawing.Point(217, 387)
+        Me.up.Location = New System.Drawing.Point(221, 438)
         Me.up.Name = "up"
         Me.up.Size = New System.Drawing.Size(18, 19)
         Me.up.TabIndex = 15
@@ -282,7 +266,8 @@ Partial Class DBModifCreate
         '
         'down
         '
-        Me.down.Location = New System.Drawing.Point(241, 387)
+        Me.down.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
+        Me.down.Location = New System.Drawing.Point(245, 438)
         Me.down.Name = "down"
         Me.down.Size = New System.Drawing.Size(18, 19)
         Me.down.TabIndex = 16
@@ -304,11 +289,14 @@ Partial Class DBModifCreate
         '
         'RepairDBSeqnce
         '
+        Me.RepairDBSeqnce.Anchor = CType((((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
+            Or System.Windows.Forms.AnchorStyles.Left) _
+            Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.RepairDBSeqnce.Location = New System.Drawing.Point(12, 209)
         Me.RepairDBSeqnce.Multiline = True
         Me.RepairDBSeqnce.Name = "RepairDBSeqnce"
         Me.RepairDBSeqnce.ScrollBars = System.Windows.Forms.ScrollBars.Vertical
-        Me.RepairDBSeqnce.Size = New System.Drawing.Size(459, 167)
+        Me.RepairDBSeqnce.Size = New System.Drawing.Size(456, 219)
         Me.RepairDBSeqnce.TabIndex = 14
         Me.ToolTip1.SetToolTip(Me.RepairDBSeqnce, "use this textbox to repair DB Sequence entries...")
         '
@@ -350,7 +338,11 @@ Partial Class DBModifCreate
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.CancelButton = Me.Cancel_Button
-        Me.ClientSize = New System.Drawing.Size(480, 423)
+        Me.ClientSize = New System.Drawing.Size(479, 469)
+        Me.ControlBox = False
+        Me.Controls.Add(Me.CreateCB)
+        Me.Controls.Add(Me.OK_Button)
+        Me.Controls.Add(Me.Cancel_Button)
         Me.Controls.Add(Me.IgnoreDataErrors)
         Me.Controls.Add(Me.EnvironmentLabel)
         Me.Controls.Add(Me.AskForExecute)
@@ -373,23 +365,20 @@ Partial Class DBModifCreate
         Me.Controls.Add(Me.PrimaryKeys)
         Me.Controls.Add(Me.Tablename)
         Me.Controls.Add(Me.DBModifName)
-        Me.Controls.Add(Me.TableLayoutPanel1)
         Me.Controls.Add(Me.RepairDBSeqnce)
         Me.Controls.Add(Me.TargetRangeAddress)
-        Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.MaximizeBox = False
         Me.MinimizeBox = False
+        Me.MinimumSize = New System.Drawing.Size(490, 485)
         Me.Name = "DBModifCreate"
         Me.ShowInTaskbar = False
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent
-        Me.TableLayoutPanel1.ResumeLayout(False)
         CType(Me.DBSeqenceDataGrid, System.ComponentModel.ISupportInitialize).EndInit()
         Me.ResumeLayout(False)
         Me.PerformLayout()
 
     End Sub
-    Friend WithEvents TableLayoutPanel1 As System.Windows.Forms.TableLayoutPanel
     Friend WithEvents OK_Button As System.Windows.Forms.Button
     Friend WithEvents Cancel_Button As System.Windows.Forms.Button
     Friend WithEvents DBModifName As Windows.Forms.TextBox
@@ -411,7 +400,6 @@ Partial Class DBModifCreate
     Friend WithEvents EnvironmentLabel As Windows.Forms.Label
     Friend WithEvents DBSeqenceDataGrid As Windows.Forms.DataGridView
     Friend WithEvents TargetRangeAddress As Windows.Forms.Label
-    Friend WithEvents TargetRangeLabel As Windows.Forms.Label
     Friend WithEvents up As Windows.Forms.Button
     Friend WithEvents down As Windows.Forms.Button
     Friend WithEvents CUDflags As Windows.Forms.CheckBox

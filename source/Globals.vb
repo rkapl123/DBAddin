@@ -232,10 +232,10 @@ Public Module Globals
     End Sub
 
     ''' <summary>splits theString into tokens delimited by delimiter, ignoring delimiters inside quotes and brackets</summary>
-    ''' <param name="theString">string to be split into tokens</param>
+    ''' <param name="theString">string to be split into tokens, case insensitive !</param>
     ''' <param name="delimiter">delimiter that string is to be split by</param>
     ''' <param name="quote">quote character where delimiters should be ignored inside</param>
-    ''' <param name="startStr">part of theString where splitting should start after</param>
+    ''' <param name="startStr">part of theString where splitting should start after, case insensitive !</param>
     ''' <param name="openBracket">opening bracket character</param>
     ''' <param name="closeBracket">closing bracket character</param>
     ''' <returns>the list of tokens</returns>

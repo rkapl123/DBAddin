@@ -156,7 +156,7 @@ Public MustInherit Class DBModif
         End If
     End Function
 
-    ''' <summary>refresh a DB Function (currently only DBListFetch and DBSetQuery) by invoking their DB*Action procedure
+    ''' <summary>refresh a DB Function (currently only DBListFetch and DBSetQuery) by invoking its respective DB*Action procedure
     ''' It is necessary to prepare the inputs to this DB*Action procedure as the UDF cannot be invoked from here</summary>
     ''' <param name="srcExtent">the unique hidden name of the DB Function cell (DBFsource(GUID))</param>
     ''' <param name="executedDBMappers">in a DB Sequence, this parameter notifies of DBMappers that were executed before to allow avoidance of refreshing changes</param>
@@ -208,11 +208,11 @@ Public MustInherit Class DBModif
             MsgBox("Didn't find target of DBRefresh !", MsgBoxStyle.Critical)
             Exit Function
         End Try
-        LogInfo("DBRefresh..." & callID)
         ' StatusCollection doesn't necessarily have the callID contained
         If Not StatusCollection.ContainsKey(callID) Then StatusCollection.Add(callID, New ContainedStatusMsg)
         Dim functionFormula As String = ExcelDnaUtil.Application.Range(srcExtent).Formula
         If UCase(Left(functionFormula, 12)) = "=DBLISTFETCH" Then
+            LogInfo("Refresh DBListFetch: " & callID)
             Dim functionArgs = functionSplit(functionFormula, ",", """", "DBListFetch", "(", ")")
             If functionArgs.Length() < 3 Then
                 functionArgs = functionSplit(functionFormula, listSepLocal, """", "DBListFetch", "(", ")")
@@ -261,6 +261,7 @@ Public MustInherit Class DBModif
             ' call action procedure directly as we can avoid the external context required in the UDF
             DBListFetchAction(callID, Query, caller, target, CStr(ConnString), formulaRange, extendDataArea, HeaderInfo, AutoFit, autoformat, ShowRowNums, targetRangeName, formulaRangeName)
         ElseIf UCase(Left(functionFormula, 11)) = "=DBSETQUERY" Then
+            LogInfo("Refresh DBSetQuery: " & callID)
             Dim functionArgs = functionSplit(functionFormula, ",", """", "DBSetQuery", "(", ")")
             If functionArgs.Length() < 3 Then
                 functionArgs = functionSplit(functionFormula, listSepLocal, """", "DBSetQuery", "(", ")")
@@ -278,6 +279,36 @@ Public MustInherit Class DBModif
             Dim targetRangeName As String : targetRangeName = functionArgs(2)
             If UBound(functionArgs) = 3 Then targetRangeName += "," + functionArgs(3)
             Functions.DBSetQueryAction(callID, Query, target, CStr(ConnString), caller, targetRangeName)
+        ElseIf UCase(Left(functionFormula, 11)) = "=DBROWFETCH" Then
+            LogInfo("Refresh DBRowFetch: " & callID)
+            Dim functionArgs = functionSplit(functionFormula, ",", """", "DBRowFetch", "(", ")")
+            If functionArgs.Length() < 3 Then
+                functionArgs = functionSplit(functionFormula, listSepLocal, """", "DBRowFetch", "(", ")")
+            End If
+            Dim Query As String = ExcelDnaUtil.Application.Evaluate(functionArgs(0))
+            Dim ConnString As Object = Replace(functionArgs(1), """", "")
+            Dim testInt As Integer : Dim EnvPrefix As String = ""
+            If CStr(ConnString) <> "" And Not Integer.TryParse(ConnString, testInt) Then
+                ConnString = ExcelDnaUtil.Application.Evaluate(functionArgs(1))
+            End If
+            If Integer.TryParse(ConnString, testInt) Then
+                ConnString = Convert.ToDouble(testInt)
+            End If
+            Functions.resolveConnstring(ConnString, EnvPrefix)
+            Dim HeaderInfo As Boolean = False
+            Dim tempArray() As Excel.Range = Nothing
+            If Boolean.TryParse(functionArgs(2), HeaderInfo) Then
+                For i = 3 To UBound(functionArgs)
+                    ReDim Preserve tempArray(i - 3)
+                    tempArray(i - 3) = target.Parent.Range(functionArgs(i))
+                Next
+            Else
+                For i = 2 To UBound(functionArgs)
+                    ReDim Preserve tempArray(i - 2)
+                    tempArray(i - 2) = target.Parent.Range(functionArgs(i))
+                Next
+            End If
+            Functions.DBRowFetchAction(callID, Query, caller, tempArray, CStr(ConnString), HeaderInfo)
         End If
         doDBRefresh = True
     End Function
@@ -1000,10 +1031,12 @@ Public Class DBSeqnce : Inherits DBModif
                         dbcnn.RollbackTrans()
                     End If
                     TransactionIsOpen = False
-                Case "DBRefrsh"
-                    doDBRefresh(srcExtent:=DBModifname, executedDBMappers:=executedDBMappers, modifiedDBMappers:=modifiedDBMappers, TransactionIsOpen:=TransactionIsOpen)
                 Case Else
-                    MsgBox("Unknown DBModiftype'" & DBModiftype & "' being called in DB Sequence (" & calledByDBSeq & ") !", MsgBoxStyle.Critical, "Execute DB Sequence")
+                    If Left(DBModiftype, 8) = "Refresh " Then
+                        doDBRefresh(srcExtent:=DBModifname, executedDBMappers:=executedDBMappers, modifiedDBMappers:=modifiedDBMappers, TransactionIsOpen:=TransactionIsOpen)
+                    Else
+                        MsgBox("Unknown type of sequence step '" & DBModiftype & "' being called in DB Sequence (" & calledByDBSeq & ") !", MsgBoxStyle.Critical, "Execute DB Sequence")
+                    End If
             End Select
         Next
     End Sub
@@ -1178,6 +1211,7 @@ Public Module DBModifs
                 .IgnoreDataErrors.Hide()
             End If
             If createdDBModifType = "DBSeqnce" Then
+                theDBModifCreateDlg.FormBorderStyle = FormBorderStyle.Sizable
                 ' hide controls irrelevant for DBSeqnce
                 .TargetRangeAddress.Hide()
                 .envSel.Hide()
@@ -1188,7 +1222,8 @@ Public Module DBModifs
                 .DBSeqenceDataGrid.Height = 320
                 .execOnSave.Top = .up.Top
                 .AskForExecute.Top = .up.Top
-
+                .execOnSave.Anchor = AnchorStyles.Bottom Or AnchorStyles.Left
+                .AskForExecute.Anchor = AnchorStyles.Bottom Or AnchorStyles.Left
                 ' fill Datagridview for DBSequence
                 Dim cb As DataGridViewComboBoxColumn = New DataGridViewComboBoxColumn()
                 cb.HeaderText = "Sequence Step"
@@ -1209,13 +1244,13 @@ Public Module DBModifs
                 ' then add DBRefresh items for allowing refreshing DBFunctions (DBListFetch and DBSetQuery) during a Sequence
                 Dim searchCell As Excel.Range
                 For Each ws As Excel.Worksheet In ExcelDnaUtil.Application.ActiveWorkbook.Worksheets
-                    For Each theFunc As String In {"DBListFetch(", "DBSetQuery("}
+                    For Each theFunc As String In {"DBListFetch(", "DBSetQuery(", "DBRowFetch("}
                         searchCell = ws.Cells.Find(What:=theFunc, After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
                         Dim firstFoundAddress As String = ""
                         If Not IsNothing(searchCell) Then firstFoundAddress = searchCell.Address
                         While Not IsNothing(searchCell)
                             Dim underlyingName As String = getDBunderlyingNameFromRange(searchCell)
-                            ds.Add("DBRefrsh:" & underlyingName & ":" & theFunc & "in " & searchCell.Parent.Name & "!" & searchCell.Address & ")")
+                            ds.Add("Refresh " & theFunc & searchCell.Parent.Name & "!" & searchCell.Address & "):" & underlyingName)
                             searchCell = ws.Cells.FindNext(searchCell)
                             If searchCell.Address = firstFoundAddress Then Exit While
                         End While
@@ -1232,6 +1267,18 @@ Public Module DBModifs
                 .DBSeqenceDataGrid.Columns.Add(cb)
                 .DBSeqenceDataGrid.Columns(0).Width = 400
             Else
+                theDBModifCreateDlg.FormBorderStyle = FormBorderStyle.FixedDialog
+                If createdDBModifType = "DBAction" Then
+                    theDBModifCreateDlg.MinimumSize = New Drawing.Size(width:=490, height:=160)
+                    theDBModifCreateDlg.Size = New Drawing.Size(width:=490, height:=160)
+                    .execOnSave.Top = .Tablename.Top
+                    .AskForExecute.Top = .Tablename.Top
+                    .envSel.Top = .Tablename.Top
+                    '.TargetRangeAddress.Location = .PrimaryKeysLabel.Location
+                Else
+                    theDBModifCreateDlg.MinimumSize = New Drawing.Size(width:=490, height:=290)
+                    theDBModifCreateDlg.Size = New Drawing.Size(width:=490, height:=290)
+                End If
                 ' hide controls irrelevant for DBMapper and DBAction
                 .up.Hide()
                 .down.Hide()

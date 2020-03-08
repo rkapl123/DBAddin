@@ -14,7 +14,9 @@ Examples for the usage of DBMapper can be found in the DBMapperTests.xlsx Workbo
 You can create the three DB Modifiers by using the cell context menu:  
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/ContextMenu.PNG)  
 
-The DBModifier (in this case a DBMapper) creation starts following dialog (already filled, when clicked on a blank cell all entries are empty):  
+The DBModifier creation/editing is shown below (examples already filled, when clicked on a blank cell all entries are empty):  
+
+#### DB Mappers are created/edited with following dialog:  
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DbMapperCreate.PNG)  
 
 *   DBMapper Name: Enter the name for the selected Range that will be used to identify the DBMap in the "Execute DBModifier" Group dropdowns. If no name is given here, then UnnamedDBMapper will be used to identify it.
@@ -34,7 +36,7 @@ The DBModifier (in this case a DBMapper) creation starts following dialog (alrea
 
 You can always edit these parameters by selecting this cell and invoking the context menu again.
 
-A DB Action is created with following dialog:  
+#### DB Actions are created/edited with following dialog:  
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DbActionCreate.PNG)  
 
 *   DBAction Name: Enter the name for the selected Range that will be used to identify the DBAction in the "Execute DBModifier" Group dropdowns. If no name is given here, then UnnamedDBAction will be used to identify it.
@@ -45,7 +47,7 @@ A DB Action is created with following dialog:
 *   The actual DBAction to be done is defined in a range that is named like the DBAction definition (the hyperlink takes you there). This range can be dynamically computed as all ranges in excel.
 *   Create CB: create a commandbutton for the DB Sequence in the current Worksheet.
 
-A DB Sequence is created with following dialog:  
+#### DB Sequences are created/edited with following dialog:  
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DbSequenceCreate.PNG)  
 
 *   DBSequence Name: Enter the name for the selected Range that will be used to identify the DBSequence in the "Execute DBModifier" Group dropdowns. If no name is given here, then UnnamedDBAction will be used to identify it.
@@ -55,18 +57,22 @@ A DB Sequence is created with following dialog:
 *   Create CB: create a commandbutton for the DB Sequence in the current Worksheet.
 *   ^/v buttons: used to move the sequence steps up and down.
 
+#### Edit DBModifier Definitions  
+
 All DBModifier definitions (done in XML) can be viewed by clicking the dialogBox Launcher on the right bottom corner of the Execute DBModifier Ribbon Group
 together with Ctrl and Shift. This opens the Edit DBModifier Definitions Window:  
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/EditDBModifDefinitions.PNG)
 
 Here you can edit the definitions directly and also insert hidden features like the confirmText. 
 
-All DBModifiers can be either executed using the Execute DBModifier Groups dropdown menus..  
+The DBModifiers can be executed either  
+
+... using the Execute DBModifier Groups dropdown menus..  
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBModifierMenu.PNG)
 
-..or commandbuttons that were generated with the creation dialogs (the name of the control box has to be the same as the DBModifier definition/DBModifier Range)..  
+... or using commandbuttons that were generated with the creation dialogs (the name of the control box has to be the same as the DBModifier definition/DBModifier Range)..  
 
-..or be done on saving the Workbook.  
+... or be done on saving the Workbook.  
 
 You can edit the DBModifiers either by Ctrl-Shift clicking the Execute DBModifier Groups dropdown menus..  
 .. or by Ctrl-Shift clicking the created commandbuttons  
