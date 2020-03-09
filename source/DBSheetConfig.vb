@@ -1,90 +1,55 @@
+Imports System.IO
+Imports System.Windows.Forms
+Imports ExcelDna.Integration
 Imports Microsoft.Office.Interop
 
 
 '''<summary>Helper class for DBSheetHandler and DBSheetConnection for easier manipulation of DBSheet definition / Connection configuration data</summary> 
-Public Class DBSheetConfig
+Public Module DBSheetConfig
     ''' <summary>current Sheet configuration as XML string</summary>
     Public curConfig As String
-    ''
-    ' current SheetParams (contains reference to configuration file) as XML string
-    Public SheetParams As String
-    ''
-    ' current connections file content as XML string (loaded with getDBConnectionsFile)
-    Public DBConnFile As String
 
-    ''
-    ' init procedure for DBSheetHandler Config
-    ' @param Sh the sheet which needs to be initialised as a DBSheet
-    ' @remarks gets DBSheet definition from current sheet's top/leftmost cell's comment
-    Public Sub initDBSheetConfig(Sh As Excel.Worksheet)
-        Dim thePath As String
+    Public Sub createDBSheet()
+        'MsgBox("not yet implemented..")
+        'Exit Sub
+        Dim openFileDialog1 = New OpenFileDialog With {
+            .InitialDirectory = fetchSetting("DBSheetDefinitions", ""),
+            .Filter = "XML files (*.xml)|*.xml",
+            .RestoreDirectory = True
+        }
+        Dim result As DialogResult = openFileDialog1.ShowDialog()
+        If result = Windows.Forms.DialogResult.OK Then
+            ' Get the DBSheet Definition file name and read into curConfig
+            Dim dsdPath As String = openFileDialog1.FileName
+            curConfig = File.ReadAllText(dsdPath)
+            ' get query
+            Dim queryStr As String = getEntry("query")
+            ' get lookup fields
+            If Not IsNothing(getEntryList("columns", "field", "lookup")) Then
+                Dim columnslist() As String       ' the list of the column infos (including lookups)
+                Dim LookupDef
+                columnslist = getEntryList("columns", "field", vbNullString)
+                ' add lookup Queries in separate sheet
+                For Each LookupDef In columnslist
+                    MsgBox(LookupDef)
+                Next
+            End If
+            ' add DBMapper with query and vlookup function fields for resolution of lookups
 
-        On Error GoTo err1
-        SheetParams = Sh.Range("A1").Comment.Text
-        thePath = getEntry("DBSheetConfigPath", SheetParams)
-        curConfig = readDBSheetConfig(thePath)
-        Exit Sub
-err1:
-        LogError("Error: " & Err.Description & ", line " & Erl() & " in DBSheetConfig.initDBSheetConfig")
+        End If
     End Sub
 
-    ''
-    ' reads DBSheet definition from thePath
-    ' @param thePath
-    ' @return the config
-    Public Function readDBSheetConfig(thePath As String) As String
-        On Error GoTo err1
-        If Len(thePath) = 0 Then
-            LogWarn("Error: no DBSheet config file given (need to set DBSheetConfigPath) !")
-            Exit Function
-        End If
-        If Left$(thePath, 2) <> "\\" And Mid$(thePath, 2, 2) <> ":\" Then
-            thePath = DBSheetDefinitionsFolder & "\" & thePath
-        End If
-
-        If Len(Dir(thePath)) > 0 Then
-            On Error Resume Next
-            Dim fileReader As System.IO.StreamReader = My.Computer.FileSystem.OpenTextFileReader(thePath)
-            readDBSheetConfig = fileReader.ReadToEnd()
-            If Err().Number <> 0 Then LogWarn("Error: " & Err.Description & " while reading DBSheet config file in initDBSheetConfig")
-            On Error GoTo err1
-        Else
-            LogWarn("Error: couldn't find DBSheet config file '" & thePath & "' !")
-        End If
-        Exit Function
-err1:
-        readDBSheetConfig = vbNullString
-        LogError("Error: " & Err.Description & ", line " & Erl() & " in DBSheetConfig.readDBSheetConfig")
-    End Function
-
-    ''
-    ' creates markup with setting value content in entryMarkup
-    ' @param entryMarkup
-    ' @param content
-    ' @return the markup
-    Public Function setEntry(ByVal entryMarkup As String, ByVal content As String) As String
-        setEntry = "<" & entryMarkup & ">" & content & "</" & entryMarkup & ">"
-    End Function
-
-    ''
-    ' fetches value in entryMarkup within paramText, search starts at position startSearch
-    ' @param entryMarkup
-    ' @param XMLString
-    ' @param startSearch
-    ' @return the value
-    Public Function getEntry(ByVal entryMarkup As String, Optional ByVal XMLString As String = vbNullString, Optional startSearch As Integer = 1) As String
+    ''' <summary>fetches value in entryMarkup within XMLString (if not given takes curConfig), search starts optionally at position startSearch (default 1)</summary>
+    ''' <param name="entryMarkup"></param>
+    ''' <param name="XMLString"></param>
+    ''' <param name="startSearch"></param>
+    ''' <returns>the fetched value</returns>
+    Public Function getEntry(ByVal entryMarkup As String, Optional ByVal XMLString As String = vbNullString, Optional ByRef startSearch As Integer = 1) As String
         Dim markStart As String, markEnd As String
         Dim fetchBeg, fetchEnd As Integer
 
         On Error GoTo getEntry_Err
-        If Len(XMLString) = 0 Then
-            If Len(DBConnFile) > 0 Then
-                XMLString = curConfig
-            Else
-                ' if we're in a DBSheet combine sheet params with central DBSheet config
-                XMLString = SheetParams & curConfig
-            End If
-        End If
+        If IsNothing(XMLString) Then XMLString = curConfig
         If Len(XMLString) = 0 Then
             getEntry = vbNullString
             Exit Function
@@ -108,15 +73,12 @@ getEntry_Err:
         LogError("Error: " & Err.Description & ", line " & Erl() & " in DBSheetConfig.getEntry")
     End Function
 
-    ''
-    ' fetches entryMarkup parts contained within lists demarked by listMarkup within parentMarkup
-    ' @param parentMarkup
-    ' @param listMarkup
-    ' @param entryMarkup
-    ' @param XMLString
-    ' @return list containing parts
-    ' @remark
-    ' returns list containing parts, if entryMarkup = vbNullString then list contains parts demarked by listMarkup
+    ''' <summary>fetches entryMarkup parts contained within lists demarked by listMarkup within parentMarkup inside XMLString (if not given takes curConfig)</summary>
+    ''' <param name="parentMarkup"></param>
+    ''' <param name="listMarkup"></param>
+    ''' <param name="entryMarkup"></param>
+    ''' <param name="XMLString"></param>
+    ''' <returns>list containing parts, if entryMarkup = vbNullString then list contains parts demarked by listMarkup</returns>
     Public Function getEntryList(ByVal parentMarkup As String, ByVal listMarkup As String, ByVal entryMarkup As String, Optional XMLString As String = vbNullString) As Object
         Dim list() As String = Nothing
         Dim i As Long, posEnd As Long
@@ -124,14 +86,7 @@ getEntry_Err:
         Dim parentEntry As String, ListItem As String, part As String
 
         On Error GoTo getEntryList_Err
-        If Len(XMLString) = 0 Then
-            If Len(DBConnFile) > 0 Then
-                XMLString = curConfig
-            Else
-                ' if we're in a DBSheet combine sheet params with central DBSheet config
-                XMLString = SheetParams & curConfig
-            End If
-        End If
+        If IsNothing(XMLString) Then XMLString = curConfig
         If Len(XMLString) = 0 Then
             getEntryList = Nothing
             Exit Function
@@ -164,29 +119,6 @@ getEntryList_Err:
         LogError("Error: " & Err.Description & ", line " & Erl() & " in DBSheetConfig.getEntryList")
     End Function
 
-    ''
-    ' sets markup denoted by entryMarkup to content (xml parameters contained in sheet ws)
-    ' @param entryMarkup
-    ' @param content
-    Public Sub changeMarkup(ByVal entryMarkup As String, ByVal content As String)
-        Dim tryConfigChange As String, oldConfig As String, newEntry As String, newConfig As String
 
-        On Error GoTo changeMarkup_Err
-        newEntry = setEntry(entryMarkup, content)
-        oldConfig = SheetParams
-        tryConfigChange = Change(oldConfig, "<" & entryMarkup & ">", content, "</" & entryMarkup & ">")
-        If Len(tryConfigChange) = 0 Then
-            newConfig = Replace(oldConfig, "</DBsheetParams>", newEntry & vbLf & "</DBsheetParams>")
-        Else
-            newConfig = tryConfigChange
-        End If
-        SheetParams = newConfig
-        Exit Sub
-
-changeMarkup_Err:
-
-        LogError("Error: " & Err.Description & ", line " & Erl() & " in DBSheetConfig.changeMarkup")
-    End Sub
-
-End Class
+End Module
 

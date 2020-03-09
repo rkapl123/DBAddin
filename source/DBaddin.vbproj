@@ -111,7 +111,6 @@
     <Compile Include="AddInEvents.vb" />
     <Compile Include="ConfigFiles.vb" />
     <Compile Include="DBSheetConfig.vb" />
-    <Compile Include="DBSheetHandler.vb" />
     <Compile Include="EditDBModifDef.Designer.vb">
       <DependentUpon>EditDBModifDef.vb</DependentUpon>
     </Compile>

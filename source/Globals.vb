@@ -3,7 +3,7 @@ Imports Microsoft.Office.Core
 Imports Microsoft.Office.Interop
 Imports System.Collections.Generic
 Imports System.Diagnostics
-Imports System.Timers
+
 
 ''' <summary>Global variables and functions for DB Addin</summary>
 Public Module Globals
@@ -22,8 +22,6 @@ Public Module Globals
     Public EventLevelSelected As String
     ''' <summary>the log listener</summary>
     Public theLogListener As TraceListener
-    ''' <summary>Folder where db sheet definitions (xml) are stored</summary>
-    Public DBSheetDefinitionsFolder As String
 
     ' Global settings
     Public DebugAddin As Boolean

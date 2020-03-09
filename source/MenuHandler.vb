@@ -46,6 +46,7 @@ Public Class MenuHandler
            "<button id='DBMapperC' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
            "<button id='DBActionC' tag='DBAction' label='DBAction' imageMso='TableIndexes' onAction='clickCreateButton'/>" +
            "<button id='DBSequenceC' tag='DBSeqnce' label='DBSequence' imageMso='ShowOnNewButton' onAction='clickCreateButton'/>" +
+           "<button id='DBSheetC' tag='DBSheet' label='DBSheetDef' imageMso='ChartResetToMatchStyle' onAction='clickCreateButton'/>" +
            "<menuSeparator id='separator' />" +
            "<button id='DBListFetchC' tag='DBListFetch' label='DBListFetch' imageMso='GroupLists' onAction='clickCreateButton'/>" +
            "<button id='DBRowFetchC' tag='DBRowFetch' label='DBRowFetch' imageMso='GroupRecords' onAction='clickCreateButton'/>" +
@@ -67,6 +68,7 @@ Public Class MenuHandler
             "<button id='DBMapperCL' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
             "<button id='DBActionCL' tag='DBAction' label='DBAction' imageMso='TableIndexes' onAction='clickCreateButton'/>" +
             "<button id='DBSequenceCL' tag='DBSeqnce' label='DBSequence' imageMso='ShowOnNewButton' onAction='clickCreateButton'/>" +
+            "<button id='DBSheetCL' tag='DBSheet' label='DBSheetDef' imageMso='ChartResetToMatchStyle' onAction='clickCreateButton'/>" +
             "<menuSeparator id='separatorCL' />" +
             "<button id='DBListFetchCL' tag='DBListFetch' label='DBListFetch' imageMso='GroupLists' onAction='clickCreateButton'/>" +
             "<button id='DBRowFetchCL' tag='DBRowFetch' label='DBRowFetch' imageMso='GroupRecords' onAction='clickCreateButton'/>" +
@@ -91,6 +93,7 @@ Public Class MenuHandler
              "<menu id='createMenuL' label='Insert/Edit DBFunc/DBModif' insertBeforeMso='Cut'>" +
                "<button id='DBMapperL' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
                "<button id='DBSequenceL' tag='DBSeqnce' label='DBSequence' imageMso='ShowOnNewButton' onAction='clickCreateButton'/>" +
+               "<button id='DBSheetL' tag='DBSheet' label='DBSheetDef' imageMso='ChartResetToMatchStyle' onAction='clickCreateButton'/>" +
              "</menu>" +
              "<menuSeparator id='MySeparatorL' insertBeforeMso='Cut'/>" +
          "</contextMenu>" +
@@ -209,7 +212,7 @@ Public Class MenuHandler
     ''' <summary>set the name of the DBModifType dropdown to the sheet name (for the WB dropdown this is the WB name)</summary>
     ''' <returns></returns>
     Public Function getDBModifTypeLabel(control As IRibbonControl) As String
-        getDBModifTypeLabel = IIf(control.Id = "DBSeqnce", "DBSequences", control.Id)
+        getDBModifTypeLabel = IIf(control.Id = "DBSeqnce", "DBSequence", control.Id)
     End Function
 
     ''' <summary>create the buttons in the DBModif sheet dropdown menu</summary>
@@ -218,7 +221,7 @@ Public Class MenuHandler
         Dim xmlString As String = "<menu xmlns='http://schemas.microsoft.com/office/2009/07/customui'>"
         Try
             If Not Globals.DBModifDefColl.ContainsKey(control.Id) Then Return ""
-            Dim DBModifTypeName As String = IIf(control.Id = "DBSeqnce", "DBSequences", IIf(control.Id = "DBMapper", "DB Mapper", IIf(control.Id = "DBAction", "DB Action", "undefined DBModifTypeName")))
+            Dim DBModifTypeName As String = IIf(control.Id = "DBSeqnce", "DBSequence", IIf(control.Id = "DBMapper", "DB Mapper", IIf(control.Id = "DBAction", "DB Action", "undefined DBModifTypeName")))
             For Each nodeName As String In Globals.DBModifDefColl(control.Id).Keys
                 Dim descName As String = IIf(nodeName = control.Id, "Unnamed " + DBModifTypeName, Replace(nodeName, DBModifTypeName, ""))
                 Dim imageMsoStr As String = IIf(control.Id = "DBSeqnce", "ShowOnNewButton", IIf(control.Id = "DBMapper", "TableSave", IIf(control.Id = "DBAction", "TableIndexes", "undefined imageMso")))
@@ -303,14 +306,13 @@ Public Class MenuHandler
         Dim activeCellDBModifName As String = getDBModifNameFromRange(ExcelDnaUtil.Application.ActiveCell)
         Dim activeCellDBModifType As String = Left(activeCellDBModifName, 8)
         If (activeCellDBModifType = "DBMapper" Or activeCellDBModifType = "DBAction") And activeCellDBModifType <> control.Tag And control.Tag <> "DBSeqnce" Then
-            Dim exitMe As Boolean = True
             MsgBox("Active Cell already contains definition for a " & activeCellDBModifType & ", inserting " & IIf(control.Tag = "DBSetQueryPivot" Or control.Tag = "DBSetQueryListObject", "DBSetQuery", control.Tag) & " here will cause trouble !", vbCritical, "Inserting not allowed")
             Exit Sub
         End If
         If control.Tag = "DBListFetch" Then
-            createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBListFetch("""","""",R[1]C,,,TRUE,TRUE,TRUE)"})
+            ConfigFiles.createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBListFetch("""","""",R[1]C,,,TRUE,TRUE,TRUE)"})
         ElseIf control.Tag = "DBRowFetch" Then
-            createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBRowFetch("""","""",TRUE,R[1]C:R[1]C[10])"})
+            ConfigFiles.createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBRowFetch("""","""",TRUE,R[1]C:R[1]C[10])"})
         ElseIf control.Tag = "DBSetQueryPivot" Then
             ' insert dummy cmd sql definition for pivot table
             Dim pivotcache As Excel.PivotCache = ExcelDnaUtil.Application.ActiveWorkbook.PivotCaches().Add(Excel.XlPivotTableSourceType.xlExternal)
@@ -325,7 +327,7 @@ Public Class MenuHandler
                 LogWarn("Exception caught when adding pivot table:" & ex.Message)
                 Exit Sub
             End Try
-            createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBSetQuery("""","""",R[1]C)"})
+            ConfigFiles.createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBSetQuery("""","""",R[1]C)"})
         ElseIf control.Tag = "DBSetQueryListObject" Then
             Try
                 ' insert dummy cmd sql definition for listobject table
@@ -348,13 +350,15 @@ Public Class MenuHandler
                 LogWarn("Exception caught when adding listobject table:" & ex.Message)
                 Exit Sub
             End Try
-            createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBSetQuery("""","""",RC[1])"})
+            ConfigFiles.createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBSetQuery("""","""",RC[1])"})
         ElseIf control.Tag = "DBMapper" Or control.Tag = "DBAction" Or control.Tag = "DBSeqnce" Then
             If activeCellDBModifType = control.Tag Then                 ' edit existing definition
-                createDBModif(control.Tag, targetDefName:=activeCellDBModifName)
+                DBModifs.createDBModif(control.Tag, targetDefName:=activeCellDBModifName)
             Else                                                     ' create new definition
-                createDBModif(control.Tag)
+                DBModifs.createDBModif(control.Tag)
             End If
+        ElseIf control.Tag = "DBSheet" Then
+            DBSheetConfig.createDBSheet()
         End If
     End Sub
 

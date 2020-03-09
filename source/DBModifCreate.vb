@@ -17,6 +17,7 @@ Public Class DBModifCreate
     ''' <param name="e"></param>
     Private Sub OK_Button_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles OK_Button.Click
         Dim NameValidationResult As String = ""
+        ' Check for valid range name
         If Me.DBModifName.Text <> String.Empty Then
             ' Add doesn't work directly with ExcelDnaUtil.Application.ActiveWorkbook.Names (late binding), so create an object here...
             Dim NamesList As Excel.Names = ExcelDnaUtil.Application.ActiveWorkbook.Names
@@ -27,60 +28,54 @@ Public Class DBModifCreate
             End Try
             Try : NamesList.Item(Me.Tag & Me.DBModifName.Text).Delete() : Catch ex As Exception : End Try
         End If
+        ' check for requirements: mandatory fields filled (visible Tablename, Primary keys and Database), NameValidation above OK and no double invocation for execOnSave in DB Sequences and sequence parts
         If Me.Tablename.Text = String.Empty And Me.Tablename.Visible Then
-            MsgBox("Field Tablename is required, please fill in!")
+            MsgBox("Field Tablename is required, please fill in!", MsgBoxStyle.Critical + vbOKOnly, "DBModification Validation")
         ElseIf Me.PrimaryKeys.Text = String.Empty And Me.PrimaryKeys.Visible Then
-            MsgBox("Field Primary Keys is required, please fill in!")
+            MsgBox("Field Primary Keys is required, please fill in!", MsgBoxStyle.Critical + vbOKOnly, "DBModification Validation")
         ElseIf Me.Database.Text = String.Empty And Me.Database.Visible Then
-            MsgBox("Field Database is required, please fill in!")
+            MsgBox("Field Database is required, please fill in!", MsgBoxStyle.Critical + vbOKOnly, "DBModification Validation")
         ElseIf NameValidationResult <> "" Then
-            MsgBox("Invalid " & Me.NameLabel.Text & ", Error: " & NameValidationResult)
+            MsgBox("Invalid " & Me.NameLabel.Text & ", Error: " & NameValidationResult, MsgBoxStyle.Critical + vbOKOnly, "DBModification Validation")
         Else
-            ' check for double invocation because of execOnSave being set on DBAction/DBMapper
-            If Me.Tag <> "DBSeqnce" Then
-                For Each docproperty In ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties
-                    If TypeName(docproperty.Value) = "String" And Strings.Left(docproperty.Name, 8) = "DBSeqnce" Then
-                        Dim dbseqName As String = Replace(docproperty.Name, "DBSeqnce", "")
-                        Dim params() As String = Split(docproperty.Value, ",")
-                        Dim execSeqElemOnSave As Boolean = Convert.ToBoolean(params(0))
-                        Dim i As Integer
-                        For i = 1 To UBound(params)
-                            Dim definition() As String = Split(params(i), ":")
-                            If definition(0) = Me.Tag AndAlso definition(1) = Me.DBModifName.Text AndAlso
-                            Globals.DBModifDefColl.ContainsKey(definition(0)) AndAlso Globals.DBModifDefColl(definition(0)).ContainsKey(definition(1)) AndAlso
-                            Me.execOnSave.Checked AndAlso execSeqElemOnSave Then
-                                Dim retval As MsgBoxResult = MsgBox(Me.Tag & Me.DBModifName.Text & " in " & Globals.DBModifDefColl(definition(0)).Item(definition(1)).getTargetRangeAddress() & " will be executed twice on saving, because it is part of DBSequence " & dbseqName & ", which is also executed on saving." & vbCrLf & "Please disable 'Execute on save' either here or on " & dbseqName & " !", MsgBoxStyle.Critical + vbOKCancel, "DBModification Validation")
-                                Exit Sub
-                            End If
-                        Next
-                    End If
-                Next
-                ' check for double invocation because of execOnSave being set on DBSequence
-            Else
-                For Each docproperty In ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties
-                    For i As Integer = 0 To Me.DBSeqenceDataGrid.Rows().Count - 2
-                        Dim definition() As String = Split(Me.DBSeqenceDataGrid.Rows(i).Cells(0).Value, ":")
-                        If TypeName(docproperty.Value) = "String" And docproperty.Name = definition(0) & definition(1) Then
-                            Dim DBModifParams() As String = functionSplit(docproperty.Value, ",", """", "def", "(", ")")
-                            Dim storeDBMapOnSave As Boolean = False
-                            If definition(0) = "DBAction" Then
-                                If DBModifParams.Length > 2 AndAlso DBModifParams(2) <> "" Then storeDBMapOnSave = Convert.ToBoolean(DBModifParams(2))
-                            ElseIf definition(0) = "DBMapper" Then
-                                If DBModifParams(7) <> "" Then storeDBMapOnSave = Convert.ToBoolean(DBModifParams(7))
-                            End If
-                            If Me.execOnSave.Checked And storeDBMapOnSave Then
-                                Dim foundDBModifName As String = definition(0) & IIf(definition(1) = "", "Unnamed " & definition(0), definition(1))
-                                Dim retval As MsgBoxResult = MsgBox(foundDBModifName & " will be executed twice on saving, because it is part of this DBSequence, which is also executed on saving." & vbCrLf & "Please disable Execute on save either here or on '" & foundDBModifName & "'", MsgBoxStyle.Critical + MsgBoxStyle.OkOnly, "DBModification Validation")
-                                Exit Sub
-                            End If
+            ' check for double invocation because of execOnSave both being set on current DB Modifier ...
+            If Me.execOnSave.Checked Then
+                Dim MyDBModifName As String = Me.Tag & Me.DBModifName.Text
+                ' and on DB Sequence that contains the current DB Mapper or DB Action:
+                If Me.Tag <> "DBSeqnce" Then
+                    For Each DBModifierCheck As DBSeqnce In Globals.DBModifDefColl("DBSeqnce").Values
+                        ' check for Sequences that have execOnSave set...
+                        If DBModifierCheck.DBModifSaveNeeded Then
+                            ' ...if they contain the current DBAction/DBMapper
+                            For Each sequenceParam As String In DBModifierCheck.getSequenceSteps
+                                Dim definition() As String = Split(sequenceParam, ":")
+                                If MyDBModifName = definition(1) Then
+                                    Dim DBModifTargetAddress As String = "(Target Address could not be found...)"
+                                    If Globals.DBModifDefColl(definition(0)).ContainsKey(definition(1)) Then DBModifTargetAddress = Globals.DBModifDefColl(definition(0)).Item(definition(1)).getTargetRangeAddress()
+                                    Dim foundDBModifName As String = IIf(DBModifierCheck.getName = "DBSeqnce", "Unnamed DBSequence", DBModifierCheck.getName)
+                                    MsgBox(Me.Tag & Me.DBModifName.Text & " in " & DBModifTargetAddress & " will be executed twice on saving, because it is part of '" & foundDBModifName & "', which is also executed on saving." & vbCrLf & IIf(Me.execOnSave.Checked, "Disabling 'Execute on save' now, you ", "You") & " can reenable after disabling it on '" & foundDBModifName & "'", MsgBoxStyle.Critical + vbOKOnly, "DBModification Validation")
+                                    Me.execOnSave.Checked = False
+                                End If
+                            Next
                         End If
                     Next
-                Next
+                    If Not Me.execOnSave.Checked Then Exit Sub
+                Else ' or on any DB Modifier being contained in current DB Sequence:
+                    For i As Integer = 0 To Me.DBSeqenceDataGrid.Rows().Count - 2
+                        Dim definition() As String = Split(Me.DBSeqenceDataGrid.Rows(i).Cells(0).Value, ":")
+                        If (definition(0) = "DBAction" Or definition(0) = "DBMapper") AndAlso Globals.DBModifDefColl(definition(0)).ContainsKey(definition(1)) AndAlso Globals.DBModifDefColl(definition(0)).Item(definition(1)).DBModifSaveNeeded Then
+                            Dim foundDBModifName As String = IIf(definition(1) = "", "Unnamed " & definition(0), definition(1))
+                            Dim DBModifTargetAddress As String = Globals.DBModifDefColl(definition(0)).Item(definition(1)).getTargetRangeAddress()
+                            MsgBox(foundDBModifName & " in " & DBModifTargetAddress & " will be executed twice on saving, because it is part of this DBSequence, which is also executed on saving." & vbCrLf & IIf(Me.execOnSave.Checked, "Disabling 'Execute on save' now, you ", "You") & " can reenable after disabling it on '" & foundDBModifName & "'", MsgBoxStyle.Critical + MsgBoxStyle.OkOnly, "DBModification Validation")
+                            Me.execOnSave.Checked = False
+                        End If
+                    Next
+                    If Not Me.execOnSave.Checked Then Exit Sub
+                End If
             End If
-
-            Me.DialogResult = DialogResult.OK
-            Me.Close()
         End If
+        Me.DialogResult = DialogResult.OK
+        Me.Close()
     End Sub
 
     ''' <summary>ignore all done changes in dialog</summary>
@@ -153,14 +148,14 @@ Public Class DBModifCreate
             For Each def As String In ds
                 allowedValues += def + vbCrLf
             Next
-            Me.RepairDBSeqnce.Text = DBSeqStepValidationErrors & vbCrLf & "allowed Entries are:" & vbCrLf & allowedValues & vbCrLf & "modify existing definition below and remove everything else to repair (clicking OK):" & vbCrLf & Me.RepairDBSeqnce.Text
+            Me.RepairDBSeqnce.Text = DBSeqStepValidationErrors & vbCrLf & "Allowed Entries are:" & vbCrLf & allowedValues & vbCrLf & "Repair existing definitions below and remove all above incl. this line to fix it by clicking OK:" & vbCrLf & Me.RepairDBSeqnce.Text
             Me.RepairDBSeqnce.Show()
             Me.RepairDBSeqnce.Width = Me.DBSeqenceDataGrid.Width
             Me.RepairDBSeqnce.Height = 325
             Me.RepairDBSeqnce.Top = Me.DatabaseLabel.Top
             Me.DBSeqenceDataGrid.Hide()
             Me.Tag = "repaired"
-            MsgBox("Defined DBSequence steps did not match allowed values." & vbCrLf & "Please follow the instructions in textbox to repair it...", MsgBoxStyle.Critical, "DBSequence definition Insert error")
+            MsgBox("Defined DBSequence steps did not match allowed values." & vbCrLf & "Please follow the instructions in textbox to fix it...", MsgBoxStyle.Critical, "DBSequence definition Insert error")
         End If
         DBSeqStepValidationErrorsShown = True
     End Sub
