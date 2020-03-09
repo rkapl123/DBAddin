@@ -172,6 +172,7 @@ Public Class MenuHandler
         storeSetting("ConstConnString", fetchSetting("ConstConnString" & env, String.Empty))
         storeSetting("ConfigStoreFolder", fetchSetting("ConfigStoreFolder" & env, String.Empty))
         storeSetting("ConfigName", fetchSetting("ConfigName" & env, String.Empty))
+        storeSetting("DBSheetDefinitions", fetchSetting("DBSheetDefinitions" & env, String.Empty))
         initSettings()
         Dim retval As MsgBoxResult = MsgBox("ConstConnString" & ConstConnString & vbCrLf & "ConfigStoreFolder:" & ConfigStoreFolder & vbCrLf & vbCrLf & "Refresh DBFunctions to see effects?", vbYesNo, "Changed environment to: " & fetchSetting("ConfigName" & env, String.Empty))
         ' provide a chance to reconnect when switching environment...
