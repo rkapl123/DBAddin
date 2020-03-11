@@ -164,14 +164,14 @@ Public MustInherit Class DBModif
         Dim caller As Excel.Range
         Try : caller = ExcelDnaUtil.Application.Range(srcExtent)
         Catch ex As Exception
-            MsgBox("Didn't find caller cell of DBRefresh using srcExtent " & srcExtent & "!", MsgBoxStyle.Critical)
+            MsgBox("Didn't find caller cell of DBRefresh using srcExtent " & srcExtent & "!", MsgBoxStyle.Critical, "Refresh of DB Functions")
             Exit Function
         End Try
         Dim targetExtent = Replace(srcExtent, "DBFsource", "DBFtarget")
         Dim target As Excel.Range
         Try : target = ExcelDnaUtil.Application.Range(targetExtent)
         Catch ex As Exception
-            MsgBox("Didn't find target of DBRefresh using targetExtent " & targetExtent & "!", MsgBoxStyle.Critical)
+            MsgBox("Didn't find target of DBRefresh using targetExtent " & targetExtent & "!", MsgBoxStyle.Critical, "Refresh of DB Functions")
             Exit Function
         End Try
         Dim DBMapperUnderlying As String = getDBModifNameFromRange(target)
@@ -183,13 +183,13 @@ Public MustInherit Class DBModif
         ' allow for avoidance of overwriting users changes with CUDFlags after an data error occurred
         If hadError Then
             If executedDBMappers.ContainsKey(DBMapperUnderlying) Then
-                Dim retval = MsgBox("Error(s) occured during sequence, really refresh Targetrange? This could lead to loss of entries.", MsgBoxStyle.Question + MsgBoxStyle.OkCancel, "Refresh DB Functions in DB Sequence")
+                Dim retval = MsgBox("Error(s) occured during sequence, really refresh Targetrange? This could lead to loss of entries.", MsgBoxStyle.Question + MsgBoxStyle.OkCancel, "Refresh of DB Functions in DB Sequence")
                 If retval = vbCancel Then Exit Function
             End If
         End If
         ' prevent deadlock if we are in a transaction and want to refresh the area that was changed.
         If (modifiedDBMappers.ContainsKey(DBMapperUnderlying) Or modifiedDBMappers.ContainsKey(DBMapperUnderlyingF)) And TransactionIsOpen Then
-            MsgBox("Transaction affecting the target area is still open, refreshing it would result in a deadlock on the database table. Skipping refresh, consider placing refresh outside of transaction.", MsgBoxStyle.Exclamation + MsgBoxStyle.OkOnly, "Refresh DB Functions in DB Sequence")
+            MsgBox("Transaction affecting the target area is still open, refreshing it would result in a deadlock on the database table. Skipping refresh, consider placing refresh outside of transaction.", MsgBoxStyle.Exclamation + MsgBoxStyle.OkOnly, "Refresh of DB Functions in DB Sequence")
             Exit Function
         End If
         ' reset query cache, so we really get new data !
@@ -198,111 +198,114 @@ Public MustInherit Class DBModif
             ' get the callID of the underlying name of the target (key of the queryCache and StatusCollection)
             callID = "[" & caller.Parent.Parent.Name & "]" & caller.Parent.Name & "!" & caller.Address
         Catch ex As Exception
-            MsgBox("Didn't find target of DBRefresh !", MsgBoxStyle.Critical)
+            MsgBox("Didn't find target of DBRefresh !", MsgBoxStyle.Critical, "Refresh of DB Functions")
             Exit Function
         End Try
-        ' StatusCollection doesn't necessarily have the callID contained
-        If Not StatusCollection.ContainsKey(callID) Then StatusCollection.Add(callID, New ContainedStatusMsg)
-        Dim functionFormula As String = ExcelDnaUtil.Application.Range(srcExtent).Formula
-        If UCase(Left(functionFormula, 12)) = "=DBLISTFETCH" Then
-            LogInfo("Refresh DBListFetch: " & callID)
-            Dim functionArgs = functionSplit(functionFormula, ",", """", "DBListFetch", "(", ")")
-            If functionArgs.Length() < 3 Then
-                functionArgs = functionSplit(functionFormula, listSepLocal, """", "DBListFetch", "(", ")")
+        Try
+            ' StatusCollection doesn't necessarily have the callID contained
+            If Not StatusCollection.ContainsKey(callID) Then StatusCollection.Add(callID, New ContainedStatusMsg)
+            Dim functionFormula As String = ExcelDnaUtil.Application.Range(srcExtent).Formula
+            If UCase(Left(functionFormula, 12)) = "=DBLISTFETCH" Then
+                LogInfo("Refresh DBListFetch: " & callID)
+                Dim functionArgs = functionSplit(functionFormula, ",", """", "DBListFetch", "(", ")")
+                If functionArgs.Length() < 3 Then
+                    functionArgs = functionSplit(functionFormula, listSepLocal, """", "DBListFetch", "(", ")")
+                End If
+                Dim Query As String = ExcelDnaUtil.Application.Evaluate(functionArgs(0))
+                Dim ConnString As Object = Replace(functionArgs(1), """", "")
+                Dim testInt As Integer : Dim EnvPrefix As String = ""
+                If CStr(ConnString) <> "" And Not Integer.TryParse(ConnString, testInt) Then
+                    ConnString = ExcelDnaUtil.Application.Evaluate(functionArgs(1))
+                End If
+                If Integer.TryParse(ConnString, testInt) Then
+                    ConnString = Convert.ToDouble(testInt)
+                End If
+                Functions.resolveConnstring(ConnString, EnvPrefix)
+                Dim targetRangeName As String : targetRangeName = functionArgs(2)
+                ' check if fetched argument targetRangeName is really a name or just a plain range address
+                If Not existsNameInWb(targetRangeName, caller.Parent.Parent) And Not existsNameInSheet(targetRangeName, caller.Parent) Then targetRangeName = ""
+                Dim formulaRangeName As String
+                If UBound(functionArgs) > 2 Then
+                    formulaRangeName = functionArgs(3)
+                    If Not existsNameInWb(formulaRangeName, caller.Parent.Parent) And Not existsNameInSheet(formulaRangeName, caller.Parent) Then formulaRangeName = ""
+                Else
+                    formulaRangeName = ""
+                End If
+                Dim extendDataArea As Integer = 0
+                If UBound(functionArgs) > 3 AndAlso functionArgs(4) <> "" Then
+                    extendDataArea = Convert.ToInt16(functionArgs(4))
+                End If
+                Dim HeaderInfo As Boolean = False
+                If UBound(functionArgs) > 4 AndAlso functionArgs(5) <> "" Then
+                    HeaderInfo = convertToBool(functionArgs(5))
+                End If
+                Dim AutoFit As Boolean = False
+                If UBound(functionArgs) > 5 AndAlso functionArgs(6) <> "" Then
+                    AutoFit = convertToBool(functionArgs(6))
+                End If
+                Dim autoformat As Boolean = False
+                If UBound(functionArgs) > 6 AndAlso functionArgs(7) <> "" Then
+                    autoformat = convertToBool(functionArgs(7))
+                End If
+                Dim ShowRowNums As Boolean = False
+                If UBound(functionArgs) > 7 AndAlso functionArgs(8) <> "" Then
+                    ShowRowNums = convertToBool(functionArgs(8))
+                End If
+                ' call action procedure directly as we can avoid the external context required in the UDF
+                DBListFetchAction(callID, Query, caller, target, CStr(ConnString), formulaRange, extendDataArea, HeaderInfo, AutoFit, autoformat, ShowRowNums, targetRangeName, formulaRangeName)
+            ElseIf UCase(Left(functionFormula, 11)) = "=DBSETQUERY" Then
+                LogInfo("Refresh DBSetQuery: " & callID)
+                Dim functionArgs = functionSplit(functionFormula, ",", """", "DBSetQuery", "(", ")")
+                If functionArgs.Length() < 3 Then
+                    functionArgs = functionSplit(functionFormula, listSepLocal, """", "DBSetQuery", "(", ")")
+                End If
+                Dim Query As String = ExcelDnaUtil.Application.Evaluate(functionArgs(0))
+                Dim ConnString As Object = Replace(functionArgs(1), """", "")
+                Dim testInt As Integer : Dim EnvPrefix As String = ""
+                If CStr(ConnString) <> "" And Not Integer.TryParse(ConnString, testInt) Then
+                    ConnString = ExcelDnaUtil.Application.Evaluate(functionArgs(1))
+                End If
+                If Integer.TryParse(ConnString, testInt) Then
+                    ConnString = Convert.ToDouble(testInt)
+                End If
+                Functions.resolveConnstring(ConnString, EnvPrefix)
+                Dim targetRangeName As String : targetRangeName = functionArgs(2)
+                If UBound(functionArgs) = 3 Then targetRangeName += "," + functionArgs(3)
+                Functions.DBSetQueryAction(callID, Query, target, CStr(ConnString), caller, targetRangeName)
+            ElseIf UCase(Left(functionFormula, 11)) = "=DBROWFETCH" Then
+                LogInfo("Refresh DBRowFetch: " & callID)
+                Dim functionArgs = functionSplit(functionFormula, ",", """", "DBRowFetch", "(", ")")
+                If functionArgs.Length() < 3 Then
+                    functionArgs = functionSplit(functionFormula, listSepLocal, """", "DBRowFetch", "(", ")")
+                End If
+                Dim Query As String = ExcelDnaUtil.Application.Evaluate(functionArgs(0))
+                Dim ConnString As Object = Replace(functionArgs(1), """", "")
+                Dim testInt As Integer : Dim EnvPrefix As String = ""
+                If CStr(ConnString) <> "" And Not Integer.TryParse(ConnString, testInt) Then
+                    ConnString = ExcelDnaUtil.Application.Evaluate(functionArgs(1))
+                End If
+                If Integer.TryParse(ConnString, testInt) Then
+                    ConnString = Convert.ToDouble(testInt)
+                End If
+                Functions.resolveConnstring(ConnString, EnvPrefix)
+                Dim HeaderInfo As Boolean = False
+                Dim tempArray() As Excel.Range = Nothing
+                If Boolean.TryParse(ExcelDnaUtil.Application.Evaluate(functionArgs(2)), HeaderInfo) Then
+                    For i = 3 To UBound(functionArgs)
+                        ReDim Preserve tempArray(i - 3)
+                        tempArray(i - 3) = target.Parent.Range(functionArgs(i))
+                    Next
+                Else
+                    For i = 2 To UBound(functionArgs)
+                        ReDim Preserve tempArray(i - 2)
+                        tempArray(i - 2) = target.Parent.Range(functionArgs(i))
+                    Next
+                End If
+                Functions.DBRowFetchAction(callID, Query, caller, tempArray, CStr(ConnString), HeaderInfo)
             End If
-            Dim Query As String = ExcelDnaUtil.Application.Evaluate(functionArgs(0))
-            Dim ConnString As Object = Replace(functionArgs(1), """", "")
-            Dim testInt As Integer : Dim EnvPrefix As String = ""
-            If CStr(ConnString) <> "" And Not Integer.TryParse(ConnString, testInt) Then
-                ConnString = ExcelDnaUtil.Application.Evaluate(functionArgs(1))
-            End If
-            If Integer.TryParse(ConnString, testInt) Then
-                ConnString = Convert.ToDouble(testInt)
-            End If
-            Functions.resolveConnstring(ConnString, EnvPrefix)
-
-            Dim targetRangeName As String : targetRangeName = functionArgs(2)
-            ' check if fetched argument targetRangeName is really a name or just a plain range address
-            If Not existsNameInWb(targetRangeName, caller.Parent.Parent) And Not existsNameInSheet(targetRangeName, caller.Parent) Then targetRangeName = ""
-            Dim formulaRangeName As String
-            If UBound(functionArgs) > 2 Then
-                formulaRangeName = functionArgs(3)
-                If Not existsNameInWb(formulaRangeName, caller.Parent.Parent) And Not existsNameInSheet(formulaRangeName, caller.Parent) Then formulaRangeName = ""
-            Else
-                formulaRangeName = ""
-            End If
-            Dim extendDataArea As Integer = 0
-            If UBound(functionArgs) > 3 AndAlso functionArgs(4) <> "" Then
-                extendDataArea = Convert.ToInt16(functionArgs(4))
-            End If
-            Dim HeaderInfo As Boolean = False
-            If UBound(functionArgs) > 4 AndAlso functionArgs(5) <> "" Then
-                HeaderInfo = convertToBool(functionArgs(5))
-            End If
-            Dim AutoFit As Boolean = False
-            If UBound(functionArgs) > 5 AndAlso functionArgs(6) <> "" Then
-                AutoFit = convertToBool(functionArgs(6))
-            End If
-            Dim autoformat As Boolean = False
-            If UBound(functionArgs) > 6 AndAlso functionArgs(7) <> "" Then
-                autoformat = convertToBool(functionArgs(7))
-            End If
-            Dim ShowRowNums As Boolean = False
-            If UBound(functionArgs) > 7 AndAlso functionArgs(8) <> "" Then
-                ShowRowNums = convertToBool(functionArgs(8))
-            End If
-            ' call action procedure directly as we can avoid the external context required in the UDF
-            DBListFetchAction(callID, Query, caller, target, CStr(ConnString), formulaRange, extendDataArea, HeaderInfo, AutoFit, autoformat, ShowRowNums, targetRangeName, formulaRangeName)
-        ElseIf UCase(Left(functionFormula, 11)) = "=DBSETQUERY" Then
-            LogInfo("Refresh DBSetQuery: " & callID)
-            Dim functionArgs = functionSplit(functionFormula, ",", """", "DBSetQuery", "(", ")")
-            If functionArgs.Length() < 3 Then
-                functionArgs = functionSplit(functionFormula, listSepLocal, """", "DBSetQuery", "(", ")")
-            End If
-            Dim Query As String = ExcelDnaUtil.Application.Evaluate(functionArgs(0))
-            Dim ConnString As Object = Replace(functionArgs(1), """", "")
-            Dim testInt As Integer : Dim EnvPrefix As String = ""
-            If CStr(ConnString) <> "" And Not Integer.TryParse(ConnString, testInt) Then
-                ConnString = ExcelDnaUtil.Application.Evaluate(functionArgs(1))
-            End If
-            If Integer.TryParse(ConnString, testInt) Then
-                ConnString = Convert.ToDouble(testInt)
-            End If
-            Functions.resolveConnstring(ConnString, EnvPrefix)
-            Dim targetRangeName As String : targetRangeName = functionArgs(2)
-            If UBound(functionArgs) = 3 Then targetRangeName += "," + functionArgs(3)
-            Functions.DBSetQueryAction(callID, Query, target, CStr(ConnString), caller, targetRangeName)
-        ElseIf UCase(Left(functionFormula, 11)) = "=DBROWFETCH" Then
-            LogInfo("Refresh DBRowFetch: " & callID)
-            Dim functionArgs = functionSplit(functionFormula, ",", """", "DBRowFetch", "(", ")")
-            If functionArgs.Length() < 3 Then
-                functionArgs = functionSplit(functionFormula, listSepLocal, """", "DBRowFetch", "(", ")")
-            End If
-            Dim Query As String = ExcelDnaUtil.Application.Evaluate(functionArgs(0))
-            Dim ConnString As Object = Replace(functionArgs(1), """", "")
-            Dim testInt As Integer : Dim EnvPrefix As String = ""
-            If CStr(ConnString) <> "" And Not Integer.TryParse(ConnString, testInt) Then
-                ConnString = ExcelDnaUtil.Application.Evaluate(functionArgs(1))
-            End If
-            If Integer.TryParse(ConnString, testInt) Then
-                ConnString = Convert.ToDouble(testInt)
-            End If
-            Functions.resolveConnstring(ConnString, EnvPrefix)
-            Dim HeaderInfo As Boolean = False
-            Dim tempArray() As Excel.Range = Nothing
-            If Boolean.TryParse(ExcelDnaUtil.Application.Evaluate(functionArgs(2)), HeaderInfo) Then
-                For i = 3 To UBound(functionArgs)
-                    ReDim Preserve tempArray(i - 3)
-                    tempArray(i - 3) = target.Parent.Range(functionArgs(i))
-                Next
-            Else
-                For i = 2 To UBound(functionArgs)
-                    ReDim Preserve tempArray(i - 2)
-                    tempArray(i - 2) = target.Parent.Range(functionArgs(i))
-                Next
-            End If
-            Functions.DBRowFetchAction(callID, Query, caller, tempArray, CStr(ConnString), HeaderInfo)
-        End If
+        Catch ex As Exception
+            LogError(ex.Message)
+        End Try
         doDBRefresh = True
     End Function
 

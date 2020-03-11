@@ -66,6 +66,60 @@ Public Module ConfigFiles
         replaceQueryInFormula = "=" & theFunction & "(" & queryString & Replace(restFormula, vbTab, ",")
     End Function
 
+    ''' <summary>create a ListObject one cell to the right of TargetCell and insert a dummy cmd sql definition for the listobject table (to be an external source)</summary>
+    ''' <param name="TargetCell">the reference cell for the ListObject (will be the source cell for the DBSetQuery function)</param>
+    Public Function createListObject(TargetCell As Excel.Range) As Object
+        Dim createdQueryTable As Object
+        Try
+            createdQueryTable = TargetCell.Parent.ListObjects.Add(SourceType:=Excel.XlListObjectSourceType.xlSrcQuery, Source:="OLEDB;" & Globals.ConstConnString, Destination:=TargetCell.Offset(0, 1)).QueryTable
+            With createdQueryTable
+                .CommandType = Excel.XlCmdType.xlCmdSql
+                .CommandText = "select CURRENT_TIMESTAMP" ' this should be sufficient for all ansi sql compliant databases
+                .RowNumbers = False
+                .FillAdjacentFormulas = False
+                .PreserveFormatting = True
+                .BackgroundQuery = True
+                .RefreshStyle = Excel.XlCellInsertionMode.xlInsertDeleteCells
+                .SavePassword = False
+                .SaveData = True
+                .AdjustColumnWidth = True
+                .RefreshPeriod = 0
+                .PreserveColumnInfo = True
+                .Refresh(BackgroundQuery:=False)
+            End With
+        Catch ex As Exception
+            LogError("Exception caught when adding listobject table:" & ex.Message)
+            createListObject = Nothing
+            Exit Function
+        End Try
+        createListObject = createdQueryTable.ListObject
+    End Function
+
+    ''' <summary>create a pivot table object one cell below TargetCell and insert a dummy cmd sql definition for the pivotcache external query</summary>>
+    ''' <param name="TargetCell">the reference cell for the pivot table (will be the source cell for the DBSetQuery function)</param>
+    Public Sub createPivotTable(TargetCell As Excel.Range)
+        Dim pivotcache As Excel.PivotCache = Nothing
+        Dim pivotTables As Excel.PivotTables
+        Try
+            pivotcache = TargetCell.Parent.Parent.PivotCaches().Add(Excel.XlPivotTableSourceType.xlExternal)
+            ' only have tested it successfully for OLEDB connections, ODBC seem to have problems...
+            pivotcache.Connection = "OLEDB;" & Globals.ConstConnString
+            pivotcache.MaintainConnection = False
+            pivotcache.CommandText = "select CURRENT_TIMESTAMP" ' this should be sufficient for most databases
+            pivotcache.CommandType = Excel.XlCmdType.xlCmdSql
+        Catch ex As Exception
+            LogError("Exception caught when creating pivot cache:" & ex.Message)
+        End Try
+
+        Try
+            pivotTables = TargetCell.Parent.PivotTables()
+            pivotTables.Add(pivotcache, TargetCell.Offset(1, 0), "PivotTable1")
+        Catch ex As Exception
+            LogError("Exception caught when adding pivot table:" & ex.Message)
+            Exit Sub
+        End Try
+    End Sub
+
     ''' <summary>creates functions in target cells (relative to referenceCell) as defined in ItemLineDef</summary>
     ''' <param name="originCell">original reference Cell</param>
     ''' <param name="ItemLineDef">String array, pairwise containing relative cell addresses and the functions in those cells (= cell content)</param>

@@ -174,10 +174,14 @@ Public Class MenuHandler
         storeSetting("ConfigName", fetchSetting("ConfigName" & env, String.Empty))
         storeSetting("DBSheetDefinitions", fetchSetting("DBSheetDefinitions" & env, String.Empty))
         initSettings()
-        Dim retval As MsgBoxResult = MsgBox("ConstConnString" & ConstConnString & vbCrLf & "ConfigStoreFolder:" & ConfigStoreFolder & vbCrLf & vbCrLf & "Refresh DBFunctions to see effects?", vbYesNo, "Changed environment to: " & fetchSetting("ConfigName" & env, String.Empty))
         ' provide a chance to reconnect when switching environment...
         conn = Nothing
-        If retval = vbYes Then Globals.refreshDBFunctions(ExcelDnaUtil.Application.ActiveWorkbook)
+        If Not IsNothing(ExcelDnaUtil.Application.ActiveWorkbook) Then
+            Dim retval As MsgBoxResult = MsgBox("ConstConnString" & ConstConnString & vbCrLf & "ConfigStoreFolder:" & ConfigStoreFolder & vbCrLf & vbCrLf & "Refresh DBFunctions in active workbook to see effects?", vbYesNo, "Changed environment to: " & fetchSetting("ConfigName" & env, String.Empty))
+            If retval = vbYes Then Globals.refreshDBFunctions(ExcelDnaUtil.Application.ActiveWorkbook)
+        Else
+            MsgBox("ConstConnString" & ConstConnString & vbCrLf & "ConfigStoreFolder:" & ConfigStoreFolder, vbOKOnly, "Changed environment to: " & fetchSetting("ConfigName" & env, String.Empty))
+        End If
     End Sub
 
     ''' <summary>dialogBoxLauncher of leftmost group: activate about box</summary>
@@ -315,47 +319,19 @@ Public Class MenuHandler
         ElseIf control.Tag = "DBRowFetch" Then
             ConfigFiles.createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBRowFetch("""","""",TRUE,R[1]C:R[1]C[10])"})
         ElseIf control.Tag = "DBSetQueryPivot" Then
-            ' insert dummy cmd sql definition for pivot table
-            Dim pivotcache As Excel.PivotCache = ExcelDnaUtil.Application.ActiveWorkbook.PivotCaches().Add(Excel.XlPivotTableSourceType.xlExternal)
-            pivotcache.Connection = "OLEDB;" & Globals.ConstConnString
-            pivotcache.MaintainConnection = False
-            pivotcache.CommandText = "select CURRENT_TIMESTAMP" ' this should be sufficient for most databases
-            pivotcache.CommandType = Excel.XlCmdType.xlCmdSql
-            Dim pivotTables As Excel.PivotTables = ExcelDnaUtil.Application.ActiveSheet.PivotTables()
-            Try
-                pivotTables.Add(pivotcache, ExcelDnaUtil.Application.ActiveCell.Offset(1, 0), "PivotTable1")
-            Catch ex As Exception
-                LogWarn("Exception caught when adding pivot table:" & ex.Message)
-                Exit Sub
-            End Try
+            ' first create a dummy pivot table
+            ConfigFiles.createPivotTable(ExcelDnaUtil.Application.ActiveCell)
+            ' then create the DBSetQuery assigning the (yet to be filled) query to the above listobject
             ConfigFiles.createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBSetQuery("""","""",R[1]C)"})
         ElseIf control.Tag = "DBSetQueryListObject" Then
-            Try
-                ' insert dummy cmd sql definition for listobject table
-                With ExcelDnaUtil.Application.ActiveSheet.ListObjects.Add(SourceType:=Excel.XlListObjectSourceType.xlSrcQuery, Source:="OLEDB;" & Globals.ConstConnString, Destination:=ExcelDnaUtil.Application.ActiveCell.Offset(0, 1)).QueryTable
-                    .CommandType = Excel.XlCmdType.xlCmdSql
-                    .CommandText = "select CURRENT_TIMESTAMP" ' this should be sufficient for all ansi sql compliant databases
-                    .RowNumbers = False
-                    .FillAdjacentFormulas = False
-                    .PreserveFormatting = True
-                    .BackgroundQuery = True
-                    .RefreshStyle = Excel.XlCellInsertionMode.xlInsertDeleteCells
-                    .SavePassword = False
-                    .SaveData = True
-                    .AdjustColumnWidth = True
-                    .RefreshPeriod = 0
-                    .PreserveColumnInfo = True
-                    .Refresh(BackgroundQuery:=False)
-                End With
-            Catch ex As Exception
-                LogWarn("Exception caught when adding listobject table:" & ex.Message)
-                Exit Sub
-            End Try
+            ' first create a dummy ListObject
+            ConfigFiles.createListObject(ExcelDnaUtil.Application.ActiveCell)
+            ' then create the DBSetQuery assigning the (yet to be filled) query to the above listobject
             ConfigFiles.createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBSetQuery("""","""",RC[1])"})
         ElseIf control.Tag = "DBMapper" Or control.Tag = "DBAction" Or control.Tag = "DBSeqnce" Then
-            If activeCellDBModifType = control.Tag Then                 ' edit existing definition
+            If activeCellDBModifType = control.Tag Then  ' edit existing definition
                 DBModifs.createDBModif(control.Tag, targetDefName:=activeCellDBModifName)
-            Else                                                     ' create new definition
+            Else                                         ' create new definition
                 DBModifs.createDBModif(control.Tag)
             End If
         ElseIf control.Tag = "DBSheet" Then

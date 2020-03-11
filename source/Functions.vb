@@ -382,7 +382,8 @@ Public Module Functions
                 ' this simple address is below being set to caller.Formula
                 If InStr(targetRangeName, theListObject.Name) > 0 Then callerFormula = Replace(callerFormula, targetRangeName, Replace(TargetCell.Cells(1, 1).Address, "$", ""))
 
-                ' Attention Dirty Hack ! This works only for SQLOLEDB driver to ODBC driver setting change...
+                ' Attention Dirty Hack ! This works only for SQLOLEDB driver to ODBC driver setting change on SQL Server !!...
+                'TODO: use a generic procedure in DBSetQueryAction/ListObject to correct the Connection Strings "provider" part to "driver" (or use a recordset directly for the QueryTable)
                 theListObject.QueryTable.Connection = connType & Replace(ConnString, "provider=SQLOLEDB", "driver=SQL SERVER")
                 theListObject.QueryTable.CommandType = Excel.XlCmdType.xlCmdSql
                 theListObject.QueryTable.CommandText = Query
@@ -392,7 +393,7 @@ Public Module Functions
                 Catch ex As Exception
                     Throw New Exception("Error in query table refresh: " & ex.Message)
                 End Try
-                StatusCollection(callID).statusMsg = "Set " & connType & " ListObject to (bgQuery= " & bgQuery & "): " & Query
+                StatusCollection(callID).statusMsg = "Set " & connType & " ListObject to (bgQuery= " & bgQuery & ", " & IIf(theListObject.QueryTable.FetchedRowOverflow, "Too many rows fetched to display !", "") & "): " & Query
                 theListObject.QueryTable.BackgroundQuery = bgQuery
                 Try
                     Dim testTarget = TargetCell.Address

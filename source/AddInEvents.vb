@@ -121,7 +121,7 @@ done:
         Dim searchCell As Excel.Range
         dontCalcWhileClearing = True
         Try
-            Dim ws As Excel.Worksheet, lastWs As Excel.Worksheet = Nothing
+            Dim ws As Excel.Worksheet = Nothing
             For Each ws In Wb.Worksheets
                 If IsNothing(ws) Then
                     LogWarn("no worksheet in saving workbook...")
@@ -163,15 +163,14 @@ done:
                                 End If
                             End If
                             searchCell = ws.Cells.FindNext(searchCell)
-                        Loop While Not searchCell Is Nothing And searchCell.Address <> firstAddress
+                        Loop While Not searchCell Is Nothing AndAlso searchCell.Address <> firstAddress
                     End If
                 Next
-                lastWs = ws
             Next
             ' always reset the cell find dialog....
-            searchCell = Nothing
-            searchCell = lastWs.Cells.Find(What:="", After:=lastWs.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
-            lastWs = Nothing
+            If Not IsNothing(ws) Then
+                searchCell = ws.Cells.Find(What:="", After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
+            End If
 
             ' refresh content area of dbfunctions after save event, requires execution out of context of Application_WorkbookSave
             If doRefreshDBFuncsAfterSave And (DBFCContentColl.Count > 0 Or DBFCAllColl.Count > 0) Then
