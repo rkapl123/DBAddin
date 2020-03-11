@@ -6,11 +6,20 @@ Imports Microsoft.Office.Interop
 
 '''<summary>Helper class for DBSheetHandler and DBSheetConnection for easier manipulation of DBSheet definition / Connection configuration data</summary> 
 Public Module DBSheetConfig
+    ''' <summary>the current cell where the DBSheet Definition is inserted at</summary>
     Dim curCell As Excel.Range
+    ''' <summary>the list object of the main query for the db mapper</summary>
     Dim createdListObject As Excel.ListObject
+    ''' <summary>the lookups list of the DBSheet definition (xml element with query, name, etc.)</summary>
     Dim lookupsList() As String
+    ''' <summary>the complete dbsheet configuration (XML)</summary>
     Dim curConfig As String
+    ''' <summary>the added and hidden worksheet with lookups inside</summary>
     Dim lookupWS As Excel.Worksheet
+    ''' <summary>counter to know how many cells we filled for the dbmapper query 
+    ''' (at least 2: dbsetquery function and query string, if additional where clause exists, 
+    ''' add one for where clause, then one for each parameter)
+    ''' </summary>
     Dim addedCells As Integer
 
     Public Sub createDBSheet()
@@ -27,7 +36,6 @@ Public Module DBSheetConfig
             Dim dsdPath As String = openFileDialog1.FileName
             curConfig = File.ReadAllText(dsdPath)
             ' get query
-            'TODO: handle parameter where clauses (WHERE..?) by adding a reference to a cell..
             Dim queryStr As String = getEntry("query", curConfig)
             If queryStr = "" Then
                 MsgBox("No query found in DBSheetConfig.", vbCritical, "DBSheet Create Error")
@@ -82,6 +90,7 @@ Public Module DBSheetConfig
             createdListObject = ConfigFiles.createListObject(curCell)
             If IsNothing(createdListObject) Then Exit Sub
             With curCell
+                ' add the query as text
                 Try
                     .Offset(1, 0).Value = queryStr
                     .Offset(1, 0).WrapText = False
@@ -89,6 +98,7 @@ Public Module DBSheetConfig
                     MsgBox("Error in adding query (" & queryStr & ")", vbCritical, "DBSheet Create Error")
                     Exit Sub
                 End Try
+                ' add an additional where clause as a concatenation string
                 If changedWhereClause <> "" Then
                     Try
                         .Offset(2, 0).Value = changedWhereClause
@@ -99,6 +109,8 @@ Public Module DBSheetConfig
                     End Try
                 End If
             End With
+            ' finally add the DBSetQuery for the main DB Mapper, only taking the query without the where clause (because we can't prefill the where parameters, 
+            ' the user has to do that before extending the query definition to the where clause as well)
             ConfigFiles.createFunctionsInCells(curCell, {"RC", "=DBSetQuery(R[1]C,"""",RC[1])"})
             ' finish creation in async called function (need to have the results from the above calculations)
             ExcelAsyncUtil.QueueAsMacro(Sub()
@@ -109,7 +121,6 @@ Public Module DBSheetConfig
 
     Private Sub finishDBMapperCreation()
         Try
-            Dim NamesList As Excel.Names = ExcelDnaUtil.Application.ActiveWorkbook.Names
             If Not IsNothing(lookupsList) Then
                 ' replace fieldname of Lookups in DBMapper with fieldname + "LU"
                 For Each LookupDef As String In lookupsList
@@ -121,9 +132,11 @@ Public Module DBSheetConfig
                         MsgBox("lookup column '" & lookupName & "LU' not found in ListRange", vbCritical, "DBSheet Create Error")
                         Exit Sub
                     Else
+                        ' this is necessary as Excel>=2016 introduces the @operator automatically in formulas, referring to just that value in the same row. which is undesired here..
+                        Dim localOffsetFormula As String = Replace(curCell.Offset(2 + addedCells, 0).FormulaLocal, "@", "")
                         lookupColumn.DataBodyRange.Validation.Add(
                             Type:=Excel.XlDVType.xlValidateList, AlertStyle:=Excel.XlDVAlertStyle.xlValidAlertStop, Operator:=Excel.XlFormatConditionOperator.xlBetween,
-                            Formula1:=curCell.Offset(2 + addedCells, 0).FormulaLocal)
+                            Formula1:=localOffsetFormula)
                         ' as the listobject was automatically extended by the setting of the new column (looked up value) above, the resolution formulas go into the last column now.
                         Dim newCol As Excel.ListColumn = createdListObject.ListColumns.Add()
                         ' add vlookup function field for resolution of lookups to ID in main Query at the end of the DBMapper table
@@ -144,8 +157,8 @@ Public Module DBSheetConfig
             MsgBox("Error in DBSheet Creation: " + ex.Message, vbCritical, "DBSheet Create Error")
             Exit Sub
         End Try
-
         ' create DBMapper with CUDFlags
+
     End Sub
 
     ''' <summary>fetches value in entryMarkup within XMLString, search starts optionally at position startSearch (default 1)</summary>
