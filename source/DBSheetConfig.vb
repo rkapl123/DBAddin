@@ -1,6 +1,7 @@
 Imports System.IO
 Imports System.Windows.Forms
 Imports ExcelDna.Integration
+Imports Microsoft.Office.Core
 Imports Microsoft.Office.Interop
 
 
@@ -16,6 +17,8 @@ Public Module DBSheetConfig
     Dim curConfig As String
     ''' <summary>the added and hidden worksheet with lookups inside</summary>
     Dim lookupWS As Excel.Worksheet
+    ''' <summary>the Database table name of the DBSheet</summary>
+    Dim tableName As String
     ''' <summary>counter to know how many cells we filled for the dbmapper query 
     ''' (at least 2: dbsetquery function and query string, if additional where clause exists, 
     ''' add one for where clause, then one for each parameter)
@@ -32,13 +35,17 @@ Public Module DBSheetConfig
         }
         Dim result As DialogResult = openFileDialog1.ShowDialog()
         If result = Windows.Forms.DialogResult.OK Then
+            ' store currently selected cell, where DBSetQuery for DBMapper will be placed.
+            curCell = ExcelDnaUtil.Application.ActiveCell
             ' Get the DBSheet Definition file name and read into curConfig
             Dim dsdPath As String = openFileDialog1.FileName
-            curConfig = File.ReadAllText(dsdPath)
+            curConfig = File.ReadAllText(dsdPath, Text.Encoding.Default)
+            ' get the table name of the DBSheet for setting the DBMapper name
+            tableName = getEntry("table", curConfig)
             ' get query
             Dim queryStr As String = getEntry("query", curConfig)
             If queryStr = "" Then
-                MsgBox("No query found in DBSheetConfig.", vbCritical, "DBSheet Create Error")
+                MsgBox("No query found in DBSheetConfig.", vbCritical, "DBSheet Creation Error")
                 Exit Sub
             End If
             Dim whereClause As String = getEntry("whereClause", curConfig)
@@ -46,12 +53,14 @@ Public Module DBSheetConfig
             addedCells = 1
             Dim changedWhereClause As String = ""
             If whereClause <> "" Then
+                ' check for where clauses and modify for parameter setting in formula
                 changedWhereClause = "="
                 Dim whereParts As String() = Split(whereClause, "?")
                 For i = 0 To UBound(whereParts)
                     If whereParts(i) <> "" Then
                         ' each parameter adds a cell below DBSetQuery
                         addedCells += 1
+                        ' create concatenation formula for parameter setting, each ? is replaced by a separate row reference below the where clause
                         changedWhereClause += IIf(i = 0, """WHERE ", "&""") & whereParts(i) & """&R[" & i + 1 & "]C"
                     End If
                 Next
@@ -61,27 +70,60 @@ Public Module DBSheetConfig
             End If
             ' get lookup fields in complete columns definitions
             lookupsList = getEntryList("columns", "field", "lookup", curConfig, True)
-
-            curCell = ExcelDnaUtil.Application.ActiveCell
             If Not IsNothing(lookupsList) Then
-                Dim lookupWS As Excel.Worksheet = ExcelDnaUtil.Application.ActiveWorkbook.Worksheets.Add()
+                lookupWS = ExcelDnaUtil.Application.ActiveWorkbook.Worksheets.Add()
+                Try
+                    lookupWS.Name = Left("LS" & tableName, 31)
+                Catch ex As Exception
+                    MsgBox("Error setting lookup Worksheet Name to '" & Left("LS" & tableName, 31) & "':" + ex.Message, vbCritical, "DBSheet Creation Error")
+                    lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
+                    Exit Sub
+                End Try
                 ' add lookup Queries in separate sheet
                 Dim lookupCol As Integer = 1
                 For Each LookupDef As String In lookupsList
                     ' fetch Lookupquery and get rid of template table def
                     Dim LookupQuery As String = Replace(getEntry("lookup", LookupDef, 1), "!T!", "T1")
-                    lookupWS.Cells(1, lookupCol + 1).Value = LookupQuery
-                    lookupWS.Cells(1, lookupCol + 1).WrapText = False
                     Dim lookupName As String = Replace(getEntry("name", LookupDef, 1), "*", "")
                     ' replace looked up ID names with ID name + "LU" in query string
-                    queryStr = Replace(queryStr, " " & lookupName, " " & lookupName & "LU")
-                    lookupWS.Cells(2, lookupCol).Name = lookupName & "Lookup"
-                    ' then create the DBListFetch with the lookup query 
-                    ConfigFiles.createFunctionsInCells(lookupWS.Cells(1, lookupCol), {"RC", "=DBListFetch(RC[1],""""," & lookupName & "Lookup" & ")"})
-                    ' lookups have two columns
-                    lookupCol += 2
+                    Dim foundDelim As Integer
+                    For Each delimStr As String In {",", " ", vbCrLf}
+                        foundDelim = InStr(queryStr, " " & lookupName & delimStr)
+                        If foundDelim > 0 Then
+                            queryStr = Replace(queryStr, " " & lookupName & delimStr, " " & lookupName & "LU" & delimStr)
+                            Exit For
+                        End If
+                        foundDelim = InStr(queryStr, "." & lookupName & delimStr)
+                        If foundDelim > 0 Then
+                            queryStr = Replace(queryStr, "." & lookupName & delimStr, "." & lookupName & " " & lookupName & "LU" & delimStr)
+                            Exit For
+                        End If
+                    Next
+                    If foundDelim = 0 Then
+                        MsgBox("Error in changing lookupName '" & lookupName & "' to '" & lookupName & "LU' in select statement of DBSheet query, it has to begin with blank and end with ','blank or CrLf !", vbCritical, "DBSheet Creation Error")
+                        lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
+                        Exit Sub
+                    End If
+                    If getEntry("fkey", LookupDef, 1) <> "" Then 'database lookup
+                        lookupWS.Cells(1, lookupCol + 1).Value = LookupQuery
+                        lookupWS.Cells(1, lookupCol + 1).WrapText = False
+                        lookupWS.Cells(2, lookupCol).Name = lookupName & "Lookup"
+                        ' then create the DBListFetch with the lookup query 
+                        ConfigFiles.createFunctionsInCells(lookupWS.Cells(1, lookupCol), {"RC", "=DBListFetch(RC[1],""""," & lookupName & "Lookup" & ")"})
+                        ' database lookups have two columns
+                        lookupCol += 2
+                    Else                                         'fixed value lookup
+                        Dim lookupValues As String() = Split(LookupQuery, "||")
+                        Dim lrow As Integer
+                        For lrow = 0 To UBound(lookupValues)
+                            lookupWS.Cells(2 + lrow, lookupCol).value = lookupValues(lrow)
+                        Next
+                        lookupWS.Range(lookupWS.Cells(2, lookupCol), lookupWS.Cells(2 + lrow - 1, lookupCol)).Name = lookupName & "Lookup"
+                        ' fixed value lookups have only one column
+                        lookupCol += 1
+                    End If
                 Next
-                'lookupWS.Visible = Excel.XlSheetVisibility.xlSheetHidden
+                lookupWS.Visible = Excel.XlSheetVisibility.xlSheetHidden
                 curCell.Parent.Select()
             End If
             ' then create the DBSetQuery assigning the (yet to be filled) query to the above listobject
@@ -95,7 +137,8 @@ Public Module DBSheetConfig
                     .Offset(1, 0).Value = queryStr
                     .Offset(1, 0).WrapText = False
                 Catch ex As Exception
-                    MsgBox("Error in adding query (" & queryStr & ")", vbCritical, "DBSheet Create Error")
+                    MsgBox("Error in adding query (" & queryStr & ")", vbCritical, "DBSheet Creation Error")
+                    lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
                     Exit Sub
                 End Try
                 ' add an additional where clause as a concatenation string
@@ -104,7 +147,8 @@ Public Module DBSheetConfig
                         .Offset(2, 0).Value = changedWhereClause
                         .Offset(2, 0).WrapText = False
                     Catch ex As Exception
-                        MsgBox("Error in adding where clause (" & changedWhereClause & ")", vbCritical, "DBSheet Create Error")
+                        MsgBox("Error in adding where clause (" & changedWhereClause & ")", vbCritical, "DBSheet Creation Error")
+                        lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
                         Exit Sub
                     End Try
                 End If
@@ -120,23 +164,42 @@ Public Module DBSheetConfig
     End Sub
 
     Private Sub finishDBMapperCreation()
+        ' store lookup columns (<>LU) to be ignored in DBMapper
+        Dim ignoreColumns As String = ""
         Try
             If Not IsNothing(lookupsList) Then
                 ' replace fieldname of Lookups in DBMapper with fieldname + "LU"
                 For Each LookupDef As String In lookupsList
-                    Dim lookupName As String = Replace(getEntry("name", LookupDef, 1), "*", "")
-                    ' create dropdown (validation) for lookup column
-                    curCell.Offset(2 + addedCells, 0).Formula = "=OFFSET(" & lookupName & "Lookup,0,0,,1)" ' this is necessary as Formula1 in Validation.Add doesn't accept english formulas
-                    Dim lookupColumn = createdListObject.ListColumns(lookupName & "LU")
-                    If IsNothing(lookupColumn) Then
-                        MsgBox("lookup column '" & lookupName & "LU' not found in ListRange", vbCritical, "DBSheet Create Error")
-                        Exit Sub
-                    Else
+                    If getEntry("fkey", LookupDef, 1) <> "" Then 'only necessary for database lookups
+                        Dim lookupName As String = Replace(getEntry("name", LookupDef, 1), "*", "")
+                        If IsNothing(ExcelDnaUtil.Application.Range(lookupName & "Lookup").Cells(1, 1).Value) Then
+                            Dim answr As MsgBoxResult = MsgBox("lookup area '" & lookupName & "Lookup' probably contains no values (maybe an error), continue?", vbCritical + vbOKCancel, "DBSheet Creation Error")
+                            If answr = vbCancel Then
+                                lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
+                                Exit Sub
+                            End If
+                        End If
+                        ' create dropdown (validation) for lookup column
+                        curCell.Offset(2 + addedCells, 0).Formula = "=OFFSET(" & lookupName & "Lookup,0,0,,1)" ' this is necessary as Formula1 in Validation.Add doesn't accept english formulas
+                        Dim lookupColumn As Excel.ListColumn
+                        Try
+                            lookupColumn = createdListObject.ListColumns(lookupName & "LU")
+                        Catch ex As Exception
+                            MsgBox("lookup column '" & lookupName & "LU' not found in ListRange", vbCritical, "DBSheet Creation Error")
+                            lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
+                            Exit Sub
+                        End Try
                         ' this is necessary as Excel>=2016 introduces the @operator automatically in formulas, referring to just that value in the same row. which is undesired here..
                         Dim localOffsetFormula As String = Replace(curCell.Offset(2 + addedCells, 0).FormulaLocal, "@", "")
-                        lookupColumn.DataBodyRange.Validation.Add(
+                        Try
+                            lookupColumn.DataBodyRange.Validation.Add(
                             Type:=Excel.XlDVType.xlValidateList, AlertStyle:=Excel.XlDVAlertStyle.xlValidAlertStop, Operator:=Excel.XlFormatConditionOperator.xlBetween,
                             Formula1:=localOffsetFormula)
+                        Catch ex As Exception
+                            MsgBox("Error in adding validation formula " & localOffsetFormula & " to column '" & lookupName & "LU': " & ex.Message, vbCritical, "DBSheet Creation Error")
+                            lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
+                            Exit Sub
+                        End Try
                         ' as the listobject was automatically extended by the setting of the new column (looked up value) above, the resolution formulas go into the last column now.
                         Dim newCol As Excel.ListColumn = createdListObject.ListColumns.Add()
                         ' add vlookup function field for resolution of lookups to ID in main Query at the end of the DBMapper table
@@ -145,20 +208,69 @@ Public Module DBSheetConfig
                         Try
                             newCol.DataBodyRange.Formula = lookupFormula
                         Catch ex As Exception
-                            MsgBox("Error in adding lookup formula " & lookupFormula & " to new column " & lookupName & ": " + ex.Message, vbCritical, "DBSheet Create Error")
+                            lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
+                            MsgBox("Error in adding lookup formula " & lookupFormula & " to new column " & lookupName & ": " + ex.Message, vbCritical, "DBSheet Creation Error")
+                            Exit Sub
                         End Try
                         ' hide the resolution column
                         newCol.Range.EntireColumn.Hidden = True
+                        ' add lookup column to ignored columns (only resolution column will be stored in DB)
+                        ignoreColumns += lookupName + "LU,"
+                        curCell.Offset(2 + addedCells, 0).Formula = ""
                     End If
-                    curCell.Offset(2 + addedCells, 0).Formula = ""
                 Next
+                ignoreColumns = Left(ignoreColumns, ignoreColumns.Length - 1)
             End If
         Catch ex As Exception
-            MsgBox("Error in DBSheet Creation: " + ex.Message, vbCritical, "DBSheet Create Error")
+            MsgBox("Error in DBSheet Creation: " + ex.Message, vbCritical, "DBSheet Creation Error")
+            lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
             Exit Sub
         End Try
-        ' create DBMapper with CUDFlags
 
+        ' set DBMapper Rangename
+        Dim NamesList As Excel.Names = ExcelDnaUtil.Application.ActiveWorkbook.Names
+        Dim alreadyExists As Boolean = False
+        Try
+            Dim testExist As String = NamesList.Item("DBMapper" & tableName).ToString
+        Catch ex As Exception
+            alreadyExists = True
+        End Try
+        If Not alreadyExists Then
+            MsgBox("Error adding DBModifier 'DBMapper" & tableName & "', Name already exists in Workbook!", vbCritical, "DBSheet Creation Error")
+            Exit Sub
+        End If
+        Try
+            NamesList.Add(Name:="DBMapper" & tableName, RefersTo:=curCell.Offset(0, 1))
+        Catch ex As Exception
+            MsgBox("Error when assigning name 'DBMapper" & tableName & "' to DBMapper starting cell (one cell to the right of active cell): " & ex.Message, vbCritical, "DBSheet Creation Error")
+            Exit Sub
+        End Try
+        ' get the database name
+        Dim databaseName As String = Replace(getEntry("connID", curConfig), fetchSetting("connIDPrefixDBtype", "MSSQL"), "")
+        ' primary columns count (first <primCols> columns are primary columns)s
+        Dim primCols = getEntry("primcols", curConfig)
+        ' create DBMapper for DBSheet
+        Dim CustomXmlParts As Object = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
+        If CustomXmlParts.Count = 0 Then ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.Add("<root xmlns=""DBModifDef""></root>")
+        CustomXmlParts = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
+        ' NamespaceURI:="DBModifDef" is required to avoid adding a xmlns attribute to each element.
+        CustomXmlParts(1).SelectSingleNode("/ns0:root").AppendChildNode("DBMapper" & tableName, NamespaceURI:="DBModifDef")
+        Dim dbModifNode As CustomXMLNode = CustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:DBMapper" & tableName)
+        dbModifNode.AppendChildNode("execOnSave", NamespaceURI:="DBModifDef", NodeValue:="True")
+        dbModifNode.AppendChildNode("askBeforeExecute", NamespaceURI:="DBModifDef", NodeValue:="True")
+        dbModifNode.AppendChildNode("env", NamespaceURI:="DBModifDef", NodeValue:="")
+        dbModifNode.AppendChildNode("database", NamespaceURI:="DBModifDef", NodeValue:=databaseName)
+        dbModifNode.AppendChildNode("tableName", NamespaceURI:="DBModifDef", NodeValue:=tableName)
+        dbModifNode.AppendChildNode("primKeysStr", NamespaceURI:="DBModifDef", NodeValue:=primCols)
+        dbModifNode.AppendChildNode("insertIfMissing", NamespaceURI:="DBModifDef", NodeValue:="True")
+        dbModifNode.AppendChildNode("executeAdditionalProc", NamespaceURI:="DBModifDef", NodeValue:="")
+        dbModifNode.AppendChildNode("ignoreColumns", NamespaceURI:="DBModifDef", NodeValue:=ignoreColumns)
+        dbModifNode.AppendChildNode("CUDFlags", NamespaceURI:="DBModifDef", NodeValue:="True")
+        dbModifNode.AppendChildNode("IgnoreDataErrors", NamespaceURI:="DBModifDef", NodeValue:="False")
+        'get new definitions into ribbon right now...
+        getDBModifDefinitions()
+        ' extend Datarange for new DBMappers immediately after definition...
+        DirectCast(Globals.DBModifDefColl("DBMapper").Item("DBMapper" & tableName), DBMapper).extendDataRange(ignoreCUDFlag:=True)
     End Sub
 
     ''' <summary>fetches value in entryMarkup within XMLString, search starts optionally at position startSearch (default 1)</summary>

@@ -211,7 +211,8 @@ Public MustInherit Class DBModif
                 If functionArgs.Length() < 3 Then
                     functionArgs = functionSplit(functionFormula, listSepLocal, """", "DBListFetch", "(", ")")
                 End If
-                Dim Query As String = ExcelDnaUtil.Application.Evaluate(functionArgs(0))
+                Dim Query As Object = ExcelDnaUtil.Application.Evaluate(functionArgs(0))
+                If TypeName(Query) = "Range" Then Query = Query.Value.ToString
                 Dim ConnString As Object = Replace(functionArgs(1), """", "")
                 Dim testInt As Integer : Dim EnvPrefix As String = ""
                 If CStr(ConnString) <> "" And Not Integer.TryParse(ConnString, testInt) Then
@@ -259,7 +260,8 @@ Public MustInherit Class DBModif
                 If functionArgs.Length() < 3 Then
                     functionArgs = functionSplit(functionFormula, listSepLocal, """", "DBSetQuery", "(", ")")
                 End If
-                Dim Query As String = ExcelDnaUtil.Application.Evaluate(functionArgs(0))
+                Dim Query As Object = ExcelDnaUtil.Application.Evaluate(functionArgs(0))
+                If TypeName(Query) = "Range" Then Query = Query.Value.ToString
                 Dim ConnString As Object = Replace(functionArgs(1), """", "")
                 Dim testInt As Integer : Dim EnvPrefix As String = ""
                 If CStr(ConnString) <> "" And Not Integer.TryParse(ConnString, testInt) Then
@@ -271,14 +273,15 @@ Public MustInherit Class DBModif
                 Functions.resolveConnstring(ConnString, EnvPrefix)
                 Dim targetRangeName As String : targetRangeName = functionArgs(2)
                 If UBound(functionArgs) = 3 Then targetRangeName += "," + functionArgs(3)
-                Functions.DBSetQueryAction(callID, Query, target, CStr(ConnString), caller, targetRangeName)
+                Functions.DBSetQueryAction(callID, CStr(Query), target, CStr(ConnString), caller, targetRangeName)
             ElseIf UCase(Left(functionFormula, 11)) = "=DBROWFETCH" Then
-                LogInfo("Refresh DBRowFetch: " & callID)
+                    LogInfo("Refresh DBRowFetch: " & callID)
                 Dim functionArgs = functionSplit(functionFormula, ",", """", "DBRowFetch", "(", ")")
                 If functionArgs.Length() < 3 Then
                     functionArgs = functionSplit(functionFormula, listSepLocal, """", "DBRowFetch", "(", ")")
                 End If
-                Dim Query As String = ExcelDnaUtil.Application.Evaluate(functionArgs(0))
+                Dim Query As Object = ExcelDnaUtil.Application.Evaluate(functionArgs(0))
+                If TypeName(Query) = "Range" Then Query = Query.Value.ToString
                 Dim ConnString As Object = Replace(functionArgs(1), """", "")
                 Dim testInt As Integer : Dim EnvPrefix As String = ""
                 If CStr(ConnString) <> "" And Not Integer.TryParse(ConnString, testInt) Then
@@ -351,7 +354,6 @@ Public Class DBMapper : Inherits DBModif
         Dim paramText As String = paramDefs
         TargetRange = paramTarget
 
-        'TODO: change this to local variable after legacy migration...
         Dim DBModifParams() As String = functionSplit(paramText, ",", """", "def", "(", ")")
         If IsNothing(DBModifParams) Then Exit Sub
         ' check for completeness
@@ -466,7 +468,7 @@ Public Class DBMapper : Inherits DBModif
             For Each changedRow As Excel.Range In changedRange.Rows
                 Dim CUDMarkRow As Integer = changedRow.Row - TargetRange.Row + 1
                 ' change only if not already set
-                If TargetRange.Cells(CUDMarkRow, TargetRange.Columns.Count + 1).Value = "" Then
+                If IsNothing(TargetRange.Cells(CUDMarkRow, TargetRange.Columns.Count + 1).Value) Then
                     Dim RowContainsData As Boolean = False
                     For Each containedCell As Excel.Range In TargetRange.Rows(CUDMarkRow).Cells
                         ' check if whole row is empty (except for the changedRange)
@@ -495,7 +497,11 @@ Public Class DBMapper : Inherits DBModif
         If Not CUDFlags Or ignoreCUDFlag Then
             preventChangeWhileFetching = True
             Dim rowEnd = TargetRange.Cells(1, 1).End(Excel.XlDirection.xlDown).Row
-            Dim colEnd = TargetRange.Cells(1, 1).End(Excel.XlDirection.xlToRight).Column
+            ' unfortunately the above method to find the column extent doesn't work with hidden columns, so count the filled cells directly...
+            Dim colEnd As Integer = TargetRange.Column
+            While Not (IsNothing(TargetRange.Cells(1, colEnd).Value) OrElse TargetRange.Cells(1, colEnd).Value = "")
+                colEnd += 1
+            End While
             Dim NamesList As Excel.Names = ExcelDnaUtil.Application.ActiveWorkbook.Names
             Try : NamesList.Add(Name:=paramTargetName, RefersTo:=TargetRange.Parent.Range(TargetRange.Cells(1, 1), TargetRange.Parent.Cells(rowEnd, colEnd)))
             Catch ex As Exception
@@ -1113,7 +1119,7 @@ Public Module DBModifs
             If InStr(cpbdtext.ToLower(), "saverangetodb") > 0 Then
                 Dim firstBracket As Integer = InStr(cpbdtext, "(")
                 Dim firstComma As Integer = InStr(cpbdtext, ",")
-                Dim connDefStart As Integer = InStrRev(cpbdtext, """MSSQL")
+                Dim connDefStart As Integer = InStrRev(cpbdtext, """" & fetchSetting("connIDPrefixDBtype", "MSSQL"))
                 Dim commaBeforeConnDef As Integer = InStrRev(cpbdtext, ",", connDefStart)
                 ' after conndef, all parameters are optional, so in case there is no comma afterwards, set this to end of whole definition string
                 Dim commaAfterConnDef As Integer = IIf(InStr(connDefStart, cpbdtext, ",") > 0, InStr(connDefStart, cpbdtext, ","), Len(cpbdtext))

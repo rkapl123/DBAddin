@@ -39,7 +39,7 @@ Public Class DBModifCreate
             MsgBox("Invalid " & Me.NameLabel.Text & ", Error: " & NameValidationResult, MsgBoxStyle.Critical + vbOKOnly, "DBModification Validation")
         Else
             ' check for double invocation because of execOnSave both being set on current DB Modifier ...
-            If Me.execOnSave.Checked Then
+            If Me.execOnSave.Checked And Globals.DBModifDefColl.ContainsKey("DBSeqnce") Then
                 Dim MyDBModifName As String = Me.Tag & Me.DBModifName.Text
                 ' and on DB Sequence that contains the current DB Mapper or DB Action:
                 If Me.Tag <> "DBSeqnce" Then
