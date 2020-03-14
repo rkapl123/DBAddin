@@ -242,7 +242,7 @@ Public MustInherit Class DBModif
                     ShowRowNums = convertToBool(functionArgs(8))
                 End If
                 ' call action procedure directly as we can avoid the external context required in the UDF
-                DBListFetchAction(callID, getQuery(functionArgs(0), caller), caller, target, getConnString(functionArgs(1)), formulaRange, extendDataArea, HeaderInfo, AutoFit, autoformat, ShowRowNums, targetRangeName, formulaRangeName)
+                DBListFetchAction(callID, getQuery(functionArgs(0), caller), caller, target, getConnString(functionArgs(1), caller), formulaRange, extendDataArea, HeaderInfo, AutoFit, autoformat, ShowRowNums, targetRangeName, formulaRangeName)
             ElseIf UCase(Left(functionFormula, 11)) = "=DBSETQUERY" Then
                 LogInfo("Refresh DBSetQuery: " & callID)
                 Dim functionArgs = functionSplit(functionFormula, ",", """", "DBSetQuery", "(", ")")
@@ -251,7 +251,7 @@ Public MustInherit Class DBModif
                 End If
                 Dim targetRangeName As String : targetRangeName = functionArgs(2)
                 If UBound(functionArgs) = 3 Then targetRangeName += "," + functionArgs(3)
-                Functions.DBSetQueryAction(callID, getQuery(functionArgs(0), caller), target, getConnString(functionArgs(1)), caller, targetRangeName)
+                Functions.DBSetQueryAction(callID, getQuery(functionArgs(0), caller), target, getConnString(functionArgs(1), caller), caller, targetRangeName)
             ElseIf UCase(Left(functionFormula, 11)) = "=DBROWFETCH" Then
                 LogInfo("Refresh DBRowFetch: " & callID)
                 Dim functionArgs = functionSplit(functionFormula, ",", """", "DBRowFetch", "(", ")")
@@ -271,7 +271,7 @@ Public MustInherit Class DBModif
                         tempArray(i - 2) = target.Parent.Range(functionArgs(i))
                     Next
                 End If
-                Functions.DBRowFetchAction(callID, getQuery(functionArgs(0), caller), caller, tempArray, getConnString(functionArgs(1)), HeaderInfo)
+                Functions.DBRowFetchAction(callID, getQuery(functionArgs(0), caller), caller, tempArray, getConnString(functionArgs(1), caller), HeaderInfo)
             End If
         Catch ex As Exception
             LogError(ex.Message)
@@ -283,7 +283,7 @@ Public MustInherit Class DBModif
     ''' <param name="funcArg">function argument parsed from DBFunction formula</param>
     ''' <param name="caller">function caller range</param>
     ''' <returns></returns>
-    Private Function getQuery(funcArg As String, caller As Object) As String
+    Private Function getQuery(funcArg As String, caller As Excel.Range) As String
         Dim Query As Object
         Dim rangePart() As String = Split(funcArg, "!")
         If UBound(rangePart) = 1 Then
@@ -297,12 +297,18 @@ Public MustInherit Class DBModif
 
     ''' <summary>get connection string from passed function argument</summary>
     ''' <param name="funcArg">function argument parsed from DBFunction formula, can be empty, a number or a String</param>
+    ''' <param name="caller">function caller range</param>
     ''' <returns>resolved connection string</returns>
-    Private Function getConnString(funcArg As String) As String
+    Private Function getConnString(funcArg As String, caller As Excel.Range) As String
         Dim ConnString As Object = Replace(funcArg, """", "")
         Dim testInt As Integer : Dim EnvPrefix As String = ""
         If CStr(ConnString) <> "" And Not Integer.TryParse(ConnString, testInt) Then
-            ConnString = ExcelDnaUtil.Application.Evaluate(funcArg)
+            Dim rangePart() As String = Split(funcArg, "!")
+            If UBound(rangePart) = 1 Then
+                ConnString = ExcelDnaUtil.Application.Evaluate(funcArg)
+            Else
+                ConnString = ExcelDnaUtil.Application.Evaluate(caller.Parent.Name & "!" & funcArg)
+            End If
         End If
         If Integer.TryParse(ConnString, testInt) Then
             ConnString = Convert.ToDouble(testInt)
