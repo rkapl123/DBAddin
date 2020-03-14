@@ -87,26 +87,27 @@ Public Module DBSheetConfig
                     ' fetch Lookupquery and get rid of template table def
                     Dim LookupQuery As String = Replace(getEntry("lookup", LookupDef, 1), "!T!", "T1")
                     Dim lookupName As String = Replace(getEntry("name", LookupDef, 1), "*", "")
-                    ' replace looked up ID names with ID name + "LU" in query string
-                    Dim foundDelim As Integer
-                    For Each delimStr As String In {",", " ", vbCrLf}
-                        foundDelim = InStr(selectPartModif, " " & lookupName & delimStr)
-                        If foundDelim > 0 Then
-                            selectPartModif = Replace(selectPartModif, " " & lookupName & delimStr, " " & lookupName & "LU" & delimStr)
-                            Exit For
+                    ' replace fieldname of Lookups in query with fieldname + "LU" only for database lookups
+                    If getEntry("fkey", LookupDef, 1) <> "" Then
+                        ' replace looked up ID names with ID name + "LU" in query string
+                        Dim foundDelim As Integer
+                        For Each delimStr As String In {",", " ", vbCrLf}
+                            foundDelim = InStr(selectPartModif, " " & lookupName & delimStr)
+                            If foundDelim > 0 Then
+                                selectPartModif = Replace(selectPartModif, " " & lookupName & delimStr, " " & lookupName & "LU" & delimStr)
+                                Exit For
+                            End If
+                            foundDelim = InStr(selectPartModif, "." & lookupName & delimStr)
+                            If foundDelim > 0 Then
+                                selectPartModif = Replace(selectPartModif, "." & lookupName & delimStr, "." & lookupName & " " & lookupName & "LU" & delimStr)
+                                Exit For
+                            End If
+                        Next
+                        If foundDelim = 0 Then
+                            MsgBox("Error in changing lookupName '" & lookupName & "' to '" & lookupName & "LU' in select statement of DBSheet query, it has to begin with blank and end with ','blank or CrLf !", vbCritical, "DBSheet Creation Error")
+                            lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
+                            Exit Sub
                         End If
-                        foundDelim = InStr(selectPartModif, "." & lookupName & delimStr)
-                        If foundDelim > 0 Then
-                            selectPartModif = Replace(selectPartModif, "." & lookupName & delimStr, "." & lookupName & " " & lookupName & "LU" & delimStr)
-                            Exit For
-                        End If
-                    Next
-                    If foundDelim = 0 Then
-                        MsgBox("Error in changing lookupName '" & lookupName & "' to '" & lookupName & "LU' in select statement of DBSheet query, it has to begin with blank and end with ','blank or CrLf !", vbCritical, "DBSheet Creation Error")
-                        lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
-                        Exit Sub
-                    End If
-                    If getEntry("fkey", LookupDef, 1) <> "" Then 'database lookup
                         lookupWS.Cells(1, lookupCol + 1).Value = LookupQuery
                         lookupWS.Cells(1, lookupCol + 1).WrapText = False
                         lookupWS.Cells(2, lookupCol).Name = lookupName & "Lookup"
@@ -114,7 +115,7 @@ Public Module DBSheetConfig
                         ConfigFiles.createFunctionsInCells(lookupWS.Cells(1, lookupCol), {"RC", "=DBListFetch(RC[1],""""," & lookupName & "Lookup" & ")"})
                         ' database lookups have two columns
                         lookupCol += 2
-                    Else                                         'fixed value lookup
+                    Else                                         'fixed value lookup only has one column, no need to resolve to an ID
                         Dim lookupValues As String() = Split(LookupQuery, "||")
                         Dim lrow As Integer
                         For lrow = 0 To UBound(lookupValues)
@@ -169,42 +170,53 @@ Public Module DBSheetConfig
 
     Private Sub finishDBMapperCreation()
         ' store lookup columns (<>LU) to be ignored in DBMapper
+        Dim queryErrorPos As Integer = InStr(curCell.Value, "Error")
+        If queryErrorPos > 0 Then
+            MsgBox("DBSHeet Query had and error:" & vbCrLf & Mid(curCell.Value, queryErrorPos + Len("Error in query table refresh: ")), vbCritical, "DBSheet Creation Error")
+            If Not IsNothing(lookupWS) Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
+            Exit Sub
+        End If
         Dim ignoreColumns As String = ""
         Try
             If Not IsNothing(lookupsList) Then
-                ' replace fieldname of Lookups in DBMapper with fieldname + "LU"
                 For Each LookupDef As String In lookupsList
-                    If getEntry("fkey", LookupDef, 1) <> "" Then 'only necessary for database lookups
-                        Dim lookupName As String = Replace(getEntry("name", LookupDef, 1), "*", "")
-                        If IsNothing(ExcelDnaUtil.Application.Range(lookupName & "Lookup").Cells(1, 1).Value) Then
-                            Dim answr As MsgBoxResult = MsgBox("lookup area '" & lookupName & "Lookup' probably contains no values (maybe an error), continue?", vbCritical + vbOKCancel, "DBSheet Creation Error")
-                            If answr = vbCancel Then
-                                lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
-                                Exit Sub
-                            End If
-                        End If
-                        ' create dropdown (validation) for lookup column
-                        curCell.Offset(2 + addedCells, 0).Formula = "=OFFSET(" & lookupName & "Lookup,0,0,,1)" ' this is necessary as Formula1 in Validation.Add doesn't accept english formulas
-                        Dim lookupColumn As Excel.ListColumn
-                        Try
-                            lookupColumn = createdListObject.ListColumns(lookupName & "LU")
-                        Catch ex As Exception
-                            MsgBox("lookup column '" & lookupName & "LU' not found in ListRange", vbCritical, "DBSheet Creation Error")
+                    Dim lookupName As String = Replace(getEntry("name", LookupDef, 1), "*", "")
+                    If IsNothing(ExcelDnaUtil.Application.Range(lookupName & "Lookup").Cells(1, 1).Value) Then
+                        Dim answr As MsgBoxResult = MsgBox("lookup area '" & lookupName & "Lookup' probably contains no values (maybe an error), continue?", vbCritical + vbOKCancel, "DBSheet Creation Error")
+                        If answr = vbCancel Then
                             lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
                             Exit Sub
-                        End Try
-                        ' this is necessary as Excel>=2016 introduces the @operator automatically in formulas, referring to just that value in the same row. which is undesired here..
-                        Dim localOffsetFormula As String = Replace(curCell.Offset(2 + addedCells, 0).FormulaLocal, "@", "")
-                        Try
-                            lookupColumn.DataBodyRange.Validation.Add(
+                        End If
+                    End If
+                    ' create dropdown (validation) for lookup column
+                    curCell.Offset(2 + addedCells, 0).Formula = "=OFFSET(" & lookupName & "Lookup,0,0,,1)" ' this is necessary as Formula1 in Validation.Add doesn't accept english formulas
+
+                    ' this is necessary as Excel>=2016 introduces the @operator automatically in formulas, referring to just that value in the same row. which is undesired here..
+                    Dim localOffsetFormula As String = Replace(curCell.Offset(2 + addedCells, 0).FormulaLocal, "@", "")
+                    Dim lookupColumn As Excel.ListColumn
+                    Try
+                        ' only for 2-column database lookups add LU
+                        If getEntry("fkey", LookupDef, 1) <> "" Then
+                            lookupColumn = createdListObject.ListColumns(lookupName & "LU")
+                        Else
+                            lookupColumn = createdListObject.ListColumns(lookupName)
+                        End If
+                    Catch ex As Exception
+                        MsgBox("lookup column '" & lookupName & "LU' not found in ListRange", vbCritical, "DBSheet Creation Error")
+                        lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
+                        Exit Sub
+                    End Try
+                    Try
+                        lookupColumn.DataBodyRange.Validation.Add(
                             Type:=Excel.XlDVType.xlValidateList, AlertStyle:=Excel.XlDVAlertStyle.xlValidAlertStop, Operator:=Excel.XlFormatConditionOperator.xlBetween,
                             Formula1:=localOffsetFormula)
-                        Catch ex As Exception
-                            MsgBox("Error in adding validation formula " & localOffsetFormula & " to column '" & lookupName & "LU': " & ex.Message, vbCritical, "DBSheet Creation Error")
-                            lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
-                            Exit Sub
-                        End Try
-                        ' as the listobject was automatically extended by the setting of the new column (looked up value) above, the resolution formulas go into the last column now.
+                    Catch ex As Exception
+                        MsgBox("Error in adding validation formula " & localOffsetFormula & " to column '" & lookupName & "LU': " & ex.Message, vbCritical, "DBSheet Creation Error")
+                        lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
+                        Exit Sub
+                    End Try
+                    If getEntry("fkey", LookupDef, 1) <> "" Then 'only necessary for database lookups
+                        ' the resolution formulas go into the last column now.
                         Dim newCol As Excel.ListColumn = createdListObject.ListColumns.Add()
                         ' add vlookup function field for resolution of lookups to ID in main Query at the end of the DBMapper table
                         newCol.Name = lookupName
@@ -227,7 +239,7 @@ Public Module DBSheetConfig
             End If
         Catch ex As Exception
             MsgBox("Error in DBSheet Creation: " + ex.Message, vbCritical, "DBSheet Creation Error")
-            lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
+            If Not IsNothing(lookupWS) Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
             Exit Sub
         End Try
 
@@ -241,12 +253,14 @@ Public Module DBSheetConfig
         End Try
         If Not alreadyExists Then
             MsgBox("Error adding DBModifier 'DBMapper" & tableName & "', Name already exists in Workbook!", vbCritical, "DBSheet Creation Error")
+            If Not IsNothing(lookupWS) Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
             Exit Sub
         End If
         Try
             NamesList.Add(Name:="DBMapper" & tableName, RefersTo:=curCell.Offset(0, 1))
         Catch ex As Exception
             MsgBox("Error when assigning name 'DBMapper" & tableName & "' to DBMapper starting cell (one cell to the right of active cell): " & ex.Message, vbCritical, "DBSheet Creation Error")
+            If Not IsNothing(lookupWS) Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
             Exit Sub
         End Try
         ' get the database name

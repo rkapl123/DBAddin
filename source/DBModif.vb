@@ -211,17 +211,6 @@ Public MustInherit Class DBModif
                 If functionArgs.Length() < 3 Then
                     functionArgs = functionSplit(functionFormula, listSepLocal, """", "DBListFetch", "(", ")")
                 End If
-                Dim Query As Object = ExcelDnaUtil.Application.Evaluate(functionArgs(0))
-                If TypeName(Query) = "Range" Then Query = Query.Value.ToString
-                Dim ConnString As Object = Replace(functionArgs(1), """", "")
-                Dim testInt As Integer : Dim EnvPrefix As String = ""
-                If CStr(ConnString) <> "" And Not Integer.TryParse(ConnString, testInt) Then
-                    ConnString = ExcelDnaUtil.Application.Evaluate(functionArgs(1))
-                End If
-                If Integer.TryParse(ConnString, testInt) Then
-                    ConnString = Convert.ToDouble(testInt)
-                End If
-                Functions.resolveConnstring(ConnString, EnvPrefix)
                 Dim targetRangeName As String : targetRangeName = functionArgs(2)
                 ' check if fetched argument targetRangeName is really a name or just a plain range address
                 If Not existsNameInWb(targetRangeName, caller.Parent.Parent) And Not existsNameInSheet(targetRangeName, caller.Parent) Then targetRangeName = ""
@@ -253,44 +242,22 @@ Public MustInherit Class DBModif
                     ShowRowNums = convertToBool(functionArgs(8))
                 End If
                 ' call action procedure directly as we can avoid the external context required in the UDF
-                DBListFetchAction(callID, Query, caller, target, CStr(ConnString), formulaRange, extendDataArea, HeaderInfo, AutoFit, autoformat, ShowRowNums, targetRangeName, formulaRangeName)
+                DBListFetchAction(callID, getQuery(functionArgs(0), caller), caller, target, getConnString(functionArgs(1)), formulaRange, extendDataArea, HeaderInfo, AutoFit, autoformat, ShowRowNums, targetRangeName, formulaRangeName)
             ElseIf UCase(Left(functionFormula, 11)) = "=DBSETQUERY" Then
                 LogInfo("Refresh DBSetQuery: " & callID)
                 Dim functionArgs = functionSplit(functionFormula, ",", """", "DBSetQuery", "(", ")")
                 If functionArgs.Length() < 3 Then
                     functionArgs = functionSplit(functionFormula, listSepLocal, """", "DBSetQuery", "(", ")")
                 End If
-                Dim Query As Object = ExcelDnaUtil.Application.Evaluate(functionArgs(0))
-                If TypeName(Query) = "Range" Then Query = Query.Value.ToString
-                Dim ConnString As Object = Replace(functionArgs(1), """", "")
-                Dim testInt As Integer : Dim EnvPrefix As String = ""
-                If CStr(ConnString) <> "" And Not Integer.TryParse(ConnString, testInt) Then
-                    ConnString = ExcelDnaUtil.Application.Evaluate(functionArgs(1))
-                End If
-                If Integer.TryParse(ConnString, testInt) Then
-                    ConnString = Convert.ToDouble(testInt)
-                End If
-                Functions.resolveConnstring(ConnString, EnvPrefix)
                 Dim targetRangeName As String : targetRangeName = functionArgs(2)
                 If UBound(functionArgs) = 3 Then targetRangeName += "," + functionArgs(3)
-                Functions.DBSetQueryAction(callID, CStr(Query), target, CStr(ConnString), caller, targetRangeName)
+                Functions.DBSetQueryAction(callID, getQuery(functionArgs(0), caller), target, getConnString(functionArgs(1)), caller, targetRangeName)
             ElseIf UCase(Left(functionFormula, 11)) = "=DBROWFETCH" Then
-                    LogInfo("Refresh DBRowFetch: " & callID)
+                LogInfo("Refresh DBRowFetch: " & callID)
                 Dim functionArgs = functionSplit(functionFormula, ",", """", "DBRowFetch", "(", ")")
                 If functionArgs.Length() < 3 Then
                     functionArgs = functionSplit(functionFormula, listSepLocal, """", "DBRowFetch", "(", ")")
                 End If
-                Dim Query As Object = ExcelDnaUtil.Application.Evaluate(functionArgs(0))
-                If TypeName(Query) = "Range" Then Query = Query.Value.ToString
-                Dim ConnString As Object = Replace(functionArgs(1), """", "")
-                Dim testInt As Integer : Dim EnvPrefix As String = ""
-                If CStr(ConnString) <> "" And Not Integer.TryParse(ConnString, testInt) Then
-                    ConnString = ExcelDnaUtil.Application.Evaluate(functionArgs(1))
-                End If
-                If Integer.TryParse(ConnString, testInt) Then
-                    ConnString = Convert.ToDouble(testInt)
-                End If
-                Functions.resolveConnstring(ConnString, EnvPrefix)
                 Dim HeaderInfo As Boolean = False
                 Dim tempArray() As Excel.Range = Nothing
                 If Boolean.TryParse(ExcelDnaUtil.Application.Evaluate(functionArgs(2)), HeaderInfo) Then
@@ -304,7 +271,7 @@ Public MustInherit Class DBModif
                         tempArray(i - 2) = target.Parent.Range(functionArgs(i))
                     Next
                 End If
-                Functions.DBRowFetchAction(callID, Query, caller, tempArray, CStr(ConnString), HeaderInfo)
+                Functions.DBRowFetchAction(callID, getQuery(functionArgs(0), caller), caller, tempArray, getConnString(functionArgs(1)), HeaderInfo)
             End If
         Catch ex As Exception
             LogError(ex.Message)
@@ -312,6 +279,37 @@ Public MustInherit Class DBModif
         doDBRefresh = True
     End Function
 
+    ''' <summary>get DBFunction's query from passed function argument</summary>
+    ''' <param name="funcArg">function argument parsed from DBFunction formula</param>
+    ''' <param name="caller">function caller range</param>
+    ''' <returns></returns>
+    Private Function getQuery(funcArg As String, caller As Object) As String
+        Dim Query As Object
+        Dim rangePart() As String = Split(funcArg, "!")
+        If UBound(rangePart) = 1 Then
+            Query = ExcelDnaUtil.Application.Evaluate(funcArg)
+        Else
+            Query = ExcelDnaUtil.Application.Evaluate(caller.Parent.Name & "!" & funcArg)
+        End If
+        If TypeName(Query) = "Range" Then Query = Query.Value.ToString
+        getQuery = Query
+    End Function
+
+    ''' <summary>get connection string from passed function argument</summary>
+    ''' <param name="funcArg">function argument parsed from DBFunction formula, can be empty, a number or a String</param>
+    ''' <returns>resolved connection string</returns>
+    Private Function getConnString(funcArg As String) As String
+        Dim ConnString As Object = Replace(funcArg, """", "")
+        Dim testInt As Integer : Dim EnvPrefix As String = ""
+        If CStr(ConnString) <> "" And Not Integer.TryParse(ConnString, testInt) Then
+            ConnString = ExcelDnaUtil.Application.Evaluate(funcArg)
+        End If
+        If Integer.TryParse(ConnString, testInt) Then
+            ConnString = Convert.ToDouble(testInt)
+        End If
+        Functions.resolveConnstring(ConnString, EnvPrefix)
+        getConnString = CStr(ConnString)
+    End Function
 End Class
 
 Public Class DBMapper : Inherits DBModif
@@ -511,7 +509,11 @@ Public Class DBMapper : Inherits DBModif
             End Try
         End If
         ' even if CUD Flags are present, the Data range might have been extended (by inserting rows), so reassign it to the TargetRange
-        TargetRange = TargetRange.Parent.Range(paramTargetName)
+        Try
+            TargetRange = TargetRange.Parent.Range(paramTargetName)
+        Catch ex As Exception
+            Throw New Exception("Error when setting name '" & paramTargetName & "' to TargetRange while extending DataRange: " & ex.Message)
+        End Try
     End Sub
 
     ''' <summary>reset CUD FLags, either after completion of doDBModif or on request (refresh)</summary>
@@ -756,28 +758,25 @@ cleanup:
         If calledByDBSeq = "" Then
             dbcnn.Close()
         End If
-        ' DBSheet surrogate (CUDFlags), ask for refresh after DB Modification was done 
-        Dim DBFunctionSrcExtent = getDBunderlyingNameFromRange(TargetRange)
-        If DBFunctionSrcExtent <> "" Then
-            If CUDFlags Then
-                If askBeforeExecute AndAlso calledByDBSeq = "" Then
-                    Dim retval As MsgBoxResult = MsgBox("Refresh DBListfetch/DBSetQuery for Data Range of DB Mapper?", MsgBoxStyle.Question + vbOKCancel, "Refresh DB Mapper")
-                    If retval = vbOK Then
-                        doDBRefresh(Replace(DBFunctionSrcExtent, "DBFtarget", "DBFsource"))
-                        ' clear CUD marks after completion
+        ' DBSheet surrogate (CUDFlags), ask for refresh after DB Modification was done
+        If changesDone Then
+            Dim DBFunctionSrcExtent = getDBunderlyingNameFromRange(TargetRange)
+            If DBFunctionSrcExtent <> "" Then
+                If CUDFlags Then
+                    If askBeforeExecute AndAlso calledByDBSeq = "" Then
+                        Dim retval As MsgBoxResult = MsgBox("Refresh Data Range of DB Mapper '" & dbmodifName & "' ?", MsgBoxStyle.Question + vbOKCancel, "Refresh DB Mapper")
+                        If retval = vbOK Then
+                            doDBRefresh(Replace(DBFunctionSrcExtent, "DBFtarget", "DBFsource"))
+                            ' clear CUD marks after completion is done with doDBRefresh/DBSetQueryAction/resizeDBMapperRange
+                        End If
+                        ' also resetCUDFlags for CUDFlags DBMapper that do not ask before execute and were called by a DBSequence
+                    ElseIf Not askBeforeExecute Then
                         Try
                             resetCUDFlags()
                         Catch ex As Exception
                             MsgBox("Error in resetting CUD Flags: " & ex.Message, MsgBoxStyle.Critical, "DBMapper Error")
                         End Try
                     End If
-                    ' also resetCUDFlags for CUDFlags DBMapper that do not ask before execute and were called by a DBSequence
-                ElseIf Not askBeforeExecute Then
-                    Try
-                        resetCUDFlags()
-                    Catch ex As Exception
-                        MsgBox("Error in resetting CUD Flags: " & ex.Message, MsgBoxStyle.Critical, "DBMapper Error")
-                    End Try
                 End If
             End If
         End If
