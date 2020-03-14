@@ -1,5 +1,5 @@
 ﻿<DBSheetConfig>
-<connID>TESTDB</connID>
+<connID>MSSQLpubs</connID>
 <table>titleauthor</table>
 <query>SELECT isnull(T2.au_lname + ' ' + T2.au_fname, T1.au_id) au_id, T3.title AS title_id, T1.au_ord, T1.royaltyper
 FROM pubs.dbo.titleauthor T1 LEFT JOIN 

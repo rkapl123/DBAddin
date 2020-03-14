@@ -1,5 +1,5 @@
 ﻿<DBSheetConfig>
-<connID>TESTDB</connID>
+<connID>MSSQLpubs</connID>
 <table>publishers</table>
 <query>SELECT T1.pub_id, T1.pub_name, T1.city, T1.state, T1.country
 FROM pubs.dbo.publishers T1

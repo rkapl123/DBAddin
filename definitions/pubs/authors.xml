@@ -1,5 +1,5 @@
 <DBsheetConfig>
-<connID>TESTDB</connID>
+<connID>MSSQLpubs</connID>
 <table>authors</table>
 <query>SELECT T1.au_id, T1.au_lname, T1.au_fname, T1.phone, T1.address, T1.city, T1.state, T1.zip, T1.contract, T1.addtlInfo1, T1.addtlInfo2, T1.addtlInfo3, T1.addtlInfo4, T1.addtlInfo5, T1.addtlInfo6, T1.addtlInfo7, T1.addtlInfo8, T1.addtlInfo9, T1.addtlInfo10, T1.addtlInfo11, T1.addtlInfo12, T1.addtlInfo13, T1.addtlInfo14, T1.addtlInfo15, T1.addtlInfo16, T1.addtlInfo17
 FROM pubs.dbo.authors T1 

@@ -70,6 +70,8 @@ Public Module DBSheetConfig
             End If
             ' get lookup fields in complete columns definitions
             lookupsList = getEntryList("columns", "field", "lookup", curConfig, True)
+            Dim selectPart As String = Left(queryStr, InStr(queryStr, "FROM ") - 1)
+            Dim selectPartModif As String = selectPart ' select part with appending LU to lookups
             If Not IsNothing(lookupsList) Then
                 lookupWS = ExcelDnaUtil.Application.ActiveWorkbook.Worksheets.Add()
                 Try
@@ -88,14 +90,14 @@ Public Module DBSheetConfig
                     ' replace looked up ID names with ID name + "LU" in query string
                     Dim foundDelim As Integer
                     For Each delimStr As String In {",", " ", vbCrLf}
-                        foundDelim = InStr(queryStr, " " & lookupName & delimStr)
+                        foundDelim = InStr(selectPartModif, " " & lookupName & delimStr)
                         If foundDelim > 0 Then
-                            queryStr = Replace(queryStr, " " & lookupName & delimStr, " " & lookupName & "LU" & delimStr)
+                            selectPartModif = Replace(selectPartModif, " " & lookupName & delimStr, " " & lookupName & "LU" & delimStr)
                             Exit For
                         End If
-                        foundDelim = InStr(queryStr, "." & lookupName & delimStr)
+                        foundDelim = InStr(selectPartModif, "." & lookupName & delimStr)
                         If foundDelim > 0 Then
-                            queryStr = Replace(queryStr, "." & lookupName & delimStr, "." & lookupName & " " & lookupName & "LU" & delimStr)
+                            selectPartModif = Replace(selectPartModif, "." & lookupName & delimStr, "." & lookupName & " " & lookupName & "LU" & delimStr)
                             Exit For
                         End If
                     Next
@@ -126,6 +128,8 @@ Public Module DBSheetConfig
                 lookupWS.Visible = Excel.XlSheetVisibility.xlSheetHidden
                 curCell.Parent.Select()
             End If
+            ' exchange the select part with the LU modified select part
+            queryStr = Replace(queryStr, selectPart, selectPartModif)
             ' then create the DBSetQuery assigning the (yet to be filled) query to the above listobject
             ' add DBSetQuery with queryStr as Basis for the final DBMapper
             ' first create a ListObject

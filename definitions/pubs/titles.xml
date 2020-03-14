@@ -1,5 +1,5 @@
 <DBSheetConfig>
-<connID>TESTDB</connID>
+<connID>MSSQLpubs</connID>
 <table>titles</table>
 <query>SELECT T1.title_id, T1.title, T1.type, T5.pub_name AS pub_id, T1.price, T1.advance, T1.royalty, T1.ytd_sales, T1.notes, T1.pubdate
 FROM pubs.dbo.titles T1 LEFT JOIN 

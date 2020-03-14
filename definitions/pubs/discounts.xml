@@ -1,5 +1,5 @@
 ﻿<DBSheetConfig>
-<connID>TESTDB</connID>
+<connID>MSSQLpubs</connID>
 <table>discounts</table>
 <query>SELECT T1.discounttype, T3.stor_name AS stor_id, T1.lowqty, T1.highqty, T1.discount
 FROM pubs.dbo.discounts T1 LEFT JOIN 

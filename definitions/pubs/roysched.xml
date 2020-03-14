@@ -1,5 +1,5 @@
 <DBsheetParams>
-<connID>TESTDB</connID>
+<connID>MSSQLpubs</connID>
 <table>roysched</table>
 <query>SELECT T2.title+'/'+p.pub_name AS title_id, T1.lorange, T1.hirange, T1.royalty
 FROM pubs.dbo.roysched T1 INNER JOIN 

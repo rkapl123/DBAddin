@@ -1,5 +1,5 @@
 ﻿<DBSheetConfig>
-<connID>TESTDB</connID>
+<connID>MSSQLpubs</connID>
 <table>employee</table>
 <query>SELECT T1.emp_id, T1.fname, T1.minit, T1.lname, T6.job_desc AS job_id, T1.job_lvl, T8.pub_name AS pub_id
 FROM pubs.dbo.employee T1 INNER JOIN 

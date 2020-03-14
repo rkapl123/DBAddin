@@ -1,5 +1,5 @@
 <DBsheetConfig>
-<connID>TESTDB</connID>
+<connID>MSSQLpubs</connID>
 <table>jobs</table>
 <query>SELECT T1.job_id, T1.job_desc, T1.min_lvl, T1.max_lvl
 FROM pubs.dbo.jobs T1
