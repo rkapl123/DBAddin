@@ -471,12 +471,12 @@ Public Class DBMapper : Inherits DBModif
         Else
             For Each changedRow As Excel.Range In changedRange.Rows
                 Dim CUDMarkRow As Integer = changedRow.Row - TargetRange.Row + 1
-                ' change only if not already set
+                ' change only if not already set or
                 If IsNothing(TargetRange.Cells(CUDMarkRow, TargetRange.Columns.Count + 1).Value) Then
                     Dim RowContainsData As Boolean = False
                     For Each containedCell As Excel.Range In TargetRange.Rows(CUDMarkRow).Cells
-                        ' check if whole row is empty (except for the changedRange)
-                        If Not IsNothing(containedCell.Value) AndAlso containedCell.Address <> changedRange.Address Then
+                        ' check if whole row is empty (except for the changedRange), formulas do not count as filled (automatically filled for lookups or other things)..
+                        If (Not IsNothing(containedCell.Value) And containedCell.Formula = "") AndAlso containedCell.Address <> changedRange.Address Then
                             RowContainsData = True
                             Exit For
                         End If
@@ -611,6 +611,7 @@ Public Class DBMapper : Inherits DBModif
                     End If
                     If IsNothing(primKeyValue) Then primKeyValue = ""
                     Dim primKey = TargetRange.Cells(1, i).Value
+                    'TODO: get lookedup value for primary instead of <>LU field...
                     If primKeysCount = 1 And CUDFlags And primKeyValue.ToString().Length = 0 And checkrst.Fields(primKey).Properties("IsAutoIncrement").Value Then
                         AutoIncrement = True
                         Exit For
@@ -897,9 +898,12 @@ Public Class DBAction : Inherits DBModif
         End If
         Dim result As Long = 0
         Try
-            'TODO: extend DB Action text to the whole given TargetRange
             ExcelDnaUtil.Application.StatusBar = "executing DBAction " & paramTargetName
-            dbcnn.Execute(TargetRange.Cells(1, 1).Text, result, Options:=CommandTypeEnum.adCmdText)
+            Dim executeText As String = ""
+            For Each targetCell As Excel.Range In TargetRange
+                executeText += targetCell.Text + " "
+            Next
+            dbcnn.Execute(executeText, result, Options:=CommandTypeEnum.adCmdText)
         Catch ex As Exception
             hadError = True
             MsgBox("Error: " & paramTargetName & ": " & ex.Message, vbCritical, "DBAction Error")

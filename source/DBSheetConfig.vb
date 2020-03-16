@@ -172,10 +172,17 @@ Public Module DBSheetConfig
         ' store lookup columns (<>LU) to be ignored in DBMapper
         Dim queryErrorPos As Integer = InStr(curCell.Value, "Error")
         If queryErrorPos > 0 Then
-            MsgBox("DBSHeet Query had and error:" & vbCrLf & Mid(curCell.Value, queryErrorPos + Len("Error in query table refresh: ")), vbCritical, "DBSheet Creation Error")
+            MsgBox("DBSheet Query had and error:" & vbCrLf & Mid(curCell.Value, queryErrorPos + Len("Error in query table refresh: ")), vbCritical, "DBSheet Creation Error")
             If Not IsNothing(lookupWS) Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
             Exit Sub
         End If
+        Try
+            curCell.Parent.Name = Left(tableName, 31)
+        Catch ex As Exception
+            MsgBox("DBSheet setting worksheet name error:" & ex.Message, vbCritical, "DBSheet Creation Error")
+            If Not IsNothing(lookupWS) Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
+            Exit Sub
+        End Try
         Dim ignoreColumns As String = ""
         Try
             If Not IsNothing(lookupsList) Then
@@ -232,10 +239,10 @@ Public Module DBSheetConfig
                         newCol.Range.EntireColumn.Hidden = True
                         ' add lookup column to ignored columns (only resolution column will be stored in DB)
                         ignoreColumns += lookupName + "LU,"
-                        curCell.Offset(2 + addedCells, 0).Formula = ""
                     End If
+                    curCell.Offset(2 + addedCells, 0).Formula = ""
                 Next
-                ignoreColumns = Left(ignoreColumns, ignoreColumns.Length - 1)
+                If ignoreColumns.Length > 0 Then ignoreColumns = Left(ignoreColumns, ignoreColumns.Length - 1)
             End If
         Catch ex As Exception
             MsgBox("Error in DBSheet Creation: " + ex.Message, vbCritical, "DBSheet Creation Error")
