@@ -560,8 +560,8 @@ Public Module Functions
             GoTo err_0
         End If
         ExcelDnaUtil.Application.Cursor = Excel.XlMousePointer.xlWait  ' show the hourglass
-        formulaRange = formulaRange
         targetSH = targetRange.Parent
+        formulaRange = formulaRange
         warning = ""
 
         Dim srcExtent As String, targetExtent As String, targetExtentF As String
@@ -1065,6 +1065,9 @@ err_0: ' errors where recordset was not opened or is already closed
         Dim targetSH As Excel.Worksheet
 
         On Error Resume Next
+        targetCells = targetArray
+        targetSH = targetCells(0).Parent
+        StatusCollection(callID).statusMsg = ""
         Dim calcMode = ExcelDnaUtil.Application.Calculation
         ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual
         ' this works around the data validation input bug and being called when COM Model is not ready
@@ -1075,10 +1078,6 @@ err_0: ' errors where recordset was not opened or is already closed
             GoTo err_1
         End If
         ExcelDnaUtil.Application.Cursor = Excel.XlMousePointer.xlWait  ' show the hourglass
-
-        targetCells = targetArray
-        targetSH = targetCells(0).Parent
-        StatusCollection(callID).statusMsg = ""
         On Error GoTo err_1
         ExcelDnaUtil.Application.StatusBar = "Retrieving data for DBRows: " & targetSH.Name & "!" & targetCells(0).Address
 
@@ -1218,6 +1217,7 @@ err_1:
         finishAction(calcMode, callID, "Error")
         caller.Formula += " " ' recalculate to trigger return of error messages to calling function
     End Sub
+
 
     ''' <summary>remove all names from Range Target except the passed name (theName) and store them into list storedNames</summary>
     ''' <param name="Target"></param>

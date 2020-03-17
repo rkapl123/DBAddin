@@ -165,6 +165,10 @@ Public Module Globals
                     Dim pivottbl As Excel.PivotTable
 
                     For Each ws In ExcelDnaUtil.Application.ActiveWorkbook.Worksheets
+                        If ws.ProtectContents And (ws.QueryTables.Count > 0 Or ws.PivotTables.Count > 0) Then
+                            ErrorMsg("Worksheet " & ws.Name & " is content protected, can't refresh QueryTables/PivotTables !")
+                            Continue For
+                        End If
                         For Each qrytbl In ws.QueryTables
                             qrytbl.Refresh()
                         Next
@@ -175,25 +179,37 @@ Public Module Globals
                 Catch ex As Exception
                 End Try
             Else ' then inside a db function area (target or source = function cell)
-                ' we're being called on a target functions area (additionally given in DBListFetch)
                 If Left$(underlyingName, 10) = "DBFtargetF" Then
                     underlyingName = Replace(underlyingName, "DBFtargetF", "DBFsource", 1, , vbTextCompare)
+                    If ExcelDnaUtil.Application.Range(underlyingName).Parent.ProtectContents Then
+                        ErrorMsg("Worksheet " & ExcelDnaUtil.Application.Range(underlyingName).Parent.Name & " is content protected, can't refresh DB Function !")
+                        Exit Sub
+                    End If
                     ExcelDnaUtil.Application.Range(underlyingName).Formula += " "
                     ' we're being called on a target area
                 ElseIf Left$(underlyingName, 9) = "DBFtarget" Then
                     underlyingName = Replace(underlyingName, "DBFtarget", "DBFsource", 1, , vbTextCompare)
+                    If ExcelDnaUtil.Application.Range(underlyingName).Parent.ProtectContents Then
+                        ErrorMsg("Worksheet " & ExcelDnaUtil.Application.Range(underlyingName).Parent.Name & " is content protected, can't refresh DB Function !")
+                        Exit Sub
+                    End If
                     ExcelDnaUtil.Application.Range(underlyingName).Formula += " "
                     ' we're being called on a source (invoking function) cell
                 ElseIf Left$(underlyingName, 9) = "DBFsource" Then
+                    If ExcelDnaUtil.Application.Range(underlyingName).Parent.ProtectContents Then
+                        ErrorMsg("Worksheet " & ExcelDnaUtil.Application.Range(underlyingName).Parent.Name & " is content protected, can't refresh DB Function !")
+                        Exit Sub
+                    End If
                     ExcelDnaUtil.Application.Range(underlyingName).Formula += " "
                 Else
-                    LogError("Error in refreshData, underlyingName does not begin with DBFtarget, DBFtargetF or DBFsource: " & underlyingName)
+                    ErrorMsg("Error in refreshData, underlyingName does not begin with DBFtarget, DBFtargetF or DBFsource: " & underlyingName)
                 End If
             End If
         Catch ex As Exception
             LogError("Error (" & ex.Message & ") in refreshData !")
         End Try
     End Sub
+
 
     ''' <summary>jumps between DB Function and target area</summary>
     <ExcelCommand(Name:="jumpButton", ShortCut:="^J")>
@@ -478,6 +494,10 @@ Public Module Globals
             End If
             ' walk through all worksheets and all cells there to find DB Functions and change their formula, adding " " to trigger recalculation
             For Each ws In Wb.Worksheets
+                If ws.ProtectContents Then
+                    ErrorMsg("Worksheet " & ws.Name & " is content protected, can't refresh DB Functions !")
+                    Continue For
+                End If
                 Dim theFunc As String
                 For Each theFunc In {"DBListFetch(", "DBRowFetch(", "DBSetQuery("}
                     searchCells = ws.Cells.Find(What:=theFunc, After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)

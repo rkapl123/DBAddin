@@ -167,6 +167,10 @@ Public MustInherit Class DBModif
             MsgBox("Didn't find caller cell of DBRefresh using srcExtent " & srcExtent & "!", MsgBoxStyle.Critical, "Refresh of DB Functions")
             Exit Function
         End Try
+        If caller.Parent.ProtectContents Then
+            ErrorMsg("Worksheet " & caller.Parent.Name & " is content protected, can't refresh DB Function !")
+            Exit Function
+        End If
         Dim targetExtent = Replace(srcExtent, "DBFsource", "DBFtarget")
         Dim target As Excel.Range
         Try : target = ExcelDnaUtil.Application.Range(targetExtent)
@@ -174,11 +178,19 @@ Public MustInherit Class DBModif
             MsgBox("Didn't find target of DBRefresh using targetExtent " & targetExtent & "!", MsgBoxStyle.Critical, "Refresh of DB Functions")
             Exit Function
         End Try
+        If target.Parent.ProtectContents Then
+            ErrorMsg("Worksheet " & target.Parent.Name & " is content protected, can't refresh DB Function !")
+            Exit Function
+        End If
         Dim DBMapperUnderlying As String = getDBModifNameFromRange(target)
         Dim targetExtentF = Replace(srcExtent, "DBFsource", "DBFtargetF")
         Dim formulaRange As Excel.Range = Nothing
         ' formulaRange might not exist
         Try : formulaRange = ExcelDnaUtil.Application.Range(targetExtentF) : Catch ex As Exception : End Try
+        If Not IsNothing(formulaRange) AndAlso formulaRange.Parent.ProtectContents Then
+            ErrorMsg("Worksheet " & formulaRange.Parent.Name & " is content protected, can't refresh DB Function !")
+            Exit Function
+        End If
         Dim DBMapperUnderlyingF As String = getDBModifNameFromRange(formulaRange)
         ' allow for avoidance of overwriting users changes with CUDFlags after an data error occurred
         If hadError Then
@@ -289,9 +301,14 @@ Public MustInherit Class DBModif
         If UBound(rangePart) = 1 Then
             Query = ExcelDnaUtil.Application.Evaluate(funcArg)
         Else
-            Query = ExcelDnaUtil.Application.Evaluate(caller.Parent.Name & "!" & funcArg)
+            ' avoid appending worksheet name if argument is a string (only references get appended)
+            If Left(funcArg, 1) = """" Then
+                Query = ExcelDnaUtil.Application.Evaluate(funcArg)
+            Else
+                Query = ExcelDnaUtil.Application.Evaluate(caller.Parent.Name & "!" & funcArg)
+            End If
         End If
-        If TypeName(Query) = "Range" Then Query = Query.Value.ToString
+            If TypeName(Query) = "Range" Then Query = Query.Value.ToString
         getQuery = Query
     End Function
 
@@ -307,7 +324,12 @@ Public MustInherit Class DBModif
             If UBound(rangePart) = 1 Then
                 ConnString = ExcelDnaUtil.Application.Evaluate(funcArg)
             Else
-                ConnString = ExcelDnaUtil.Application.Evaluate(caller.Parent.Name & "!" & funcArg)
+                ' avoid appending worksheet name if argument is a string (only references get appended)
+                If Left(funcArg, 1) = """" Then
+                    ConnString = ExcelDnaUtil.Application.Evaluate(funcArg)
+                Else
+                    ConnString = ExcelDnaUtil.Application.Evaluate(caller.Parent.Name & "!" & funcArg)
+                End If
             End If
         End If
         If Integer.TryParse(ConnString, testInt) Then
@@ -460,6 +482,10 @@ Public Class DBMapper : Inherits DBModif
             Dim retval As MsgBoxResult = MsgBox("DB Mapper Range with CUD Flags is only one cell, really set CUD Flags ?", MsgBoxStyle.Question + vbOKCancel, "Set CUD Flags for DB Mapper")
             If retval = vbCancel Then Exit Sub
         End If
+        If changedRange.Parent.ProtectContents Then
+            ErrorMsg("Worksheet " & changedRange.Parent.Name & " is content protected, can't set CUD Flags !")
+            Exit Sub
+        End If
         ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = False ' to prevent automatic creation of new column
         ' DBMapper ranges relative to start of TargetRange and respecting a header row, so CUDMarkRow = changedRange.Row - TargetRange.Row + 1 ...
         If deleteFlag Then
@@ -475,8 +501,10 @@ Public Class DBMapper : Inherits DBModif
                 If IsNothing(TargetRange.Cells(CUDMarkRow, TargetRange.Columns.Count + 1).Value) Then
                     Dim RowContainsData As Boolean = False
                     For Each containedCell As Excel.Range In TargetRange.Rows(CUDMarkRow).Cells
+                        ' check without newly inserted/updated cells (copy paste) 
+                        Dim possibleIntersection As Excel.Range = ExcelDnaUtil.Application.Intersect(containedCell, changedRange)
                         ' check if whole row is empty (except for the changedRange), formulas do not count as filled (automatically filled for lookups or other things)..
-                        If (Not IsNothing(containedCell.Value) And containedCell.Formula = "") AndAlso containedCell.Address <> changedRange.Address Then
+                        If Not IsNothing(containedCell.Value) AndAlso IsNothing(possibleIntersection) AndAlso Left(containedCell.Formula, 1) <> "=" Then
                             RowContainsData = True
                             Exit For
                         End If
@@ -526,6 +554,10 @@ Public Class DBMapper : Inherits DBModif
     Public Sub resetCUDFlags()
         ' in case CUDFlags was set to a single cell DBMapper avoid resetting CUDFlags
         If CUDFlags And TargetRange.Columns.Count > 1 And TargetRange.Rows.Count > 1 Then
+            If TargetRange.Parent.ProtectContents Then
+                ErrorMsg("Worksheet " & TargetRange.Parent.Name & " is content protected, can't reset CUD Flags !")
+                Exit Sub
+            End If
             ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = False ' to prevent automatic creation of new column
             TargetRange.Columns(TargetRange.Columns.Count + 1).ClearContents
             TargetRange.Font.Italic = False
@@ -611,14 +643,29 @@ Public Class DBMapper : Inherits DBModif
                     End If
                     If IsNothing(primKeyValue) Then primKeyValue = ""
                     Dim primKey = TargetRange.Cells(1, i).Value
-                    'TODO: get lookedup value for primary instead of <>LU field...
-                    If primKeysCount = 1 And CUDFlags And primKeyValue.ToString().Length = 0 And checkrst.Fields(primKey).Properties("IsAutoIncrement").Value Then
+                    ' if primKey is in ignoreColumns then the only reasonable reason is a lookup primary key in DBSHeets (CUDFlags only), so try with "real" (resolved key) instead...
+                    If InStr(1, LCase(ignoreColumns) + ",", LCase(primKey) + ",") > 0 Then
+                        If CUDFlags Then
+                            primKey = Left(primKey, Len(primKey) - 2) ' correct the LU to real primary Key
+                            primKeyValue = TargetRange.ListObject.ListColumns(primKey).Range(rowNum, 1).Value ' get the value from there
+                        Else
+                            If Not notifyUserOfDataError("Primary key '" & primKey & "' contained in ignoreColumns !", rowNum, i) Then GoTo cleanup
+                            GoTo nextRow
+                        End If
+                    End If
+                    Dim checkAutoIncrement As Boolean
+                    Try : checkAutoIncrement = checkrst.Fields(primKey).Properties("IsAutoIncrement").Value
+                    Catch ex As Exception
+                        If Not notifyUserOfDataError("Primary key '" + primKey + "' not found in table '" + tableName + "' or IsAutoIncrement Property not provided:" + ex.Message, rowNum, i) Then GoTo cleanup
+                        GoTo nextRow
+                    End Try
+                    If primKeysCount = 1 And CUDFlags And primKeyValue.ToString().Length = 0 And checkAutoIncrement Then
                         AutoIncrement = True
                         Exit For
                     End If
                     ' with CUDFlags there can be empty primary keys (auto identity columns), leave error checking to database in this case ...
                     If (Not CUDFlags Or (CUDFlags And rowCUDFlag = "u")) And primKeyValue.ToString().Length = 0 Then
-                        notifyUserOfDataError("Empty primary key value, cell (" & rowNum.ToString & "," & i.ToString & ") in sheet " & TargetRange.Parent.Name & " and row " & rowNum.ToString, rowNum, i)
+                        If Not notifyUserOfDataError("Empty primary key value, cell (" & rowNum.ToString & "," & i.ToString & ") in sheet " & TargetRange.Parent.Name & " and row " & rowNum.ToString, rowNum, i) Then GoTo cleanup
                         GoTo nextRow
                     End If
                     ' now format the primary key value and construct the WHERE clause
@@ -674,11 +721,17 @@ Public Class DBMapper : Inherits DBModif
                         ExcelDnaUtil.Application.StatusBar = Left("Inserting " & primKeyDisplay & " into " & tableName, 255)
                         rst.AddNew()
                         For i = 1 To primKeysCount
+                            Dim primKeyValue As Object = TargetRange.Cells(rowNum, i).Value
+                            If IsNothing(primKeyValue) Then primKeyValue = ""
+                            Dim primKey = TargetRange.Cells(1, i).Value
+                            ' if primKey is in ignoreColumns then the only reasonable reason is a lookup primary key in DBSHeets (CUDFlags only), so try with "real" (resolved key) instead...
+                            If InStr(1, LCase(ignoreColumns) + ",", LCase(primKey) + ",") > 0 AndAlso CUDFlags Then
+                                primKey = Left(primKey, Len(primKey) - 2) ' correct the LU to real primary Key
+                                primKeyValue = TargetRange.ListObject.ListColumns(primKey).Range(rowNum, 1).Value ' get the value from there
+                            End If
                             Try
                                 ' skip empty primary field values for autoincrementing identity fields ..
-                                If Not (IsNothing(TargetRange.Cells(rowNum, i).Value) OrElse TargetRange.Cells(rowNum, i).Value.ToString().Length = 0) Then
-                                    rst.Fields(TargetRange.Cells(1, i).Value).Value = TargetRange.Cells(rowNum, i).Value
-                                End If
+                                If CStr(primKeyValue) <> "" Then rst.Fields(primKey).Value = primKeyValue
                             Catch ex As Exception
                                 If Not notifyUserOfDataError("Error inserting primary key value into table " & tableName & ": " & dbcnn.Errors(0).Description, rowNum, i) Then GoTo cleanup
                             End Try
