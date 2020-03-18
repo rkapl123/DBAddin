@@ -28,7 +28,7 @@ Public Module ConfigFiles
             End If
         Next
 
-        retval = MsgBox("Inserting contents configured in " & theFileName, vbInformation + vbOKCancel, "DBAddin: Inserting Configuration...")
+        retval = QuestionMsg("Inserting contents configured in " & theFileName, MsgBoxStyle.OkCancel, "DBAddin: Inserting Configuration...", MsgBoxStyle.Information)
         If retval = vbCancel Then Exit Sub
         If ExcelDnaUtil.Application.ActiveWorkbook Is Nothing Then ExcelDnaUtil.Application.Workbooks.Add
 
@@ -164,7 +164,7 @@ Public Module ConfigFiles
                         TargetCell.Value = cellToBeStoredContent
                     End If
                 Catch ex As Exception
-                    MsgBox("Error in setting Cell: " & ex.Message)
+                    ErrorMsg("Error in setting Cell: " & ex.Message, "Create functions in cells")
                 End Try
             End If
         Next

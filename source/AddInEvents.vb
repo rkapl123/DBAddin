@@ -37,7 +37,7 @@ Public Class AddInEvents
         Application = ExcelDnaUtil.Application
         Try
             If ExcelDnaUtil.Application.AddIns("DBAddin.Functions").Installed Then
-                MsgBox("Attention: legacy DBAddin (DBAddin.Functions) still active, this might lead to unexpected results!")
+                ErrorMsg("Attention: legacy DBAddin (DBAddin.Functions) still active, this might lead to unexpected results!")
             End If
         Catch ex As Exception : End Try
         Trace.Listeners.Add(New ExcelDna.Logging.LogDisplayTraceListener())
@@ -80,7 +80,7 @@ Public Class AddInEvents
             For Each DBmodifType As String In Globals.DBModifDefColl.Keys
                 For Each dbmapdefkey As String In Globals.DBModifDefColl(DBmodifType).Keys
                     If Globals.DBModifDefColl(DBmodifType).Item(dbmapdefkey).DBModifSaveNeeded() Then
-                        Dim answer As MsgBoxResult = MsgBox("do the DB Modifications defined in Workbook ?", vbYesNo, "DB Modifications on Save")
+                        Dim answer As MsgBoxResult = QuestionMsg("do the DB Modifications defined in Workbook ?", MsgBoxStyle.YesNo, "DB Modifications on Save")
                         If answer = vbYes Then doDBMOnSave = True
                         GoTo done
                     End If
@@ -242,7 +242,7 @@ done:
             Try
                 targetRange = ExcelDnaUtil.Application.ActiveWorkbook.Names.Item(cbName).RefersToRange
             Catch ex As Exception
-                MsgBox("No underlying " & Left(cbName, 8) & " Range named " & cbName & " found, exiting without DBModification.")
+                ErrorMsg("No underlying " & Left(cbName, 8) & " Range named " & cbName & " found, exiting without DBModification.")
                 LogWarn("targetRange assignment failed: " & ex.Message)
                 Exit Sub
             End Try
@@ -276,7 +276,7 @@ done:
                 ElseIf IsNothing(cb5) Then
                     cb5 = Sh.OLEObjects(shp.Name).Object
                 Else
-                    MsgBox("only max. of five DBModifier Buttons allowed on a Worksheet, currently using " & cb1.Name & "," & cb2.Name & "," & cb3.Name & "," & cb4.Name & " and " & cb5.Name & " !")
+                    ErrorMsg("only max. of five DBModifier Buttons allowed on a Worksheet, currently using " & cb1.Name & "," & cb2.Name & "," & cb3.Name & "," & cb4.Name & " and " & cb5.Name & " !")
                     assignHandler = False
                     Exit For
                 End If

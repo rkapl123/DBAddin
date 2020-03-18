@@ -21,14 +21,14 @@ Public Class EditDBModifDef
                 Try
                     doc.LoadXml(Me.EditBox.Text)
                 Catch ex As Exception
-                    MsgBox("Problems with parsing changed definition: " & ex.Message, MsgBoxStyle.Critical)
+                    ErrorMsg("Problems with parsing changed definition: " & ex.Message, "Edit DB Modifier Definitions XML")
                     Exit Sub
                 End Try
                 doc.WriteTo(xml_writer)
                 xml_writer.Flush()
                 ' store the result in CustomXmlParts
                 CustomXmlParts(1).Delete
-                CustomXmlParts.Add(sw.ToString())
+                CustomXmlParts.Add(sw.ToString)
             End Using
         End Using
         ' add/change the tickboxes doDBMOnSave and DBFskip
@@ -37,7 +37,7 @@ Public Class EditDBModifDef
                 Try : ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties("DBFskip").Delete : Catch ex As Exception : End Try
                 ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties.Add(Name:="DBFskip", LinkToContent:=False, Type:=MsoDocProperties.msoPropertyTypeBoolean, Value:=Me.DBFskip.Checked)
             Catch ex As Exception
-                MsgBox("Error when adding DBFskip to Workbook:" + ex.Message, MsgBoxStyle.Critical)
+                ErrorMsg("Error when adding DBFskip to Workbook:" + ex.Message, "Edit DB Modifier Definitions XML")
             End Try
         End If
         If Not Me.doDBMOnSave.CheckState = CheckState.Indeterminate Then
@@ -45,7 +45,7 @@ Public Class EditDBModifDef
                 Try : ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties("doDBMOnSave").Delete : Catch ex As Exception : End Try
                 ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties.Add(Name:="doDBMOnSave", LinkToContent:=False, Type:=MsoDocProperties.msoPropertyTypeBoolean, Value:=Me.doDBMOnSave.Checked)
             Catch ex As Exception
-                MsgBox("Error when adding doDBMOnSave to Workbook:" + ex.Message, MsgBoxStyle.Critical)
+                ErrorMsg("Error when adding doDBMOnSave to Workbook:" + ex.Message, "Edit DB Modifier Definitions XML")
             End Try
         End If
         Me.DialogResult = DialogResult.OK
@@ -66,7 +66,7 @@ Public Class EditDBModifDef
     Private Sub EditDBModifDef_Shown(sender As Object, e As EventArgs) Handles Me.Shown
         CustomXmlParts = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
         If CustomXmlParts.Count = 0 Then
-            MsgBox("No DB Modifier Definition (CustomXMLPart) contained in Workbook " & ExcelDnaUtil.Application.ActiveWorkbook.Name)
+            ErrorMsg("No DB Modifier Definition (CustomXMLPart) contained in Workbook " & ExcelDnaUtil.Application.ActiveWorkbook.Name, "Edit DB Modifier Definitions XML")
             Me.DialogResult = DialogResult.Cancel
             Me.Close()
         Else
@@ -80,7 +80,7 @@ Public Class EditDBModifDef
                     doc.WriteTo(xml_writer)
                     xml_writer.Flush()
                     ' Display the result.
-                    Me.EditBox.Text = sw.ToString()
+                    Me.EditBox.Text = sw.ToString
                 End Using
             End Using
         End If
@@ -100,7 +100,7 @@ Public Class EditDBModifDef
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub EditBox_SelectionChanged(sender As Object, e As EventArgs) Handles EditBox.SelectionChanged
-        Me.PosIndex.Text = "Line: " & (Me.EditBox.GetLineFromCharIndex(Me.EditBox.SelectionStart) + 1).ToString() & ", Column: " & (Me.EditBox.SelectionStart - Me.EditBox.GetFirstCharIndexOfCurrentLine + 1).ToString()
+        Me.PosIndex.Text = "Line: " & (Me.EditBox.GetLineFromCharIndex(Me.EditBox.SelectionStart) + 1).ToString & ", Column: " & (Me.EditBox.SelectionStart - Me.EditBox.GetFirstCharIndexOfCurrentLine + 1).ToString
     End Sub
 
 End Class

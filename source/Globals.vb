@@ -22,6 +22,10 @@ Public Module Globals
     Public EventLevelSelected As String
     ''' <summary>the log listener</summary>
     Public theLogListener As TraceListener
+    ''' <summary>for DBMapper invocations by execDBModif, this is set to true, avoiding MsgBox</summary>
+    Public nonInteractive As Boolean = False
+    ''' <summary>collect non interactive error messages here</summary>
+    Public nonInteractiveErrMsgs As String
 
     ' Global settings
     Public DebugAddin As Boolean
@@ -85,11 +89,16 @@ Public Module Globals
     ''' <param name="eEventType">event type: info, warning, error</param>
     ''' <param name="caller">reflection based caller information: module.method</param>
     Private Sub WriteToLog(Message As String, eEventType As EventLogEntryType, caller As String)
-        Select Case eEventType
-            Case EventLogEntryType.Information : Trace.TraceInformation("{0}: {1}", caller, Message)
-            Case EventLogEntryType.Warning : Trace.TraceWarning("{0}: {1}", caller, Message)
-            Case EventLogEntryType.Error : Trace.TraceError("{0}: {1}", caller, Message)
-        End Select
+        ' only collect errors and warnings in non interactive mode
+        If nonInteractive AndAlso (eEventType = EventLogEntryType.Error Or eEventType = EventLogEntryType.Warning) Then
+            nonInteractiveErrMsgs += caller + ":" + Message
+        Else
+            Select Case eEventType
+                Case EventLogEntryType.Information : Trace.TraceInformation("{0}: {1}", caller, Message)
+                Case EventLogEntryType.Warning : Trace.TraceWarning("{0}: {1}", caller, Message)
+                Case EventLogEntryType.Error : Trace.TraceError("{0}: {1}", caller, Message)
+            End Select
+        End If
     End Sub
 
     ''' <summary>Logs error messages</summary>
@@ -118,20 +127,25 @@ Public Module Globals
         End If
     End Sub
 
-    ''' <summary>show Error message to User</summary> 
+    ''' <summary>show Error message to User and log as warning (errors would pop up the trace information window)</summary> 
     ''' <param name="LogMessage">the message to be shown/logged</param>
-    ''' <param name="exitMe">can be set to True to let the user avoid repeated error messages, returns true if cancel was clicked</param>
-    Public Sub ErrorMsg(LogMessage As String, Optional ByRef exitMe As Boolean = False, Optional exitMsg As String = "(press Cancel to avoid further error messages of this kind)")
+    ''' <param name="errTitle">optionally pass a title for the msgbox here</param>
+    Public Sub ErrorMsg(LogMessage As String, Optional errTitle As String = "DBAddin Error", Optional msgboxIcon As MsgBoxStyle = MsgBoxStyle.Critical)
         Dim theMethod As Object = (New System.Diagnostics.StackTrace).GetFrame(1).GetMethod
         Dim caller As String = theMethod.ReflectedType.FullName & "." & theMethod.Name
         WriteToLog(LogMessage, EventLogEntryType.Warning, caller) ' to avoid popup of trace log
-        Dim retval As Integer = MsgBox(LogMessage & IIf(exitMe, vbCrLf & exitMsg, ""), vbExclamation + IIf(exitMe, vbOKCancel, vbOKOnly), "DBAddin Error")
-        If retval = vbCancel Then
-            exitMe = True
-        Else
-            exitMe = False
-        End If
+        If Not nonInteractive Then MsgBox(LogMessage, msgboxIcon + MsgBoxStyle.OkOnly, errTitle)
     End Sub
+
+    Public Function QuestionMsg(theMessage As String, Optional questionType As MsgBoxStyle = MsgBoxStyle.OkCancel, Optional questionTitle As String = "DBAddin Question", Optional msgboxIcon As MsgBoxStyle = MsgBoxStyle.Question) As MsgBoxResult
+        If nonInteractive Then
+            If questionType = MsgBoxStyle.OkCancel Then Return MsgBoxResult.Cancel
+            If questionType = MsgBoxStyle.YesNo Then Return MsgBoxResult.No
+            If questionType = MsgBoxStyle.YesNoCancel Then Return MsgBoxResult.No
+            If questionType = MsgBoxStyle.RetryCancel Then Return MsgBoxResult.Cancel
+        End If
+        Return MsgBox(theMessage, msgboxIcon + questionType, questionTitle)
+    End Function
 
     ''' <summary>refresh DB Functions (and - if called from outside any db function area - all other external data ranges)</summary>
     <ExcelCommand(Name:="refreshData", ShortCut:="^R")>
@@ -470,7 +484,7 @@ Public Module Globals
 
         ' hidden workbooks produce an error when searching for cells, this is captured by 
         If TypeName(ExcelDnaUtil.Application.Calculation) = "Error" Then
-            MsgBox("ExcelDnaUtil.Application.Calculation = Error, " & Wb.Path & "\" & Wb.Name & " (hidden workbooks produce calculation errors...)")
+            ErrorMsg("ExcelDnaUtil.Application.Calculation = Error, " & Wb.Path & "\" & Wb.Name & " (hidden workbooks produce calculation errors...)")
             Exit Sub
         End If
         DBModifs.preventChangeWhileFetching = True
@@ -480,7 +494,7 @@ Public Module Globals
                 cellcount += ExcelDnaUtil.Application.WorksheetFunction.CountIf(ws.Range("1:" & ws.Rows.Count), "<>")
             Next
             If cellcount > CLng(fetchSetting("maxCellCount", "300000")) Then
-                Dim retval As MsgBoxResult = MsgBox("This large workbook (" & cellcount.ToString() & " filled cells >" & CLng(fetchSetting("maxCellCount", "300000")) & ") might take long to search for DB functions to refresh, continue ?" & vbCrLf & "Click Cancel to add DBFskip to this Workbook, avoiding this search in the future...", vbQuestion + vbYesNoCancel, "Refresh DB functions")
+                Dim retval As MsgBoxResult = QuestionMsg("This large workbook (" & cellcount.ToString() & " filled cells >" & CLng(fetchSetting("maxCellCount", "300000")) & ") might take long to search for DB functions to refresh, continue ?" & vbCrLf & "Click Cancel to add DBFskip to this Workbook, avoiding this search in the future...", vbYesNoCancel, "Refresh DB functions")
                 If retval <> vbYes Then
                     If retval = vbCancel Then
                         Try
@@ -564,8 +578,8 @@ Public Module Globals
     End Sub
 
     ''' <summary>"repairs" legacy functions from old VB6-COM Addin by removing "DBAddin.Functions." before function name</summary>
-    ''' <param name="showReponse">in case this is called interactively, provide a response in case of no legacy functions there</param>
-    Public Sub repairLegacyFunctions(Optional showReponse As Boolean = False)
+    ''' <param name="showResponse">in case this is called interactively, provide a response in case of no legacy functions there</param>
+    Public Sub repairLegacyFunctions(Optional showResponse As Boolean = False)
         Dim searchCell As Excel.Range
         Dim foundLegacyWS As Collection = New Collection
         Dim xlcalcmode As Long = ExcelDnaUtil.Application.Calculation
@@ -590,7 +604,7 @@ Public Module Globals
             Next
             ' warn if above threshold
             If cellcount > CLng(fetchSetting("maxCellCount", "300000")) Then
-                Dim retval As MsgBoxResult = MsgBox("This large workbook (" & cellcount.ToString() & " filled cells >" & CLng(fetchSetting("maxCellCount", "300000")) & ") might take long to search for legacy functions, continue ?" & vbCrLf & "Cancel to disable legacy function checking for this workbook ...", vbQuestion + MsgBoxStyle.YesNoCancel, "Legacy DBAddin functions")
+                Dim retval As MsgBoxResult = QuestionMsg("This large workbook (" & cellcount.ToString() & " filled cells >" & CLng(fetchSetting("maxCellCount", "300000")) & ") might take long to search for legacy functions, continue ?" & vbCrLf & "Cancel to disable legacy function checking for this workbook ...", MsgBoxStyle.YesNoCancel, "Legacy DBAddin functions")
                 If retval <> vbYes Then
                     If retval = vbCancel Then
                         Try
@@ -609,7 +623,7 @@ Public Module Globals
                 If Not (searchCell Is Nothing) Then foundLegacyWS.Add(ws)
             Next
             If foundLegacyWS.Count > 0 Then
-                Dim retval As MsgBoxResult = MsgBox("Found legacy DBAddin functions in active workbook, should they be replaced with current addin functions (save workbook afterwards to persist) ?", vbQuestion + vbYesNo, "Legacy DBAddin functions")
+                Dim retval As MsgBoxResult = QuestionMsg("Found legacy DBAddin functions in active workbook, should they be replaced with current addin functions (save workbook afterwards to persist) ?", MsgBoxStyle.YesNo, "Legacy DBAddin functions")
                 If retval = vbYes Then
                     ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual ' avoid recalculations during replace action
                     ExcelDnaUtil.Application.DisplayAlerts = False ' avoid warnings for sheet where "DBAddin.Functions." is not found
@@ -619,13 +633,13 @@ Public Module Globals
                         ws.Cells.Replace(What:="DBAddin.Functions.", Replacement:="", LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, MatchCase:=False, SearchFormat:=False, ReplaceFormat:=False)
                     Next
                 End If
-            ElseIf showReponse Then
-                MsgBox("No legacy DBAddin functions found in active workbook.", vbExclamation + vbOKOnly, "Legacy DBAddin functions")
+            ElseIf showResponse Then
+                ErrorMsg("No legacy DBAddin functions found in active workbook.", "Legacy DBAddin functions", MsgBoxStyle.Exclamation)
             End If
             ' reset the cell find dialog....
             ExcelDnaUtil.Application.ActiveSheet.Cells.Find(What:="", After:=ExcelDnaUtil.Application.ActiveSheet.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
         Catch ex As Exception
-            LogError("Error occured in replacing legacy DB functions: " & ex.Message)
+            ErrorMsg("Exception occured: " & ex.Message, "Legacy DBAddin functions")
         End Try
         ExcelDnaUtil.Application.DisplayAlerts = True
         ' only set this back if it was changed to manual as otherwise it would change the (else unchanged) workbook, forcing a confirmation for saving...
@@ -637,7 +651,7 @@ Public Module Globals
     ''' <summary>maintenance procedure to purge names used for dbfunctions from workbook</summary>
     Public Sub purgeNames()
         Dim resultingPurges As String = String.Empty
-        Dim retval As MsgBoxResult = MsgBox("Should ExternalData names (from Queries) and names referring to missing references (thus containing #REF!) also be purged?", vbYesNoCancel + vbQuestion, "purge Names")
+        Dim retval As MsgBoxResult = QuestionMsg("Should ExternalData names (from Queries) and names referring to missing references (thus containing #REF!) also be purged?", MsgBoxStyle.YesNoCancel, "purge Names")
         If retval = vbCancel Then Exit Sub
         Dim calcMode = ExcelDnaUtil.Application.Calculation
         ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual
@@ -659,13 +673,12 @@ Public Module Globals
                 End If
             Next
             If resultingPurges = String.Empty Then
-                MsgBox("nothing purged...", vbOKOnly, "purge Names")
+                ErrorMsg("nothing purged...", "purge Names", MsgBoxStyle.Exclamation)
             Else
-                MsgBox("removed " + resultingPurges, vbOKOnly, "purge Names")
-                LogInfo("purgeNames removed " + resultingPurges)
+                ErrorMsg("removed " + resultingPurges, "purge Names", MsgBoxStyle.Exclamation)
             End If
         Catch ex As Exception
-            LogError("Error: " & ex.Message)
+            ErrorMsg("Exception: " & ex.Message, "purge Names")
         End Try
         ExcelDnaUtil.Application.Calculation = calcMode
     End Sub

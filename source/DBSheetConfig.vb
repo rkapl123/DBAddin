@@ -26,8 +26,6 @@ Public Module DBSheetConfig
     Dim addedCells As Integer
 
     Public Sub createDBSheet()
-        'MsgBox("not yet implemented..")
-        'Exit Sub
         Dim openFileDialog1 = New OpenFileDialog With {
             .InitialDirectory = fetchSetting("DBSheetDefinitions", ""),
             .Filter = "XML files (*.xml)|*.xml",
@@ -45,7 +43,7 @@ Public Module DBSheetConfig
             ' get query
             Dim queryStr As String = getEntry("query", curConfig)
             If queryStr = "" Then
-                MsgBox("No query found in DBSheetConfig.", vbCritical, "DBSheet Creation Error")
+                ErrorMsg("No query found in DBSheetConfig.", "DBSheet Creation Error")
                 Exit Sub
             End If
             Dim whereClause As String = getEntry("whereClause", curConfig)
@@ -77,7 +75,7 @@ Public Module DBSheetConfig
                 Try
                     lookupWS.Name = Left("LS" & tableName, 31)
                 Catch ex As Exception
-                    MsgBox("Error setting lookup Worksheet Name to '" & Left("LS" & tableName, 31) & "':" + ex.Message, vbCritical, "DBSheet Creation Error")
+                    ErrorMsg("Error setting lookup Worksheet Name to '" & Left("LS" & tableName, 31) & "':" + ex.Message, "DBSheet Creation Error")
                     lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
                     Exit Sub
                 End Try
@@ -104,7 +102,7 @@ Public Module DBSheetConfig
                             End If
                         Next
                         If foundDelim = 0 Then
-                            MsgBox("Error in changing lookupName '" & lookupName & "' to '" & lookupName & "LU' in select statement of DBSheet query, it has to begin with blank and end with ','blank or CrLf !", vbCritical, "DBSheet Creation Error")
+                            ErrorMsg("Error in changing lookupName '" & lookupName & "' to '" & lookupName & "LU' in select statement of DBSheet query, it has to begin with blank and end with ','blank or CrLf !", "DBSheet Creation Error")
                             lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
                             Exit Sub
                         End If
@@ -142,7 +140,7 @@ Public Module DBSheetConfig
                     .Offset(1, 0).Value = queryStr
                     .Offset(1, 0).WrapText = False
                 Catch ex As Exception
-                    MsgBox("Error in adding query (" & queryStr & ")", vbCritical, "DBSheet Creation Error")
+                    ErrorMsg("Error in adding query (" & queryStr & ")", "DBSheet Creation Error")
                     lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
                     Exit Sub
                 End Try
@@ -152,7 +150,7 @@ Public Module DBSheetConfig
                         .Offset(2, 0).Value = changedWhereClause
                         .Offset(2, 0).WrapText = False
                     Catch ex As Exception
-                        MsgBox("Error in adding where clause (" & changedWhereClause & ")", vbCritical, "DBSheet Creation Error")
+                        ErrorMsg("Error in adding where clause (" & changedWhereClause & ")", "DBSheet Creation Error")
                         lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
                         Exit Sub
                     End Try
@@ -172,14 +170,14 @@ Public Module DBSheetConfig
         ' store lookup columns (<>LU) to be ignored in DBMapper
         Dim queryErrorPos As Integer = InStr(curCell.Value, "Error")
         If queryErrorPos > 0 Then
-            MsgBox("DBSheet Query had and error:" & vbCrLf & Mid(curCell.Value, queryErrorPos + Len("Error in query table refresh: ")), vbCritical, "DBSheet Creation Error")
+            ErrorMsg("DBSheet Query had and error:" & vbCrLf & Mid(curCell.Value, queryErrorPos + Len("Error in query table refresh: ")), "DBSheet Creation Error")
             If Not IsNothing(lookupWS) Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
             Exit Sub
         End If
         Try
             curCell.Parent.Name = Left(tableName, 31)
         Catch ex As Exception
-            MsgBox("DBSheet setting worksheet name error:" & ex.Message, vbCritical, "DBSheet Creation Error")
+            ErrorMsg("DBSheet setting worksheet name error:" & ex.Message, "DBSheet Creation Error")
             If Not IsNothing(lookupWS) Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
             Exit Sub
         End Try
@@ -189,7 +187,7 @@ Public Module DBSheetConfig
                 For Each LookupDef As String In lookupsList
                     Dim lookupName As String = Replace(getEntry("name", LookupDef, 1), "*", "")
                     If IsNothing(ExcelDnaUtil.Application.Range(lookupName & "Lookup").Cells(1, 1).Value) Then
-                        Dim answr As MsgBoxResult = MsgBox("lookup area '" & lookupName & "Lookup' probably contains no values (maybe an error), continue?", vbCritical + vbOKCancel, "DBSheet Creation Error")
+                        Dim answr As MsgBoxResult = QuestionMsg("lookup area '" & lookupName & "Lookup' probably contains no values (maybe an error), continue?", MsgBoxStyle.OkCancel, "DBSheet Creation Error")
                         If answr = vbCancel Then
                             lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
                             Exit Sub
@@ -209,7 +207,7 @@ Public Module DBSheetConfig
                             lookupColumn = createdListObject.ListColumns(lookupName)
                         End If
                     Catch ex As Exception
-                        MsgBox("lookup column '" & lookupName & "LU' not found in ListRange", vbCritical, "DBSheet Creation Error")
+                        ErrorMsg("lookup column '" & lookupName & "LU' not found in ListRange", "DBSheet Creation Error")
                         lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
                         Exit Sub
                     End Try
@@ -218,7 +216,7 @@ Public Module DBSheetConfig
                             Type:=Excel.XlDVType.xlValidateList, AlertStyle:=Excel.XlDVAlertStyle.xlValidAlertStop, Operator:=Excel.XlFormatConditionOperator.xlBetween,
                             Formula1:=localOffsetFormula)
                     Catch ex As Exception
-                        MsgBox("Error in adding validation formula " & localOffsetFormula & " to column '" & lookupName & "LU': " & ex.Message, vbCritical, "DBSheet Creation Error")
+                        ErrorMsg("Error in adding validation formula " & localOffsetFormula & " to column '" & lookupName & "LU': " & ex.Message, "DBSheet Creation Error")
                         lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
                         Exit Sub
                     End Try
@@ -232,7 +230,7 @@ Public Module DBSheetConfig
                             newCol.DataBodyRange.Formula = lookupFormula
                         Catch ex As Exception
                             lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
-                            MsgBox("Error in adding lookup formula " & lookupFormula & " to new column " & lookupName & ": " + ex.Message, vbCritical, "DBSheet Creation Error")
+                            ErrorMsg("Error in adding lookup formula " & lookupFormula & " to new column " & lookupName & ": " + ex.Message, "DBSheet Creation Error")
                             Exit Sub
                         End Try
                         ' hide the resolution column
@@ -245,7 +243,7 @@ Public Module DBSheetConfig
                 If ignoreColumns.Length > 0 Then ignoreColumns = Left(ignoreColumns, ignoreColumns.Length - 1)
             End If
         Catch ex As Exception
-            MsgBox("Error in DBSheet Creation: " + ex.Message, vbCritical, "DBSheet Creation Error")
+            ErrorMsg("Error in DBSheet Creation: " + ex.Message, "DBSheet Creation Error")
             If Not IsNothing(lookupWS) Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
             Exit Sub
         End Try
@@ -259,14 +257,14 @@ Public Module DBSheetConfig
             alreadyExists = True
         End Try
         If Not alreadyExists Then
-            MsgBox("Error adding DBModifier 'DBMapper" & tableName & "', Name already exists in Workbook!", vbCritical, "DBSheet Creation Error")
+            ErrorMsg("Error adding DBModifier 'DBMapper" & tableName & "', Name already exists in Workbook!", "DBSheet Creation Error")
             If Not IsNothing(lookupWS) Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
             Exit Sub
         End If
         Try
             NamesList.Add(Name:="DBMapper" & tableName, RefersTo:=curCell.Offset(0, 1))
         Catch ex As Exception
-            MsgBox("Error when assigning name 'DBMapper" & tableName & "' to DBMapper starting cell (one cell to the right of active cell): " & ex.Message, vbCritical, "DBSheet Creation Error")
+            ErrorMsg("Error when assigning name 'DBMapper" & tableName & "' to DBMapper starting cell (one cell to the right of active cell): " & ex.Message, "DBSheet Creation Error")
             If Not IsNothing(lookupWS) Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
             Exit Sub
         End Try
@@ -274,7 +272,12 @@ Public Module DBSheetConfig
         Dim databaseName As String = Replace(getEntry("connID", curConfig), fetchSetting("connIDPrefixDBtype", "MSSQL"), "")
         ' primary columns count (first <primCols> columns are primary columns)s
         Dim primCols = getEntry("primcols", curConfig)
-        ' create DBMapper for DBSheet
+        ' some visual aid:
+        curCell.EntireColumn.ColumnWidth = 0.4
+        curCell.Offset(2, 2 + primCols).Select()
+        ExcelDnaUtil.Application.ActiveWindow.FreezePanes = True
+
+        ' create DBMapper Configuration for DBSheet
         Dim CustomXmlParts As Object = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
         If CustomXmlParts.Count = 0 Then ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.Add("<root xmlns=""DBModifDef""></root>")
         CustomXmlParts = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")

@@ -107,17 +107,18 @@ Public Class MenuHandler
 
         ' Ctrl-Shift starts the CustomXML display
         If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown Then
-            Dim theEditDBModifDefDlg As EditDBModifDef = New EditDBModifDef()
-            If theEditDBModifDefDlg.ShowDialog() = System.Windows.Forms.DialogResult.OK Then DBModifs.getDBModifDefinitions()
-            Exit Sub
+            If Not IsNothing(ExcelDnaUtil.Application.ActiveWorkbook) Then
+                Dim theEditDBModifDefDlg As EditDBModifDef = New EditDBModifDef()
+                If theEditDBModifDefDlg.ShowDialog() = System.Windows.Forms.DialogResult.OK Then DBModifs.getDBModifDefinitions()
+                Exit Sub
+            End If
         End If
 
         Dim cbrs As Object = ExcelDnaUtil.Application.CommandBars
         If Not IsNothing(cbrs) AndAlso cbrs.GetEnabledMso("DesignMode") Then
             cbrs.ExecuteMso("DesignMode")
         Else
-            ' this should actually never be reached...
-            MsgBox("Couldn't toggle designmode, because Designmode commandbar button is not available !")
+            ErrorMsg("Couldn't toggle designmode, because Designmode commandbar button is not available (no button?)", "DBAddin toggle Designmode", MsgBoxStyle.Exclamation)
         End If
         ' update state of designmode in screentip
         theRibbon.InvalidateControl(control.Id)
@@ -129,10 +130,10 @@ Public Class MenuHandler
     Public Function getToggleDesignScreentip(control As IRibbonControl) As String
         Dim cbrs As Object = ExcelDnaUtil.Application.CommandBars
         If Not IsNothing(cbrs) AndAlso cbrs.GetEnabledMso("DesignMode") Then
-            Return "Designmode is currently " & IIf(cbrs.GetPressedMso("DesignMode"), "on !", "off !") & "; Ctrl-Shift-click to inspect/edit DBModifier definitions here"
+            Return "Designmode is currently " & IIf(cbrs.GetPressedMso("DesignMode"), "on !", "off !") & "; Ctrl-Shift-click to inspect/edit DBModifier definitions of the active workbook here"
         Else
             ' this should actually never be reached...
-            Return "Designmode commandbar button not available; Ctrl-Shift-click to inspect/edit DBModifier definitions here"
+            Return "Designmode commandbar button not available (no button?); Ctrl-Shift-click to inspect/edit DBModifier definitions of the active workbook here"
         End If
     End Function
 
@@ -166,7 +167,7 @@ Public Class MenuHandler
         Dim env As String = (index + 1).ToString()
 
         If GetSetting("DBAddin", "Settings", "DontChangeEnvironment", String.Empty) = "Y" Then
-            MsgBox("Setting DontChangeEnvironment is set to Y, therefore changing the Environment is prevented !")
+            ErrorMsg("Setting DontChangeEnvironment is set to Y, therefore changing the Environment is prevented !", "DBAddin Change Environment", MsgBoxStyle.Exclamation)
             Exit Sub
         End If
         storeSetting("ConstConnString", fetchSetting("ConstConnString" & env, String.Empty))
@@ -177,10 +178,10 @@ Public Class MenuHandler
         ' provide a chance to reconnect when switching environment...
         conn = Nothing
         If Not IsNothing(ExcelDnaUtil.Application.ActiveWorkbook) Then
-            Dim retval As MsgBoxResult = MsgBox("ConstConnString" & ConstConnString & vbCrLf & "ConfigStoreFolder:" & ConfigStoreFolder & vbCrLf & vbCrLf & "Refresh DBFunctions in active workbook to see effects?", vbYesNo, "Changed environment to: " & fetchSetting("ConfigName" & env, String.Empty))
+            Dim retval As MsgBoxResult = QuestionMsg("ConstConnString" & ConstConnString & vbCrLf & "ConfigStoreFolder:" & ConfigStoreFolder & vbCrLf & vbCrLf & "Refresh DBFunctions in active workbook to see effects?", MsgBoxStyle.YesNo, "Changed environment to: " & fetchSetting("ConfigName" & env, String.Empty))
             If retval = vbYes Then Globals.refreshDBFunctions(ExcelDnaUtil.Application.ActiveWorkbook)
         Else
-            MsgBox("ConstConnString" & ConstConnString & vbCrLf & "ConfigStoreFolder:" & ConfigStoreFolder, vbOKOnly, "Changed environment to: " & fetchSetting("ConfigName" & env, String.Empty))
+            ErrorMsg("ConstConnString" & ConstConnString & vbCrLf & "ConfigStoreFolder:" & ConfigStoreFolder, "Changed environment to: " & fetchSetting("ConfigName" & env, String.Empty), MsgBoxStyle.Information)
         End If
     End Sub
 
@@ -198,7 +199,7 @@ Public Class MenuHandler
     Public Sub refreshDBConfigTree(control As IRibbonControl)
         initSettings()
         createConfigTreeMenu()
-        MsgBox("refreshed DB Config Tree Menu", vbInformation + vbOKOnly, "DBAddin: refresh Config tree...")
+        ErrorMsg("refreshed DB Config Tree Menu", "DBAddin: refresh Config tree...", MsgBoxStyle.Information)
         theRibbon.Invalidate()
     End Sub
 
@@ -261,7 +262,7 @@ Public Class MenuHandler
     Public Sub DBModifClick(control As IRibbonControl)
         Dim nodeName As String = Right(control.Id, Len(control.Id) - 1)
         If Not ExcelDnaUtil.Application.CommandBars.GetEnabledMso("FileNewDefault") Then
-            MsgBox("Cannot execute DB Modifier while cell editing active !", MsgBoxStyle.Exclamation, "DB Modifier execution")
+            ErrorMsg("Cannot execute DB Modifier while cell editing active !", "DB Modifier execution", MsgBoxStyle.Exclamation)
             Exit Sub
         End If
         Try
@@ -272,7 +273,7 @@ Public Class MenuHandler
                 If Not (ExcelDnaUtil.Application.ActiveWorkbook.ReadOnlyRecommended And ExcelDnaUtil.Application.ActiveWorkbook.ReadOnly) Then
                     Globals.DBModifDefColl(control.Tag).Item(nodeName).doDBModif()
                 Else
-                    MsgBox("ReadOnlyRecommended is set on active workbook (being readonly), therefore all DB Modifiers are disabled !", MsgBoxStyle.Exclamation, "DB Modifier execution")
+                    ErrorMsg("ReadOnlyRecommended is set on active workbook (being readonly), therefore all DB Modifiers are disabled !", "DB Modifier execution", MsgBoxStyle.Exclamation)
                 End If
             End If
         Catch ex As Exception
@@ -311,7 +312,7 @@ Public Class MenuHandler
         Dim activeCellDBModifName As String = getDBModifNameFromRange(ExcelDnaUtil.Application.ActiveCell)
         Dim activeCellDBModifType As String = Left(activeCellDBModifName, 8)
         If (activeCellDBModifType = "DBMapper" Or activeCellDBModifType = "DBAction") And activeCellDBModifType <> control.Tag And control.Tag <> "DBSeqnce" Then
-            MsgBox("Active Cell already contains definition for a " & activeCellDBModifType & ", inserting " & IIf(control.Tag = "DBSetQueryPivot" Or control.Tag = "DBSetQueryListObject", "DBSetQuery", control.Tag) & " here will cause trouble !", vbCritical, "Inserting not allowed")
+            ErrorMsg("Active Cell already contains definition for a " & activeCellDBModifType & ", inserting " & IIf(control.Tag = "DBSetQueryPivot" Or control.Tag = "DBSetQueryListObject", "DBSetQuery", control.Tag) & " here will cause trouble !", "Inserting not allowed")
             Exit Sub
         End If
         If control.Tag = "DBListFetch" Then
