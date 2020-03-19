@@ -408,6 +408,9 @@ Public Class DBMapper : Inherits DBModif
         If DBModifParams.Length > 7 AndAlso DBModifParams(7) <> "" Then execOnSave = Convert.ToBoolean(DBModifParams(7))
     End Sub
 
+    ''' <summary>normal constructor with definition XML</summary>
+    ''' <param name="definitionXML"></param>
+    ''' <param name="paramTarget"></param>
     Public Sub New(definitionXML As CustomXMLNode, paramTarget As Excel.Range)
         Try
             dbmodifName = definitionXML.BaseName
@@ -434,6 +437,7 @@ Public Class DBMapper : Inherits DBModif
             insertIfMissing = Convert.ToBoolean(getParamFromXML(definitionXML, "insertIfMissing"))
             executeAdditionalProc = getParamFromXML(definitionXML, "executeAdditionalProc")
             ignoreColumns = getParamFromXML(definitionXML, "ignoreColumns")
+            IgnoreDataErrors = Convert.ToBoolean(If(getParamFromXML(definitionXML, "IgnoreDataErrors") = "", "False", getParamFromXML(definitionXML, "IgnoreDataErrors")))
             CUDFlags = Convert.ToBoolean(getParamFromXML(definitionXML, "CUDFlags"))
             confirmText = getParamFromXML(definitionXML, "confirmText")
 
@@ -649,11 +653,8 @@ Public Class DBMapper : Inherits DBModif
                 For i As Integer = 1 To primKeysCount
                     Dim primKeyValue = TargetRange.Cells(rowNum, i).Value
                     If IsXLCVErr(primKeyValue) Then
-                        If Not notifyUserOfDataError("Error in primary key value, cell (" & rowNum.ToString & "," & i.ToString & ") in sheet " & TargetRange.Parent.Name & " and row " & rowNum.ToString, rowNum, i) Then
-                            GoTo cleanup
-                        Else
-                            GoTo nextRow
-                        End If
+                        If Not notifyUserOfDataError("Error in primary key value: " & CVErrText(primKeyValue) & ", cell (" & rowNum.ToString & "," & i.ToString & ") in sheet " & TargetRange.Parent.Name & " and row " & rowNum.ToString, rowNum, i) Then GoTo cleanup
+                        GoTo nextRow
                     End If
                     If IsNothing(primKeyValue) Then primKeyValue = ""
                     Dim primKey = TargetRange.Cells(1, i).Value
@@ -713,8 +714,9 @@ Public Class DBMapper : Inherits DBModif
                     End If
                     primKeyCompound = primKeyCompound & primKey & " = " & primKeyFormatted & IIf(i = primKeysCount, "", " AND ")
                 Next
+                ' get the record for updating, however avoid opening recordset with empty primary key value if autoincrement is given...
                 Dim getStmt As String = "SELECT * FROM " & tableName & primKeyCompound
-                If Not AutoIncrement Then ' avoid opening recordset with empty primary key value if autoincrement is given...
+                If Not AutoIncrement Then
                     Try
                         rst.Open(getStmt, dbcnn, CursorTypeEnum.adOpenDynamic, LockTypeEnum.adLockOptimistic)
                         Dim check As Boolean = rst.EOF
@@ -728,7 +730,8 @@ Public Class DBMapper : Inherits DBModif
                     rst.Open(tableName, dbcnn, CursorTypeEnum.adOpenDynamic, LockTypeEnum.adLockOptimistic)
                 End If
 
-                ' If we have an autoincrementing primary key (empty primary key value !) or didn't find record on given primary key (rst.EOF), add a new record if insertIfMissing flag is set or CUD Flag insert is given
+                ' If we have an autoincrementing primary key (empty primary key value !) or didn't find a record with the given primary key (rst.EOF),
+                ' add a new record if insertIfMissing flag is set Or CUD Flag insert is given
                 If AutoIncrement OrElse rst.EOF Then
                     Dim i As Integer
                     If insertIfMissing Or rowCUDFlag = "i" Then
@@ -771,15 +774,16 @@ Public Class DBMapper : Inherits DBModif
                                         If IgnoreDataErrors Then
                                             rst.Fields(fieldname).Value = Nothing
                                         Else
-                                            If Not notifyUserOfDataError("Field Value Update Error with Table: " & tableName & ", Field: " & fieldname & ", in sheet " & TargetRange.Parent.Name & " and row " & rowNum.ToString & ", col: " & colNum.ToString, rowNum, colNum) Then GoTo cleanup
+                                            If Not notifyUserOfDataError("Field Value Update Error: " & CVErrText(fieldval) & " with Table: " & tableName & ", Field: " & fieldname & ", in sheet " & TargetRange.Parent.Name & " and row " & rowNum.ToString & ", col: " & colNum.ToString, rowNum, colNum) Then GoTo cleanup
                                         End If
                                     Else
                                         rst.Fields(fieldname).Value = IIf(fieldval.ToString().Length = 0, Nothing, fieldval)
                                     End If
                                 End If
                             Catch ex As Exception
+                                Dim exMessage As String = ex.Message
                                 rst.CancelUpdate()
-                                If Not notifyUserOfDataError("Field Value Update Error: " & ex.Message & " with Table: " & tableName & ", Field: " & fieldname & ", in sheet " & TargetRange.Parent.Name & " and row " & rowNum.ToString & ", col: " & colNum.ToString, rowNum, colNum) Then GoTo cleanup
+                                If Not notifyUserOfDataError("Field Value Update Error: " & exMessage & " with Table: " & tableName & ", Field: " & fieldname & ", in sheet " & TargetRange.Parent.Name & " and row " & rowNum.ToString & ", col: " & colNum.ToString, rowNum, colNum) Then GoTo cleanup
                             End Try
                         End If
                         colNum += 1
@@ -790,8 +794,9 @@ Public Class DBMapper : Inherits DBModif
                         rst.Update()
                         changesDone = True
                     Catch ex As Exception
+                        Dim exMessage As String = ex.Message
                         rst.CancelUpdate()
-                        If Not notifyUserOfDataError("Row Update Error, Table: " & rst.Source & ", Error: " & ex.Message & " in sheet " & TargetRange.Parent.Name & " and row " & rowNum.ToString, rowNum) Then GoTo cleanup
+                        If Not notifyUserOfDataError("Row Update Error, Table: " & rst.Source & ", Error: " & exMessage & " in sheet " & TargetRange.Parent.Name & " and row " & rowNum.ToString, rowNum) Then GoTo cleanup
                     End Try
                 End If
                 If (CUDFlags And rowCUDFlag = "d") Then
@@ -897,6 +902,9 @@ Public Class DBAction : Inherits DBModif
     ''' <summary>DBModif name of target range</summary>
     Private paramTargetName As String
 
+    ''' <summary>normal constructor with definition xml</summary>
+    ''' <param name="definitionXML"></param>
+    ''' <param name="paramTarget"></param>
     Public Sub New(definitionXML As CustomXMLNode, paramTarget As Excel.Range)
         Try
             dbmodifName = definitionXML.BaseName
@@ -1002,6 +1010,8 @@ Public Class DBSeqnce : Inherits DBModif
     ''' <summary>sequence of DB Mappers, DB Actions and DB Refreshes being executed in this sequence</summary>
     Private sequenceParams() As String = {}
 
+    ''' <summary>normal constructor with definition xml</summary>
+    ''' <param name="definitionXML"></param>
     Public Sub New(definitionXML As CustomXMLNode)
         Try
             dbmodifName = definitionXML.BaseName
@@ -1526,12 +1536,28 @@ Public Module DBModifs
         Return TypeOf (rangeval) Is Int32
     End Function
 
+    ''' <summary>to convert the error number to text</summary>
+    ''' <param name="whichError">integer error number</param>
+    ''' <returns>text of error</returns>
+    Public Function CVErrText(whichError As Integer) As String
+        Select Case whichError
+            Case -2146826281 : Return "#Div0!"
+            Case -2146826246 : Return "#N/A"
+            Case -2146826259 : Return "#Name"
+            Case -2146826288 : Return "#Null!"
+            Case -2146826252 : Return "#Num!"
+            Case -2146826265 : Return "#Ref!"
+            Case -2146826273 : Return "#Value!"
+            Case Else : Return "unknown error !!"
+        End Select
+    End Function
+
     ''' <summary>execute given DBModifier, used for VBA call by Application.Run)</summary>
     ''' <param name="DBModifName">Full name of DB Modifier, including type at beginning</param>
     ''' <returns>empty string on success, error message otherwise</returns>
     <ExcelCommand(Name:="executeDBModif")>
-    Public Function executeDBModif(DBModifName As String) As String
-        hadError = False : nonInteractiveErrMsgs = "" : nonInteractive = True
+    Public Function executeDBModif(DBModifName As String, Optional headLess As Boolean = False) As String
+        hadError = False : nonInteractiveErrMsgs = "" : nonInteractive = headLess
         Dim DBModiftype As String = Left(DBModifName, 8)
         If DBModiftype = "DBSeqnce" Or DBModiftype = "DBMapper" Or DBModiftype = "DBAction" Then
             If Not Globals.DBModifDefColl(DBModiftype).ContainsKey(DBModifName) Then
