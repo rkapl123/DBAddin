@@ -237,7 +237,7 @@ Public Class MenuHandler
             xmlString += "</menu>"
             Return xmlString
         Catch ex As Exception
-            LogWarn("Exception caught while building xml: " & ex.Message)
+            ErrorMsg("Exception caught while building xml: " & ex.Message)
             Return String.Empty
         End Try
     End Function
@@ -277,7 +277,7 @@ Public Class MenuHandler
                 End If
             End If
         Catch ex As Exception
-            LogError(ex.Message & ",control.Tag:" & control.Tag & ",nodeName:" & nodeName)
+            ErrorMsg("Exception: " & ex.Message & ",control.Tag:" & control.Tag & ",nodeName:" & nodeName, "DBModif Click")
         End Try
     End Sub
 

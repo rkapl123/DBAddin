@@ -89,9 +89,11 @@ Public Module Globals
     ''' <param name="eEventType">event type: info, warning, error</param>
     ''' <param name="caller">reflection based caller information: module.method</param>
     Private Sub WriteToLog(Message As String, eEventType As EventLogEntryType, caller As String)
-        ' only collect errors and warnings in non interactive mode
-        If nonInteractive AndAlso (eEventType = EventLogEntryType.Error Or eEventType = EventLogEntryType.Warning) Then
-            nonInteractiveErrMsgs += caller + ":" + Message
+        If nonInteractive Then
+            If eEventType = EventLogEntryType.Error Or eEventType = EventLogEntryType.Warning Then
+                ' only collect errors and warnings in non interactive mode
+                nonInteractiveErrMsgs += caller + ":" + Message + vbCrLf
+            End If
         Else
             Select Case eEventType
                 Case EventLogEntryType.Information : Trace.TraceInformation("{0}: {1}", caller, Message)
@@ -138,6 +140,9 @@ Public Module Globals
     End Sub
 
     Public Function QuestionMsg(theMessage As String, Optional questionType As MsgBoxStyle = MsgBoxStyle.OkCancel, Optional questionTitle As String = "DBAddin Question", Optional msgboxIcon As MsgBoxStyle = MsgBoxStyle.Question) As MsgBoxResult
+        Dim theMethod As Object = (New System.Diagnostics.StackTrace).GetFrame(1).GetMethod
+        Dim caller As String = theMethod.ReflectedType.FullName & "." & theMethod.Name
+        WriteToLog(theMessage, EventLogEntryType.Warning, caller) ' to avoid popup of trace log
         If nonInteractive Then
             If questionType = MsgBoxStyle.OkCancel Then Return MsgBoxResult.Cancel
             If questionType = MsgBoxStyle.YesNo Then Return MsgBoxResult.No
@@ -220,7 +225,7 @@ Public Module Globals
                 End If
             End If
         Catch ex As Exception
-            LogError("Error (" & ex.Message & ") in refreshData !")
+            ErrorMsg("Exception: " & ex.Message, "refresh Data")
         End Try
     End Sub
 
@@ -246,7 +251,7 @@ Public Module Globals
             ExcelDnaUtil.Application.Range(underlyingName).Parent.Select()
             ExcelDnaUtil.Application.Range(underlyingName).Select()
         Catch ex As Exception
-            ErrorMsg("Can't jump to target/source, corresponding workbook open? " & ex.Message)
+            ErrorMsg("Can't jump to target/source, corresponding workbook open? " & ex.Message, "jump Button")
         End Try
     End Sub
 
@@ -288,7 +293,7 @@ Public Module Globals
             finalResult = Split(tempString, vbTab)
             functionSplit = finalResult
         Catch ex As Exception
-            LogError("Error: " & ex.Message)
+            ErrorMsg("Exception: " & ex.Message, "function split into tokens")
             functionSplit = Nothing
         End Try
     End Function
@@ -330,7 +335,7 @@ Public Module Globals
                 balancedString = Mid$(theString, startBalance + 1, endBalance - startBalance)
             End If
         Catch ex As Exception
-            LogError("Error: " & ex.Message)
+            ErrorMsg("Exception: " & ex.Message, "get minimal balanced string")
         End Try
     End Function
 
@@ -372,7 +377,7 @@ Public Module Globals
                 End If
             Next
         Catch ex As Exception
-            LogError("Error: " & ex.Message)
+            ErrorMsg("Exception: " & ex.Message, "replace delimiters with special separator")
         End Try
     End Function
 
@@ -444,7 +449,7 @@ Public Module Globals
                 End If
             Next
         Catch ex As Exception
-            LogError("Error: " & ex.Message)
+            ErrorMsg("Exception: " & ex.Message, "get underlying DBFName from Range")
         End Try
     End Function
 
@@ -471,7 +476,7 @@ Public Module Globals
             Next
             If foundNames > 1 Then checkMultipleDBRangeNames = True
         Catch ex As Exception
-            LogError("Error: " & ex.Message)
+            ErrorMsg("Exception: " & ex.Message, "check Multiple DBRange Names")
         End Try
     End Function
 
@@ -543,7 +548,7 @@ Public Module Globals
                 ExcelDnaUtil.Application.CalculateFull()
             End If
         Catch ex As Exception
-            LogError("Error: " & ex.Message & ", " & Wb.Path & "\" & Wb.Name)
+            ErrorMsg("Exception: " & ex.Message & ", " & Wb.Path & "\" & Wb.Name, "refresh DBFunctions")
         End Try
         DBModifs.preventChangeWhileFetching = False
     End Sub
@@ -559,7 +564,7 @@ Public Module Globals
                 ExcelDnaUtil.Application.ActiveWorkbook.Saved = previouslySaved
             End If
         Catch ex As Exception
-            LogError(ex.Message)
+            ErrorMsg("Exception: " & ex.Message, "refresh DBFunc later")
         End Try
     End Sub
 

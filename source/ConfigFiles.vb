@@ -88,7 +88,7 @@ Public Module ConfigFiles
                 .Refresh(BackgroundQuery:=False)
             End With
         Catch ex As Exception
-            LogError("Exception caught when adding listobject table:" & ex.Message)
+            ErrorMsg("Exception adding listobject query table:" & ex.Message, "Create List Object")
             createListObject = Nothing
             Exit Function
         End Try
@@ -108,14 +108,14 @@ Public Module ConfigFiles
             pivotcache.CommandText = "select CURRENT_TIMESTAMP" ' this should be sufficient for most databases
             pivotcache.CommandType = Excel.XlCmdType.xlCmdSql
         Catch ex As Exception
-            LogError("Exception caught when creating pivot cache:" & ex.Message)
+            ErrorMsg("Exception creating pivot cache:" & ex.Message, "Create Pivot Table")
         End Try
 
         Try
             pivotTables = TargetCell.Parent.PivotTables()
             pivotTables.Add(pivotcache, TargetCell.Offset(1, 0), "PivotTable1")
         Catch ex As Exception
-            LogError("Exception caught when adding pivot table:" & ex.Message)
+            ErrorMsg("Exception adding pivot table:" & ex.Message, "Create Pivot Table")
             Exit Sub
         End Try
     End Sub
@@ -140,7 +140,7 @@ Public Module ConfigFiles
                 ' if there is a reference to a different sheet in cellToBeStoredAddress (starts with '<sheetname>'! ) and this sheet doesn't exist, create it...
                 If InStr(1, cellToBeStoredAddress, "!") > 0 Then
                     Dim theSheetName As String = Replace(Mid$(cellToBeStoredAddress, 1, InStr(1, cellToBeStoredAddress, "!") - 1), "'", String.Empty)
-                    Try
+            Try
                         Dim testSheetExist As String = ExcelDnaUtil.Application.Worksheets(theSheetName).name
                     Catch ex As Exception
                         With ExcelDnaUtil.Application.Worksheets.Add(After:=originCell.Parent)

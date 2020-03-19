@@ -286,7 +286,7 @@ Public MustInherit Class DBModif
                 Functions.DBRowFetchAction(callID, getQuery(functionArgs(0), caller), caller, tempArray, getConnString(functionArgs(1), caller), HeaderInfo)
             End If
         Catch ex As Exception
-            LogError(ex.Message)
+            ErrorMsg("Exception: " & ex.Message, "DBRefresh")
         End Try
         doDBRefresh = True
     End Function
@@ -529,26 +529,30 @@ Public Class DBMapper : Inherits DBModif
     End Sub
 
     ''' <summary>extend DataRange to "whole" DBMApper area (first row (field names) to the right and first column (primary key) down)</summary>
-    ''' <param name="ignoreCUDFlag">right after creation every DBMapper Data Range is extended, in this case ignore the CUD Flag setting on it</param>
-    Public Sub extendDataRange(Optional ignoreCUDFlag As Boolean = False)
-        ' only extend if no CUD Flags present (may have non existing first (primary) columns -> auto identity columns !)
-        If Not CUDFlags Or ignoreCUDFlag Then
+    Public Sub extendDataRange()
+        Dim NamesList As Excel.Names = ExcelDnaUtil.Application.ActiveWorkbook.Names
+        ' only extend like this if no CUD Flags present (may have non existing first (primary) columns -> auto identity columns !)
+        If Not CUDFlags Then
             preventChangeWhileFetching = True
             Dim rowEnd = TargetRange.Cells(1, 1).End(Excel.XlDirection.xlDown).Row
             ' unfortunately the above method to find the column extent doesn't work with hidden columns, so count the filled cells directly...
             Dim colEnd As Integer = TargetRange.Column
-            While Not (IsNothing(TargetRange.Cells(1, colEnd).Value) OrElse TargetRange.Cells(1, colEnd).Value = "")
+            While Not (IsNothing(TargetRange.Cells(1, colEnd + 1).Value) OrElse TargetRange.Cells(1, colEnd + 1).Value = "")
                 colEnd += 1
             End While
-            Dim NamesList As Excel.Names = ExcelDnaUtil.Application.ActiveWorkbook.Names
             Try : NamesList.Add(Name:=paramTargetName, RefersTo:=TargetRange.Parent.Range(TargetRange.Cells(1, 1), TargetRange.Parent.Cells(rowEnd, colEnd)))
             Catch ex As Exception
                 Throw New Exception("Error when reassigning name '" & paramTargetName & "' to DBMapper while extending DataRange: " & ex.Message)
             Finally
                 preventChangeWhileFetching = False
             End Try
+        Else
+            Try : NamesList.Add(Name:=paramTargetName, RefersTo:=TargetRange.ListObject.Range)
+            Catch ex As Exception
+                Throw New Exception("Error when reassigning name '" & paramTargetName & "' to DBMapper while extending DataRange: " & ex.Message)
+            End Try
         End If
-        ' even if CUD Flags are present, the Data range might have been extended (by inserting rows), so reassign it to the TargetRange
+        ' the Data range might have been extended (by inserting rows), so reassign it to the TargetRange
         Try
             TargetRange = TargetRange.Parent.Range(paramTargetName)
         Catch ex As Exception
@@ -1410,7 +1414,7 @@ Public Module DBModifs
             getDBModifDefinitions()
             ' extend Datarange for new DBMappers immediately after definition...
             If createdDBModifType = "DBMapper" Then
-                DirectCast(Globals.DBModifDefColl("DBMapper").Item(createdDBModifType + .DBModifName.Text), DBMapper).extendDataRange(ignoreCUDFlag:=True)
+                DirectCast(Globals.DBModifDefColl("DBMapper").Item(createdDBModifType + .DBModifName.Text), DBMapper).extendDataRange()
             End If
         End With
     End Sub
@@ -1476,11 +1480,11 @@ Public Module DBModifs
                     End If
                 Next
             ElseIf CustomXmlParts.Count > 1 Then
-                LogError("Multiple CustomXmlParts for DBModifDef existing!")
+                ErrorMsg("Multiple CustomXmlParts for DBModifDef existing!", "get DBModif Definitions")
             End If
             Globals.theRibbon.Invalidate()
         Catch ex As Exception
-            LogError(ex.Message)
+            ErrorMsg("Exception: " & ex.Message, "get DBModif Definitions")
         End Try
     End Sub
 
@@ -1511,7 +1515,7 @@ Public Module DBModifs
                 End If
             Next
         Catch ex As Exception
-            LogError("Error: " & ex.Message)
+            ErrorMsg("Exception: " & ex.Message, "get DBModif Name From Range")
         End Try
     End Function
 
@@ -1527,8 +1531,7 @@ Public Module DBModifs
     ''' <returns>empty string on success, error message otherwise</returns>
     <ExcelCommand(Name:="executeDBModif")>
     Public Function executeDBModif(DBModifName As String) As String
-        hadError = False
-
+        hadError = False : nonInteractiveErrMsgs = "" : nonInteractive = True
         Dim DBModiftype As String = Left(DBModifName, 8)
         If DBModiftype = "DBSeqnce" Or DBModiftype = "DBMapper" Or DBModiftype = "DBAction" Then
             If Not Globals.DBModifDefColl(DBModiftype).ContainsKey(DBModifName) Then
@@ -1536,16 +1539,24 @@ Public Module DBModifs
                 For Each DBMtype As String In {"DBMapper", "DBAction", "DBSeqnce"}
                     For Each DBMkey As String In Globals.DBModifDefColl(DBMtype).Keys : DBModifavailable += "," + DBMkey : Next
                 Next
+                nonInteractive = False
                 Return "DB Modifier '" & DBModifName & "' not existing, available: " & DBModifavailable
             End If
             Try
-                nonInteractive = True
                 Globals.DBModifDefColl(DBModiftype).Item(DBModifName).doDBModif()
             Catch ex As Exception
+                nonInteractive = False
                 Return "DB Modifier '" & DBModifName & "' doDBModif had following error(s): " & ex.Message
             End Try
-            Return Not hadError
+            If hadError Then
+                nonInteractive = False
+                Return nonInteractiveErrMsgs
+            Else
+                nonInteractive = False
+                Return ""
+            End If
         Else
+            nonInteractive = False
             Return "No valid type (" & DBModiftype & ") in passed DB Modifier '" & DBModifName & "', DB Modifier name must start with 'DBSeqnce', 'DBMapper' Or 'DBAction' !"
         End If
     End Function

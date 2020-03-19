@@ -298,7 +298,7 @@ Public Module DBSheetConfig
         'get new definitions into ribbon right now...
         getDBModifDefinitions()
         ' extend Datarange for new DBMappers immediately after definition...
-        DirectCast(Globals.DBModifDefColl("DBMapper").Item("DBMapper" & tableName), DBMapper).extendDataRange(ignoreCUDFlag:=True)
+        DirectCast(Globals.DBModifDefColl("DBMapper").Item("DBMapper" & tableName), DBMapper).extendDataRange()
     End Sub
 
     ''' <summary>fetches value in entryMarkup within XMLString, search starts optionally at position startSearch (default 1)</summary>
@@ -331,7 +331,7 @@ Public Module DBSheetConfig
         Exit Function
 
 getEntry_Err:
-        LogError("Error: " & Err.Description & ", line " & Erl() & " in DBSheetConfig.getEntry")
+        ErrorMsg("Error: " & Err.Description & " in DBSheetConfig.getEntry", "DBSheetConfig get Entry")
     End Function
 
     ''' <summary>fetches entryMarkup parts contained within lists demarked by listMarkup within parentMarkup inside XMLString</summary>
@@ -381,9 +381,8 @@ getEntry_Err:
         Exit Function
 
 getEntryList_Err:
-        LogError("Error: " & Err.Description & ", line " & Erl() & " in DBSheetConfig.getEntryList")
+        ErrorMsg("Error: " & Err.Description & " in DBSheetConfig.getEntryList", "DBSheetConfig get Entry List")
     End Function
-
 
 End Module
 

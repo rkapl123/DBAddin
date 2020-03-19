@@ -62,7 +62,7 @@ Public Class AddInEvents
             theMenuHandler = Nothing
             ExcelDna.IntelliSense.IntelliSenseServer.Uninstall()
         Catch ex As Exception
-            LogError("DBAddin unloading error: " + ex.Message)
+            ErrorMsg("DBAddin unloading error: " + ex.Message, "AutoClose")
         End Try
     End Sub
 
@@ -114,7 +114,7 @@ done:
                 End If
             Next
         Catch ex As Exception
-            LogError("Error getting docproperties: " & Wb.Name & ex.Message)
+            ErrorMsg("Error getting docproperties: " & Wb.Name & ex.Message)
         End Try
 
         ' now clear content/all
@@ -179,7 +179,7 @@ done:
                                             End Sub)
             End If
         Catch ex As Exception
-            LogError("Error clearing DBfunction targets in Workbook " & Wb.Name & ": " & ex.Message)
+            ErrorMsg("Error clearing DBfunction targets in Workbook " & Wb.Name & ": " & ex.Message)
         End Try
         dontCalcWhileClearing = False
     End Sub
