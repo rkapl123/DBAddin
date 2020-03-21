@@ -174,6 +174,7 @@ Public Module DBSheetConfig
             If Not IsNothing(lookupWS) Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
             Exit Sub
         End If
+        ' name the worksheet to tableName
         Try
             curCell.Parent.Name = Left(tableName, 31)
         Catch ex As Exception
@@ -268,14 +269,24 @@ Public Module DBSheetConfig
             If Not IsNothing(lookupWS) Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
             Exit Sub
         End Try
-        ' get the database name
-        Dim databaseName As String = Replace(getEntry("connID", curConfig), fetchSetting("connIDPrefixDBtype", "MSSQL"), "")
-        ' primary columns count (first <primCols> columns are primary columns)s
-        Dim primCols = getEntry("primcols", curConfig)
-        ' some visual aid:
-        curCell.EntireColumn.ColumnWidth = 0.4
-        curCell.Offset(2, 2 + primCols).Select()
-        ExcelDnaUtil.Application.ActiveWindow.FreezePanes = True
+        Dim databaseName, primCols As String
+        Try
+            ' get the database name
+            databaseName = Replace(getEntry("connID", curConfig), fetchSetting("connIDPrefixDBtype", "MSSQL"), "")
+            ' primary columns count (first <primCols> columns are primary columns)s
+            primCols = getEntry("primcols", curConfig)
+            ' some visual aid:
+            curCell.EntireColumn.ColumnWidth = 0.4
+            ' freeze top row and primary column(s) if more than one column...
+            curCell.Offset(1, If(createdListObject.ListColumns.Count > 1, 1 + primCols, 0)).Select()
+            ExcelDnaUtil.Application.ActiveWindow.FreezePanes = True
+            ' turn off autofilter...
+            createdListObject.ShowAutoFilter = False
+        Catch ex As Exception
+            ErrorMsg("Exception: " & ex.Message, "DBSheet Creation Error")
+            If Not IsNothing(lookupWS) Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
+            Exit Sub
+        End Try
 
         ' create DBMapper Configuration for DBSheet
         Dim CustomXmlParts As Object = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
