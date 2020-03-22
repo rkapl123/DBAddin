@@ -70,6 +70,7 @@ Public MustInherit Class DBModif
         If nodeCount = 0 Then
             getParamFromXML = ""
         ElseIf nodeCount > 1 Then
+            'TODO: check if returned and if not, think of other way to pass error...
             getParamFromXML = definitionXML.SelectSingleNode("ns0:" & nodeName & "[1]").Text ' get first element...
             Throw New Exception("DBModif definition of " & definitionXML.BaseName & " contains node '" & nodeName & "' more than once (" & nodeCount & " times) !")
         Else
@@ -1281,9 +1282,10 @@ Public Module DBModifs
                 .execOnSave.Anchor = AnchorStyles.Bottom Or AnchorStyles.Left
                 .AskForExecute.Anchor = AnchorStyles.Bottom Or AnchorStyles.Left
                 ' fill Datagridview for DBSequence
-                Dim cb As DataGridViewComboBoxColumn = New DataGridViewComboBoxColumn()
-                cb.HeaderText = "Sequence Step"
-                cb.ReadOnly = False
+                Dim cb As DataGridViewComboBoxColumn = New DataGridViewComboBoxColumn With {
+                    .HeaderText = "Sequence Step",
+                    .ReadOnly = False
+                }
                 cb.ValueType() = GetType(String)
                 Dim ds As List(Of String) = New List(Of String)
 
@@ -1478,8 +1480,9 @@ Public Module DBModifs
                         If Not IsNothing(newDBModif) Then
                             If Not DBModifDefColl.ContainsKey(DBModiftype) Then
                                 ' add to new DBModiftype "menu"
-                                defColl = New Dictionary(Of String, DBModif)
-                                defColl.Add(customXMLNodeDef.BaseName, newDBModif)
+                                defColl = New Dictionary(Of String, DBModif) From {
+                                    {customXMLNodeDef.BaseName, newDBModif}
+                                }
                                 DBModifDefColl.Add(DBModiftype, defColl)
                             Else
                                 ' add definition to existing DBModiftype "menu"

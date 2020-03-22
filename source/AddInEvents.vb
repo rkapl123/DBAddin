@@ -1,7 +1,7 @@
 ﻿Imports ExcelDna.Integration
 Imports ExcelDna.Registration
 Imports Microsoft.Office.Interop
-Imports Microsoft.Office.Interop.Excel
+Imports Microsoft.Office.Interop.Excel ' for event procedures...
 Imports Microsoft.Office.Core
 Imports Microsoft.Vbe.Interop
 Imports System.Diagnostics

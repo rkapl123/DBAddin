@@ -14,7 +14,7 @@ Public Module DBSheetConfig
     ''' <summary>the lookups list of the DBSheet definition (xml element with query, name, etc.)</summary>
     Dim lookupsList() As String
     ''' <summary>the complete dbsheet configuration (XML)</summary>
-    Dim curConfig As String
+    Public curConfig As String
     ''' <summary>the added and hidden worksheet with lookups inside</summary>
     Dim lookupWS As Excel.Worksheet
     ''' <summary>the Database table name of the DBSheet</summary>
@@ -345,54 +345,55 @@ getEntry_Err:
         ErrorMsg("Error: " & Err.Description & " in DBSheetConfig.getEntry", "DBSheetConfig get Entry")
     End Function
 
+    ''' <summary>creates markup with setting value content in entryMarkup</summary>
+    ''' <param name="entryMarkup"></param>
+    ''' <param name="content"></param>
+    ''' <returns>the markup</returns>
+    Public Function setEntry(ByVal entryMarkup As String, ByVal content As String) As String
+        setEntry = "<" & entryMarkup & ">" & content & "</" & entryMarkup & ">"
+    End Function
+
     ''' <summary>fetches entryMarkup parts contained within lists demarked by listMarkup within parentMarkup inside XMLString</summary>
     ''' <param name="parentMarkup"></param>
     ''' <param name="listMarkup"></param>
     ''' <param name="entryMarkup">element inside listMarkup that should be fetched, if empty take whole listMarkup instead</param>
     ''' <param name="XMLString"></param>
     ''' <param name="fetchListMarkup">if true, take listMarkup elements where entryMarkup was found, else take entryMarkup element</param>
-    ''' <returns>list containing parts, if entryMarkup = vbNullString then list contains parts demarked by listMarkup</returns>
+    ''' <returns>list containing parts, if entryMarkup = "" then list contains parts demarked by listMarkup</returns>
     Public Function getEntryList(parentMarkup As String, listMarkup As String, entryMarkup As String, XMLString As String, Optional fetchListMarkup As Boolean = False) As Object
         Dim list() As String = Nothing
         Dim i As Long, posEnd As Long
-        Dim isFilled As Boolean
         Dim parentEntry As String, ListItem As String, part As String
 
-        On Error GoTo getEntryList_Err
         If Len(XMLString) = 0 Then
             getEntryList = Nothing
             Exit Function
         End If
 
-        i = 0 : posEnd = 1 : isFilled = False
-        parentEntry = getEntry(parentMarkup, XMLString)
-        Do
-            ' first get outer element demarked by listMarkup
-            ListItem = getEntry(listMarkup, XMLString, posEnd)
-            If Len(entryMarkup) = 0 Then
-                part = ListItem
-            Else
-                ' take inner element for check and returning (if fetchListMarkup not set)
-                part = getEntry(entryMarkup, ListItem)
-            End If
-            If Len(part) > 0 Then
-                ' take outer element where entryMarkup was found
-                If fetchListMarkup Then part = ListItem
-                isFilled = True
-                ReDim Preserve list(i)
-                list(i) = part
-                i += 1
-            End If
-        Loop Until ListItem = ""
-        If isFilled Then
-            getEntryList = list
-        Else
-            getEntryList = Nothing
-        End If
-        Exit Function
-
-getEntryList_Err:
-        ErrorMsg("Error: " & Err.Description & " in DBSheetConfig.getEntryList", "DBSheetConfig get Entry List")
+        i = 0 : posEnd = 1
+        Try
+            parentEntry = getEntry(parentMarkup, XMLString)
+            Do
+                ' first get outer element demarked by listMarkup
+                ListItem = getEntry(listMarkup, XMLString, posEnd)
+                If entryMarkup = "" Then
+                    part = ListItem
+                Else
+                    ' take inner element for check and returning (if fetchListMarkup not set)
+                    part = getEntry(entryMarkup, ListItem)
+                End If
+                If Len(part) > 0 Then
+                    ' take outer element where entryMarkup was found
+                    If fetchListMarkup Then part = ListItem
+                    ReDim Preserve list(i)
+                    list(i) = part
+                    i += 1
+                End If
+            Loop Until ListItem = ""
+        Catch ex As Exception
+            ErrorMsg("Error: " & ex.Message, "DBSheetConfig get Entry List")
+        End Try
+        getEntryList = list
     End Function
 
 End Module

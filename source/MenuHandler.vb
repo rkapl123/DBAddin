@@ -35,7 +35,13 @@ Public Class MenuHandler
                                             "size='large' getLabel='getDBModifTypeLabel' imageMso='ApplicationOptionsDialog' " +
                                             "getScreentip='getDBModifScreentip' getContent='getDBModifMenuContent' getVisible='getDBModifMenuVisible'/>"
         Next
-        customUIXml += "<dialogBoxLauncher><button id='designmode' label='DBModif design' onAction='toggleDesignMode' tag='4' getScreentip='getToggleDesignScreentip'/></dialogBoxLauncher></group></tab></tabs></ribbon>"
+        customUIXml += "<dialogBoxLauncher><button id='designmode' label='DBModif design' onAction='toggleDesignMode' tag='4' getScreentip='getToggleDesignScreentip'/></dialogBoxLauncher></group>"
+        ' DBSheet Group:
+        customUIXml += "<group id='DBSheetGroup' label='DB Sheet creation'>" +
+              "<button id='DBSheetCreate' label='create DBsheet Def' screentip='click to create a new DBSheet or edit an existing definition' imageMso='ChartResetToMatchStyle' onAction='clickCreateDBSheet'/>" +
+              "<button id='DBSheetAssign' tag='DBSheet' label='assign DBsheet Def' screentip='click to assign a DBSheet definition to the current cell' imageMso='ChartResetToMatchStyle' onAction='clickCreateButton'/>" +
+              "</group>"
+        customUIXml += "</tab></tabs></ribbon>"
         ' Context menus for refresh, jump and creation: in cell, row, column and ListRange (area of ListObjects)
         customUIXml += "<contextMenus>" +
          "<contextMenu idMso ='ContextMenuCell'>" +
@@ -46,7 +52,6 @@ Public Class MenuHandler
            "<button id='DBMapperC' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
            "<button id='DBActionC' tag='DBAction' label='DBAction' imageMso='TableIndexes' onAction='clickCreateButton'/>" +
            "<button id='DBSequenceC' tag='DBSeqnce' label='DBSequence' imageMso='ShowOnNewButton' onAction='clickCreateButton'/>" +
-           "<button id='DBSheetC' tag='DBSheet' label='DBSheetDef' imageMso='ChartResetToMatchStyle' onAction='clickCreateButton'/>" +
            "<menuSeparator id='separator' />" +
            "<button id='DBListFetchC' tag='DBListFetch' label='DBListFetch' imageMso='GroupLists' onAction='clickCreateButton'/>" +
            "<button id='DBRowFetchC' tag='DBRowFetch' label='DBRowFetch' imageMso='GroupRecords' onAction='clickCreateButton'/>" +
@@ -68,7 +73,6 @@ Public Class MenuHandler
             "<button id='DBMapperCL' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
             "<button id='DBActionCL' tag='DBAction' label='DBAction' imageMso='TableIndexes' onAction='clickCreateButton'/>" +
             "<button id='DBSequenceCL' tag='DBSeqnce' label='DBSequence' imageMso='ShowOnNewButton' onAction='clickCreateButton'/>" +
-            "<button id='DBSheetCL' tag='DBSheet' label='DBSheetDef' imageMso='ChartResetToMatchStyle' onAction='clickCreateButton'/>" +
             "<menuSeparator id='separatorCL' />" +
             "<button id='DBListFetchCL' tag='DBListFetch' label='DBListFetch' imageMso='GroupLists' onAction='clickCreateButton'/>" +
             "<button id='DBRowFetchCL' tag='DBRowFetch' label='DBRowFetch' imageMso='GroupRecords' onAction='clickCreateButton'/>" +
@@ -304,6 +308,13 @@ Public Class MenuHandler
     ''' <summary>show the trace log</summary>
     Public Sub clickShowLog(control As IRibbonControl)
         ExcelDna.Logging.LogDisplay.Show()
+    End Sub
+
+    ''' <summary>ribbon menu button for DBSheet creation start</summary>
+    ''' <param name="control"></param>
+    Public Sub clickCreateDBSheet(control As IRibbonControl)
+        Dim theDBSheetCreateForm As DBSheetCreateForm = New DBSheetCreateForm
+        theDBSheetCreateForm.Show()
     End Sub
 
     ''' <summary>context menu entries below create...: create DB function or DB Modification definition</summary>
