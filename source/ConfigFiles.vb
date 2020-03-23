@@ -78,11 +78,11 @@ Public Module ConfigFiles
                 .RowNumbers = False
                 .FillAdjacentFormulas = False
                 .PreserveFormatting = True
-                .BackgroundQuery = True
+                .BackgroundQuery = False
                 .RefreshStyle = Excel.XlCellInsertionMode.xlInsertDeleteCells
                 .SavePassword = False
                 .SaveData = True
-                .AdjustColumnWidth = True
+                .AdjustColumnWidth = False
                 .RefreshPeriod = 0
                 .PreserveColumnInfo = True
                 .Refresh(BackgroundQuery:=False)
@@ -92,6 +92,7 @@ Public Module ConfigFiles
             createListObject = Nothing
             Exit Function
         End Try
+        ' turn off autofilter can't be done here because it leads to memory corruption...
         createListObject = createdQueryTable.ListObject
     End Function
 

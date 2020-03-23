@@ -541,11 +541,11 @@ Public Class DBMapper : Inherits DBModif
             preventChangeWhileFetching = True
             Dim rowEnd = TargetRange.Cells(1, 1).End(Excel.XlDirection.xlDown).Row
             ' unfortunately the above method to find the column extent doesn't work with hidden columns, so count the filled cells directly...
-            Dim colEnd As Integer = TargetRange.Column
+            Dim colEnd As Integer = 1
             While Not (IsNothing(TargetRange.Cells(1, colEnd + 1).Value) OrElse TargetRange.Cells(1, colEnd + 1).Value = "")
                 colEnd += 1
             End While
-            Try : NamesList.Add(Name:=paramTargetName, RefersTo:=TargetRange.Parent.Range(TargetRange.Cells(1, 1), TargetRange.Parent.Cells(rowEnd, colEnd)))
+            Try : NamesList.Add(Name:=paramTargetName, RefersTo:=TargetRange.Parent.Range(TargetRange.Cells(1, 1), TargetRange.Cells(rowEnd, colEnd)))
             Catch ex As Exception
                 Throw New Exception("Error when reassigning name '" & paramTargetName & "' to DBMapper while extending DataRange: " & ex.Message)
             Finally
@@ -602,6 +602,7 @@ Public Class DBMapper : Inherits DBModif
                 Dim retval As MsgBoxResult = QuestionMsg(theMessage:="Modifying more rows (" & changesToBeDone & ") than defined warning limit (" & maxMassChanges & "), continue?", questionTitle:="Execute DB Mapper")
                 If retval = vbCancel Then Exit Sub
             End If
+            'TODO: for CUDFlags/DBSheets insert formulas for resolution again, because they might have been removed (also by empty table)...
         End If
         'now create/get a connection (dbcnn) for env(ironment) in case it was not already created by a step in the sequence before (transactions!)
         If Not TransactionOpen Then
