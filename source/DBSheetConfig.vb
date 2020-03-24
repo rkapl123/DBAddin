@@ -14,7 +14,7 @@ Public Module DBSheetConfig
     ''' <summary>the lookups list of the DBSheet definition (xml element with query, name, etc.)</summary>
     Dim lookupsList() As String
     ''' <summary>the complete dbsheet configuration (XML)</summary>
-    Public curConfig As String
+    Dim curConfig As String
     ''' <summary>the added and hidden worksheet with lookups inside</summary>
     Dim lookupWS As Excel.Worksheet
     ''' <summary>the Database table name of the DBSheet</summary>
@@ -72,10 +72,11 @@ Public Module DBSheetConfig
             Dim selectPartModif As String = selectPart ' select part with appending LU to lookups
             If Not IsNothing(lookupsList) Then
                 lookupWS = ExcelDnaUtil.Application.ActiveWorkbook.Worksheets.Add()
+                Dim lookupWSname As String = Left(Replace(Guid.NewGuid().ToString, "-", ""), 31)
                 Try
-                    lookupWS.Name = Left("LS" & tableName, 31)
+                    lookupWS.Name = lookupWSname
                 Catch ex As Exception
-                    ErrorMsg("Error setting lookup Worksheet Name to '" & Left("LS" & tableName, 31) & "':" + ex.Message, "DBSheet Creation Error")
+                    ErrorMsg("Error setting lookup Worksheet Name to '" & lookupWSname & "': " + ex.Message, "DBSheet Creation Error")
                     lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
                     Exit Sub
                 End Try
@@ -89,7 +90,7 @@ Public Module DBSheetConfig
                     If getEntry("fkey", LookupDef, 1) <> "" Then
                         ' replace looked up ID names with ID name + "LU" in query string
                         Dim foundDelim As Integer
-                        For Each delimStr As String In {",", " ", vbCrLf}
+                        For Each delimStr As String In {",", vbCrLf}
                             foundDelim = InStr(selectPartModif, " " & lookupName & delimStr)
                             If foundDelim > 0 Then
                                 selectPartModif = Replace(selectPartModif, " " & lookupName & delimStr, " " & lookupName & "LU" & delimStr)
@@ -321,6 +322,8 @@ Public Module DBSheetConfig
         getDBModifDefinitions()
         ' extend Datarange for new DBMappers immediately after definition...
         DirectCast(Globals.DBModifDefColl("DBMapper").Item("DBMapper" & tableName), DBMapper).extendDataRange()
+        ' switch back to DBAddin tab for easier handling...
+        Globals.theRibbon.ActivateTab("DBaddinTab")
     End Sub
 
     ''' <summary>fetches value in entryMarkup within XMLString, search starts optionally at position startSearch (default 1)</summary>
