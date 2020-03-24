@@ -602,7 +602,6 @@ Public Class DBMapper : Inherits DBModif
                 Dim retval As MsgBoxResult = QuestionMsg(theMessage:="Modifying more rows (" & changesToBeDone & ") than defined warning limit (" & maxMassChanges & "), continue?", questionTitle:="Execute DB Mapper")
                 If retval = vbCancel Then Exit Sub
             End If
-            'TODO: for CUDFlags/DBSheets insert formulas for resolution again, because they might have been removed (also by empty table)...
         End If
         'now create/get a connection (dbcnn) for env(ironment) in case it was not already created by a step in the sequence before (transactions!)
         If Not TransactionOpen Then

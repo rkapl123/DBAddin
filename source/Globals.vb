@@ -442,8 +442,13 @@ Public Module Globals
                 If Not rng Is Nothing Then
                     testRng = Nothing
                     Try : testRng = ExcelDnaUtil.Application.Intersect(theRange, rng) : Catch ex As Exception : End Try
-                    If Not IsNothing(testRng) And (InStr(1, nm.Name, "DBFtarget") >= 1 Or InStr(1, nm.Name, "DBFsource") >= 1) Then
-                        getDBunderlyingNameFromRange = nm.Name
+                    If Not IsNothing(testRng) And (InStr(nm.Name, "DBFtarget") > 0 Or InStr(nm.Name, "DBFsource") > 0) Then
+                        Dim WbkSepPos As Integer = InStr(nm.Name, "!")
+                        If WbkSepPos > 1 Then
+                            getDBunderlyingNameFromRange = Mid(nm.Name, WbkSepPos + 1)
+                        Else
+                            getDBunderlyingNameFromRange = nm.Name
+                        End If
                         Exit Function
                     End If
                 End If
@@ -499,7 +504,7 @@ Public Module Globals
                 cellcount += ExcelDnaUtil.Application.WorksheetFunction.CountIf(ws.Range("1:" & ws.Rows.Count), "<>")
             Next
             If cellcount > CLng(fetchSetting("maxCellCount", "300000")) Then
-                Dim retval As MsgBoxResult = QuestionMsg("This large workbook (" & cellcount.ToString() & " filled cells >" & CLng(fetchSetting("maxCellCount", "300000")) & ") might take long to search for DB functions to refresh, continue ?" & vbCrLf & "Click Cancel to add DBFskip to this Workbook, avoiding this search in the future...", vbYesNoCancel, "Refresh DB functions")
+                Dim retval As MsgBoxResult = QuestionMsg("This large workbook (" & cellcount.ToString() & " filled cells >" & CLng(fetchSetting("maxCellCount", "300000")) & ") might take long to search for DB functions to refresh, continue ?" & vbCrLf & "Click Cancel to add DBFskip to this Workbook, avoiding this search in the future (no DB Data will be refreshed then !)...", vbYesNoCancel, "Refresh DB functions")
                 If retval <> vbYes Then
                     If retval = vbCancel Then
                         Try
@@ -582,6 +587,14 @@ Public Module Globals
         Next
     End Sub
 
+    Public Function getCustPropertyBool(name As String, Wb As Excel.Workbook) As Boolean
+        Try
+            getCustPropertyBool = Wb.CustomDocumentProperties(name).Value
+        Catch ex As Exception
+            getCustPropertyBool = False
+        End Try
+    End Function
+
     ''' <summary>"repairs" legacy functions from old VB6-COM Addin by removing "DBAddin.Functions." before function name</summary>
     ''' <param name="showResponse">in case this is called interactively, provide a response in case of no legacy functions there</param>
     Public Sub repairLegacyFunctions(Optional showResponse As Boolean = False)
@@ -593,13 +606,7 @@ Public Module Globals
             LogWarn("no active workbook available !")
             Exit Sub
         End If
-        Dim skipLegacyCheck As Boolean
-        Try
-            skipLegacyCheck = actWB.CustomDocumentProperties("DBFNoLegacyCheck").Value
-        Catch ex As Exception
-            skipLegacyCheck = False
-        End Try
-        If skipLegacyCheck Then Exit Sub
+        If getCustPropertyBool("DBFNoLegacyCheck", actWB) Then Exit Sub
         DBModifs.preventChangeWhileFetching = True ' WorksheetFunction.CountIf trigger Change event with target in argument 1, so make sure this doesn't change anything)
         Try
             ' count nonempty cells in workbook...

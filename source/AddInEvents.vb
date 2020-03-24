@@ -70,10 +70,7 @@ Public Class AddInEvents
     ''' choosing functions for removal of target data is done with custom docproperties</summary>
     Private Sub Application_WorkbookSave(Wb As Excel.Workbook, ByVal SaveAsUI As Boolean, ByRef Cancel As Boolean) Handles Application.WorkbookBeforeSave
         ' ask if modifications should be done if no overriding flag is defined...
-        Dim doDBMOnSave As Boolean = False
-        Try
-            If Wb.CustomDocumentProperties("doDBMOnSave").Value Then doDBMOnSave = True
-        Catch ex As Exception : End Try
+        Dim doDBMOnSave As Boolean = getCustPropertyBool("doDBMOnSave", Wb)
         ' if overriding flag not given and Readonly is NOT recommended on this workbook and workbook IS NOT Readonly, ...
         ' ...ask for saving if it is necessary for any DBmodifier...
         If Not (Wb.ReadOnlyRecommended And Wb.ReadOnly) And Not doDBMOnSave Then
@@ -189,19 +186,13 @@ done:
     ''' <param name="Wb"></param>
     Private Sub Application_WorkbookOpen(Wb As Excel.Workbook) Handles Application.WorkbookOpen
         If Not Wb.IsAddin Then
-            Dim refreshDBFuncs As Boolean
             ' in case of reopening workbooks with dbfunctions, look for old query caches and status collections (returned error messages) and reset them to get new data
             resetCachesForWorkbook(Wb.Name)
 
             ' when opening, force recalculation of DB functions in workbook.
             ' this is required as there is no recalculation if no dependencies have changed (usually when opening workbooks)
             ' however the most important dependency for DB functions is the database data....
-            Try
-                refreshDBFuncs = Not Wb.CustomDocumentProperties("DBFskip").Value
-            Catch ex As Exception
-                refreshDBFuncs = True
-            End Try
-            If refreshDBFuncs Then refreshDBFunctions(Wb)
+            If Not getCustPropertyBool("DBFskip", Wb) Then refreshDBFunctions(Wb)
             repairLegacyFunctions()
         End If
     End Sub

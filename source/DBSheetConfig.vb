@@ -182,8 +182,8 @@ Public Module DBSheetConfig
             If Not IsNothing(lookupWS) Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
             Exit Sub
         End Try
-        ' some visual aid:
-        curCell.EntireColumn.ColumnWidth = 0.4
+        ' some visual aid for DBSHeets
+        If curCell.Column = 1 And curCell.Row = 1 Then curCell.EntireColumn.ColumnWidth = 0.4
         Dim ignoreColumns As String = ""
         Try
             If Not IsNothing(lookupsList) Then
@@ -231,25 +231,23 @@ Public Module DBSheetConfig
                         Exit Sub
                     End Try
                     If getEntry("fkey", LookupDef, 1) <> "" Then 'only necessary for database lookups
-                        ' the resolution formulas go into the last column now.
                         ' add vlookup function field for resolution of lookups to ID in main Query at the end of the DBMapper table
                         Dim lookupFormula As String = "=IF([@[" & lookupName & "LU]]<>"""",VLOOKUP([@[" & lookupName & "LU]]" & "," & lookupName & "Lookup" & ",2,False),"""")"
+                        ' if no data was fetched, add a row...
+                        If IsNothing(createdListObject.DataBodyRange) Then
+                            createdListObject.ListRows.AddEx()
+                        End If
                         Dim newCol As Excel.ListColumn = createdListObject.ListColumns.Add()
                         newCol.Name = lookupName
                         Try
-                            ' if nothing was fetched, there lookupFormulas cannot be inserted because they are refreshed away again (insertRowRange)...
-                            'createdListObject.InsertRowRange.Cells(1, createdListObject.ListColumns.Count).Formula = lookupFormula
-
-                            If Not IsNothing(createdListObject.DataBodyRange) Then
-                                newCol.DataBodyRange.Formula = lookupFormula
-                            End If
+                            newCol.DataBodyRange.Formula = lookupFormula
                         Catch ex As Exception
                             lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
                             ErrorMsg("Error in adding lookup formula " & lookupFormula & " to new column " & lookupName & ": " + ex.Message, "DBSheet Creation Error")
                             Exit Sub
                         End Try
                         ' hide the resolution column
-                        'newCol.Range.EntireColumn.Hidden = True
+                        newCol.Range.EntireColumn.Hidden = True
                         ' add lookup column to ignored columns (only resolution column will be stored in DB)
                         ignoreColumns += lookupName + "LU,"
                     End If
@@ -284,15 +282,17 @@ Public Module DBSheetConfig
             If Not IsNothing(lookupWS) Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
             Exit Sub
         End Try
-        Dim databaseName, primCols As String
+        ' get the database name
+        Dim databaseName = Replace(getEntry("connID", curConfig), fetchSetting("connIDPrefixDBtype", "MSSQL"), "")
+        ' primary columns count (first <primCols> columns are primary columns)s
+        Dim primCols As String = getEntry("primcols", curConfig)
         Try
-            ' get the database name
-            databaseName = Replace(getEntry("connID", curConfig), fetchSetting("connIDPrefixDBtype", "MSSQL"), "")
-            ' primary columns count (first <primCols> columns are primary columns)s
-            primCols = getEntry("primcols", curConfig)
-            ' freeze top row and primary column(s) if more than one column...
-            curCell.Offset(1, If(createdListObject.ListColumns.Count > 1, 1 + primCols, 0)).Select()
-            ExcelDnaUtil.Application.ActiveWindow.FreezePanes = True
+            ' some visual aid for DBSHeets
+            If curCell.Column = 1 And curCell.Row = 1 Then
+                ' freeze top row and primary column(s) if more than one column...
+                curCell.Offset(1, If(createdListObject.ListColumns.Count > 1, 1 + primCols, 0)).Select()
+                ExcelDnaUtil.Application.ActiveWindow.FreezePanes = True
+            End If
         Catch ex As Exception
             ErrorMsg("Exception: " & ex.Message, "DBSheet Creation Error")
             If Not IsNothing(lookupWS) Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible

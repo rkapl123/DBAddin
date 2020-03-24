@@ -1,7 +1,7 @@
 Imports ExcelDna.Integration.CustomUI
 Imports ExcelDna.Integration
-Imports Microsoft.Office.Interop
 Imports System.Runtime.InteropServices
+Imports Microsoft.Office.Interop
 
 
 ''' <summary>handles all Menu related aspects (context menu for building/refreshing, "DBAddin"/"Load Config" tree menu for retrieving stored configuration files</summary>
@@ -17,98 +17,139 @@ Public Class MenuHandler
     ''' <summary>creates the Ribbon (only at startup). any changes to the ribbon can only be done via dynamic menus</summary>
     ''' <returns></returns>
     Public Overrides Function GetCustomUI(RibbonID As String) As String
-        ' Ribbon definition XML
+        ' Ribbon definition XML          size='normal' 
         Dim customUIXml As String = "<customUI xmlns='http://schemas.microsoft.com/office/2009/07/customui' onLoad='ribbonLoaded' ><ribbon><tabs><tab id='DBaddinTab' label='DB Addin'>"
         ' DBAddin Group: environment choice, DBConfics selection tree, purge names tool button and dialogBoxLauncher for AboutBox
-        customUIXml += "<group id='DBAddinGroup' label='General settings'>" +
-              "<dropDown id='envDropDown' label='Environment:' sizeString='123456789012345' getSelectedItemIndex='GetSelectedEnvironment' getItemCount='GetItemCount' getItemID='GetItemID' getItemLabel='GetItemLabel' onAction='selectEnvironment'/>" +
-              "<dynamicMenu id='DBConfigs' size='normal' label='DB Configs' imageMso='QueryShowTable' screentip='DB Function Configuration Files quick access' getContent='getDBConfigMenu'/>" +
-              "<buttonGroup id='buttonGroup'>" +
-              "<button id='purgetool' label='purge tool' screentip='purges underlying DBtarget/DBsource Names' imageMso='BorderErase' onAction='clickpurgetoolbutton'/>" +
-              "<button id='showLog' label='show log' screentip='shows Database Addins Diagnostic Display' imageMso='ZoomOnePage' onAction='clickShowLog'/>" +
-              "</buttonGroup>" +
-              "<dialogBoxLauncher><button id='dialog' label='About DBAddin' onAction='showAbout' tag='3' screentip='Show Aboutbox with help, version information, homepage and access to log'/></dialogBoxLauncher></group>"
+        customUIXml +=
+        "<group id='DBAddinGroup' label='General settings'>" +
+            "<dropDown id='envDropDown' label='Environment:' sizeString='1234567890123456' getSelectedItemIndex='GetSelectedEnvironment' getItemCount='GetItemCount' getItemID='GetItemID' getItemLabel='GetItemLabel' onAction='selectEnvironment'/>" +
+            "<buttonGroup id='buttonGroup'>" +
+                "<dynamicMenu id='DBConfigs' label='DB Configs' imageMso='QueryShowTable' screentip='DB Function Configuration Files quick access' getContent='getDBConfigMenu'/>" +
+                "<button id='purgetool' label='purge tool' screentip='purges underlying DBtarget/DBsource Names' imageMso='BorderErase' onAction='clickpurgetoolbutton'/>" +
+            "</buttonGroup>" +
+            "<buttonGroup id='buttonGroup2'>" +
+                "<button id='showLog' label='show log' screentip='shows Database Addins Diagnostic Display' imageMso='ZoomOnePage' onAction='clickShowLog'/>" +
+                "<button id='props' label='custom props' onAction='showCProps' getImage='getCPropsImage' screentip='Change custom properties relevant for DB Addin:' getSupertip='getToggleCPropsScreentip' />" +
+            "</buttonGroup>" +
+            "<dialogBoxLauncher><button id='dialog' label='About DBAddin' onAction='showAbout' tag='3' screentip='Show Aboutbox with help, version information, homepage and access to log'/></dialogBoxLauncher>" +
+        "</group>"
         ' DBModif Group: maximum three DBModif types possible (depending on existence in current workbook): 
-        customUIXml += "<group id='DBModifGroup' label='Execute DBModifier'>"
+        customUIXml +=
+        "<group id='DBModifGroup' label='Execute DBModifier'>"
         For Each DBModifType As String In {"DBSeqnce", "DBMapper", "DBAction"}
             customUIXml += "<dynamicMenu id='" + DBModifType + "' " +
-                                            "size='large' getLabel='getDBModifTypeLabel' imageMso='ApplicationOptionsDialog' " +
-                                            "getScreentip='getDBModifScreentip' getContent='getDBModifMenuContent' getVisible='getDBModifMenuVisible'/>"
+                                                "size='large' getLabel='getDBModifTypeLabel' imageMso='ApplicationOptionsDialog' " +
+                                                "getScreentip='getDBModifScreentip' getContent='getDBModifMenuContent' getVisible='getDBModifMenuVisible'/>"
         Next
-        customUIXml += "<dialogBoxLauncher><button id='designmode' label='DBModif design' onAction='toggleDesignMode' tag='4' getScreentip='getToggleDesignScreentip'/></dialogBoxLauncher></group>"
+        customUIXml += "<dialogBoxLauncher><button id='designmode' label='DBModif design' onAction='toggleDesignMode' tag='4' getScreentip='getToggleDesignScreentip'/></dialogBoxLauncher>" +
+        "</group>"
         ' DBSheet Group:
-        customUIXml += "<group id='DBSheetGroup' label='DB Sheet creation'>" +
-              "<button id='DBSheetCreate' label='create DBsheet Def' screentip='click to create a new DBSheet or edit an existing definition' imageMso='ChartResetToMatchStyle' onAction='clickCreateDBSheet'/>" +
-              "<button id='DBSheetAssign' tag='DBSheet' label='assign DBsheet Def' screentip='click to assign a DBSheet definition to the current cell' imageMso='ChartResetToMatchStyle' onAction='clickCreateButton'/>" +
-              "</group>"
+        customUIXml +=
+        "<group id='DBSheetGroup' label='DB Sheet creation'>" +
+            "<button id='DBSheetCreate' label='create DBsheet Def' screentip='click to create a new DBSheet or edit an existing definition' imageMso='ChartResetToMatchStyle' onAction='clickCreateDBSheet'/>" +
+            "<button id='DBSheetAssign' tag='DBSheet' label='assign DBsheet Def' screentip='click to assign a DBSheet definition to the current cell' imageMso='ChartResetToMatchStyle' onAction='clickCreateButton'/>" +
+        "</group>"
         customUIXml += "</tab></tabs></ribbon>"
         ' Context menus for refresh, jump and creation: in cell, row, column and ListRange (area of ListObjects)
         customUIXml += "<contextMenus>" +
-         "<contextMenu idMso ='ContextMenuCell'>" +
-         "<button id='refreshDataC' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
-         "<button id='gotoDBFuncC' label='jump to DBFunc/target (Ctl-Sh-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
-         "<button id='DeleteRowC' label='delete Row (Ctl-Sh-D)' imageMso='SlicerDelete' onAction='deleteRowButton' insertBeforeMso='Cut'/>" +
-         "<menu id='createMenu' label='Insert/Edit DBFunc/DBModif' insertBeforeMso='Cut'>" +
-           "<button id='DBMapperC' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
-           "<button id='DBActionC' tag='DBAction' label='DBAction' imageMso='TableIndexes' onAction='clickCreateButton'/>" +
-           "<button id='DBSequenceC' tag='DBSeqnce' label='DBSequence' imageMso='ShowOnNewButton' onAction='clickCreateButton'/>" +
-           "<menuSeparator id='separator' />" +
-           "<button id='DBListFetchC' tag='DBListFetch' label='DBListFetch' imageMso='GroupLists' onAction='clickCreateButton'/>" +
-           "<button id='DBRowFetchC' tag='DBRowFetch' label='DBRowFetch' imageMso='GroupRecords' onAction='clickCreateButton'/>" +
-           "<button id='DBSetQueryPivotC' tag='DBSetQueryPivot' label='DBSetQueryPivot' imageMso='AddContentType' onAction='clickCreateButton'/>" +
-           "<button id='DBSetQueryListObjectC' tag='DBSetQueryListObject' label='DBSetQueryListObject' imageMso='AddContentType' onAction='clickCreateButton'/>" +
-         "</menu>" +
-         "<menuSeparator id='MySeparatorC' insertBeforeMso='Cut'/>" +
-         "</contextMenu>" +
-         "<contextMenu idMso ='ContextMenuPivotTable'>" +
-         "<button id='refreshDataPT' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Copy'/>" +
-         "<button id='gotoDBFuncPT' label='jump to DBFunc/target (Ctl-Sh-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Copy'/>" +
-         "<menuSeparator id='MySeparatorPT' insertBeforeMso='Copy'/>" +
-         "</contextMenu>" +
-         "<contextMenu idMso ='ContextMenuCellLayout'>" +
-         "<button id='refreshDataCL' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
-         "<button id='gotoDBFuncCL' label='jump to DBFunc/target (Ctl-Sh-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
-         "<button id='DeleteRowCL' label='delete Row (Ctl-Sh-D)' imageMso='SlicerDelete' onAction='deleteRowButton' insertBeforeMso='Cut'/>" +
-         "<menu id='createMenuCL' label='Insert/Edit DBFunc/DBModif' insertBeforeMso='Cut'>" +
-            "<button id='DBMapperCL' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
-            "<button id='DBActionCL' tag='DBAction' label='DBAction' imageMso='TableIndexes' onAction='clickCreateButton'/>" +
-            "<button id='DBSequenceCL' tag='DBSeqnce' label='DBSequence' imageMso='ShowOnNewButton' onAction='clickCreateButton'/>" +
-            "<menuSeparator id='separatorCL' />" +
-            "<button id='DBListFetchCL' tag='DBListFetch' label='DBListFetch' imageMso='GroupLists' onAction='clickCreateButton'/>" +
-            "<button id='DBRowFetchCL' tag='DBRowFetch' label='DBRowFetch' imageMso='GroupRecords' onAction='clickCreateButton'/>" +
-            "<button id='DBSetQueryPivotCL' tag='DBSetQueryPivot' label='DBSetQueryPivot' imageMso='AddContentType' onAction='clickCreateButton'/>" +
-            "<button id='DBSetQueryListObjectCL' tag='DBSetQueryListObject' label='DBSetQueryListObject' imageMso='AddContentType' onAction='clickCreateButton'/>" +
-         "</menu>" +
-         "<menuSeparator id='MySeparatorCL' insertBeforeMso='Cut'/>" +
-         "</contextMenu>" +
-         "<contextMenu idMso='ContextMenuRow'>" +
-         "<button id='refreshDataR' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
-         "<button id='DeleteRowR' label='delete Row (Ctl-Sh-D)' imageMso='SlicerDelete' onAction='deleteRowButton' insertBeforeMso='Cut'/>" +
-         "<menuSeparator id='MySeparatorR' insertBeforeMso='Cut'/>" +
-         "</contextMenu>" +
-         "<contextMenu idMso='ContextMenuColumn'>" +
-         "<button id='refreshDataZ' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
-         "<menuSeparator id='MySeparatorZ' insertBeforeMso='Cut'/>" +
-         "</contextMenu>" +
-         "<contextMenu idMso='ContextMenuListRange'>" +
-             "<button id='refreshDataL' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
-             "<button id='gotoDBFuncL' label='jump to DBFunc/target (Ctl-Sh-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
-             "<button id='DeleteRowL' label='delete Row (Ctl-Sh-D)' imageMso='SlicerDelete' onAction='deleteRowButton' insertBeforeMso='Cut'/>" +
-             "<menu id='createMenuL' label='Insert/Edit DBFunc/DBModif' insertBeforeMso='Cut'>" +
-               "<button id='DBMapperL' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
-               "<button id='DBSequenceL' tag='DBSeqnce' label='DBSequence' imageMso='ShowOnNewButton' onAction='clickCreateButton'/>" +
-               "<button id='DBSheetL' tag='DBSheet' label='DBSheetDef' imageMso='ChartResetToMatchStyle' onAction='clickCreateButton'/>" +
-             "</menu>" +
-             "<menuSeparator id='MySeparatorL' insertBeforeMso='Cut'/>" +
-         "</contextMenu>" +
-         "</contextMenus></customUI>"
+        "<contextMenu idMso ='ContextMenuCell'>" +
+            "<button id='refreshDataC' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
+            "<button id='gotoDBFuncC' label='jump to DBFunc/target (Ctl-Sh-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
+            "<button id='DeleteRowC' label='delete Row (Ctl-Sh-D)' imageMso='SlicerDelete' onAction='deleteRowButton' insertBeforeMso='Cut'/>" +
+            "<menu id='createMenu' label='Insert/Edit DBFunc/DBModif' insertBeforeMso='Cut'>" +
+                "<button id='DBMapperC' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
+                "<button id='DBActionC' tag='DBAction' label='DBAction' imageMso='TableIndexes' onAction='clickCreateButton'/>" +
+                "<button id='DBSequenceC' tag='DBSeqnce' label='DBSequence' imageMso='ShowOnNewButton' onAction='clickCreateButton'/>" +
+                "<menuSeparator id='separator' />" +
+                "<button id='DBListFetchC' tag='DBListFetch' label='DBListFetch' imageMso='GroupLists' onAction='clickCreateButton'/>" +
+                "<button id='DBRowFetchC' tag='DBRowFetch' label='DBRowFetch' imageMso='GroupRecords' onAction='clickCreateButton'/>" +
+                "<button id='DBSetQueryPivotC' tag='DBSetQueryPivot' label='DBSetQueryPivot' imageMso='AddContentType' onAction='clickCreateButton'/>" +
+                "<button id='DBSetQueryListObjectC' tag='DBSetQueryListObject' label='DBSetQueryListObject' imageMso='AddContentType' onAction='clickCreateButton'/>" +
+            "</menu>" +
+            "<menuSeparator id='MySeparatorC' insertBeforeMso='Cut'/>" +
+        "</contextMenu>" +
+        "<contextMenu idMso ='ContextMenuPivotTable'>" +
+            "<button id='refreshDataPT' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Copy'/>" +
+            "<button id='gotoDBFuncPT' label='jump to DBFunc/target (Ctl-Sh-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Copy'/>" +
+            "<menuSeparator id='MySeparatorPT' insertBeforeMso='Copy'/>" +
+        "</contextMenu>" +
+        "<contextMenu idMso ='ContextMenuCellLayout'>" +
+            "<button id='refreshDataCL' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
+            "<button id='gotoDBFuncCL' label='jump to DBFunc/target (Ctl-Sh-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
+            "<button id='DeleteRowCL' label='delete Row (Ctl-Sh-D)' imageMso='SlicerDelete' onAction='deleteRowButton' insertBeforeMso='Cut'/>" +
+            "<menu id='createMenuCL' label='Insert/Edit DBFunc/DBModif' insertBeforeMso='Cut'>" +
+                "<button id='DBMapperCL' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
+                "<button id='DBActionCL' tag='DBAction' label='DBAction' imageMso='TableIndexes' onAction='clickCreateButton'/>" +
+                "<button id='DBSequenceCL' tag='DBSeqnce' label='DBSequence' imageMso='ShowOnNewButton' onAction='clickCreateButton'/>" +
+                "<menuSeparator id='separatorCL' />" +
+                "<button id='DBListFetchCL' tag='DBListFetch' label='DBListFetch' imageMso='GroupLists' onAction='clickCreateButton'/>" +
+                "<button id='DBRowFetchCL' tag='DBRowFetch' label='DBRowFetch' imageMso='GroupRecords' onAction='clickCreateButton'/>" +
+                "<button id='DBSetQueryPivotCL' tag='DBSetQueryPivot' label='DBSetQueryPivot' imageMso='AddContentType' onAction='clickCreateButton'/>" +
+                "<button id='DBSetQueryListObjectCL' tag='DBSetQueryListObject' label='DBSetQueryListObject' imageMso='AddContentType' onAction='clickCreateButton'/>" +
+            "</menu>" +
+            "<menuSeparator id='MySeparatorCL' insertBeforeMso='Cut'/>" +
+        "</contextMenu>" +
+        "<contextMenu idMso='ContextMenuRow'>" +
+            "<button id='refreshDataR' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
+            "<button id='DeleteRowR' label='delete Row (Ctl-Sh-D)' imageMso='SlicerDelete' onAction='deleteRowButton' insertBeforeMso='Cut'/>" +
+            "<menuSeparator id='MySeparatorR' insertBeforeMso='Cut'/>" +
+        "</contextMenu>" +
+        "<contextMenu idMso='ContextMenuColumn'>" +
+            "<button id='refreshDataZ' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
+            "<menuSeparator id='MySeparatorZ' insertBeforeMso='Cut'/>" +
+        "</contextMenu>" +
+        "<contextMenu idMso='ContextMenuListRange'>" +
+            "<button id='refreshDataL' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
+            "<button id='gotoDBFuncL' label='jump to DBFunc/target (Ctl-Sh-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
+            "<button id='DeleteRowL' label='delete Row (Ctl-Sh-D)' imageMso='SlicerDelete' onAction='deleteRowButton' insertBeforeMso='Cut'/>" +
+            "<menu id='createMenuL' label='Insert/Edit DBFunc/DBModif' insertBeforeMso='Cut'>" +
+                "<button id='DBMapperL' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
+                "<button id='DBSequenceL' tag='DBSeqnce' label='DBSequence' imageMso='ShowOnNewButton' onAction='clickCreateButton'/>" +
+                "<button id='DBSheetL' tag='DBSheet' label='DBSheetDef' imageMso='ChartResetToMatchStyle' onAction='clickCreateButton'/>" +
+            "</menu>" +
+            "<menuSeparator id='MySeparatorL' insertBeforeMso='Cut'/>" +
+        "</contextMenu>" +
+        "</contextMenus></customUI>"
         Return customUIXml
     End Function
+
+    ''' <summary>display warning button icon on Cprops change if DBFskip is set...</summary>
+    ''' <param name="control"></param>
+    ''' <returns></returns>
+    Public Function getCPropsImage(control As IRibbonControl) As String
+        If getCustPropertyBool("DBFskip", ExcelDnaUtil.Application.ActiveWorkbook) Then
+            Return "DeclineTask"
+        Else
+            Return "AcceptTask"
+        End If
+    End Function
+
+    ''' <summary>display state of designmode in screentip of dialogBox launcher</summary>
+    ''' <param name="control"></param>
+    ''' <returns>screentip and the state of designmode</returns>
+    Public Function getToggleCPropsScreentip(control As IRibbonControl) As String
+        Dim displayMessage As String = ""
+        Try
+            Dim docproperty As Microsoft.Office.Core.DocumentProperty
+            For Each docproperty In ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties
+                If Left$(docproperty.Name, 5) = "DBFC" Or docproperty.Name = "DBFskip" Or docproperty.Name = "doDBMOnSave" Or docproperty.Name = "DBFNoLegacyCheck" Then
+                    displayMessage += docproperty.Name + ":" + docproperty.Value.ToString + vbCrLf
+                End If
+            Next
+        Catch ex As Exception : End Try
+        Return displayMessage
+    End Function
+
+    ''' <summary>click on change props: show Custom Properties Dialog</summary>
+    ''' <param name="control"></param>
+    Public Sub showCProps(control As IRibbonControl)
+        ExcelDnaUtil.Application.Dialogs(Excel.XlBuiltInDialog.xlDialogProperties).Show
+        Globals.theRibbon.InvalidateControl(control.Id)
+    End Sub
 
     ''' <summary>toggle designmode button (actually dialogBox launcher on DBModif Menu)</summary>
     ''' <param name="control"></param>
     Sub toggleDesignMode(control As IRibbonControl)
-
         ' Ctrl-Shift starts the CustomXML display
         If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown Then
             If Not IsNothing(ExcelDnaUtil.Application.ActiveWorkbook) Then
@@ -117,7 +158,6 @@ Public Class MenuHandler
                 Exit Sub
             End If
         End If
-
         Dim cbrs As Object = ExcelDnaUtil.Application.CommandBars
         If Not IsNothing(cbrs) AndAlso cbrs.GetEnabledMso("DesignMode") Then
             cbrs.ExecuteMso("DesignMode")
