@@ -175,14 +175,16 @@ Public Module DBSheetConfig
             If Not IsNothing(lookupWS) Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
             Exit Sub
         End If
-        ' name the worksheet to tableName
-        Try
-            curCell.Parent.Name = Left(tableName, 31)
-        Catch ex As Exception
-            ErrorMsg("DBSheet setting worksheet name error:" & ex.Message, "DBSheet Creation Error")
-            If Not IsNothing(lookupWS) Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
-            Exit Sub
-        End Try
+        ' name the worksheet to tableName, if defined in the settings
+        If CBool(fetchSetting("DBsheetAutoName", "False")) Then
+            Try
+                curCell.Parent.Name = Left(tableName, 31)
+            Catch ex As Exception
+                ErrorMsg("DBSheet setting worksheet name error:" & ex.Message, "DBSheet Creation Error")
+                If Not IsNothing(lookupWS) Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
+                Exit Sub
+            End Try
+        End If
         ' some visual aid for DBSHeets
         If curCell.Column = 1 And curCell.Row = 1 Then curCell.EntireColumn.ColumnWidth = 0.4
         Dim ignoreColumns As String = ""
@@ -197,11 +199,13 @@ Public Module DBSheetConfig
                             Exit Sub
                         End If
                     End If
-                    ' create dropdown (validation) for lookup column
-                    curCell.Offset(2 + addedCells, 0).Formula = "=OFFSET(" & lookupName & "Lookup,0,0,,1)" ' this is necessary as Formula1 in Validation.Add doesn't accept english formulas
 
-                    ' this is necessary as Excel>=2016 introduces the @operator automatically in formulas, referring to just that value in the same row. which is undesired here..
+                    ' ..... create dropdown (validation) for lookup column
+                    ' a workaround with getting the local formula is necessary as Formula1 in Validation.Add doesn't accept english formulas
+                    curCell.Offset(2 + addedCells, 0).Formula = "=OFFSET(" & lookupName & "Lookup,0,0,,1)"
+                    ' necessary as Excel>=2016 introduces the @operator automatically in formulas referring to list objects, referring to just that value in the same row. which is undesired here..
                     Dim localOffsetFormula As String = Replace(curCell.Offset(2 + addedCells, 0).FormulaLocal, "@", "")
+                    ' get lookupColumn (lookupName & "LU" for 2-column database lookups, lookupName only for 1-column lookups)
                     Dim lookupColumn As Excel.ListColumn
                     Try
                         ' only for 2-column database lookups add LU
@@ -215,13 +219,16 @@ Public Module DBSheetConfig
                         lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
                         Exit Sub
                     End Try
+                    ' add validation to look columns
                     Try
                         ' if nothing was fetched, there is no DataBodyRange, so add validation to the second row of the column range...
                         If IsNothing(lookupColumn.DataBodyRange) Then
+                            lookupColumn.Range.Cells(2, 1).Validation.Delete ' remove existing validations, just in case it exists, otherwise add would throw exception... 
                             lookupColumn.Range.Cells(2, 1).Validation.Add(
                                 Type:=Excel.XlDVType.xlValidateList, AlertStyle:=Excel.XlDVAlertStyle.xlValidAlertStop, Operator:=Excel.XlFormatConditionOperator.xlBetween,
                                 Formula1:=localOffsetFormula)
                         Else
+                            lookupColumn.DataBodyRange.Validation.Delete()  ' remove existing validations, just in case it exists, otherwise add would throw exception... 
                             lookupColumn.DataBodyRange.Validation.Add(
                                 Type:=Excel.XlDVType.xlValidateList, AlertStyle:=Excel.XlDVAlertStyle.xlValidAlertStop, Operator:=Excel.XlFormatConditionOperator.xlBetween,
                                 Formula1:=localOffsetFormula)
@@ -231,13 +238,13 @@ Public Module DBSheetConfig
                         lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
                         Exit Sub
                     End Try
-                    If getEntry("fkey", LookupDef, 1) <> "" Then 'only necessary for database lookups
+                    ' adding resolution formulas is only necessary for 2-column database lookups
+                    If getEntry("fkey", LookupDef, 1) <> "" Then
                         ' add vlookup function field for resolution of lookups to ID in main Query at the end of the DBMapper table
                         Dim lookupFormula As String = "=IF([@[" & lookupName & "LU]]<>"""",VLOOKUP([@[" & lookupName & "LU]]" & "," & lookupName & "Lookup" & ",2,False),"""")"
                         ' if no data was fetched, add a row...
-                        If IsNothing(createdListObject.DataBodyRange) Then
-                            createdListObject.ListRows.AddEx()
-                        End If
+                        If IsNothing(createdListObject.DataBodyRange) Then createdListObject.ListRows.AddEx()
+                        ' now add the resolution formula column
                         Dim newCol As Excel.ListColumn = createdListObject.ListColumns.Add()
                         newCol.Name = lookupName
                         Try
@@ -247,11 +254,12 @@ Public Module DBSheetConfig
                             ErrorMsg("Error in adding lookup formula " & lookupFormula & " to new column " & lookupName & ": " + ex.Message, "DBSheet Creation Error")
                             Exit Sub
                         End Try
-                        ' hide the resolution column
+                        ' hide the resolution formula column
                         newCol.Range.EntireColumn.Hidden = True
                         ' add lookup column to ignored columns (only resolution column will be stored in DB)
                         ignoreColumns += lookupName + "LU,"
                     End If
+                    ' clean up our workaround target...
                     curCell.Offset(2 + addedCells, 0).Formula = ""
                 Next
                 If ignoreColumns.Length > 0 Then ignoreColumns = Left(ignoreColumns, ignoreColumns.Length - 1)
