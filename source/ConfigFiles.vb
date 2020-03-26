@@ -297,14 +297,18 @@ Public Module ConfigFiles
                     Dim nameParts As String
                     For i = 0 To UBound(fileList)
                         ' is current entry contained in next entry then revert order to allow for containment in next entry's hierarchy..
+                        ' e.g. SpecialTable and SpecialTableDetails (and afterwards SpecialTableMoreDetails) -> SpecialTable opens hierarchy
                         If i < UBound(fileList) Then
                             If InStr(1, Left$(fileList(i + 1).Name, Len(fileList(i + 1).Name) - 4), Left$(fileList(i).Name, Len(fileList(i).Name) - 4)) > 0 Then
+                                ' first process NEXT alphabetically ordered file
                                 nameParts = stringParts(IIf(firstCharLevel, Left$(fileList(i + 1).Name, 1) & " ", String.Empty) &
                                                             Left$(fileList(i + 1).Name, Len(fileList(i + 1).Name) - 4), specialConfigStoreSeparator)
                                 buildFileSepMenuCtrl(nameParts, currentBar, rootPath & "\" & fileList(i + 1).Name, spclFolder, specialFolderMaxDepth)
+                                ' then process THIS file
                                 nameParts = stringParts(IIf(firstCharLevel, Left$(fileList(i).Name, 1) & " ", String.Empty) &
                                                             Left$(fileList(i).Name, Len(fileList(i).Name) - 4), specialConfigStoreSeparator)
                                 buildFileSepMenuCtrl(nameParts, currentBar, rootPath & "\" & fileList(i).Name, spclFolder, specialFolderMaxDepth)
+                                ' skip this and next one
                                 i += 2
                                 If i > UBound(fileList) Then Exit For
                             End If
@@ -345,10 +349,10 @@ Public Module ConfigFiles
         End Try
     End Sub
 
-    ''' <summary>for special Folders, parses Substrings contained in nameParts (recursively) of passed config file (fullPathName) and adds them to currentBar and submenus (recursively)</summary>
+    ''' <summary>parses Substrings (filenames in special Folders) contained in nameParts (recursively) of passed xcl config filepath (fullPathName) and adds them to currentBar and submenus (recursively)</summary>
     ''' <param name="nameParts">tokenized string (separated by space)</param>
     ''' <param name="currentBar">current menu element, where submenus and buttons are added</param>
-    ''' <param name="fullPathName">full path name to config file</param>
+    ''' <param name="fullPathName">full path name to xcl config file</param>
     ''' <param name="newRootName">the new root name for the menu, used avoid multiple placement of buttons in submenus</param>
     ''' <param name="specialFolderMaxDepth">limit for menu depth (required technically - depth limitation by Ribbon: 5 levels - and sometimes practically)</param>
     Private Sub buildFileSepMenuCtrl(nameParts As String, ByRef currentBar As XElement, fullPathName As String, newRootName As String, specialFolderMaxDepth As Integer)

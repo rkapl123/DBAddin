@@ -2,6 +2,7 @@
 Imports Microsoft.Office.Core
 Imports Microsoft.Office.Interop
 Imports System.Collections.Generic
+Imports System.Configuration
 Imports System.Diagnostics
 
 
@@ -43,14 +44,29 @@ Public Module Globals
     ''' <param name="defaultValue">Value that is taken if Key was not found</param>
     ''' <returns>the setting value</returns>
     Public Function fetchSetting(Key As String, defaultValue As String) As String
-        fetchSetting = GetSetting("DBAddin", "Settings", Key, defaultValue)
+        'fetchSetting = GetSetting("DBAddin", "Settings", Key, defaultValue)
+        fetchSetting = ConfigurationManager.AppSettings(Key)
+        If IsNothing(fetchSetting) Then fetchSetting = defaultValue
     End Function
 
     ''' <summary>encapsulates setting storing (currently registry)</summary>
     ''' <param name="Key">registry key to store value to</param>
     ''' <param name="Value">value to store</param>
     Public Sub storeSetting(Key As String, Value As String)
-        SaveSetting("DBAddin", "Settings", Key, Value)
+        'SaveSetting("DBAddin", "Settings", Key, Value)
+        Try
+            Dim configFile = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None)
+            Dim settings = configFile.AppSettings.Settings
+            If IsNothing(settings(Key)) Then
+                settings.Add(Key, Value)
+            Else
+                settings(Key).Value = Value
+            End If
+            configFile.Save(ConfigurationSaveMode.Modified)
+            ConfigurationManager.RefreshSection(configFile.AppSettings.SectionInformation.Name)
+        Catch e As ConfigurationErrorsException
+            ErrorMsg("Error writing app settings")
+        End Try
     End Sub
 
     ''' <summary>initializes global configuration variables from registry</summary>
@@ -156,7 +172,6 @@ Public Module Globals
     <ExcelCommand(Name:="refreshData", ShortCut:="^R")>
     Public Sub refreshData()
         initSettings()
-
         ' enable events in case there were some problems in procedure with EnableEvents = false
         Try
             ExcelDnaUtil.Application.EnableEvents = True
@@ -164,7 +179,6 @@ Public Module Globals
             ErrorMsg("Can't refresh data while lookup dropdown is open !!")
             Exit Sub
         End Try
-
         ' also reset the database connection in case of errors (might be nothing or not open...)
         Try : conn.Close() : Catch ex As Exception : End Try
         conn = Nothing
@@ -173,7 +187,6 @@ Public Module Globals
             ' look for old query caches and status collections (returned error messages) in active workbook and reset them to get new data
             resetCachesForWorkbook(ExcelDnaUtil.Application.ActiveWorkbook.Name)
             Dim underlyingName As String = getDBunderlyingNameFromRange(ExcelDnaUtil.Application.ActiveCell)
-
             ' now for DBListfetch/DBRowfetch resetting, first outside of all db function areas...
             If underlyingName = "" Then
                 refreshDBFunctions(ExcelDnaUtil.Application.ActiveWorkbook)
@@ -182,7 +195,6 @@ Public Module Globals
                     Dim ws As Excel.Worksheet
                     Dim qrytbl As Excel.QueryTable
                     Dim pivottbl As Excel.PivotTable
-
                     For Each ws In ExcelDnaUtil.Application.ActiveWorkbook.Worksheets
                         If ws.ProtectContents And (ws.QueryTables.Count > 0 Or ws.PivotTables.Count > 0) Then
                             ErrorMsg("Worksheet " & ws.Name & " is content protected, can't refresh QueryTables/PivotTables !")
@@ -237,7 +249,6 @@ Public Module Globals
             ErrorMsg("Multiple hidden DB Function names in selected cell (making 'jump' ambigous/impossible), please use purge names tool!")
             Exit Sub
         End If
-
         Dim underlyingName As String = getDBunderlyingNameFromRange(ExcelDnaUtil.Application.ActiveCell)
         If underlyingName = "" Then Exit Sub
         If Left$(underlyingName, 10) = "DBFtargetF" Then
@@ -278,7 +289,6 @@ Public Module Globals
     Public Function functionSplit(ByVal theString As String, delimiter As String, quote As String, startStr As String, openBracket As String, closeBracket As String) As Object
         Dim tempString As String
         Dim finalResult
-
         Try
             ' find startStr
             tempString = Mid$(theString, InStr(1, UCase$(theString), UCase$(startStr)) + Len(startStr))
@@ -491,7 +501,6 @@ Public Module Globals
     Public Sub refreshDBFunctions(Wb As Excel.Workbook, Optional ignoreCalcMode As Boolean = False)
         Dim searchCells As Excel.Range
         Dim ws As Excel.Worksheet
-
         ' hidden workbooks produce an error when searching for cells, this is captured by 
         If TypeName(ExcelDnaUtil.Application.Calculation) = "Error" Then
             ErrorMsg("ExcelDnaUtil.Application.Calculation = Error, " & Wb.Path & "\" & Wb.Name & " (hidden workbooks produce calculation errors...)")
@@ -503,7 +512,7 @@ Public Module Globals
             For Each ws In Wb.Worksheets
                 cellcount += ExcelDnaUtil.Application.WorksheetFunction.CountIf(ws.Range("1:" & ws.Rows.Count), "<>")
             Next
-            If cellcount > CLng(fetchSetting("maxCellCount", "300000")) Then
+            If cellcount > CLng(fetchSetting("maxCellCount", "300000")) And Not CBool(fetchSetting("maxCellCountIgnore", "False")) Then
                 Dim retval As MsgBoxResult = QuestionMsg("This large workbook (" & cellcount.ToString() & " filled cells >" & CLng(fetchSetting("maxCellCount", "300000")) & ") might take long to search for DB functions to refresh, continue ?" & vbCrLf & "Click Cancel to add DBFskip to this Workbook, avoiding this search in the future (no DB Data will be refreshed then !)...", vbYesNoCancel, "Refresh DB functions")
                 If retval <> vbYes Then
                     If retval = vbCancel Then
