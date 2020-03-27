@@ -111,19 +111,18 @@ Partial Friend Class DBSheetCreateForm
         End Try
     End Sub
 
-    ''
-    ' saves the definitions currently stored in theDBSheetCreateForm to newly selected file (saveAs = True) or
-    ' to the file already stored in setting "dsdPath"
-    ' @param saveAs
-    ' @remarks
+    Private currentFilepath As String
+
+    ''' <summary>saves the definitions currently stored in theDBSheetCreateForm to newly selected file (saveAs = True) or to the file already stored in setting "dsdPath"</summary>
+    ''' <param name="saveAs"></param>
     Private Sub saveDefinitionsToFile(ByRef saveAs As Boolean)
-        Dim currentFilepath As String = fetchSetting("dsdPath", String.Empty)
+
         Dim fileToStore As String = FileSystem.Dir(currentFilepath, FileAttribute.Normal)
         Try
             If Strings.Len(fileToStore) = 0 Or saveAs Or Strings.Len(currentFilepath) = 0 Then
                 'fileToStore = showOpenSaveDialog(1, "Save DBSheet Definition", True, Table.Text & ".xml")
                 If Strings.Len(fileToStore) = 0 Then Exit Sub
-                storeSetting("dsdPath", fileToStore)
+                currentFilepath = fileToStore
             Else
                 fileToStore = currentFilepath
             End If
@@ -405,7 +404,7 @@ Partial Friend Class DBSheetCreateForm
             If Not theDBSheetColumnList.hasRows() Then
                 Query.Text = String.Empty
                 ' reset the current filename
-                storeSetting("dsdPath", String.Empty)
+                currentFilepath = ""
                 saveEnabled(False)
                 columnEditMode(False)
                 ' after resetting columns changes to table/connection allowed again !!
@@ -423,7 +422,7 @@ Partial Friend Class DBSheetCreateForm
     Private Sub clearAllFields_Click(ByVal eventSender As Object, ByVal eventArgs As EventArgs) Handles clearAllFields.Click
         clearTablesColumnsAndQuery()
         ' reset the current filename
-        storeSetting("dsdPath", String.Empty)
+        currentFilepath = ""
         saveEnabled(False)
         columnEditMode(False)
     End Sub
@@ -1174,7 +1173,7 @@ Partial Friend Class DBSheetCreateForm
                 Dim retval As String = openFileDialog1.FileName
                 If Strings.Len(retval) = 0 Then Exit Sub
                 ' remember path for possible storing in DBSheetParams
-                storeSetting("dsdPath", retval)
+                currentFilepath = retval
                 Dim DBSheetParams As String = File.ReadAllText(retval, System.Text.Encoding.Default)
                 Me.Hide()
                 createDefinitions(DBSheetParams)

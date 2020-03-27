@@ -2,6 +2,7 @@ Imports ExcelDna.Integration.CustomUI
 Imports ExcelDna.Integration
 Imports System.Runtime.InteropServices
 Imports Microsoft.Office.Interop
+Imports System.Configuration
 
 
 ''' <summary>handles all Menu related aspects (context menu for building/refreshing, "DBAddin"/"Load Config" tree menu for retrieving stored configuration files</summary>
@@ -17,12 +18,12 @@ Public Class MenuHandler
     ''' <summary>creates the Ribbon (only at startup). any changes to the ribbon can only be done via dynamic menus</summary>
     ''' <returns></returns>
     Public Overrides Function GetCustomUI(RibbonID As String) As String
-        ' Ribbon definition XML          size='normal' 
+        ' Ribbon definition XML
         Dim customUIXml As String = "<customUI xmlns='http://schemas.microsoft.com/office/2009/07/customui' onLoad='ribbonLoaded' ><ribbon><tabs><tab id='DBaddinTab' label='DB Addin'>"
         ' DBAddin Group: environment choice, DBConfics selection tree, purge names tool button and dialogBoxLauncher for AboutBox
         customUIXml +=
         "<group id='DBAddinGroup' label='General settings'>" +
-            "<dropDown id='envDropDown' label='Environment:' sizeString='1234567890123456' getSelectedItemIndex='GetSelectedEnvironment' getItemCount='GetItemCount' getItemID='GetItemID' getItemLabel='GetItemLabel' onAction='selectEnvironment'/>" +
+            "<dropDown id='envDropDown' label='Environment:' sizeString='1234567890123456' getEnabled='GetEnabledSelect' getSelectedItemIndex='GetSelectedEnvironment' getItemCount='GetItemCount' getItemID='GetItemID' getItemLabel='GetItemLabel' getSupertip='getSelectedTooltip' onAction='selectEnvironment'/>" +
             "<buttonGroup id='buttonGroup'>" +
                 "<dynamicMenu id='DBConfigs' label='DB Configs' imageMso='QueryShowTable' screentip='DB Function Configuration Files quick access' getContent='getDBConfigMenu'/>" +
                 "<button id='purgetool' label='purge tool' screentip='purges underlying DBtarget/DBsource Names' imageMso='BorderErase' onAction='clickpurgetoolbutton'/>" +
@@ -31,7 +32,7 @@ Public Class MenuHandler
                 "<button id='showLog' label='show log' screentip='shows Database Addins Diagnostic Display' imageMso='ZoomOnePage' onAction='clickShowLog'/>" +
                 "<button id='props' label='custom props' onAction='showCProps' getImage='getCPropsImage' screentip='Change custom properties relevant for DB Addin:' getSupertip='getToggleCPropsScreentip' />" +
             "</buttonGroup>" +
-            "<dialogBoxLauncher><button id='dialog' label='About DBAddin' onAction='showAbout' tag='3' screentip='Show Aboutbox with help, version information, homepage and access to log'/></dialogBoxLauncher>" +
+            "<dialogBoxLauncher><button id='dialog' label='About DBAddin' onAction='showAbout' tag='3' screentip='Show Aboutbox with help, version information and project homepage; Ctrl-Shift-click to inspect/edit DBAddin User Settings'/></dialogBoxLauncher>" +
         "</group>"
         ' DBModif Group: maximum three DBModif types possible (depending on existence in current workbook): 
         customUIXml +=
@@ -205,37 +206,50 @@ Public Class MenuHandler
         Return Globals.selectedEnvironment
     End Function
 
+    Public Function getSelectedTooltip(control As IRibbonControl) As String
+        If CBool(fetchSetting("DontChangeEnvironment", "False")) Then
+            Return "DontChangeEnvironment is set, therefore changing the Environment is prevented !"
+        Else
+            Return ""
+        End If
+    End Function
+
+    Public Function GetEnabledSelect(control As IRibbonControl) As Integer
+        Return Not CBool(fetchSetting("DontChangeEnvironment", "False"))
+    End Function
+
     ''' <summary>Choose environment (configured in registry with ConstConnString(N), ConfigStoreFolder(N))</summary>
     Public Sub selectEnvironment(control As IRibbonControl, id As String, index As Integer)
         Globals.selectedEnvironment = index
-        Dim env As String = (index + 1).ToString()
-
-        If GetSetting("DBAddin", "Settings", "DontChangeEnvironment", String.Empty) = "Y" Then
-            ErrorMsg("Setting DontChangeEnvironment is set to Y, therefore changing the Environment is prevented !", "DBAddin Change Environment", MsgBoxStyle.Exclamation)
-            Exit Sub
-        End If
-        storeSetting("ConstConnString", fetchSetting("ConstConnString" & env, String.Empty))
-        storeSetting("ConfigStoreFolder", fetchSetting("ConfigStoreFolder" & env, String.Empty))
-        storeSetting("ConfigName", fetchSetting("ConfigName" & env, String.Empty))
-        storeSetting("DBSheetDefinitions", fetchSetting("DBSheetDefinitions" & env, String.Empty))
         initSettings()
         ' provide a chance to reconnect when switching environment...
         conn = Nothing
         If Not IsNothing(ExcelDnaUtil.Application.ActiveWorkbook) Then
-            Dim retval As MsgBoxResult = QuestionMsg("ConstConnString" & ConstConnString & vbCrLf & "ConfigStoreFolder:" & ConfigStoreFolder & vbCrLf & vbCrLf & "Refresh DBFunctions in active workbook to see effects?", MsgBoxStyle.YesNo, "Changed environment to: " & fetchSetting("ConfigName" & env, String.Empty))
+            Dim retval As MsgBoxResult = QuestionMsg("ConstConnString" & Globals.ConstConnString & vbCrLf & "ConfigStoreFolder:" & ConfigFiles.ConfigStoreFolder & vbCrLf & vbCrLf & "Refresh DBFunctions in active workbook to see effects?", MsgBoxStyle.YesNo, "Changed environment to: " & fetchSetting("ConfigName" & Globals.env(), String.Empty))
             If retval = vbYes Then Globals.refreshDBFunctions(ExcelDnaUtil.Application.ActiveWorkbook)
         Else
-            ErrorMsg("ConstConnString" & ConstConnString & vbCrLf & "ConfigStoreFolder:" & ConfigStoreFolder, "Changed environment to: " & fetchSetting("ConfigName" & env, String.Empty), MsgBoxStyle.Information)
+            ErrorMsg("ConstConnString" & Globals.ConstConnString & vbCrLf & "ConfigStoreFolder:" & ConfigFiles.ConfigStoreFolder, "Changed environment to: " & fetchSetting("ConfigName" & Globals.env(), String.Empty), MsgBoxStyle.Information)
         End If
     End Sub
 
     ''' <summary>dialogBoxLauncher of leftmost group: activate about box</summary>
     Public Sub showAbout(control As IRibbonControl)
-        Dim myAbout As AboutBox = New AboutBox
-        myAbout.ShowDialog()
-        ' if disabling the addin was chosen, then suicide here..
-        If myAbout.disableAddinAfterwards Then
-            Try : ExcelDnaUtil.Application.AddIns("DBaddin").Installed = False : Catch ex As Exception : End Try
+        ' Ctrl-Shift starts the AppSetting display
+        If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown Then
+            Dim theEditDBModifDefDlg As EditDBModifDef = New EditDBModifDef()
+            theEditDBModifDefDlg.DBFskip.Hide()
+            theEditDBModifDefDlg.doDBMOnSave.Hide()
+            If theEditDBModifDefDlg.ShowDialog() = System.Windows.Forms.DialogResult.OK Then
+                ConfigurationManager.RefreshSection("appSettings")
+                theRibbon.Invalidate()
+            End If
+        Else
+            Dim myAbout As AboutBox = New AboutBox
+            myAbout.ShowDialog()
+            ' if disabling the addin was chosen, then suicide here..
+            If myAbout.disableAddinAfterwards Then
+                Try : ExcelDnaUtil.Application.AddIns("DBaddin").Installed = False : Catch ex As Exception : End Try
+            End If
         End If
     End Sub
 

@@ -18,6 +18,7 @@ Public NotInheritable Class AboutBox
             Dim sModule As String = tModule.FileName
             If sModule.ToUpper.Contains("DBADDIN") Then
                 sModuleInfo = FileDateTime(sModule).ToString()
+                Exit For
             End If
         Next
         ' set the UI elements

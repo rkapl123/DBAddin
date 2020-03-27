@@ -1276,7 +1276,7 @@ err_1:
     Public Function DBAddinServerSetting() As String
         ExcelDnaUtil.Application.Volatile()
         Try
-            Dim theConnString As String = fetchSetting("ConstConnString", String.Empty)
+            Dim theConnString As String = fetchSetting("ConstConnString" & Globals.env(), String.Empty)
             Dim keywordstart As Integer = InStr(1, UCase(theConnString), "SERVER=") + Len("SERVER=")
             DBAddinServerSetting = Mid$(theConnString, keywordstart, InStr(keywordstart, theConnString, ";") - keywordstart)
             If ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual Then DBAddinServerSetting = "calc Mode is manual, please press F9 to get current DBAddin server setting !"
@@ -1372,9 +1372,9 @@ err_1:
             EnvPrefix = "Env:" & fetchSetting("ConfigName" & ConnString.ToString(), String.Empty)
             ConnString = fetchSetting("ConstConnString" & ConnString.ToString(), String.Empty)
         ElseIf TypeName(ConnString) = "String" Then
-            If ConnString = "" Then ' no ConnString or environment number set: get current set connection string
-                EnvPrefix = "Env:" & fetchSetting("ConfigName", String.Empty)
-                ConnString = fetchSetting("ConstConnString", String.Empty)
+            If ConnString = "" Then ' no ConnString or environment number set: get connection string of currently selected evironment
+                EnvPrefix = "Env:" & fetchSetting("ConfigName" & Globals.env(), String.Empty)
+                ConnString = fetchSetting("ConstConnString" & Globals.env(), String.Empty)
             Else
                 EnvPrefix = "ConnString set"
             End If

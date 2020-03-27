@@ -49,34 +49,20 @@ Public Module Globals
         If IsNothing(fetchSetting) Then fetchSetting = defaultValue
     End Function
 
-    ''' <summary>encapsulates setting storing (currently registry)</summary>
-    ''' <param name="Key">registry key to store value to</param>
-    ''' <param name="Value">value to store</param>
-    Public Sub storeSetting(Key As String, Value As String)
-        'SaveSetting("DBAddin", "Settings", Key, Value)
-        Try
-            Dim configFile = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None)
-            Dim settings = configFile.AppSettings.Settings
-            If IsNothing(settings(Key)) Then
-                settings.Add(Key, Value)
-            Else
-                settings(Key).Value = Value
-            End If
-            configFile.Save(ConfigurationSaveMode.Modified)
-            ConfigurationManager.RefreshSection(configFile.AppSettings.SectionInformation.Name)
-        Catch e As ConfigurationErrorsException
-            ErrorMsg("Error writing app settings")
-        End Try
-    End Sub
+    ''' <summary>environment for settings (+1 of selectedeEnvironment which is the index of the dropdown)</summary>
+    ''' <returns></returns>
+    Public Function env() As String
+        Return (Globals.selectedEnvironment + 1).ToString()
+    End Function
 
-    ''' <summary>initializes global configuration variables from registry</summary>
+    ''' <summary>initializes global configuration variables</summary>
     Public Sub initSettings()
         Try
             DebugAddin = CBool(fetchSetting("DebugAddin", "False"))
-            ConstConnString = fetchSetting("ConstConnString", String.Empty)
+            ConstConnString = fetchSetting("ConstConnString" + Globals.env(), String.Empty)
             CnnTimeout = CInt(fetchSetting("CnnTimeout", "15"))
             CmdTimeout = CInt(fetchSetting("CmdTimeout", "60"))
-            ConfigStoreFolder = fetchSetting("ConfigStoreFolder", String.Empty)
+            ConfigStoreFolder = fetchSetting("ConfigStoreFolder" + Globals.env(), String.Empty)
             specialConfigStoreFolders = Split(fetchSetting("specialConfigStoreFolders", String.Empty), ":")
             DefaultDBDateFormatting = CInt(fetchSetting("DefaultDBDateFormatting", "0"))
             ' load environments
@@ -88,10 +74,6 @@ Public Module Globals
                 If Len(ConfigName) > 0 Then
                     ReDim Preserve environdefs(environdefs.Length)
                     environdefs(environdefs.Length - 1) = ConfigName + " - " + i.ToString()
-                End If
-                ' set selectedEnvironment
-                If fetchSetting("ConstConnString" + i.ToString(), vbNullString) = ConstConnString Then
-                    selectedEnvironment = i - 1
                 End If
                 i += 1
             Loop Until Len(ConfigName) = 0
