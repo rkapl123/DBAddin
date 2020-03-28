@@ -949,8 +949,8 @@ Public Class DBAction : Inherits DBModif
 
         'Dim ds As DataSet = New DataSet()
         'Dim dataAdapter As SqlDataAdapter = New SqlDataAdapter()
-        'Dim theConnString As String = fetchSetting("ConstConnString" & env, String.Empty)
-        'Dim dbidentifier As String = fetchSetting("DBidentifierCCS" & env, String.Empty)
+        'Dim theConnString As String = fetchSetting("ConstConnString" & env, "")
+        'Dim dbidentifier As String = fetchSetting("DBidentifierCCS" & env, "")
         'theConnString = Change(theConnString, dbidentifier, database, ";")
         'Dim cn As SqlConnection = New SqlConnection(theConnString)
         'cn.Open()
@@ -1132,13 +1132,13 @@ Public Module DBModifs
     Public Function openConnection(env As Integer, database As String) As Boolean
         openConnection = False
 
-        Dim theConnString As String = fetchSetting("ConstConnString" & env, String.Empty)
-        If theConnString = String.Empty Then
+        Dim theConnString As String = fetchSetting("ConstConnString" & env, "")
+        If theConnString = "" Then
             ErrorMsg("No Connectionstring given for environment: " & env & ", please correct and rerun.", "Open Connection Error")
             Exit Function
         End If
-        Dim dbidentifier As String = fetchSetting("DBidentifierCCS" & env, String.Empty)
-        If dbidentifier = String.Empty Then
+        Dim dbidentifier As String = fetchSetting("DBidentifierCCS" & env, "")
+        If dbidentifier = "" Then
             ErrorMsg("No DB identifier given for environment: " & env & ", please correct and rerun.", "Open Connection Error")
             Exit Function
         End If

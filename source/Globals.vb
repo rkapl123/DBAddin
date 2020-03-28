@@ -44,7 +44,6 @@ Public Module Globals
     ''' <param name="defaultValue">Value that is taken if Key was not found</param>
     ''' <returns>the setting value</returns>
     Public Function fetchSetting(Key As String, defaultValue As String) As String
-        'fetchSetting = GetSetting("DBAddin", "Settings", Key, defaultValue)
         fetchSetting = ConfigurationManager.AppSettings(Key)
         If IsNothing(fetchSetting) Then fetchSetting = defaultValue
     End Function
@@ -59,11 +58,11 @@ Public Module Globals
     Public Sub initSettings()
         Try
             DebugAddin = CBool(fetchSetting("DebugAddin", "False"))
-            ConstConnString = fetchSetting("ConstConnString" + Globals.env(), String.Empty)
+            ConstConnString = fetchSetting("ConstConnString" + Globals.env(), "")
             CnnTimeout = CInt(fetchSetting("CnnTimeout", "15"))
             CmdTimeout = CInt(fetchSetting("CmdTimeout", "60"))
-            ConfigStoreFolder = fetchSetting("ConfigStoreFolder" + Globals.env(), String.Empty)
-            specialConfigStoreFolders = Split(fetchSetting("specialConfigStoreFolders", String.Empty), ":")
+            ConfigStoreFolder = fetchSetting("ConfigStoreFolder" + Globals.env(), "")
+            specialConfigStoreFolders = Split(fetchSetting("specialConfigStoreFolders", ""), ":")
             DefaultDBDateFormatting = CInt(fetchSetting("DefaultDBDateFormatting", "0"))
             ' load environments
             Dim i As Integer = 1
@@ -299,7 +298,7 @@ Public Module Globals
     ''' <returns>the balanced string</returns>
     Public Function balancedString(theString As String, openBracket As String, closeBracket As String, Optional quote As String = "") As String
         Dim startBalance As Long, endBalance As Long, i As Long, countOpen As Long, countClose As Long
-        balancedString = String.Empty
+        balancedString = ""
         Dim quoteMode As Boolean = False
         Try
             startBalance = 0
@@ -342,7 +341,7 @@ Public Module Globals
     Public Function replaceDelimsWithSpecialSep(theString As String, delimiter As String, quote As String, openBracket As String, closeBracket As String, specialSep As String) As String
         Dim openedBrackets As Long, quoteMode As Boolean
         Dim i As Long
-        replaceDelimsWithSpecialSep = String.Empty
+        replaceDelimsWithSpecialSep = ""
         Try
             For i = 1 To Len(theString)
                 If Left$(Mid$(theString, i), Len(quote)) = quote And quote.Length > 0 And Not quoteMode Then
@@ -384,7 +383,7 @@ Public Module Globals
 
         replaceBeg = InStr(1, UCase$(theString), UCase$(keystr))
         If replaceBeg = 0 Then
-            Change = String.Empty
+            Change = ""
             Exit Function
         End If
         replaceEnd = InStr(replaceBeg, UCase$(theString), UCase$(separator))
@@ -401,7 +400,7 @@ Public Module Globals
         Dim fetchBeg As Integer, fetchEnd As Integer
 
         fetchBeg = InStr(1, UCase$(theString), UCase$(keystr))
-        If fetchBeg = 0 Then Return String.Empty
+        If fetchBeg = 0 Then Return ""
         fetchEnd = InStr(fetchBeg + Len(keystr), UCase$(theString), UCase$(separator))
         If fetchEnd = 0 Or separator.Length = 0 Then fetchEnd = Len(theString) + 1
         fetch = Mid$(theString, fetchBeg + Len(keystr), fetchEnd - (fetchBeg + Len(keystr)))
@@ -597,7 +596,7 @@ Public Module Globals
             LogWarn("no active workbook available !")
             Exit Sub
         End If
-        If getCustPropertyBool("DBFNoLegacyCheck", actWB) Then Exit Sub
+        If Globals.getCustPropertyBool("DBFNoLegacyCheck", actWB) Then Exit Sub
         DBModifs.preventChangeWhileFetching = True ' WorksheetFunction.CountIf trigger Change event with target in argument 1, so make sure this doesn't change anything)
         Try
             ' count nonempty cells in workbook...
@@ -653,7 +652,7 @@ Public Module Globals
 
     ''' <summary>maintenance procedure to purge names used for dbfunctions from workbook</summary>
     Public Sub purgeNames()
-        Dim resultingPurges As String = String.Empty
+        Dim resultingPurges As String = ""
         Dim retval As MsgBoxResult = QuestionMsg("Should ExternalData names (from Queries) and names referring to missing references (thus containing #REF!) also be purged?", MsgBoxStyle.YesNoCancel, "purge Names")
         If retval = vbCancel Then Exit Sub
         Dim calcMode = ExcelDnaUtil.Application.Calculation
@@ -675,7 +674,7 @@ Public Module Globals
                     'DBname.Delete()
                 End If
             Next
-            If resultingPurges = String.Empty Then
+            If resultingPurges = "" Then
                 ErrorMsg("nothing purged...", "purge Names", MsgBoxStyle.Exclamation)
             Else
                 ErrorMsg("removed " + resultingPurges, "purge Names", MsgBoxStyle.Exclamation)

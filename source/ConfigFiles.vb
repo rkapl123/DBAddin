@@ -140,8 +140,8 @@ Public Module ConfigFiles
             If cellToBeStoredAddress.Length > 0 Then
                 ' if there is a reference to a different sheet in cellToBeStoredAddress (starts with '<sheetname>'! ) and this sheet doesn't exist, create it...
                 If InStr(1, cellToBeStoredAddress, "!") > 0 Then
-                    Dim theSheetName As String = Replace(Mid$(cellToBeStoredAddress, 1, InStr(1, cellToBeStoredAddress, "!") - 1), "'", String.Empty)
-            Try
+                    Dim theSheetName As String = Replace(Mid$(cellToBeStoredAddress, 1, InStr(1, cellToBeStoredAddress, "!") - 1), "'", "")
+                    Try
                         Dim testSheetExist As String = ExcelDnaUtil.Application.Worksheets(theSheetName).name
                     Catch ex As Exception
                         With ExcelDnaUtil.Application.Worksheets.Add(After:=originCell.Parent)
@@ -183,7 +183,7 @@ Public Module ConfigFiles
         If InStr(1, relAddress, "!") = 0 Then
             theSheetName = originCell.Parent.Name
         Else
-            theSheetName = Replace(Mid$(relAddress, 1, InStr(1, relAddress, "!") - 1), "'", String.Empty)
+            theSheetName = Replace(Mid$(relAddress, 1, InStr(1, relAddress, "!") - 1), "'", "")
         End If
         ' parse row or column out of RC style reference adresses
         Dim startRow As Long = 0, startCol As Long = 0, endRow As Long = 0, endCol As Long = 0
@@ -262,7 +262,7 @@ Public Module ConfigFiles
             menuID = 0
             readAllFiles(ConfigStoreFolder, currentBar)
             specialConfigFoldersTempColl = Nothing
-            ExcelDnaUtil.Application.StatusBar = String.Empty
+            ExcelDnaUtil.Application.StatusBar = ""
             currentBar.SetAttributeValue("xmlns", "http://schemas.microsoft.com/office/2009/07/customui")
             ConfigMenuXML = currentBar.ToString()
         End If
@@ -280,7 +280,7 @@ Public Module ConfigFiles
             Dim fileList() As FileSystemInfo = di.GetFileSystemInfos("*.xcl").OrderBy(Function(fi) fi.Name).ToArray()
             If fileList.Length > 0 Then
                 ' for special folders split menu further into camelcase (or other special) separated names
-                Dim aFolder : Dim spclFolder As String : spclFolder = String.Empty
+                Dim aFolder : Dim spclFolder As String : spclFolder = ""
                 Dim theFolder As String
                 theFolder = Mid$(rootPath, InStrRev(rootPath, "\") + 1)
                 For Each aFolder In specialConfigStoreFolders
@@ -291,7 +291,7 @@ Public Module ConfigFiles
                 Next
                 If spclFolder.Length > 0 Then
                     Dim firstCharLevel As Boolean = CBool(fetchSetting(spclFolder & "FirstLetterLevel", "False"))
-                    Dim specialConfigStoreSeparator As String = fetchSetting(spclFolder & "Separator", String.Empty)
+                    Dim specialConfigStoreSeparator As String = fetchSetting(spclFolder & "Separator", "")
                     ' max depth limitation by Ribbon: 5 levels: 1 top level, 1 folder level (Database foldername) -> 3 left
                     specialFolderMaxDepth = IIf(fetchSetting(spclFolder & "MaxDepth", 1) <= 3, fetchSetting(spclFolder & "MaxDepth", 1), 3)
                     Dim nameParts As String
@@ -301,11 +301,11 @@ Public Module ConfigFiles
                         If i < UBound(fileList) Then
                             If InStr(1, Left$(fileList(i + 1).Name, Len(fileList(i + 1).Name) - 4), Left$(fileList(i).Name, Len(fileList(i).Name) - 4)) > 0 Then
                                 ' first process NEXT alphabetically ordered file
-                                nameParts = stringParts(IIf(firstCharLevel, Left$(fileList(i + 1).Name, 1) & " ", String.Empty) &
+                                nameParts = stringParts(IIf(firstCharLevel, Left$(fileList(i + 1).Name, 1) & " ", "") &
                                                             Left$(fileList(i + 1).Name, Len(fileList(i + 1).Name) - 4), specialConfigStoreSeparator)
                                 buildFileSepMenuCtrl(nameParts, currentBar, rootPath & "\" & fileList(i + 1).Name, spclFolder, specialFolderMaxDepth)
                                 ' then process THIS file
-                                nameParts = stringParts(IIf(firstCharLevel, Left$(fileList(i).Name, 1) & " ", String.Empty) &
+                                nameParts = stringParts(IIf(firstCharLevel, Left$(fileList(i).Name, 1) & " ", "") &
                                                             Left$(fileList(i).Name, Len(fileList(i).Name) - 4), specialConfigStoreSeparator)
                                 buildFileSepMenuCtrl(nameParts, currentBar, rootPath & "\" & fileList(i).Name, spclFolder, specialFolderMaxDepth)
                                 ' skip this and next one
@@ -313,7 +313,7 @@ Public Module ConfigFiles
                                 If i > UBound(fileList) Then Exit For
                             End If
                         End If
-                        nameParts = stringParts(IIf(firstCharLevel, Left$(fileList(i).Name, 1) & " ", String.Empty) & Left$(fileList(i).Name, Len(fileList(i).Name) - 4), specialConfigStoreSeparator)
+                        nameParts = stringParts(IIf(firstCharLevel, Left$(fileList(i).Name, 1) & " ", "") & Left$(fileList(i).Name, Len(fileList(i).Name) - 4), specialConfigStoreSeparator)
                         buildFileSepMenuCtrl(nameParts, currentBar, rootPath & "\" & fileList(i).Name, spclFolder, specialFolderMaxDepth)
                     Next
                     ' normal case: just follow the path and enter all entries as buttons
@@ -396,7 +396,7 @@ Public Module ConfigFiles
     ''' <param name="theString">string to be tokenized</param>
     ''' <param name="specialConfigStoreSeparator">if not empty, tokenize theString by this separator, else tokenize by camel case</param>
     Private Function stringParts(theString As String, specialConfigStoreSeparator As String) As String
-        stringParts = String.Empty
+        stringParts = ""
         ' specialConfigStoreSeparator given: split by it
         If specialConfigStoreSeparator.Length > 0 Then
             stringParts = Join(Split(theString, specialConfigStoreSeparator), " ")

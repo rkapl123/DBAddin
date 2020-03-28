@@ -18,7 +18,7 @@ Public Class DBModifCreate
     Private Sub OK_Button_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles OK_Button.Click
         Dim NameValidationResult As String = ""
         ' Check for valid range name
-        If Me.DBModifName.Text <> String.Empty Then
+        If Me.DBModifName.Text <> "" Then
             ' Add doesn't work directly with ExcelDnaUtil.Application.ActiveWorkbook.Names (late binding), so create an object here...
             Dim NamesList As Excel.Names = ExcelDnaUtil.Application.ActiveWorkbook.Names
             Try
@@ -29,11 +29,11 @@ Public Class DBModifCreate
             Try : NamesList.Item(Me.Tag & Me.DBModifName.Text).Delete() : Catch ex As Exception : End Try
         End If
         ' check for requirements: mandatory fields filled (visible Tablename, Primary keys and Database), NameValidation above OK and no double invocation for execOnSave in DB Sequences and sequence parts
-        If Me.Tablename.Text = String.Empty And Me.Tablename.Visible Then
+        If Me.Tablename.Text = "" And Me.Tablename.Visible Then
             ErrorMsg("Field Tablename is required, please fill in!", "DBModification Validation")
-        ElseIf Me.PrimaryKeys.Text = String.Empty And Me.PrimaryKeys.Visible Then
+        ElseIf Me.PrimaryKeys.Text = "" And Me.PrimaryKeys.Visible Then
             ErrorMsg("Field Primary Keys is required, please fill in!", "DBModification Validation")
-        ElseIf Me.Database.Text = String.Empty And Me.Database.Visible Then
+        ElseIf Me.Database.Text = "" And Me.Database.Visible Then
             ErrorMsg("Field Database is required, please fill in!", "DBModification Validation")
         ElseIf NameValidationResult <> "" Then
             ErrorMsg("Invalid " & Me.NameLabel.Text & ", Error: " & NameValidationResult, "DBModification Validation")
@@ -73,9 +73,9 @@ Public Class DBModifCreate
                     If Not Me.execOnSave.Checked Then Exit Sub
                 End If
             End If
+            Me.DialogResult = DialogResult.OK
+            Me.Close()
         End If
-        Me.DialogResult = DialogResult.OK
-        Me.Close()
     End Sub
 
     ''' <summary>ignore all done changes in dialog</summary>

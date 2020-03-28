@@ -36,7 +36,6 @@ Partial Class EditDBModifDef
         'OKBtn
         '
         Me.OKBtn.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.OKBtn.DialogResult = System.Windows.Forms.DialogResult.OK
         Me.OKBtn.Location = New System.Drawing.Point(538, 396)
         Me.OKBtn.Name = "OKBtn"
         Me.OKBtn.Size = New System.Drawing.Size(55, 23)
@@ -48,7 +47,6 @@ Partial Class EditDBModifDef
         'CancelBtn
         '
         Me.CancelBtn.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.CancelBtn.DialogResult = System.Windows.Forms.DialogResult.Cancel
         Me.CancelBtn.Location = New System.Drawing.Point(599, 396)
         Me.CancelBtn.Name = "CancelBtn"
         Me.CancelBtn.Size = New System.Drawing.Size(55, 23)
@@ -106,11 +104,10 @@ Partial Class EditDBModifDef
         '
         'EditDBModifDef
         '
-        Me.AcceptButton = Me.OKBtn
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.CancelButton = Me.CancelBtn
-        Me.ClientSize = New System.Drawing.Size(674, 431)
+        Me.ClientSize = New System.Drawing.Size(674, 454)
         Me.ControlBox = False
         Me.Controls.Add(Me.DBFskip)
         Me.Controls.Add(Me.doDBMOnSave)

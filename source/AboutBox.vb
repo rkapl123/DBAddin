@@ -54,7 +54,7 @@ Public NotInheritable Class AboutBox
     ''' <param name="e"></param>
     Private Sub LabelProductName_Click(sender As Object, e As EventArgs) Handles LabelProductName.Click
         Try
-            Process.Start(fetchSetting("LocalHelp", String.Empty))
+            Process.Start(fetchSetting("LocalHelp", ""))
         Catch ex As Exception
             LogWarn(ex.Message)
         End Try

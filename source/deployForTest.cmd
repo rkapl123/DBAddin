@@ -8,10 +8,12 @@ if exist "C:\Program Files\Microsoft Office\root\" (
 	copy /Y %source%\DBaddin-AddIn64-packed.xll "%appdata%\Microsoft\AddIns\DBaddin.xll"
 	copy /Y %source%\DBaddin.pdb "%appdata%\Microsoft\AddIns"
 	copy /Y %source%\DBaddin.dll.config "%appdata%\Microsoft\AddIns\DBaddin.xll.config"
+	copy /Y DBaddinCentral.config "%appdata%\Microsoft\AddIns\DBaddinCentral.config"
 ) else (
 	echo 32bit office
 	copy /Y %source%\DBaddin-AddIn-packed.xll "%appdata%\Microsoft\AddIns\DBaddin.xll"
 	copy /Y %source%\DBaddin.pdb "%appdata%\Microsoft\AddIns"
 	copy /Y %source%\DBaddin.dll.config "%appdata%\Microsoft\AddIns\DBaddin.xll.config"
+	copy /Y DBaddinCentral.config "%appdata%\Microsoft\AddIns\DBaddinCentral.config"
 )
 pause

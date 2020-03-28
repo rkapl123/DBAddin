@@ -98,11 +98,11 @@ Partial Friend Class DBSheetCreateForm
             Sorting.Items.Add("None")
             Sorting.Items.Add("Ascending")
             Sorting.Items.Add("Descending")
-            Query.Text = String.Empty
-            WhereClause.Text = String.Empty
-            LookupQuery.Text = String.Empty
+            Query.Text = ""
+            WhereClause.Text = ""
+            LookupQuery.Text = ""
             DBSheetCols.Rows.Clear()
-            currentForTable = String.Empty
+            currentForTable = ""
             maxColCount = 0
             saveEnabled(False)
 
@@ -217,7 +217,7 @@ Partial Friend Class DBSheetCreateForm
             End If
             ' just in case this wasn't cleared before...
             theDBSheetColumnList.Clear()
-            Query.Text = String.Empty
+            Query.Text = ""
             fillColumns()
             columnEditMode(False)
             FormDisabled = False
@@ -402,7 +402,7 @@ Partial Friend Class DBSheetCreateForm
                 setEntryFields()
             End If
             If Not theDBSheetColumnList.hasRows() Then
-                Query.Text = String.Empty
+                Query.Text = ""
                 ' reset the current filename
                 currentFilepath = ""
                 saveEnabled(False)
@@ -572,8 +572,8 @@ Partial Friend Class DBSheetCreateForm
         TableEditable(True)
         Table.SelectedIndex = -1
         Column.SelectedIndex = -1
-        Query.Text = String.Empty
-        LookupQuery.Text = String.Empty
+        Query.Text = ""
+        LookupQuery.Text = ""
         columnEditMode(False)
         FormDisabled = False
     End Sub
@@ -616,9 +616,9 @@ Partial Friend Class DBSheetCreateForm
                     theDBSheetColumnList.Value(last, 3) = ForTableLookup.Text
                     theDBSheetColumnList.Value(last, 4) = outerJoin.CheckState
                 Else
-                    theDBSheetColumnList.Value(last, 1) = String.Empty
-                    theDBSheetColumnList.Value(last, 2) = String.Empty
-                    theDBSheetColumnList.Value(last, 3) = String.Empty
+                    theDBSheetColumnList.Value(last, 1) = ""
+                    theDBSheetColumnList.Value(last, 2) = ""
+                    theDBSheetColumnList.Value(last, 3) = ""
                     theDBSheetColumnList.Value(last, 4) = 0
                 End If
             End If
@@ -837,7 +837,7 @@ Partial Friend Class DBSheetCreateForm
 
         Try
             For Each iteration_row As DataRow In rstSchema.Tables(0).Rows
-                attached = String.Empty
+                attached = ""
                 If Not iteration_row("IS_NULLABLE") Then attached = specialNonNullableChar
                 If iteration_row("TABLE_CATALOG").ToUpper() = theDatabase Or iteration_row("TABLE_SCHEMA").ToUpper() = theDatabase Then Column.Items.Add(attached & iteration_row("COLUMN_NAME"))
             Next iteration_row
@@ -1070,8 +1070,8 @@ Partial Friend Class DBSheetCreateForm
                 usedColumn = correctNonNull(theDBSheetColumnList.Value(i, 0))
                 tableCounter += 1
                 Select Case theDBSheetColumnList.Value(i, 8)
-                    Case "Ascending" : orderByStr = IIf(orderByStr = "", String.Empty, orderByStr & ", ") & CStr(i + 1) & " ASC"
-                    Case "Descending" : orderByStr = IIf(orderByStr = "", String.Empty, orderByStr & ", ") & CStr(i + 1) & " DESC"
+                    Case "Ascending" : orderByStr = IIf(orderByStr = "", "", orderByStr & ", ") & CStr(i + 1) & " ASC"
+                    Case "Descending" : orderByStr = IIf(orderByStr = "", "", orderByStr & ", ") & CStr(i + 1) & " DESC"
                 End Select
                 If Strings.Len(theDBSheetColumnList.Value(i, 1)) = 0 Then
                     selectStr = selectStr & "T1." & usedColumn & ", "
@@ -1079,7 +1079,7 @@ Partial Friend Class DBSheetCreateForm
                 Else
                     If Strings.Len(theDBSheetColumnList.Value(i, 9)) = 0 Then
                         theDBSheetColumnList.Selection = i
-                        result = String.Empty
+                        result = ""
                         LogWarn("No Lookup Query created for field " & theDBSheetColumnList.Value(i, 0) & ", can't proceed !")
                         Return result
                     End If
@@ -1094,7 +1094,7 @@ Partial Friend Class DBSheetCreateForm
                     If restrPos > 0 Then addRestrict = addRestrict.Substring(0, Math.Min(restrPos - 1, addRestrict.Length))
                     If Strings.Len(completeJoin) > 0 Then
                         ' when having the complete join, use additional restriction not for main subtable
-                        addRestrict = String.Empty
+                        addRestrict = ""
                         ' instead make it an additional condition for the join and replace placeholder with tablealias
                         completeJoin = quotedReplace(ciReplace(completeJoin, "WHERE", "AND"), "T" & tableCounter)
                     End If
@@ -1128,11 +1128,11 @@ Partial Friend Class DBSheetCreateForm
                 End If
             Next
             Dim wherePart As String = ""
-            wherePart = WhereClause.Text.Replace(Environment.NewLine, String.Empty)
+            wherePart = WhereClause.Text.Replace(Environment.NewLine, "")
             selectStr = "SELECT " & selectStr.Substring(0, Math.Min(Strings.Len(selectStr) - 2, selectStr.Length))
             result = selectStr & Environment.NewLine & fromStr.ToString() & Environment.NewLine &
-                     IIf(Strings.Len(wherePart) > 0, "WHERE " & wherePart & Environment.NewLine, String.Empty) &
-                     IIf(Strings.Len(orderByStr) > 0, "ORDER BY " & orderByStr, String.Empty)
+                     IIf(Strings.Len(wherePart) > 0, "WHERE " & wherePart & Environment.NewLine, "") &
+                     IIf(Strings.Len(orderByStr) > 0, "ORDER BY " & orderByStr, "")
             saveEnabled(True)
         Catch ex As System.Exception
             LogError("Error: " & ex.Message)
@@ -1144,7 +1144,7 @@ Partial Friend Class DBSheetCreateForm
     ''' <param name="eventSender"></param>
     ''' <param name="eventArgs"></param>
     Private Sub cmdAssignDBSheet_Click(ByVal eventSender As Object, ByVal eventArgs As EventArgs) Handles cmdAssignDBSheet.Click
-        Dim currentFilepath As String = fetchSetting("dsdPath", String.Empty)
+        Dim currentFilepath As String = fetchSetting("dsdPath", "")
         Dim retval As String = FileSystem.Dir(currentFilepath, FileAttribute.Normal)
         Try
             If Strings.Len(retval) = 0 Or Strings.Len(currentFilepath) = 0 Then
@@ -1203,7 +1203,7 @@ Partial Friend Class DBSheetCreateForm
         saveDefs.Enabled = choice
         saveDefsAs.Enabled = choice
         cmdAssignDBSheet.Enabled = choice
-        If Strings.Len(fetchSetting("dsdPath", String.Empty)) = 0 Or ExcelDnaUtil.Application.ActiveSheet Is Nothing Then cmdAssignDBSheet.Enabled = False
+        If Strings.Len(fetchSetting("dsdPath", "")) = 0 Or ExcelDnaUtil.Application.ActiveSheet Is Nothing Then cmdAssignDBSheet.Enabled = False
     End Sub
 
     ''' <summary>opens a database connection with active connstring, optionally changing database in the connection string</summary>

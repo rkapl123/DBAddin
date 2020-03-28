@@ -131,7 +131,7 @@ Public Module Functions
     Public Function DBString(<ExcelArgument(Description:="array of strings/wildcards or ranges containing strings/wildcards")> ParamArray StringPart() As Object) As String
         Dim myRef, myCell
         Try
-            Dim retval As String = String.Empty
+            Dim retval As String = ""
             For Each myRef In StringPart
                 If TypeName(myRef) = "Object(,)" Then
                     For Each myCell In myRef
@@ -169,7 +169,7 @@ Public Module Functions
     ''' <returns>concatenated String</returns>
     <ExcelFunction(Description:="concatenates values contained in thetarget together (using .value attribute for cells)")>
     Public Function concatCells(<ExcelArgument(AllowReference:=True, Description:="all cells/values which should be concatenated")> ParamArray concatPart As Object()) As String
-        concatCells = DoConcatCellsSep(String.Empty, False, concatPart)
+        concatCells = DoConcatCellsSep("", False, concatPart)
     End Function
 
     ''' <summary>concatenates values contained in thetarget (using .value for cells) using a separator</summary>
@@ -199,7 +199,7 @@ Public Module Functions
         Dim myRef, myCell
 
         Try
-            Dim retval As String = String.Empty
+            Dim retval As String = ""
             For Each myRef In concatParts
                 Dim isMultiCell As Boolean = False
                 If TypeName(myRef) = "ExcelReference" Then
@@ -484,14 +484,14 @@ Public Module Functions
             Dim functionArgs = functionSplit(caller.Formula, ",", """", "DBListFetch", "(", ")")
             Dim targetRangeName As String : targetRangeName = functionArgs(2)
             ' check if fetched argument targetRangeName is really a name or just a plain range address
-            If Not existsNameInWb(targetRangeName, caller.Parent.Parent) And Not existsNameInSheet(targetRangeName, caller.Parent) Then targetRangeName = String.Empty
+            If Not existsNameInWb(targetRangeName, caller.Parent.Parent) And Not existsNameInSheet(targetRangeName, caller.Parent) Then targetRangeName = ""
             ' get formula range name ...
             Dim formulaRangeName As String
             If UBound(functionArgs) > 2 Then
                 formulaRangeName = functionArgs(3)
-                If Not existsNameInWb(formulaRangeName, caller.Parent.Parent) And Not existsNameInSheet(formulaRangeName, caller.Parent) Then formulaRangeName = String.Empty
+                If Not existsNameInWb(formulaRangeName, caller.Parent.Parent) And Not existsNameInSheet(formulaRangeName, caller.Parent) Then formulaRangeName = ""
             Else
-                formulaRangeName = String.Empty
+                formulaRangeName = ""
             End If
             HeaderInfo = convertToBool(HeaderInfo) : AutoFit = convertToBool(AutoFit) : autoformat = convertToBool(autoformat) : ShowRowNums = convertToBool(ShowRowNums)
 
@@ -631,7 +631,7 @@ Public Module Functions
         End If
         Err.Clear()
 
-        Dim ODBCconnString As String = String.Empty
+        Dim ODBCconnString As String = ""
         If InStr(1, UCase$(ConnString), ";ODBC;") Then
             ODBCconnString = Mid$(ConnString, InStr(1, UCase$(ConnString), ";ODBC;") + 1)
             ConnString = Left$(ConnString, InStr(1, UCase$(ConnString), ";ODBC;") - 1)
@@ -663,7 +663,7 @@ Public Module Functions
         ExcelDnaUtil.Application.StatusBar = "Retrieving data for DBList: " & IIf(targetRangeName.Length > 0, targetRangeName, targetSH.Name & "!" & targetRange.Address)
         tableRst = New ADODB.Recordset
         tableRst.Open(Query, conn, CursorTypeEnum.adOpenForwardOnly, LockTypeEnum.adLockReadOnly, CommandTypeEnum.adCmdText)
-        Dim dberr As String = String.Empty
+        Dim dberr As String = ""
         If conn.Errors.Count > 0 Then
             Dim errcount As Integer
             For errcount = 0 To conn.Errors.Count - 1
@@ -901,12 +901,12 @@ Public Module Functions
                 If Left$(warning, 1) = "," Then
                     warning = Right$(warning, Len(warning) - 2)
                 End If
-                StatusCollection(callID).statusMsg = "Retrieved " & retrievedRows & " record" & IIf(retrievedRows > 1, "s", String.Empty) & ", Warning: " & warning
+                StatusCollection(callID).statusMsg = "Retrieved " & retrievedRows & " record" & IIf(retrievedRows > 1, "s", "") & ", Warning: " & warning
             Else
                 StatusCollection(callID).statusMsg = warning
             End If
         Else
-            StatusCollection(callID).statusMsg = "Retrieved " & retrievedRows & " record" & IIf(retrievedRows > 1, "s", String.Empty) & " from: " & Query
+            StatusCollection(callID).statusMsg = "Retrieved " & retrievedRows & " record" & IIf(retrievedRows > 1, "s", "") & " from: " & Query
         End If
 
         ' autoformat: restore formats
@@ -1058,7 +1058,7 @@ err_0: ' errors where recordset was not opened or is already closed
     Public Sub DBRowFetchAction(callID As String, Query As String, caller As Excel.Range, targetArray As Object, ConnString As String, HeaderInfo As Boolean)
         Dim tableRst As ADODB.Recordset = Nothing
         Dim targetCells As Object
-        Dim errMsg As String = String.Empty, refCollector As Excel.Range
+        Dim errMsg As String = "", refCollector As Excel.Range
         Dim headerFilled As Boolean, DeleteExistingContent As Boolean, fillByRows As Boolean
         Dim returnedRows As Long, fieldIter As Integer, rangeIter As Integer
         Dim theCell As Excel.Range, targetSlice As Excel.Range, targetSlices As Excel.Range
@@ -1128,7 +1128,7 @@ err_0: ' errors where recordset was not opened or is already closed
         tableRst = New ADODB.Recordset
         tableRst.Open(Query, conn, CursorTypeEnum.adOpenStatic, LockTypeEnum.adLockReadOnly, CommandTypeEnum.adCmdText)
         On Error Resume Next
-        Dim dberr As String = String.Empty
+        Dim dberr As String = ""
         If conn.Errors.Count > 0 Then
             Dim errcount As Integer
             For errcount = 0 To conn.Errors.Count - 1
@@ -1171,12 +1171,12 @@ err_0: ' errors where recordset was not opened or is already closed
                 End If
                 For Each theCell In targetSlice.Cells
                     If tableRst.EOF Then
-                        theCell.Value = String.Empty
+                        theCell.Value = ""
                     Else
                         If Not headerFilled Then
                             theCell.Value = tableRst.Fields(fieldIter).Name
                         ElseIf DeleteExistingContent Then
-                            theCell.Value = String.Empty
+                            theCell.Value = ""
                         Else
                             On Error Resume Next
                             theCell.Value = tableRst.Fields(fieldIter).Value
@@ -1205,7 +1205,7 @@ err_0: ' errors where recordset was not opened or is already closed
         refCollector.Parent.Parent.Names(targetExtent).Visible = False
 
         tableRst.Close()
-        If StatusCollection(callID).statusMsg.Length = 0 Then StatusCollection(callID).statusMsg = "Retrieved " & returnedRows & " record" & IIf(returnedRows > 1, "s", String.Empty) & " from: " & Query
+        If StatusCollection(callID).statusMsg.Length = 0 Then StatusCollection(callID).statusMsg = "Retrieved " & returnedRows & " record" & IIf(returnedRows > 1, "s", "") & " from: " & Query
         finishAction(calcMode, callID)
         Exit Sub
 
@@ -1262,7 +1262,7 @@ err_1:
     Public Function DBAddinEnvironment() As String
         ExcelDnaUtil.Application.Volatile()
         Try
-            DBAddinEnvironment = fetchSetting("ConfigName", String.Empty)
+            DBAddinEnvironment = fetchSetting("ConfigName", "")
             If ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual Then DBAddinEnvironment = "calc Mode is manual, please press F9 to get current DBAddin environment !"
         Catch ex As Exception
             DBAddinEnvironment = "Error happened: " & ex.Message
@@ -1276,7 +1276,7 @@ err_1:
     Public Function DBAddinServerSetting() As String
         ExcelDnaUtil.Application.Volatile()
         Try
-            Dim theConnString As String = fetchSetting("ConstConnString" & Globals.env(), String.Empty)
+            Dim theConnString As String = fetchSetting("ConstConnString" & Globals.env(), "")
             Dim keywordstart As Integer = InStr(1, UCase(theConnString), "SERVER=") + Len("SERVER=")
             DBAddinServerSetting = Mid$(theConnString, keywordstart, InStr(keywordstart, theConnString, ";") - keywordstart)
             If ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual Then DBAddinServerSetting = "calc Mode is manual, please press F9 to get current DBAddin server setting !"
@@ -1369,12 +1369,12 @@ err_1:
         If TypeName(ConnString) = "ExcelMissing" Then ConnString = ""
         ' in case ConnString is a number (set environment, retrieve ConnString from Setting ConstConnString<Number>
         If TypeName(ConnString) = "Double" Then
-            EnvPrefix = "Env:" & fetchSetting("ConfigName" & ConnString.ToString(), String.Empty)
-            ConnString = fetchSetting("ConstConnString" & ConnString.ToString(), String.Empty)
+            EnvPrefix = "Env:" & fetchSetting("ConfigName" & ConnString.ToString(), "")
+            ConnString = fetchSetting("ConstConnString" & ConnString.ToString(), "")
         ElseIf TypeName(ConnString) = "String" Then
             If ConnString = "" Then ' no ConnString or environment number set: get connection string of currently selected evironment
-                EnvPrefix = "Env:" & fetchSetting("ConfigName" & Globals.env(), String.Empty)
-                ConnString = fetchSetting("ConstConnString" & Globals.env(), String.Empty)
+                EnvPrefix = "Env:" & fetchSetting("ConfigName" & Globals.env(), "")
+                ConnString = fetchSetting("ConstConnString" & Globals.env(), "")
             Else
                 EnvPrefix = "ConnString set"
             End If

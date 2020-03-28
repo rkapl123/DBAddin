@@ -40,14 +40,21 @@ Public Class AddInEvents
                 ErrorMsg("Attention: legacy DBAddin (DBAddin.Functions) still active, this might lead to unexpected results!")
             End If
         Catch ex As Exception : End Try
+        ' for finding out what happened...
         Trace.Listeners.Add(New ExcelDna.Logging.LogDisplayTraceListener())
+        ' IntelliSense needed for DB- and supporting functions
         ExcelDna.IntelliSense.IntelliSenseServer.Install()
+        ' Ribbon and context menu setup
         Globals.theMenuHandler = New MenuHandler
         LogInfo("initialize configuration settings")
         Functions.queryCache = New Dictionary(Of String, String)
         Functions.StatusCollection = New Dictionary(Of String, ContainedStatusMsg)
         Globals.DBModifDefColl = New Dictionary(Of String, Dictionary(Of String, DBModif))
+        ' get the default environment and initialize settings 
+        ' Configs are 1 based, selectedEnvironment(index of environment dropdown) is 0 based. negative values not allowed!
+        Globals.selectedEnvironment = Math.Max(CInt(fetchSetting("DefaultEnvironment", "1")) - 1, 0)
         Globals.initSettings()
+        ' get the ExcelDna LogDisplayTraceListener for filtering log messages by level in about box
         For Each srchdListener As Object In Trace.Listeners
             If srchdListener.ToString() = "ExcelDna.Logging.LogDisplayTraceListener" Then
                 Globals.theLogListener = srchdListener
@@ -59,7 +66,7 @@ Public Class AddInEvents
     ''' <summary>AutoClose cleans up after finishing addin</summary>
     Public Sub AutoClose() Implements IExcelAddIn.AutoClose
         Try
-            theMenuHandler = Nothing
+            Globals.theMenuHandler = Nothing
             ExcelDna.IntelliSense.IntelliSenseServer.Uninstall()
         Catch ex As Exception
             ErrorMsg("DBAddin unloading error: " + ex.Message, "AutoClose")
@@ -70,7 +77,7 @@ Public Class AddInEvents
     ''' choosing functions for removal of target data is done with custom docproperties</summary>
     Private Sub Application_WorkbookSave(Wb As Excel.Workbook, ByVal SaveAsUI As Boolean, ByRef Cancel As Boolean) Handles Application.WorkbookBeforeSave
         ' ask if modifications should be done if no overriding flag is defined...
-        Dim doDBMOnSave As Boolean = getCustPropertyBool("doDBMOnSave", Wb)
+        Dim doDBMOnSave As Boolean = Globals.getCustPropertyBool("doDBMOnSave", Wb)
         ' if overriding flag not given and Readonly is NOT recommended on this workbook and workbook IS NOT Readonly, ...
         ' ...ask for saving if it is necessary for any DBmodifier...
         If Not (Wb.ReadOnlyRecommended And Wb.ReadOnly) And Not doDBMOnSave Then
@@ -137,9 +144,9 @@ done:
                                 ' check which DB functions should be content cleared (CC) or all cleared (CA)
                                 Dim DBFCC As Boolean = False : Dim DBFCA As Boolean = False
                                 DBFCC = DBFCContentColl.Contains("*")
-                                DBFCC = DBFCContentColl.Contains(searchCell.Parent.Name & "!" & Replace(searchCell.Address, "$", String.Empty)) Or DBFCC
+                                DBFCC = DBFCContentColl.Contains(searchCell.Parent.Name & "!" & Replace(searchCell.Address, "$", "")) Or DBFCC
                                 DBFCA = DBFCAllColl.Contains("*")
-                                DBFCA = DBFCAllColl.Contains(searchCell.Parent.Name & "!" & Replace(searchCell.Address, "$", String.Empty)) Or DBFCA
+                                DBFCA = DBFCAllColl.Contains(searchCell.Parent.Name & "!" & Replace(searchCell.Address, "$", "")) Or DBFCA
                                 Dim theTargetRange As Excel.Range
                                 Try : theTargetRange = ExcelDnaUtil.Application.Range(targetName)
                                 Catch ex As Exception
@@ -187,13 +194,13 @@ done:
     Private Sub Application_WorkbookOpen(Wb As Excel.Workbook) Handles Application.WorkbookOpen
         If Not Wb.IsAddin Then
             ' in case of reopening workbooks with dbfunctions, look for old query caches and status collections (returned error messages) and reset them to get new data
-            resetCachesForWorkbook(Wb.Name)
+            Globals.resetCachesForWorkbook(Wb.Name)
 
             ' when opening, force recalculation of DB functions in workbook.
             ' this is required as there is no recalculation if no dependencies have changed (usually when opening workbooks)
             ' however the most important dependency for DB functions is the database data....
-            If Not getCustPropertyBool("DBFskip", Wb) Then refreshDBFunctions(Wb)
-            repairLegacyFunctions()
+            If Not Globals.getCustPropertyBool("DBFskip", Wb) Then refreshDBFunctions(Wb)
+            Globals.repairLegacyFunctions()
         End If
     End Sub
 
@@ -201,7 +208,7 @@ done:
     Private Sub Application_WorkbookActivate(Wb As Excel.Workbook) Handles Application.WorkbookActivate
         ' avoid when being activated by DBFuncsAction 
         If Not DBModifs.preventChangeWhileFetching Then
-            getDBModifDefinitions()
+            DBModifs.getDBModifDefinitions()
             ' unfortunately, Excel doesn't fire SheetActivate when opening workbooks, so do that here...
             assignHandler(Wb.ActiveSheet)
         End If
@@ -240,7 +247,7 @@ done:
             Dim DBModifName As String = getDBModifNameFromRange(targetRange)
         End If
         If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown Then
-            createDBModif(DBModifType, targetDefName:=cbName)
+            DBModifs.createDBModif(DBModifType, targetDefName:=cbName)
         Else
             Globals.DBModifDefColl(DBModifType).Item(cbName).doDBModif()
         End If
@@ -280,7 +287,7 @@ done:
     Private Sub Application_SheetActivate(Sh As Object) Handles Application.SheetActivate
         ' avoid when being activated by DBFuncsAction 
         If Not DBModifs.preventChangeWhileFetching Then
-            getDBModifDefinitions()
+            DBModifs.getDBModifDefinitions()
             ' only when needed assign button handler for this sheet ...
             If Globals.DBModifDefColl.Count > 0 Then assignHandler(Sh)
         End If
@@ -295,7 +302,7 @@ done:
 
     Private Sub Application_SheetChange(Sh As Object, Target As Range) Handles Application.SheetChange
         If Globals.DBModifDefColl.ContainsKey("DBMapper") And Not DBModifs.preventChangeWhileFetching Then
-            Dim targetName As String = getDBModifNameFromRange(Target)
+            Dim targetName As String = DBModifs.getDBModifNameFromRange(Target)
             If Left(targetName, 8) = "DBMapper" Then
                 DirectCast(Globals.DBModifDefColl("DBMapper").Item(targetName), DBMapper).doCUDMarks(Target)
             End If

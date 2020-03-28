@@ -4,6 +4,7 @@ Imports ExcelDna.Integration
 Imports Microsoft.Office.Core
 Imports System.IO
 Imports System.Diagnostics
+Imports System.Configuration
 
 ''' <summary>Dialog used to display and edit the CustomXMLPart utilized for storing the DBModif definitions</summary>
 Public Class EditDBModifDef
@@ -41,6 +42,7 @@ Public Class EditDBModifDef
                     ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties.Add(Name:="DBFskip", LinkToContent:=False, Type:=MsoDocProperties.msoPropertyTypeBoolean, Value:=Me.DBFskip.Checked)
                 Catch ex As Exception
                     ErrorMsg("Error when adding DBFskip to Workbook:" + ex.Message, "Edit DB Modifier Definitions XML")
+                    Exit Sub
                 End Try
             End If
             If Not Me.doDBMOnSave.CheckState = CheckState.Indeterminate Then
@@ -49,6 +51,7 @@ Public Class EditDBModifDef
                     ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties.Add(Name:="doDBMOnSave", LinkToContent:=False, Type:=MsoDocProperties.msoPropertyTypeBoolean, Value:=Me.doDBMOnSave.Checked)
                 Catch ex As Exception
                     ErrorMsg("Error when adding doDBMOnSave to Workbook:" + ex.Message, "Edit DB Modifier Definitions XML")
+                    Exit Sub
                 End Try
             End If
         Else
@@ -64,6 +67,14 @@ Public Class EditDBModifDef
                 File.WriteAllText(xllPath & ".config", Me.EditBox.Text, System.Text.Encoding.Default)
             Catch ex As Exception
                 ErrorMsg("Couldn't write DB Addin Usersettings from " & xllPath & ":" & ex.Message, "Edit DB Addin Settings")
+                Exit Sub
+            End Try
+            Try
+                ConfigurationManager.RefreshSection("appSettings")
+                Dim testSetting As String = ConfigurationManager.AppSettings("DefaultEnvironment")
+            Catch ex As Exception
+                ErrorMsg("Problem with AppSettings:" & ex.Message, "Edit DB Addin Settings")
+                Exit Sub
             End Try
         End If
         Me.DialogResult = DialogResult.OK
