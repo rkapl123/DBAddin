@@ -24,6 +24,22 @@ Public MustInherit Class DBModif
     ''' <summary>Text displayed for confirmation before doing dbModif instead of standard text</summary>
     Protected confirmText As String = ""
 
+    Public Sub New(definitionXML As CustomXMLNode)
+        If definitionXML.Attributes.Count > 0 Then
+            dbmodifName = definitionXML.BaseName + definitionXML.Attributes(1).Text
+        Else
+            dbmodifName = definitionXML.BaseName
+        End If
+        execOnSave = Convert.ToBoolean(getParamFromXML(definitionXML, "execOnSave"))
+        askBeforeExecute = Convert.ToBoolean(getParamFromXML(definitionXML, "askBeforeExecute"))
+        confirmText = getParamFromXML(definitionXML, "confirmText")
+    End Sub
+
+    ''' <summary>needed for legacy DBmapper constructor</summary>
+    Public Sub New()
+
+    End Sub
+
     ''' <summary>public accessor function</summary>
     ''' <returns>the targetRangeAddress nicely formatted</returns>
     Public Function getTargetRangeAddress() As String
@@ -70,8 +86,6 @@ Public MustInherit Class DBModif
         If nodeCount = 0 Then
             getParamFromXML = ""
         ElseIf nodeCount > 1 Then
-            'TODO: check if returned and if not, think of other way to pass error...
-            getParamFromXML = definitionXML.SelectSingleNode("ns0:" & nodeName & "[1]").Text ' get first element...
             Throw New Exception("DBModif definition of " & definitionXML.BaseName & " contains node '" & nodeName & "' more than once (" & nodeCount & " times) !")
         Else
             getParamFromXML = definitionXML.SelectSingleNode("ns0:" & nodeName).Text
@@ -413,35 +427,29 @@ Public Class DBMapper : Inherits DBModif
     ''' <param name="definitionXML"></param>
     ''' <param name="paramTarget"></param>
     Public Sub New(definitionXML As CustomXMLNode, paramTarget As Excel.Range)
+        MyBase.New(definitionXML)
         Try
-            dbmodifName = definitionXML.BaseName
             ' if no target range is set, then no parameters can be found...
             If IsNothing(paramTarget) Then Throw New Exception("paramTarget is Nothing")
             paramTargetName = getDBModifNameFromRange(paramTarget)
             If Left(paramTargetName, 8) <> "DBMapper" Then Throw New Exception("target " & paramTargetName & " not matching passed DBModif type DBMapper for " & getTargetRangeAddress() & "/" & dbmodifName & "!")
             TargetRange = paramTarget
-
             ' fill parameters from definition
             env = getParamFromXML(definitionXML, "env")
             database = getParamFromXML(definitionXML, "database")
             If database = "" Then Throw New Exception("No database given in DBMapper definition!")
             tableName = getParamFromXML(definitionXML, "tableName")
             If tableName = "" Then Throw New Exception("No Tablename given in DBMapper definition!")
-
             Try
                 primKeysCount = Convert.ToInt32(getParamFromXML(definitionXML, "primKeysStr"))
             Catch ex As Exception
                 Throw New Exception("couldn't get primary key count given in DBMapper definition!")
             End Try
-            execOnSave = Convert.ToBoolean(getParamFromXML(definitionXML, "execOnSave"))
-            askBeforeExecute = Convert.ToBoolean(getParamFromXML(definitionXML, "askBeforeExecute"))
             insertIfMissing = Convert.ToBoolean(getParamFromXML(definitionXML, "insertIfMissing"))
             executeAdditionalProc = getParamFromXML(definitionXML, "executeAdditionalProc")
             ignoreColumns = getParamFromXML(definitionXML, "ignoreColumns")
             IgnoreDataErrors = Convert.ToBoolean(If(getParamFromXML(definitionXML, "IgnoreDataErrors") = "", "False", getParamFromXML(definitionXML, "IgnoreDataErrors")))
             CUDFlags = Convert.ToBoolean(getParamFromXML(definitionXML, "CUDFlags"))
-            confirmText = getParamFromXML(definitionXML, "confirmText")
-
             If Not IsNothing(TargetRange.ListObject) Then
                 ' special grey table style for CUDFlags DBMapper
                 If CUDFlags Then
@@ -907,8 +915,8 @@ Public Class DBAction : Inherits DBModif
     ''' <param name="definitionXML"></param>
     ''' <param name="paramTarget"></param>
     Public Sub New(definitionXML As CustomXMLNode, paramTarget As Excel.Range)
+        MyBase.New(definitionXML)
         Try
-            dbmodifName = definitionXML.BaseName
             ' if no target range is set, then no parameters can be found...
             If IsNothing(paramTarget) Then Exit Sub
             paramTargetName = getDBModifNameFromRange(paramTarget)
@@ -920,9 +928,6 @@ Public Class DBAction : Inherits DBModif
             env = getParamFromXML(definitionXML, "env")
             database = getParamFromXML(definitionXML, "database")
             If database = "" Then Throw New Exception("No database given in DBAction definition!")
-            execOnSave = Convert.ToBoolean(getParamFromXML(definitionXML, "execOnSave"))
-            askBeforeExecute = Convert.ToBoolean(getParamFromXML(definitionXML, "askBeforeExecute"))
-            confirmText = getParamFromXML(definitionXML, "confirmText")
         Catch ex As Exception
             ErrorMsg("Error when creating DB Sequence '" & dbmodifName & "': " & ex.Message, "DBModifier Definitions Error")
         End Try
@@ -1015,10 +1020,6 @@ Public Class DBSeqnce : Inherits DBModif
     ''' <param name="definitionXML"></param>
     Public Sub New(definitionXML As CustomXMLNode)
         Try
-            dbmodifName = definitionXML.BaseName
-            execOnSave = Convert.ToBoolean(getParamFromXML(definitionXML, "execOnSave")) ' should DBSequence be done on Excel Saving?
-            askBeforeExecute = Convert.ToBoolean(getParamFromXML(definitionXML, "askBeforeExecute")) ' should DBSequence be done on Excel Saving?
-            confirmText = getParamFromXML(definitionXML, "confirmText")
             Dim seqSteps As Integer = definitionXML.SelectNodes("ns0:seqStep").Count
             If seqSteps = 0 Then
                 Throw New Exception("no steps defined in DBSequence definition!")
@@ -1389,11 +1390,14 @@ Public Module DBModifs
             Dim CustomXmlParts As Object = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
             If CustomXmlParts.Count = 0 Then ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.Add("<root xmlns=""DBModifDef""></root>")
             CustomXmlParts = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
-            ' remove old node in case of renaming DBModifier...
-            Try : CustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:" + existingDefName).Delete : Catch ex As Exception : End Try
+            ' remove old node in case of renaming DBModifier...old naming scheme, Elements named like ranges (<DBMapperGivenName>)
+            If Not IsNothing(CustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:" + existingDefName)) Then CustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:" + existingDefName).Delete
+            ' ...new naming scheme, Elements named like types, attribute Name is GivenName (<DBMapper Name="GivenName">)
+            If Not IsNothing(CustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:" + createdDBModifType + "[@Name='" + Replace(existingDefName, createdDBModifType, "") + "']")) Then CustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:" + createdDBModifType + "[@Name='" + Replace(existingDefName, createdDBModifType, "") + "']").Delete
             ' NamespaceURI:="DBModifDef" is required to avoid adding a xmlns attribute to each element.
-            CustomXmlParts(1).SelectSingleNode("/ns0:root").AppendChildNode(createdDBModifType + .DBModifName.Text, NamespaceURI:="DBModifDef")
-            Dim dbModifNode As CustomXMLNode = CustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:" + createdDBModifType + .DBModifName.Text)
+            CustomXmlParts(1).SelectSingleNode("/ns0:root").AppendChildNode(createdDBModifType, NamespaceURI:="DBModifDef")
+            Dim dbModifNode As CustomXMLNode = CustomXmlParts(1).SelectSingleNode("/ns0:root").LastChild
+            dbModifNode.AppendChildNode("Name", NodeType:=MsoCustomXMLNodeType.msoCustomXMLNodeAttribute, NodeValue:= .DBModifName.Text)
             dbModifNode.AppendChildNode("execOnSave", NamespaceURI:="DBModifDef", NodeValue:= .execOnSave.Checked.ToString()) ' should DB Modifier be done on Excel Saving?
             dbModifNode.AppendChildNode("askBeforeExecute", NamespaceURI:="DBModifDef", NodeValue:= .AskForExecute.Checked.ToString())
             If createdDBModifType = "DBMapper" Then
@@ -1443,7 +1447,13 @@ Public Module DBModifs
                 For Each customXMLNodeDef As CustomXMLNode In CustomXmlParts(1).SelectSingleNode("/ns0:root").ChildNodes
                     Dim DBModiftype As String = Left(customXMLNodeDef.BaseName, 8)
                     If DBModiftype = "DBSeqnce" Or DBModiftype = "DBMapper" Or DBModiftype = "DBAction" Then
-                        Dim nodeName As String = customXMLNodeDef.BaseName
+                        Dim nodeName As String
+                        If customXMLNodeDef.Attributes.Count > 0 Then
+                            nodeName = DBModiftype + customXMLNodeDef.Attributes(1).Text
+                        Else
+                            nodeName = customXMLNodeDef.BaseName
+                        End If
+
                         Dim targetRange As Excel.Range = Nothing
                         ' for DBMappers and DBActions the data of the DBModification is stored in Ranges, so check for those and get the Range
                         If DBModiftype = "DBMapper" Or DBModiftype = "DBAction" Then
@@ -1481,13 +1491,13 @@ Public Module DBModifs
                             If Not DBModifDefColl.ContainsKey(DBModiftype) Then
                                 ' add to new DBModiftype "menu"
                                 defColl = New Dictionary(Of String, DBModif) From {
-                                    {customXMLNodeDef.BaseName, newDBModif}
+                                    {nodeName, newDBModif}
                                 }
                                 DBModifDefColl.Add(DBModiftype, defColl)
                             Else
                                 ' add definition to existing DBModiftype "menu"
                                 defColl = DBModifDefColl(DBModiftype)
-                                defColl.Add(customXMLNodeDef.BaseName, newDBModif)
+                                defColl.Add(nodeName, newDBModif)
                             End If
                         End If
                     End If
