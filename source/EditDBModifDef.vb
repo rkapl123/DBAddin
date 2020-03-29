@@ -23,7 +23,12 @@ Public Class EditDBModifDef
                     xml_writer.Formatting = Formatting.None
                     Dim doc As New XmlDocument()
                     Try
+                        Dim schemaString As String = My.Resources.DefinitionFiles.DBModifDef
+                        Dim schemadoc As XmlReader = XmlReader.Create(New StringReader(schemaString))
+                        doc.Schemas.Add("DBModifDef", schemadoc)
+                        Dim eventHandler As Schema.ValidationEventHandler = New Schema.ValidationEventHandler(AddressOf myValidationEventHandler)
                         doc.LoadXml(Me.EditBox.Text)
+                        doc.Validate(eventHandler)
                     Catch ex As Exception
                         ErrorMsg("Problems with parsing changed definition: " & ex.Message, "Edit DB Modifier Definitions XML")
                         Exit Sub
@@ -79,6 +84,10 @@ Public Class EditDBModifDef
         End If
         Me.DialogResult = DialogResult.OK
         Me.Close()
+    End Sub
+
+    Sub myValidationEventHandler(sender As Object, e As Schema.ValidationEventArgs)
+        If e.Severity = Schema.XmlSeverityType.Error Or e.Severity = Schema.XmlSeverityType.Warning Then Throw New Exception(e.Message)
     End Sub
 
     ''' <summary>no change was made to definition</summary>
