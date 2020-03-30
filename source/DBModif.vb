@@ -991,7 +991,7 @@ Public Class DBAction : Inherits DBModif
             Exit Sub
         End Try
         If Not WbIsSaving And calledByDBSeq = "" Then
-            ErrorMsg("DBAction " & paramTargetName & " executed, affected records: " & result, "DBAction Error")
+            ErrorMsg("DBAction " & paramTargetName & " executed, affected records: " & result, "DBAction executed", MsgBoxStyle.Information)
         End If
         ExcelDnaUtil.Application.StatusBar = False
         ' close connection to return it to the pool...
@@ -1017,6 +1017,7 @@ Public Class DBSeqnce : Inherits DBModif
     ''' <summary>normal constructor with definition xml</summary>
     ''' <param name="definitionXML"></param>
     Public Sub New(definitionXML As CustomXMLNode)
+        MyBase.New(definitionXML)
         Try
             Dim seqSteps As Integer = definitionXML.SelectNodes("ns0:seqStep").Count
             If seqSteps = 0 Then
