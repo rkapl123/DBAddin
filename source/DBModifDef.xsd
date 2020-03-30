@@ -1,0 +1,58 @@
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+	<xs:element name="root">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:choice maxOccurs="unbounded" minOccurs="1">
+					<xs:element name="DBAction">
+						<xs:complexType>
+							<xs:sequence>
+								<xs:choice maxOccurs="unbounded" minOccurs="1">
+									<xs:element type="xs:byte" name="env"/>
+									<xs:element type="xs:string" name="database"/>
+									<xs:element type="xs:string" name="execOnSave"/>
+									<xs:element type="xs:string" name="askBeforeExecute"/>
+									<xs:element type="xs:string" name="confirmText" minOccurs="0"/>
+								</xs:choice>
+							</xs:sequence>
+							<xs:attribute name="Name" type="xs:string"/>
+						</xs:complexType>
+					</xs:element>
+					<xs:element name="DBMapper">
+						<xs:complexType>
+							<xs:sequence>
+								<xs:choice maxOccurs="unbounded" minOccurs="1">
+									<xs:element type="xs:byte" name="env"/>
+									<xs:element type="xs:string" name="database"/>
+									<xs:element type="xs:string" name="tableName"/>
+									<xs:element type="xs:byte" name="primKeysStr"/>
+									<xs:element type="xs:string" name="insertIfMissing"/>
+									<xs:element type="xs:string" name="executeAdditionalProc"/>
+									<xs:element type="xs:string" name="ignoreColumns"/>
+									<xs:element type="xs:string" name="CUDFlags"/>
+									<xs:element type="xs:string" name="execOnSave"/>
+									<xs:element type="xs:string" name="askBeforeExecute"/>
+									<xs:element type="xs:string" name="IgnoreDataErrors"/>
+									<xs:element type="xs:string" name="confirmText" minOccurs="0"/>
+								</xs:choice>
+							</xs:sequence>
+							<xs:attribute name="Name" type="xs:string"/>
+						</xs:complexType>
+					</xs:element>
+					<xs:element name="DBSeqnce">
+						<xs:complexType>
+							<xs:sequence>
+								<xs:choice maxOccurs="unbounded" minOccurs="1">
+									<xs:element type="xs:string" name="execOnSave"/>
+									<xs:element type="xs:string" name="askBeforeExecute"/>
+									<xs:element type="xs:string" name="confirmText" minOccurs="0"/>
+									<xs:element type="xs:string" name="seqStep" maxOccurs="unbounded" minOccurs="0"/>
+								</xs:choice>
+							</xs:sequence>
+							<xs:attribute name="Name" type="xs:string"/>
+						</xs:complexType>
+					</xs:element>
+				</xs:choice>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>

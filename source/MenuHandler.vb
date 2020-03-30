@@ -243,7 +243,10 @@ Public Class MenuHandler
             Dim theEditDBModifDefDlg As EditDBModifDef = New EditDBModifDef()
             theEditDBModifDefDlg.DBFskip.Hide()
             theEditDBModifDefDlg.doDBMOnSave.Hide()
-            If theEditDBModifDefDlg.ShowDialog() = System.Windows.Forms.DialogResult.OK Then Globals.theRibbon.Invalidate()
+            If theEditDBModifDefDlg.ShowDialog() = System.Windows.Forms.DialogResult.OK Then
+                ConfigurationManager.RefreshSection("appSettings")
+                Globals.theRibbon.Invalidate()
+            End If
         Else
             Dim myAbout As AboutBox = New AboutBox
             myAbout.ShowDialog()

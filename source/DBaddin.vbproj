@@ -146,10 +146,10 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
-    <Compile Include="DefinitionFiles.Designer.vb">
+    <Compile Include="SchemaFiles.Designer.vb">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
-      <DependentUpon>DefinitionFiles.resx</DependentUpon>
+      <DependentUpon>SchemaFiles.resx</DependentUpon>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -169,6 +169,9 @@
       <SubType>Designer</SubType>
     </None>
     <None Include="docfx.json" />
+    <None Include="DotNetConfig20.xsd">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="index.md" />
     <None Include="My Project\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -199,10 +202,10 @@
       <LastGenOutput>Resources.Designer.vb</LastGenOutput>
       <SubType>Designer</SubType>
     </EmbeddedResource>
-    <EmbeddedResource Include="DefinitionFiles.resx">
+    <EmbeddedResource Include="SchemaFiles.resx">
       <CustomToolNamespace>My.Resources</CustomToolNamespace>
       <Generator>PublicResXFileCodeGenerator</Generator>
-      <LastGenOutput>DefinitionFiles.Designer.vb</LastGenOutput>
+      <LastGenOutput>SchemaFiles.Designer.vb</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />

@@ -8,7 +8,7 @@ Imports System.Data
 Imports System.Data.SqlClient
 
 
-''' <summary>Abstraction of a DB Modification Object (concrete classes DB Mapper, DB Action or DB Sequence)</summary>
+''' <summary>Abstraction of a DB Modification Object (concrete classes DBMapper, DBAction or DBSeqnce)</summary>
 Public MustInherit Class DBModif
 
     '''<summary>unique key of DBModif</summary>
@@ -84,9 +84,7 @@ Public MustInherit Class DBModif
     Protected Function getParamFromXML(definitionXML As CustomXMLNode, nodeName As String) As String
         Dim nodeCount As Integer = definitionXML.SelectNodes("ns0:" & nodeName).Count
         If nodeCount = 0 Then
-            getParamFromXML = ""
-        ElseIf nodeCount > 1 Then
-            Throw New Exception("DBModif definition of " & definitionXML.BaseName & " contains node '" & nodeName & "' more than once (" & nodeCount & " times) !")
+            getParamFromXML = "" ' optional nodes become empty strings
         Else
             getParamFromXML = definitionXML.SelectSingleNode("ns0:" & nodeName).Text
         End If
@@ -1390,13 +1388,16 @@ Public Module DBModifs
             Dim CustomXmlParts As Object = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
             If CustomXmlParts.Count = 0 Then ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.Add("<root xmlns=""DBModifDef""></root>")
             CustomXmlParts = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
-            ' remove old node in case of renaming DBModifier...old naming scheme, Elements named like ranges (<DBMapperGivenName>)
+            ' remove old node in case of renaming DBModifier
+            ' ...old naming scheme, Elements named like ranges (<DBMapperGivenName>)
             If Not IsNothing(CustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:" + existingDefName)) Then CustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:" + existingDefName).Delete
             ' ...new naming scheme, Elements named like types, attribute Name is GivenName (<DBMapper Name="GivenName">)
             If Not IsNothing(CustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:" + createdDBModifType + "[@Name='" + Replace(existingDefName, createdDBModifType, "") + "']")) Then CustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:" + createdDBModifType + "[@Name='" + Replace(existingDefName, createdDBModifType, "") + "']").Delete
             ' NamespaceURI:="DBModifDef" is required to avoid adding a xmlns attribute to each element.
             CustomXmlParts(1).SelectSingleNode("/ns0:root").AppendChildNode(createdDBModifType, NamespaceURI:="DBModifDef")
+            ' new appended elements are last, get it to append further child elements
             Dim dbModifNode As CustomXMLNode = CustomXmlParts(1).SelectSingleNode("/ns0:root").LastChild
+            ' append the detailed settings to the definition element
             dbModifNode.AppendChildNode("Name", NodeType:=MsoCustomXMLNodeType.msoCustomXMLNodeAttribute, NodeValue:= .DBModifName.Text)
             dbModifNode.AppendChildNode("execOnSave", NamespaceURI:="DBModifDef", NodeValue:= .execOnSave.Checked.ToString()) ' should DB Modifier be done on Excel Saving?
             dbModifNode.AppendChildNode("askBeforeExecute", NamespaceURI:="DBModifDef", NodeValue:= .AskForExecute.Checked.ToString())
@@ -1425,6 +1426,7 @@ Public Module DBModifs
                     Next
                 End If
             End If
+            ' any features added directly to DBModif definition in XML need to be re-added now
             If Not IsNothing(existingDBModif) Then existingDBModif.addHiddenFeatureDefs(dbModifNode)
             ' refresh mapper definitions to reflect changes immediately...
             getDBModifDefinitions()

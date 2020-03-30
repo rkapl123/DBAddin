@@ -23,7 +23,8 @@ Public Class EditDBModifDef
                     xml_writer.Formatting = Formatting.None
                     Dim doc As New XmlDocument()
                     Try
-                        Dim schemaString As String = My.Resources.DefinitionFiles.DBModifDef
+                        ' validate definition XML
+                        Dim schemaString As String = My.Resources.SchemaFiles.DBModifDef
                         Dim schemadoc As XmlReader = XmlReader.Create(New StringReader(schemaString))
                         doc.Schemas.Add("DBModifDef", schemadoc)
                         Dim eventHandler As Schema.ValidationEventHandler = New Schema.ValidationEventHandler(AddressOf myValidationEventHandler)
@@ -63,7 +64,13 @@ Public Class EditDBModifDef
             ' save the users app settings...
             Dim doc As New XmlDocument()
             Try
+                ' validate settings
+                Dim schemaString As String = My.Resources.SchemaFiles.DotNetConfig20
+                Dim schemadoc As XmlReader = XmlReader.Create(New StringReader(schemaString))
+                doc.Schemas.Add("", schemadoc)
+                Dim eventHandler As Schema.ValidationEventHandler = New Schema.ValidationEventHandler(AddressOf myValidationEventHandler)
                 doc.LoadXml(Me.EditBox.Text)
+                doc.Validate(eventHandler)
             Catch ex As Exception
                 ErrorMsg("Problems with parsing changed app settings: " & ex.Message, "Edit DB Addin Settings")
                 Exit Sub
@@ -74,19 +81,16 @@ Public Class EditDBModifDef
                 ErrorMsg("Couldn't write DB Addin Usersettings from " & xllPath & ":" & ex.Message, "Edit DB Addin Settings")
                 Exit Sub
             End Try
-            Try
-                ConfigurationManager.RefreshSection("appSettings")
-                Dim testSetting As String = ConfigurationManager.AppSettings("DefaultEnvironment")
-            Catch ex As Exception
-                ErrorMsg("Problem with AppSettings:" & ex.Message, "Edit DB Addin Settings")
-                Exit Sub
-            End Try
         End If
         Me.DialogResult = DialogResult.OK
         Me.Close()
     End Sub
 
+    ''' <summary>validation handler for XML schema (user app settings and DBModif Def) checking</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
     Sub myValidationEventHandler(sender As Object, e As Schema.ValidationEventArgs)
+        ' simply pass back Errors and Warnings as an exception
         If e.Severity = Schema.XmlSeverityType.Error Or e.Severity = Schema.XmlSeverityType.Warning Then Throw New Exception(e.Message)
     End Sub
 
@@ -104,6 +108,8 @@ Public Class EditDBModifDef
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub EditDBModifDef_Shown(sender As Object, e As EventArgs) Handles Me.Shown
+        ' depending on visibility of DBFskip and doDBMOnSave (custom properties only on Workbooklevel) 
+        ' show Workbooklevel DBModif Definitions or Addinlevel DBAddin user settings
         If Me.DBFskip.Visible Then
             CustomXmlParts = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
             If CustomXmlParts.Count = 0 Then
@@ -136,10 +142,10 @@ Public Class EditDBModifDef
                 Me.doDBMOnSave.CheckState = CheckState.Indeterminate
             End Try
         Else
+            ' get DBAddin user settings and display them
             Me.OKBtn.Text = "Save"
             Me.ToolTip1.SetToolTip(OKBtn, "save DB Addin User settings to DBAddin.xll.config")
-            ' gets user settings and display them
-            ' get path of xll:
+            ' find path of xll:
             For Each tModule As ProcessModule In Process.GetCurrentProcess().Modules
                 Dim sModule As String = tModule.FileName
                 If sModule.ToUpper.Contains("DBADDIN") Then
