@@ -1064,7 +1064,7 @@ Public Class DBSeqnce : Inherits DBModif
                         If DirectCast(DBModifDefColl("DBMapper").Item(DBModifname), DBMapper).hadChanges Then modifiedDBMappers(DBModifname) = True
                     End If
                 Case "DBBegin"
-                    LogInfo("DBBegin... ")
+                    LogInfo("DBBeginTrans... ")
                     If IsNothing(dbcnn) Then
                         ' take database connection properties from next sequence step
                         Dim nextdefinition() As String = Split(sequenceParams(i + 1), ":")
@@ -1400,7 +1400,7 @@ Public Module DBModifs
             Dim dbModifNode As CustomXMLNode = CustomXmlParts(1).SelectSingleNode("/ns0:root").LastChild
             ' append the detailed settings to the definition element
             dbModifNode.AppendChildNode("Name", NodeType:=MsoCustomXMLNodeType.msoCustomXMLNodeAttribute, NodeValue:= .DBModifName.Text)
-            dbModifNode.AppendChildNode("execOnSave", NamespaceURI:="DBModifDef", NodeValue:= .execOnSave.Checked.ToString()) ' should DB Modifier be done on Excel Saving?
+            dbModifNode.AppendChildNode("execOnSave", NamespaceURI:="DBModifDef", NodeValue:= .execOnSave.Checked.ToString())
             dbModifNode.AppendChildNode("askBeforeExecute", NamespaceURI:="DBModifDef", NodeValue:= .AskForExecute.Checked.ToString())
             If createdDBModifType = "DBMapper" Then
                 dbModifNode.AppendChildNode("env", NamespaceURI:="DBModifDef", NodeValue:=IIf(.envSel.SelectedIndex = -1, "", (.envSel.SelectedIndex + 1).ToString()))
@@ -1416,6 +1416,7 @@ Public Module DBModifs
                 dbModifNode.AppendChildNode("env", NamespaceURI:="DBModifDef", NodeValue:=IIf(.envSel.SelectedIndex = -1, "", (.envSel.SelectedIndex + 1).ToString()))
                 dbModifNode.AppendChildNode("database", NamespaceURI:="DBModifDef", NodeValue:= .Database.Text)
             ElseIf createdDBModifType = "DBSeqnce" Then
+                ' "repaired" mode (indicating rewriting DBSequence Steps)
                 If .Tag = "repaired" Then
                     Dim repairedSequence() As String = Split(.RepairDBSeqnce.Text, vbCrLf)
                     For i As Integer = 0 To UBound(repairedSequence)

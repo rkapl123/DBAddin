@@ -141,19 +141,25 @@ Public Class DBModifCreate
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub DBModifCreate_Shown(sender As Object, e As EventArgs) Handles Me.Shown
+        ' on creating the form and DBSequenceDataGrid in DBModif.createDBModif, Data Errors produced when filling DBSeqenceDataGrid are caught by 
+        ' DBModifCreate.DBSeqenceDataGrid_DataError event procedure and stored in DBSeqStepValidationErrors. 
+        ' If any errors have been caught, display these in alternate textform RepairDBSeqnce along with instructions on how to repair them
         If DBSeqStepValidationErrors <> "" Then
+            ' first get allowed values from filled DataGridView DataSource
             Dim cb As DataGridViewComboBoxColumn = DBSeqenceDataGrid.Columns(0)
             Dim ds As List(Of String) = cb.DataSource()
             Dim allowedValues As String = ""
             For Each def As String In ds
                 allowedValues += def + vbCrLf
             Next
+            ' then display allowed values along with error messages and instruction on how to repair.
             Me.RepairDBSeqnce.Text = DBSeqStepValidationErrors & vbCrLf & "Allowed Entries are:" & vbCrLf & allowedValues & vbCrLf & "Repair existing definitions below and remove all above incl. this line to fix it by clicking OK:" & vbCrLf & Me.RepairDBSeqnce.Text
             Me.RepairDBSeqnce.Show()
             Me.RepairDBSeqnce.Width = Me.DBSeqenceDataGrid.Width
             Me.RepairDBSeqnce.Height = 325
             Me.RepairDBSeqnce.Top = Me.DatabaseLabel.Top
             Me.DBSeqenceDataGrid.Hide()
+            ' go into "repaired" mode (indicating rewriting DBSequence Steps in DBModif.createDBModif)
             Me.Tag = "repaired"
             ErrorMsg("Defined DBSequence steps did not match allowed values." & vbCrLf & "Please follow the instructions in textbox to fix it...", "DBSequence definition Insert error")
         End If

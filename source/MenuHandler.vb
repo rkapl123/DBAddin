@@ -47,7 +47,7 @@ Public Class MenuHandler
         ' DBSheet Group:
         customUIXml +=
         "<group id='DBSheetGroup' label='DB Sheet creation'>" +
-            "<button id='DBSheetCreate' label='create DBsheet Def' screentip='click to create a new DBSheet or edit an existing definition' imageMso='ChartResetToMatchStyle' onAction='clickCreateDBSheet'/>" +
+            "<button id='DBSheetCreate' label='create DBsheet Def' screentip='click to create a new DBSheet or edit an existing definition' imageMso='SlicerCreateNewStyle' onAction='clickCreateDBSheet'/>" +
             "<button id='DBSheetAssign' tag='DBSheet' label='assign DBsheet Def' screentip='click to assign a DBSheet definition to the current cell' imageMso='ChartResetToMatchStyle' onAction='clickCreateButton'/>" +
         "</group>"
         customUIXml += "</tab></tabs></ribbon>"

@@ -15,23 +15,21 @@ Partial Friend Class DBSheetCreateForm
     Private ForceFieldUpdate As Boolean
     ''' <summary>last selected column</summary>
     Private last As Integer
-
-    Private theDBSheetColumnList As DBSheetColumnList
+    Private dbsheetConnString As String
     Private CtrlPressed As Boolean
     Private maxColCount As Integer
     Private currentForDatabase As String = ""
     Private currentForTable As String = ""
     Private curConfig As String
-    Private theConnString As String
     Private dbidentifier As String
     Private ownerQualifier As String
-    Private theDatabase As String
+
     Private dbGetAllStr As String
     Private DBGetAllFieldName As String
     Private dbshcnn As OdbcConnection
-
-    Const tblPlaceHolder As String = "!T!"
-    Const specialNonNullableChar As String = "*"
+    Private dbPwdSpec As String
+    Private tblPlaceHolder As String = "!T!"
+    Private specialNonNullableChar As String = "*"
 
     ''' <summary>sets up DBSheetCreateForm for editing DBSHeet definitions</summary>
     ''' <param name="DBSheetParams"></param>
@@ -39,43 +37,46 @@ Partial Friend Class DBSheetCreateForm
     Public Sub createDefinitions(Optional ByVal DBSheetParams As String = "")
         Try
             init_Form()
-            theDBSheetColumnList = New DBSheetColumnList(DBSheetCols)
             ' loading defs from file...
             If Strings.Len(DBSheetParams) > 0 Then curConfig = DBSheetParams
             FormDisabled = True
 
-            Dim columnslist As Object
-            Dim newRow As Integer
-            Dim columnType As String = ""
-            Dim theHeaders As Object
             ' if we have a valid dbsheet definition (either selected a valid dbsheeet or loaded from file)
             ' fetch params into form from sheet or file
             If Not (curConfig = "") Then
                 FormDisabled = True
-                DBSheetCols.Rows.Clear()
+                ' get Database from (legacy) connID (legacy connID prefixed with connIDPrefixDBtype)
+                Dim configDatabase As String = Replace(DBSheetConfig.getEntry("connID", DBSheetParams), fetchSetting("connIDPrefixDBtype", "MSSQL"), "")
+                Database.SelectedIndex = Database.Items.IndexOf(configDatabase)
+                If Not openConnection(Database.Text) Then
+                    ErrorMsg("Couldn't open connection to database " & Database.Text)
+                    Exit Sub
+                End If
+                fillTables()
+                FormDisabled = True
+                Table.SelectedIndex = Table.Items.IndexOf(DBSheetConfig.getEntry("table", DBSheetParams))
+                Dim columnslist As Object = DBSheetConfig.getEntryList("columns", "field", "", DBSheetParams)
+                Dim theDBSheetDefTable = New DBSheetDefTable
+                For Each DBSheetColumnDef As String In columnslist
+                    Dim newRow As DBSheetDefRow = theDBSheetDefTable.GetNewRow()
+                    newRow.ColName = DBSheetConfig.getEntry("name", DBSheetColumnDef)
+                    newRow.Ftable = DBSheetConfig.getEntry("ftable", DBSheetColumnDef)
+                    newRow.Fkey = DBSheetConfig.getEntry("fkey", DBSheetColumnDef)
+                    newRow.Flookup = DBSheetConfig.getEntry("flookup", DBSheetColumnDef)
+                    newRow.OuterJ = If(DBSheetConfig.getEntry("outer", DBSheetColumnDef) = 1, True, False)
+                    newRow.Primkey = If(DBSheetConfig.getEntry("primkey", DBSheetColumnDef) = 1, True, False)
+                    newRow.ColType = getType_Renamed(newRow.ColName)
+                    If newRow.ColType = "" Then Exit Sub
+                    newRow.Sorting = DBSheetConfig.getEntry("sort", DBSheetColumnDef)
+                    newRow.Lookup = DBSheetConfig.getEntry("lookup", DBSheetColumnDef)
+                    theDBSheetDefTable.Add(newRow)
+                Next
+                DBSheetCols.DataSource = theDBSheetDefTable
                 Query.Text = DBSheetConfig.getEntry("query", DBSheetParams)
                 WhereClause.Text = DBSheetConfig.getEntry("whereClause", DBSheetParams)
-                Table.SelectedIndex = findCBIndex(Table, DBSheetConfig.getEntry("table", DBSheetParams))
-                columnslist = DBSheetConfig.getEntryList("columns", "field", "", DBSheetParams)
-
-                theHeaders = theDBSheetColumnList.Headers
-                For Each columnentry As String In columnslist
-                    newRow = theDBSheetColumnList.newRow()
-                    For j As Integer = 0 To theDBSheetColumnList.ColumnCount - 1
-                        theDBSheetColumnList.Value(newRow, j) = DBSheetConfig.getEntry(theHeaders.GetValue(j), columnentry)
-                    Next
-                    If Len(theDBSheetColumnList.Value(newRow, 8)) = 0 Then theDBSheetColumnList.Value(newRow, 8) = "None"
-                    ' reset type....
-                    columnType = getType_Renamed(theDBSheetColumnList.Value(newRow, 0))
-                    If Strings.Len(columnType) > 0 Then
-                        theDBSheetColumnList.Value(newRow, 7) = columnType
-                    End If
-                Next columnentry
-                FormDisabled = False
                 fillColumns()
-                fillForDatabases()
-                ForDatabase.SelectedIndex = findCBIndex(ForDatabase, theDatabase)
-                'fillForTables
+                fillDatabases(ForDatabase)
+                fillForTables()
                 DBSheetCols.Enabled = True
                 TableEditable(False)
                 saveEnabled(True)
@@ -85,9 +86,8 @@ Partial Friend Class DBSheetCreateForm
             End If
             ' now show the dialog...
             columnEditMode(False)
-            Me.Show()
         Catch ex As System.Exception
-            LogError("Error: " & ex.Message)
+            ErrorMsg("Error: " & ex.Message)
         End Try
     End Sub
 
@@ -107,7 +107,7 @@ Partial Friend Class DBSheetCreateForm
             saveEnabled(False)
 
         Catch ex As System.Exception
-            LogError("Error: " & ex.Message)
+            ErrorMsg("Error: " & ex.Message)
         End Try
     End Sub
 
@@ -131,11 +131,10 @@ Partial Friend Class DBSheetCreateForm
                 FileSystem.PrintLine(1, xmlDbsheetConfig())
                 FileSystem.FileClose(1)
             End If
-            cmdAssignDBSheet.Enabled = True
             Exit Sub
 
         Catch ex As System.Exception
-            LogError("Error: " & ex.Message)
+            ErrorMsg("Error: " & ex.Message)
         End Try
     End Sub
 
@@ -146,22 +145,24 @@ Partial Friend Class DBSheetCreateForm
 
         Dim theHeaders() As String
         Try
+            'TODO: change theDBSheetColumnList
             ' first create the columns list
-            theHeaders = theDBSheetColumnList.Headers
-            Dim primKeyCount, calcCols As Integer
-            primKeyCount = 0 : calcCols = 0
-            ' collect lookups
-            For i As Integer = 0 To theDBSheetColumnList.RowCount - 1
-                columnLine = "<field>"
-                For j As Integer = 0 To theDBSheetColumnList.ColumnCount - 1
-                    If Strings.Len(theDBSheetColumnList.Value(i, j)) > 0 And theDBSheetColumnList.Value(i, j) <> 0 Then
-                        If Not ((j = 8 And theDBSheetColumnList.Value(i, 8) = "None") Or j = 7) Then columnLine += DBSheetConfig.setEntry(theHeaders(j), theDBSheetColumnList.Value(i, j))
-                    End If
-                Next
-                columnsDef += Environment.NewLine & columnLine & "</field>"
-                If theDBSheetColumnList.Value(i, 5) = 1 Then primKeyCount += 1
-            Next
+            'theHeaders = theDBSheetColumnList.Headers
+            Dim primKeyCount As Integer
+            'primKeyCount = 0 
+            '' collect lookups
+            'For i As Integer = 0 To theDBSheetColumnList.RowCount - 1
+            '    columnLine = "<field>"
+            '    For j As Integer = 0 To theDBSheetColumnList.ColumnCount - 1
+            '        If Strings.Len(theDBSheetColumnList.Value(i, j)) > 0 And theDBSheetColumnList.Value(i, j) <> 0 Then
+            '            If Not ((j = 8 And theDBSheetColumnList.Value(i, 8) = "None") Or j = 7) Then columnLine += DBSheetConfig.setEntry(theHeaders(j), theDBSheetColumnList.Value(i, j))
+            '        End If
+            '    Next
+            '    columnsDef += Environment.NewLine & columnLine & "</field>"
+            '    If theDBSheetColumnList.Value(i, 5) = 1 Then primKeyCount += 1
+            'Next
             ' then create the parameters stored in named cells
+            namedParams += DBSheetConfig.setEntry("connID", Database.Text) & Environment.NewLine
             namedParams += DBSheetConfig.setEntry("table", Table.Text) & Environment.NewLine
             namedParams += DBSheetConfig.setEntry("query", Query.Text) & Environment.NewLine
             namedParams += DBSheetConfig.setEntry("whereClause", WhereClause.Text) & Environment.NewLine
@@ -171,7 +172,7 @@ Partial Friend Class DBSheetCreateForm
             namedParams & Environment.NewLine &
             "<columns>" & columnsDef.ToString() & Environment.NewLine & "</columns>" & Environment.NewLine & "</DBsheetConfig>"
         Catch ex As System.Exception
-            LogError("Error: " & ex.Message)
+            ErrorMsg("Error: " & ex.Message)
             Return ""
         End Try
     End Function
@@ -196,7 +197,7 @@ Partial Friend Class DBSheetCreateForm
             End If
 
         Catch ex As System.Exception
-            LogError("Error: " & ex.Message)
+            ErrorMsg("Error: " & ex.Message)
         End Try
     End Sub
 
@@ -216,14 +217,15 @@ Partial Friend Class DBSheetCreateForm
                 DBSheetCols.Enabled = True
             End If
             ' just in case this wasn't cleared before...
-            theDBSheetColumnList.Clear()
+            'TODO: change theDBSheetColumnList
+            'theDBSheetColumnList.Clear()
             Query.Text = ""
             fillColumns()
             columnEditMode(False)
             FormDisabled = False
 
         Catch ex As System.Exception
-            LogError("Error: " & ex.Message)
+            ErrorMsg("Error: " & ex.Message)
         End Try
     End Sub
 
@@ -231,26 +233,27 @@ Partial Friend Class DBSheetCreateForm
         If FormDisabled Or Strings.Len(Column.Text) = 0 Then Exit Sub
         Try
             lookupAndSelect(IsPrimary)
-            If Not theDBSheetColumnList.hasRows() Then Exit Sub
-            If Not theDBSheetColumnList.selectionMade() Then Exit Sub
-            If Not theDBSheetColumnList.firstEntrySelected() Then
-                If theDBSheetColumnList.Value(theDBSheetColumnList.Selection - 1, 5) = 0 And IsPrimary.CheckState = CheckState.Checked Then
-                    ErrorMsg("All primary keys have to be first and there is at least one non-primary key column before that one !", "DBSheet Definition Warning")
-                    IsPrimary.CheckState = CheckState.Unchecked
-                End If
-                If Not theDBSheetColumnList.lastEntrySelected() Then
-                    If theDBSheetColumnList.Value(theDBSheetColumnList.Selection + 1, 5) = 1 And IsPrimary.CheckState = CheckState.Unchecked Then
-                        ErrorMsg("All primary keys have to be first and there is at least one primary key column after that one !", "DBSheet Definition Warning")
-                        IsPrimary.CheckState = CheckState.Checked
-                    End If
-                End If
-            ElseIf IsPrimary.CheckState = CheckState.Unchecked Then
-                ErrorMsg("first column always has to be primary key", "DBSheet Definition Warning")
-                IsPrimary.CheckState = CheckState.Checked
-            End If
+            'TODO: change theDBSheetColumnList
+            'If Not theDBSheetColumnList.hasRows() Then Exit Sub
+            'If Not theDBSheetColumnList.selectionMade() Then Exit Sub
+            'If Not theDBSheetColumnList.firstEntrySelected() Then
+            '    If theDBSheetColumnList.Value(theDBSheetColumnList.Selection - 1, 5) = 0 And IsPrimary.CheckState = CheckState.Checked Then
+            '        ErrorMsg("All primary keys have to be first and there is at least one non-primary key column before that one !", "DBSheet Definition Warning")
+            '        IsPrimary.CheckState = CheckState.Unchecked
+            '    End If
+            '    If Not theDBSheetColumnList.lastEntrySelected() Then
+            '        If theDBSheetColumnList.Value(theDBSheetColumnList.Selection + 1, 5) = 1 And IsPrimary.CheckState = CheckState.Unchecked Then
+            '            ErrorMsg("All primary keys have to be first and there is at least one primary key column after that one !", "DBSheet Definition Warning")
+            '            IsPrimary.CheckState = CheckState.Checked
+            '        End If
+            '    End If
+            'ElseIf IsPrimary.CheckState = CheckState.Unchecked Then
+            '    ErrorMsg("first column always has to be primary key", "DBSheet Definition Warning")
+            '    IsPrimary.CheckState = CheckState.Checked
+            'End If
 
         Catch ex As System.Exception
-            LogError("Error: " & ex.Message)
+            ErrorMsg("Error: " & ex.Message)
         End Try
     End Sub
 
@@ -259,16 +262,17 @@ Partial Friend Class DBSheetCreateForm
         Try
             lookupAndSelect(IsForeign)
             ' check whether this can't be done also on non selected fields (would be nicer !!)....
-            If Not theDBSheetColumnList.selectionMade() Then Exit Sub
-            fillForDatabases()
-            ForDatabase.SelectedIndex = findCBIndex(ForDatabase, theDatabase)
+            'TODO: change  theDBSheetColumnList
+            'If Not theDBSheetColumnList.selectionMade() Then Exit Sub
+            fillDatabases(ForDatabase)
+            ForDatabase.SelectedIndex = ForDatabase.Items.IndexOf(Database.Text)
             setForeignColFieldsVisibility()
             LLookupQuery.Enabled = True
             LookupQuery.Enabled = True
             regenLookupQueries.Enabled = True
             testLookupQuery.Enabled = True
         Catch ex As System.Exception
-            LogError("Error: " & ex.Message)
+            ErrorMsg("Error: " & ex.Message)
         End Try
     End Sub
 
@@ -292,19 +296,21 @@ Partial Friend Class DBSheetCreateForm
             FormDisabled = True
             rstSchema = dbshcnn.GetSchema().DataSet
             Dim firstRow As Boolean : firstRow = True
-            theDBSheetColumnList.Clear()
+            'TODO: change theDBSheetColumnList
+            'theDBSheetColumnList.Clear()
             Dim newRow As Integer
             For Each iteration_row As DataRow In rstSchema.Tables(0).Rows
-                If iteration_row("TABLE_CATALOG").ToUpper() = theDatabase.ToUpper() Or iteration_row("TABLE_SCHEMA").ToUpper() = theDatabase.ToUpper() Then
+                If iteration_row("TABLE_CATALOG").ToUpper() = Database.Text.ToUpper() Or iteration_row("TABLE_SCHEMA").ToUpper() = Database.Text.ToUpper() Then
                     Dim attached As String = ""
                     If Not iteration_row("IS_NULLABLE") Then attached = specialNonNullableChar
-                    newRow = theDBSheetColumnList.newRow()
-                    theDBSheetColumnList.Value(newRow, 0) = attached & iteration_row("COLUMN_NAME")
-                    'fist field is always primary col by default:
-                    If firstRow Then theDBSheetColumnList.Value(newRow, 5) = 1
-                    firstRow = False
-                    theDBSheetColumnList.Value(newRow, 6) = getType_Renamed(iteration_row("COLUMN_NAME"))
-                    theDBSheetColumnList.Value(newRow, 7) = "None"
+                    newRow = DBSheetCols.Rows.Add(New DataGridViewRow())
+                    'TODO: change theDBSheetColumnList
+                    'theDBSheetColumnList.Value(newRow, 0) = attached & iteration_row("COLUMN_NAME")
+                    ''fist field is always primary col by default:
+                    'If firstRow Then theDBSheetColumnList.Value(newRow, 5) = 1
+                    'firstRow = False
+                    'theDBSheetColumnList.Value(newRow, 6) = getType_Renamed(iteration_row("COLUMN_NAME"))
+                    'theDBSheetColumnList.Value(newRow, 7) = "None"
                 End If
             Next iteration_row
             columnEditMode(False)
@@ -314,7 +320,7 @@ Partial Friend Class DBSheetCreateForm
             TableEditable(False)
 
         Catch ex As System.Exception
-            LogError("Error: " & ex.Message)
+            ErrorMsg("Error: " & ex.Message)
         End Try
     End Sub
 
@@ -329,47 +335,52 @@ Partial Friend Class DBSheetCreateForm
             If maxColCount = 0 Then
                 maxColCount = ExcelDnaUtil.ExcelLimits.MaxColumns
             End If
-
-            If theDBSheetColumnList.RowCount = maxColCount Then
-                ErrorMsg("Max. Columns allowed in DBSheet: " & maxColCount & " (last column reserved for data status)", "DBSheet Definition Warning")
-                Exit Sub
-            End If
+            'TODO: change theDBSheetColumnList
+            'If theDBSheetColumnList.RowCount = maxColCount Then
+            '    ErrorMsg("Max. Columns allowed in DBSheet: " & maxColCount & " (last column reserved for data status)", "DBSheet Definition Warning")
+            '    Exit Sub
+            'End If
 
             ExcelDnaUtil.Application.EnableEvents = False
             Dim newRow As Integer
-            newRow = theDBSheetColumnList.newRow()
+            newRow = DBSheetCols.Rows.Add(New DataGridViewRow())
             FormDisabled = True
 
             ' Column
-            theDBSheetColumnList.Value(newRow, 0) = Column.Text
+            'TODO: change theDBSheetColumnList
+            'theDBSheetColumnList.Value(newRow, 0) = Column.Text
 
             ' Foreign Table information
             If Strings.Len(ForTable.Text) > 0 And Strings.Len(ForTableKey.Text) > 0 And Strings.Len(ForTableLookup.Text) > 0 Then
-                theDBSheetColumnList.Value(newRow, 1) = ForDatabase.Text & ownerQualifier & ForTable.Text
-                theDBSheetColumnList.Value(newRow, 2) = ForTableKey.Text
-                theDBSheetColumnList.Value(newRow, 3) = ForTableLookup.Text
-                If outerJoin.CheckState = CheckState.Checked Then theDBSheetColumnList.Value(newRow, 4) = 1
+                'TODO: change theDBSheetColumnList
+                'theDBSheetColumnList.Value(newRow, 1) = ForDatabase.Text & ownerQualifier & ForTable.Text
+                'theDBSheetColumnList.Value(newRow, 2) = ForTableKey.Text
+                'theDBSheetColumnList.Value(newRow, 3) = ForTableLookup.Text
+                'If outerJoin.CheckState = CheckState.Checked Then theDBSheetColumnList.Value(newRow, 4) = 1
             ElseIf Strings.Len(ForTable.Text) > 0 Or Strings.Len(ForTableKey.Text) > 0 Or Strings.Len(ForTableLookup.Text) > 0 And Strings.Len(LookupQuery.Text) = 0 Then
                 ErrorMsg("Please specify all 3 foreign column informations: ForeignTable, ForeignTableKey and ForeignTableLookup !", "DBSheet Definition Warning")
             End If
 
             ' Primary key
             If newRow = 0 Then ' always have first column as PK
-                theDBSheetColumnList.Value(newRow, 5) = 1
+                'TODO: change theDBSheetColumnList
+                'theDBSheetColumnList.Value(newRow, 5) = 1
                 IsPrimary.CheckState = CheckState.Checked
             End If
             ' check if primary keys are first
             Dim primaryAllowed As Boolean
             primaryAllowed = True
             For i As Integer = 0 To newRow
-                If Strings.Len(theDBSheetColumnList.Value(i, 5)) = 0 Then
-                    primaryAllowed = False
-                    Exit For
-                End If
+                'TODO: change theDBSheetColumnList
+                'If Strings.Len(theDBSheetColumnList.Value(i, 5)) = 0 Then
+                '    primaryAllowed = False
+                '    Exit For
+                'End If
             Next
             If IsPrimary.CheckState = CheckState.Checked Then
                 If primaryAllowed Then
-                    theDBSheetColumnList.Value(newRow, 5) = 1
+                    'TODO: change theDBSheetColumnList
+                    'theDBSheetColumnList.Value(newRow, 5) = 1
                 Else
                     MessageBox.Show("Primary Keys must be first in a DBSheet (please place above)", "DBAddin: DBSheet Definition Warning", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
                     IsPrimary.CheckState = CheckState.Unchecked
@@ -377,10 +388,12 @@ Partial Friend Class DBSheetCreateForm
             End If
 
             ' Column Type
-            theDBSheetColumnList.Value(newRow, 6) = getType_Renamed(Column.Text)
+            'TODO: change theDBSheetColumnList
+            'theDBSheetColumnList.Value(newRow, 6) = getType_Renamed(Column.Text)
 
             ' Sort by this column ?
-            theDBSheetColumnList.Value(newRow, 7) = Sorting.Text
+            'TODO: change theDBSheetColumnList
+            'theDBSheetColumnList.Value(newRow, 7) = Sorting.Text
 
             columnEditMode(False)
             FormDisabled = False
@@ -389,7 +402,7 @@ Partial Friend Class DBSheetCreateForm
 
         Catch ex As System.Exception
             ExcelDnaUtil.Application.EnableEvents = True
-            LogError("Error: " & ex.Message)
+            ErrorMsg("Error: " & ex.Message)
         End Try
     End Sub
 
@@ -397,25 +410,26 @@ Partial Friend Class DBSheetCreateForm
         Try
             ExcelDnaUtil.Application.EnableEvents = False
             FormDisabled = True
-            If theDBSheetColumnList.selectionMade() Then
-                theDBSheetColumnList.removeRow(theDBSheetColumnList.Selection)
-                setEntryFields()
-            End If
-            If Not theDBSheetColumnList.hasRows() Then
-                Query.Text = ""
-                ' reset the current filename
-                currentFilepath = ""
-                saveEnabled(False)
-                columnEditMode(False)
-                ' after resetting columns changes to table/connection allowed again !!
-                TableEditable(True)
-            End If
+            ' TODO: change theDBSheetColumnList
+            'If theDBSheetColumnList.selectionMade() Then
+            '    'TODO: theDBSheetColumnList.removeRow(theDBSheetColumnList.Selection)
+            '    setEntryFields()
+            'End If
+            'If Not theDBSheetColumnList.hasRows() Then
+            '    Query.Text = ""
+            '    ' reset the current filename
+            '    currentFilepath = ""
+            '    saveEnabled(False)
+            '    columnEditMode(False)
+            '    ' after resetting columns changes to table/connection allowed again !!
+            '    TableEditable(True)
+            'End If
             FormDisabled = False
             ExcelDnaUtil.Application.EnableEvents = True
 
         Catch ex As System.Exception
             ExcelDnaUtil.Application.EnableEvents = True
-            LogError("Error: " & ex.Message)
+            ErrorMsg("Error: " & ex.Message)
         End Try
     End Sub
 
@@ -468,27 +482,30 @@ Partial Friend Class DBSheetCreateForm
             End If
 
             Dim curSel As Integer
-            curSel = theDBSheetColumnList.Selection
+            'TODO: change theDBSheetColumnList
+            'curSel = theDBSheetColumnList.Selection
             ' copy into static variables
             If KeyAscii = 3 Then
-                ForTableV = theDBSheetColumnList.Value(curSel, 1)
-                ForTableKeyV = theDBSheetColumnList.Value(curSel, 2)
-                ForTableLookupV = theDBSheetColumnList.Value(curSel, 3)
-                outerJoinV = theDBSheetColumnList.Value(curSel, 4)
-                PrimaryV = theDBSheetColumnList.Value(curSel, 5)
-                SortingBy = theDBSheetColumnList.Value(curSel, 7)
-                restrictDef = theDBSheetColumnList.Value(curSel, 8)
+                'TODO: change theDBSheetColumnList
+                'ForTableV = theDBSheetColumnList.Value(curSel, 1)
+                'ForTableKeyV = theDBSheetColumnList.Value(curSel, 2)
+                'ForTableLookupV = theDBSheetColumnList.Value(curSel, 3)
+                'outerJoinV = theDBSheetColumnList.Value(curSel, 4)
+                'PrimaryV = theDBSheetColumnList.Value(curSel, 5)
+                'SortingBy = theDBSheetColumnList.Value(curSel, 7)
+                'restrictDef = theDBSheetColumnList.Value(curSel, 8)
                 ' paste from static variables
             ElseIf KeyAscii = 22 Then
-                theDBSheetColumnList.Value(curSel, 1) = ForTableV
-                theDBSheetColumnList.Value(curSel, 2) = ForTableKeyV
-                theDBSheetColumnList.Value(curSel, 3) = ForTableLookupV
-                theDBSheetColumnList.Value(curSel, 4) = outerJoinV
-                theDBSheetColumnList.Value(curSel, 5) = PrimaryV
-                ' exception if we overwrite isPrimary of first dbsheet column...
-                If curSel = 0 Then theDBSheetColumnList.Value(curSel, 5) = "Y"
-                theDBSheetColumnList.Value(curSel, 7) = SortingBy
-                theDBSheetColumnList.Value(curSel, 8) = restrictDef
+                'TODO: change theDBSheetColumnList
+                'theDBSheetColumnList.Value(curSel, 1) = ForTableV
+                'theDBSheetColumnList.Value(curSel, 2) = ForTableKeyV
+                'theDBSheetColumnList.Value(curSel, 3) = ForTableLookupV
+                'theDBSheetColumnList.Value(curSel, 4) = outerJoinV
+                'theDBSheetColumnList.Value(curSel, 5) = PrimaryV
+                '' exception if we overwrite isPrimary of first dbsheet column...
+                'If curSel = 0 Then theDBSheetColumnList.Value(curSel, 5) = "Y"
+                'theDBSheetColumnList.Value(curSel, 7) = SortingBy
+                'theDBSheetColumnList.Value(curSel, 8) = restrictDef
                 setEntryFields()
             End If
             If KeyAscii = 0 Then
@@ -496,7 +513,7 @@ Partial Friend Class DBSheetCreateForm
             End If
 
         Catch ex As System.Exception
-            LogError("Error: " & ex.Message)
+            ErrorMsg("Error: " & ex.Message)
             If KeyAscii = 0 Then
                 eventArgs.Handled = True
             End If
@@ -516,59 +533,77 @@ Partial Friend Class DBSheetCreateForm
                     FormDisabled = False
                     Exit Sub
                 End If
-                For i As Integer = 0 To theDBSheetColumnList.RowCount - 1
-                    If Strings.Len(theDBSheetColumnList.Value(i, 1)) > 0 Then
-                        ' only overwrite if forced regenerate or empty restriction def...
-                        If retval = MsgBoxResult.Yes Or Strings.Len(theDBSheetColumnList.Value(i, 9)) = 0 Then
-                            theDBSheetColumnList.Value(i, 9) = "SELECT " & theDBSheetColumnList.Value(i, 3) & "," & theDBSheetColumnList.Value(i, 2) & " FROM " & theDBSheetColumnList.Value(i, 1) & " ORDER BY " & theDBSheetColumnList.Value(i, 3)
-                        End If
-                    End If
-                Next
+                'TODO: change theDBSheetColumnList
+                'For i As Integer = 0 To theDBSheetColumnList.RowCount - 1
+                '    If Strings.Len(theDBSheetColumnList.Value(i, 1)) > 0 Then
+                '        ' only overwrite if forced regenerate or empty restriction def...
+                '        If retval = MsgBoxResult.Yes Or Strings.Len(theDBSheetColumnList.Value(i, 9)) = 0 Then
+                '            theDBSheetColumnList.Value(i, 9) = "SELECT " & theDBSheetColumnList.Value(i, 3) & "," & theDBSheetColumnList.Value(i, 2) & " FROM " & theDBSheetColumnList.Value(i, 1) & " ORDER BY " & theDBSheetColumnList.Value(i, 3)
+                '        End If
+                '    End If
+                'Next
             End If
             FormDisabled = False
         Catch ex As System.Exception
-            LogError("Error: " & ex.Message)
+            ErrorMsg("Error: " & ex.Message)
         End Try
     End Sub
 
     Private Sub moveUp_Click(ByVal eventSender As Object, ByVal eventArgs As EventArgs) Handles moveUp.Click
-        If Not theDBSheetColumnList.selectionMade() Or theDBSheetColumnList.firstEntrySelected() Then Exit Sub
+        'TODO: change theDBSheetColumnList
+        'If Not theDBSheetColumnList.selectionMade() Or theDBSheetColumnList.firstEntrySelected() Then Exit Sub
         Try
-            If theDBSheetColumnList.Selection = 1 And IsPrimary.CheckState = CheckState.Unchecked Then
+            If DBSheetCols.CurrentCell.RowIndex = 0 And IsPrimary.CheckState = CheckState.Unchecked Then
                 ErrorMsg("first column always has to be primary key", "DBSheet Definition Warning")
                 Exit Sub
-            ElseIf theDBSheetColumnList.Value(theDBSheetColumnList.Selection - 1, 5) = 1 And IsPrimary.CheckState = CheckState.Unchecked Then
+            ElseIf DBSheetCols.DataSource.Item(DBSheetCols.CurrentCell.RowIndex + 1).Primary And IsPrimary.CheckState = CheckState.Unchecked Then
                 ErrorMsg("All primary keys have to be first and there is a primary key column that would be shifted below this non-primary one !", "DBSheet Definition Warning")
                 Exit Sub
             End If
-            theDBSheetColumnList.shiftEntry(-1)
+            If IsNothing(DBSheetCols.CurrentRow) Then Return
+            Dim rw As DataGridViewRow = DBSheetCols.CurrentRow
+            Dim selIndex As Integer = DBSheetCols.CurrentRow.Index
+            ' avoid moving up of first row
+            If selIndex = 0 Then Return
+            DBSheetCols.Rows.RemoveAt(selIndex)
+            DBSheetCols.Rows.Insert(selIndex - 1, rw)
+            DBSheetCols.Rows(selIndex - 1).Cells(0).Selected = True
             last -= 1
             columnEditMode(True)
         Catch ex As System.Exception
-            LogError("Error: " & ex.Message)
+            ErrorMsg("Error: " & ex.Message)
         End Try
     End Sub
 
     Private Sub moveDown_Click(ByVal eventSender As Object, ByVal eventArgs As EventArgs) Handles moveDown.Click
         Try
-            If Not theDBSheetColumnList.selectionMade() Or theDBSheetColumnList.lastEntrySelected() Then Exit Sub
-            If theDBSheetColumnList.Value(theDBSheetColumnList.Selection + 1, 5) = 0 And IsPrimary.CheckState = CheckState.Checked Then
+            'TODO: change theDBSheetColumnList
+            'If Not theDBSheetColumnList.selectionMade() Or theDBSheetColumnList.lastEntrySelected() Then Exit Sub
+            If Not DBSheetCols.DataSource.Item(DBSheetCols.CurrentCell.RowIndex + 1).Primary And IsPrimary.CheckState = CheckState.Checked Then
                 ErrorMsg("All primary keys have to be first and there is a non primary key column that would be shifted above this primary one !", "DBSheet Definition Warning")
                 Exit Sub
             End If
-            theDBSheetColumnList.shiftEntry(1)
+            If IsNothing(DBSheetCols.CurrentRow) Then Return
+            Dim rw As DataGridViewRow = DBSheetCols.CurrentRow
+            Dim selIndex As Integer = DBSheetCols.CurrentRow.Index
+            ' avoid moving down of last row, DBSeqenceDataGrid.Rows.Count is 1 more than the actual inserted rows because of the "new" row, selIndex is 0 based
+            If selIndex = DBSheetCols.Rows.Count - 2 Then Return
+            DBSheetCols.Rows.RemoveAt(selIndex)
+            DBSheetCols.Rows.Insert(selIndex + 1, rw)
+            DBSheetCols.Rows(selIndex + 1).Cells(0).Selected = True
             last += 1
             columnEditMode(True)
 
         Catch ex As System.Exception
-            LogError("Error: " & ex.Message)
+            ErrorMsg("Error: " & ex.Message)
         End Try
     End Sub
 
     ''' <summary>clears the defined columns and resets the selection fields (Table, ForTable) and the Query</summary>
     Private Sub clearTablesColumnsAndQuery()
         FormDisabled = True
-        theDBSheetColumnList.Clear()
+        'TODO: change theDBSheetColumnList
+        ' theDBSheetColumnList.Clear()
         TableEditable(True)
         Table.SelectedIndex = -1
         Column.SelectedIndex = -1
@@ -584,20 +619,21 @@ Partial Friend Class DBSheetCreateForm
         Try
             Dim columnBackup As String = ""
 
-            last = theDBSheetColumnList.checkForValue(Column.Text)
+            last = checkForValue(Column.Text)
             If addToDBsheetCols.Text.StartsWith("&add") And last >= 0 Then
                 FormDisabled = True
-                theDBSheetColumnList.Selection = last
+                'TODO: change theDBSheetColumnList
+                ' theDBSheetColumnList.Selection = last
                 columnBackup = CStr(changedField.CheckState)
                 setEntryFields()
                 changedField.CheckState = columnBackup
                 columnEditMode(True)
             Else
-                last = theDBSheetColumnList.Selection
+                'last = theDBSheetColumnList.Selection
             End If
 
         Catch ex As System.Exception
-            LogError("Error: " & ex.Message)
+            ErrorMsg("Error: " & ex.Message)
         End Try
     End Sub
 
@@ -606,25 +642,26 @@ Partial Friend Class DBSheetCreateForm
         Try
             If addToDBsheetCols.Text.StartsWith("&abort") Then
                 ' only fill column def if column is really filled (schema errors can lead to empty values here !
-                If Strings.Len(Column.Text) > 0 Then theDBSheetColumnList.Value(last, 0) = Column.Text
-                theDBSheetColumnList.Value(last, 5) = IsPrimary.CheckState
-                theDBSheetColumnList.Value(last, 7) = Sorting.Text
-                theDBSheetColumnList.Value(last, 8) = LookupQuery.Text
-                If IsForeign.CheckState = CheckState.Checked And Strings.Len(ForTable.Text) > 0 And Strings.Len(ForTableKey.Text) > 0 And Strings.Len(ForTableLookup.Text) > 0 Then
-                    theDBSheetColumnList.Value(last, 1) = ForDatabase.Text & ownerQualifier & ForTable.Text
-                    theDBSheetColumnList.Value(last, 2) = ForTableKey.Text
-                    theDBSheetColumnList.Value(last, 3) = ForTableLookup.Text
-                    theDBSheetColumnList.Value(last, 4) = outerJoin.CheckState
-                Else
-                    theDBSheetColumnList.Value(last, 1) = ""
-                    theDBSheetColumnList.Value(last, 2) = ""
-                    theDBSheetColumnList.Value(last, 3) = ""
-                    theDBSheetColumnList.Value(last, 4) = 0
-                End If
+                'TODO: change theDBSheetColumnList
+                'If Strings.Len(Column.Text) > 0 Then theDBSheetColumnList.Value(last, 0) = Column.Text
+                'theDBSheetColumnList.Value(last, 5) = IsPrimary.CheckState
+                'theDBSheetColumnList.Value(last, 7) = Sorting.Text
+                'theDBSheetColumnList.Value(last, 8) = LookupQuery.Text
+                'If IsForeign.CheckState = CheckState.Checked And Strings.Len(ForTable.Text) > 0 And Strings.Len(ForTableKey.Text) > 0 And Strings.Len(ForTableLookup.Text) > 0 Then
+                '    theDBSheetColumnList.Value(last, 1) = ForDatabase.Text & ownerQualifier & ForTable.Text
+                '    theDBSheetColumnList.Value(last, 2) = ForTableKey.Text
+                '    theDBSheetColumnList.Value(last, 3) = ForTableLookup.Text
+                '    theDBSheetColumnList.Value(last, 4) = outerJoin.CheckState
+                'Else
+                '    theDBSheetColumnList.Value(last, 1) = ""
+                '    theDBSheetColumnList.Value(last, 2) = ""
+                '    theDBSheetColumnList.Value(last, 3) = ""
+                '    theDBSheetColumnList.Value(last, 4) = 0
+                'End If
             End If
 
         Catch ex As System.Exception
-            LogError("Error: " & ex.Message)
+            ErrorMsg("Error: " & ex.Message)
         End Try
     End Sub
 
@@ -634,36 +671,39 @@ Partial Friend Class DBSheetCreateForm
 
         Try
             ' remember last selection for a) moveRows and b) lookupAndSelect
-            last = theDBSheetColumnList.Selection
+            'TODO: change theDBSheetColumnList
+            'last = theDBSheetColumnList.Selection
             If last = -1 Then Exit Sub
 
             ' lookup the current selected row in the available columns
             Dim newIndex As Integer
-            newIndex = findCBIndex(Column, theDBSheetColumnList.Value(last, 0))
+            'TODO: change theDBSheetColumnList
+            'newIndex = Column.Items.IndexOf(theDBSheetColumnList.Value(last, 0))
             ' if column name changed isnullable flag (specialNonNullableChar in front of col name changed)
             ' then try again including/excluding it (prevent strange GUI effects later)
-            If newIndex = -1 Then
-                If theDBSheetColumnList.Value(last, 0).StartsWith(specialNonNullableChar) Then
-                    ' skip specialNonNullableChar in front
-                    newIndex = findCBIndex(Column, theDBSheetColumnList.Value(last, 0).Substring(1))
-                Else
-                    ' add specialNonNullableChar in front
-                    newIndex = findCBIndex(Column, specialNonNullableChar & theDBSheetColumnList.Value(last, 0))
-                End If
-            End If
-            If newIndex = -1 Then
-                ErrorMsg("couldn't find the column " & theDBSheetColumnList.Value(last, 0) & " in current table's columns. Did the table schema change?")
-            End If
+            'If newIndex = -1 Then
+            '    If theDBSheetColumnList.Value(last, 0).StartsWith(specialNonNullableChar) Then
+            '        ' skip specialNonNullableChar in front
+            '        newIndex = Column.Items.IndexOf(theDBSheetColumnList.Value(last, 0).Substring(1))
+            '    Else
+            '        ' add specialNonNullableChar in front
+            '        newIndex = Column.Items.IndexOf(specialNonNullableChar & theDBSheetColumnList.Value(last, 0))
+            '    End If
+            'End If
+            'If newIndex = -1 Then
+            '    ErrorMsg("couldn't find the column " & theDBSheetColumnList.Value(last, 0) & " in current table's columns. Did the table schema change?")
+            'End If
             Column.SelectedIndex = newIndex
 
             ' set the plain entry fields to the row's values
-            ForTableV = theDBSheetColumnList.Value(last, 1)
-            ForTableKeyV = theDBSheetColumnList.Value(last, 2)
-            ForTableLookupV = theDBSheetColumnList.Value(last, 3)
-            outerJoin.CheckState = theDBSheetColumnList.Value(last, 4)
-            IsPrimary.CheckState = theDBSheetColumnList.Value(last, 5)
-            Sorting.SelectedIndex = findCBIndex(Sorting, theDBSheetColumnList.Value(last, 7))
-            LookupQuery.Text = theDBSheetColumnList.Value(last, 8)
+            'TODO: change theDBSheetColumnList
+            'ForTableV = theDBSheetColumnList.Value(last, 1)
+            'ForTableKeyV = theDBSheetColumnList.Value(last, 2)
+            'ForTableLookupV = theDBSheetColumnList.Value(last, 3)
+            'outerJoin.CheckState = theDBSheetColumnList.Value(last, 4)
+            'IsPrimary.CheckState = theDBSheetColumnList.Value(last, 5)
+            'Sorting.SelectedIndex = Sorting.Items.IndexOf(theDBSheetColumnList.Value(last, 7))
+            'LookupQuery.Text = theDBSheetColumnList.Value(last, 8)
 
             ' set the foreign lookup entry fields to the row's values: special care needs to be taken for switching databases !!
             If Strings.Len(ForTableV) > 0 Then
@@ -674,7 +714,7 @@ Partial Friend Class DBSheetCreateForm
                     ErrorMsg("No database information can be extracted from (not fully qualified) foreign table name!")
                     ForDatabase.SelectedIndex = -1
                 Else
-                    ForDatabase.SelectedIndex = findCBIndex(ForDatabase, Strings.Left(ForTableV, InStr(1, ForTableV, ".") - 1))
+                    ForDatabase.SelectedIndex = ForDatabase.Items.IndexOf(Strings.Left(ForTableV, InStr(1, ForTableV, ".") - 1))
                 End If
                 If ForDatabase.Text <> currentForDatabase Then
                     fillForTables()
@@ -682,7 +722,7 @@ Partial Friend Class DBSheetCreateForm
                 End If
                 ' in case of qualified table name (pubs.dbo.employee), set table to begin at last "."
                 Dim lookupForTable As String = Strings.Mid(ForTableV, IIf(InStrRev(ForTableV, ".") = 0, 1, InStrRev(ForTableV, ".") + 1))
-                ForTable.SelectedIndex = findCBIndex(ForTable, lookupForTable)
+                ForTable.SelectedIndex = ForTable.Items.IndexOf(lookupForTable)
                 If ForTable.SelectedIndex = -1 Then
                     ErrorMsg("foreign table '" & lookupForTable & "' was not found! Did the table's name change (case sensitive !)?")
                     Exit Sub
@@ -697,7 +737,7 @@ Partial Friend Class DBSheetCreateForm
             End If
 
         Catch ex As System.Exception
-            LogError("Error: " & ex.Message)
+            ErrorMsg("Error: " & ex.Message)
         End Try
     End Sub
 
@@ -722,7 +762,7 @@ Partial Friend Class DBSheetCreateForm
             ' restore backuped settings
             Dim newIndex As Integer
             If Strings.Len(oldForTableKey) > 0 Then
-                newIndex = findCBIndex(ForTableKey, oldForTableKey)
+                newIndex = ForTableKey.Items.IndexOf(oldForTableKey)
                 If newIndex = -1 Then
                     ErrorMsg("couldn't find the foreign table key column " & oldForTableKey & " in current foreign table columns. Did the table schema change?")
                 Else
@@ -730,7 +770,7 @@ Partial Friend Class DBSheetCreateForm
                 End If
             End If
             If Strings.Len(oldForTableLookup) > 0 Then
-                newIndex = findCBIndex(ForTableLookup, oldForTableLookup)
+                newIndex = ForTableLookup.Items.IndexOf(oldForTableLookup)
                 If newIndex = -1 Then
                     ErrorMsg("couldn't find the foreign table lookup column " & oldForTableLookup & " in current foreign table columns. Did the table schema change?")
                 Else
@@ -738,7 +778,7 @@ Partial Friend Class DBSheetCreateForm
                 End If
             End If
         Catch ex As System.Exception
-            LogError("Error: " & ex.Message)
+            ErrorMsg("Error: " & ex.Message)
         End Try
     End Sub
 
@@ -758,7 +798,8 @@ Partial Friend Class DBSheetCreateForm
         Else
             Column.Enabled = True
             LColumn.Enabled = True
-            theDBSheetColumnList.Selection = -1
+            'TODO: change theDBSheetColumnList
+            'theDBSheetColumnList.Selection = -1
             addToDBsheetCols.Text = "&add to DBsheet"
             regenLookupQueries.Text = "re&generate all lookup queries"
             IsForeign.CheckState = CheckState.Unchecked
@@ -796,142 +837,169 @@ Partial Friend Class DBSheetCreateForm
         End If
     End Sub
 
-    ''' <summary>gets the ADO type of a column in string form</summary>
+    ''' <summary>gets the type of a column including size, precision and scale</summary>
     ''' <param name="Column">Column Name of column</param>
-    ''' <returns>type in string form</returns>
-    Private Function getType_Renamed(ByRef Column As String) As String
-        Dim result As String
+    ''' <returns>type information</returns>
+    Private Function getType_Renamed(Column As String) As String
+        getType_Renamed = ""
         Dim rstSchema As OdbcDataReader
         Column = correctNonNull(Column)
-        Dim sqlCommand As OdbcCommand = New OdbcCommand(Table.Text, dbshcnn)
+        If Not openConnection() Then Exit Function
+
+        Dim sqlCommand As OdbcCommand = New OdbcCommand("SELECT * FROM " + Table.Text, dbshcnn)
         rstSchema = sqlCommand.ExecuteReader()
         Try
-            rstSchema.Read()
+            Dim schemaInfo As DataTable = rstSchema.GetSchemaTable()
+            For Each schemaRow As DataRow In schemaInfo.Rows
+                If schemaRow("ColumnName") = Column Then
+                    getType_Renamed = schemaRow("DataType").Name + "(" + schemaRow("ColumnSize").ToString + "/" + schemaRow("NumericPrecision").ToString + "/" + schemaRow("NumericScale").ToString + ")"
+                    rstSchema.Close()
+                    Exit Function
+                End If
+            Next
         Catch ex As Exception
             ErrorMsg("Could not get type information for column: '" & Column & "', err: " & ex.Message)
-            FormDisabled = False
-            Return ""
+            rstSchema.Close()
+            Exit Function
         End Try
-        result = rstSchema(rstSchema(Column).GetOrdinal).GetDataTypeName()
-        rstSchema.Close()
-        Return result
+
     End Function
 
     ''' <summary>fill all possible columns of currently selected table</summary>
     Private Sub fillColumns()
-        Dim rstSchema As DataSet
+        Dim schemaTable As DataTable
         Dim attached As String, columnTemp As String
         Dim tableTemp As String = ""
 
+        If Not openConnection() Then Exit Sub
         FormDisabled = True
         columnTemp = Column.Text
         Column.Items.Clear()
         Try
-            rstSchema = dbshcnn.GetSchema().DataSet
-            If rstSchema.Tables(0).Rows.Count = 0 Then Throw New Exception("No Columns could be fetched from Schema")
+            schemaTable = dbshcnn.GetSchema("Columns")
+            If schemaTable.Rows.Count = 0 Then Throw New Exception("No Columns could be fetched from Schema")
         Catch ex As Exception
-            ErrorMsg("Error getting schema information for columns in connection strings database ' " & theDatabase & "'." & ",error: " & ex.Message)
             FormDisabled = False
-            Exit Sub
+            Throw New Exception("Error getting schema information for columns in connection strings database ' " & Database.Text & "'." & ",error: " & ex.Message)
         End Try
 
         Try
-            For Each iteration_row As DataRow In rstSchema.Tables(0).Rows
+            For Each iteration_row As DataRow In schemaTable.Rows
                 attached = ""
-                If Not iteration_row("IS_NULLABLE") Then attached = specialNonNullableChar
-                If iteration_row("TABLE_CATALOG").ToUpper() = theDatabase Or iteration_row("TABLE_SCHEMA").ToUpper() = theDatabase Then Column.Items.Add(attached & iteration_row("COLUMN_NAME"))
+                If iteration_row("IS_NULLABLE") <> "NO" Then attached = specialNonNullableChar
+                If iteration_row("TABLE_CAT").ToUpper() = Database.Text Or iteration_row("TABLE_SCHEM").ToUpper() = Database.Text Then Column.Items.Add(attached & iteration_row("COLUMN_NAME"))
             Next iteration_row
-            If Strings.Len(tableTemp) > 0 Then Column.SelectedIndex = findCBIndex(Column, columnTemp)
+            If Strings.Len(tableTemp) > 0 Then Column.SelectedIndex = Column.Items.IndexOf(columnTemp)
             FormDisabled = False
-            Exit Sub
         Catch ex As System.Exception
-            LogError("Error: " & ex.Message)
+            Throw New Exception("Exception in fillColumns: " & ex.Message)
         End Try
     End Sub
 
-    ''
-    ' fill foreign tables, see above
-    ' @remarks
+    ''' <summary>fill all possible tables Of currently selected database/schema</summary>
+    Private Sub fillTables()
+        Dim schemaTable As DataTable
+        Dim tableTemp As String
+
+        If Not openConnection() Then
+            FormDisabled = False
+            Throw New Exception("could not open connection for database '" & Database.Text & "' in connection string '" & dbsheetConnString & "'.")
+        End If
+        Try
+            schemaTable = dbshcnn.GetSchema("Tables")
+            If schemaTable.Rows.Count = 0 Then Throw New Exception("No Tables could be fetched from Schema")
+        Catch ex As Exception
+            FormDisabled = False
+            Throw New Exception("Error getting schema information for tables in connection strings database ' " & Database.Text & "'." & ",error: " & ex.Message)
+        End Try
+        FormDisabled = True
+        tableTemp = Table.Text
+        Table.Items.Clear()
+        Try
+            For Each iteration_row As DataRow In schemaTable.Rows
+                If iteration_row("TABLE_CAT").ToUpper() = Database.Text Or iteration_row("TABLE_SCHEM").ToUpper() = Database.Text Then Table.Items.Add(iteration_row("TABLE_NAME"))
+            Next iteration_row
+            If Strings.Len(tableTemp) > 0 Then Table.SelectedIndex = Table.Items.IndexOf(tableTemp)
+            FormDisabled = False
+        Catch ex As System.Exception
+            Throw New Exception("Exception in fillTables: " & ex.Message)
+        End Try
+    End Sub
+
+    ''' <summary>fill foreign tables, see above</summary>
     Private Sub fillForTables()
-        Dim rstSchema As DataSet
+        Dim schemaTable As DataTable
         Dim tableTemp As String
 
         If Not openConnection(ForDatabase.Text) Then
-            ErrorMsg("could not open connection for foreign database '" & ForDatabase.Text & "' in connection string '" & theConnString & "'.")
             FormDisabled = False
             ForTable.Items.Clear() : ForTableKey.Items.Clear() : ForTableLookup.Items.Clear()
-            Exit Sub
+            Throw New Exception("could not open connection for foreign database '" & ForDatabase.Text & "' in connection string '" & dbsheetConnString & "'.")
         End If
 
         FormDisabled = True
         tableTemp = ForTable.Text
         ForTable.Items.Clear()
         Try
-            rstSchema = dbshcnn.GetSchema().DataSet
-            If rstSchema.Tables(0).Rows.Count = 0 Then Throw New Exception("No Tables could be fetched from Schema")
+            schemaTable = dbshcnn.GetSchema("Tables")
+            If schemaTable.Rows.Count = 0 Then Throw New Exception("No Tables could be fetched from Schema")
         Catch ex As Exception
-            ErrorMsg("Error getting schema information for tables in connection strings database ' " & theDatabase & "'." & ",error: " & ex.Message)
             FormDisabled = False
-            Exit Sub
+            Throw New Exception("Error getting schema information for tables in connection strings database ' " & Database.Text & "'." & ",error: " & ex.Message)
         End Try
         Try
-            For Each iteration_row As DataRow In rstSchema.Tables(0).Rows
-                If iteration_row("TABLE_CATALOG").ToUpper() = ForDatabase.Text.ToUpper() Or iteration_row("TABLE_SCHEMA").ToUpper() = ForDatabase.Text.ToUpper() Then ForTable.Items.Add(iteration_row("TABLE_NAME"))
+            For Each iteration_row As DataRow In schemaTable.Rows
+                If iteration_row("TABLE_CAT").ToUpper() = ForDatabase.Text.ToUpper() Or iteration_row("TABLE_SCHEM").ToUpper() = ForDatabase.Text.ToUpper() Then ForTable.Items.Add(iteration_row("TABLE_NAME"))
             Next iteration_row
-            If Strings.Len(tableTemp) > 0 Then ForTable.SelectedIndex = findCBIndex(ForTable, tableTemp)
+            If Strings.Len(tableTemp) > 0 Then ForTable.SelectedIndex = ForTable.Items.IndexOf(tableTemp)
             FormDisabled = False
-            Exit Sub
         Catch ex As System.Exception
-            LogError("Error: " & ex.Message)
+            Throw New Exception("Exception in fillForTables: " & ex.Message)
         End Try
     End Sub
 
     ''' <summary>fills all possible databases of current connection using db proprietary code in dbGetAllStr, data coming from field DBGetAllFieldName</summary>
-    Private Sub fillForDatabases()
+    Private Sub fillDatabases(DatabaseComboBox As ComboBox)
         Dim addVal As String
         Dim dbs As OdbcDataReader
 
+        If Not openConnection() Then Exit Sub
         FormDisabled = True
-        ForDatabase.Items.Clear()
+        DatabaseComboBox.Items.Clear()
         Dim sqlCommand As OdbcCommand = New OdbcCommand(dbGetAllStr, dbshcnn)
         Try
             dbs = sqlCommand.ExecuteReader()
         Catch ex As OdbcException
-            ErrorMsg("Could not retrieve schema information for databases in connection string: '" & theConnString & "',error: " & ex.Message)
             FormDisabled = False
-            Exit Sub
+            Throw New Exception("Could not retrieve schema information for databases in connection string: '" & dbsheetConnString & "',error: " & ex.Message)
         End Try
 
-        Try
-            Do
-                If Strings.Len(DBGetAllFieldName) = 0 Then
-                    addVal = dbs(0)
-                Else
-                    addVal = dbs(DBGetAllFieldName)
-                End If
-                ForDatabase.Items.Add(addVal)
-            Loop While dbs.Read()
-            dbs.Close()
+        If dbs.HasRows Then
+            Try
+                Do
+                    If Strings.Len(DBGetAllFieldName) = 0 Then
+                        addVal = dbs(0)
+                    Else
+                        addVal = dbs(DBGetAllFieldName)
+                    End If
+                    DatabaseComboBox.Items.Add(addVal)
+                Loop While dbs.Read()
+                dbs.Close()
+                FormDisabled = False
+            Catch ex As System.Exception
+                FormDisabled = False
+                Throw New Exception("Exception: " & ex.Message)
+            End Try
+        Else
             FormDisabled = False
-            Exit Sub
-        Catch ex As System.Exception
-            LogError("Error: " & ex.Message)
-        End Try
+            Throw New Exception("Could not retrieve any databases with: " & dbGetAllStr & "!")
+        End If
+
     End Sub
 
-    ''' <summary>finds SearchValue in combobox</summary>
-    ''' <param name="cbComboBox"></param>
-    ''' <param name="SearchValue"></param>
-    ''' <returns>found Position in combobox</returns>
-    Public Function findCBIndex(ByRef cbComboBox As ComboBox, ByRef SearchValue As String) As Integer
-        For n As Integer = 0 To cbComboBox.Items.Count - 1
-            If cbComboBox.GetItemText(n) = SearchValue Then
-                Return n
-            End If
-        Next
-        Return -1
-    End Function
-
+    ''' <summary>create the final DBSheet Main Query</summary>
+    ''' <param name="eventSender"></param>
+    ''' <param name="eventArgs"></param>
     Private Sub createQuery_Click(ByVal eventSender As Object, ByVal eventArgs As EventArgs) Handles createQuery.Click
         If DBSheetCols.Rows.Count = 0 Then
             ErrorMsg("No columns defined yet, can't create Query !", "DBSheet Definition Error")
@@ -943,7 +1011,7 @@ Partial Friend Class DBSheetCreateForm
         If Strings.Len(queryStr) > 0 Then Query.Text = queryStr
     End Sub
 
-    ''' <summary>test the final DBSheet query</summary>
+    ''' <summary>test the final DBSheet Main query</summary>
     ''' <param name="eventSender"></param>
     ''' <param name="eventArgs"></param>
     Private Sub testQuery_Click(ByVal eventSender As Object, ByVal eventArgs As EventArgs) Handles testQuery.Click
@@ -965,7 +1033,7 @@ Partial Friend Class DBSheetCreateForm
                 MessageBox.Show("No Query created to test !!!", "DBAddin: DBSheet Query Test Warning", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
             End If
         Catch ex As System.Exception
-            LogError("Error: " & ex.Message)
+            ErrorMsg("Error: " & ex.Message)
         End Try
     End Sub
 
@@ -1046,7 +1114,7 @@ Partial Friend Class DBSheetCreateForm
             Exit Sub
 
         Catch ex As System.Exception
-            LogError("Error: " & ex.Message)
+            ErrorMsg("Error: " & ex.Message)
         End Try
     End Sub
 
@@ -1065,68 +1133,69 @@ Partial Friend Class DBSheetCreateForm
             Dim completeJoin As String = "", addRestrict As String = ""
             Dim restrPos As Integer
             Dim selectPart As String = ""
-            For i As Integer = 0 To theDBSheetColumnList.RowCount - 1
-                ' plain table field
-                usedColumn = correctNonNull(theDBSheetColumnList.Value(i, 0))
-                tableCounter += 1
-                Select Case theDBSheetColumnList.Value(i, 8)
-                    Case "Ascending" : orderByStr = IIf(orderByStr = "", "", orderByStr & ", ") & CStr(i + 1) & " ASC"
-                    Case "Descending" : orderByStr = IIf(orderByStr = "", "", orderByStr & ", ") & CStr(i + 1) & " DESC"
-                End Select
-                If Strings.Len(theDBSheetColumnList.Value(i, 1)) = 0 Then
-                    selectStr = selectStr & "T1." & usedColumn & ", "
-                    ' create (inner or outer) joins for foreign key lookup id
-                Else
-                    If Strings.Len(theDBSheetColumnList.Value(i, 9)) = 0 Then
-                        theDBSheetColumnList.Selection = i
-                        result = ""
-                        LogWarn("No Lookup Query created for field " & theDBSheetColumnList.Value(i, 0) & ", can't proceed !")
-                        Return result
-                    End If
-                    theTable = "T" & tableCounter
-                    ' either we go for the whole part after the last join
-                    completeJoin = fetch(theDBSheetColumnList.Value(i, 9), "JOIN ", "")
-                    ' or we have a simple WHERE and just "AND" it to the created join
-                    addRestrict = quotedReplace(fetch(theDBSheetColumnList.Value(i, 9), "WHERE ", ""), "T" & tableCounter)
+            'TODO: change theDBSheetColumnList
+            'For i As Integer = 0 To theDBSheetColumnList.RowCount - 1
+            '    ' plain table field
+            '    usedColumn = correctNonNull(theDBSheetColumnList.Value(i, 0))
+            '    tableCounter += 1
+            '    Select Case theDBSheetColumnList.Value(i, 8)
+            '        Case "Ascending" : orderByStr = IIf(orderByStr = "", "", orderByStr & ", ") & CStr(i + 1) & " ASC"
+            '        Case "Descending" : orderByStr = IIf(orderByStr = "", "", orderByStr & ", ") & CStr(i + 1) & " DESC"
+            '    End Select
+            '    If Strings.Len(theDBSheetColumnList.Value(i, 1)) = 0 Then
+            '        selectStr = selectStr & "T1." & usedColumn & ", "
+            '        ' create (inner or outer) joins for foreign key lookup id
+            '    Else
+            '        If Strings.Len(theDBSheetColumnList.Value(i, 9)) = 0 Then
+            '            theDBSheetColumnList.Selection = i
+            '            result = ""
+            '            LogWarn("No Lookup Query created for field " & theDBSheetColumnList.Value(i, 0) & ", can't proceed !")
+            '            Return result
+            '        End If
+            '        theTable = "T" & tableCounter
+            '        ' either we go for the whole part after the last join
+            '        completeJoin = fetch(theDBSheetColumnList.Value(i, 9), "JOIN ", "")
+            '        ' or we have a simple WHERE and just "AND" it to the created join
+            '        addRestrict = quotedReplace(fetch(theDBSheetColumnList.Value(i, 9), "WHERE ", ""), "T" & tableCounter)
 
-                    ' remove any ORDER BY clause from additional restrict...
-                    restrPos = addRestrict.ToUpper().LastIndexOf(" ORDER") + 1
-                    If restrPos > 0 Then addRestrict = addRestrict.Substring(0, Math.Min(restrPos - 1, addRestrict.Length))
-                    If Strings.Len(completeJoin) > 0 Then
-                        ' when having the complete join, use additional restriction not for main subtable
-                        addRestrict = ""
-                        ' instead make it an additional condition for the join and replace placeholder with tablealias
-                        completeJoin = quotedReplace(ciReplace(completeJoin, "WHERE", "AND"), "T" & tableCounter)
-                    End If
-                    If theDBSheetColumnList.Value(i, 4) = 1 Then
-                        fromStr += " LEFT JOIN " & Environment.NewLine & theDBSheetColumnList.Value(i, 1) & " " & theTable &
-                                       " ON " & "T1." & usedColumn & " = " & theTable & "." & theDBSheetColumnList.Value(i, 2) & IIf(Strings.Len(addRestrict) > 0, " AND " & addRestrict, "")
-                    Else
-                        fromStr += " INNER JOIN " & Environment.NewLine & theDBSheetColumnList.Value(i, 1) & " " & theTable &
-                                       " ON " & "T1." & usedColumn & " = " & theTable & "." & theDBSheetColumnList.Value(i, 2) & IIf(Strings.Len(addRestrict) > 0, " AND " & addRestrict, "")
-                    End If
-                    ' we have additionally joined (an)other table(s) for the lookup display...
-                    If Strings.Len(completeJoin) > 0 Then
-                        ' remove any ORDER BY clause from completeJoin...
-                        restrPos = completeJoin.ToUpper().LastIndexOf(" ORDER") + 1
-                        If restrPos > 0 Then completeJoin = completeJoin.Substring(0, Math.Min(restrPos - 1, completeJoin.Length))
-                        ' ..and add join of additional subtable(s) to the query
-                        fromStr += " LEFT JOIN " & Environment.NewLine & completeJoin
-                    End If
+            '        ' remove any ORDER BY clause from additional restrict...
+            '        restrPos = addRestrict.ToUpper().LastIndexOf(" ORDER") + 1
+            '        If restrPos > 0 Then addRestrict = addRestrict.Substring(0, Math.Min(restrPos - 1, addRestrict.Length))
+            '        If Strings.Len(completeJoin) > 0 Then
+            '            ' when having the complete join, use additional restriction not for main subtable
+            '            addRestrict = ""
+            '            ' instead make it an additional condition for the join and replace placeholder with tablealias
+            '            completeJoin = quotedReplace(ciReplace(completeJoin, "WHERE", "AND"), "T" & tableCounter)
+            '        End If
+            '        If theDBSheetColumnList.Value(i, 4) = 1 Then
+            '            fromStr += " LEFT JOIN " & Environment.NewLine & theDBSheetColumnList.Value(i, 1) & " " & theTable &
+            '                           " ON " & "T1." & usedColumn & " = " & theTable & "." & theDBSheetColumnList.Value(i, 2) & IIf(Strings.Len(addRestrict) > 0, " AND " & addRestrict, "")
+            '        Else
+            '            fromStr += " INNER JOIN " & Environment.NewLine & theDBSheetColumnList.Value(i, 1) & " " & theTable &
+            '                           " ON " & "T1." & usedColumn & " = " & theTable & "." & theDBSheetColumnList.Value(i, 2) & IIf(Strings.Len(addRestrict) > 0, " AND " & addRestrict, "")
+            '        End If
+            '        ' we have additionally joined (an)other table(s) for the lookup display...
+            '        If Strings.Len(completeJoin) > 0 Then
+            '            ' remove any ORDER BY clause from completeJoin...
+            '            restrPos = completeJoin.ToUpper().LastIndexOf(" ORDER") + 1
+            '            If restrPos > 0 Then completeJoin = completeJoin.Substring(0, Math.Min(restrPos - 1, completeJoin.Length))
+            '            ' ..and add join of additional subtable(s) to the query
+            '            fromStr += " LEFT JOIN " & Environment.NewLine & completeJoin
+            '        End If
 
-                    selectPart = fetch(theDBSheetColumnList.Value(i, 9), "SELECT ", " FROM ").Trim()
-                    ' remove second field in lookup query's select clause
-                    restrPos = selectPart.LastIndexOf(",") + 1
-                    selectPart = selectPart.Substring(0, Math.Min(restrPos - 1, selectPart.Length))
-                    ' complex select statement, take directly from lookup query..
-                    If selectPart <> theDBSheetColumnList.Value(i, 3) Then
-                        selectStr += quotedReplace(selectPart, "T" & tableCounter) & ", "
-                    Else
-                        ' simple select statement (only the lookup field and id), put together...
-                        selectStr += theTable & "." & theDBSheetColumnList.Value(i, 3) & " AS " & usedColumn & ", "
-                    End If
-                End If
-            Next
+            '        selectPart = fetch(theDBSheetColumnList.Value(i, 9), "SELECT ", " FROM ").Trim()
+            '        ' remove second field in lookup query's select clause
+            '        restrPos = selectPart.LastIndexOf(",") + 1
+            '        selectPart = selectPart.Substring(0, Math.Min(restrPos - 1, selectPart.Length))
+            '        ' complex select statement, take directly from lookup query..
+            '        If selectPart <> theDBSheetColumnList.Value(i, 3) Then
+            '            selectStr += quotedReplace(selectPart, "T" & tableCounter) & ", "
+            '        Else
+            '            ' simple select statement (only the lookup field and id), put together...
+            '            selectStr += theTable & "." & theDBSheetColumnList.Value(i, 3) & " AS " & usedColumn & ", "
+            '        End If
+            '    End If
+            'Next
             Dim wherePart As String = ""
             wherePart = WhereClause.Text.Replace(Environment.NewLine, "")
             selectStr = "SELECT " & selectStr.Substring(0, Math.Min(Strings.Len(selectStr) - 2, selectStr.Length))
@@ -1135,7 +1204,7 @@ Partial Friend Class DBSheetCreateForm
                      IIf(Strings.Len(orderByStr) > 0, "ORDER BY " & orderByStr, "")
             saveEnabled(True)
         Catch ex As System.Exception
-            LogError("Error: " & ex.Message)
+            ErrorMsg("Error: " & ex.Message)
         End Try
         Return result
     End Function
@@ -1143,7 +1212,7 @@ Partial Friend Class DBSheetCreateForm
     ''' <summary>assigns the DBSHeet definitions to the currently active Excel sheet</summary>
     ''' <param name="eventSender"></param>
     ''' <param name="eventArgs"></param>
-    Private Sub cmdAssignDBSheet_Click(ByVal eventSender As Object, ByVal eventArgs As EventArgs) Handles cmdAssignDBSheet.Click
+    Private Sub cmdAssignDBSheet_Click(ByVal eventSender As Object, ByVal eventArgs As EventArgs)
         Dim currentFilepath As String = fetchSetting("dsdPath", "")
         Dim retval As String = FileSystem.Dir(currentFilepath, FileAttribute.Normal)
         Try
@@ -1154,7 +1223,7 @@ Partial Friend Class DBSheetCreateForm
             'TODO: assign definitions to current active sheet
             Exit Sub
         Catch ex As System.Exception
-            LogError("Error: " & ex.Message)
+            ErrorMsg("Error: " & ex.Message)
         End Try
     End Sub
 
@@ -1174,12 +1243,11 @@ Partial Friend Class DBSheetCreateForm
                 If Strings.Len(retval) = 0 Then Exit Sub
                 ' remember path for possible storing in DBSheetParams
                 currentFilepath = retval
-                Dim DBSheetParams As String = File.ReadAllText(retval, System.Text.Encoding.Default)
-                Me.Hide()
+                Dim DBSheetParams As String = File.ReadAllText(currentFilepath, System.Text.Encoding.Default)
                 createDefinitions(DBSheetParams)
             End If
         Catch ex As System.Exception
-            LogError("Error: " & ex.Message)
+            ErrorMsg("Error: " & ex.Message)
         End Try
     End Sub
 
@@ -1202,30 +1270,55 @@ Partial Friend Class DBSheetCreateForm
     Private Sub saveEnabled(ByRef choice As Boolean)
         saveDefs.Enabled = choice
         saveDefsAs.Enabled = choice
-        cmdAssignDBSheet.Enabled = choice
-        If Strings.Len(fetchSetting("dsdPath", "")) = 0 Or ExcelDnaUtil.Application.ActiveSheet Is Nothing Then cmdAssignDBSheet.Enabled = False
     End Sub
 
     ''' <summary>opens a database connection with active connstring, optionally changing database in the connection string</summary>
     ''' <param name="database"></param>
     ''' <returns>true on success</returns>
-    Function openConnection(database As String) As Boolean
+    Function openConnection(Optional database As String = "") As Boolean
         openConnection = False
-
         ' connections are pooled by ADO depending on the connection string:
-        dbshcnn = New OdbcConnection()
-        If database <> "" Then theConnString = Change(theConnString, dbidentifier, database, ";")
-        LogInfo("open connection with " & theConnString)
-        ExcelDnaUtil.Application.StatusBar = "Trying " & Globals.CnnTimeout & " sec. with connstring: " & theConnString
+
+        If InStr(1, dbsheetConnString, dbPwdSpec) > 0 And Strings.Len(Password.Text) = 0 Then
+            ErrorMsg("Password is required by connection string: " & dbsheetConnString, "Open Connection Error")
+            Exit Function
+        End If
+        If database <> "" Then dbsheetConnString = Change(dbsheetConnString, dbidentifier, database, ";")
+        If Strings.Len(Password.Text) > 0 Then
+            If InStr(1, dbsheetConnString, dbPwdSpec) > 0 Then
+                dbsheetConnString = Change(dbsheetConnString, dbPwdSpec, Password.Text, ";")
+            Else
+                dbsheetConnString = dbsheetConnString & ";" & dbPwdSpec & Password.Text
+            End If
+        End If
+        LogInfo("open dbsheet definition connection with " & dbsheetConnString)
+        ExcelDnaUtil.Application.StatusBar = "Trying " & Globals.CnnTimeout & " sec. with connstring: " & dbsheetConnString
         Try
-            dbshcnn.ConnectionString = theConnString
-            dbshcnn.ConnectionTimeout = Globals.CnnTimeout
+            dbshcnn = New OdbcConnection With {
+                .ConnectionString = dbsheetConnString,
+                .ConnectionTimeout = Globals.CnnTimeout
+            }
             dbshcnn.Open()
             openConnection = True
         Catch ex As Exception
-            ErrorMsg("Error connecting to DB: " & ex.Message & ", connection string: " & theConnString, "Open Connection Error")
-            dbcnn = Nothing
+            ErrorMsg("Error connecting to DB: " & ex.Message & ", connection string: " & dbsheetConnString, "Open Connection Error")
+            dbshcnn = Nothing
         End Try
+    End Function
+
+    ''' <summary>checks in existing columns (column 1 in DataGridView theCols) whether theColumnVal exists already in DBsheetCols And returns the found row of DBsheetCols</summary>
+    ''' <param name="theColumnVal"></param>
+    ''' <returns>found row in DataGridView</returns>
+    Public Function checkForValue(theColumnVal As String) As Integer
+        DBSheetCols.SelectionMode = DataGridViewSelectionMode.FullRowSelect
+        Try
+            For Each row As DataGridViewRow In DBSheetCols.Rows
+                If (row.Cells(2).Value.ToString().Equals(theColumnVal)) Then Return row.Index
+            Next
+        Catch ex As Exception
+            ErrorMsg(ex.Message)
+        End Try
+        Return -1
     End Function
 
     ''' <summary>corrects field names of nonnullable fields prepended with specialNonNullableChar (e.g. "*") back to the real name</summary>
@@ -1252,6 +1345,8 @@ Partial Friend Class DBSheetCreateForm
     ''' <summary>set UI to enable(choice=True)/disable(choice=False) changes of table</summary>
     ''' <param name="choice"></param>
     Private Sub TableEditable(ByRef choice As Boolean)
+        Database.Enabled = choice
+        LDatabase.Enabled = choice
         Table.Enabled = choice
         LTable.Enabled = choice
     End Sub
@@ -1293,8 +1388,8 @@ Partial Friend Class DBSheetCreateForm
             ErrorMsg("No ownerQualifier given for environment: " & env.ToString & ", please correct and rerun.", "createDefinitions Error")
             Exit Sub
         End If
-        theConnString = fetchSetting("ConstConnString" & env.ToString, "NONEXISTENT")
-        If theConnString = "NONEXISTENT" Then
+        dbsheetConnString = fetchSetting("DBSheetConnString" & env.ToString, "NONEXISTENT")
+        If dbsheetConnString = "NONEXISTENT" Then
             ErrorMsg("No Connectionstring given for environment: " & env.ToString & ", please correct and rerun.", "createDefinitions Error")
             Exit Sub
         End If
@@ -1303,9 +1398,34 @@ Partial Friend Class DBSheetCreateForm
             ErrorMsg("No DB identifier given for environment: " & env.ToString & ", please correct and rerun.", "createDefinitions Error")
             Exit Sub
         End If
-        theDatabase = fetch(theConnString, dbidentifier, ";")
+        dbPwdSpec = fetchSetting("dbPwdSpec" & env.ToString, "")
+        tblPlaceHolder = fetchSetting("tblPlaceHolder" & env.ToString, "!T!")
+        specialNonNullableChar = fetchSetting("specialNonNullableChar" & env.ToString, "*")
+        Try
+            fillDatabases(Database)
+        Catch ex As System.Exception
+            ErrorMsg("Error: " & ex.Message)
+        End Try
+        Database.SelectedIndex = Database.Items.IndexOf(fetch(dbsheetConnString, dbidentifier, ";"))
         ' initialize with empty DBSheet definitions
         createDefinitions("")
     End Sub
 
+    Dim oldPwdEntry As String = ""
+    Private Sub Password_Leave(sender As Object, e As EventArgs) Handles Password.Leave
+        If Password.Text <> oldPwdEntry Then
+            Try
+                fillDatabases(Database)
+            Catch ex As System.Exception
+                ErrorMsg("Error: " & ex.Message)
+            End Try
+            Database.SelectedIndex = Database.Items.IndexOf(fetch(dbsheetConnString, dbidentifier, ";"))
+            ' initialize with empty DBSheet definitions
+            createDefinitions("")
+        End If
+    End Sub
+
+    Private Sub Password_Enter(sender As Object, e As EventArgs) Handles Password.Enter
+        oldPwdEntry = Password.Text
+    End Sub
 End Class

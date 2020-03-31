@@ -199,7 +199,7 @@ done:
             ' when opening, force recalculation of DB functions in workbook.
             ' this is required as there is no recalculation if no dependencies have changed (usually when opening workbooks)
             ' however the most important dependency for DB functions is the database data....
-            If Not Globals.getCustPropertyBool("DBFskip", Wb) Then refreshDBFunctions(Wb)
+            If Not Globals.getCustPropertyBool("DBFskip", Wb) Then Globals.refreshDBFunctions(Wb)
             Globals.repairLegacyFunctions()
         End If
     End Sub

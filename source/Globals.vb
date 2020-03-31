@@ -508,16 +508,16 @@ Public Module Globals
             End If
             ' walk through all worksheets and all cells there to find DB Functions and change their formula, adding " " to trigger recalculation
             For Each ws In Wb.Worksheets
-                If ws.ProtectContents Then
-                    ErrorMsg("Worksheet " & ws.Name & " is content protected, can't refresh DB Functions !")
-                    Continue For
-                End If
                 Dim theFunc As String
                 For Each theFunc In {"DBListFetch(", "DBRowFetch(", "DBSetQuery("}
                     searchCells = ws.Cells.Find(What:=theFunc, After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
                     Dim firstFoundAddress As String = ""
                     If Not IsNothing(searchCells) Then firstFoundAddress = searchCells.Address
                     While Not IsNothing(searchCells)
+                        If ws.ProtectContents Then
+                            ErrorMsg("Worksheet " & ws.Name & " is content protected, can't refresh DB Functions !")
+                            Continue For
+                        End If
                         Dim callID As String = "" : Dim underlyingName As String = ""
                         Try
                             ' get the callID of the underlying name of the target (key of the queryCache and StatusCollection)

@@ -1,3 +1,4 @@
+Imports System.Data
 Imports System.IO
 Imports System.Windows.Forms
 Imports ExcelDna.Integration
@@ -5,7 +6,7 @@ Imports Microsoft.Office.Core
 Imports Microsoft.Office.Interop
 
 
-'''<summary>Helper class for DBSheetHandler and DBSheetConnection for easier manipulation of DBSheet definition / Connection configuration data</summary> 
+'''<summary>Helper module  for easier manipulation of DBSheet definition / Connection configuration data</summary> 
 Public Module DBSheetConfig
     ''' <summary>the current cell where the DBSheet Definition is inserted at</summary>
     Dim curCell As Excel.Range
@@ -420,3 +421,132 @@ getEntry_Err:
 
 End Module
 
+Public Class DBSheetDefTable : Inherits DataTable
+
+    Default Public ReadOnly Property Item(ByVal idx As Integer) As DBSheetDefRow
+        Get
+            Return CType(Rows(idx), DBSheetDefRow)
+        End Get
+    End Property
+
+    Public Sub New()
+        Columns.Add(New DataColumn("ColName", GetType(String)))
+        Columns.Add(New DataColumn("Ftable", GetType(String)))
+        Columns.Add(New DataColumn("Fkey", GetType(String)))
+        Columns.Add(New DataColumn("Flookup", GetType(String)))
+        Columns.Add(New DataColumn("OuterJ", GetType(Boolean)))
+        Columns.Add(New DataColumn("Primkey", GetType(Boolean)))
+        Columns.Add(New DataColumn("ColType", GetType(String)))
+        Columns.Add(New DataColumn("Sorting", GetType(String)))
+        Columns.Add(New DataColumn("Lookup", GetType(String)))
+    End Sub
+
+    Public Sub Add(ByVal row As DBSheetDefRow)
+        Rows.Add(row)
+    End Sub
+
+    Public Sub Remove(ByVal row As DBSheetDefRow)
+        Rows.Remove(row)
+    End Sub
+
+    Public Function GetNewRow() As DBSheetDefRow
+        Dim row As DBSheetDefRow = CType(NewRow(), DBSheetDefRow)
+        Return row
+    End Function
+
+    Protected Overrides Function GetRowType() As Type
+        Return GetType(DBSheetDefRow)
+    End Function
+
+    Protected Overrides Function NewRowFromBuilder(ByVal builder As DataRowBuilder) As DataRow
+        Return New DBSheetDefRow(builder)
+    End Function
+
+End Class
+
+Public Class DBSheetDefRow : Inherits DataRow
+    Public Property ColName As String
+        Get
+            Return CStr(MyBase.Item("ColName"))
+        End Get
+        Set(ByVal value As String)
+            MyBase.Item("ColName") = value
+        End Set
+    End Property
+    Public Property Ftable As String
+        Get
+            Return CStr(MyBase.Item("Ftable"))
+        End Get
+        Set(ByVal value As String)
+            MyBase.Item("Ftable") = value
+        End Set
+    End Property
+    Public Property Fkey As String
+        Get
+            Return CStr(MyBase.Item("Fkey"))
+        End Get
+        Set(ByVal value As String)
+            MyBase.Item("Fkey") = value
+        End Set
+    End Property
+    Public Property Flookup As String
+        Get
+            Return CStr(MyBase.Item("Flookup"))
+        End Get
+        Set(ByVal value As String)
+            MyBase.Item("Flookup") = value
+        End Set
+    End Property
+    Public Property OuterJ As Boolean
+        Get
+            Return CBool(MyBase.Item("OuterJ"))
+        End Get
+        Set(ByVal value As Boolean)
+            MyBase.Item("OuterJ") = value
+        End Set
+    End Property
+    Public Property Primkey As Boolean
+        Get
+            Return CBool(MyBase.Item("Primkey"))
+        End Get
+        Set(ByVal value As Boolean)
+            MyBase.Item("Primkey") = value
+        End Set
+    End Property
+    Public Property ColType As String
+        Get
+            Return CStr(MyBase.Item("ColType"))
+        End Get
+        Set(ByVal value As String)
+            MyBase.Item("ColType") = value
+        End Set
+    End Property
+    Public Property Sorting As String
+        Get
+            Return CStr(MyBase.Item("Sorting"))
+        End Get
+        Set(ByVal value As String)
+            MyBase.Item("Sorting") = value
+        End Set
+    End Property
+    Public Property Lookup As String
+        Get
+            Return CStr(MyBase.Item("Lookup"))
+        End Get
+        Set(ByVal value As String)
+            MyBase.Item("Lookup") = value
+        End Set
+    End Property
+    Friend Sub New(ByVal builder As DataRowBuilder)
+        MyBase.New(builder)
+        ColName = ""
+        Ftable = ""
+        Fkey = ""
+        Flookup = ""
+        OuterJ = False
+        Primkey = False
+        ColType = ""
+        Sorting = ""
+        Lookup = ""
+    End Sub
+End Class

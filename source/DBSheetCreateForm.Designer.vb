@@ -33,25 +33,24 @@ Partial Class DBSheetCreateForm
 	Public WithEvents testLookupQuery As System.Windows.Forms.Button
 	Public WithEvents ForDatabase As System.Windows.Forms.ComboBox
 	Public WithEvents Sorting As System.Windows.Forms.ComboBox
-	Public WithEvents cmdAssignDBSheet As System.Windows.Forms.Button
-	Public WithEvents saveDefs As System.Windows.Forms.Button
-	Public WithEvents saveDefsAs As System.Windows.Forms.Button
-	Public WithEvents loadDefs As System.Windows.Forms.Button
+    Public WithEvents saveDefs As System.Windows.Forms.Button
+    Public WithEvents saveDefsAs As System.Windows.Forms.Button
+    Public WithEvents loadDefs As System.Windows.Forms.Button
     Public WithEvents Label3 As System.Windows.Forms.Label
     Public WithEvents LTable As System.Windows.Forms.Label
-	Public WithEvents LColumn As System.Windows.Forms.Label
-	Public WithEvents LForTableKey As System.Windows.Forms.Label
-	Public WithEvents LForTableLookup As System.Windows.Forms.Label
-	Public WithEvents LLookupQuery As System.Windows.Forms.Label
-	Public WithEvents LForDatabase As System.Windows.Forms.Label
-	Public WithEvents LForTable As System.Windows.Forms.Label
-	Public WithEvents Label28 As System.Windows.Forms.Label
+    Public WithEvents LColumn As System.Windows.Forms.Label
+    Public WithEvents LForTableKey As System.Windows.Forms.Label
+    Public WithEvents LForTableLookup As System.Windows.Forms.Label
+    Public WithEvents LLookupQuery As System.Windows.Forms.Label
+    Public WithEvents LForDatabase As System.Windows.Forms.Label
+    Public WithEvents LForTable As System.Windows.Forms.Label
+    Public WithEvents Label28 As System.Windows.Forms.Label
 
-	'NOTE: The following procedure is required by the Windows Form Designer
-	'It can be modified using the Windows Form Designer.
-	'Do not modify it using the code editor.
-	<System.Diagnostics.DebuggerStepThrough()> _
-	 Private Sub InitializeComponent()
+    'NOTE: The following procedure is required by the Windows Form Designer
+    'It can be modified using the Windows Form Designer.
+    'Do not modify it using the code editor.
+    <System.Diagnostics.DebuggerStepThrough()>
+    Private Sub InitializeComponent()
         Me.components = New System.ComponentModel.Container()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(DBSheetCreateForm))
         Me.ToolTipMain = New System.Windows.Forms.ToolTip(Me.components)
@@ -78,10 +77,11 @@ Partial Class DBSheetCreateForm
         Me.testLookupQuery = New System.Windows.Forms.Button()
         Me.ForDatabase = New System.Windows.Forms.ComboBox()
         Me.Sorting = New System.Windows.Forms.ComboBox()
-        Me.cmdAssignDBSheet = New System.Windows.Forms.Button()
         Me.saveDefs = New System.Windows.Forms.Button()
         Me.saveDefsAs = New System.Windows.Forms.Button()
         Me.loadDefs = New System.Windows.Forms.Button()
+        Me.Password = New System.Windows.Forms.TextBox()
+        Me.Database = New System.Windows.Forms.ComboBox()
         Me.Label3 = New System.Windows.Forms.Label()
         Me.LTable = New System.Windows.Forms.Label()
         Me.LColumn = New System.Windows.Forms.Label()
@@ -92,6 +92,8 @@ Partial Class DBSheetCreateForm
         Me.LForTable = New System.Windows.Forms.Label()
         Me.Label28 = New System.Windows.Forms.Label()
         Me.DBSheetCols = New System.Windows.Forms.DataGridView()
+        Me.LDatabase = New System.Windows.Forms.Label()
+        Me.Label1 = New System.Windows.Forms.Label()
         CType(Me.DBSheetCols, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
@@ -458,23 +460,6 @@ Partial Class DBSheetCreateForm
         Me.Sorting.TabIndex = 5
         Me.ToolTipMain.SetToolTip(Me.Sorting, "shall DBsheet data be sorted by this column?")
         '
-        'cmdAssignDBSheet
-        '
-        Me.cmdAssignDBSheet.AllowDrop = True
-        Me.cmdAssignDBSheet.BackColor = System.Drawing.SystemColors.Control
-        Me.cmdAssignDBSheet.ForeColor = System.Drawing.SystemColors.ControlText
-        Me.cmdAssignDBSheet.Location = New System.Drawing.Point(357, 8)
-        Me.cmdAssignDBSheet.Name = "cmdAssignDBSheet"
-        Me.cmdAssignDBSheet.RightToLeft = System.Windows.Forms.RightToLeft.No
-        Me.cmdAssignDBSheet.Size = New System.Drawing.Size(190, 23)
-        Me.cmdAssignDBSheet.TabIndex = 3
-        Me.cmdAssignDBSheet.TabStop = False
-        Me.cmdAssignDBSheet.Text = "&assign DBSheet def to active sheet"
-        Me.cmdAssignDBSheet.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageAboveText
-        Me.ToolTipMain.SetToolTip(Me.cmdAssignDBSheet, "assign currently stored DB Sheet definition to active excel sheet (needs saving f" &
-        "irst)")
-        Me.cmdAssignDBSheet.UseVisualStyleBackColor = False
-        '
         'saveDefs
         '
         Me.saveDefs.AllowDrop = True
@@ -522,6 +507,30 @@ Partial Class DBSheetCreateForm
         Me.ToolTipMain.SetToolTip(Me.loadDefs, "load DB Sheet definitions into current context")
         Me.loadDefs.UseVisualStyleBackColor = False
         '
+        'Password
+        '
+        Me.Password.Location = New System.Drawing.Point(644, 11)
+        Me.Password.Name = "Password"
+        Me.Password.PasswordChar = Global.Microsoft.VisualBasic.ChrW(42)
+        Me.Password.Size = New System.Drawing.Size(100, 20)
+        Me.Password.TabIndex = 39
+        Me.ToolTipMain.SetToolTip(Me.Password, "enter the password for the user required to access schema information (given in D" &
+        "BSheetConnString)")
+        '
+        'Database
+        '
+        Me.Database.AllowDrop = True
+        Me.Database.BackColor = System.Drawing.SystemColors.Window
+        Me.Database.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
+        Me.Database.ForeColor = System.Drawing.SystemColors.WindowText
+        Me.Database.Location = New System.Drawing.Point(451, 10)
+        Me.Database.Name = "Database"
+        Me.Database.RightToLeft = System.Windows.Forms.RightToLeft.No
+        Me.Database.Size = New System.Drawing.Size(146, 21)
+        Me.Database.Sorted = True
+        Me.Database.TabIndex = 40
+        Me.ToolTipMain.SetToolTip(Me.Database, "choose Database to select foreign tables from.")
+        '
         'Label3
         '
         Me.Label3.AllowDrop = True
@@ -557,9 +566,9 @@ Partial Class DBSheetCreateForm
         Me.LColumn.Location = New System.Drawing.Point(165, 36)
         Me.LColumn.Name = "LColumn"
         Me.LColumn.RightToLeft = System.Windows.Forms.RightToLeft.No
-        Me.LColumn.Size = New System.Drawing.Size(42, 13)
+        Me.LColumn.Size = New System.Drawing.Size(29, 13)
         Me.LColumn.TabIndex = 31
-        Me.LColumn.Text = "Column"
+        Me.LColumn.Text = "Field"
         '
         'LForTableKey
         '
@@ -570,9 +579,9 @@ Partial Class DBSheetCreateForm
         Me.LForTableKey.Location = New System.Drawing.Point(349, 78)
         Me.LForTableKey.Name = "LForTableKey"
         Me.LForTableKey.RightToLeft = System.Windows.Forms.RightToLeft.No
-        Me.LForTableKey.Size = New System.Drawing.Size(93, 13)
+        Me.LForTableKey.Size = New System.Drawing.Size(118, 13)
         Me.LForTableKey.TabIndex = 30
-        Me.LForTableKey.Text = "Foreign Table Key"
+        Me.LForTableKey.Text = "Foreign Table Key Field"
         '
         'LForTableLookup
         '
@@ -583,9 +592,9 @@ Partial Class DBSheetCreateForm
         Me.LForTableLookup.Location = New System.Drawing.Point(544, 78)
         Me.LForTableLookup.Name = "LForTableLookup"
         Me.LForTableLookup.RightToLeft = System.Windows.Forms.RightToLeft.No
-        Me.LForTableLookup.Size = New System.Drawing.Size(147, 13)
+        Me.LForTableLookup.Size = New System.Drawing.Size(134, 13)
         Me.LForTableLookup.TabIndex = 29
-        Me.LForTableLookup.Text = "Foreign Table Lookup Column"
+        Me.LForTableLookup.Text = "Foreign Table Lookup Field"
         '
         'LLookupQuery
         '
@@ -647,6 +656,32 @@ Partial Class DBSheetCreateForm
         Me.DBSheetCols.Size = New System.Drawing.Size(739, 327)
         Me.DBSheetCols.TabIndex = 38
         '
+        'LDatabase
+        '
+        Me.LDatabase.AllowDrop = True
+        Me.LDatabase.AutoSize = True
+        Me.LDatabase.BackColor = System.Drawing.Color.Transparent
+        Me.LDatabase.ForeColor = System.Drawing.SystemColors.ControlText
+        Me.LDatabase.Location = New System.Drawing.Point(392, 13)
+        Me.LDatabase.Name = "LDatabase"
+        Me.LDatabase.RightToLeft = System.Windows.Forms.RightToLeft.No
+        Me.LDatabase.Size = New System.Drawing.Size(53, 13)
+        Me.LDatabase.TabIndex = 41
+        Me.LDatabase.Text = "Database"
+        '
+        'Label1
+        '
+        Me.Label1.AllowDrop = True
+        Me.Label1.AutoSize = True
+        Me.Label1.BackColor = System.Drawing.Color.Transparent
+        Me.Label1.ForeColor = System.Drawing.SystemColors.ControlText
+        Me.Label1.Location = New System.Drawing.Point(611, 13)
+        Me.Label1.Name = "Label1"
+        Me.Label1.RightToLeft = System.Windows.Forms.RightToLeft.No
+        Me.Label1.Size = New System.Drawing.Size(27, 13)
+        Me.Label1.TabIndex = 42
+        Me.Label1.Text = "Pwd"
+        '
         'DBSheetCreateForm
         '
         Me.AllowDrop = True
@@ -654,6 +689,10 @@ Partial Class DBSheetCreateForm
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.BackColor = System.Drawing.SystemColors.Control
         Me.ClientSize = New System.Drawing.Size(1208, 588)
+        Me.Controls.Add(Me.Label1)
+        Me.Controls.Add(Me.LDatabase)
+        Me.Controls.Add(Me.Database)
+        Me.Controls.Add(Me.Password)
         Me.Controls.Add(Me.DBSheetCols)
         Me.Controls.Add(Me.createQuery)
         Me.Controls.Add(Me.Query)
@@ -678,7 +717,6 @@ Partial Class DBSheetCreateForm
         Me.Controls.Add(Me.testLookupQuery)
         Me.Controls.Add(Me.ForDatabase)
         Me.Controls.Add(Me.Sorting)
-        Me.Controls.Add(Me.cmdAssignDBSheet)
         Me.Controls.Add(Me.saveDefs)
         Me.Controls.Add(Me.saveDefsAs)
         Me.Controls.Add(Me.loadDefs)
@@ -708,5 +746,9 @@ Partial Class DBSheetCreateForm
     End Sub
 
     Friend WithEvents DBSheetCols As Windows.Forms.DataGridView
+    Friend WithEvents Password As Windows.Forms.TextBox
+    Public WithEvents Database As Windows.Forms.ComboBox
+    Public WithEvents LDatabase As Windows.Forms.Label
+    Public WithEvents Label1 As Windows.Forms.Label
 #End Region
 End Class
