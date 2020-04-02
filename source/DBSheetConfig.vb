@@ -27,8 +27,8 @@ Public Module DBSheetConfig
     Dim addedCells As Integer
 
     Public Sub createDBSheet()
-        Dim openFileDialog1 = New OpenFileDialog With {
-            .InitialDirectory = fetchSetting("DBSheetDefinitions", ""),
+        Dim openFileDialog1 As OpenFileDialog = New OpenFileDialog With {
+            .InitialDirectory = fetchSetting("DBSheetDefinitions" & Globals.env, ""),
             .Filter = "XML files (*.xml)|*.xml",
             .RestoreDirectory = True
         }
@@ -430,15 +430,15 @@ Public Class DBSheetDefTable : Inherits DataTable
     End Property
 
     Public Sub New()
-        Columns.Add(New DataColumn("ColName", GetType(String)))
-        Columns.Add(New DataColumn("Ftable", GetType(String)))
-        Columns.Add(New DataColumn("Fkey", GetType(String)))
-        Columns.Add(New DataColumn("Flookup", GetType(String)))
-        Columns.Add(New DataColumn("OuterJ", GetType(Boolean)))
-        Columns.Add(New DataColumn("Primkey", GetType(Boolean)))
+        Columns.Add(New DataColumn("name", GetType(String)))
+        Columns.Add(New DataColumn("ftable", GetType(String)))
+        Columns.Add(New DataColumn("fkey", GetType(String)))
+        Columns.Add(New DataColumn("flookup", GetType(String)))
+        Columns.Add(New DataColumn("outer", GetType(Boolean)))
+        Columns.Add(New DataColumn("primkey", GetType(Boolean)))
         Columns.Add(New DataColumn("ColType", GetType(String)))
-        Columns.Add(New DataColumn("Sorting", GetType(String)))
-        Columns.Add(New DataColumn("Lookup", GetType(String)))
+        Columns.Add(New DataColumn("sort", GetType(String)))
+        Columns.Add(New DataColumn("lookup", GetType(String)))
     End Sub
 
     Public Sub Add(ByVal row As DBSheetDefRow)
@@ -465,52 +465,52 @@ Public Class DBSheetDefTable : Inherits DataTable
 End Class
 
 Public Class DBSheetDefRow : Inherits DataRow
-    Public Property ColName As String
+    Public Property name As String
         Get
-            Return CStr(MyBase.Item("ColName"))
+            Return CStr(MyBase.Item("name"))
         End Get
         Set(ByVal value As String)
-            MyBase.Item("ColName") = value
+            MyBase.Item("name") = value
         End Set
     End Property
-    Public Property Ftable As String
+    Public Property ftable As String
         Get
-            Return CStr(MyBase.Item("Ftable"))
+            Return CStr(MyBase.Item("ftable"))
         End Get
         Set(ByVal value As String)
-            MyBase.Item("Ftable") = value
+            MyBase.Item("ftable") = value
         End Set
     End Property
-    Public Property Fkey As String
+    Public Property fkey As String
         Get
-            Return CStr(MyBase.Item("Fkey"))
+            Return CStr(MyBase.Item("fkey"))
         End Get
         Set(ByVal value As String)
-            MyBase.Item("Fkey") = value
+            MyBase.Item("fkey") = value
         End Set
     End Property
-    Public Property Flookup As String
+    Public Property flookup As String
         Get
-            Return CStr(MyBase.Item("Flookup"))
+            Return CStr(MyBase.Item("flookup"))
         End Get
         Set(ByVal value As String)
-            MyBase.Item("Flookup") = value
+            MyBase.Item("flookup") = value
         End Set
     End Property
-    Public Property OuterJ As Boolean
+    Public Property outer As Boolean
         Get
-            Return CBool(MyBase.Item("OuterJ"))
+            Return CBool(MyBase.Item("outer"))
         End Get
         Set(ByVal value As Boolean)
-            MyBase.Item("OuterJ") = value
+            MyBase.Item("outer") = value
         End Set
     End Property
-    Public Property Primkey As Boolean
+    Public Property primkey As Boolean
         Get
-            Return CBool(MyBase.Item("Primkey"))
+            Return CBool(MyBase.Item("primkey"))
         End Get
         Set(ByVal value As Boolean)
-            MyBase.Item("Primkey") = value
+            MyBase.Item("primkey") = value
         End Set
     End Property
     Public Property ColType As String
@@ -521,32 +521,32 @@ Public Class DBSheetDefRow : Inherits DataRow
             MyBase.Item("ColType") = value
         End Set
     End Property
-    Public Property Sorting As String
+    Public Property sort As String
         Get
-            Return CStr(MyBase.Item("Sorting"))
+            Return CStr(MyBase.Item("sort"))
         End Get
         Set(ByVal value As String)
-            MyBase.Item("Sorting") = value
+            MyBase.Item("sort") = value
         End Set
     End Property
-    Public Property Lookup As String
+    Public Property lookup As String
         Get
-            Return CStr(MyBase.Item("Lookup"))
+            Return CStr(MyBase.Item("lookup"))
         End Get
         Set(ByVal value As String)
-            MyBase.Item("Lookup") = value
+            MyBase.Item("lookup") = value
         End Set
     End Property
     Friend Sub New(ByVal builder As DataRowBuilder)
         MyBase.New(builder)
-        ColName = ""
+        name = ""
         Ftable = ""
-        Fkey = ""
-        Flookup = ""
-        OuterJ = False
-        Primkey = False
+        fkey = ""
+        flookup = ""
+        outer = False
+        primkey = False
         ColType = ""
-        Sorting = ""
-        Lookup = ""
+        sort = ""
+        lookup = ""
     End Sub
 End Class

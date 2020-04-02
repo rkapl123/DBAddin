@@ -1,38 +1,38 @@
-<Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()> _
+<Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class DBSheetCreateForm
 
 #Region "Windows Form Designer generated code "
     Public Shared Function CreateInstance() As DBSheetCreateForm
-		Dim theInstance As New DBSheetCreateForm()
-		Return theInstance
-	End Function
+        Dim theInstance As New DBSheetCreateForm()
+        Return theInstance
+    End Function
     Private visualControls() As String = New String() {"components", "ToolTipMain", "createQuery", "Query", "testQuery", "WhereClause", "ForTableKey", "Table", "Column", "ForTable", "ForTableLookup", "IsForeign", "addToDBsheetCols", "removeDBsheetCols", "clearAllFields", "outerJoin", "LookupQuery", "regenLookupQueries", "IsPrimary", "moveUp", "moveDown", "addAllFields", "testLookupQuery", "ForDatabase", "Sorting", "cmdAssignDBSheet", "saveDefs", "saveDefsAs", "loadDefs", "DBsheetCols", "Label3", "LTable", "LColumn", "LForTableKey", "LForTableLookup", "LLookupQuery", "LForDatabase", "LForTable", "Label28"}
     'Required by the Windows Form Designer
     Private components As System.ComponentModel.IContainer
-	Public ToolTipMain As System.Windows.Forms.ToolTip
-	Public WithEvents createQuery As System.Windows.Forms.Button
-	Public WithEvents Query As System.Windows.Forms.TextBox
-	Public WithEvents testQuery As System.Windows.Forms.Button
-	Public WithEvents WhereClause As System.Windows.Forms.TextBox
-	Public WithEvents ForTableKey As System.Windows.Forms.ComboBox
-	Public WithEvents Table As System.Windows.Forms.ComboBox
-	Public WithEvents Column As System.Windows.Forms.ComboBox
-	Public WithEvents ForTable As System.Windows.Forms.ComboBox
-	Public WithEvents ForTableLookup As System.Windows.Forms.ComboBox
-	Public WithEvents IsForeign As System.Windows.Forms.CheckBox
-	Public WithEvents addToDBsheetCols As System.Windows.Forms.Button
-	Public WithEvents removeDBsheetCols As System.Windows.Forms.Button
-	Public WithEvents clearAllFields As System.Windows.Forms.Button
-	Public WithEvents outerJoin As System.Windows.Forms.CheckBox
-	Public WithEvents LookupQuery As System.Windows.Forms.TextBox
-	Public WithEvents regenLookupQueries As System.Windows.Forms.Button
-	Public WithEvents IsPrimary As System.Windows.Forms.CheckBox
+    Public ToolTipMain As System.Windows.Forms.ToolTip
+    Public WithEvents createQuery As System.Windows.Forms.Button
+    Public WithEvents Query As System.Windows.Forms.TextBox
+    Public WithEvents testQuery As System.Windows.Forms.Button
+    Public WithEvents WhereClause As System.Windows.Forms.TextBox
+    Public WithEvents ForTableKey As System.Windows.Forms.ComboBox
+    Public WithEvents Table As System.Windows.Forms.ComboBox
+    Public WithEvents Column As System.Windows.Forms.ComboBox
+    Public WithEvents ForTable As System.Windows.Forms.ComboBox
+    Public WithEvents ForTableLookup As System.Windows.Forms.ComboBox
+    Public WithEvents IsForeign As System.Windows.Forms.CheckBox
+    Public WithEvents addToDBsheetCols As System.Windows.Forms.Button
+    Public WithEvents removeDBsheetCols As System.Windows.Forms.Button
+    Public WithEvents clearAllFields As System.Windows.Forms.Button
+    Public WithEvents outerJoin As System.Windows.Forms.CheckBox
+    Public WithEvents LookupQuery As System.Windows.Forms.TextBox
+    Public WithEvents regenLookupQueries As System.Windows.Forms.Button
+    Public WithEvents IsPrimary As System.Windows.Forms.CheckBox
     Public WithEvents moveUp As System.Windows.Forms.Button
     Public WithEvents moveDown As System.Windows.Forms.Button
-	Public WithEvents addAllFields As System.Windows.Forms.Button
-	Public WithEvents testLookupQuery As System.Windows.Forms.Button
-	Public WithEvents ForDatabase As System.Windows.Forms.ComboBox
-	Public WithEvents Sorting As System.Windows.Forms.ComboBox
+    Public WithEvents addAllFields As System.Windows.Forms.Button
+    Public WithEvents testLookupQuery As System.Windows.Forms.Button
+    Public WithEvents ForDatabase As System.Windows.Forms.ComboBox
+    Public WithEvents Sorting As System.Windows.Forms.ComboBox
     Public WithEvents saveDefs As System.Windows.Forms.Button
     Public WithEvents saveDefsAs As System.Windows.Forms.Button
     Public WithEvents loadDefs As System.Windows.Forms.Button

@@ -1,5 +1,6 @@
 Imports ExcelDna.Integration
 Imports Microsoft.Office.Interop
+Imports System.Collections.Generic
 Imports System.Data
 Imports System.Data.Odbc
 Imports System.IO
@@ -52,31 +53,36 @@ Partial Friend Class DBSheetCreateForm
                     ErrorMsg("Couldn't open connection to database " & Database.Text)
                     Exit Sub
                 End If
+                ExcelDnaUtil.Application.StatusBar = "fillTables..."
                 fillTables()
                 FormDisabled = True
                 Table.SelectedIndex = Table.Items.IndexOf(DBSheetConfig.getEntry("table", DBSheetParams))
+                ExcelDnaUtil.Application.StatusBar = "fillColumns..."
+                fillColumns()
+                ExcelDnaUtil.Application.StatusBar = "getEntryList..."
                 Dim columnslist As Object = DBSheetConfig.getEntryList("columns", "field", "", DBSheetParams)
                 Dim theDBSheetDefTable = New DBSheetDefTable
                 For Each DBSheetColumnDef As String In columnslist
                     Dim newRow As DBSheetDefRow = theDBSheetDefTable.GetNewRow()
-                    newRow.ColName = DBSheetConfig.getEntry("name", DBSheetColumnDef)
-                    newRow.Ftable = DBSheetConfig.getEntry("ftable", DBSheetColumnDef)
-                    newRow.Fkey = DBSheetConfig.getEntry("fkey", DBSheetColumnDef)
-                    newRow.Flookup = DBSheetConfig.getEntry("flookup", DBSheetColumnDef)
-                    newRow.OuterJ = If(DBSheetConfig.getEntry("outer", DBSheetColumnDef) = 1, True, False)
-                    newRow.Primkey = If(DBSheetConfig.getEntry("primkey", DBSheetColumnDef) = 1, True, False)
-                    newRow.ColType = getType_Renamed(newRow.ColName)
+                    newRow.name = DBSheetConfig.getEntry("name", DBSheetColumnDef)
+                    newRow.ftable = DBSheetConfig.getEntry("ftable", DBSheetColumnDef)
+                    newRow.fkey = DBSheetConfig.getEntry("fkey", DBSheetColumnDef)
+                    newRow.flookup = DBSheetConfig.getEntry("flookup", DBSheetColumnDef)
+                    newRow.outer = If(DBSheetConfig.getEntry("outer", DBSheetColumnDef) = 1, True, False)
+                    newRow.primkey = If(DBSheetConfig.getEntry("primkey", DBSheetColumnDef) = 1, True, False)
+                    newRow.ColType = TableDataTypes(newRow.name)
                     If newRow.ColType = "" Then Exit Sub
-                    newRow.Sorting = DBSheetConfig.getEntry("sort", DBSheetColumnDef)
-                    newRow.Lookup = DBSheetConfig.getEntry("lookup", DBSheetColumnDef)
+                    newRow.sort = DBSheetConfig.getEntry("sort", DBSheetColumnDef)
+                    newRow.lookup = DBSheetConfig.getEntry("lookup", DBSheetColumnDef)
                     theDBSheetDefTable.Add(newRow)
                 Next
                 DBSheetCols.DataSource = theDBSheetDefTable
                 Query.Text = DBSheetConfig.getEntry("query", DBSheetParams)
                 WhereClause.Text = DBSheetConfig.getEntry("whereClause", DBSheetParams)
-                fillColumns()
+                ExcelDnaUtil.Application.StatusBar = "fillDatabases and ForTables..."
                 fillDatabases(ForDatabase)
                 fillForTables()
+                ExcelDnaUtil.Application.StatusBar = False
                 DBSheetCols.Enabled = True
                 TableEditable(False)
                 saveEnabled(True)
@@ -120,19 +126,24 @@ Partial Friend Class DBSheetCreateForm
         Dim fileToStore As String = FileSystem.Dir(currentFilepath, FileAttribute.Normal)
         Try
             If Strings.Len(fileToStore) = 0 Or saveAs Or Strings.Len(currentFilepath) = 0 Then
-                'fileToStore = showOpenSaveDialog(1, "Save DBSheet Definition", True, Table.Text & ".xml")
-                If Strings.Len(fileToStore) = 0 Then Exit Sub
+                Dim saveFileDialog1 As SaveFileDialog = New SaveFileDialog With {
+                    .Title = "Save DBSheet Definition",
+                    .FileName = Table.Text & ".xml",
+                    .InitialDirectory = fetchSetting("DBSheetDefinitions" & Globals.env, ""),
+                    .Filter = "XML files (*.xml)|*.xml",
+                    .RestoreDirectory = True
+                }
+                Dim result As DialogResult = saveFileDialog1.ShowDialog()
+                If result = Windows.Forms.DialogResult.OK Then
+                    fileToStore = saveFileDialog1.FileName
+                Else
+                    Exit Sub
+                End If
                 currentFilepath = fileToStore
-            Else
-                fileToStore = currentFilepath
             End If
-            If CBool(fileToStore) Then
-                FileSystem.FileOpen(1, fileToStore, OpenMode.Output)
-                FileSystem.PrintLine(1, xmlDbsheetConfig())
-                FileSystem.FileClose(1)
-            End If
-            Exit Sub
-
+            FileSystem.FileOpen(1, fileToStore, OpenMode.Output)
+            FileSystem.PrintLine(1, xmlDbsheetConfig())
+            FileSystem.FileClose(1)
         Catch ex As System.Exception
             ErrorMsg("Error: " & ex.Message)
         End Try
@@ -141,36 +152,35 @@ Partial Friend Class DBSheetCreateForm
     ''' <summary>creates xml DBsheet parameter string from the data entered in theDBSheetCreateForm</summary>
     ''' <returns>the xml DBsheet parameter string</returns>
     Private Function xmlDbsheetConfig() As String
-        Dim namedParams As String = "", columnsDef As String = "", columnLine As String
+        Dim namedParams As String = "", columnsDef As String = ""
 
-        Dim theHeaders() As String
         Try
-            'TODO: change theDBSheetColumnList
             ' first create the columns list
-            'theHeaders = theDBSheetColumnList.Headers
-            Dim primKeyCount As Integer
-            'primKeyCount = 0 
-            '' collect lookups
-            'For i As Integer = 0 To theDBSheetColumnList.RowCount - 1
-            '    columnLine = "<field>"
-            '    For j As Integer = 0 To theDBSheetColumnList.ColumnCount - 1
-            '        If Strings.Len(theDBSheetColumnList.Value(i, j)) > 0 And theDBSheetColumnList.Value(i, j) <> 0 Then
-            '            If Not ((j = 8 And theDBSheetColumnList.Value(i, 8) = "None") Or j = 7) Then columnLine += DBSheetConfig.setEntry(theHeaders(j), theDBSheetColumnList.Value(i, j))
-            '        End If
-            '    Next
-            '    columnsDef += Environment.NewLine & columnLine & "</field>"
-            '    If theDBSheetColumnList.Value(i, 5) = 1 Then primKeyCount += 1
-            'Next
+            Dim primKeyCount As Integer = 0
+            ' collect lookups
+            For i As Integer = 0 To DBSheetCols.RowCount - 2 ' respect the insert row !!!
+                Dim columnLine As String = "<field>"
+                For j As Integer = 0 To DBSheetCols.ColumnCount - 1
+                    If Not IsDBNull(DBSheetCols.Rows(i).Cells(j).Value) Then
+                        ' store everything except "none" sorting, false values and ColType (is always inferred from Database)
+                        If Not ((DBSheetCols.Columns(j).Name = "sort" AndAlso DBSheetCols.Rows(i).Cells(j).Value = "None") OrElse
+                            DBSheetCols.Columns(j).Name = "ColType" OrElse
+                            (TypeName(DBSheetCols.Rows(i).Cells(j).Value) = "Boolean" AndAlso Not DBSheetCols.Rows(i).Cells(j).Value)) Then
+                            columnLine += DBSheetConfig.setEntry(DBSheetCols.Columns(j).Name, CStr(DBSheetCols.Rows(i).Cells(j).Value))
+                        End If
+                    End If
+                Next
+                columnsDef += vbCrLf + columnLine + "</field>"
+                If DBSheetCols.Rows(i).Cells("primkey").Value Then primKeyCount += 1
+            Next
             ' then create the parameters stored in named cells
-            namedParams += DBSheetConfig.setEntry("connID", Database.Text) & Environment.NewLine
-            namedParams += DBSheetConfig.setEntry("table", Table.Text) & Environment.NewLine
-            namedParams += DBSheetConfig.setEntry("query", Query.Text) & Environment.NewLine
-            namedParams += DBSheetConfig.setEntry("whereClause", WhereClause.Text) & Environment.NewLine
-            namedParams += DBSheetConfig.setEntry("primcols", CStr(primKeyCount))
+            namedParams += DBSheetConfig.setEntry("connID", Database.Text) + vbCrLf
+            namedParams += DBSheetConfig.setEntry("table", Table.Text) + vbCrLf
+            namedParams += DBSheetConfig.setEntry("query", Query.Text) + vbCrLf
+            namedParams += DBSheetConfig.setEntry("whereClause", WhereClause.Text) + vbCrLf
+            namedParams += DBSheetConfig.setEntry("primcols", primKeyCount.ToString)
             ' finally put everything together:
-            Return "<DBsheetConfig>" & Environment.NewLine &
-            namedParams & Environment.NewLine &
-            "<columns>" & columnsDef.ToString() & Environment.NewLine & "</columns>" & Environment.NewLine & "</DBsheetConfig>"
+            Return "<DBsheetConfig>" + vbCrLf + namedParams + vbCrLf + "<columns>" + columnsDef + vbCrLf + "</columns>" + vbCrLf + "</DBsheetConfig>"
         Catch ex As System.Exception
             ErrorMsg("Error: " & ex.Message)
             Return ""
@@ -837,63 +847,68 @@ Partial Friend Class DBSheetCreateForm
         End If
     End Sub
 
-    ''' <summary>gets the type of a column including size, precision and scale</summary>
-    ''' <param name="Column">Column Name of column</param>
-    ''' <returns>type information</returns>
-    Private Function getType_Renamed(Column As String) As String
-        getType_Renamed = ""
-        Dim rstSchema As OdbcDataReader
-        Column = correctNonNull(Column)
-        If Not openConnection() Then Exit Function
+    Private TableDataTypes As Dictionary(Of String, String)
 
-        Dim sqlCommand As OdbcCommand = New OdbcCommand("SELECT * FROM " + Table.Text, dbshcnn)
+    ''' <summary>gets the types of currently selected table including size, precision and scale into DataTypes</summary>
+    Private Sub getTableDataTypes()
+        TableDataTypes = New Dictionary(Of String, String)
+        Dim rstSchema As OdbcDataReader
+        If Not openConnection() Then Exit Sub
+
+        Dim sqlCommand As OdbcCommand = New OdbcCommand("SELECT TOP 1 * FROM " + Table.Text, dbshcnn)
         rstSchema = sqlCommand.ExecuteReader()
         Try
             Dim schemaInfo As DataTable = rstSchema.GetSchemaTable()
             For Each schemaRow As DataRow In schemaInfo.Rows
-                If schemaRow("ColumnName") = Column Then
-                    getType_Renamed = schemaRow("DataType").Name + "(" + schemaRow("ColumnSize").ToString + "/" + schemaRow("NumericPrecision").ToString + "/" + schemaRow("NumericScale").ToString + ")"
-                    rstSchema.Close()
-                    Exit Function
-                End If
+                Dim appendInfo As String = If(schemaRow("AllowDBNull"), "", specialNonNullableChar)
+                TableDataTypes(appendInfo + schemaRow("ColumnName")) = schemaRow("DataType").Name + "(" + schemaRow("ColumnSize").ToString + "/" + schemaRow("NumericPrecision").ToString + "/" + schemaRow("NumericScale").ToString + ")"
             Next
         Catch ex As Exception
-            ErrorMsg("Could not get type information for column: '" & Column & "', err: " & ex.Message)
-            rstSchema.Close()
-            Exit Function
+            ErrorMsg("Could not get type information for table: '" & Table.Text & "', error: " & ex.Message)
         End Try
-
-    End Function
+        rstSchema.Close()
+    End Sub
 
     ''' <summary>fill all possible columns of currently selected table</summary>
     Private Sub fillColumns()
-        Dim schemaTable As DataTable
-        Dim attached As String, columnTemp As String
-        Dim tableTemp As String = ""
-
-        If Not openConnection() Then Exit Sub
-        FormDisabled = True
-        columnTemp = Column.Text
+        getTableDataTypes()
+        Dim columnTemp As String = Column.Text
         Column.Items.Clear()
         Try
-            schemaTable = dbshcnn.GetSchema("Columns")
-            If schemaTable.Rows.Count = 0 Then Throw New Exception("No Columns could be fetched from Schema")
-        Catch ex As Exception
-            FormDisabled = False
-            Throw New Exception("Error getting schema information for columns in connection strings database ' " & Database.Text & "'." & ",error: " & ex.Message)
-        End Try
-
-        Try
-            For Each iteration_row As DataRow In schemaTable.Rows
-                attached = ""
-                If iteration_row("IS_NULLABLE") <> "NO" Then attached = specialNonNullableChar
-                If iteration_row("TABLE_CAT").ToUpper() = Database.Text Or iteration_row("TABLE_SCHEM").ToUpper() = Database.Text Then Column.Items.Add(attached & iteration_row("COLUMN_NAME"))
-            Next iteration_row
-            If Strings.Len(tableTemp) > 0 Then Column.SelectedIndex = Column.Items.IndexOf(columnTemp)
+            For Each colname As String In TableDataTypes.Keys
+                Column.Items.Add(colname)
+            Next
+            If Strings.Len(columnTemp) > 0 Then Column.SelectedIndex = Column.Items.IndexOf(columnTemp)
             FormDisabled = False
         Catch ex As System.Exception
             Throw New Exception("Exception in fillColumns: " & ex.Message)
         End Try
+
+        'Dim schemaTable As DataTable
+        'Dim attached As String
+
+        'If Not openConnection() Then Exit Sub
+        'FormDisabled = True
+
+        'Try
+        '    schemaTable = dbshcnn.GetSchema("Columns")
+        '    If schemaTable.Rows.Count = 0 Then Throw New Exception("No Columns could be fetched from Schema")
+        'Catch ex As Exception
+        '    FormDisabled = False
+        '    Throw New Exception("Error getting schema information for columns in connection strings database ' " & Database.Text & "'." & ",error: " & ex.Message)
+        'End Try
+
+        'Try
+        '    For Each iteration_row As DataRow In schemaTable.Rows
+        '        attached = ""
+        '        If iteration_row("IS_NULLABLE") <> "NO" Then attached = specialNonNullableChar
+        '        If iteration_row("TABLE_CAT").ToUpper() = Database.Text Or iteration_row("TABLE_SCHEM").ToUpper() = Database.Text Then Column.Items.Add(attached & iteration_row("COLUMN_NAME"))
+        '    Next iteration_row
+        '    If Strings.Len(columnTemp) > 0 Then Column.SelectedIndex = Column.Items.IndexOf(columnTemp)
+        '    FormDisabled = False
+        'Catch ex As System.Exception
+        '    Throw New Exception("Exception in fillColumns: " & ex.Message)
+        'End Try
     End Sub
 
     ''' <summary>fill all possible tables Of currently selected database/schema</summary>
@@ -1209,24 +1224,6 @@ Partial Friend Class DBSheetCreateForm
         Return result
     End Function
 
-    ''' <summary>assigns the DBSHeet definitions to the currently active Excel sheet</summary>
-    ''' <param name="eventSender"></param>
-    ''' <param name="eventArgs"></param>
-    Private Sub cmdAssignDBSheet_Click(ByVal eventSender As Object, ByVal eventArgs As EventArgs)
-        Dim currentFilepath As String = fetchSetting("dsdPath", "")
-        Dim retval As String = FileSystem.Dir(currentFilepath, FileAttribute.Normal)
-        Try
-            If Strings.Len(retval) = 0 Or Strings.Len(currentFilepath) = 0 Then
-                LogWarn("no current Definition file (store Definitions first)")
-                Exit Sub
-            End If
-            'TODO: assign definitions to current active sheet
-            Exit Sub
-        Catch ex As System.Exception
-            ErrorMsg("Error: " & ex.Message)
-        End Try
-    End Sub
-
     ''' <summary>loads the DBSHeet definitions from a file (xml format)</summary>
     ''' <param name="eventSender"></param>
     ''' <param name="eventArgs"></param>
@@ -1291,8 +1288,6 @@ Partial Friend Class DBSheetCreateForm
                 dbsheetConnString = dbsheetConnString & ";" & dbPwdSpec & Password.Text
             End If
         End If
-        LogInfo("open dbsheet definition connection with " & dbsheetConnString)
-        ExcelDnaUtil.Application.StatusBar = "Trying " & Globals.CnnTimeout & " sec. with connstring: " & dbsheetConnString
         Try
             dbshcnn = New OdbcConnection With {
                 .ConnectionString = dbsheetConnString,
