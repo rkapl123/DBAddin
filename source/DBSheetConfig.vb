@@ -1,4 +1,3 @@
-Imports System.Data
 Imports System.IO
 Imports System.Windows.Forms
 Imports ExcelDna.Integration
@@ -28,7 +27,7 @@ Public Module DBSheetConfig
 
     Public Sub createDBSheet()
         Dim openFileDialog1 As OpenFileDialog = New OpenFileDialog With {
-            .InitialDirectory = fetchSetting("DBSheetDefinitions" & Globals.env, ""),
+            .InitialDirectory = fetchSetting("DBSheetDefinitions" + Globals.env, ""),
             .Filter = "XML files (*.xml)|*.xml",
             .RestoreDirectory = True
         }
@@ -60,10 +59,10 @@ Public Module DBSheetConfig
                         ' each parameter adds a cell below DBSetQuery
                         addedCells += 1
                         ' create concatenation formula for parameter setting, each ? is replaced by a separate row reference below the where clause
-                        changedWhereClause += IIf(i = 0, """WHERE ", "&""") & whereParts(i) & """&R[" & i + 1 & "]C"
+                        changedWhereClause += If(i = 0, """WHERE ", "&""") + whereParts(i) + """&R[" + (i + 1).ToString + "]C"
                     End If
                 Next
-                queryStr = Replace(queryStr, "WHERE " & whereClause, "")
+                queryStr = Replace(queryStr, "WHERE " + whereClause, "")
                 ' whereClause inserted below queryStr
                 addedCells += 1
             End If
@@ -77,7 +76,7 @@ Public Module DBSheetConfig
                 Try
                     lookupWS.Name = lookupWSname
                 Catch ex As Exception
-                    ErrorMsg("Error setting lookup Worksheet Name to '" & lookupWSname & "': " + ex.Message, "DBSheet Creation Error")
+                    ErrorMsg("Error setting lookup Worksheet Name to '" + lookupWSname + "': " + ex.Message, "DBSheet Creation Error")
                     lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
                     Exit Sub
                 End Try
@@ -92,27 +91,27 @@ Public Module DBSheetConfig
                         ' replace looked up ID names with ID name + "LU" in query string
                         Dim foundDelim As Integer
                         For Each delimStr As String In {",", vbCrLf}
-                            foundDelim = InStr(selectPartModif, " " & lookupName & delimStr)
+                            foundDelim = InStr(selectPartModif, " " + lookupName + delimStr)
                             If foundDelim > 0 Then
-                                selectPartModif = Replace(selectPartModif, " " & lookupName & delimStr, " " & lookupName & "LU" & delimStr)
+                                selectPartModif = Replace(selectPartModif, " " + lookupName + delimStr, " " + lookupName + "LU" + delimStr)
                                 Exit For
                             End If
-                            foundDelim = InStr(selectPartModif, "." & lookupName & delimStr)
+                            foundDelim = InStr(selectPartModif, "." + lookupName + delimStr)
                             If foundDelim > 0 Then
-                                selectPartModif = Replace(selectPartModif, "." & lookupName & delimStr, "." & lookupName & " " & lookupName & "LU" & delimStr)
+                                selectPartModif = Replace(selectPartModif, "." + lookupName + delimStr, "." + lookupName + " " + lookupName + "LU" + delimStr)
                                 Exit For
                             End If
                         Next
                         If foundDelim = 0 Then
-                            ErrorMsg("Error in changing lookupName '" & lookupName & "' to '" & lookupName & "LU' in select statement of DBSheet query, it has to begin with blank and end with ','blank or CrLf !", "DBSheet Creation Error")
+                            ErrorMsg("Error in changing lookupName '" + lookupName + "' to '" + lookupName + "LU' in select statement of DBSheet query, it has to begin with blank and end with ','blank or CrLf !", "DBSheet Creation Error")
                             lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
                             Exit Sub
                         End If
                         lookupWS.Cells(1, lookupCol + 1).Value = LookupQuery
                         lookupWS.Cells(1, lookupCol + 1).WrapText = False
-                        lookupWS.Cells(2, lookupCol).Name = lookupName & "Lookup"
+                        lookupWS.Cells(2, lookupCol).Name = lookupName + "Lookup"
                         ' then create the DBListFetch with the lookup query 
-                        ConfigFiles.createFunctionsInCells(lookupWS.Cells(1, lookupCol), {"RC", "=DBListFetch(RC[1],""""," & lookupName & "Lookup" & ")"})
+                        ConfigFiles.createFunctionsInCells(lookupWS.Cells(1, lookupCol), {"RC", "=DBListFetch(RC[1],""""," + lookupName + "Lookup" + ")"})
                         ' database lookups have two columns
                         lookupCol += 2
                     Else                                         'fixed value lookup only has one column, no need to resolve to an ID
@@ -121,7 +120,7 @@ Public Module DBSheetConfig
                         For lrow = 0 To UBound(lookupValues)
                             lookupWS.Cells(2 + lrow, lookupCol).value = lookupValues(lrow)
                         Next
-                        lookupWS.Range(lookupWS.Cells(2, lookupCol), lookupWS.Cells(2 + lrow - 1, lookupCol)).Name = lookupName & "Lookup"
+                        lookupWS.Range(lookupWS.Cells(2, lookupCol), lookupWS.Cells(2 + lrow - 1, lookupCol)).Name = lookupName + "Lookup"
                         ' fixed value lookups have only one column
                         lookupCol += 1
                     End If
@@ -142,7 +141,7 @@ Public Module DBSheetConfig
                     .Offset(1, 0).Value = queryStr
                     .Offset(1, 0).WrapText = False
                 Catch ex As Exception
-                    ErrorMsg("Error in adding query (" & queryStr & ")", "DBSheet Creation Error")
+                    ErrorMsg("Error in adding query (" + queryStr + ")", "DBSheet Creation Error")
                     lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
                     Exit Sub
                 End Try
@@ -152,7 +151,7 @@ Public Module DBSheetConfig
                         .Offset(2, 0).Value = changedWhereClause
                         .Offset(2, 0).WrapText = False
                     Catch ex As Exception
-                        ErrorMsg("Error in adding where clause (" & changedWhereClause & ")", "DBSheet Creation Error")
+                        ErrorMsg("Error in adding where clause (" + changedWhereClause + ")", "DBSheet Creation Error")
                         lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
                         Exit Sub
                     End Try
@@ -170,9 +169,9 @@ Public Module DBSheetConfig
 
     Private Sub finishDBMapperCreation()
         ' store lookup columns (<>LU) to be ignored in DBMapper
-        Dim queryErrorPos As Integer = InStr(curCell.Value, "Error")
+        Dim queryErrorPos As Integer = InStr(curCell.Value.ToString, "Error")
         If queryErrorPos > 0 Then
-            ErrorMsg("DBSheet Query had and error:" & vbCrLf & Mid(curCell.Value, queryErrorPos + Len("Error in query table refresh: ")), "DBSheet Creation Error")
+            ErrorMsg("DBSheet Query had and error:" + vbCrLf + Mid(curCell.Value.ToString, queryErrorPos + Len("Error in query table refresh: ")), "DBSheet Creation Error")
             If Not IsNothing(lookupWS) Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
             Exit Sub
         End If
@@ -181,7 +180,7 @@ Public Module DBSheetConfig
             Try
                 curCell.Parent.Name = Left(tableName, 31)
             Catch ex As Exception
-                ErrorMsg("DBSheet setting worksheet name error:" & ex.Message, "DBSheet Creation Error")
+                ErrorMsg("DBSheet setting worksheet name error:" + ex.Message, "DBSheet Creation Error")
                 If Not IsNothing(lookupWS) Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
                 Exit Sub
             End Try
@@ -193,8 +192,8 @@ Public Module DBSheetConfig
             If Not IsNothing(lookupsList) Then
                 For Each LookupDef As String In lookupsList
                     Dim lookupName As String = Replace(getEntry("name", LookupDef, 1), "*", "")
-                    If IsNothing(ExcelDnaUtil.Application.Range(lookupName & "Lookup").Cells(1, 1).Value) Then
-                        Dim answr As MsgBoxResult = QuestionMsg("lookup area '" & lookupName & "Lookup' probably contains no values (maybe an error), continue?", MsgBoxStyle.OkCancel, "DBSheet Creation Error")
+                    If IsNothing(ExcelDnaUtil.Application.Range(lookupName + "Lookup").Cells(1, 1).Value) Then
+                        Dim answr As MsgBoxResult = QuestionMsg("lookup area '" + lookupName + "Lookup' probably contains no values (maybe an error), continue?", MsgBoxStyle.OkCancel, "DBSheet Creation Error")
                         If answr = vbCancel Then
                             lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
                             Exit Sub
@@ -203,20 +202,20 @@ Public Module DBSheetConfig
 
                     ' ..... create dropdown (validation) for lookup column
                     ' a workaround with getting the local formula is necessary as Formula1 in Validation.Add doesn't accept english formulas
-                    curCell.Offset(2 + addedCells, 0).Formula = "=OFFSET(" & lookupName & "Lookup,0,0,,1)"
+                    curCell.Offset(2 + addedCells, 0).Formula = "=OFFSET(" + lookupName + "Lookup,0,0,,1)"
                     ' necessary as Excel>=2016 introduces the @operator automatically in formulas referring to list objects, referring to just that value in the same row. which is undesired here..
-                    Dim localOffsetFormula As String = Replace(curCell.Offset(2 + addedCells, 0).FormulaLocal, "@", "")
-                    ' get lookupColumn (lookupName & "LU" for 2-column database lookups, lookupName only for 1-column lookups)
+                    Dim localOffsetFormula As String = Replace(curCell.Offset(2 + addedCells, 0).FormulaLocal.ToString, "@", "")
+                    ' get lookupColumn (lookupName + "LU" for 2-column database lookups, lookupName only for 1-column lookups)
                     Dim lookupColumn As Excel.ListColumn
                     Try
                         ' only for 2-column database lookups add LU
                         If getEntry("fkey", LookupDef, 1) <> "" Then
-                            lookupColumn = createdListObject.ListColumns(lookupName & "LU")
+                            lookupColumn = createdListObject.ListColumns(lookupName + "LU")
                         Else
                             lookupColumn = createdListObject.ListColumns(lookupName)
                         End If
                     Catch ex As Exception
-                        ErrorMsg("lookup column '" & lookupName & "LU' not found in ListRange", "DBSheet Creation Error")
+                        ErrorMsg("lookup column '" + lookupName + "LU' not found in ListRange", "DBSheet Creation Error")
                         lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
                         Exit Sub
                     End Try
@@ -235,14 +234,14 @@ Public Module DBSheetConfig
                                 Formula1:=localOffsetFormula)
                         End If
                     Catch ex As Exception
-                        ErrorMsg("Error in adding validation formula " & localOffsetFormula & " to column '" & lookupName & "LU': " & ex.Message, "DBSheet Creation Error")
+                        ErrorMsg("Error in adding validation formula " + localOffsetFormula + " to column '" + lookupName + "LU': " + ex.Message, "DBSheet Creation Error")
                         lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
                         Exit Sub
                     End Try
                     ' adding resolution formulas is only necessary for 2-column database lookups
                     If getEntry("fkey", LookupDef, 1) <> "" Then
                         ' add vlookup function field for resolution of lookups to ID in main Query at the end of the DBMapper table
-                        Dim lookupFormula As String = "=IF([@[" & lookupName & "LU]]<>"""",VLOOKUP([@[" & lookupName & "LU]]" & "," & lookupName & "Lookup" & ",2,False),"""")"
+                        Dim lookupFormula As String = "=IF([@[" + lookupName + "LU]]<>"""",VLOOKUP([@[" + lookupName + "LU]]" + "," + lookupName + "Lookup" + ",2,False),"""")"
                         ' if no data was fetched, add a row...
                         If IsNothing(createdListObject.DataBodyRange) Then createdListObject.ListRows.AddEx()
                         ' now add the resolution formula column
@@ -252,7 +251,7 @@ Public Module DBSheetConfig
                             newCol.DataBodyRange.Formula = lookupFormula
                         Catch ex As Exception
                             lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
-                            ErrorMsg("Error in adding lookup formula " & lookupFormula & " to new column " & lookupName & ": " + ex.Message, "DBSheet Creation Error")
+                            ErrorMsg("Error in adding lookup formula " + lookupFormula + " to new column " + lookupName + ": " + ex.Message, "DBSheet Creation Error")
                             Exit Sub
                         End Try
                         ' hide the resolution formula column
@@ -276,19 +275,19 @@ Public Module DBSheetConfig
         Dim NamesList As Excel.Names = ExcelDnaUtil.Application.ActiveWorkbook.Names
         Dim alreadyExists As Boolean = False
         Try
-            Dim testExist As String = NamesList.Item("DBMapper" & tableName).ToString
+            Dim testExist As String = NamesList.Item("DBMapper" + tableName).ToString
         Catch ex As Exception
             alreadyExists = True
         End Try
         If Not alreadyExists Then
-            ErrorMsg("Error adding DBModifier 'DBMapper" & tableName & "', Name already exists in Workbook!", "DBSheet Creation Error")
+            ErrorMsg("Error adding DBModifier 'DBMapper" + tableName + "', Name already exists in Workbook!", "DBSheet Creation Error")
             If Not IsNothing(lookupWS) Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
             Exit Sub
         End If
         Try
-            NamesList.Add(Name:="DBMapper" & tableName, RefersTo:=curCell.Offset(0, 1))
+            NamesList.Add(Name:="DBMapper" + tableName, RefersTo:=curCell.Offset(0, 1))
         Catch ex As Exception
-            ErrorMsg("Error when assigning name 'DBMapper" & tableName & "' to DBMapper starting cell (one cell to the right of active cell): " & ex.Message, "DBSheet Creation Error")
+            ErrorMsg("Error when assigning name 'DBMapper" + tableName + "' to DBMapper starting cell (one cell to the right of active cell): " + ex.Message, "DBSheet Creation Error")
             If Not IsNothing(lookupWS) Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
             Exit Sub
         End Try
@@ -300,11 +299,11 @@ Public Module DBSheetConfig
             ' some visual aid for DBSHeets
             If curCell.Column = 1 And curCell.Row = 1 Then
                 ' freeze top row and primary column(s) if more than one column...
-                curCell.Offset(1, If(createdListObject.ListColumns.Count > 1, 1 + primCols, 0)).Select()
+                curCell.Offset(1, If(createdListObject.ListColumns.Count > 1, 1 + CInt(primCols), 0)).Select()
                 ExcelDnaUtil.Application.ActiveWindow.FreezePanes = True
             End If
         Catch ex As Exception
-            ErrorMsg("Exception: " & ex.Message, "DBSheet Creation Error")
+            ErrorMsg("Exception: " + ex.Message, "DBSheet Creation Error")
             If Not IsNothing(lookupWS) Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
             Exit Sub
         End Try
@@ -314,8 +313,8 @@ Public Module DBSheetConfig
         If CustomXmlParts.Count = 0 Then ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.Add("<root xmlns=""DBModifDef""></root>")
         CustomXmlParts = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
         ' NamespaceURI:="DBModifDef" is required to avoid adding a xmlns attribute to each element.
-        CustomXmlParts(1).SelectSingleNode("/ns0:root").AppendChildNode("DBMapper" & tableName, NamespaceURI:="DBModifDef")
-        Dim dbModifNode As CustomXMLNode = CustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:DBMapper" & tableName)
+        CustomXmlParts(1).SelectSingleNode("/ns0:root").AppendChildNode("DBMapper" + tableName, NamespaceURI:="DBModifDef")
+        Dim dbModifNode As CustomXMLNode = CustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:DBMapper" + tableName)
         dbModifNode.AppendChildNode("execOnSave", NamespaceURI:="DBModifDef", NodeValue:="True")
         dbModifNode.AppendChildNode("askBeforeExecute", NamespaceURI:="DBModifDef", NodeValue:="True")
         dbModifNode.AppendChildNode("env", NamespaceURI:="DBModifDef", NodeValue:="")
@@ -330,7 +329,7 @@ Public Module DBSheetConfig
         'get new definitions into ribbon right now...
         DBModifs.getDBModifDefinitions()
         ' extend Datarange for new DBMappers immediately after definition...
-        DirectCast(Globals.DBModifDefColl("DBMapper").Item("DBMapper" & tableName), DBMapper).extendDataRange()
+        DirectCast(Globals.DBModifDefColl("DBMapper").Item("DBMapper" + tableName), DBMapper).extendDataRange()
         ' switch back to DBAddin tab for easier handling...
         Globals.theRibbon.ActivateTab("DBaddinTab")
     End Sub
@@ -350,8 +349,8 @@ Public Module DBSheetConfig
             Exit Function
         End If
 
-        markStart = "<" & entryMarkup & ">"
-        markEnd = "</" & entryMarkup & ">"
+        markStart = "<" + entryMarkup + ">"
+        markEnd = "</" + entryMarkup + ">"
 
         fetchEnd = startSearch
         fetchBeg = InStr(fetchEnd, XMLString, markStart)
@@ -365,15 +364,15 @@ Public Module DBSheetConfig
         Exit Function
 
 getEntry_Err:
-        ErrorMsg("Error: " & Err.Description & " in DBSheetConfig.getEntry", "DBSheetConfig get Entry")
+        ErrorMsg("Error: " + Err.Description + " in DBSheetConfig.getEntry", "DBSheetConfig get Entry")
     End Function
 
-    ''' <summary>creates markup with setting value content in entryMarkup</summary>
+    ''' <summary>creates markup with setting value content in entryMarkup, used in DBSheetCreateForm.xmlDbsheetConfig</summary>
     ''' <param name="entryMarkup"></param>
     ''' <param name="content"></param>
     ''' <returns>the markup</returns>
     Public Function setEntry(ByVal entryMarkup As String, ByVal content As String) As String
-        setEntry = "<" & entryMarkup & ">" & content & "</" & entryMarkup & ">"
+        setEntry = "<" + entryMarkup + ">" + content + "</" + entryMarkup + ">"
     End Function
 
     ''' <summary>fetches entryMarkup parts contained within lists demarked by listMarkup within parentMarkup inside XMLString</summary>
@@ -414,139 +413,11 @@ getEntry_Err:
                 End If
             Loop Until ListItem = ""
         Catch ex As Exception
-            ErrorMsg("Error: " & ex.Message, "DBSheetConfig get Entry List")
+            ErrorMsg("Error: " + ex.Message, "DBSheetConfig get Entry List")
         End Try
         getEntryList = list
     End Function
 
 End Module
 
-Public Class DBSheetDefTable : Inherits DataTable
 
-    Default Public ReadOnly Property Item(ByVal idx As Integer) As DBSheetDefRow
-        Get
-            Return CType(Rows(idx), DBSheetDefRow)
-        End Get
-    End Property
-
-    Public Sub New()
-        Columns.Add(New DataColumn("name", GetType(String)))
-        Columns.Add(New DataColumn("ftable", GetType(String)))
-        Columns.Add(New DataColumn("fkey", GetType(String)))
-        Columns.Add(New DataColumn("flookup", GetType(String)))
-        Columns.Add(New DataColumn("outer", GetType(Boolean)))
-        Columns.Add(New DataColumn("primkey", GetType(Boolean)))
-        Columns.Add(New DataColumn("ColType", GetType(String)))
-        Columns.Add(New DataColumn("sort", GetType(String)))
-        Columns.Add(New DataColumn("lookup", GetType(String)))
-    End Sub
-
-    Public Sub Add(ByVal row As DBSheetDefRow)
-        Rows.Add(row)
-    End Sub
-
-    Public Sub Remove(ByVal row As DBSheetDefRow)
-        Rows.Remove(row)
-    End Sub
-
-    Public Function GetNewRow() As DBSheetDefRow
-        Dim row As DBSheetDefRow = CType(NewRow(), DBSheetDefRow)
-        Return row
-    End Function
-
-    Protected Overrides Function GetRowType() As Type
-        Return GetType(DBSheetDefRow)
-    End Function
-
-    Protected Overrides Function NewRowFromBuilder(ByVal builder As DataRowBuilder) As DataRow
-        Return New DBSheetDefRow(builder)
-    End Function
-
-End Class
-
-Public Class DBSheetDefRow : Inherits DataRow
-    Public Property name As String
-        Get
-            Return CStr(MyBase.Item("name"))
-        End Get
-        Set(ByVal value As String)
-            MyBase.Item("name") = value
-        End Set
-    End Property
-    Public Property ftable As String
-        Get
-            Return CStr(MyBase.Item("ftable"))
-        End Get
-        Set(ByVal value As String)
-            MyBase.Item("ftable") = value
-        End Set
-    End Property
-    Public Property fkey As String
-        Get
-            Return CStr(MyBase.Item("fkey"))
-        End Get
-        Set(ByVal value As String)
-            MyBase.Item("fkey") = value
-        End Set
-    End Property
-    Public Property flookup As String
-        Get
-            Return CStr(MyBase.Item("flookup"))
-        End Get
-        Set(ByVal value As String)
-            MyBase.Item("flookup") = value
-        End Set
-    End Property
-    Public Property outer As Boolean
-        Get
-            Return CBool(MyBase.Item("outer"))
-        End Get
-        Set(ByVal value As Boolean)
-            MyBase.Item("outer") = value
-        End Set
-    End Property
-    Public Property primkey As Boolean
-        Get
-            Return CBool(MyBase.Item("primkey"))
-        End Get
-        Set(ByVal value As Boolean)
-            MyBase.Item("primkey") = value
-        End Set
-    End Property
-    Public Property ColType As String
-        Get
-            Return CStr(MyBase.Item("ColType"))
-        End Get
-        Set(ByVal value As String)
-            MyBase.Item("ColType") = value
-        End Set
-    End Property
-    Public Property sort As String
-        Get
-            Return CStr(MyBase.Item("sort"))
-        End Get
-        Set(ByVal value As String)
-            MyBase.Item("sort") = value
-        End Set
-    End Property
-    Public Property lookup As String
-        Get
-            Return CStr(MyBase.Item("lookup"))
-        End Get
-        Set(ByVal value As String)
-            MyBase.Item("lookup") = value
-        End Set
-    End Property
-    Friend Sub New(ByVal builder As DataRowBuilder)
-        MyBase.New(builder)
-        name = ""
-        Ftable = ""
-        fkey = ""
-        flookup = ""
-        outer = False
-        primkey = False
-        ColType = ""
-        sort = ""
-        lookup = ""
-    End Sub
-End Class

@@ -22,11 +22,11 @@ Public Class DBModifCreate
             ' Add doesn't work directly with ExcelDnaUtil.Application.ActiveWorkbook.Names (late binding), so create an object here...
             Dim NamesList As Excel.Names = ExcelDnaUtil.Application.ActiveWorkbook.Names
             Try
-                NamesList.Add(Name:=Me.Tag & Me.DBModifName.Text, RefersTo:=ExcelDnaUtil.Application.ActiveCell)
+                NamesList.Add(Name:=Me.Tag + Me.DBModifName.Text, RefersTo:=ExcelDnaUtil.Application.ActiveCell)
             Catch ex As Exception
                 NameValidationResult = ex.Message
             End Try
-            Try : NamesList.Item(Me.Tag & Me.DBModifName.Text).Delete() : Catch ex As Exception : End Try
+            Try : NamesList.Item(Me.Tag + Me.DBModifName.Text).Delete() : Catch ex As Exception : End Try
         End If
         ' check for requirements: mandatory fields filled (visible Tablename, Primary keys and Database), NameValidation above OK and no double invocation for execOnSave in DB Sequences and sequence parts
         If Me.Tablename.Text = "" And Me.Tablename.Visible Then
@@ -36,11 +36,11 @@ Public Class DBModifCreate
         ElseIf Me.Database.Text = "" And Me.Database.Visible Then
             ErrorMsg("Field Database is required, please fill in!", "DBModification Validation")
         ElseIf NameValidationResult <> "" Then
-            ErrorMsg("Invalid " & Me.NameLabel.Text & ", Error: " & NameValidationResult, "DBModification Validation")
+            ErrorMsg("Invalid " + Me.NameLabel.Text + ", Error: " + NameValidationResult, "DBModification Validation")
         Else
             ' check for double invocation because of execOnSave both being set on current DB Modifier ...
             If Me.execOnSave.Checked And Globals.DBModifDefColl.ContainsKey("DBSeqnce") Then
-                Dim MyDBModifName As String = Me.Tag & Me.DBModifName.Text
+                Dim MyDBModifName As String = Me.Tag + Me.DBModifName.Text
                 ' and on DB Sequence that contains the current DB Mapper or DB Action:
                 If Me.Tag <> "DBSeqnce" Then
                     For Each DBModifierCheck As DBSeqnce In Globals.DBModifDefColl("DBSeqnce").Values
@@ -53,7 +53,7 @@ Public Class DBModifCreate
                                     Dim DBModifTargetAddress As String = "(Target Address could not be found...)"
                                     If Globals.DBModifDefColl(definition(0)).ContainsKey(definition(1)) Then DBModifTargetAddress = Globals.DBModifDefColl(definition(0)).Item(definition(1)).getTargetRangeAddress()
                                     Dim foundDBModifName As String = IIf(DBModifierCheck.getName = "DBSeqnce", "Unnamed DBSequence", DBModifierCheck.getName)
-                                    ErrorMsg(Me.Tag & Me.DBModifName.Text & " in " & DBModifTargetAddress & " will be executed twice on saving, because it is part of '" & foundDBModifName & "', which is also executed on saving." & vbCrLf & IIf(Me.execOnSave.Checked, "Disabling 'Execute on save' now, you ", "You") & " can reenable after disabling it on '" & foundDBModifName & "'", "DBModification Validation")
+                                    ErrorMsg(Me.Tag + Me.DBModifName.Text + " in " + DBModifTargetAddress + " will be executed twice on saving, because it is part of '" + foundDBModifName + "', which is also executed on saving." + vbCrLf + IIf(Me.execOnSave.Checked, "Disabling 'Execute on save' now, you ", "You") + " can reenable after disabling it on '" + foundDBModifName + "'", "DBModification Validation")
                                     Me.execOnSave.Checked = False
                                 End If
                             Next
@@ -64,9 +64,9 @@ Public Class DBModifCreate
                     For i As Integer = 0 To Me.DBSeqenceDataGrid.Rows().Count - 2
                         Dim definition() As String = Split(Me.DBSeqenceDataGrid.Rows(i).Cells(0).Value, ":")
                         If (definition(0) = "DBAction" Or definition(0) = "DBMapper") AndAlso Globals.DBModifDefColl(definition(0)).ContainsKey(definition(1)) AndAlso Globals.DBModifDefColl(definition(0)).Item(definition(1)).DBModifSaveNeeded Then
-                            Dim foundDBModifName As String = IIf(definition(1) = "", "Unnamed " & definition(0), definition(1))
+                            Dim foundDBModifName As String = IIf(definition(1) = "", "Unnamed " + definition(0), definition(1))
                             Dim DBModifTargetAddress As String = Globals.DBModifDefColl(definition(0)).Item(definition(1)).getTargetRangeAddress()
-                            ErrorMsg(foundDBModifName & " in " & DBModifTargetAddress & " will be executed twice on saving, because it is part of this DBSequence, which is also executed on saving." & vbCrLf & IIf(Me.execOnSave.Checked, "Disabling 'Execute on save' now, you ", "You") & " can reenable after disabling it on '" & foundDBModifName & "'", "DBModification Validation")
+                            ErrorMsg(foundDBModifName + " in " + DBModifTargetAddress + " will be executed twice on saving, because it is part of this DBSequence, which is also executed on saving." + vbCrLf + IIf(Me.execOnSave.Checked, "Disabling 'Execute on save' now, you ", "You") + " can reenable after disabling it on '" + foundDBModifName + "'", "DBModification Validation")
                             Me.execOnSave.Checked = False
                         End If
                     Next
@@ -91,7 +91,7 @@ Public Class DBModifCreate
     ''' <param name="e"></param>
     Private Sub DBSeqenceDataGrid_DataError(sender As Object, e As DataGridViewDataErrorEventArgs) Handles DBSeqenceDataGrid.DataError
         If Not DBSeqStepValidationErrorsShown Then
-            DBSeqStepValidationErrors += "Error in row " & e.RowIndex + 1 & ",content: " & Me.DBSeqenceDataGrid.Rows(e.RowIndex).Cells(0).Value & vbCrLf
+            DBSeqStepValidationErrors += "Error in row " + (e.RowIndex + 1).ToString + ",content: " + Me.DBSeqenceDataGrid.Rows(e.RowIndex).Cells(0).Value + vbCrLf
         End If
     End Sub
 
@@ -105,7 +105,7 @@ Public Class DBModifCreate
             ExcelDnaUtil.Application.Worksheets(rangePart(0)).Select()
             ExcelDnaUtil.Application.Range(rangePart(1)).Select()
         Catch ex As Exception
-            ErrorMsg("Couldn't select " & Me.TargetRangeAddress.Text & ":" & ex.Message)
+            ErrorMsg("Couldn't select " + Me.TargetRangeAddress.Text + ":" + ex.Message)
         End Try
     End Sub
 
@@ -153,7 +153,7 @@ Public Class DBModifCreate
                 allowedValues += def + vbCrLf
             Next
             ' then display allowed values along with error messages and instruction on how to repair.
-            Me.RepairDBSeqnce.Text = DBSeqStepValidationErrors & vbCrLf & "Allowed Entries are:" & vbCrLf & allowedValues & vbCrLf & "Repair existing definitions below and remove all above incl. this line to fix it by clicking OK:" & vbCrLf & Me.RepairDBSeqnce.Text
+            Me.RepairDBSeqnce.Text = DBSeqStepValidationErrors + vbCrLf + "Allowed Entries are:" + vbCrLf + allowedValues + vbCrLf + "Repair existing definitions below and remove all above incl. this line to fix it by clicking OK:" + vbCrLf + Me.RepairDBSeqnce.Text
             Me.RepairDBSeqnce.Show()
             Me.RepairDBSeqnce.Width = Me.DBSeqenceDataGrid.Width
             Me.RepairDBSeqnce.Height = 325
@@ -161,7 +161,7 @@ Public Class DBModifCreate
             Me.DBSeqenceDataGrid.Hide()
             ' go into "repaired" mode (indicating rewriting DBSequence Steps in DBModif.createDBModif)
             Me.Tag = "repaired"
-            ErrorMsg("Defined DBSequence steps did not match allowed values." & vbCrLf & "Please follow the instructions in textbox to fix it...", "DBSequence definition Insert error")
+            ErrorMsg("Defined DBSequence steps did not match allowed values." + vbCrLf + "Please follow the instructions in textbox to fix it...", "DBSequence definition Insert error")
         End If
         DBSeqStepValidationErrorsShown = True
     End Sub
@@ -173,18 +173,18 @@ Public Class DBModifCreate
         ' create a commandbutton for the current DBmodification?
         Dim cbshp As Excel.OLEObject = ExcelDnaUtil.Application.ActiveSheet.OLEObjects.Add(ClassType:="Forms.CommandButton.1", Link:=False, DisplayAsIcon:=False, Left:=600, Top:=70, Width:=120, Height:=24)
         Dim cb As Forms.CommandButton = cbshp.Object
-        Dim cbName As String = Me.Tag & Me.DBModifName.Text
+        Dim cbName As String = Me.Tag + Me.DBModifName.Text
         Try
             cb.Name = cbName
-            cb.Caption = IIf(Me.DBModifName.Text = "", "Unnamed " & Me.Tag, Me.Tag & Me.DBModifName.Text)
+            cb.Caption = IIf(Me.DBModifName.Text = "", "Unnamed " + Me.Tag, Me.Tag + Me.DBModifName.Text)
         Catch ex As Exception
             cbshp.Delete()
-            ErrorMsg("Couldn't name CommandButton '" & cbName & "': " & ex.Message, "CommandButton create Error")
+            ErrorMsg("Couldn't name CommandButton '" + cbName + "': " + ex.Message, "CommandButton create Error")
             Exit Sub
         End Try
         If Len(cbName) > 31 Then
             cbshp.Delete()
-            ErrorMsg("CommandButton codenames cannot be longer than 31 characters ! '" & cbName & "': ", "CommandButton create Error")
+            ErrorMsg("CommandButton codenames cannot be longer than 31 characters ! '" + cbName + "': ", "CommandButton create Error")
             Exit Sub
         End If
         ' fail to assign a handler? remove commandbutton (otherwise it gets hard to edit an existing DBModification with a different name).

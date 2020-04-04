@@ -31,7 +31,7 @@ Public Class EditDBModifDef
                         doc.LoadXml(Me.EditBox.Text)
                         doc.Validate(eventHandler)
                     Catch ex As Exception
-                        ErrorMsg("Problems with parsing changed definition: " & ex.Message, "Edit DB Modifier Definitions XML")
+                        ErrorMsg("Problems with parsing changed definition: " + ex.Message, "Edit DB Modifier Definitions XML")
                         Exit Sub
                     End Try
                     doc.WriteTo(xml_writer)
@@ -72,13 +72,13 @@ Public Class EditDBModifDef
                 doc.LoadXml(Me.EditBox.Text)
                 doc.Validate(eventHandler)
             Catch ex As Exception
-                ErrorMsg("Problems with parsing changed app settings: " & ex.Message, "Edit DB Addin Settings")
+                ErrorMsg("Problems with parsing changed app settings: " + ex.Message, "Edit DB Addin Settings")
                 Exit Sub
             End Try
             Try
-                File.WriteAllText(xllPath & ".config", Me.EditBox.Text, System.Text.Encoding.Default)
+                File.WriteAllText(xllPath + ".config", Me.EditBox.Text, System.Text.Encoding.Default)
             Catch ex As Exception
-                ErrorMsg("Couldn't write DB Addin Usersettings from " & xllPath & ":" & ex.Message, "Edit DB Addin Settings")
+                ErrorMsg("Couldn't write DB Addin Usersettings from " + xllPath + ":" + ex.Message, "Edit DB Addin Settings")
                 Exit Sub
             End Try
         End If
@@ -113,7 +113,7 @@ Public Class EditDBModifDef
         If Me.DBFskip.Visible Then
             CustomXmlParts = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
             If CustomXmlParts.Count = 0 Then
-                ErrorMsg("No DB Modifier Definition (CustomXMLPart) contained in Workbook " & ExcelDnaUtil.Application.ActiveWorkbook.Name, "Edit DB Modifier Definitions XML")
+                ErrorMsg("No DB Modifier Definition (CustomXMLPart) contained in Workbook " + ExcelDnaUtil.Application.ActiveWorkbook.Name, "Edit DB Modifier Definitions XML")
                 Me.DialogResult = DialogResult.Cancel
                 Me.Close()
             Else
@@ -156,9 +156,9 @@ Public Class EditDBModifDef
             ' read setting from xllPath + ".config"
             Dim appSettings As String
             Try
-                appSettings = File.ReadAllText(xllPath & ".config", System.Text.Encoding.Default)
+                appSettings = File.ReadAllText(xllPath + ".config", System.Text.Encoding.Default)
             Catch ex As Exception
-                ErrorMsg("Couldn't read DB Addin Usersettings from " & xllPath & ":" & ex.Message, "Edit DB Addin Settings")
+                ErrorMsg("Couldn't read DB Addin Usersettings from " + xllPath + ":" + ex.Message, "Edit DB Addin Settings")
                 Exit Sub
             End Try
             Me.EditBox.Text = appSettings
@@ -169,7 +169,7 @@ Public Class EditDBModifDef
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub EditBox_SelectionChanged(sender As Object, e As EventArgs) Handles EditBox.SelectionChanged
-        Me.PosIndex.Text = "Line: " & (Me.EditBox.GetLineFromCharIndex(Me.EditBox.SelectionStart) + 1).ToString & ", Column: " & (Me.EditBox.SelectionStart - Me.EditBox.GetFirstCharIndexOfCurrentLine + 1).ToString
+        Me.PosIndex.Text = "Line: " + (Me.EditBox.GetLineFromCharIndex(Me.EditBox.SelectionStart) + 1).ToString + ", Column: " + (Me.EditBox.SelectionStart - Me.EditBox.GetFirstCharIndexOfCurrentLine + 1).ToString
     End Sub
 
 End Class

@@ -104,7 +104,7 @@ Public Module Globals
     ''' <param name="LogMessage">the message to be logged</param>
     Public Sub LogError(LogMessage As String)
         Dim theMethod As Object = (New System.Diagnostics.StackTrace).GetFrame(1).GetMethod
-        Dim caller As String = theMethod.ReflectedType.FullName & "." & theMethod.Name
+        Dim caller As String = theMethod.ReflectedType.FullName + "." + theMethod.Name
         WriteToLog(LogMessage, EventLogEntryType.Error, caller)
     End Sub
 
@@ -112,7 +112,7 @@ Public Module Globals
     ''' <param name="LogMessage">the message to be logged</param>
     Public Sub LogWarn(LogMessage As String)
         Dim theMethod As Object = (New System.Diagnostics.StackTrace).GetFrame(1).GetMethod
-        Dim caller As String = theMethod.ReflectedType.FullName & "." & theMethod.Name
+        Dim caller As String = theMethod.ReflectedType.FullName + "." + theMethod.Name
         WriteToLog(LogMessage, EventLogEntryType.Warning, caller)
     End Sub
 
@@ -121,7 +121,7 @@ Public Module Globals
     Public Sub LogInfo(LogMessage As String)
         If DebugAddin Then
             Dim theMethod As Object = (New System.Diagnostics.StackTrace).GetFrame(1).GetMethod
-            Dim caller As String = theMethod.ReflectedType.FullName & "." & theMethod.Name
+            Dim caller As String = theMethod.ReflectedType.FullName + "." + theMethod.Name
             WriteToLog(LogMessage, EventLogEntryType.Information, caller)
         End If
     End Sub
@@ -131,14 +131,14 @@ Public Module Globals
     ''' <param name="errTitle">optionally pass a title for the msgbox here</param>
     Public Sub ErrorMsg(LogMessage As String, Optional errTitle As String = "DBAddin Error", Optional msgboxIcon As MsgBoxStyle = MsgBoxStyle.Critical)
         Dim theMethod As Object = (New System.Diagnostics.StackTrace).GetFrame(1).GetMethod
-        Dim caller As String = theMethod.ReflectedType.FullName & "." & theMethod.Name
+        Dim caller As String = theMethod.ReflectedType.FullName + "." + theMethod.Name
         WriteToLog(LogMessage, EventLogEntryType.Warning, caller) ' to avoid popup of trace log
         If Not nonInteractive Then MsgBox(LogMessage, msgboxIcon + MsgBoxStyle.OkOnly, errTitle)
     End Sub
 
     Public Function QuestionMsg(theMessage As String, Optional questionType As MsgBoxStyle = MsgBoxStyle.OkCancel, Optional questionTitle As String = "DBAddin Question", Optional msgboxIcon As MsgBoxStyle = MsgBoxStyle.Question) As MsgBoxResult
         Dim theMethod As Object = (New System.Diagnostics.StackTrace).GetFrame(1).GetMethod
-        Dim caller As String = theMethod.ReflectedType.FullName & "." & theMethod.Name
+        Dim caller As String = theMethod.ReflectedType.FullName + "." + theMethod.Name
         WriteToLog(theMessage, EventLogEntryType.Warning, caller) ' to avoid popup of trace log
         If nonInteractive Then
             If questionType = MsgBoxStyle.OkCancel Then Return MsgBoxResult.Cancel
@@ -178,7 +178,7 @@ Public Module Globals
                     Dim pivottbl As Excel.PivotTable
                     For Each ws In ExcelDnaUtil.Application.ActiveWorkbook.Worksheets
                         If ws.ProtectContents And (ws.QueryTables.Count > 0 Or ws.PivotTables.Count > 0) Then
-                            ErrorMsg("Worksheet " & ws.Name & " is content protected, can't refresh QueryTables/PivotTables !")
+                            ErrorMsg("Worksheet " + ws.Name + " is content protected, can't refresh QueryTables/PivotTables !")
                             Continue For
                         End If
                         For Each qrytbl In ws.QueryTables
@@ -194,7 +194,7 @@ Public Module Globals
                 If Left$(underlyingName, 10) = "DBFtargetF" Then
                     underlyingName = Replace(underlyingName, "DBFtargetF", "DBFsource", 1, , vbTextCompare)
                     If ExcelDnaUtil.Application.Range(underlyingName).Parent.ProtectContents Then
-                        ErrorMsg("Worksheet " & ExcelDnaUtil.Application.Range(underlyingName).Parent.Name & " is content protected, can't refresh DB Function !")
+                        ErrorMsg("Worksheet " + ExcelDnaUtil.Application.Range(underlyingName).Parent.Name + " is content protected, can't refresh DB Function !")
                         Exit Sub
                     End If
                     ExcelDnaUtil.Application.Range(underlyingName).Formula += " "
@@ -202,23 +202,23 @@ Public Module Globals
                 ElseIf Left$(underlyingName, 9) = "DBFtarget" Then
                     underlyingName = Replace(underlyingName, "DBFtarget", "DBFsource", 1, , vbTextCompare)
                     If ExcelDnaUtil.Application.Range(underlyingName).Parent.ProtectContents Then
-                        ErrorMsg("Worksheet " & ExcelDnaUtil.Application.Range(underlyingName).Parent.Name & " is content protected, can't refresh DB Function !")
+                        ErrorMsg("Worksheet " + ExcelDnaUtil.Application.Range(underlyingName).Parent.Name + " is content protected, can't refresh DB Function !")
                         Exit Sub
                     End If
                     ExcelDnaUtil.Application.Range(underlyingName).Formula += " "
                     ' we're being called on a source (invoking function) cell
                 ElseIf Left$(underlyingName, 9) = "DBFsource" Then
                     If ExcelDnaUtil.Application.Range(underlyingName).Parent.ProtectContents Then
-                        ErrorMsg("Worksheet " & ExcelDnaUtil.Application.Range(underlyingName).Parent.Name & " is content protected, can't refresh DB Function !")
+                        ErrorMsg("Worksheet " + ExcelDnaUtil.Application.Range(underlyingName).Parent.Name + " is content protected, can't refresh DB Function !")
                         Exit Sub
                     End If
                     ExcelDnaUtil.Application.Range(underlyingName).Formula += " "
                 Else
-                    ErrorMsg("Error in refreshData, underlyingName does not begin with DBFtarget, DBFtargetF or DBFsource: " & underlyingName)
+                    ErrorMsg("Error in refreshData, underlyingName does not begin with DBFtarget, DBFtargetF or DBFsource: " + underlyingName)
                 End If
             End If
         Catch ex As Exception
-            ErrorMsg("Exception: " & ex.Message, "refresh Data")
+            ErrorMsg("Exception: " + ex.Message, "refresh Data")
         End Try
     End Sub
 
@@ -243,7 +243,7 @@ Public Module Globals
             ExcelDnaUtil.Application.Range(underlyingName).Parent.Select()
             ExcelDnaUtil.Application.Range(underlyingName).Select()
         Catch ex As Exception
-            ErrorMsg("Can't jump to target/source, corresponding workbook open? " & ex.Message, "jump Button")
+            ErrorMsg("Can't jump to target/source, corresponding workbook open? " + ex.Message, "jump Button")
         End Try
     End Sub
 
@@ -276,7 +276,7 @@ Public Module Globals
             ' rip out the balancing string now...
             tempString = balancedString(tempString, openBracket, closeBracket, quote)
             If tempString.Length = 0 Then
-                ErrorMsg("couldn't produce balanced string from " & theString)
+                ErrorMsg("couldn't produce balanced string from " + theString)
                 functionSplit = Nothing
                 Exit Function
             End If
@@ -284,7 +284,7 @@ Public Module Globals
             finalResult = Split(tempString, vbTab)
             functionSplit = finalResult
         Catch ex As Exception
-            ErrorMsg("Exception: " & ex.Message, "function split into tokens")
+            ErrorMsg("Exception: " + ex.Message, "function split into tokens")
             functionSplit = Nothing
         End Try
     End Function
@@ -326,7 +326,7 @@ Public Module Globals
                 balancedString = Mid$(theString, startBalance + 1, endBalance - startBalance)
             End If
         Catch ex As Exception
-            ErrorMsg("Exception: " & ex.Message, "get minimal balanced string")
+            ErrorMsg("Exception: " + ex.Message, "get minimal balanced string")
         End Try
     End Function
 
@@ -359,16 +359,16 @@ Public Module Globals
 
                 If Not (openedBrackets > 0 Or quoteMode) Then
                     If Left$(Mid$(theString, i), Len(delimiter)) = delimiter Then
-                        replaceDelimsWithSpecialSep &= specialSep
+                        replaceDelimsWithSpecialSep += specialSep
                     Else
-                        replaceDelimsWithSpecialSep &= Mid$(theString, i, 1)
+                        replaceDelimsWithSpecialSep += Mid$(theString, i, 1)
                     End If
                 Else
-                    replaceDelimsWithSpecialSep &= Mid$(theString, i, 1)
+                    replaceDelimsWithSpecialSep += Mid$(theString, i, 1)
                 End If
             Next
         Catch ex As Exception
-            ErrorMsg("Exception: " & ex.Message, "replace delimiters with special separator")
+            ErrorMsg("Exception: " + ex.Message, "replace delimiters with special separator")
         End Try
     End Function
 
@@ -388,7 +388,7 @@ Public Module Globals
         End If
         replaceEnd = InStr(replaceBeg, UCase$(theString), UCase$(separator))
         If replaceEnd = 0 Then replaceEnd = Len(theString) + 1
-        Change = Left$(theString, replaceBeg - 1 + Len(keystr)) & changed & Right$(theString, Len(theString) - replaceEnd + 1)
+        Change = Left$(theString, replaceBeg - 1 + Len(keystr)) + changed + Right$(theString, Len(theString) - replaceEnd + 1)
     End Function
 
     ''' <summary>fetches substring starting after keystr and ending with separator from theString, case insensitive !! if separator is "" then fetch to end of string</summary>
@@ -445,7 +445,7 @@ Public Module Globals
                 End If
             Next
         Catch ex As Exception
-            ErrorMsg("Exception: " & ex.Message, "get underlying DBFName from Range")
+            ErrorMsg("Exception: " + ex.Message, "get underlying DBFName from Range")
         End Try
     End Function
 
@@ -472,7 +472,7 @@ Public Module Globals
             Next
             If foundNames > 1 Then checkMultipleDBRangeNames = True
         Catch ex As Exception
-            ErrorMsg("Exception: " & ex.Message, "check Multiple DBRange Names")
+            ErrorMsg("Exception: " + ex.Message, "check Multiple DBRange Names")
         End Try
     End Function
 
@@ -484,17 +484,17 @@ Public Module Globals
         Dim ws As Excel.Worksheet
         ' hidden workbooks produce an error when searching for cells, this is captured by 
         If TypeName(ExcelDnaUtil.Application.Calculation) = "Error" Then
-            ErrorMsg("ExcelDnaUtil.Application.Calculation = Error, " & Wb.Path & "\" & Wb.Name & " (hidden workbooks produce calculation errors...)")
+            ErrorMsg("ExcelDnaUtil.Application.Calculation = Error, " + Wb.Path + "\" + Wb.Name + " (hidden workbooks produce calculation errors...)")
             Exit Sub
         End If
         DBModifs.preventChangeWhileFetching = True
         Try
             Dim cellcount As Long = 0
             For Each ws In Wb.Worksheets
-                cellcount += ExcelDnaUtil.Application.WorksheetFunction.CountIf(ws.Range("1:" & ws.Rows.Count), "<>")
+                cellcount += ExcelDnaUtil.Application.WorksheetFunction.CountIf(ws.Range("1:" + ws.Rows.Count.ToString), "<>")
             Next
             If cellcount > CLng(fetchSetting("maxCellCount", "300000")) And Not CBool(fetchSetting("maxCellCountIgnore", "False")) Then
-                Dim retval As MsgBoxResult = QuestionMsg("This large workbook (" & cellcount.ToString() & " filled cells >" & CLng(fetchSetting("maxCellCount", "300000")) & ") might take long to search for DB functions to refresh, continue ?" & vbCrLf & "Click Cancel to add DBFskip to this Workbook, avoiding this search in the future (no DB Data will be refreshed then !)...", vbYesNoCancel, "Refresh DB functions")
+                Dim retval As MsgBoxResult = QuestionMsg("This large workbook (" + cellcount.ToString() + " filled cells >" + fetchSetting("maxCellCount", "300000") + ") might take long to search for DB functions to refresh, continue ?" + vbCrLf + "Click Cancel to add DBFskip to this Workbook, avoiding this search in the future (no DB Data will be refreshed then !)...", vbYesNoCancel, "Refresh DB functions")
                 If retval <> vbYes Then
                     If retval = vbCancel Then
                         Try
@@ -515,20 +515,20 @@ Public Module Globals
                     If Not IsNothing(searchCells) Then firstFoundAddress = searchCells.Address
                     While Not IsNothing(searchCells)
                         If ws.ProtectContents Then
-                            ErrorMsg("Worksheet " & ws.Name & " is content protected, can't refresh DB Functions !")
+                            ErrorMsg("Worksheet " + ws.Name + " is content protected, can't refresh DB Functions !")
                             Continue For
                         End If
                         Dim callID As String = "" : Dim underlyingName As String = ""
                         Try
                             ' get the callID of the underlying name of the target (key of the queryCache and StatusCollection)
-                            callID = "[" & searchCells.Parent.Parent.Name & "]" & searchCells.Parent.Name & "!" & searchCells.Address
+                            callID = "[" + searchCells.Parent.Parent.Name + "]" + searchCells.Parent.Name + "!" + searchCells.Address
                             ' remove query cache to force refetching
                             queryCache.Remove(callID)
                             ' trigger recalculation by changing formula of DB Function
                             underlyingName = getDBunderlyingNameFromRange(searchCells)
                             ExcelDnaUtil.Application.Range(underlyingName).Formula += " "
                         Catch ex As Exception
-                            LogWarn("Exception when setting Formula or getting callID (" & callID & ") of DB Function " & theFunc & ") in searchCells (" & searchCells.Address & ") with underlyingName " & underlyingName & ": " + ex.Message)
+                            LogWarn("Exception when setting Formula or getting callID (" + callID + ") of DB Function " + theFunc + ") in searchCells (" + searchCells.Address + ") with underlyingName " + underlyingName + ": " + ex.Message)
                         End Try
                         searchCells = ws.Cells.FindNext(searchCells)
                         If searchCells.Address = firstFoundAddress Then Exit While
@@ -539,11 +539,11 @@ Public Module Globals
                 searchCells = ws.Cells.Find(What:="", After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
             Next
             If ignoreCalcMode Then
-                LogInfo("ignoreCalcMode = True, ExcelDnaUtil.Application.CalculateFull called " & Wb.Path & "\" & Wb.Name)
+                LogInfo("ignoreCalcMode = True, ExcelDnaUtil.Application.CalculateFull called " + Wb.Path + "\" + Wb.Name)
                 ExcelDnaUtil.Application.CalculateFull()
             End If
         Catch ex As Exception
-            ErrorMsg("Exception: " & ex.Message & ", " & Wb.Path & "\" & Wb.Name, "refresh DBFunctions")
+            ErrorMsg("Exception: " + ex.Message + ", " + Wb.Path + "\" + Wb.Name, "refresh DBFunctions")
         End Try
         DBModifs.preventChangeWhileFetching = False
     End Sub
@@ -559,7 +559,7 @@ Public Module Globals
                 ExcelDnaUtil.Application.ActiveWorkbook.Saved = previouslySaved
             End If
         Catch ex As Exception
-            ErrorMsg("Exception: " & ex.Message, "refresh DBFunc later")
+            ErrorMsg("Exception: " + ex.Message, "refresh DBFunc later")
         End Try
     End Sub
 
@@ -569,11 +569,11 @@ Public Module Globals
         ' reset query cache for current workbook, so we really get new data !
         Dim tempColl1 As Dictionary(Of String, String) = New Dictionary(Of String, String)(queryCache) ' clone dictionary to be able to remove items...
         For Each resetkey As String In tempColl1.Keys
-            If InStr(resetkey, "[" & WBname & "]") > 0 Then queryCache.Remove(resetkey)
+            If InStr(resetkey, "[" + WBname + "]") > 0 Then queryCache.Remove(resetkey)
         Next
         Dim tempColl2 As Dictionary(Of String, ContainedStatusMsg) = New Dictionary(Of String, ContainedStatusMsg)(StatusCollection)
         For Each resetkey As String In tempColl2.Keys
-            If InStr(resetkey, "[" & WBname & "]") > 0 Then StatusCollection.Remove(resetkey)
+            If InStr(resetkey, "[" + WBname + "]") > 0 Then StatusCollection.Remove(resetkey)
         Next
     End Sub
 
@@ -602,11 +602,11 @@ Public Module Globals
             ' count nonempty cells in workbook...
             Dim cellcount As Long = 0
             For Each ws In actWB.Worksheets
-                cellcount += ExcelDnaUtil.Application.WorksheetFunction.CountIf(ws.Range("1:" & ws.Rows.Count), "<>")
+                cellcount += ExcelDnaUtil.Application.WorksheetFunction.CountIf(ws.Range("1:" + ws.Rows.Count.ToString), "<>")
             Next
             ' warn if above threshold
             If cellcount > CLng(fetchSetting("maxCellCount", "300000")) Then
-                Dim retval As MsgBoxResult = QuestionMsg("This large workbook (" & cellcount.ToString() & " filled cells >" & CLng(fetchSetting("maxCellCount", "300000")) & ") might take long to search for legacy functions, continue ?" & vbCrLf & "Cancel to disable legacy function checking for this workbook ...", MsgBoxStyle.YesNoCancel, "Legacy DBAddin functions")
+                Dim retval As MsgBoxResult = QuestionMsg("This large workbook (" + cellcount.ToString + " filled cells >" + fetchSetting("maxCellCount", "300000") + ") might take long to search for legacy functions, continue ?" + vbCrLf + "Cancel to disable legacy function checking for this workbook ...", MsgBoxStyle.YesNoCancel, "Legacy DBAddin functions")
                 If retval <> vbYes Then
                     If retval = vbCancel Then
                         Try
@@ -641,7 +641,7 @@ Public Module Globals
             ' reset the cell find dialog....
             ExcelDnaUtil.Application.ActiveSheet.Cells.Find(What:="", After:=ExcelDnaUtil.Application.ActiveSheet.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
         Catch ex As Exception
-            ErrorMsg("Exception occured: " & ex.Message, "Legacy DBAddin functions")
+            ErrorMsg("Exception occured: " + ex.Message, "Legacy DBAddin functions")
         End Try
         ExcelDnaUtil.Application.DisplayAlerts = True
         ' only set this back if it was changed to manual as otherwise it would change the (else unchanged) workbook, forcing a confirmation for saving...
@@ -680,7 +680,7 @@ Public Module Globals
                 ErrorMsg("removed " + resultingPurges, "purge Names", MsgBoxStyle.Exclamation)
             End If
         Catch ex As Exception
-            ErrorMsg("Exception: " & ex.Message, "purge Names")
+            ErrorMsg("Exception: " + ex.Message, "purge Names")
         End Try
         ExcelDnaUtil.Application.Calculation = calcMode
     End Sub

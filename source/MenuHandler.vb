@@ -179,7 +179,7 @@ Public Class MenuHandler
     Public Function getToggleDesignScreentip(control As IRibbonControl) As String
         Dim cbrs As Object = ExcelDnaUtil.Application.CommandBars
         If Not IsNothing(cbrs) AndAlso cbrs.GetEnabledMso("DesignMode") Then
-            Return "Designmode is currently " & IIf(cbrs.GetPressedMso("DesignMode"), "on !", "off !") & "; Ctrl-Shift-click to inspect/edit DBModifier definitions of the active workbook here"
+            Return "Designmode is currently " + IIf(cbrs.GetPressedMso("DesignMode"), "on !", "off !") + "; Ctrl-Shift-click to inspect/edit DBModifier definitions of the active workbook here"
         Else
             ' this should actually never be reached...
             Return "Designmode commandbar button not available (no button?); Ctrl-Shift-click to inspect/edit DBModifier definitions of the active workbook here"
@@ -229,10 +229,10 @@ Public Class MenuHandler
         ' provide a chance to reconnect when switching environment...
         conn = Nothing
         If Not IsNothing(ExcelDnaUtil.Application.ActiveWorkbook) Then
-            Dim retval As MsgBoxResult = QuestionMsg("ConstConnString" & Globals.ConstConnString & vbCrLf & "ConfigStoreFolder:" & ConfigFiles.ConfigStoreFolder & vbCrLf & vbCrLf & "Refresh DBFunctions in active workbook to see effects?", MsgBoxStyle.YesNo, "Changed environment to: " & fetchSetting("ConfigName" & Globals.env(), ""))
+            Dim retval As MsgBoxResult = QuestionMsg("ConstConnString" + Globals.ConstConnString + vbCrLf + "ConfigStoreFolder:" + ConfigFiles.ConfigStoreFolder + vbCrLf + vbCrLf + "Refresh DBFunctions in active workbook to see effects?", MsgBoxStyle.YesNo, "Changed environment to: " + fetchSetting("ConfigName" + Globals.env(), ""))
             If retval = vbYes Then Globals.refreshDBFunctions(ExcelDnaUtil.Application.ActiveWorkbook)
         Else
-            ErrorMsg("ConstConnString" & Globals.ConstConnString & vbCrLf & "ConfigStoreFolder:" & ConfigFiles.ConfigStoreFolder, "Changed environment to: " & fetchSetting("ConfigName" & Globals.env(), ""), MsgBoxStyle.Information)
+            ErrorMsg("ConstConnString" + Globals.ConstConnString + vbCrLf + "ConfigStoreFolder:" + ConfigFiles.ConfigStoreFolder, "Changed environment to: " + fetchSetting("ConfigName" + Globals.env(), ""), MsgBoxStyle.Information)
         End If
     End Sub
 
@@ -294,12 +294,12 @@ Public Class MenuHandler
                 Dim descName As String = IIf(nodeName = control.Id, "Unnamed " + DBModifTypeName, Replace(nodeName, DBModifTypeName, ""))
                 Dim imageMsoStr As String = IIf(control.Id = "DBSeqnce", "ShowOnNewButton", IIf(control.Id = "DBMapper", "TableSave", IIf(control.Id = "DBAction", "TableIndexes", "undefined imageMso")))
                 Dim superTipStr As String = IIf(control.Id = "DBSeqnce", "executes " + DBModifTypeName + " defined in docproperty: " + nodeName, IIf(control.Id = "DBMapper", "stores data defined in DBMapper (named " + nodeName + ") range on " + Globals.DBModifDefColl(control.Id).Item(nodeName).getTargetRangeAddress(), IIf(control.Id = "DBAction", "executes Action defined in DBAction (named " + nodeName + ") range on " + Globals.DBModifDefColl(control.Id).Item(nodeName).getTargetRangeAddress(), "undefined superTip")))
-                xmlString = xmlString + "<button id='_" + nodeName + "' label='do " + descName + "' imageMso='" & imageMsoStr & "' onAction='DBModifClick' tag='" + control.Id + "' screentip='do " & DBModifTypeName & ": " + descName + "' supertip='" + superTipStr + "' />"
+                xmlString = xmlString + "<button id='_" + nodeName + "' label='do " + descName + "' imageMso='" + imageMsoStr + "' onAction='DBModifClick' tag='" + control.Id + "' screentip='do " + DBModifTypeName + ": " + descName + "' supertip='" + superTipStr + "' />"
             Next
             xmlString += "</menu>"
             Return xmlString
         Catch ex As Exception
-            ErrorMsg("Exception caught while building xml: " & ex.Message)
+            ErrorMsg("Exception caught while building xml: " + ex.Message)
             Return ""
         End Try
     End Function
@@ -307,7 +307,7 @@ Public Class MenuHandler
     ''' <summary>show a screentip for the dynamic DBMapper/DBAction/DBSequence Menus (also showing the ID behind)</summary>
     ''' <returns></returns>
     Public Function getDBModifScreentip(control As IRibbonControl) As String
-        Return "Select DBModifier to store/do action/do sequence (" & control.Id & ")"
+        Return "Select DBModifier to store/do action/do sequence (" + control.Id + ")"
     End Function
 
     ''' <summary>shows the DBModif sheet button only if it was collected...</summary>
@@ -339,7 +339,7 @@ Public Class MenuHandler
                 End If
             End If
         Catch ex As Exception
-            ErrorMsg("Exception: " & ex.Message & ",control.Tag:" & control.Tag & ",nodeName:" & nodeName, "DBModif Click")
+            ErrorMsg("Exception: " + ex.Message + ",control.Tag:" + control.Tag + ",nodeName:" + nodeName, "DBModif Click")
         End Try
     End Sub
 
@@ -381,7 +381,7 @@ Public Class MenuHandler
         Dim activeCellDBModifName As String = DBModifs.getDBModifNameFromRange(ExcelDnaUtil.Application.ActiveCell)
         Dim activeCellDBModifType As String = Left(activeCellDBModifName, 8)
         If (activeCellDBModifType = "DBMapper" Or activeCellDBModifType = "DBAction") And activeCellDBModifType <> control.Tag And control.Tag <> "DBSeqnce" Then
-            ErrorMsg("Active Cell already contains definition for a " & activeCellDBModifType & ", inserting " & IIf(control.Tag = "DBSetQueryPivot" Or control.Tag = "DBSetQueryListObject", "DBSetQuery", control.Tag) & " here will cause trouble !", "Inserting not allowed")
+            ErrorMsg("Active Cell already contains definition for a " + activeCellDBModifType + ", inserting " + IIf(control.Tag = "DBSetQueryPivot" Or control.Tag = "DBSetQueryListObject", "DBSetQuery", control.Tag) + " here will cause trouble !", "Inserting not allowed")
             Exit Sub
         End If
         If control.Tag = "DBListFetch" Then

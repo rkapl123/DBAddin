@@ -21,14 +21,14 @@ Public Module ConfigFiles
         Dim srchdFunc As String = ""
         ' check whether there is any existing db function other than DBListFetch inside active cell
         For Each srchdFunc In {"DBSETQUERY", "DBROWFETCH"}
-            If Left(UCase(ExcelDnaUtil.Application.ActiveCell.Formula), Len(srchdFunc) + 2) = "=" & srchdFunc & "(" Then
+            If Left(UCase(ExcelDnaUtil.Application.ActiveCell.Formula), Len(srchdFunc) + 2) = "=" + srchdFunc + "(" Then
                 Exit For
             Else
                 srchdFunc = ""
             End If
         Next
 
-        retval = QuestionMsg("Inserting contents configured in " & theFileName, MsgBoxStyle.OkCancel, "DBAddin: Inserting Configuration...", MsgBoxStyle.Information)
+        retval = QuestionMsg("Inserting contents configured in " + theFileName, MsgBoxStyle.OkCancel, "DBAddin: Inserting Configuration...", MsgBoxStyle.Information)
         If retval = vbCancel Then Exit Sub
         If ExcelDnaUtil.Application.ActiveWorkbook Is Nothing Then ExcelDnaUtil.Application.Workbooks.Add
 
@@ -46,7 +46,7 @@ Public Module ConfigFiles
             Loop Until fileReader.EndOfStream
             fileReader.Close()
         Catch ex As Exception
-            ErrorMsg("Error (" & ex.Message & ") during filling items from config file '" & theFileName & "' in ConfigFiles.loadConfig")
+            ErrorMsg("Error (" + ex.Message + ") during filling items from config file '" + theFileName + "' in ConfigFiles.loadConfig")
         End Try
     End Sub
 
@@ -63,7 +63,7 @@ Public Module ConfigFiles
         Dim restFormula As String = Mid$(tempFormula, InStr(tempFormula, vbTab))
         ' for existing DB Functions DBSetQuery or DBRowFetch...
         ' replace querystring in existing formula of active cell
-        replaceQueryInFormula = "=" & theFunction & "(" & queryString & Replace(restFormula, vbTab, ",")
+        replaceQueryInFormula = "=" + theFunction + "(" + queryString + Replace(restFormula, vbTab, ",")
     End Function
 
     ''' <summary>create a ListObject one cell to the right of TargetCell and insert a dummy cmd sql definition for the listobject table (to be an external source)</summary>
@@ -71,7 +71,7 @@ Public Module ConfigFiles
     Public Function createListObject(TargetCell As Excel.Range) As Object
         Dim createdQueryTable As Object
         Try
-            createdQueryTable = TargetCell.Parent.ListObjects.Add(SourceType:=Excel.XlListObjectSourceType.xlSrcQuery, Source:="OLEDB;" & Globals.ConstConnString, Destination:=TargetCell.Offset(0, 1)).QueryTable
+            createdQueryTable = TargetCell.Parent.ListObjects.Add(SourceType:=Excel.XlListObjectSourceType.xlSrcQuery, Source:="OLEDB;" + Globals.ConstConnString, Destination:=TargetCell.Offset(0, 1)).QueryTable
             With createdQueryTable
                 .CommandType = Excel.XlCmdType.xlCmdSql
                 .CommandText = "select CURRENT_TIMESTAMP" ' this should be sufficient for all ansi sql compliant databases
@@ -88,7 +88,7 @@ Public Module ConfigFiles
                 .Refresh(BackgroundQuery:=False)
             End With
         Catch ex As Exception
-            ErrorMsg("Exception adding listobject query table:" & ex.Message, "Create List Object")
+            ErrorMsg("Exception adding listobject query table:" + ex.Message, "Create List Object")
             createListObject = Nothing
             Exit Function
         End Try
@@ -104,19 +104,19 @@ Public Module ConfigFiles
         Try
             pivotcache = TargetCell.Parent.Parent.PivotCaches().Add(Excel.XlPivotTableSourceType.xlExternal)
             ' only have tested it successfully for OLEDB connections, ODBC seem to have problems...
-            pivotcache.Connection = "OLEDB;" & Globals.ConstConnString
+            pivotcache.Connection = "OLEDB;" + Globals.ConstConnString
             pivotcache.MaintainConnection = False
             pivotcache.CommandText = "select CURRENT_TIMESTAMP" ' this should be sufficient for most databases
             pivotcache.CommandType = Excel.XlCmdType.xlCmdSql
         Catch ex As Exception
-            ErrorMsg("Exception creating pivot cache:" & ex.Message, "Create Pivot Table")
+            ErrorMsg("Exception creating pivot cache:" + ex.Message, "Create Pivot Table")
         End Try
 
         Try
             pivotTables = TargetCell.Parent.PivotTables()
             pivotTables.Add(pivotcache, TargetCell.Offset(1, 0), "PivotTable1")
         Catch ex As Exception
-            ErrorMsg("Exception adding pivot table:" & ex.Message, "Create Pivot Table")
+            ErrorMsg("Exception adding pivot table:" + ex.Message, "Create Pivot Table")
             Exit Sub
         End Try
     End Sub
@@ -154,7 +154,7 @@ Public Module ConfigFiles
                 ' get target cell respecting relative cellToBeStoredAddress starting from originCell
                 Dim TargetCell As Excel.Range = Nothing
                 If Not getRangeFromRelative(originCell, cellToBeStoredAddress, TargetCell) Then
-                    ErrorMsg("Excel Borders would be violated by placing target cell (relative address:" & cellToBeStoredAddress & ")" & vbLf & "Cell content: " & cellToBeStoredContent & vbLf & "Please select different cell !!")
+                    ErrorMsg("Excel Borders would be violated by placing target cell (relative address:" + cellToBeStoredAddress + ")" + vbLf + "Cell content: " + cellToBeStoredContent + vbLf + "Please select different cell !!")
                 End If
 
                 ' finally fill function target cell with function text (relative cell references to target cell) or value
@@ -165,7 +165,7 @@ Public Module ConfigFiles
                         TargetCell.Value = cellToBeStoredContent
                     End If
                 Catch ex As Exception
-                    ErrorMsg("Error in setting Cell: " & ex.Message, "Create functions in cells")
+                    ErrorMsg("Error in setting Cell: " + ex.Message, "Create functions in cells")
                 End Try
             End If
         Next
@@ -245,7 +245,7 @@ Public Module ConfigFiles
         Dim currentBar, button As XElement
 
         If Not Directory.Exists(ConfigStoreFolder) Then
-            ErrorMsg("No predefined config store folder '" & ConfigStoreFolder & "' found, please correct setting and refresh!")
+            ErrorMsg("No predefined config store folder '" + ConfigStoreFolder + "' found, please correct setting and refresh!")
             ConfigMenuXML = "<menu xmlns='http://schemas.microsoft.com/office/2009/07/customui'><button id='refreshDBConfig' label='refresh DBConfig Tree' imageMso='Refresh' onAction='refreshDBConfigTree'/></menu>"
         Else
             ' top level menu
@@ -290,10 +290,10 @@ Public Module ConfigFiles
                     End If
                 Next
                 If spclFolder.Length > 0 Then
-                    Dim firstCharLevel As Boolean = CBool(fetchSetting(spclFolder & "FirstLetterLevel", "False"))
-                    Dim specialConfigStoreSeparator As String = fetchSetting(spclFolder & "Separator", "")
+                    Dim firstCharLevel As Boolean = CBool(fetchSetting(spclFolder + "FirstLetterLevel", "False"))
+                    Dim specialConfigStoreSeparator As String = fetchSetting(spclFolder + "Separator", "")
                     ' max depth limitation by Ribbon: 5 levels: 1 top level, 1 folder level (Database foldername) -> 3 left
-                    specialFolderMaxDepth = IIf(fetchSetting(spclFolder & "MaxDepth", 1) <= 3, fetchSetting(spclFolder & "MaxDepth", 1), 3)
+                    specialFolderMaxDepth = IIf(fetchSetting(spclFolder + "MaxDepth", 1) <= 3, fetchSetting(spclFolder + "MaxDepth", 1), 3)
                     Dim nameParts As String
                     For i = 0 To UBound(fileList)
                         ' is current entry contained in next entry then revert order to allow for containment in next entry's hierarchy..
@@ -301,20 +301,20 @@ Public Module ConfigFiles
                         If i < UBound(fileList) Then
                             If InStr(1, Left$(fileList(i + 1).Name, Len(fileList(i + 1).Name) - 4), Left$(fileList(i).Name, Len(fileList(i).Name) - 4)) > 0 Then
                                 ' first process NEXT alphabetically ordered file
-                                nameParts = stringParts(IIf(firstCharLevel, Left$(fileList(i + 1).Name, 1) & " ", "") &
+                                nameParts = stringParts(IIf(firstCharLevel, Left$(fileList(i + 1).Name, 1) + " ", "") +
                                                             Left$(fileList(i + 1).Name, Len(fileList(i + 1).Name) - 4), specialConfigStoreSeparator)
-                                buildFileSepMenuCtrl(nameParts, currentBar, rootPath & "\" & fileList(i + 1).Name, spclFolder, specialFolderMaxDepth)
+                                buildFileSepMenuCtrl(nameParts, currentBar, rootPath + "\" + fileList(i + 1).Name, spclFolder, specialFolderMaxDepth)
                                 ' then process THIS file
-                                nameParts = stringParts(IIf(firstCharLevel, Left$(fileList(i).Name, 1) & " ", "") &
+                                nameParts = stringParts(IIf(firstCharLevel, Left$(fileList(i).Name, 1) + " ", "") +
                                                             Left$(fileList(i).Name, Len(fileList(i).Name) - 4), specialConfigStoreSeparator)
-                                buildFileSepMenuCtrl(nameParts, currentBar, rootPath & "\" & fileList(i).Name, spclFolder, specialFolderMaxDepth)
+                                buildFileSepMenuCtrl(nameParts, currentBar, rootPath + "\" + fileList(i).Name, spclFolder, specialFolderMaxDepth)
                                 ' skip this and next one
                                 i += 2
                                 If i > UBound(fileList) Then Exit For
                             End If
                         End If
-                        nameParts = stringParts(IIf(firstCharLevel, Left$(fileList(i).Name, 1) & " ", "") & Left$(fileList(i).Name, Len(fileList(i).Name) - 4), specialConfigStoreSeparator)
-                        buildFileSepMenuCtrl(nameParts, currentBar, rootPath & "\" & fileList(i).Name, spclFolder, specialFolderMaxDepth)
+                        nameParts = stringParts(IIf(firstCharLevel, Left$(fileList(i).Name, 1) + " ", "") + Left$(fileList(i).Name, Len(fileList(i).Name) - 4), specialConfigStoreSeparator)
+                        buildFileSepMenuCtrl(nameParts, currentBar, rootPath + "\" + fileList(i).Name, spclFolder, specialFolderMaxDepth)
                     Next
                     ' normal case: just follow the path and enter all entries as buttons
                 Else
@@ -322,8 +322,8 @@ Public Module ConfigFiles
                         newBar = New XElement(xnspace + "button")
                         menuID += 1
                         newBar.SetAttributeValue("id", "m" + menuID.ToString())
-                        newBar.SetAttributeValue("screentip", "click to insert DBListFetch for " & Left$(fileList(i).Name, Len(fileList(i).Name) - 4) & " in active cell")
-                        newBar.SetAttributeValue("tag", rootPath + "\" & fileList(i).Name)
+                        newBar.SetAttributeValue("screentip", "click to insert DBListFetch for " + Left$(fileList(i).Name, Len(fileList(i).Name) - 4) + " in active cell")
+                        newBar.SetAttributeValue("tag", rootPath + "\" + fileList(i).Name)
                         newBar.SetAttributeValue("label", Left$(fileList(i).Name, Len(fileList(i).Name) - 4))
                         newBar.SetAttributeValue("onAction", "getConfig")
                         currentBar.Add(newBar)
@@ -336,16 +336,16 @@ Public Module ConfigFiles
             If DirList.Length = 0 Then Exit Sub
             ' recursively build branched menu structure from dirEntries
             For i = 0 To UBound(DirList)
-                ExcelDnaUtil.Application.StatusBar = "Filling DBConfigs Menu: " & rootPath & "\" & DirList(i).Name
+                ExcelDnaUtil.Application.StatusBar = "Filling DBConfigs Menu: " + rootPath + "\" + DirList(i).Name
                 newBar = New XElement(xnspace + "menu")
                 menuID += 1
                 newBar.SetAttributeValue("id", "m" + menuID.ToString())
                 newBar.SetAttributeValue("label", DirList(i).Name)
                 currentBar.Add(newBar)
-                readAllFiles(rootPath & "\" & DirList(i).Name, newBar)
+                readAllFiles(rootPath + "\" + DirList(i).Name, newBar)
             Next
         Catch ex As Exception
-            ErrorMsg("Error (" & ex.Message & ") in MenuHandler.readAllFiles")
+            ErrorMsg("Error (" + ex.Message + ") in MenuHandler.readAllFiles")
         End Try
     End Sub
 
@@ -365,7 +365,7 @@ Public Module ConfigFiles
                 newBar = New XElement(xnspace + "button")
                 menuID += 1
                 newBar.SetAttributeValue("id", "m" + menuID.ToString())
-                newBar.SetAttributeValue("screentip", "click to insert DBListFetch for " & Left$(entryName, Len(entryName) - 4) & " in active cell")
+                newBar.SetAttributeValue("screentip", "click to insert DBListFetch for " + Left$(entryName, Len(entryName) - 4) + " in active cell")
                 newBar.SetAttributeValue("label", Left$(entryName, Len(entryName) - 4))
                 newBar.SetAttributeValue("tag", fullPathName)
                 newBar.SetAttributeValue("onAction", "getConfig")
@@ -373,22 +373,22 @@ Public Module ConfigFiles
             Else  ' branch node: add new menu, recursively descend
                 Dim newName As String = Left$(nameParts, InStr(1, nameParts, " ") - 1)
                 ' prefix already exists: put new submenu below already existing prefix
-                If specialConfigFoldersTempColl.Contains(newRootName & newName) Then
-                    newBar = specialConfigFoldersTempColl(newRootName & newName)
+                If specialConfigFoldersTempColl.Contains(newRootName + newName) Then
+                    newBar = specialConfigFoldersTempColl(newRootName + newName)
                 Else
                     newBar = New XElement(xnspace + "menu")
                     menuID += 1
                     newBar.SetAttributeValue("id", "m" + menuID.ToString())
                     newBar.SetAttributeValue("label", newName)
-                    specialConfigFoldersTempColl.Add(newBar, newRootName & newName)
+                    specialConfigFoldersTempColl.Add(newBar, newRootName + newName)
                     currentBar.Add(newBar)
                 End If
                 currentDepth += 1
-                buildFileSepMenuCtrl(Mid$(nameParts, InStr(1, nameParts, " ") + 1), newBar, fullPathName, newRootName & newName, specialFolderMaxDepth)
+                buildFileSepMenuCtrl(Mid$(nameParts, InStr(1, nameParts, " ") + 1), newBar, fullPathName, newRootName + newName, specialFolderMaxDepth)
                 currentDepth -= 1
             End If
         Catch ex As Exception
-            ErrorMsg("Error (" & ex.Message & ") in MenuHandler.buildFileSepMenuCtrl")
+            ErrorMsg("Error (" + ex.Message + ") in MenuHandler.buildFileSepMenuCtrl")
         End Try
     End Sub
 
@@ -413,17 +413,17 @@ Public Module ConfigFiles
                     ' underscore also separates camelcase, except preceded by $, - or another underscore
                     If charAsc = 95 Then
                         If Not (pre = 36 Or pre = 45 Or pre = 95) _
-                            Then stringParts &= " "
+                            Then stringParts += " "
                     End If
                     ' Uppercase characters separate unless the are preceding
                     If (charAsc >= 65 And charAsc <= 90) Then
                         If Not (pre >= 65 And pre <= 90) _
                            And Not (pre = 36 Or pre = 45 Or pre = 95) _
                            And Not (pre >= 48 And pre <= 57) _
-                           Then stringParts &= " "
+                           Then stringParts += " "
                     End If
                 End If
-                stringParts &= aChar
+                stringParts += aChar
             Next
             stringParts = LTrim$(Replace(Replace(stringParts, "   ", " "), "  ", " "))
         End If

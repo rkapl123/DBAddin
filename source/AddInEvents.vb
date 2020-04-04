@@ -26,8 +26,6 @@ Public Class AddInEvents
     Shared WithEvents cb4 As Forms.CommandButton
     ''' <summary>CommandButton that can be inserted on a worksheet (name property being the same as the respective target range (for DBMapper/DBAction) or DBSeqnce Name)</summary>
     Shared WithEvents cb5 As Forms.CommandButton
-    ''' <summary>necessary to asynchronously start refresh of db functions after save event</summary>
-    Private aTimer As System.Timers.Timer
 
     ''' <summary>connect to Excel when opening Addin</summary>
     Public Sub AutoOpen() Implements IExcelAddIn.AutoOpen
@@ -118,7 +116,7 @@ done:
                 End If
             Next
         Catch ex As Exception
-            ErrorMsg("Error getting docproperties: " & Wb.Name & ex.Message)
+            ErrorMsg("Error getting docproperties: " + Wb.Name + ex.Message)
         End Try
 
         ' now clear content/all
@@ -144,13 +142,13 @@ done:
                                 ' check which DB functions should be content cleared (CC) or all cleared (CA)
                                 Dim DBFCC As Boolean = False : Dim DBFCA As Boolean = False
                                 DBFCC = DBFCContentColl.Contains("*")
-                                DBFCC = DBFCContentColl.Contains(searchCell.Parent.Name & "!" & Replace(searchCell.Address, "$", "")) Or DBFCC
+                                DBFCC = DBFCContentColl.Contains(searchCell.Parent.Name + "!" + Replace(searchCell.Address, "$", "")) Or DBFCC
                                 DBFCA = DBFCAllColl.Contains("*")
-                                DBFCA = DBFCAllColl.Contains(searchCell.Parent.Name & "!" & Replace(searchCell.Address, "$", "")) Or DBFCA
+                                DBFCA = DBFCAllColl.Contains(searchCell.Parent.Name + "!" + Replace(searchCell.Address, "$", "")) Or DBFCA
                                 Dim theTargetRange As Excel.Range
                                 Try : theTargetRange = ExcelDnaUtil.Application.Range(targetName)
                                 Catch ex As Exception
-                                    LogWarn("Error in finding target range of DB Function " & theFunc & "in " & firstAddress & "), refreshing all DB functions should solve this.")
+                                    LogWarn("Error in finding target range of DB Function " + theFunc + "in " + firstAddress + "), refreshing all DB functions should solve this.")
                                     searchCell = Nothing
                                     searchCell = ws.Cells.Find(What:="", After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
                                     dontCalcWhileClearing = False
@@ -183,7 +181,7 @@ done:
                                             End Sub)
             End If
         Catch ex As Exception
-            ErrorMsg("Error clearing DBfunction targets in Workbook " & Wb.Name & ": " & ex.Message)
+            ErrorMsg("Error clearing DBfunction targets in Workbook " + Wb.Name + ": " + ex.Message)
         End Try
         dontCalcWhileClearing = False
     End Sub
@@ -240,8 +238,8 @@ done:
             Try
                 targetRange = ExcelDnaUtil.Application.ActiveWorkbook.Names.Item(cbName).RefersToRange
             Catch ex As Exception
-                ErrorMsg("No underlying " & Left(cbName, 8) & " Range named " & cbName & " found, exiting without DBModification.")
-                LogWarn("targetRange assignment failed: " & ex.Message)
+                ErrorMsg("No underlying " + Left(cbName, 8) + " Range named " + cbName + " found, exiting without DBModification.")
+                LogWarn("targetRange assignment failed: " + ex.Message)
                 Exit Sub
             End Try
             Dim DBModifName As String = getDBModifNameFromRange(targetRange)
@@ -274,7 +272,7 @@ done:
                 ElseIf IsNothing(cb5) Then
                     cb5 = Sh.OLEObjects(shp.Name).Object
                 Else
-                    ErrorMsg("only max. of five DBModifier Buttons allowed on a Worksheet, currently using " & cb1.Name & "," & cb2.Name & "," & cb3.Name & "," & cb4.Name & " and " & cb5.Name & " !")
+                    ErrorMsg("only max. of five DBModifier Buttons allowed on a Worksheet, currently using " + cb1.Name + "," + cb2.Name + "," + cb3.Name + "," + cb4.Name + " and " + cb5.Name + " !")
                     assignHandler = False
                     Exit For
                 End If
