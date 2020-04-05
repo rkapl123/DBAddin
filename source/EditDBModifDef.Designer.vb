@@ -47,6 +47,7 @@ Partial Class EditDBModifDef
         'CancelBtn
         '
         Me.CancelBtn.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
+        Me.CancelBtn.DialogResult = System.Windows.Forms.DialogResult.Cancel
         Me.CancelBtn.Location = New System.Drawing.Point(599, 396)
         Me.CancelBtn.Name = "CancelBtn"
         Me.CancelBtn.Size = New System.Drawing.Size(55, 23)
@@ -116,7 +117,7 @@ Partial Class EditDBModifDef
         Me.Controls.Add(Me.CancelBtn)
         Me.Controls.Add(Me.OKBtn)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
-        Me.MinimumSize = New System.Drawing.Size(690, 470)
+        Me.MinimumSize = New System.Drawing.Size(690, 493)
         Me.Name = "EditDBModifDef"
         Me.Text = "Edit DBModifier Definitions (CustomXML)"
         Me.ResumeLayout(False)

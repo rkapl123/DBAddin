@@ -24,6 +24,8 @@ Public Module DBSheetConfig
     ''' add one for where clause, then one for each parameter)
     ''' </summary>
     Dim addedCells As Integer
+    ''' <summary>for DBSheetCreateForm, store the password so we don't have to enter it again...</summary>
+    Public existingPwd As String
 
     Public Sub createDBSheet()
         Dim openFileDialog1 As OpenFileDialog = New OpenFileDialog With {

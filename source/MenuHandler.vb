@@ -47,7 +47,7 @@ Public Class MenuHandler
         ' DBSheet Group:
         customUIXml +=
         "<group id='DBSheetGroup' label='DB Sheet creation'>" +
-            "<button id='DBSheetCreate' label='create DBsheet Def' screentip='click to create a new DBSheet or edit an existing definition' imageMso='SlicerCreateNewStyle' onAction='clickCreateDBSheet'/>" +
+            "<button id='DBSheetCreate' label='create DBsheet Def' screentip='click to create a new DBSheet or edit an existing definition' imageMso='TableDesign' onAction='clickCreateDBSheet'/>" +
             "<button id='DBSheetAssign' tag='DBSheet' label='assign DBsheet Def' screentip='click to assign a DBSheet definition to the current cell' imageMso='ChartResetToMatchStyle' onAction='clickCreateButton'/>" +
         "</group>"
         customUIXml += "</tab></tabs></ribbon>"
@@ -214,7 +214,7 @@ Public Class MenuHandler
         If CBool(fetchSetting("DontChangeEnvironment", "False")) Then
             Return "DontChangeEnvironment is set, therefore changing the Environment is prevented !"
         Else
-            Return ""
+            Return "configured for Database Access in %appdata%\Microsoft\Addins\DBaddin.xll.config"
         End If
     End Function
 

@@ -16,15 +16,11 @@ Partial Class DBSheetCreateForm
     Public WithEvents WhereClause As System.Windows.Forms.TextBox
     Public WithEvents Table As System.Windows.Forms.ComboBox
     Public WithEvents clearAllFields As System.Windows.Forms.Button
-    Public WithEvents regenLookupQueries As System.Windows.Forms.Button
-    Public WithEvents moveUp As System.Windows.Forms.Button
-    Public WithEvents moveDown As System.Windows.Forms.Button
     Public WithEvents addAllFields As System.Windows.Forms.Button
-    Public WithEvents testLookupQuery As System.Windows.Forms.Button
     Public WithEvents saveDefs As System.Windows.Forms.Button
     Public WithEvents saveDefsAs As System.Windows.Forms.Button
     Public WithEvents loadDefs As System.Windows.Forms.Button
-    Public WithEvents Label3 As System.Windows.Forms.Label
+    Public WithEvents LWhereParamClause As System.Windows.Forms.Label
     Public WithEvents LTable As System.Windows.Forms.Label
 
     'NOTE: The following procedure is required by the Windows Form Designer
@@ -41,35 +37,41 @@ Partial Class DBSheetCreateForm
         Me.WhereClause = New System.Windows.Forms.TextBox()
         Me.Table = New System.Windows.Forms.ComboBox()
         Me.clearAllFields = New System.Windows.Forms.Button()
-        Me.regenLookupQueries = New System.Windows.Forms.Button()
-        Me.moveUp = New System.Windows.Forms.Button()
-        Me.moveDown = New System.Windows.Forms.Button()
         Me.addAllFields = New System.Windows.Forms.Button()
-        Me.testLookupQuery = New System.Windows.Forms.Button()
         Me.saveDefs = New System.Windows.Forms.Button()
         Me.saveDefsAs = New System.Windows.Forms.Button()
         Me.loadDefs = New System.Windows.Forms.Button()
         Me.Password = New System.Windows.Forms.TextBox()
         Me.Database = New System.Windows.Forms.ComboBox()
-        Me.Label3 = New System.Windows.Forms.Label()
+        Me.LWhereParamClause = New System.Windows.Forms.Label()
         Me.LTable = New System.Windows.Forms.Label()
         Me.DBSheetCols = New System.Windows.Forms.DataGridView()
+        Me.DBSheetColsMoveMenu = New System.Windows.Forms.ContextMenuStrip(Me.components)
+        Me.MoveRowUpToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
+        Me.MoveRowDownToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.LDatabase = New System.Windows.Forms.Label()
-        Me.Label1 = New System.Windows.Forms.Label()
+        Me.LPwd = New System.Windows.Forms.Label()
         Me.LQuery = New System.Windows.Forms.Label()
+        Me.DBSheetColsLookupMenu = New System.Windows.Forms.ContextMenuStrip(Me.components)
+        Me.ToolStripMenuItem3 = New System.Windows.Forms.ToolStripMenuItem()
+        Me.ToolStripMenuItem4 = New System.Windows.Forms.ToolStripMenuItem()
+        Me.ToolStripMenuItem5 = New System.Windows.Forms.ToolStripMenuItem()
         CType(Me.DBSheetCols, System.ComponentModel.ISupportInitialize).BeginInit()
+        Me.DBSheetColsMoveMenu.SuspendLayout()
+        Me.DBSheetColsLookupMenu.SuspendLayout()
         Me.SuspendLayout()
         '
         'createQuery
         '
         Me.createQuery.AllowDrop = True
+        Me.createQuery.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
         Me.createQuery.BackColor = System.Drawing.SystemColors.Control
         Me.createQuery.ForeColor = System.Drawing.SystemColors.ControlText
         Me.createQuery.Location = New System.Drawing.Point(428, 337)
         Me.createQuery.Name = "createQuery"
         Me.createQuery.RightToLeft = System.Windows.Forms.RightToLeft.No
         Me.createQuery.Size = New System.Drawing.Size(133, 24)
-        Me.createQuery.TabIndex = 12
+        Me.createQuery.TabIndex = 14
         Me.createQuery.Text = "create DBSheet &query"
         Me.createQuery.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageAboveText
         Me.ToolTipMain.SetToolTip(Me.createQuery, "create query for DBsheet and foreign lookup informations")
@@ -79,6 +81,8 @@ Partial Class DBSheetCreateForm
         '
         Me.Query.AcceptsReturn = True
         Me.Query.AllowDrop = True
+        Me.Query.Anchor = CType(((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left) _
+            Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.Query.BackColor = System.Drawing.SystemColors.Window
         Me.Query.Cursor = System.Windows.Forms.Cursors.IBeam
         Me.Query.ForeColor = System.Drawing.SystemColors.WindowText
@@ -89,7 +93,7 @@ Partial Class DBSheetCreateForm
         Me.Query.RightToLeft = System.Windows.Forms.RightToLeft.No
         Me.Query.ScrollBars = System.Windows.Forms.ScrollBars.Vertical
         Me.Query.Size = New System.Drawing.Size(840, 164)
-        Me.Query.TabIndex = 14
+        Me.Query.TabIndex = 16
         Me.Query.Text = "__"
         Me.ToolTipMain.SetToolTip(Me.Query, "Query: If needed, modify the query for the DBSheet data being displayed. Attentio" &
         "n: create DBSheet query will destroy all custom information here !!")
@@ -97,13 +101,14 @@ Partial Class DBSheetCreateForm
         'testQuery
         '
         Me.testQuery.AllowDrop = True
+        Me.testQuery.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
         Me.testQuery.BackColor = System.Drawing.SystemColors.Control
         Me.testQuery.ForeColor = System.Drawing.SystemColors.ControlText
         Me.testQuery.Location = New System.Drawing.Point(568, 337)
         Me.testQuery.Name = "testQuery"
         Me.testQuery.RightToLeft = System.Windows.Forms.RightToLeft.No
         Me.testQuery.Size = New System.Drawing.Size(121, 24)
-        Me.testQuery.TabIndex = 13
+        Me.testQuery.TabIndex = 15
         Me.testQuery.Text = "&test DBSheet Query"
         Me.testQuery.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageAboveText
         Me.ToolTipMain.SetToolTip(Me.testQuery, "test the DBSheet query  in a new Excel Sheet...")
@@ -113,6 +118,7 @@ Partial Class DBSheetCreateForm
         '
         Me.WhereClause.AcceptsReturn = True
         Me.WhereClause.AllowDrop = True
+        Me.WhereClause.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.WhereClause.BackColor = System.Drawing.SystemColors.Window
         Me.WhereClause.Cursor = System.Windows.Forms.Cursors.IBeam
         Me.WhereClause.ForeColor = System.Drawing.SystemColors.WindowText
@@ -123,22 +129,23 @@ Partial Class DBSheetCreateForm
         Me.WhereClause.RightToLeft = System.Windows.Forms.RightToLeft.No
         Me.WhereClause.ScrollBars = System.Windows.Forms.ScrollBars.Vertical
         Me.WhereClause.Size = New System.Drawing.Size(250, 164)
-        Me.WhereClause.TabIndex = 15
+        Me.WhereClause.TabIndex = 17
         Me.ToolTipMain.SetToolTip(Me.WhereClause, "Where Parameter Clause: Restrict the data displayed with the Where part of an SQL" &
         " Select statement (enter without ""WHERE"" !).")
         '
         'Table
         '
         Me.Table.AllowDrop = True
+        Me.Table.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.Table.BackColor = System.Drawing.SystemColors.Window
         Me.Table.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
         Me.Table.ForeColor = System.Drawing.SystemColors.WindowText
-        Me.Table.Location = New System.Drawing.Point(51, 37)
+        Me.Table.Location = New System.Drawing.Point(907, 41)
         Me.Table.Name = "Table"
         Me.Table.RightToLeft = System.Windows.Forms.RightToLeft.No
-        Me.Table.Size = New System.Drawing.Size(190, 21)
+        Me.Table.Size = New System.Drawing.Size(194, 21)
         Me.Table.Sorted = True
-        Me.Table.TabIndex = 5
+        Me.Table.TabIndex = 6
         Me.ToolTipMain.SetToolTip(Me.Table, "Main Table of DBSheet: on this table the created DBSheet definition will allow ed" &
         "iting data")
         '
@@ -147,104 +154,41 @@ Partial Class DBSheetCreateForm
         Me.clearAllFields.AllowDrop = True
         Me.clearAllFields.BackColor = System.Drawing.SystemColors.Control
         Me.clearAllFields.ForeColor = System.Drawing.SystemColors.ControlText
-        Me.clearAllFields.Location = New System.Drawing.Point(346, 36)
+        Me.clearAllFields.Location = New System.Drawing.Point(114, 38)
         Me.clearAllFields.Name = "clearAllFields"
         Me.clearAllFields.RightToLeft = System.Windows.Forms.RightToLeft.No
-        Me.clearAllFields.Size = New System.Drawing.Size(96, 24)
-        Me.clearAllFields.TabIndex = 7
+        Me.clearAllFields.Size = New System.Drawing.Size(109, 24)
+        Me.clearAllFields.TabIndex = 8
         Me.clearAllFields.Text = "&clear all Fields"
         Me.clearAllFields.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageAboveText
         Me.ToolTipMain.SetToolTip(Me.clearAllFields, "clear all column definitions in DBsheet")
         Me.clearAllFields.UseVisualStyleBackColor = False
-        '
-        'regenLookupQueries
-        '
-        Me.regenLookupQueries.AllowDrop = True
-        Me.regenLookupQueries.BackColor = System.Drawing.SystemColors.Control
-        Me.regenLookupQueries.ForeColor = System.Drawing.SystemColors.ControlText
-        Me.regenLookupQueries.Location = New System.Drawing.Point(787, 37)
-        Me.regenLookupQueries.Name = "regenLookupQueries"
-        Me.regenLookupQueries.RightToLeft = System.Windows.Forms.RightToLeft.No
-        Me.regenLookupQueries.Size = New System.Drawing.Size(163, 24)
-        Me.regenLookupQueries.TabIndex = 10
-        Me.regenLookupQueries.Text = "re&generate all lookup queries"
-        Me.regenLookupQueries.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageAboveText
-        Me.ToolTipMain.SetToolTip(Me.regenLookupQueries, "regenerate restrictions for foreign table queries")
-        Me.regenLookupQueries.UseVisualStyleBackColor = False
-        '
-        'moveUp
-        '
-        Me.moveUp.AllowDrop = True
-        Me.moveUp.BackColor = System.Drawing.SystemColors.Control
-        Me.moveUp.Font = New System.Drawing.Font("Arial", 11.0!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        Me.moveUp.ForeColor = System.Drawing.SystemColors.ControlText
-        Me.moveUp.Location = New System.Drawing.Point(517, 37)
-        Me.moveUp.Name = "moveUp"
-        Me.moveUp.RightToLeft = System.Windows.Forms.RightToLeft.No
-        Me.moveUp.Size = New System.Drawing.Size(25, 24)
-        Me.moveUp.TabIndex = 8
-        Me.moveUp.Text = "^"
-        Me.moveUp.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageAboveText
-        Me.ToolTipMain.SetToolTip(Me.moveUp, "move column in order of appearance 1 up ")
-        Me.moveUp.UseVisualStyleBackColor = False
-        '
-        'moveDown
-        '
-        Me.moveDown.AllowDrop = True
-        Me.moveDown.BackColor = System.Drawing.SystemColors.Control
-        Me.moveDown.Font = New System.Drawing.Font("Arial", 9.0!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        Me.moveDown.ForeColor = System.Drawing.SystemColors.ControlText
-        Me.moveDown.Location = New System.Drawing.Point(548, 37)
-        Me.moveDown.Name = "moveDown"
-        Me.moveDown.RightToLeft = System.Windows.Forms.RightToLeft.No
-        Me.moveDown.Size = New System.Drawing.Size(24, 24)
-        Me.moveDown.TabIndex = 9
-        Me.moveDown.Text = "v"
-        Me.moveDown.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageAboveText
-        Me.ToolTipMain.SetToolTip(Me.moveDown, "move column in order of appearance 1 down")
-        Me.moveDown.UseVisualStyleBackColor = False
         '
         'addAllFields
         '
         Me.addAllFields.AllowDrop = True
         Me.addAllFields.BackColor = System.Drawing.SystemColors.Control
         Me.addAllFields.ForeColor = System.Drawing.SystemColors.ControlText
-        Me.addAllFields.Location = New System.Drawing.Point(262, 36)
+        Me.addAllFields.Location = New System.Drawing.Point(5, 38)
         Me.addAllFields.Name = "addAllFields"
         Me.addAllFields.RightToLeft = System.Windows.Forms.RightToLeft.No
-        Me.addAllFields.Size = New System.Drawing.Size(78, 24)
-        Me.addAllFields.TabIndex = 6
+        Me.addAllFields.Size = New System.Drawing.Size(103, 24)
+        Me.addAllFields.TabIndex = 7
         Me.addAllFields.Text = "add all &Fields"
         Me.addAllFields.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageAboveText
         Me.ToolTipMain.SetToolTip(Me.addAllFields, "add all columns to DBsheet")
         Me.addAllFields.UseVisualStyleBackColor = False
-        '
-        'testLookupQuery
-        '
-        Me.testLookupQuery.AllowDrop = True
-        Me.testLookupQuery.BackColor = System.Drawing.SystemColors.Control
-        Me.testLookupQuery.CausesValidation = False
-        Me.testLookupQuery.ForeColor = System.Drawing.SystemColors.ControlText
-        Me.testLookupQuery.Location = New System.Drawing.Point(985, 35)
-        Me.testLookupQuery.Name = "testLookupQuery"
-        Me.testLookupQuery.RightToLeft = System.Windows.Forms.RightToLeft.No
-        Me.testLookupQuery.Size = New System.Drawing.Size(116, 25)
-        Me.testLookupQuery.TabIndex = 11
-        Me.testLookupQuery.Text = "test &Lookup Query"
-        Me.testLookupQuery.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageAboveText
-        Me.ToolTipMain.SetToolTip(Me.testLookupQuery, "test Lookup query in a new Excel Sheet...")
-        Me.testLookupQuery.UseVisualStyleBackColor = False
         '
         'saveDefs
         '
         Me.saveDefs.AllowDrop = True
         Me.saveDefs.BackColor = System.Drawing.SystemColors.Control
         Me.saveDefs.ForeColor = System.Drawing.SystemColors.ControlText
-        Me.saveDefs.Location = New System.Drawing.Point(346, 6)
+        Me.saveDefs.Location = New System.Drawing.Point(114, 8)
         Me.saveDefs.Name = "saveDefs"
         Me.saveDefs.RightToLeft = System.Windows.Forms.RightToLeft.No
-        Me.saveDefs.Size = New System.Drawing.Size(109, 23)
-        Me.saveDefs.TabIndex = 3
+        Me.saveDefs.Size = New System.Drawing.Size(109, 24)
+        Me.saveDefs.TabIndex = 4
         Me.saveDefs.Text = "&save DBSheet def"
         Me.saveDefs.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageAboveText
         Me.ToolTipMain.SetToolTip(Me.saveDefs, "save current DB Sheet definition context ")
@@ -255,11 +199,11 @@ Partial Class DBSheetCreateForm
         Me.saveDefsAs.AllowDrop = True
         Me.saveDefsAs.BackColor = System.Drawing.SystemColors.Control
         Me.saveDefsAs.ForeColor = System.Drawing.SystemColors.ControlText
-        Me.saveDefsAs.Location = New System.Drawing.Point(461, 6)
+        Me.saveDefsAs.Location = New System.Drawing.Point(229, 8)
         Me.saveDefsAs.Name = "saveDefsAs"
         Me.saveDefsAs.RightToLeft = System.Windows.Forms.RightToLeft.No
-        Me.saveDefsAs.Size = New System.Drawing.Size(130, 23)
-        Me.saveDefsAs.TabIndex = 4
+        Me.saveDefsAs.Size = New System.Drawing.Size(130, 24)
+        Me.saveDefsAs.TabIndex = 5
         Me.saveDefsAs.Text = "save DBSheet def As..."
         Me.saveDefsAs.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageAboveText
         Me.ToolTipMain.SetToolTip(Me.saveDefsAs, "save current DB Sheet definition context As...")
@@ -270,11 +214,11 @@ Partial Class DBSheetCreateForm
         Me.loadDefs.AllowDrop = True
         Me.loadDefs.BackColor = System.Drawing.SystemColors.Control
         Me.loadDefs.ForeColor = System.Drawing.SystemColors.ControlText
-        Me.loadDefs.Location = New System.Drawing.Point(237, 6)
+        Me.loadDefs.Location = New System.Drawing.Point(5, 8)
         Me.loadDefs.Name = "loadDefs"
         Me.loadDefs.RightToLeft = System.Windows.Forms.RightToLeft.No
-        Me.loadDefs.Size = New System.Drawing.Size(103, 23)
-        Me.loadDefs.TabIndex = 2
+        Me.loadDefs.Size = New System.Drawing.Size(103, 24)
+        Me.loadDefs.TabIndex = 3
         Me.loadDefs.Text = "&load DBSheet def"
         Me.loadDefs.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageAboveText
         Me.ToolTipMain.SetToolTip(Me.loadDefs, "load DB Sheet definitions into current context")
@@ -282,7 +226,8 @@ Partial Class DBSheetCreateForm
         '
         'Password
         '
-        Me.Password.Location = New System.Drawing.Point(992, 9)
+        Me.Password.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
+        Me.Password.Location = New System.Drawing.Point(719, 10)
         Me.Password.Name = "Password"
         Me.Password.PasswordChar = Global.Microsoft.VisualBasic.ChrW(42)
         Me.Password.Size = New System.Drawing.Size(109, 20)
@@ -293,37 +238,40 @@ Partial Class DBSheetCreateForm
         'Database
         '
         Me.Database.AllowDrop = True
+        Me.Database.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.Database.BackColor = System.Drawing.SystemColors.Window
         Me.Database.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
         Me.Database.ForeColor = System.Drawing.SystemColors.WindowText
-        Me.Database.Location = New System.Drawing.Point(787, 8)
+        Me.Database.Location = New System.Drawing.Point(907, 10)
         Me.Database.Name = "Database"
         Me.Database.RightToLeft = System.Windows.Forms.RightToLeft.No
-        Me.Database.Size = New System.Drawing.Size(163, 21)
+        Me.Database.Size = New System.Drawing.Size(194, 21)
         Me.Database.Sorted = True
-        Me.Database.TabIndex = 1
+        Me.Database.TabIndex = 2
         Me.ToolTipMain.SetToolTip(Me.Database, "choose Database to select foreign tables from.")
         '
-        'Label3
+        'LWhereParamClause
         '
-        Me.Label3.AllowDrop = True
-        Me.Label3.AutoSize = True
-        Me.Label3.BackColor = System.Drawing.Color.Transparent
-        Me.Label3.ForeColor = System.Drawing.SystemColors.ControlText
-        Me.Label3.Location = New System.Drawing.Point(848, 348)
-        Me.Label3.Name = "Label3"
-        Me.Label3.RightToLeft = System.Windows.Forms.RightToLeft.No
-        Me.Label3.Size = New System.Drawing.Size(131, 13)
-        Me.Label3.TabIndex = 100
-        Me.Label3.Text = "Where Parameter Clause:"
+        Me.LWhereParamClause.AllowDrop = True
+        Me.LWhereParamClause.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
+        Me.LWhereParamClause.AutoSize = True
+        Me.LWhereParamClause.BackColor = System.Drawing.Color.Transparent
+        Me.LWhereParamClause.ForeColor = System.Drawing.SystemColors.ControlText
+        Me.LWhereParamClause.Location = New System.Drawing.Point(848, 348)
+        Me.LWhereParamClause.Name = "LWhereParamClause"
+        Me.LWhereParamClause.RightToLeft = System.Windows.Forms.RightToLeft.No
+        Me.LWhereParamClause.Size = New System.Drawing.Size(131, 13)
+        Me.LWhereParamClause.TabIndex = 100
+        Me.LWhereParamClause.Text = "Where Parameter Clause:"
         '
         'LTable
         '
         Me.LTable.AllowDrop = True
+        Me.LTable.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.LTable.AutoSize = True
         Me.LTable.BackColor = System.Drawing.Color.Transparent
         Me.LTable.ForeColor = System.Drawing.SystemColors.ControlText
-        Me.LTable.Location = New System.Drawing.Point(12, 40)
+        Me.LTable.Location = New System.Drawing.Point(868, 44)
         Me.LTable.Name = "LTable"
         Me.LTable.RightToLeft = System.Windows.Forms.RightToLeft.No
         Me.LTable.Size = New System.Drawing.Size(33, 13)
@@ -332,50 +280,101 @@ Partial Class DBSheetCreateForm
         '
         'DBSheetCols
         '
+        Me.DBSheetCols.Anchor = CType((((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
+            Or System.Windows.Forms.AnchorStyles.Left) _
+            Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.DBSheetCols.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize
         Me.DBSheetCols.Location = New System.Drawing.Point(5, 68)
+        Me.DBSheetCols.MultiSelect = False
         Me.DBSheetCols.Name = "DBSheetCols"
         Me.DBSheetCols.Size = New System.Drawing.Size(1096, 258)
-        Me.DBSheetCols.TabIndex = 10
+        Me.DBSheetCols.TabIndex = 13
+        Me.ToolTipMain.SetToolTip(Me.DBSheetCols, "Select one or more columns (fields) adding possible foreign key lookup informatio" &
+        "n in foreign tables")
+        '
+        'DBSheetColsMoveMenu
+        '
+        Me.DBSheetColsMoveMenu.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.MoveRowUpToolStripMenuItem, Me.MoveRowDownToolStripMenuItem})
+        Me.DBSheetColsMoveMenu.Name = "DBSheetColsContextMenu"
+        Me.DBSheetColsMoveMenu.Size = New System.Drawing.Size(161, 48)
+        '
+        'MoveRowUpToolStripMenuItem
+        '
+        Me.MoveRowUpToolStripMenuItem.Name = "MoveRowUpToolStripMenuItem"
+        Me.MoveRowUpToolStripMenuItem.Size = New System.Drawing.Size(160, 22)
+        Me.MoveRowUpToolStripMenuItem.Text = "move row up"
+        '
+        'MoveRowDownToolStripMenuItem
+        '
+        Me.MoveRowDownToolStripMenuItem.Name = "MoveRowDownToolStripMenuItem"
+        Me.MoveRowDownToolStripMenuItem.Size = New System.Drawing.Size(160, 22)
+        Me.MoveRowDownToolStripMenuItem.Text = "move row down"
         '
         'LDatabase
         '
         Me.LDatabase.AllowDrop = True
+        Me.LDatabase.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.LDatabase.AutoSize = True
         Me.LDatabase.BackColor = System.Drawing.Color.Transparent
         Me.LDatabase.ForeColor = System.Drawing.SystemColors.ControlText
-        Me.LDatabase.Location = New System.Drawing.Point(728, 11)
+        Me.LDatabase.Location = New System.Drawing.Point(848, 13)
         Me.LDatabase.Name = "LDatabase"
         Me.LDatabase.RightToLeft = System.Windows.Forms.RightToLeft.No
         Me.LDatabase.Size = New System.Drawing.Size(53, 13)
         Me.LDatabase.TabIndex = 100
         Me.LDatabase.Text = "Database"
         '
-        'Label1
+        'LPwd
         '
-        Me.Label1.AllowDrop = True
-        Me.Label1.AutoSize = True
-        Me.Label1.BackColor = System.Drawing.Color.Transparent
-        Me.Label1.ForeColor = System.Drawing.SystemColors.ControlText
-        Me.Label1.Location = New System.Drawing.Point(956, 11)
-        Me.Label1.Name = "Label1"
-        Me.Label1.RightToLeft = System.Windows.Forms.RightToLeft.No
-        Me.Label1.Size = New System.Drawing.Size(27, 13)
-        Me.Label1.TabIndex = 100
-        Me.Label1.Text = "Pwd"
+        Me.LPwd.AllowDrop = True
+        Me.LPwd.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
+        Me.LPwd.AutoSize = True
+        Me.LPwd.BackColor = System.Drawing.Color.Transparent
+        Me.LPwd.ForeColor = System.Drawing.SystemColors.ControlText
+        Me.LPwd.Location = New System.Drawing.Point(686, 12)
+        Me.LPwd.Name = "LPwd"
+        Me.LPwd.RightToLeft = System.Windows.Forms.RightToLeft.No
+        Me.LPwd.Size = New System.Drawing.Size(27, 13)
+        Me.LPwd.TabIndex = 100
+        Me.LPwd.Text = "Pwd"
         '
         'LQuery
         '
         Me.LQuery.AllowDrop = True
+        Me.LQuery.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
         Me.LQuery.AutoSize = True
         Me.LQuery.BackColor = System.Drawing.Color.Transparent
         Me.LQuery.ForeColor = System.Drawing.SystemColors.ControlText
-        Me.LQuery.Location = New System.Drawing.Point(12, 343)
+        Me.LQuery.Location = New System.Drawing.Point(12, 348)
         Me.LQuery.Name = "LQuery"
         Me.LQuery.RightToLeft = System.Windows.Forms.RightToLeft.No
         Me.LQuery.Size = New System.Drawing.Size(85, 13)
         Me.LQuery.TabIndex = 100
         Me.LQuery.Text = "DBSheet Query:"
+        '
+        'DBSheetColsLookupMenu
+        '
+        Me.DBSheetColsLookupMenu.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.ToolStripMenuItem3, Me.ToolStripMenuItem4, Me.ToolStripMenuItem5})
+        Me.DBSheetColsLookupMenu.Name = "DBSheetColsContextMenu"
+        Me.DBSheetColsLookupMenu.Size = New System.Drawing.Size(247, 70)
+        '
+        'ToolStripMenuItem3
+        '
+        Me.ToolStripMenuItem3.Name = "ToolStripMenuItem3"
+        Me.ToolStripMenuItem3.Size = New System.Drawing.Size(246, 22)
+        Me.ToolStripMenuItem3.Text = "regenerate lookup query/queries"
+        '
+        'ToolStripMenuItem4
+        '
+        Me.ToolStripMenuItem4.Name = "ToolStripMenuItem4"
+        Me.ToolStripMenuItem4.Size = New System.Drawing.Size(246, 22)
+        Me.ToolStripMenuItem4.Text = "test lookup query"
+        '
+        'ToolStripMenuItem5
+        '
+        Me.ToolStripMenuItem5.Name = "ToolStripMenuItem5"
+        Me.ToolStripMenuItem5.Size = New System.Drawing.Size(246, 22)
+        Me.ToolStripMenuItem5.Text = "remove lookup query test"
         '
         'DBSheetCreateForm
         '
@@ -385,7 +384,7 @@ Partial Class DBSheetCreateForm
         Me.BackColor = System.Drawing.SystemColors.Control
         Me.ClientSize = New System.Drawing.Size(1113, 543)
         Me.Controls.Add(Me.LQuery)
-        Me.Controls.Add(Me.Label1)
+        Me.Controls.Add(Me.LPwd)
         Me.Controls.Add(Me.LDatabase)
         Me.Controls.Add(Me.Database)
         Me.Controls.Add(Me.Password)
@@ -396,27 +395,23 @@ Partial Class DBSheetCreateForm
         Me.Controls.Add(Me.WhereClause)
         Me.Controls.Add(Me.Table)
         Me.Controls.Add(Me.clearAllFields)
-        Me.Controls.Add(Me.regenLookupQueries)
-        Me.Controls.Add(Me.moveUp)
-        Me.Controls.Add(Me.moveDown)
         Me.Controls.Add(Me.addAllFields)
-        Me.Controls.Add(Me.testLookupQuery)
         Me.Controls.Add(Me.saveDefs)
         Me.Controls.Add(Me.saveDefsAs)
         Me.Controls.Add(Me.loadDefs)
-        Me.Controls.Add(Me.Label3)
+        Me.Controls.Add(Me.LWhereParamClause)
         Me.Controls.Add(Me.LTable)
         Me.Font = New System.Drawing.Font("Tahoma", 8.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.Location = New System.Drawing.Point(3, 22)
-        Me.MaximizeBox = False
-        Me.MinimizeBox = False
+        Me.MinimumSize = New System.Drawing.Size(1129, 582)
         Me.Name = "DBSheetCreateForm"
         Me.RightToLeft = System.Windows.Forms.RightToLeft.No
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent
         Me.Text = "DB Sheet creation"
         CType(Me.DBSheetCols, System.ComponentModel.ISupportInitialize).EndInit()
+        Me.DBSheetColsMoveMenu.ResumeLayout(False)
+        Me.DBSheetColsLookupMenu.ResumeLayout(False)
         Me.ResumeLayout(False)
         Me.PerformLayout()
 
@@ -426,7 +421,14 @@ Partial Class DBSheetCreateForm
     Friend WithEvents Password As Windows.Forms.TextBox
     Public WithEvents Database As Windows.Forms.ComboBox
     Public WithEvents LDatabase As Windows.Forms.Label
-    Public WithEvents Label1 As Windows.Forms.Label
+    Public WithEvents LPwd As Windows.Forms.Label
     Public WithEvents LQuery As Windows.Forms.Label
+    Friend WithEvents DBSheetColsMoveMenu As Windows.Forms.ContextMenuStrip
+    Friend WithEvents MoveRowUpToolStripMenuItem As Windows.Forms.ToolStripMenuItem
+    Friend WithEvents MoveRowDownToolStripMenuItem As Windows.Forms.ToolStripMenuItem
+    Friend WithEvents DBSheetColsLookupMenu As Windows.Forms.ContextMenuStrip
+    Friend WithEvents ToolStripMenuItem3 As Windows.Forms.ToolStripMenuItem
+    Friend WithEvents ToolStripMenuItem4 As Windows.Forms.ToolStripMenuItem
+    Friend WithEvents ToolStripMenuItem5 As Windows.Forms.ToolStripMenuItem
 #End Region
 End Class
