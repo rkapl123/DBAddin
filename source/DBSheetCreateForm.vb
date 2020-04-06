@@ -280,7 +280,7 @@ Public Class DBSheetCreateForm
         Try
             ' avoid moving up of first row
             If selRowIndex = 0 Then Return
-            If DBSheetCols.Rows(selRowIndex + 1).Cells("primkey").Value And Not DBSheetCols.Rows(selRowIndex).Cells("primkey").Value Then
+            If DBSheetCols.Rows(selRowIndex - 1).Cells("primkey").Value And Not DBSheetCols.Rows(selRowIndex).Cells("primkey").Value Then
                 ErrorMsg("All primary keys have to be first and there is a primary key column that would be shifted below this non-primary one !", "DBSheet Definition Warning")
                 Exit Sub
             End If
@@ -679,7 +679,7 @@ Public Class DBSheetCreateForm
         If queryStr <> "" Then Query.Text = queryStr
     End Sub
 
-    ''' <summary>test the final DBSheet Main query</summary>
+    ''' <summary>test the final DBSheet Main query or remove the test query sheet/workbook</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub testQuery_Click(ByVal sender As Object, ByVal e As EventArgs) Handles testQuery.Click
@@ -707,6 +707,7 @@ Public Class DBSheetCreateForm
     ''' <param name="theQueryText"></param>
     ''' <param name="isLookupQuery"></param>
     Private Sub testTheQuery(ByVal theQueryText As String, Optional ByRef isLookupQuery As Boolean = False)
+        theQueryText = theQueryText.Replace(vbCrLf, " ").Replace(vbLf, " ")
         If isLookupQuery Then
             ' replace tblPlaceHolder with a more SQL compatible name..
             theQueryText = quotedReplace(theQueryText, "FT")
@@ -714,29 +715,23 @@ Public Class DBSheetCreateForm
             ' quoted replace of "?" with parameter values
             ' needs splitting of WhereClause by quotes !
             ' only for main query !!
-            Dim teststr() As String = Split(WhereClause.Text, "'")
-            Dim whereStr As String = ""
-            Dim subresult As String
+            Dim whereClauseText As String = WhereClause.Text.Replace(vbCrLf, " ").Replace(vbLf, " ")
+            Dim replacedStr As String = whereClauseText
             Dim j As Integer = 1
-            For i As Integer = 0 To UBound(teststr)
-                If i Mod 2 = 0 Then
-                    Dim replacedStr As String = teststr(i)
-                    Dim questionMarkLoc As Integer = InStr(1, replacedStr, "?")
-                    While questionMarkLoc > 0
-                        Dim paramVal As String = InputBox("Value for parameter " + j.ToString + " ?", "Enter parameter values..")
-                        If Len(paramVal) = 0 Then Exit Sub
-                        replacedStr = Strings.Mid(replacedStr, 1, questionMarkLoc - 1) + paramVal + Strings.Mid(replacedStr, questionMarkLoc + 1)
-                        j += 1
-                    End While
-                    subresult = replacedStr
-                Else
-                    subresult = teststr(i)
-                End If
-                whereStr += subresult + If(i < UBound(teststr), "'", "")
-            Next
-            theQueryText.Replace(WhereClause.Text, whereStr)
+            While InStr(1, replacedStr, "?") > 0
+                Dim questionMarkLoc As Integer = InStr(1, replacedStr, "?")
+                Dim paramVal As String = InputBox("Value for parameter " + j.ToString + " ?", "Enter parameter values..")
+                If Len(paramVal) = 0 Then Exit Sub
+                replacedStr = Strings.Mid(replacedStr, 1, questionMarkLoc - 1) + paramVal + Strings.Mid(replacedStr, questionMarkLoc + 1)
+                j += 1
+            End While
+            If InStr(theQueryText, whereClauseText) = 0 Then
+                ErrorMsg("Didn't find where clause " + whereClauseText + " in theQueryText: " + theQueryText + vbCrLf + "maybe creating DBSheet query again helps..")
+                Exit Sub
+            Else
+                theQueryText = Replace(theQueryText, whereClauseText, replacedStr)
+            End If
         End If
-        theQueryText = theQueryText.Replace(vbCrLf, " ").Replace(vbLf, " ")
         Try
             ExcelDnaUtil.Application.SheetsInNewWorkbook = 1
             Dim newWB As Excel.Workbook = ExcelDnaUtil.Application.Workbooks.Add
@@ -744,7 +739,7 @@ Public Class DBSheetCreateForm
             Preview.Cells(1, 2).Value = theQueryText
             Preview.Cells(1, 2).WrapText = False
             ' create a DBListFetch with the query 
-            ConfigFiles.createFunctionsInCells(Preview.Cells(1, 1), {"RC", "=DBListFetch(RC[1],"""",R[1]C,,,true)"})
+            ConfigFiles.createFunctionsInCells(Preview.Cells(1, 1), {"RC", "=DBListFetch(RC[1], """", R[1]C,,,True)"})
             newWB.Saved = True
             If isLookupQuery Then
                 Preview.Name = "TESTSHEET"
@@ -754,7 +749,7 @@ Public Class DBSheetCreateForm
             End If
             Exit Sub
         Catch ex As System.Exception
-            ErrorMsg("Exception in testTheQuery: " + ex.Message)
+            ErrorMsg("Exception In testTheQuery: " + ex.Message)
         End Try
     End Sub
 
