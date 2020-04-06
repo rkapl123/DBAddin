@@ -580,7 +580,6 @@ Public Class DBMapper : Inherits DBModif
                 Exit Sub
             End If
             ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = False ' to prevent automatic creation of new column
-            'TODO: when deleting last row, CUD Flag still visible...
             TargetRange.Columns(TargetRange.Columns.Count + 1).ClearContents
             TargetRange.Font.Italic = False
             TargetRange.Font.Strikethrough = False
@@ -841,27 +840,25 @@ nextRow:
 cleanup:
         ExcelDnaUtil.Application.StatusBar = False
         ' close connection to return it to the pool (automatically closes recordset objects)...
-        If calledByDBSeq = "" Then
-            dbcnn.Close()
-        End If
+        If calledByDBSeq = "" Then dbcnn.Close()
         ' DBSheet surrogate (CUDFlags), ask for refresh after DB Modification was done
         If changesDone Then
             Dim DBFunctionSrcExtent = getDBunderlyingNameFromRange(TargetRange)
             If DBFunctionSrcExtent <> "" Then
                 If CUDFlags Then
+                    ' also resetCUDFlags for CUDFlags DBMapper that do not ask before execute and were called by a DBSequence
+                    Try
+                        ' reset CUDFlags before refresh to avoid problems with reduced TargetRange due to deletions!
+                        resetCUDFlags()
+                    Catch ex As Exception
+                        ErrorMsg("Error in resetting CUD Flags: " + ex.Message, "DBMapper Error")
+                    End Try
                     If askBeforeExecute AndAlso calledByDBSeq = "" Then
                         Dim retval As MsgBoxResult = QuestionMsg(theMessage:="Refresh Data Range of DB Mapper '" + dbmodifName + "' ?", questionTitle:="Refresh DB Mapper")
                         If retval = vbOK Then
                             doDBRefresh(Replace(DBFunctionSrcExtent, "DBFtarget", "DBFsource"))
                             ' clear CUD marks after completion is done with doDBRefresh/DBSetQueryAction/resizeDBMapperRange
                         End If
-                        ' also resetCUDFlags for CUDFlags DBMapper that do not ask before execute and were called by a DBSequence
-                    ElseIf Not askBeforeExecute Then
-                        Try
-                            resetCUDFlags()
-                        Catch ex As Exception
-                            ErrorMsg("Error in resetting CUD Flags: " + ex.Message, "DBMapper Error")
-                        End Try
                     End If
                 End If
             End If

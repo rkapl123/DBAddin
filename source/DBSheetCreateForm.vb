@@ -106,7 +106,7 @@ Public Class DBSheetCreateForm
                 }
         Dim sortCB As DataGridViewComboBoxColumn = New DataGridViewComboBoxColumn With {
                     .Name = "sort",
-                    .DataSource = New List(Of String)({"None", "Ascending", "Descending"}),
+                    .DataSource = New List(Of String)({"", "ASC", "DESC"}),
                     .HeaderText = "sort",
                     .DataPropertyName = "sort"
                 }
@@ -156,7 +156,7 @@ Public Class DBSheetCreateForm
         Try
             fillDatabases(Database)
         Catch ex As System.Exception
-            ErrorMsg("Error: " + ex.Message)
+            ErrorMsg("Exception in fillDatabases: " + ex.Message)
             Exit Sub
         End Try
         Me.Text = "DB Sheet creation: Select Database and Table to start building a DBSheet Definition"
@@ -184,7 +184,7 @@ Public Class DBSheetCreateForm
             DBSheetCols.Rows.Clear()
             FormDisabled = False
         Catch ex As System.Exception
-            ErrorMsg("Error: " + ex.Message, "Database_SelectedIndexChanged")
+            ErrorMsg("Exception in Database_SelectedIndexChanged: " + ex.Message)
         End Try
     End Sub
 
@@ -204,7 +204,7 @@ Public Class DBSheetCreateForm
             fillForTables()
             FormDisabled = False
         Catch ex As System.Exception
-            ErrorMsg("Error: " + ex.Message)
+            ErrorMsg("Exception in Table_SelectedIndexChanged: " + ex.Message)
         End Try
         Me.Text = "DB Sheet creation: Select one or more columns (fields) adding possible foreign key lookup information in foreign tables, finally click create query to finish DBSheet definition"
     End Sub
@@ -220,13 +220,20 @@ Public Class DBSheetCreateForm
             fillForTables()
             ' ..and column type
             DBSheetCols.Rows(selIndex).Cells("ColType").Value = TableDataTypes(DBSheetCols.Rows(selIndex).Cells("name").Value)
+            DBSheetCols.AutoResizeColumns()
             ' if first column then always primary key!
             If selIndex = 0 Then DBSheetCols.Rows(selIndex).Cells("primkey").Value = True
         ElseIf eventArgs.ColumnIndex = 1 Then         ' ftable column -> fill fkey and flookup
-            Dim colnameList As List(Of String) = getforeignTableColumns(DBSheetCols.Rows(selIndex).Cells("ftable").Value)
             FormDisabled = True
-            DirectCast(DBSheetCols.Rows(selIndex).Cells("fkey"), DataGridViewComboBoxCell).DataSource = colnameList
-            DirectCast(DBSheetCols.Rows(selIndex).Cells("flookup"), DataGridViewComboBoxCell).DataSource = colnameList
+            If DBSheetCols.Rows(selIndex).Cells("ftable").Value.ToString = "" Then
+                DirectCast(DBSheetCols.Rows(selIndex).Cells("fkey"), DataGridViewComboBoxCell).DataSource = Nothing
+                DirectCast(DBSheetCols.Rows(selIndex).Cells("flookup"), DataGridViewComboBoxCell).DataSource = Nothing
+            Else
+                Dim colnameList As List(Of String) = getforeignTableColumns(DBSheetCols.Rows(selIndex).Cells("ftable").Value.ToString)
+                DirectCast(DBSheetCols.Rows(selIndex).Cells("fkey"), DataGridViewComboBoxCell).DataSource = colnameList
+                DirectCast(DBSheetCols.Rows(selIndex).Cells("flookup"), DataGridViewComboBoxCell).DataSource = colnameList
+            End If
+            DBSheetCols.AutoResizeColumns()
             FormDisabled = False
         ElseIf eventArgs.ColumnIndex = 5 Then ' primkey column
             Try
@@ -248,7 +255,7 @@ Public Class DBSheetCreateForm
                     DBSheetCols.Rows(selIndex).Cells("primkey").Value = True
                 End If
             Catch ex As System.Exception
-                ErrorMsg("Error: " + ex.Message)
+                ErrorMsg("Exception in DBSheetCols_CellValueChanged: " + ex.Message)
             End Try
         End If
     End Sub
@@ -297,7 +304,7 @@ Public Class DBSheetCreateForm
             DBSheetCols.CurrentCell = DBSheetCols.Rows(selRowIndex - 1).Cells(0)
             DBSheetCols.Rows(selRowIndex - 1).Selected = True
         Catch ex As System.Exception
-            ErrorMsg("Error: " + ex.Message)
+            ErrorMsg("Exception in MoveRowUpToolStripMenuItem_Click: " + ex.Message)
         End Try
         FormDisabled = False
     End Sub
@@ -322,7 +329,7 @@ Public Class DBSheetCreateForm
             DBSheetCols.CurrentCell = DBSheetCols.Rows(selRowIndex + 1).Cells(0)
             DBSheetCols.Rows(selRowIndex + 1).Selected = True
         Catch ex As System.Exception
-            ErrorMsg("Error: " + ex.Message)
+            ErrorMsg("Exception in MoveRowDownToolStripMenuItem_Click: " + ex.Message)
         End Try
         FormDisabled = False
     End Sub
@@ -341,9 +348,11 @@ Public Class DBSheetCreateForm
                     DBSheetCols.Rows(i).Cells("lookup").Value = "SELECT " + DBSheetCols.Rows(i).Cells("flookup").Value.ToString + "," + DBSheetCols.Rows(i).Cells("fkey").Value.ToString + " FROM " + DBSheetCols.Rows(i).Cells("ftable").Value.ToString + " ORDER BY " + DBSheetCols.Rows(i).Cells("flookup").Value.ToString
                 End If
             Next
+            DBSheetCols.AutoResizeColumns()
         Else
             If DBSheetCols.Rows(selRowIndex).Cells("ftable").Value.ToString <> "" And DBSheetCols.Rows(selRowIndex).Cells("fkey").Value.ToString <> "" And DBSheetCols.Rows(selRowIndex).Cells("flookup").Value.ToString <> "" Then
                 DBSheetCols.Rows(selRowIndex).Cells("lookup").Value = "SELECT " + DBSheetCols.Rows(selRowIndex).Cells("flookup").Value.ToString + "," + DBSheetCols.Rows(selRowIndex).Cells("fkey").Value.ToString + " FROM " + DBSheetCols.Rows(selRowIndex).Cells("ftable").Value.ToString + " ORDER BY " + DBSheetCols.Rows(selRowIndex).Cells("flookup").Value.ToString
+                DBSheetCols.AutoResizeColumns()
             Else
                 ErrorMsg("No lookup query to regenerate as foreign keys are not (fully) defined for field " + DBSheetCols.Rows(selRowIndex).Cells("name").Value)
             End If
@@ -402,6 +411,7 @@ Public Class DBSheetCreateForm
                     theDBSheetDefTable.Add(newRow)
                 Next
                 DBSheetCols.DataSource = theDBSheetDefTable
+                DBSheetCols.AutoResizeColumns()
             Catch ex As Exception
                 ErrorMsg("Could not get schema information for table fields with query: '" + selectStmt + "', error: " + ex.Message)
             End Try
@@ -410,7 +420,7 @@ Public Class DBSheetCreateForm
             ' after changing the column no more change to table allowed !!
             TableEditable(False)
         Catch ex As System.Exception
-            ErrorMsg("Error: " + ex.Message)
+            ErrorMsg("Exception in addAllFields_Click: " + ex.Message)
         End Try
     End Sub
 
@@ -431,35 +441,6 @@ Public Class DBSheetCreateForm
         currentFilepath = ""
         saveEnabled(False)
         DBSheetColsEditable(False)
-    End Sub
-
-    ''' <summary>moves selected row up</summary>
-    ''' <param name="eventSender"></param>
-    ''' <param name="eventArgs"></param>
-    Private Sub moveUp_Click(ByVal eventSender As Object, ByVal eventArgs As EventArgs)
-
-    End Sub
-
-    ''' <summary>moves selected row down</summary>
-    ''' <param name="eventSender"></param>
-    ''' <param name="eventArgs"></param>
-    Private Sub moveDown_Click(ByVal eventSender As Object, ByVal eventArgs As EventArgs)
-        Try
-            Dim selIndex As Integer = DBSheetCols.CurrentRow.Index
-            ' avoid moving down of last row, DBSeqenceDataGrid.Rows.Count is 1 more than the actual inserted rows because of the "new" row, selIndex is 0 based
-            If Not DBSheetCols.CurrentRow.Selected Or selIndex = DBSheetCols.Rows.Count - 2 Then Exit Sub
-            If Not DBSheetCols.Rows(selIndex + 1).Cells("primkey").Value And DBSheetCols.Rows(selIndex).Cells("primkey").Value Then
-                ErrorMsg("All primary keys have to be first and there is a non primary key column that would be shifted above this primary one !", "DBSheet Definition Warning")
-                Exit Sub
-            End If
-            If IsNothing(DBSheetCols.CurrentRow) Then Return
-            Dim rw As DataGridViewRow = DBSheetCols.CurrentRow
-            DBSheetCols.Rows.RemoveAt(selIndex)
-            DBSheetCols.Rows.Insert(selIndex + 1, rw)
-            DBSheetCols.Rows(selIndex + 1).Cells(0).Selected = True
-        Catch ex As System.Exception
-            ErrorMsg("Error: " + ex.Message)
-        End Try
     End Sub
 
     Private TableDataTypes As Dictionary(Of String, String)
@@ -617,6 +598,7 @@ Public Class DBSheetCreateForm
     ''' <param name="eventSender"></param>
     ''' <param name="eventArgs"></param>
     Private Sub createQuery_Click(ByVal eventSender As Object, ByVal eventArgs As EventArgs) Handles createQuery.Click
+        testQuery.Text = "test DBSheet Query"
         If DBSheetCols.Rows.Count = 0 Then
             ErrorMsg("No columns defined yet, can't create Query !", "DBSheet Definition Error")
             Exit Sub
@@ -624,7 +606,7 @@ Public Class DBSheetCreateForm
         Dim retval As DialogResult = QuestionMsg("regenerating DBSheet Query, overwriting all customizations there !", MessageBoxButtons.OKCancel, "DBSheet Definition Warning", MessageBoxIcon.Exclamation)
         If retval = MsgBoxResult.Cancel Then Exit Sub
         Dim queryStr As String = createTheQuery()
-        If Strings.Len(queryStr) > 0 Then Query.Text = queryStr
+        If queryStr <> "" Then Query.Text = queryStr
     End Sub
 
     ''' <summary>test the final DBSheet Main query</summary>
@@ -632,22 +614,22 @@ Public Class DBSheetCreateForm
     ''' <param name="eventArgs"></param>
     Private Sub testQuery_Click(ByVal eventSender As Object, ByVal eventArgs As EventArgs) Handles testQuery.Click
         Try
-            If Strings.Len(Query.Text) > 0 Then
+            If Query.Text <> "" Then
                 If testQuery.Text = "test DBSheet Query" Then
                     testTheQuery(Query.Text)
                 ElseIf testQuery.Text = "remove Testsheet" Then
                     If ExcelDnaUtil.Application.ActiveSheet.Name <> "TESTSHEETQ" Then
-                        MessageBox.Show("Active sheet doesn't seem to be a query test sheet !!!", "DBAddin: DBSheet Testsheet Remove Warning", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+                        ErrorMsg("Active sheet doesn't seem to be a query test sheet !", "DBSheet Testsheet Remove Warning", MessageBoxIcon.Exclamation)
                     Else
                         ExcelDnaUtil.Application.ActiveWorkbook.Close(False)
                     End If
                     testQuery.Text = "test DBSheet Query"
                 End If
             Else
-                MessageBox.Show("No Query created to test !!!", "DBAddin: DBSheet Query Test Warning", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+                ErrorMsg("No Query created to test !!!", "DBSheet Query Test Warning", MessageBoxIcon.Exclamation)
             End If
         Catch ex As System.Exception
-            ErrorMsg("Error: " + ex.Message)
+            ErrorMsg("Exception in testQuery_Click: " + ex.Message)
         End Try
     End Sub
 
@@ -655,25 +637,24 @@ Public Class DBSheetCreateForm
     ''' <param name="theQueryText"></param>
     ''' <param name="isLookupQuery"></param>
     Private Sub testTheQuery(ByVal theQueryText As String, Optional ByRef isLookupQuery As Boolean = False)
-        theQueryText = theQueryText.Replace(vbCrLf, " ").Replace(vbLf, " ")
-        If isLookupQuery Then theQueryText = quotedReplace(theQueryText, "FT")
-        ' quoted replace of "?" with parameter values
-        ' needs splitting of WhereClause by quotes !
-        ' only for main query !!
-        If Not isLookupQuery Then
+        If isLookupQuery Then
+            ' replace tblPlaceHolder with a more SQL compatible name..
+            theQueryText = quotedReplace(theQueryText, "FT")
+        Else
+            ' quoted replace of "?" with parameter values
+            ' needs splitting of WhereClause by quotes !
+            ' only for main query !!
             Dim teststr() As String = Split(WhereClause.Text, "'")
-            Dim whereStr As String = vbNullString
-            Dim j, i As Integer
+            Dim whereStr As String = ""
             Dim subresult As String
-            j = 1
-            For i = 0 To UBound(teststr)
+            Dim j As Integer = 1
+            For i As Integer = 0 To UBound(teststr)
                 If i Mod 2 = 0 Then
                     Dim replacedStr As String = teststr(i)
-                    While InStr(1, replacedStr, "?")
+                    Dim questionMarkLoc As Integer = InStr(1, replacedStr, "?")
+                    While questionMarkLoc > 0
                         Dim paramVal As String = InputBox("Value for parameter " + j.ToString + " ?", "Enter parameter values..")
                         If Len(paramVal) = 0 Then Exit Sub
-                        Dim questionMarkLoc As Integer
-                        questionMarkLoc = InStr(1, replacedStr, "?")
                         replacedStr = Strings.Mid(replacedStr, 1, questionMarkLoc - 1) + paramVal + Strings.Mid(replacedStr, questionMarkLoc + 1)
                         j += 1
                     End While
@@ -681,35 +662,20 @@ Public Class DBSheetCreateForm
                 Else
                     subresult = teststr(i)
                 End If
-                whereStr = whereStr + subresult + IIf(i < UBound(teststr), "'", "")
+                whereStr += subresult + If(i < UBound(teststr), "'", "")
             Next
+            theQueryText.Replace(WhereClause.Text, whereStr)
         End If
-        Dim rst As DataSet = New DataSet()
-        Try
-            Dim adap As OdbcDataAdapter = New OdbcDataAdapter(theQueryText, dbshcnn)
-            rst.Tables.Clear()
-            adap.Fill(rst)
-        Catch ex As Exception
-            LogWarn("Error in query: " + theQueryText + vbCrLf + ex.Message)
-            Exit Sub
-        End Try
+        theQueryText = theQueryText.Replace(vbCrLf, " ").Replace(vbLf, " ")
         Try
             ExcelDnaUtil.Application.SheetsInNewWorkbook = 1
             Dim newWB As Excel.Workbook = ExcelDnaUtil.Application.Workbooks.Add
             Dim Preview As Excel.Worksheet = newWB.Sheets(1)
-            Preview.Select()
-            With Preview.QueryTables.Add(rst, Preview.Range("A1"))
-                .FieldNames = True
-                .AdjustColumnWidth = True
-                .RefreshStyle = Excel.XlCellInsertionMode.xlOverwriteCells
-                .RefreshPeriod = 0
-                .PreserveColumnInfo = True
-                .Refresh()
-                .Delete()
-            End With
-            rst = Nothing
+            Preview.Cells(1, 2).Value = theQueryText
+            Preview.Cells(1, 2).WrapText = False
+            ' create a DBListFetch with the query 
+            ConfigFiles.createFunctionsInCells(Preview.Cells(1, 1), {"RC", "=DBListFetch(RC[1],"""",R[1]C)"})
             newWB.Saved = True
-            Preview.Select()
             If isLookupQuery Then
                 Preview.Name = "TESTSHEET"
             Else
@@ -718,7 +684,7 @@ Public Class DBSheetCreateForm
             End If
             Exit Sub
         Catch ex As System.Exception
-            ErrorMsg("Error: " + ex.Message)
+            ErrorMsg("Exception in testTheQuery: " + ex.Message)
         End Try
     End Sub
 
@@ -734,12 +700,11 @@ Public Class DBSheetCreateForm
             For i As Integer = 0 To DBSheetCols.Rows.Count - 2
                 ' plain table field
                 Dim usedColumn As String = correctNonNull(DBSheetCols.Rows(i).Cells("name").Value.ToString)
+                ' used for foreign table lookups
                 tableCounter += 1
-                Dim sortChoice As String = DBSheetCols.Rows(i).Cells("sort").Value.ToString
-                Select Case sortChoice
-                    Case "Ascending" : orderByStr = If(orderByStr = "", "", orderByStr + ", ") + (i + 1).ToString + " ASC"
-                    Case "Descending" : orderByStr = If(orderByStr = "", "", orderByStr + ", ") + (i + 1).ToString + " DESC"
-                End Select
+                If DBSheetCols.Rows(i).Cells("sort").Value.ToString <> "" Then
+                    orderByStr = If(orderByStr = "", "", orderByStr + ", ") + (i + 1).ToString + " " + DBSheetCols.Rows(i).Cells("sort").Value.ToString
+                End If
                 Dim ftableStr As String = DBSheetCols.Rows(i).Cells("ftable").Value.ToString
                 If ftableStr = "" Then
                     selectStr += "T1." + usedColumn + ", "
@@ -800,11 +765,11 @@ Public Class DBSheetCreateForm
             Dim wherePart As String = WhereClause.Text.Replace(vbCrLf, "")
             selectStr = "SELECT " + selectStr.Substring(0, Math.Min(Strings.Len(selectStr) - 2, selectStr.Length))
             createTheQuery = selectStr + vbCrLf + fromStr.ToString() + vbCrLf +
-                     If(Strings.Len(wherePart) > 0, "WHERE " + wherePart + vbCrLf, "") +
-                     If(Strings.Len(orderByStr) > 0, "ORDER BY " + orderByStr, "")
+                     If(wherePart <> "", "WHERE " + wherePart + vbCrLf, "") +
+                     If(orderByStr <> "", "ORDER BY " + orderByStr, "")
             saveEnabled(True)
         Catch ex As System.Exception
-            ErrorMsg("Error: " + ex.Message)
+            ErrorMsg("Exception in createTheQuery: " + ex.Message)
             createTheQuery = ""
         End Try
     End Function
@@ -857,11 +822,13 @@ Public Class DBSheetCreateForm
                     newRow.primkey = If(DBSheetConfig.getEntry("primkey", DBSheetColumnDef) <> "", True, False)
                     newRow.ColType = TableDataTypes(newRow.name)
                     If newRow.ColType = "" Then Exit Sub
-                    newRow.sort = DBSheetConfig.getEntry("sort", DBSheetColumnDef)
+                    Dim sortMode As String = DBSheetConfig.getEntry("sort", DBSheetColumnDef)
+                    newRow.sort = If(sortMode = "Ascending", "ASC", If(sortMode = "Descending", "DESC", ""))
                     newRow.lookup = DBSheetConfig.getEntry("lookup", DBSheetColumnDef)
                     theDBSheetDefTable.Add(newRow)
                 Next
                 DBSheetCols.DataSource = theDBSheetDefTable
+                DBSheetCols.AutoResizeColumns()
                 Query.Text = DBSheetConfig.getEntry("query", DBSheetParams)
                 WhereClause.Text = DBSheetConfig.getEntry("whereClause", DBSheetParams)
                 TableEditable(False)
@@ -869,7 +836,7 @@ Public Class DBSheetCreateForm
                 saveEnabled(True)
             End If
         Catch ex As System.Exception
-            ErrorMsg("Error: " + ex.Message)
+            ErrorMsg("Exception in loadDefs_Click: " + ex.Message)
         End Try
     End Sub
 
@@ -899,10 +866,10 @@ Public Class DBSheetCreateForm
     ''' <summary>saves the definitions currently stored in theDBSheetCreateForm to newly selected file (saveAs = True) or to the file already stored in setting "dsdPath"</summary>
     ''' <param name="saveAs"></param>
     Private Sub saveDefinitionsToFile(ByRef saveAs As Boolean)
-
-        Dim fileToStore As String = FileSystem.Dir(currentFilepath, FileAttribute.Normal)
+        Dim fileToStore As String = ""
         Try
-            If Strings.Len(fileToStore) = 0 Or saveAs Or Strings.Len(currentFilepath) = 0 Then
+            If currentFilepath <> "" Then fileToStore = FileSystem.Dir(currentFilepath, FileAttribute.Normal)
+            If fileToStore = "" Or saveAs Or currentFilepath = "" Then
                 Dim saveFileDialog1 As SaveFileDialog = New SaveFileDialog With {
                     .Title = "Save DBSheet Definition",
                     .FileName = Table.Text + ".xml",
@@ -922,7 +889,7 @@ Public Class DBSheetCreateForm
             FileSystem.PrintLine(1, xmlDbsheetConfig())
             FileSystem.FileClose(1)
         Catch ex As System.Exception
-            ErrorMsg("Error: " + ex.Message)
+            ErrorMsg("Exception in saveDefinitionsToFile: " + ex.Message)
         End Try
     End Sub
 
@@ -937,11 +904,11 @@ Public Class DBSheetCreateForm
             For i As Integer = 0 To DBSheetCols.RowCount - 2 ' respect the insert row !!!
                 Dim columnLine As String = "<field>"
                 For j As Integer = 0 To DBSheetCols.ColumnCount - 1
-                    If Not IsDBNull(DBSheetCols.Rows(i).Cells(j).Value) Then
-                        ' store everything except "none" sorting, false values and ColType (is always inferred from Database)
-                        If Not ((DBSheetCols.Columns(j).Name = "sort" AndAlso DBSheetCols.Rows(i).Cells(j).Value = "None") OrElse
-                            DBSheetCols.Columns(j).Name = "ColType" OrElse (TypeName(DBSheetCols.Rows(i).Cells(j).Value) = "Boolean" And Not DBSheetCols.Rows(i).Cells(j).Value)) Then
-                            columnLine += DBSheetConfig.setEntry(DBSheetCols.Columns(j).Name, CStr(DBSheetCols.Rows(i).Cells(j).Value))
+                    If DBSheetCols.Rows(i).Cells(j).Value.ToString <> "" Then
+                        ' store everything false values and ColType (is always inferred from Database)
+                        If Not (DBSheetCols.Columns(j).Name = "ColType" OrElse
+                            (TypeName(DBSheetCols.Rows(i).Cells(j).Value) = "Boolean" AndAlso Not DBSheetCols.Rows(i).Cells(j).Value)) Then
+                            columnLine += DBSheetConfig.setEntry(DBSheetCols.Columns(j).Name, CStr(DBSheetCols.Rows(i).Cells(j).Value.ToString))
                         End If
                     End If
                 Next
@@ -957,7 +924,7 @@ Public Class DBSheetCreateForm
             ' finally put everything together:
             Return "<DBsheetConfig>" + vbCrLf + namedParams + vbCrLf + "<columns>" + columnsDef + vbCrLf + "</columns>" + vbCrLf + "</DBsheetConfig>"
         Catch ex As System.Exception
-            ErrorMsg("Error: " + ex.Message)
+            ErrorMsg("Exception in xmlDbsheetConfig: " + ex.Message)
             Return ""
         End Try
     End Function

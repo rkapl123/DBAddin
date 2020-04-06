@@ -182,7 +182,7 @@ Public Module DBSheetConfig
             Try
                 curCell.Parent.Name = Left(tableName, 31)
             Catch ex As Exception
-                ErrorMsg("DBSheet setting worksheet name error:" + ex.Message, "DBSheet Creation Error")
+                ErrorMsg("DBSheet setting worksheet name exception:" + ex.Message, "DBSheet Creation Error")
                 If Not IsNothing(lookupWS) Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
                 Exit Sub
             End Try
@@ -415,7 +415,7 @@ getEntry_Err:
                 End If
             Loop Until ListItem = ""
         Catch ex As Exception
-            ErrorMsg("Error: " + ex.Message, "DBSheetConfig get Entry List")
+            ErrorMsg("Exception in getEntryList: " + ex.Message)
         End Try
         getEntryList = list
     End Function

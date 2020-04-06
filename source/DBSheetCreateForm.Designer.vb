@@ -72,7 +72,7 @@ Partial Class DBSheetCreateForm
         Me.createQuery.RightToLeft = System.Windows.Forms.RightToLeft.No
         Me.createQuery.Size = New System.Drawing.Size(133, 24)
         Me.createQuery.TabIndex = 14
-        Me.createQuery.Text = "create DBSheet &query"
+        Me.createQuery.Text = "create DBSheet query"
         Me.createQuery.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageAboveText
         Me.ToolTipMain.SetToolTip(Me.createQuery, "create query for DBsheet and foreign lookup informations")
         Me.createQuery.UseVisualStyleBackColor = False
@@ -109,7 +109,7 @@ Partial Class DBSheetCreateForm
         Me.testQuery.RightToLeft = System.Windows.Forms.RightToLeft.No
         Me.testQuery.Size = New System.Drawing.Size(121, 24)
         Me.testQuery.TabIndex = 15
-        Me.testQuery.Text = "&test DBSheet Query"
+        Me.testQuery.Text = "test DBSheet Query"
         Me.testQuery.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageAboveText
         Me.ToolTipMain.SetToolTip(Me.testQuery, "test the DBSheet query  in a new Excel Sheet...")
         Me.testQuery.UseVisualStyleBackColor = False
@@ -248,7 +248,7 @@ Partial Class DBSheetCreateForm
         Me.Database.Size = New System.Drawing.Size(194, 21)
         Me.Database.Sorted = True
         Me.Database.TabIndex = 2
-        Me.ToolTipMain.SetToolTip(Me.Database, "choose Database to select foreign tables from.")
+        Me.ToolTipMain.SetToolTip(Me.Database, "choose Database to select tables from.")
         '
         'LWhereParamClause
         '
@@ -283,6 +283,7 @@ Partial Class DBSheetCreateForm
         Me.DBSheetCols.Anchor = CType((((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
             Or System.Windows.Forms.AnchorStyles.Left) _
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
+        Me.DBSheetCols.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.AllCells
         Me.DBSheetCols.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize
         Me.DBSheetCols.Location = New System.Drawing.Point(5, 68)
         Me.DBSheetCols.MultiSelect = False
