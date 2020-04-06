@@ -39,7 +39,7 @@ Public Module Globals
     ''' <summary>default formatting style used in DBDate</summary>
     Public DefaultDBDateFormatting As Integer
 
-    ''' <summary>encapsulates setting fetching (currently registry)</summary>
+    ''' <summary>encapsulates setting fetching (currently ConfigurationManager from DBAddin.xll.config)</summary>
     ''' <param name="Key">registry key to take value from</param>
     ''' <param name="defaultValue">Value that is taken if Key was not found</param>
     ''' <returns>the setting value</returns>

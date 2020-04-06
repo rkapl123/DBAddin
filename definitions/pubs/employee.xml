@@ -14,8 +14,8 @@ pubs.dbo.publishers T8 ON T1.pub_id = T8.pub_id
 <field><name>*fname</name></field>
 <field><name>minit</name></field>
 <field><name>*lname</name></field>
-<field><name>*job_id</name><ftable>pubs.dbo.jobs</ftable><fkey>job_id</fkey><flookup>job_desc</flookup><lookup>SELECT job_desc,job_id FROM  pubs.dbo.jobs ORDER BY job_desc DESC</lookup></field>
+<field><name>*job_id</name><ftable>pubs.dbo.jobs</ftable><fkey>job_id</fkey><flookup>job_desc</flookup><lookup>SELECT job_desc,job_id FROM pubs.dbo.jobs ORDER BY job_desc DESC</lookup></field>
 <field><name>job_lvl</name></field>
-<field><name>*pub_id</name><ftable>pubs.dbo.publishers</ftable><fkey>pub_id</fkey><flookup>pub_name</flookup><lookup>SELECT pub_name,pub_id FROM  pubs.dbo.publishers ORDER BY pub_name DESC</lookup></field>
+<field><name>*pub_id</name><ftable>pubs.dbo.publishers</ftable><fkey>pub_id</fkey><flookup>pub_name</flookup><lookup>SELECT pub_name,pub_id FROM pubs.dbo.publishers ORDER BY pub_name DESC</lookup></field>
 </columns>
 </DBSheetConfig>

@@ -15,8 +15,6 @@ Public Class DBSheetCreateForm
     Private dbsheetConnString As String
     ''' <summary>identifier needed to fetch database from connection string (eg Database=)</summary>
     Private dbidentifier As String
-    ''' <summary>specifiying the owner (schema) of a table</summary>
-    Private ownerQualifier As String
     ''' <summary>statement/procedure to get all databases in a DB instance</summary>
     Private dbGetAllStr As String
     ''' <summary>fieldname where databases are returned by dbGetAllStr</summary>
@@ -42,11 +40,6 @@ Public Class DBSheetCreateForm
         DBGetAllFieldName = fetchSetting("dbGetAllFieldName" + env.ToString, "NONEXISTENT")
         If DBGetAllFieldName = "NONEXISTENT" Then
             ErrorMsg("No DBGetAllFieldName given for environment: " + env.ToString + ", please correct and rerun.", "createDefinitions Error")
-            Exit Sub
-        End If
-        ownerQualifier = fetchSetting("ownerQualifier" + env.ToString, "NONEXISTENT")
-        If ownerQualifier = "NONEXISTENT" Then
-            ErrorMsg("No ownerQualifier given for environment: " + env.ToString + ", please correct and rerun.", "createDefinitions Error")
             Exit Sub
         End If
         dbsheetConnString = fetchSetting("DBSheetConnString" + env.ToString, "NONEXISTENT")
@@ -173,7 +166,7 @@ Public Class DBSheetCreateForm
                 ErrorMsg("Couldn't open connection to database " + Database.Text)
                 Exit Sub
             End If
-            fillTables(Database.Text)
+            fillTables()
             ' start with empty columns list
             TableEditable(True)
             saveEnabled(False)
@@ -189,9 +182,9 @@ Public Class DBSheetCreateForm
     End Sub
 
     ''' <summary>selecting the Table triggers enabling the DBSheetCols definition (fils columns/fields of that table and resetting DBSheetCols definition)</summary>
-    ''' <param name="eventSender"></param>
-    ''' <param name="eventArgs"></param>
-    Private Sub Table_SelectedIndexChanged(ByVal eventSender As Object, ByVal eventArgs As EventArgs) Handles Table.SelectedIndexChanged
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub Table_SelectedIndexChanged(ByVal sender As Object, ByVal e As EventArgs) Handles Table.SelectedIndexChanged
         If FormDisabled Then Exit Sub
         Try
             FormDisabled = True
@@ -210,21 +203,20 @@ Public Class DBSheetCreateForm
     End Sub
 
     ''' <summary>handles the various changes in the DBSheetCols gridview</summary>
-    ''' <param name="eventSender"></param>
-    ''' <param name="eventArgs"></param>
-    Private Sub DBSheetCols_CellValueChanged(ByVal eventSender As Object, ByVal eventArgs As DataGridViewCellEventArgs) Handles DBSheetCols.CellValueChanged
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub DBSheetCols_CellValueChanged(ByVal sender As Object, ByVal e As DataGridViewCellEventArgs) Handles DBSheetCols.CellValueChanged
         If FormDisabled Then Exit Sub
-        Dim selIndex As Integer = eventArgs.RowIndex
-        If eventArgs.ColumnIndex = 0 Then  ' field name column 
+        FormDisabled = True
+        Dim selIndex As Integer = e.RowIndex
+        If e.ColumnIndex = 0 Then  ' field name column 
             ' fill foreign tables ..
             fillForTables()
             ' ..and column type
             DBSheetCols.Rows(selIndex).Cells("ColType").Value = TableDataTypes(DBSheetCols.Rows(selIndex).Cells("name").Value)
-            DBSheetCols.AutoResizeColumns()
             ' if first column then always primary key!
             If selIndex = 0 Then DBSheetCols.Rows(selIndex).Cells("primkey").Value = True
-        ElseIf eventArgs.ColumnIndex = 1 Then         ' ftable column -> fill fkey and flookup
-            FormDisabled = True
+        ElseIf e.ColumnIndex = 1 Then         ' ftable column -> fill fkey and flookup
             If DBSheetCols.Rows(selIndex).Cells("ftable").Value.ToString = "" Then
                 DirectCast(DBSheetCols.Rows(selIndex).Cells("fkey"), DataGridViewComboBoxCell).DataSource = Nothing
                 DirectCast(DBSheetCols.Rows(selIndex).Cells("flookup"), DataGridViewComboBoxCell).DataSource = Nothing
@@ -233,9 +225,7 @@ Public Class DBSheetCreateForm
                 DirectCast(DBSheetCols.Rows(selIndex).Cells("fkey"), DataGridViewComboBoxCell).DataSource = colnameList
                 DirectCast(DBSheetCols.Rows(selIndex).Cells("flookup"), DataGridViewComboBoxCell).DataSource = colnameList
             End If
-            DBSheetCols.AutoResizeColumns()
-            FormDisabled = False
-        ElseIf eventArgs.ColumnIndex = 5 Then ' primkey column
+        ElseIf e.ColumnIndex = 5 Then ' primkey column
             Try
                 ' not first row selected: check for previous row (field) if also primary column..
                 If Not selIndex = 0 Then
@@ -258,6 +248,8 @@ Public Class DBSheetCreateForm
                 ErrorMsg("Exception in DBSheetCols_CellValueChanged: " + ex.Message)
             End Try
         End If
+        DBSheetCols.AutoResizeColumns()
+        FormDisabled = False
     End Sub
 
     Private selRowIndex As Integer
@@ -384,9 +376,9 @@ Public Class DBSheetCreateForm
     End Sub
 
     ''' <summary>add all fields of currently selected Table to DBSheetCols definitions</summary>
-    ''' <param name="eventSender"></param>
-    ''' <param name="eventArgs"></param>
-    Private Sub addAllFields_Click(ByVal eventSender As Object, ByVal eventArgs As EventArgs) Handles addAllFields.Click
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub addAllFields_Click(ByVal sender As Object, ByVal e As EventArgs) Handles addAllFields.Click
         Try
             FormDisabled = True
             Dim firstRow As Boolean = True
@@ -425,9 +417,9 @@ Public Class DBSheetCreateForm
     End Sub
 
     ''' <summary>clears the defined columns and resets the selection fields (Table, ForTable) and the Query</summary>
-    ''' <param name="eventSender"></param>
-    ''' <param name="eventArgs"></param>
-    Private Sub clearAllFields_Click(ByVal eventSender As Object, ByVal eventArgs As EventArgs) Handles clearAllFields.Click
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub clearAllFields_Click(ByVal sender As Object, ByVal e As EventArgs) Handles clearAllFields.Click
         FormDisabled = True
         DBSheetCols.DataSource = Nothing
         DBSheetCols.Rows.Clear()
@@ -507,7 +499,7 @@ Public Class DBSheetCreateForm
     End Sub
 
     ''' <summary>fill all possible tables of configDatabase</summary>
-    Private Sub fillTables(configDatabase As String)
+    Private Sub fillTables()
         Dim schemaTable As DataTable
         Dim tableTemp As String
 
@@ -525,7 +517,7 @@ Public Class DBSheetCreateForm
         Table.Items.Clear()
         Try
             For Each iteration_row As DataRow In schemaTable.Rows
-                If iteration_row("TABLE_CAT") = Database.Text Or iteration_row("TABLE_SCHEM") = Database.Text Then Table.Items.Add(iteration_row("TABLE_NAME"))
+                If iteration_row("TABLE_CAT") = Database.Text Then Table.Items.Add(Database.Text + "." + iteration_row("TABLE_SCHEM") + "." + iteration_row("TABLE_NAME"))
             Next iteration_row
             If Strings.Len(tableTemp) > 0 Then Table.SelectedIndex = Table.Items.IndexOf(tableTemp)
             FormDisabled = False
@@ -595,24 +587,102 @@ Public Class DBSheetCreateForm
     End Sub
 
     ''' <summary>create the final DBSheet Main Query</summary>
-    ''' <param name="eventSender"></param>
-    ''' <param name="eventArgs"></param>
-    Private Sub createQuery_Click(ByVal eventSender As Object, ByVal eventArgs As EventArgs) Handles createQuery.Click
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub createQuery_Click(ByVal sender As Object, ByVal e As EventArgs) Handles createQuery.Click
         testQuery.Text = "test DBSheet Query"
-        If DBSheetCols.Rows.Count = 0 Then
-            ErrorMsg("No columns defined yet, can't create Query !", "DBSheet Definition Error")
+        If DBSheetCols.Rows.Count < 2 Then
+            ErrorMsg("No columns defined yet, can't create query !", "DBSheet Definition Error")
             Exit Sub
         End If
-        Dim retval As DialogResult = QuestionMsg("regenerating DBSheet Query, overwriting all customizations there !", MessageBoxButtons.OKCancel, "DBSheet Definition Warning", MessageBoxIcon.Exclamation)
+        Dim retval As DialogResult = QuestionMsg("regenerating DBSheet query, overwriting all customizations there !", MessageBoxButtons.OKCancel, "DBSheet Definition Warning", MessageBoxIcon.Exclamation)
         If retval = MsgBoxResult.Cancel Then Exit Sub
-        Dim queryStr As String = createTheQuery()
+        Dim queryStr As String = "", selectStr As String = "", orderByStr As String = ""
+        Try
+            Dim fromStr As String = "FROM " + Table.Text + " T1"
+            Dim tableCounter As Integer = 1
+            Dim selectPart As String = ""
+            For i As Integer = 0 To DBSheetCols.Rows.Count - 2
+                ' plain table field
+                Dim usedColumn As String = correctNonNull(DBSheetCols.Rows(i).Cells("name").Value.ToString)
+                ' used for foreign table lookups
+                tableCounter += 1
+                If DBSheetCols.Rows(i).Cells("sort").Value.ToString <> "" Then
+                    orderByStr = If(orderByStr = "", "", orderByStr + ", ") + (i + 1).ToString + " " + DBSheetCols.Rows(i).Cells("sort").Value.ToString
+                End If
+                Dim ftableStr As String = DBSheetCols.Rows(i).Cells("ftable").Value.ToString
+                If ftableStr = "" Then
+                    selectStr += "T1." + usedColumn + ", "
+                    ' create (inner or outer) joins for foreign key lookup id
+                Else
+                    Dim lookupStr As String = DBSheetCols.Rows(i).Cells("lookup").Value.ToString
+                    If lookupStr = "" Then
+                        DBSheetCols.Rows(i).Selected = True
+                        ErrorMsg("No lookup query created for field " + DBSheetCols.Rows(i).Cells("name").Value + ", can't proceed !")
+                        Exit Sub
+                    End If
+                    Dim theTable As String = "T" + tableCounter.ToString
+                    ' either we go for the whole part after the last join
+                    Dim completeJoin As String = fetch(lookupStr, "JOIN ", "")
+                    ' or we have a simple WHERE and just "AND" it to the created join
+                    Dim addRestrict As String = quotedReplace(fetch(lookupStr, "WHERE ", ""), "T" + tableCounter.ToString)
+
+                    ' remove any ORDER BY clause from additional restrict...
+                    Dim restrPos As Integer = addRestrict.ToUpper().LastIndexOf(" ORDER") + 1
+                    If restrPos > 0 Then addRestrict = addRestrict.Substring(0, Math.Min(restrPos - 1, addRestrict.Length))
+                    If completeJoin <> "" Then
+                        ' when having the complete join, use additional restriction not for main subtable
+                        addRestrict = ""
+                        ' instead make it an additional condition for the join and replace placeholder with tablealias
+                        completeJoin = quotedReplace(ciReplace(completeJoin, "WHERE", "AND"), "T" + tableCounter.ToString)
+                    End If
+                    Dim fkeyStr As String = DBSheetCols.Rows(i).Cells("fkey").Value.ToString
+                    If DBSheetCols.Rows(i).Cells("outer").Value Then
+                        fromStr += " LEFT JOIN " + vbCrLf + ftableStr + " " + theTable +
+                                       " ON " + "T1." + usedColumn + " = " + theTable + "." + fkeyStr + If(addRestrict <> "", " AND " + addRestrict, "")
+                    Else
+                        fromStr += " INNER JOIN " + vbCrLf + ftableStr + " " + theTable +
+                                       " ON " + "T1." + usedColumn + " = " + theTable + "." + fkeyStr + If(addRestrict <> "", " AND " + addRestrict, "")
+                    End If
+                    ' we have additionally joined (an)other table(s) for the lookup display...
+                    If completeJoin <> "" Then
+                        ' remove any ORDER BY clause from completeJoin...
+                        restrPos = completeJoin.ToUpper().LastIndexOf(" ORDER") + 1
+                        If restrPos > 0 Then completeJoin = completeJoin.Substring(0, Math.Min(restrPos - 1, completeJoin.Length))
+                        ' ..and add join of additional subtable(s) to the query
+                        fromStr += " LEFT JOIN " + vbCrLf + completeJoin
+                    End If
+
+                    selectPart = fetch(lookupStr, "SELECT ", " FROM ").Trim()
+                    ' remove second field in lookup query's select clause
+                    restrPos = selectPart.LastIndexOf(",") + 1
+                    selectPart = selectPart.Substring(0, Math.Min(restrPos - 1, selectPart.Length))
+                    ' complex select statement, take directly from lookup query..
+                    Dim flookupStr As String = DBSheetCols.Rows(i).Cells("flookup").Value.ToString
+                    If selectPart <> flookupStr Then
+                        selectStr += quotedReplace(selectPart, "T" + tableCounter.ToString) + ", "
+                    Else
+                        ' simple select statement (only the lookup field and id), put together...
+                        selectStr += theTable + "." + flookupStr + " AS " + usedColumn + ", "
+                    End If
+                End If
+            Next
+            Dim wherePart As String = WhereClause.Text.Replace(vbCrLf, "")
+            selectStr = "SELECT " + selectStr.Substring(0, Math.Min(Strings.Len(selectStr) - 2, selectStr.Length))
+            queryStr = selectStr + vbCrLf + fromStr.ToString() + vbCrLf +
+                     If(wherePart <> "", "WHERE " + wherePart + vbCrLf, "") +
+                     If(orderByStr <> "", "ORDER BY " + orderByStr, "")
+            saveEnabled(True)
+        Catch ex As System.Exception
+            ErrorMsg("Exception in createTheQuery: " + ex.Message)
+        End Try
         If queryStr <> "" Then Query.Text = queryStr
     End Sub
 
     ''' <summary>test the final DBSheet Main query</summary>
-    ''' <param name="eventSender"></param>
-    ''' <param name="eventArgs"></param>
-    Private Sub testQuery_Click(ByVal eventSender As Object, ByVal eventArgs As EventArgs) Handles testQuery.Click
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub testQuery_Click(ByVal sender As Object, ByVal e As EventArgs) Handles testQuery.Click
         Try
             If Query.Text <> "" Then
                 If testQuery.Text = "test DBSheet Query" Then
@@ -640,7 +710,7 @@ Public Class DBSheetCreateForm
         If isLookupQuery Then
             ' replace tblPlaceHolder with a more SQL compatible name..
             theQueryText = quotedReplace(theQueryText, "FT")
-        Else
+        ElseIf WhereClause.Text <> "" Then
             ' quoted replace of "?" with parameter values
             ' needs splitting of WhereClause by quotes !
             ' only for main query !!
@@ -674,7 +744,7 @@ Public Class DBSheetCreateForm
             Preview.Cells(1, 2).Value = theQueryText
             Preview.Cells(1, 2).WrapText = False
             ' create a DBListFetch with the query 
-            ConfigFiles.createFunctionsInCells(Preview.Cells(1, 1), {"RC", "=DBListFetch(RC[1],"""",R[1]C)"})
+            ConfigFiles.createFunctionsInCells(Preview.Cells(1, 1), {"RC", "=DBListFetch(RC[1],"""",R[1]C,,,true)"})
             newWB.Saved = True
             If isLookupQuery Then
                 Preview.Name = "TESTSHEET"
@@ -688,108 +758,22 @@ Public Class DBSheetCreateForm
         End Try
     End Sub
 
-    ''' <summary>creates the main query from the column definitions found in DBsheetCols</summary>
-    ''' <returns>the generated query</returns>
-    Private Function createTheQuery() As String
-        Dim selectStr As String = "", orderByStr As String = ""
-        Try
-            ' always take primary table database from connection definition !
-            Dim fromStr As String = "FROM " + ownerQualifier + Table.Text + " T1"
-            Dim tableCounter As Integer = 1
-            Dim selectPart As String = ""
-            For i As Integer = 0 To DBSheetCols.Rows.Count - 2
-                ' plain table field
-                Dim usedColumn As String = correctNonNull(DBSheetCols.Rows(i).Cells("name").Value.ToString)
-                ' used for foreign table lookups
-                tableCounter += 1
-                If DBSheetCols.Rows(i).Cells("sort").Value.ToString <> "" Then
-                    orderByStr = If(orderByStr = "", "", orderByStr + ", ") + (i + 1).ToString + " " + DBSheetCols.Rows(i).Cells("sort").Value.ToString
-                End If
-                Dim ftableStr As String = DBSheetCols.Rows(i).Cells("ftable").Value.ToString
-                If ftableStr = "" Then
-                    selectStr += "T1." + usedColumn + ", "
-                    ' create (inner or outer) joins for foreign key lookup id
-                Else
-                    Dim lookupStr As String = DBSheetCols.Rows(i).Cells("lookup").Value.ToString
-                    If lookupStr = "" Then
-                        DBSheetCols.Rows(i).Selected = True
-                        ErrorMsg("No Lookup Query created for field " + DBSheetCols.Rows(i).Cells("name").Value + ", can't proceed !")
-                        Return ""
-                    End If
-                    Dim theTable As String = "T" + tableCounter.ToString
-                    ' either we go for the whole part after the last join
-                    Dim completeJoin As String = fetch(lookupStr, "JOIN ", "")
-                    ' or we have a simple WHERE and just "AND" it to the created join
-                    Dim addRestrict As String = quotedReplace(fetch(lookupStr, "WHERE ", ""), "T" + tableCounter.ToString)
-
-                    ' remove any ORDER BY clause from additional restrict...
-                    Dim restrPos As Integer = addRestrict.ToUpper().LastIndexOf(" ORDER") + 1
-                    If restrPos > 0 Then addRestrict = addRestrict.Substring(0, Math.Min(restrPos - 1, addRestrict.Length))
-                    If Strings.Len(completeJoin) > 0 Then
-                        ' when having the complete join, use additional restriction not for main subtable
-                        addRestrict = ""
-                        ' instead make it an additional condition for the join and replace placeholder with tablealias
-                        completeJoin = quotedReplace(ciReplace(completeJoin, "WHERE", "AND"), "T" + tableCounter.ToString)
-                    End If
-                    Dim fkeyStr As String = DBSheetCols.Rows(i).Cells("fkey").Value.ToString
-                    If DBSheetCols.Rows(i).Cells("outer").Value Then
-                        fromStr += " LEFT JOIN " + vbCrLf + ftableStr + " " + theTable +
-                                       " ON " + "T1." + usedColumn + " = " + theTable + "." + fkeyStr + If(addRestrict <> "", " AND " + addRestrict, "")
-                    Else
-                        fromStr += " INNER JOIN " + vbCrLf + ftableStr + " " + theTable +
-                                       " ON " + "T1." + usedColumn + " = " + theTable + "." + fkeyStr + If(addRestrict <> "", " AND " + addRestrict, "")
-                    End If
-                    ' we have additionally joined (an)other table(s) for the lookup display...
-                    If Strings.Len(completeJoin) > 0 Then
-                        ' remove any ORDER BY clause from completeJoin...
-                        restrPos = completeJoin.ToUpper().LastIndexOf(" ORDER") + 1
-                        If restrPos > 0 Then completeJoin = completeJoin.Substring(0, Math.Min(restrPos - 1, completeJoin.Length))
-                        ' ..and add join of additional subtable(s) to the query
-                        fromStr += " LEFT JOIN " + vbCrLf + completeJoin
-                    End If
-
-                    selectPart = fetch(lookupStr, "SELECT ", " FROM ").Trim()
-                    ' remove second field in lookup query's select clause
-                    restrPos = selectPart.LastIndexOf(",") + 1
-                    selectPart = selectPart.Substring(0, Math.Min(restrPos - 1, selectPart.Length))
-                    ' complex select statement, take directly from lookup query..
-                    Dim flookupStr As String = DBSheetCols.Rows(i).Cells("flookup").Value.ToString
-                    If selectPart <> flookupStr Then
-                        selectStr += quotedReplace(selectPart, "T" + tableCounter.ToString) + ", "
-                    Else
-                        ' simple select statement (only the lookup field and id), put together...
-                        selectStr += theTable + "." + flookupStr + " AS " + usedColumn + ", "
-                    End If
-                End If
-            Next
-            Dim wherePart As String = WhereClause.Text.Replace(vbCrLf, "")
-            selectStr = "SELECT " + selectStr.Substring(0, Math.Min(Strings.Len(selectStr) - 2, selectStr.Length))
-            createTheQuery = selectStr + vbCrLf + fromStr.ToString() + vbCrLf +
-                     If(wherePart <> "", "WHERE " + wherePart + vbCrLf, "") +
-                     If(orderByStr <> "", "ORDER BY " + orderByStr, "")
-            saveEnabled(True)
-        Catch ex As System.Exception
-            ErrorMsg("Exception in createTheQuery: " + ex.Message)
-            createTheQuery = ""
-        End Try
-    End Function
 
     ''' <summary>loads the DBSHeet definitions from a file (xml format)</summary>
-    ''' <param name="eventSender"></param>
-    ''' <param name="eventArgs"></param>
-    Private Sub loadDefs_Click(ByVal eventSender As Object, ByVal eventArgs As EventArgs) Handles loadDefs.Click
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub loadDefs_Click(ByVal sender As Object, ByVal e As EventArgs) Handles loadDefs.Click
         Try
             Dim openFileDialog1 = New OpenFileDialog With {
-                .InitialDirectory = fetchSetting("DBSheetDefinitions", ""),
+                .InitialDirectory = fetchSetting("DBSheetDefinitions" + Globals.env, ""),
                 .Filter = "XML files (*.xml)|*.xml",
                 .RestoreDirectory = True
             }
             Dim result As DialogResult = openFileDialog1.ShowDialog()
             If result = Windows.Forms.DialogResult.OK Then
-                Dim retval As String = openFileDialog1.FileName
-                If Strings.Len(retval) = 0 Then Exit Sub
                 ' remember path for possible storing in DBSheetParams
-                currentFilepath = retval
+                currentFilepath = openFileDialog1.FileName
+                CurrentFileLinkLabel.Text = currentFilepath
                 Dim DBSheetParams As String = File.ReadAllText(currentFilepath, System.Text.Encoding.Default)
                 ' fetch params into form from sheet or file
                 FormDisabled = True
@@ -800,12 +784,13 @@ Public Class DBSheetCreateForm
                     ErrorMsg("Couldn't open connection to database " + Database.Text)
                     Exit Sub
                 End If
-                fillTables(Database.Text)
+                fillTables()
                 fillForTables()
                 FormDisabled = True
-                Table.SelectedIndex = Table.Items.IndexOf(DBSheetConfig.getEntry("table", DBSheetParams))
+                Dim theTable As String = If(InStr(DBSheetConfig.getEntry("table", DBSheetParams), Database.Text + ".") > 0, DBSheetConfig.getEntry("table", DBSheetParams), Database.Text + fetchSetting("ownerQualifier" + env.ToString, "") + DBSheetConfig.getEntry("table", DBSheetParams))
+                Table.SelectedIndex = Table.Items.IndexOf(theTable)
                 If Table.SelectedIndex = -1 Then
-                    ErrorMsg("couldn't find table " + DBSheetConfig.getEntry("table", DBSheetParams) + " defined in definitions file in database " + Database.Text + "!")
+                    ErrorMsg("couldn't find table " + theTable + " defined in definitions file in database " + Database.Text + "!")
                     FormDisabled = False
                     Exit Sub
                 End If
@@ -828,6 +813,14 @@ Public Class DBSheetCreateForm
                     theDBSheetDefTable.Add(newRow)
                 Next
                 DBSheetCols.DataSource = theDBSheetDefTable
+                ' re-add the fkey and flookup combobox values...
+                For i As Integer = 0 To DBSheetCols.Rows.Count - 2
+                    If DBSheetCols.Rows(i).Cells("ftable").Value.ToString <> "" Then
+                        Dim colnameList As List(Of String) = getforeignTableColumns(DBSheetCols.Rows(i).Cells("ftable").Value.ToString)
+                        DirectCast(DBSheetCols.Rows(i).Cells("fkey"), DataGridViewComboBoxCell).DataSource = colnameList
+                        DirectCast(DBSheetCols.Rows(i).Cells("flookup"), DataGridViewComboBoxCell).DataSource = colnameList
+                    End If
+                Next
                 DBSheetCols.AutoResizeColumns()
                 Query.Text = DBSheetConfig.getEntry("query", DBSheetParams)
                 WhereClause.Text = DBSheetConfig.getEntry("whereClause", DBSheetParams)
@@ -841,16 +834,16 @@ Public Class DBSheetCreateForm
     End Sub
 
     ''' <summary>save definitions button</summary>
-    ''' <param name="eventSender"></param>
-    ''' <param name="eventArgs"></param>
-    Private Sub saveDefs_Click(ByVal eventSender As Object, ByVal eventArgs As EventArgs) Handles saveDefs.Click
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub saveDefs_Click(ByVal sender As Object, ByVal e As EventArgs) Handles saveDefs.Click
         saveDefinitionsToFile(False)
     End Sub
 
     ''' <summary>save definitions as button</summary>
-    ''' <param name="eventSender"></param>
-    ''' <param name="eventArgs"></param>
-    Private Sub saveDefsAs_Click(ByVal eventSender As Object, ByVal eventArgs As EventArgs) Handles saveDefsAs.Click
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub saveDefsAs_Click(ByVal sender As Object, ByVal e As EventArgs) Handles saveDefsAs.Click
         saveDefinitionsToFile(True)
     End Sub
 
@@ -866,26 +859,25 @@ Public Class DBSheetCreateForm
     ''' <summary>saves the definitions currently stored in theDBSheetCreateForm to newly selected file (saveAs = True) or to the file already stored in setting "dsdPath"</summary>
     ''' <param name="saveAs"></param>
     Private Sub saveDefinitionsToFile(ByRef saveAs As Boolean)
-        Dim fileToStore As String = ""
         Try
-            If currentFilepath <> "" Then fileToStore = FileSystem.Dir(currentFilepath, FileAttribute.Normal)
-            If fileToStore = "" Or saveAs Or currentFilepath = "" Then
+            If saveAs Or currentFilepath = "" Then
+                Dim tableName As String = If(InStrRev(Table.Text, ".") > 0, Strings.Mid(Table.Text, InStrRev(Table.Text, ".") + 1), Table.Text)
                 Dim saveFileDialog1 As SaveFileDialog = New SaveFileDialog With {
                     .Title = "Save DBSheet Definition",
-                    .FileName = Table.Text + ".xml",
+                    .FileName = tableName + ".xml",
                     .InitialDirectory = fetchSetting("DBSheetDefinitions" + Globals.env, ""),
                     .Filter = "XML files (*.xml)|*.xml",
                     .RestoreDirectory = True
                 }
                 Dim result As DialogResult = saveFileDialog1.ShowDialog()
                 If result = Windows.Forms.DialogResult.OK Then
-                    fileToStore = saveFileDialog1.FileName
+                    currentFilepath = saveFileDialog1.FileName
+                    CurrentFileLinkLabel.Text = currentFilepath
                 Else
                     Exit Sub
                 End If
-                currentFilepath = fileToStore
             End If
-            FileSystem.FileOpen(1, fileToStore, OpenMode.Output)
+            FileSystem.FileOpen(1, currentFilepath, OpenMode.Output)
             FileSystem.PrintLine(1, xmlDbsheetConfig())
             FileSystem.FileClose(1)
         Catch ex As System.Exception
@@ -1020,6 +1012,9 @@ Public Class DBSheetCreateForm
         Next
     End Function
 
+    Private Sub CurrentFileLinkLabel_Click(sender As Object, e As EventArgs) Handles CurrentFileLinkLabel.Click
+        Diagnostics.Process.Start(CurrentFileLinkLabel.Text)
+    End Sub
 End Class
 
 ''' <summary>Helper Class for filling DBSheetCols DataGridView</summary>

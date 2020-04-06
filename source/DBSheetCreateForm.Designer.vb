@@ -56,6 +56,7 @@ Partial Class DBSheetCreateForm
         Me.ToolStripMenuItem3 = New System.Windows.Forms.ToolStripMenuItem()
         Me.ToolStripMenuItem4 = New System.Windows.Forms.ToolStripMenuItem()
         Me.ToolStripMenuItem5 = New System.Windows.Forms.ToolStripMenuItem()
+        Me.CurrentFileLinkLabel = New System.Windows.Forms.LinkLabel()
         CType(Me.DBSheetCols, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.DBSheetColsMoveMenu.SuspendLayout()
         Me.DBSheetColsLookupMenu.SuspendLayout()
@@ -377,6 +378,14 @@ Partial Class DBSheetCreateForm
         Me.ToolStripMenuItem5.Size = New System.Drawing.Size(246, 22)
         Me.ToolStripMenuItem5.Text = "remove lookup query test"
         '
+        'CurrentFileLinkLabel
+        '
+        Me.CurrentFileLinkLabel.AutoSize = True
+        Me.CurrentFileLinkLabel.Location = New System.Drawing.Point(229, 44)
+        Me.CurrentFileLinkLabel.Name = "CurrentFileLinkLabel"
+        Me.CurrentFileLinkLabel.Size = New System.Drawing.Size(0, 13)
+        Me.CurrentFileLinkLabel.TabIndex = 101
+        '
         'DBSheetCreateForm
         '
         Me.AllowDrop = True
@@ -384,6 +393,7 @@ Partial Class DBSheetCreateForm
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.BackColor = System.Drawing.SystemColors.Control
         Me.ClientSize = New System.Drawing.Size(1113, 543)
+        Me.Controls.Add(Me.CurrentFileLinkLabel)
         Me.Controls.Add(Me.LQuery)
         Me.Controls.Add(Me.LPwd)
         Me.Controls.Add(Me.LDatabase)
@@ -431,5 +441,6 @@ Partial Class DBSheetCreateForm
     Friend WithEvents ToolStripMenuItem3 As Windows.Forms.ToolStripMenuItem
     Friend WithEvents ToolStripMenuItem4 As Windows.Forms.ToolStripMenuItem
     Friend WithEvents ToolStripMenuItem5 As Windows.Forms.ToolStripMenuItem
+    Friend WithEvents CurrentFileLinkLabel As Windows.Forms.LinkLabel
 #End Region
 End Class

@@ -347,7 +347,7 @@ Public Module DBSheetConfig
 
         On Error GoTo getEntry_Err
         If Len(XMLString) = 0 Then
-            getEntry = vbNullString
+            getEntry = ""
             Exit Function
         End If
 
@@ -357,16 +357,16 @@ Public Module DBSheetConfig
         fetchEnd = startSearch
         fetchBeg = InStr(fetchEnd, XMLString, markStart)
         If fetchBeg = 0 Then
-            getEntry = vbNullString
+            getEntry = ""
             Exit Function
         End If
         fetchEnd = InStr(fetchBeg, XMLString, markEnd)
         startSearch = fetchEnd
-        getEntry = Mid$(XMLString, fetchBeg + Len(markStart), fetchEnd - (fetchBeg + Len(markStart)))
+        getEntry = Strings.Mid(XMLString, fetchBeg + Len(markStart), fetchEnd - (fetchBeg + Len(markStart)))
         Exit Function
 
 getEntry_Err:
-        ErrorMsg("Error: " + Err.Description + " in DBSheetConfig.getEntry", "DBSheetConfig get Entry")
+        ErrorMsg("Error: " + Err.Description + " in DBSheetConfig.getEntry")
     End Function
 
     ''' <summary>creates markup with setting value content in entryMarkup, used in DBSheetCreateForm.xmlDbsheetConfig</summary>
