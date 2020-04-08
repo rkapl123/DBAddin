@@ -26,6 +26,7 @@ Public Class DBSheetCreateForm
     Private tblPlaceHolder As String = "!T!"
     Private specialNonNullableChar As String = "*"
 
+#Region "Initialization of DBSheetDefs"
     ''' <summary>entry point of form, invoked by clicking "create/edit DBSheet definition"</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
@@ -61,52 +62,61 @@ Public Class DBSheetCreateForm
                     .Name = "name",
                     .DataSource = New List(Of String),
                     .HeaderText = "name",
-                    .DataPropertyName = "name"
+                    .DataPropertyName = "name",
+                    .SortMode = DataGridViewColumnSortMode.NotSortable
                 }
         Dim ftableCB As DataGridViewComboBoxColumn = New DataGridViewComboBoxColumn With {
                     .Name = "ftable",
                     .DataSource = New List(Of String),
                     .HeaderText = "ftable",
-                    .DataPropertyName = "ftable"
+                    .DataPropertyName = "ftable",
+                    .SortMode = DataGridViewColumnSortMode.NotSortable
                 }
         Dim fkeyCB As DataGridViewComboBoxColumn = New DataGridViewComboBoxColumn With {
                     .Name = "fkey",
                     .DataSource = New List(Of String),
                     .HeaderText = "fkey",
-                    .DataPropertyName = "fkey"
+                    .DataPropertyName = "fkey",
+                    .SortMode = DataGridViewColumnSortMode.NotSortable
                 }
         Dim flookupCB As DataGridViewComboBoxColumn = New DataGridViewComboBoxColumn With {
                     .Name = "flookup",
                     .DataSource = New List(Of String),
                     .HeaderText = "flookup",
-                    .DataPropertyName = "flookup"
+                    .DataPropertyName = "flookup",
+                    .SortMode = DataGridViewColumnSortMode.NotSortable
                 }
         Dim outerCB As DataGridViewCheckBoxColumn = New DataGridViewCheckBoxColumn With {
                     .Name = "outer",
                     .HeaderText = "outer",
-                    .DataPropertyName = "outer"
+                    .DataPropertyName = "outer",
+                    .SortMode = DataGridViewColumnSortMode.NotSortable
                 }
         Dim primkeyCB As DataGridViewCheckBoxColumn = New DataGridViewCheckBoxColumn With {
                     .Name = "primkey",
                     .HeaderText = "primkey",
-                    .DataPropertyName = "primkey"
+                    .DataPropertyName = "primkey",
+                    .SortMode = DataGridViewColumnSortMode.NotSortable
                 }
         Dim ColTypeTB As DataGridViewTextBoxColumn = New DataGridViewTextBoxColumn With {
                     .Name = "ColType",
                     .HeaderText = "ColType",
                     .DataPropertyName = "ColType",
-                    .[ReadOnly] = True
+                    .[ReadOnly] = True,
+                    .SortMode = DataGridViewColumnSortMode.NotSortable
                 }
         Dim sortCB As DataGridViewComboBoxColumn = New DataGridViewComboBoxColumn With {
                     .Name = "sort",
                     .DataSource = New List(Of String)({"", "ASC", "DESC"}),
                     .HeaderText = "sort",
-                    .DataPropertyName = "sort"
+                    .DataPropertyName = "sort",
+                    .SortMode = DataGridViewColumnSortMode.NotSortable
                 }
         Dim lookupTB As DataGridViewTextBoxColumn = New DataGridViewTextBoxColumn With {
                     .Name = "lookup",
                     .HeaderText = "lookup",
-                    .DataPropertyName = "lookup"
+                    .DataPropertyName = "lookup",
+                    .SortMode = DataGridViewColumnSortMode.NotSortable
                 }
         DBSheetCols.AutoGenerateColumns = False
         DBSheetCols.Columns.AddRange(nameCB, ftableCB, fkeyCB, flookupCB, outerCB, primkeyCB, ColTypeTB, sortCB, lookupTB)
@@ -124,12 +134,6 @@ Public Class DBSheetCreateForm
         End If
     End Sub
 
-    Private Sub setPasswordAndInit()
-        existingPwd = Password.Text
-        Try : dbshcnn.Close() : Catch ex As Exception : End Try
-        dbshcnn = Nothing
-        fillDatabasesAndSetDropDown()
-    End Sub
     ''' <summary>enter pressed in Password textbox triggering initialisation</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
@@ -144,12 +148,23 @@ Public Class DBSheetCreateForm
         If existingPwd <> Password.Text Then setPasswordAndInit()
     End Sub
 
+    ''' <summary>called after new password has been entered, reset stored password and fill database dropdown</summary>
+    Private Sub setPasswordAndInit()
+        existingPwd = Password.Text
+        Try : dbshcnn.Close() : Catch ex As Exception : End Try
+        dbshcnn = Nothing
+        fillDatabasesAndSetDropDown()
+    End Sub
+
     ''' <summary>fill the Database dropdown and set dropdown to database set in connection string</summary>
     Private Sub fillDatabasesAndSetDropDown()
         Try
             fillDatabases(Database)
         Catch ex As System.Exception
-            ErrorMsg("Exception in fillDatabases: " + ex.Message)
+            TableEditable(False)
+            saveEnabled(False)
+            DBSheetColsEditable(False)
+            ErrorMsg(ex.Message)
             Exit Sub
         End Try
         Me.Text = "DB Sheet creation: Select Database and Table to start building a DBSheet Definition"
@@ -157,15 +172,50 @@ Public Class DBSheetCreateForm
         'initialization of everything else is triggered by above change and caught by Database_SelectedIndexChanged
     End Sub
 
-    ''' <summary>database changed, initialize everything (Tables, DBSheetCols definition) from scratch</summary>
+    ''' <summary>fills all possible databases of current connection using db proprietary code in dbGetAllStr, data coming from field DBGetAllFieldName</summary>
+    Private Sub fillDatabases(DatabaseComboBox As ComboBox)
+        Dim addVal As String
+        Dim dbs As OdbcDataReader
+
+        ' do not catch exception here, as it should be handled by fillDatabasesAndSetDropDown
+        openConnection()
+        FormDisabled = True
+        DatabaseComboBox.Items.Clear()
+        Dim sqlCommand As OdbcCommand = New OdbcCommand(dbGetAllStr, dbshcnn)
+        Try
+            dbs = sqlCommand.ExecuteReader()
+        Catch ex As OdbcException
+            FormDisabled = False
+            Throw New Exception("Could not retrieve schema information for databases in connection string: '" + dbsheetConnString + "',error: " + ex.Message)
+        End Try
+        If dbs.HasRows Then
+            Try
+                Do
+                    If Strings.Len(DBGetAllFieldName) = 0 Then
+                        addVal = dbs(0)
+                    Else
+                        addVal = dbs(DBGetAllFieldName)
+                    End If
+                    DatabaseComboBox.Items.Add(addVal)
+                Loop While dbs.Read()
+                dbs.Close()
+                FormDisabled = False
+            Catch ex As System.Exception
+                FormDisabled = False
+                Throw New Exception("Exception when filling DatabaseComboBox: " + ex.Message)
+            End Try
+        Else
+            FormDisabled = False
+            Throw New Exception("Could not retrieve any databases with: " + dbGetAllStr + "!")
+        End If
+    End Sub
+
+    ''' <summary>database changed, initialize everything else (Tables, DBSheetCols definition) from scratch</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub Database_SelectedIndexChanged(sender As Object, e As EventArgs) Handles Database.SelectedIndexChanged
+        Try : openConnection() : Catch ex As Exception : ErrorMsg(ex.Message) : Exit Sub : End Try
         Try
-            If Not openConnection() Then
-                ErrorMsg("Couldn't open connection to database " + Database.Text)
-                Exit Sub
-            End If
             fillTables()
             ' start with empty columns list
             TableEditable(True)
@@ -192,16 +242,19 @@ Public Class DBSheetCreateForm
             ' just in case this wasn't cleared before...
             DBSheetCols.DataSource = Nothing
             DBSheetCols.Rows.Clear()
+            DBSheetCols.DataSource = New DBSheetDefTable()
             Query.Text = ""
-            fillColumns()
-            fillForTables()
+            DirectCast(DBSheetCols.Columns("name"), DataGridViewComboBoxColumn).DataSource = getColumns()
+            DirectCast(DBSheetCols.Columns("ftable"), DataGridViewComboBoxColumn).DataSource = getforeignTables()
             FormDisabled = False
         Catch ex As System.Exception
             ErrorMsg("Exception in Table_SelectedIndexChanged: " + ex.Message)
         End Try
         Me.Text = "DB Sheet creation: Select one or more columns (fields) adding possible foreign key lookup information in foreign tables, finally click create query to finish DBSheet definition"
     End Sub
+#End Region
 
+#Region "DBSheetCols Gridview"
     ''' <summary>handles the various changes in the DBSheetCols gridview</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
@@ -209,24 +262,40 @@ Public Class DBSheetCreateForm
         If FormDisabled Then Exit Sub
         FormDisabled = True
         Dim selIndex As Integer = e.RowIndex
-        If e.ColumnIndex = 0 Then  ' field name column 
-            ' fill foreign tables ..
-            fillForTables()
-            ' ..and column type
-            DBSheetCols.Rows(selIndex).Cells("ColType").Value = TableDataTypes(DBSheetCols.Rows(selIndex).Cells("name").Value)
-            ' if first column then always primary key!
+        If e.ColumnIndex = 0 Then     ' field name column 
+            ' lock table and database choice to not let user accidentally clear DBSheet defs
+            TableEditable(False)
+            ' fill empty lists for fkey and flookup comboboxes (resetting) ..
+            DirectCast(DBSheetCols.Rows(selIndex).Cells("fkey"), DataGridViewComboBoxCell).DataSource = New List(Of String)({""})
+            DirectCast(DBSheetCols.Rows(selIndex).Cells("flookup"), DataGridViewComboBoxCell).DataSource = New List(Of String)({""})
+            ' if first column then always set primary key!
             If selIndex = 0 Then DBSheetCols.Rows(selIndex).Cells("primkey").Value = True
-        ElseIf e.ColumnIndex = 1 Then         ' ftable column -> fill fkey and flookup
-            If DBSheetCols.Rows(selIndex).Cells("ftable").Value.ToString = "" Then
-                DirectCast(DBSheetCols.Rows(selIndex).Cells("fkey"), DataGridViewComboBoxCell).DataSource = Nothing
-                DirectCast(DBSheetCols.Rows(selIndex).Cells("flookup"), DataGridViewComboBoxCell).DataSource = Nothing
-            Else
-                Dim colnameList As List(Of String) = getforeignTableColumns(DBSheetCols.Rows(selIndex).Cells("ftable").Value.ToString)
-                DirectCast(DBSheetCols.Rows(selIndex).Cells("fkey"), DataGridViewComboBoxCell).DataSource = colnameList
-                DirectCast(DBSheetCols.Rows(selIndex).Cells("flookup"), DataGridViewComboBoxCell).DataSource = colnameList
+            ' fill field type for current column
+            DBSheetCols.Rows(selIndex).Cells("ColType").Value = TableDataTypes(DBSheetCols.Rows(selIndex).Cells("name").Value)
+            ' fill default values ..
+            DBSheetCols.Rows(selIndex).Cells("ftable").Value = ""
+            DBSheetCols.Rows(selIndex).Cells("fkey").Value = ""
+            DBSheetCols.Rows(selIndex).Cells("flookup").Value = ""
+            DBSheetCols.Rows(selIndex).Cells("sort").Value = ""
+            DBSheetCols.Rows(selIndex).Cells("lookup").Value = ""
+        ElseIf e.ColumnIndex = 1 Then  ' ftable column 
+            If DBSheetCols.Rows(selIndex).Cells("ftable").Value.ToString = "" Then ' reset fkey and flookup dropdown
+                DirectCast(DBSheetCols.Rows(selIndex).Cells("fkey"), DataGridViewComboBoxCell).DataSource = New List(Of String)({""})
+                DirectCast(DBSheetCols.Rows(selIndex).Cells("flookup"), DataGridViewComboBoxCell).DataSource = New List(Of String)({""})
+            Else ' fill fkey and flookup with fields of ftable
+                Dim forColsList As List(Of String) = getforeignTables(DBSheetCols.Rows(selIndex).Cells("ftable").Value.ToString)
+                DirectCast(DBSheetCols.Rows(selIndex).Cells("fkey"), DataGridViewComboBoxCell).DataSource = forColsList
+                DirectCast(DBSheetCols.Rows(selIndex).Cells("flookup"), DataGridViewComboBoxCell).DataSource = forColsList
             End If
+            ' reset fkey and flookup
+            DBSheetCols.Rows(selIndex).Cells("fkey").Value = ""
+            DBSheetCols.Rows(selIndex).Cells("flookup").Value = ""
+        ElseIf e.ColumnIndex = 3 Then  ' flookup column -> ask for regeneration of flookup
+            Dim retval As MsgBoxResult = QuestionMsg("regenerate foreign lookup (overwriting all customizations there)?",, "DBSheet Definition")
+            If retval <> MsgBoxResult.Cancel Then regenLookupForRow(selIndex)
+            DBSheetCols.AutoResizeColumns()
         ElseIf e.ColumnIndex = 5 Then ' primkey column
-            Try
+        Try
                 ' not first row selected: check for previous row (field) if also primary column..
                 If Not selIndex = 0 Then
                     If Not DBSheetCols.Rows(selIndex - 1).Cells("primkey").Value And DBSheetCols.Rows(selIndex).Cells("primkey").Value Then
@@ -252,45 +321,97 @@ Public Class DBSheetCreateForm
         FormDisabled = False
     End Sub
 
+    ''' <summary>reset ContextMenuStrip if outside cells</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub DBSheetCols_MouseDown(sender As Object, e As MouseEventArgs) Handles DBSheetCols.MouseDown
+        DBSheetCols.ContextMenuStrip = Nothing
+    End Sub
+
     Private selRowIndex As Integer
     Private selColIndex As Integer
-    Private Sub DBSheetCols_CellMouseDown(sender As Object, e As DataGridViewCellMouseEventArgs) Handles DBSheetCols.CellMouseDown
-        If e.Button = Windows.Forms.MouseButtons.Right Then
-            selRowIndex = e.RowIndex
-            selColIndex = e.ColumnIndex
-            If selColIndex = 8 And selRowIndex >= 0 Then
-                DBSheetCols.ContextMenuStrip = DBSheetColsLookupMenu
-                DBSheetColsLookupMenu.Items(0).Text = "regenerate lookup query"
-                DBSheetColsLookupMenu.Items(1).Visible = True
-                DBSheetColsLookupMenu.Items(2).Visible = True
-            ElseIf selColIndex = -1 And selRowIndex >= 0 AndAlso DBSheetCols.SelectedRows.Count > 0 AndAlso DBSheetCols.SelectedRows(0).Index = selRowIndex Then
-                DBSheetCols.ContextMenuStrip = DBSheetColsMoveMenu
-            ElseIf selColIndex = 8 And selRowIndex = -1 Then
-                DBSheetCols.ContextMenuStrip = DBSheetColsLookupMenu
-                DBSheetColsLookupMenu.Items(0).Text = "regenerate all lookup queries"
-                DBSheetColsLookupMenu.Items(1).Visible = False
-                DBSheetColsLookupMenu.Items(2).Visible = False
+
+    ''' <summary>Shift F10 or menu key pressed to get the context menu</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub DBSheetCols_KeyDown(sender As Object, e As KeyEventArgs) Handles DBSheetCols.KeyDown
+        selRowIndex = DBSheetCols.CurrentCell.RowIndex
+        selColIndex = DBSheetCols.CurrentCell.ColumnIndex
+        If e.KeyCode = Keys.Apps Or (e.KeyCode = Keys.F10 And e.Modifiers = Keys.Shift) Or (e.KeyCode = Keys.Down And e.Modifiers = Keys.Alt) Then
+            If DBSheetCols.SelectedRows.Count > 0 Then
+                ' whole row selection -> move up/down menu...
+                selColIndex = -1
+                displayContextMenus()
+                ' need show here as the context menu is not displayed otherwise...
+                DBSheetCols.ContextMenuStrip.Show()
+            ElseIf selColIndex = 8 And selRowIndex >= 0 Then
+                displayContextMenus()
+                DBSheetCols.ContextMenuStrip.Show()
+            End If
+            ' set to handled to avoid moving down cell selection (Keys.Down)
+            e.Handled = True
+        ElseIf e.KeyCode = Keys.C And e.Modifiers = Keys.Control Then
+            clipboardDataRow = DBSheetCols.DataSource.GetNewRow()
+            clipboardDataRow.ItemArray = DBSheetCols.DataSource.Rows(selRowIndex).ItemArray.Clone()
+        ElseIf e.KeyCode = Keys.V And e.Modifiers = Keys.Control Then
+            DBSheetCols.Rows(selRowIndex).Cells("ftable").Value = clipboardDataRow.ftable
+            DBSheetCols.Rows(selRowIndex).Cells("fkey").Value = clipboardDataRow.fkey
+            DBSheetCols.Rows(selRowIndex).Cells("flookup").Value = clipboardDataRow.flookup
+            DBSheetCols.Rows(selRowIndex).Cells("lookup").Value = clipboardDataRow.lookup
+            ' fill in the dropdown values
+            If DBSheetCols.Rows(selRowIndex).Cells("ftable").Value.ToString = "" Then
+                DirectCast(DBSheetCols.Rows(selRowIndex).Cells("fkey"), DataGridViewComboBoxCell).DataSource = New List(Of String)({""})
+                DirectCast(DBSheetCols.Rows(selRowIndex).Cells("flookup"), DataGridViewComboBoxCell).DataSource = New List(Of String)({""})
             Else
-                DBSheetCols.ContextMenuStrip = Nothing
+                Dim forColsList As List(Of String) = getforeignTables(DBSheetCols.Rows(selRowIndex).Cells("ftable").Value.ToString)
+                DirectCast(DBSheetCols.Rows(selRowIndex).Cells("fkey"), DataGridViewComboBoxCell).DataSource = forColsList
+                DirectCast(DBSheetCols.Rows(selRowIndex).Cells("flookup"), DataGridViewComboBoxCell).DataSource = forColsList
             End If
         End If
     End Sub
 
-    Private Sub MoveRowUpToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles MoveRowUpToolStripMenuItem.Click
+    Private clipboardDataRow As DBSheetDefRow
+
+    ''' <summary>display context menus depending on cell selected</summary>
+    Private Sub displayContextMenus()
+        If selColIndex = 8 And selRowIndex >= 0 Then
+            DBSheetCols.ContextMenuStrip = DBSheetColsLookupMenu
+        ElseIf selColIndex = -1 And selRowIndex >= 0 AndAlso DBSheetCols.SelectedRows.Count > 0 AndAlso DBSheetCols.SelectedRows(0).Index = selRowIndex Then
+            DBSheetCols.ContextMenuStrip = DBSheetColsMoveMenu
+        Else
+            DBSheetCols.ContextMenuStrip = Nothing
+        End If
+    End Sub
+    ''' <summary>prepare context menus to be displayed after right mouse click</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub DBSheetCols_CellMouseDown(sender As Object, e As DataGridViewCellMouseEventArgs) Handles DBSheetCols.CellMouseDown
+        selRowIndex = e.RowIndex
+        selColIndex = e.ColumnIndex
+        If e.Button = Windows.Forms.MouseButtons.Right Then displayContextMenus()
+    End Sub
+
+    ''' <summary>move (shift) row up</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub MoveRowUp_Click(sender As Object, e As EventArgs) Handles MoveRowUp.Click
         Try
             ' avoid moving up of first row
             If selRowIndex = 0 Then Return
+            If (DBSheetCols.DataSource.Rows.Count - 1 < selRowIndex) Then
+                ErrorMsg("Editing not finished in selected row (values not committed), cannot move up!")
+                Exit Sub
+            End If
             If DBSheetCols.Rows(selRowIndex - 1).Cells("primkey").Value And Not DBSheetCols.Rows(selRowIndex).Cells("primkey").Value Then
                 ErrorMsg("All primary keys have to be first and there is a primary key column that would be shifted below this non-primary one !", "DBSheet Definition Warning")
                 Exit Sub
             End If
-            Dim dsdt As DBSheetDefTable = DBSheetCols.DataSource
-            Dim rw As DBSheetDefRow = dsdt.GetNewRow()
-            rw.ItemArray = dsdt.Rows(selRowIndex).ItemArray.Clone()
+            Dim rw As DBSheetDefRow = DBSheetCols.DataSource.GetNewRow()
+            rw.ItemArray = DBSheetCols.DataSource.Rows(selRowIndex).ItemArray.Clone()
             Dim colnameList As List(Of String) = DirectCast(DBSheetCols.Rows(selRowIndex).Cells("fkey"), DataGridViewComboBoxCell).DataSource
             FormDisabled = True
-            dsdt.Rows.RemoveAt(selRowIndex)
-            dsdt.Rows.InsertAt(rw, selRowIndex - 1)
+            DBSheetCols.DataSource.Rows.RemoveAt(selRowIndex)
+            DBSheetCols.DataSource.Rows.InsertAt(rw, selRowIndex - 1)
             DirectCast(DBSheetCols.Rows(selRowIndex - 1).Cells("flookup"), DataGridViewComboBoxCell).DataSource = colnameList
             DirectCast(DBSheetCols.Rows(selRowIndex - 1).Cells("fkey"), DataGridViewComboBoxCell).DataSource = colnameList
             DBSheetCols.CurrentCell = DBSheetCols.Rows(selRowIndex - 1).Cells(0)
@@ -301,7 +422,10 @@ Public Class DBSheetCreateForm
         FormDisabled = False
     End Sub
 
-    Private Sub MoveRowDownToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles MoveRowDownToolStripMenuItem.Click
+    ''' <summary>move (shift) row down</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub MoveRowDown_Click(sender As Object, e As EventArgs) Handles MoveRowDown.Click
         Try
             ' avoid moving down of last row, DBSeqenceDataGrid.Rows.Count is 1 more than the actual inserted rows because of the "new" row, selIndex is 0 based
             If selRowIndex = DBSheetCols.Rows.Count - 2 Then Exit Sub
@@ -309,13 +433,12 @@ Public Class DBSheetCreateForm
                 ErrorMsg("All primary keys have to be first and there is a non primary key column that would be shifted above this primary one !", "DBSheet Definition Warning")
                 Exit Sub
             End If
-            Dim dsdt As DBSheetDefTable = DBSheetCols.DataSource
-            Dim rw As DBSheetDefRow = dsdt.GetNewRow()
-            rw.ItemArray = dsdt.Rows(selRowIndex).ItemArray.Clone()
+            Dim rw As DBSheetDefRow = DBSheetCols.DataSource.GetNewRow()
+            rw.ItemArray = DBSheetCols.DataSource.Rows(selRowIndex).ItemArray.Clone()
             Dim colnameList As List(Of String) = DirectCast(DBSheetCols.Rows(selRowIndex).Cells("fkey"), DataGridViewComboBoxCell).DataSource
             FormDisabled = True
-            dsdt.Rows.RemoveAt(selRowIndex)
-            dsdt.Rows.InsertAt(rw, selRowIndex + 1)
+            DBSheetCols.DataSource.Rows.RemoveAt(selRowIndex)
+            DBSheetCols.DataSource.Rows.InsertAt(rw, selRowIndex + 1)
             DirectCast(DBSheetCols.Rows(selRowIndex + 1).Cells("flookup"), DataGridViewComboBoxCell).DataSource = colnameList
             DirectCast(DBSheetCols.Rows(selRowIndex + 1).Cells("fkey"), DataGridViewComboBoxCell).DataSource = colnameList
             DBSheetCols.CurrentCell = DBSheetCols.Rows(selRowIndex + 1).Cells(0)
@@ -326,33 +449,44 @@ Public Class DBSheetCreateForm
         FormDisabled = False
     End Sub
 
-    ''' <summary>(re)generates the lookup query for active cell or all cells..</summary>
-    Private Sub RegenerateLookupQueryToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles ToolStripMenuItem3.Click
-        If selColIndex = 8 And selRowIndex = -1 Then
-            Dim retval As MsgBoxResult = QuestionMsg("regenerating Foreign Lookups completely (overwriting all customizations there): yes or generate only new: no !", MsgBoxStyle.YesNoCancel, "DBSheet Definition")
-            If retval = MsgBoxResult.Cancel Then
-                FormDisabled = False
-                Exit Sub
-            End If
-            For i As Integer = 0 To DBSheetCols.Rows.Count - 2
-                'only overwrite if forced regenerate or empty restriction def...
-                If (retval = MsgBoxResult.Yes Or DBSheetCols.Rows(i).Cells("lookup").Value.ToString = "") And (DBSheetCols.Rows(i).Cells("ftable").Value.ToString <> "" And DBSheetCols.Rows(i).Cells("fkey").Value.ToString <> "" And DBSheetCols.Rows(i).Cells("flookup").Value.ToString <> "") Then
-                    DBSheetCols.Rows(i).Cells("lookup").Value = "SELECT " + DBSheetCols.Rows(i).Cells("flookup").Value.ToString + "," + DBSheetCols.Rows(i).Cells("fkey").Value.ToString + " FROM " + DBSheetCols.Rows(i).Cells("ftable").Value.ToString + " ORDER BY " + DBSheetCols.Rows(i).Cells("flookup").Value.ToString
-                End If
-            Next
-            DBSheetCols.AutoResizeColumns()
+    ''' <summary>(re)generates the lookup query for active row/cell</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub RegenerateThisLookupQuery_Click(sender As Object, e As EventArgs) Handles RegenerateThisLookupQuery.Click
+        regenLookupForRow(selRowIndex)
+        DBSheetCols.AutoResizeColumns()
+    End Sub
+
+    ''' <summary>regenerate lookup for row in rowIndex</summary>
+    ''' <param name="rowIndex"></param>
+    Private Sub regenLookupForRow(rowIndex As Integer)
+        If DBSheetCols.Rows(rowIndex).Cells("ftable").Value.ToString <> "" And DBSheetCols.Rows(rowIndex).Cells("fkey").Value.ToString <> "" And DBSheetCols.Rows(rowIndex).Cells("flookup").Value.ToString <> "" Then
+            DBSheetCols.Rows(rowIndex).Cells("lookup").Value = "SELECT " + tblPlaceHolder + "." + DBSheetCols.Rows(rowIndex).Cells("flookup").Value.ToString + " " + correctNonNull(DBSheetCols.Rows(rowIndex).Cells("name").Value.ToString) + "," + tblPlaceHolder + "." + DBSheetCols.Rows(rowIndex).Cells("fkey").Value.ToString + " FROM " + DBSheetCols.Rows(rowIndex).Cells("ftable").Value.ToString + " " + tblPlaceHolder + " ORDER BY " + DBSheetCols.Rows(rowIndex).Cells("flookup").Value.ToString
         Else
-            If DBSheetCols.Rows(selRowIndex).Cells("ftable").Value.ToString <> "" And DBSheetCols.Rows(selRowIndex).Cells("fkey").Value.ToString <> "" And DBSheetCols.Rows(selRowIndex).Cells("flookup").Value.ToString <> "" Then
-                DBSheetCols.Rows(selRowIndex).Cells("lookup").Value = "SELECT " + DBSheetCols.Rows(selRowIndex).Cells("flookup").Value.ToString + "," + DBSheetCols.Rows(selRowIndex).Cells("fkey").Value.ToString + " FROM " + DBSheetCols.Rows(selRowIndex).Cells("ftable").Value.ToString + " ORDER BY " + DBSheetCols.Rows(selRowIndex).Cells("flookup").Value.ToString
-                DBSheetCols.AutoResizeColumns()
-            Else
-                ErrorMsg("No lookup query to regenerate as foreign keys are not (fully) defined for field " + DBSheetCols.Rows(selRowIndex).Cells("name").Value)
-            End If
+            ErrorMsg("No lookup query to regenerate as foreign keys are not (fully) defined for field " + DBSheetCols.Rows(rowIndex).Cells("name").Value)
         End If
     End Sub
 
+    ''' <summary>(re)generates ALL lookup queries</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub RegenerateAllLookupQueries_Click(sender As Object, e As EventArgs) Handles RegenerateAllLookupQueries.Click
+        Dim retval As MsgBoxResult = QuestionMsg("regenerate foreign lookups completely, overwriting all customizations there: yes" + vbCrLf + "generate only new: no", MsgBoxStyle.YesNoCancel, "DBSheet Definition")
+        If retval = MsgBoxResult.Cancel Then
+            FormDisabled = False
+            Exit Sub
+        End If
+        For i As Integer = 0 To DBSheetCols.Rows.Count - 2
+            'only overwrite if forced regenerate or empty restriction def...
+            If (retval = MsgBoxResult.Yes Or DBSheetCols.Rows(i).Cells("lookup").Value.ToString = "") Then regenLookupForRow(i)
+        Next
+        DBSheetCols.AutoResizeColumns()
+    End Sub
+
     ''' <summary>test the (generated or manually edited) lookup query in currently selected row</summary>
-    Private Sub TestLookupQueryToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles ToolStripMenuItem4.Click
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub TestLookupQuery_Click(sender As Object, e As EventArgs) Handles TestLookupQuery.Click
         If Strings.Len(DBSheetCols.Rows(selRowIndex).Cells("lookup").Value) > 0 Then
             testTheQuery(DBSheetCols.Rows(selRowIndex).Cells("lookup").Value, True)
         Else
@@ -361,7 +495,9 @@ Public Class DBSheetCreateForm
     End Sub
 
     ''' <summary>removes the lookup query test currently open</summary>
-    Private Sub RemoveLookupQueryTestToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles ToolStripMenuItem5.Click
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub RemoveLookupQueryTest_Click(sender As Object, e As EventArgs) Handles RemoveLookupQueryTest.Click
         If ExcelDnaUtil.Application.ActiveSheet.Name <> "TESTSHEET" Then
             ErrorMsg("Active sheet doesn't seem to be a query test sheet !!!", "DBSheet Testsheet Remove Warning")
         Else
@@ -375,17 +511,33 @@ Public Class DBSheetCreateForm
     Private Sub DBSheetCols_DataError(sender As Object, e As DataGridViewDataErrorEventArgs) Handles DBSheetCols.DataError
     End Sub
 
+    ''' <summary>check for first Row/field if primary column field set</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub DBSheetCols_RowsRemoved(sender As Object, e As DataGridViewRowsRemovedEventArgs) Handles DBSheetCols.RowsRemoved
+        If FormDisabled Then Exit Sub
+        If Not DBSheetCols.Rows(0).Cells("primkey").Value Then DBSheetCols.Rows(0).Cells("primkey").Value = True
+    End Sub
+
+#End Region
+
+#Region "GUI element filling procedures"
     ''' <summary>add all fields of currently selected Table to DBSheetCols definitions</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub addAllFields_Click(ByVal sender As Object, ByVal e As EventArgs) Handles addAllFields.Click
+        If DBSheetCols.Rows.Count > 1 Then
+            Dim answr As MsgBoxResult = QuestionMsg("adding all fields resets current definitions, continue?",, "DBSheet Definition")
+            If answr = MsgBoxResult.Cancel Then Exit Sub
+        End If
+
         Try
             FormDisabled = True
             Dim firstRow As Boolean = True
             DBSheetCols.DataSource = Nothing
             DBSheetCols.Rows.Clear()
+            Try : openConnection() : Catch ex As Exception : ErrorMsg(ex.Message) : Exit Sub : End Try
             Dim rstSchema As OdbcDataReader
-            If Not openConnection() Then Exit Sub
             Dim selectStmt As String = "SELECT TOP 1 * FROM " + Table.Text
             Dim sqlCommand As OdbcCommand = New OdbcCommand(selectStmt, dbshcnn)
             rstSchema = sqlCommand.ExecuteReader()
@@ -431,6 +583,7 @@ Public Class DBSheetCreateForm
         FormDisabled = False
         ' reset the current filename
         currentFilepath = ""
+        CurrentFileLinkLabel.Text = ""
         saveEnabled(False)
         DBSheetColsEditable(False)
     End Sub
@@ -439,9 +592,9 @@ Public Class DBSheetCreateForm
 
     ''' <summary>gets the types of currently selected table including size, precision and scale into DataTypes</summary>
     Private Sub getTableDataTypes()
+        Try : openConnection() : Catch ex As Exception : ErrorMsg(ex.Message) : Exit Sub : End Try
         TableDataTypes = New Dictionary(Of String, String)
         Dim rstSchema As OdbcDataReader
-        If Not openConnection() Then Exit Sub
         Dim selectStmt As String = "SELECT TOP 1 * FROM " + Table.Text
         Dim sqlCommand As OdbcCommand = New OdbcCommand(selectStmt, dbshcnn)
         rstSchema = sqlCommand.ExecuteReader()
@@ -461,20 +614,20 @@ Public Class DBSheetCreateForm
         rstSchema.Close()
     End Sub
 
-    ''' <summary>gets the columns of the foreignTable</summary>
+    ''' <summary>gets the possible foreign tables in the instance (over all databases)</summary>
     ''' <param name="foreignTable"></param>
     ''' <returns>List of columns</returns>
-    Private Function getforeignTableColumns(foreignTable As String) As List(Of String)
-        getforeignTableColumns = New List(Of String)({""})
+    Private Function getforeignTables(foreignTable As String) As List(Of String)
+        getforeignTables = New List(Of String)({""})
+        Try : openConnection() : Catch ex As Exception : ErrorMsg(ex.Message) : Exit Function : End Try
         Dim rstSchema As OdbcDataReader
-        If Not openConnection() Then Exit Function
         Dim selectStmt As String = "SELECT TOP 1 * FROM " + foreignTable
         Dim sqlCommand As OdbcCommand = New OdbcCommand(selectStmt, dbshcnn)
         rstSchema = sqlCommand.ExecuteReader()
         Try
             Dim schemaInfo As DataTable = rstSchema.GetSchemaTable()
             For Each schemaRow As DataRow In schemaInfo.Rows
-                getforeignTableColumns.Add(schemaRow("ColumnName"))
+                getforeignTables.Add(schemaRow("ColumnName"))
             Next
         Catch ex As Exception
             ErrorMsg("Could not get type information for table fields with query: '" + selectStmt + "', error: " + ex.Message)
@@ -483,29 +636,20 @@ Public Class DBSheetCreateForm
     End Function
 
     ''' <summary>fill all possible columns of currently selected table</summary>
-    Private Sub fillColumns()
+    Private Function getColumns() As List(Of String)
+        ' first get column/type Dictionary TableDataTypes
         getTableDataTypes()
-        Dim colnameList As List(Of String) = New List(Of String)({""})
-        Try
-            For Each colname As String In TableDataTypes.Keys
-                colnameList.Add(colname)
-            Next
-            FormDisabled = True
-            DirectCast(DBSheetCols.Columns("name"), DataGridViewComboBoxColumn).DataSource = colnameList
-            FormDisabled = False
-        Catch ex As System.Exception
-            Throw New Exception("Exception in fillColumns: " + ex.Message)
-        End Try
-    End Sub
+        getColumns = New List(Of String)({""})
+        For Each colname As String In TableDataTypes.Keys
+            getColumns.Add(colname)
+        Next
+    End Function
 
     ''' <summary>fill all possible tables of configDatabase</summary>
     Private Sub fillTables()
         Dim schemaTable As DataTable
         Dim tableTemp As String
-
-        If Not openConnection() Then
-            Throw New Exception("could not open connection for database '" + Database.Text + "' in connection string '" + dbsheetConnString + "'.")
-        End If
+        Try : openConnection() : Catch ex As Exception : ErrorMsg(ex.Message) : Exit Sub : End Try
         Try
             schemaTable = dbshcnn.GetSchema("Tables")
             If schemaTable.Rows.Count = 0 Then Throw New Exception("No Tables could be fetched from Schema")
@@ -527,8 +671,9 @@ Public Class DBSheetCreateForm
         End Try
     End Sub
 
-    ''' <summary>fill foreign tables, see above</summary>
-    Private Sub fillForTables()
+    ''' <summary>fill foreign tables into list of strings (is called by and filled in DBSheetCols.CellValueChanged)</summary>
+    Private Function getforeignTables() As List(Of String)
+        getforeignTables = New List(Of String)({""})
         Dim schemaTable As DataTable
         Try
             schemaTable = dbshcnn.GetSchema("Tables")
@@ -537,55 +682,16 @@ Public Class DBSheetCreateForm
             Throw New Exception("Error getting schema information for tables in connection strings database ' " + Database.Text + "'." + ",error: " + ex.Message)
         End Try
         Try
-            Dim forTableList As List(Of String) = New List(Of String)({""})
             For Each iteration_row As DataRow In schemaTable.Rows
-                forTableList.Add(iteration_row("TABLE_CAT") + "." + iteration_row("TABLE_SCHEM") + "." + iteration_row("TABLE_NAME"))
+                getforeignTables.Add(iteration_row("TABLE_CAT") + "." + iteration_row("TABLE_SCHEM") + "." + iteration_row("TABLE_NAME"))
             Next iteration_row
-            FormDisabled = True
-            DirectCast(DBSheetCols.Columns("ftable"), DataGridViewComboBoxColumn).DataSource = forTableList
-            FormDisabled = False
         Catch ex As System.Exception
             Throw New Exception("Exception in fillForTables: " + ex.Message)
         End Try
-    End Sub
+    End Function
+#End Region
 
-    ''' <summary>fills all possible databases of current connection using db proprietary code in dbGetAllStr, data coming from field DBGetAllFieldName</summary>
-    Private Sub fillDatabases(DatabaseComboBox As ComboBox)
-        Dim addVal As String
-        Dim dbs As OdbcDataReader
-
-        If Not openConnection() Then Exit Sub
-        FormDisabled = True
-        DatabaseComboBox.Items.Clear()
-        Dim sqlCommand As OdbcCommand = New OdbcCommand(dbGetAllStr, dbshcnn)
-        Try
-            dbs = sqlCommand.ExecuteReader()
-        Catch ex As OdbcException
-            FormDisabled = False
-            Throw New Exception("Could not retrieve schema information for databases in connection string: '" + dbsheetConnString + "',error: " + ex.Message)
-        End Try
-        If dbs.HasRows Then
-            Try
-                Do
-                    If Strings.Len(DBGetAllFieldName) = 0 Then
-                        addVal = dbs(0)
-                    Else
-                        addVal = dbs(DBGetAllFieldName)
-                    End If
-                    DatabaseComboBox.Items.Add(addVal)
-                Loop While dbs.Read()
-                dbs.Close()
-                FormDisabled = False
-            Catch ex As System.Exception
-                FormDisabled = False
-                Throw New Exception("Exception: " + ex.Message)
-            End Try
-        Else
-            FormDisabled = False
-            Throw New Exception("Could not retrieve any databases with: " + dbGetAllStr + "!")
-        End If
-    End Sub
-
+#Region "Query Creation and Testing"
     ''' <summary>create the final DBSheet Main Query</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
@@ -595,7 +701,7 @@ Public Class DBSheetCreateForm
             ErrorMsg("No columns defined yet, can't create query !", "DBSheet Definition Error")
             Exit Sub
         End If
-        Dim retval As DialogResult = QuestionMsg("regenerating DBSheet query, overwriting all customizations there !", MessageBoxButtons.OKCancel, "DBSheet Definition Warning", MessageBoxIcon.Exclamation)
+        Dim retval As DialogResult = QuestionMsg("regenerate DBSheet query, overwriting all customizations there?",, "DBSheet Definition")
         If retval = MsgBoxResult.Cancel Then Exit Sub
         Dim queryStr As String = "", selectStr As String = "", orderByStr As String = ""
         Try
@@ -674,7 +780,7 @@ Public Class DBSheetCreateForm
                      If(orderByStr <> "", "ORDER BY " + orderByStr, "")
             saveEnabled(True)
         Catch ex As System.Exception
-            ErrorMsg("Exception in createTheQuery: " + ex.Message)
+            ErrorMsg("Exception in createQuery_Click: " + ex.Message)
         End Try
         If queryStr <> "" Then Query.Text = queryStr
     End Sub
@@ -752,7 +858,9 @@ Public Class DBSheetCreateForm
             ErrorMsg("Exception In testTheQuery: " + ex.Message)
         End Try
     End Sub
+#End Region
 
+#Region "DBSheet Definitionfiles Handling"
 
     ''' <summary>loads the DBSHeet definitions from a file (xml format)</summary>
     ''' <param name="sender"></param>
@@ -775,12 +883,9 @@ Public Class DBSheetCreateForm
                 ' get Database from (legacy) connID (legacy connID was prefixed with connIDPrefixDBtype)
                 Dim configDatabase As String = Replace(DBSheetConfig.getEntry("connID", DBSheetParams), fetchSetting("connIDPrefixDBtype", "MSSQL"), "")
                 Database.SelectedIndex = Database.Items.IndexOf(configDatabase)
-                If Not openConnection() Then
-                    ErrorMsg("Couldn't open connection to database " + Database.Text)
-                    Exit Sub
-                End If
+                Try : openConnection() : Catch ex As Exception : ErrorMsg(ex.Message) : Exit Sub : End Try
                 fillTables()
-                fillForTables()
+                DirectCast(DBSheetCols.Columns("ftable"), DataGridViewComboBoxColumn).DataSource = getforeignTables()
                 FormDisabled = True
                 Dim theTable As String = If(InStr(DBSheetConfig.getEntry("table", DBSheetParams), Database.Text + ".") > 0, DBSheetConfig.getEntry("table", DBSheetParams), Database.Text + fetchSetting("ownerQualifier" + env.ToString, "") + DBSheetConfig.getEntry("table", DBSheetParams))
                 Table.SelectedIndex = Table.Items.IndexOf(theTable)
@@ -789,7 +894,7 @@ Public Class DBSheetCreateForm
                     FormDisabled = False
                     Exit Sub
                 End If
-                fillColumns()
+                DirectCast(DBSheetCols.Columns("name"), DataGridViewComboBoxColumn).DataSource = getColumns()
                 Dim columnslist As Object = DBSheetConfig.getEntryList("columns", "field", "", DBSheetParams)
                 Dim theDBSheetDefTable = New DBSheetDefTable
                 For Each DBSheetColumnDef As String In columnslist
@@ -811,7 +916,7 @@ Public Class DBSheetCreateForm
                 ' re-add the fkey and flookup combobox values...
                 For i As Integer = 0 To DBSheetCols.Rows.Count - 2
                     If DBSheetCols.Rows(i).Cells("ftable").Value.ToString <> "" Then
-                        Dim colnameList As List(Of String) = getforeignTableColumns(DBSheetCols.Rows(i).Cells("ftable").Value.ToString)
+                        Dim colnameList As List(Of String) = getforeignTables(DBSheetCols.Rows(i).Cells("ftable").Value.ToString)
                         DirectCast(DBSheetCols.Rows(i).Cells("fkey"), DataGridViewComboBoxCell).DataSource = colnameList
                         DirectCast(DBSheetCols.Rows(i).Cells("flookup"), DataGridViewComboBoxCell).DataSource = colnameList
                     End If
@@ -840,13 +945,6 @@ Public Class DBSheetCreateForm
     ''' <param name="e"></param>
     Private Sub saveDefsAs_Click(ByVal sender As Object, ByVal e As EventArgs) Handles saveDefsAs.Click
         saveDefinitionsToFile(True)
-    End Sub
-
-    ''' <summary>toggle saveEnabled behaviour</summary>
-    ''' <param name="choice"></param>
-    Private Sub saveEnabled(ByRef choice As Boolean)
-        saveDefs.Enabled = choice
-        saveDefsAs.Enabled = choice
     End Sub
 
     Private currentFilepath As String
@@ -916,14 +1014,19 @@ Public Class DBSheetCreateForm
         End Try
     End Function
 
+    ''' <summary>current file link clicked: open possibility</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub CurrentFileLinkLabel_Click(sender As Object, e As EventArgs) Handles CurrentFileLinkLabel.Click
+        Diagnostics.Process.Start(CurrentFileLinkLabel.Text)
+    End Sub
+#End Region
+
     ''' <summary>opens a database connection with active connstring</summary>
-    ''' <returns>true on success</returns>
-    Function openConnection() As Boolean
-        openConnection = False
+    Sub openConnection()
         ' connections are pooled by ADO depending on the connection string:
         If InStr(1, dbsheetConnString, dbPwdSpec) > 0 And Strings.Len(existingPwd) = 0 Then
-            ErrorMsg("Password is required by connection string: " + dbsheetConnString, "Open Connection Error")
-            Exit Function
+            Throw New Exception("Password is required by connection string: " + dbsheetConnString)
         End If
         If Strings.Len(existingPwd) > 0 Then
             If InStr(1, dbsheetConnString, dbPwdSpec) > 0 Then
@@ -938,14 +1041,47 @@ Public Class DBSheetCreateForm
                 .ConnectionTimeout = Globals.CnnTimeout
             }
             dbshcnn.Open()
-            openConnection = True
         Catch ex As Exception
             dbsheetConnString = Replace(dbsheetConnString, dbPwdSpec + existingPwd, dbPwdSpec + "*******")
-            ErrorMsg("Error connecting to DB: " + ex.Message + ", connection string: " + dbsheetConnString, "Open Connection Error")
             dbshcnn = Nothing
+            Throw New Exception("Error connecting to DB: " + ex.Message + ", connection string: " + dbsheetConnString)
         End Try
-    End Function
+    End Sub
 
+#Region "GUI Helper functions"
+    ''' <summary>Table/Database/Password change possible</summary>
+    ''' <param name="choice">possible True, not possible False</param>
+    Private Sub TableEditable(choice As Boolean)
+        Database.Enabled = choice
+        LDatabase.Enabled = choice
+        Table.Enabled = choice
+        LTable.Enabled = choice
+    End Sub
+
+    ''' <summary>if DBSheetCols Definitions should be editable, enable relevant cotrols</summary>
+    ''' <param name="choice">editable True, not editable False</param>
+    Private Sub DBSheetColsEditable(choice As Boolean)
+        ' block password change if DBSheetDef is editable
+        Password.Enabled = Not choice
+        LPwd.Enabled = Not choice
+        addAllFields.Enabled = choice
+        clearAllFields.Enabled = choice
+        DBSheetCols.Enabled = choice
+        createQuery.Enabled = choice
+        testQuery.Enabled = choice
+        Query.Enabled = choice
+        WhereClause.Enabled = choice
+    End Sub
+
+    ''' <summary>toggle saveEnabled behaviour</summary>
+    ''' <param name="choice"></param>
+    Private Sub saveEnabled(ByRef choice As Boolean)
+        saveDefs.Enabled = choice
+        saveDefsAs.Enabled = choice
+    End Sub
+#End Region
+
+#Region "Various Helper functions"
     ''' <summary>corrects field names of nonnullable fields prepended with specialNonNullableChar (e.g. "*") back to the real name</summary>
     ''' <param name="name"></param>
     ''' <returns>the corrected string</returns>
@@ -967,27 +1103,6 @@ Public Class DBSheetCreateForm
         Return Strings.Left(theString, replaceBeg - 1) + changed + Strings.Right(theString, Len(theString) - replaceBeg - Len(keystr) + 1)
     End Function
 
-    ''' <summary>Table/Database choice change possible</summary>
-    ''' <param name="choice">possible True, not possible False</param>
-    Private Sub TableEditable(choice As Boolean)
-        Database.Enabled = choice
-        LDatabase.Enabled = choice
-        Table.Enabled = choice
-        LTable.Enabled = choice
-    End Sub
-
-    ''' <summary>if DBSheetCols Definitions should be editable, enable relevant cotrols</summary>
-    ''' <param name="choice">editable True, not editable False</param>
-    Private Sub DBSheetColsEditable(choice As Boolean)
-        addAllFields.Enabled = choice
-        clearAllFields.Enabled = choice
-        DBSheetCols.Enabled = choice
-        createQuery.Enabled = choice
-        testQuery.Enabled = choice
-        Query.Enabled = choice
-        WhereClause.Enabled = choice
-    End Sub
-
     ''' <summary>replaces tblPlaceHolder with changed in theString, quote aware (keystr is not replaced within quotes) !!</summary>
     ''' <param name="theString"></param>
     ''' <param name="changed"></param>
@@ -1007,12 +1122,11 @@ Public Class DBSheetCreateForm
         Next
     End Function
 
-    Private Sub CurrentFileLinkLabel_Click(sender As Object, e As EventArgs) Handles CurrentFileLinkLabel.Click
-        Diagnostics.Process.Start(CurrentFileLinkLabel.Text)
-    End Sub
+#End Region
 End Class
 
-''' <summary>Helper Class for filling DBSheetCols DataGridView</summary>
+#Region "DBSheetCols Gridview Helper Classes"
+''' <summary>DataTable Class for filling DBSheetCols DataGridView</summary>
 Public Class DBSheetDefTable : Inherits DataTable
 
     Default Public ReadOnly Property Item(ByVal idx As Integer) As DBSheetDefRow
@@ -1056,7 +1170,7 @@ Public Class DBSheetDefTable : Inherits DataTable
 
 End Class
 
-''' <summary>Row Class for DBSheetDefTable</summary>
+''' <summary>DataRow Class for DBSheetDefTable</summary>
 Public Class DBSheetDefRow : Inherits DataRow
     Public Property name As String
         Get
@@ -1143,3 +1257,4 @@ Public Class DBSheetDefRow : Inherits DataRow
         lookup = ""
     End Sub
 End Class
+#End Region

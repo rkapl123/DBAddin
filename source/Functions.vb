@@ -381,35 +381,40 @@ Public Module Functions
                 ' check whether target range is actually a table Listobject reference, if so, replace with simple address as this doesn't produce a #REF! error on QueryTable.Refresh
                 ' this simple address is below being set to caller.Formula
                 If InStr(targetRangeName, theListObject.Name) > 0 Then callerFormula = Replace(callerFormula, targetRangeName, Replace(TargetCell.Cells(1, 1).Address, "$", ""))
-
+                ' in case of CUDFlags, reset them now (before resizing)...
+                Dim dbMapperRangeName As String = getDBModifNameFromRange(TargetCell)
+                If Left(dbMapperRangeName, 8) = "DBMapper" Then
+                    Dim dbMapper As DBMapper = Globals.DBModifDefColl("DBMapper").Item(dbMapperRangeName)
+                    dbMapper.resetCUDFlags()
+                End If
                 ' Attention Dirty Hack ! This works only for SQLOLEDB driver to ODBC driver setting change on SQL Server !!...
                 'TODO: use a generic procedure in DBSetQueryAction/ListObject to correct the Connection Strings "provider" part to "driver" (or use a recordset directly for the QueryTable)
                 theListObject.QueryTable.Connection = connType + Replace(ConnString, "provider=SQLOLEDB", "driver=SQL SERVER")
-                theListObject.QueryTable.CommandType = Excel.XlCmdType.xlCmdSql
-                theListObject.QueryTable.CommandText = Query
-                theListObject.QueryTable.BackgroundQuery = False
-                Try
-                    theListObject.QueryTable.Refresh()
-                Catch ex As Exception
-                    Throw New Exception("Error in query table refresh: " + ex.Message)
-                End Try
-                StatusCollection(callID).statusMsg = "Set " + connType + " ListObject to (bgQuery= " + bgQuery.ToString + ", " + If(theListObject.QueryTable.FetchedRowOverflow, "Too many rows fetched to display !", "") + "): " + Query
-                theListObject.QueryTable.BackgroundQuery = bgQuery
-                Try
-                    Dim testTarget = TargetCell.Address
-                Catch ex As Exception
-                    caller.Formula = callerFormula ' restore formula as excel deletes target range when changing query fundamentally
-                End Try
-                ' give hidden name to target range of listobject (jump function)
-                Dim oldRange As Excel.Range = Nothing
-                ' first invocation of DBSetQuery will have no defined targetExtent Range name, so this will fail:
-                Try : oldRange = theListObject.Range.Parent.Parent.Names(targetExtent).RefersToRange : Catch ex As Exception : End Try
-                If IsNothing(oldRange) Then oldRange = theListObject.Range
-                theListObject.Range.Name = targetExtent
-                theListObject.Range.Parent.Parent.Names(targetExtent).Visible = False
-                ' if refreshed range is a DBMapper and it is in the current workbook, resize it, but ONLY if it the DBMapper is the same area as the old range
-                DBModifs.resizeDBMapperRange(theListObject.Range, oldRange)
-            End If
+                    theListObject.QueryTable.CommandType = Excel.XlCmdType.xlCmdSql
+                    theListObject.QueryTable.CommandText = Query
+                    theListObject.QueryTable.BackgroundQuery = False
+                    Try
+                        theListObject.QueryTable.Refresh()
+                    Catch ex As Exception
+                        Throw New Exception("Error in query table refresh: " + ex.Message)
+                    End Try
+                    StatusCollection(callID).statusMsg = "Set " + connType + " ListObject to (bgQuery= " + bgQuery.ToString + ", " + If(theListObject.QueryTable.FetchedRowOverflow, "Too many rows fetched to display !", "") + "): " + Query
+                    theListObject.QueryTable.BackgroundQuery = bgQuery
+                    Try
+                        Dim testTarget = TargetCell.Address
+                    Catch ex As Exception
+                        caller.Formula = callerFormula ' restore formula as excel deletes target range when changing query fundamentally
+                    End Try
+                    ' give hidden name to target range of listobject (jump function)
+                    Dim oldRange As Excel.Range = Nothing
+                    ' first invocation of DBSetQuery will have no defined targetExtent Range name, so this will fail:
+                    Try : oldRange = theListObject.Range.Parent.Parent.Names(targetExtent).RefersToRange : Catch ex As Exception : End Try
+                    If IsNothing(oldRange) Then oldRange = theListObject.Range
+                    theListObject.Range.Name = targetExtent
+                    theListObject.Range.Parent.Parent.Names(targetExtent).Visible = False
+                    ' if refreshed range is a DBMapper and it is in the current workbook, resize it, but ONLY if it the DBMapper is the same area as the old range
+                    DBModifs.resizeDBMapperRange(theListObject.Range, oldRange)
+                End If
         Catch ex As Exception
             LogWarn(ex.Message + " in query: " + Query + ", caller: " + callID)
             StatusCollection(callID).statusMsg = ex.Message + " in query: " + Query

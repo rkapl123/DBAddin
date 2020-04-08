@@ -165,6 +165,9 @@
     <None Include="app.config" />
     <None Include="articles\intro.md" />
     <None Include="articles\toc.md" />
+    <None Include="DBAddinCentral.xsd">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="DBModifDef.xsd">
       <SubType>Designer</SubType>
     </None>

@@ -22,17 +22,32 @@ Public Class MenuHandler
         Dim customUIXml As String = "<customUI xmlns='http://schemas.microsoft.com/office/2009/07/customui' onLoad='ribbonLoaded' ><ribbon><tabs><tab id='DBaddinTab' label='DB Addin'>"
         ' DBAddin Group: environment choice, DBConfics selection tree, purge names tool button and dialogBoxLauncher for AboutBox
         customUIXml +=
-        "<group id='DBAddinGroup' label='General settings'>" +
+        "<group id='DBAddinGroup' label='DBAddin settings'>" +
             "<dropDown id='envDropDown' label='Environment:' sizeString='1234567890123456' getEnabled='GetEnabledSelect' getSelectedItemIndex='GetSelectedEnvironment' getItemCount='GetItemCount' getItemID='GetItemID' getItemLabel='GetItemLabel' getSupertip='getSelectedTooltip' onAction='selectEnvironment'/>" +
-            "<buttonGroup id='buttonGroup'>" +
-                "<dynamicMenu id='DBConfigs' label='DB Configs' imageMso='QueryShowTable' screentip='DB Function Configuration Files quick access' getContent='getDBConfigMenu'/>" +
-                "<button id='purgetool' label='purge tool' screentip='purges underlying DBtarget/DBsource Names' imageMso='BorderErase' onAction='clickpurgetoolbutton'/>" +
-            "</buttonGroup>" +
-            "<buttonGroup id='buttonGroup2'>" +
-                "<button id='showLog' label='show log' screentip='shows Database Addins Diagnostic Display' imageMso='ZoomOnePage' onAction='clickShowLog'/>" +
+            "<buttonGroup id='buttonGroup1'>" +
+                "<menu id='configMenu' label='Configs'>" +
+                    "<button id='userconfig' label='User config' onAction='showAddinConfig' imageMso='ControlProperties' screentip='Show/edit user configuration for DB Addin' />" +
+                    "<button id='centralconfig' label='Central config' onAction='showAddinConfig' imageMso='TablePropertiesDialog' screentip='Show/edit central configuration for DB Addin' />" +
+                "</menu>" +
                 "<button id='props' label='custom props' onAction='showCProps' getImage='getCPropsImage' screentip='Change custom properties relevant for DB Addin:' getSupertip='getToggleCPropsScreentip' />" +
             "</buttonGroup>" +
-            "<dialogBoxLauncher><button id='dialog' label='About DBAddin' onAction='showAppSettingAbout' tag='3' screentip='Show Aboutbox with help, version information and project homepage; Ctrl-Shift-click to inspect/edit DBAddin User Settings'/></dialogBoxLauncher>" +
+            "<dialogBoxLauncher><button id='dialog' label='About DBAddin' onAction='showAbout' screentip='Show Aboutbox with help, version information and project homepage'/></dialogBoxLauncher>" +
+        "</group>"
+        ' DBAddin Tools Group:
+        customUIXml +=
+        "<group id='DBAddinToolsGroup' label='DB Addin Tools'>" +
+            "<buttonGroup id='buttonGroup2'>" +
+                "<dynamicMenu id='DBConfigs' label='DB Configs' imageMso='QueryShowTable' screentip='DB Function Configuration Files quick access' getContent='getDBConfigMenu'/>" +
+                "<menu id='DBSheetMenu' label='DBSheets'>" +
+                    "<button id='DBSheetCreate' label='create DBsheet Def' screentip='click to create a new DBSheet or edit an existing definition' imageMso='TableDesign' onAction='clickCreateDBSheet'/>" +
+                    "<button id='DBSheetAssign' tag='DBSheet' label='assign DBsheet Def' screentip='click to assign a DBSheet definition to the current cell' imageMso='ChartResetToMatchStyle' onAction='clickCreateButton'/>" +
+                "</menu>" +
+            "</buttonGroup>" +
+            "<buttonGroup id='buttonGroup3'>" +
+                "<button id='purgetool' label='purge tool' screentip='purges underlying DBtarget/DBsource Names' imageMso='BorderErase' onAction='clickpurgetoolbutton'/>" +
+                "<button id='showLog' label='show log' screentip='shows Database Addins Diagnostic Display' getImage='getLogsImage' onAction='clickShowLog'/>" +
+            "</buttonGroup>" +
+            "<button id='designmode' label='Buttondesign' onAction='showToggleDesignMode' getImage='getToggleDesignImage' getScreentip='getToggleDesignScreentip'/>" +
         "</group>"
         ' DBModif Group: maximum three DBModif types possible (depending on existence in current workbook): 
         customUIXml +=
@@ -42,14 +57,8 @@ Public Class MenuHandler
                                                 "size='large' getLabel='getDBModifTypeLabel' imageMso='ApplicationOptionsDialog' " +
                                                 "getScreentip='getDBModifScreentip' getContent='getDBModifMenuContent' getVisible='getDBModifMenuVisible'/>"
         Next
-        customUIXml += "<dialogBoxLauncher><button id='designmode' label='DBModif design' onAction='showDBModifEditToggleDesignMode' tag='4' getScreentip='getToggleDesignScreentip'/></dialogBoxLauncher>" +
-        "</group>"
-        ' DBSheet Group:
-        customUIXml +=
-        "<group id='DBSheetGroup' label='DB Sheet creation'>" +
-            "<button id='DBSheetCreate' label='create DBsheet Def' screentip='click to create a new DBSheet or edit an existing definition' imageMso='TableDesign' onAction='clickCreateDBSheet'/>" +
-            "<button id='DBSheetAssign' tag='DBSheet' label='assign DBsheet Def' screentip='click to assign a DBSheet definition to the current cell' imageMso='ChartResetToMatchStyle' onAction='clickCreateButton'/>" +
-        "</group>"
+        customUIXml += "<dialogBoxLauncher><button id='DBModifEdit' label='DBModif design' onAction='showDBModifEdit' screentip='Show/edit DBModif Definitions of current workbook'/></dialogBoxLauncher>"
+        customUIXml += "</group>"
         customUIXml += "</tab></tabs></ribbon>"
         ' Context menus for refresh, jump and creation: in cell, row, column and ListRange (area of ListObjects)
         customUIXml += "<contextMenus>" +
@@ -127,6 +136,17 @@ Public Class MenuHandler
         End If
     End Function
 
+    ''' <summary>display warning icon on log button if warning has been logged...</summary>
+    ''' <param name="control"></param>
+    ''' <returns></returns>
+    Public Function getLogsImage(control As IRibbonControl) As String
+        If Globals.WarningIssued Then
+            Return "IndexUpdate"
+        Else
+            Return "MailMergeStartLetters"
+        End If
+    End Function
+
     ''' <summary>display state of designmode in screentip of dialogBox launcher</summary>
     ''' <param name="control"></param>
     ''' <returns>screentip and the state of designmode</returns>
@@ -151,38 +171,53 @@ Public Class MenuHandler
         Globals.theRibbon.InvalidateControl(control.Id)
     End Sub
 
-    ''' <summary>toggle designmode button (actually dialogBox launcher on DBModif Menu)</summary>
+    ''' <summary>show DBModif deefinitions edit box</summary>
     ''' <param name="control"></param>
-    Sub showDBModifEditToggleDesignMode(control As IRibbonControl)
-        ' Ctrl-Shift starts the CustomXML display
-        If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown Then
-            If Not IsNothing(ExcelDnaUtil.Application.ActiveWorkbook) Then
-                Dim theEditDBModifDefDlg As EditDBModifDef = New EditDBModifDef()
-                If theEditDBModifDefDlg.ShowDialog() = System.Windows.Forms.DialogResult.OK Then DBModifs.getDBModifDefinitions()
-                Exit Sub
-            End If
-        Else
-            Dim cbrs As Object = ExcelDnaUtil.Application.CommandBars
-            If Not IsNothing(cbrs) AndAlso cbrs.GetEnabledMso("DesignMode") Then
-                cbrs.ExecuteMso("DesignMode")
-            Else
-                ErrorMsg("Couldn't toggle designmode, because Designmode commandbar button is not available (no button?)", "DBAddin toggle Designmode", MsgBoxStyle.Exclamation)
-            End If
-            ' update state of designmode in screentip
-            Globals.theRibbon.InvalidateControl(control.Id)
+    Sub showDBModifEdit(control As IRibbonControl)
+        If Not IsNothing(ExcelDnaUtil.Application.ActiveWorkbook) Then
+            Dim theEditDBModifDefDlg As EditDBModifDef = New EditDBModifDef()
+            If theEditDBModifDefDlg.ShowDialog() = System.Windows.Forms.DialogResult.OK Then DBModifs.getDBModifDefinitions()
         End If
     End Sub
 
-    ''' <summary>display state of designmode in screentip of dialogBox launcher</summary>
+    ''' <summary>toggle designmode button</summary>
+    ''' <param name="control"></param>
+    Sub showToggleDesignMode(control As IRibbonControl)
+        Dim cbrs As Object = ExcelDnaUtil.Application.CommandBars
+        If Not IsNothing(cbrs) AndAlso cbrs.GetEnabledMso("DesignMode") Then
+            cbrs.ExecuteMso("DesignMode")
+        Else
+            ErrorMsg("Couldn't toggle designmode, because Designmode commandbar button is not available (no button?)", "DBAddin toggle Designmode", MsgBoxStyle.Exclamation)
+        End If
+        ' update state of designmode in screentip
+        Globals.theRibbon.InvalidateControl(control.Id)
+    End Sub
+
+    ''' <summary>display state of designmode in screentip of button</summary>
     ''' <param name="control"></param>
     ''' <returns>screentip and the state of designmode</returns>
     Public Function getToggleDesignScreentip(control As IRibbonControl) As String
         Dim cbrs As Object = ExcelDnaUtil.Application.CommandBars
         If Not IsNothing(cbrs) AndAlso cbrs.GetEnabledMso("DesignMode") Then
-            Return "Designmode is currently " + IIf(cbrs.GetPressedMso("DesignMode"), "on !", "off !") + "; Ctrl-Shift-click to inspect/edit DBModifier definitions of the active workbook here"
+            Return "Designmode is currently " + IIf(cbrs.GetPressedMso("DesignMode"), "on !", "off !")
         Else
-            ' this should actually never be reached...
-            Return "Designmode commandbar button not available (no button?); Ctrl-Shift-click to inspect/edit DBModifier definitions of the active workbook here"
+            Return "Designmode commandbar button not available (no button on sheet)"
+        End If
+    End Function
+
+    ''' <summary>display state of designmode in icon of button</summary>
+    ''' <param name="control"></param>
+    ''' <returns>screentip and the state of designmode</returns>
+    Public Function getToggleDesignImage(control As IRibbonControl) As String
+        Dim cbrs As Object = ExcelDnaUtil.Application.CommandBars
+        If Not IsNothing(cbrs) AndAlso cbrs.GetEnabledMso("DesignMode") Then
+            If cbrs.GetPressedMso("DesignMode") Then
+                Return "ObjectsGroupMenuOutlook"
+            Else
+                Return "SelectMenuAccess"
+            End If
+        Else
+            Return "SelectMenuAccess"
         End If
     End Function
 
@@ -214,7 +249,7 @@ Public Class MenuHandler
         If CBool(fetchSetting("DontChangeEnvironment", "False")) Then
             Return "DontChangeEnvironment is set, therefore changing the Environment is prevented !"
         Else
-            Return "configured for Database Access in %appdata%\Microsoft\Addins\DBaddin.xll.config"
+            Return "configured for Database Access in user config %appdata%\Microsoft\Addins\DBaddin.xll.config"
         End If
     End Function
 
@@ -236,24 +271,26 @@ Public Class MenuHandler
         End If
     End Sub
 
-    ''' <summary>dialogBoxLauncher of leftmost group: activate about box</summary>
-    Public Sub showAppSettingAbout(control As IRibbonControl)
-        ' Ctrl-Shift starts the AppSetting display
-        If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown Then
-            Dim theEditDBModifDefDlg As EditDBModifDef = New EditDBModifDef()
-            theEditDBModifDefDlg.DBFskip.Hide()
-            theEditDBModifDefDlg.doDBMOnSave.Hide()
-            If theEditDBModifDefDlg.ShowDialog() = System.Windows.Forms.DialogResult.OK Then
-                ConfigurationManager.RefreshSection("appSettings")
-                Globals.theRibbon.Invalidate()
-            End If
-        Else
-            Dim myAbout As AboutBox = New AboutBox
-            myAbout.ShowDialog()
-            ' if disabling the addin was chosen, then suicide here..
-            If myAbout.disableAddinAfterwards Then
-                Try : ExcelDnaUtil.Application.AddIns("DBaddin").Installed = False : Catch ex As Exception : End Try
-            End If
+    ''' <summary>show the user config (AppSetting) or the central config (referenced by App Settings)</summary>
+    ''' <param name="control"></param>
+    Public Sub showAddinConfig(control As IRibbonControl)
+        Dim theEditDBModifDefDlg As EditDBModifDef = New EditDBModifDef()
+        theEditDBModifDefDlg.DBFskip.Hide()
+        theEditDBModifDefDlg.doDBMOnSave.Hide()
+        theEditDBModifDefDlg.Tag = control.Id
+        If theEditDBModifDefDlg.ShowDialog() = System.Windows.Forms.DialogResult.OK Then
+            ConfigurationManager.RefreshSection("appSettings")
+            Globals.theRibbon.Invalidate()
+        End If
+    End Sub
+
+    ''' <summary>dialogBoxLauncher of DBAddin settings group: activate about box</summary>
+    Public Sub showAbout(control As IRibbonControl)
+        Dim myAbout As AboutBox = New AboutBox
+        myAbout.ShowDialog()
+        ' if disabling the addin was chosen, then suicide here..
+        If myAbout.disableAddinAfterwards Then
+            Try : ExcelDnaUtil.Application.AddIns("DBaddin").Installed = False : Catch ex As Exception : End Try
         End If
     End Sub
 
@@ -366,6 +403,9 @@ Public Class MenuHandler
     ''' <summary>show the trace log</summary>
     Public Sub clickShowLog(control As IRibbonControl)
         ExcelDna.Logging.LogDisplay.Show()
+        ' reset warning flag
+        WarningIssued = False
+        theRibbon.InvalidateControl("showLog")
     End Sub
 
     ''' <summary>ribbon menu button for DBSheet creation start</summary>

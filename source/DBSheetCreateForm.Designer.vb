@@ -43,19 +43,20 @@ Partial Class DBSheetCreateForm
         Me.loadDefs = New System.Windows.Forms.Button()
         Me.Password = New System.Windows.Forms.TextBox()
         Me.Database = New System.Windows.Forms.ComboBox()
+        Me.DBSheetCols = New System.Windows.Forms.DataGridView()
         Me.LWhereParamClause = New System.Windows.Forms.Label()
         Me.LTable = New System.Windows.Forms.Label()
-        Me.DBSheetCols = New System.Windows.Forms.DataGridView()
         Me.DBSheetColsMoveMenu = New System.Windows.Forms.ContextMenuStrip(Me.components)
-        Me.MoveRowUpToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
-        Me.MoveRowDownToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
+        Me.MoveRowUp = New System.Windows.Forms.ToolStripMenuItem()
+        Me.MoveRowDown = New System.Windows.Forms.ToolStripMenuItem()
         Me.LDatabase = New System.Windows.Forms.Label()
         Me.LPwd = New System.Windows.Forms.Label()
         Me.LQuery = New System.Windows.Forms.Label()
         Me.DBSheetColsLookupMenu = New System.Windows.Forms.ContextMenuStrip(Me.components)
-        Me.ToolStripMenuItem3 = New System.Windows.Forms.ToolStripMenuItem()
-        Me.ToolStripMenuItem4 = New System.Windows.Forms.ToolStripMenuItem()
-        Me.ToolStripMenuItem5 = New System.Windows.Forms.ToolStripMenuItem()
+        Me.RegenerateThisLookupQuery = New System.Windows.Forms.ToolStripMenuItem()
+        Me.RegenerateAllLookupQueries = New System.Windows.Forms.ToolStripMenuItem()
+        Me.TestLookupQuery = New System.Windows.Forms.ToolStripMenuItem()
+        Me.RemoveLookupQueryTest = New System.Windows.Forms.ToolStripMenuItem()
         Me.CurrentFileLinkLabel = New System.Windows.Forms.LinkLabel()
         CType(Me.DBSheetCols, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.DBSheetColsMoveMenu.SuspendLayout()
@@ -158,11 +159,11 @@ Partial Class DBSheetCreateForm
         Me.clearAllFields.Location = New System.Drawing.Point(114, 38)
         Me.clearAllFields.Name = "clearAllFields"
         Me.clearAllFields.RightToLeft = System.Windows.Forms.RightToLeft.No
-        Me.clearAllFields.Size = New System.Drawing.Size(109, 24)
+        Me.clearAllFields.Size = New System.Drawing.Size(128, 24)
         Me.clearAllFields.TabIndex = 8
-        Me.clearAllFields.Text = "&clear all Fields"
+        Me.clearAllFields.Text = "reset DBSheet creation"
         Me.clearAllFields.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageAboveText
-        Me.ToolTipMain.SetToolTip(Me.clearAllFields, "clear all column definitions in DBsheet")
+        Me.ToolTipMain.SetToolTip(Me.clearAllFields, "clear all DBSheet definitions and enable database/table choice")
         Me.clearAllFields.UseVisualStyleBackColor = False
         '
         'addAllFields
@@ -177,7 +178,7 @@ Partial Class DBSheetCreateForm
         Me.addAllFields.TabIndex = 7
         Me.addAllFields.Text = "add all &Fields"
         Me.addAllFields.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageAboveText
-        Me.ToolTipMain.SetToolTip(Me.addAllFields, "add all columns to DBsheet")
+        Me.ToolTipMain.SetToolTip(Me.addAllFields, "add all columns to DBsheet definition")
         Me.addAllFields.UseVisualStyleBackColor = False
         '
         'saveDefs
@@ -251,6 +252,21 @@ Partial Class DBSheetCreateForm
         Me.Database.TabIndex = 2
         Me.ToolTipMain.SetToolTip(Me.Database, "choose Database to select tables from.")
         '
+        'DBSheetCols
+        '
+        Me.DBSheetCols.Anchor = CType((((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
+            Or System.Windows.Forms.AnchorStyles.Left) _
+            Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
+        Me.DBSheetCols.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.AllCells
+        Me.DBSheetCols.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize
+        Me.DBSheetCols.Location = New System.Drawing.Point(5, 68)
+        Me.DBSheetCols.MultiSelect = False
+        Me.DBSheetCols.Name = "DBSheetCols"
+        Me.DBSheetCols.Size = New System.Drawing.Size(1096, 258)
+        Me.DBSheetCols.TabIndex = 13
+        Me.ToolTipMain.SetToolTip(Me.DBSheetCols, "Select columns (fields) adding possible foreign key lookup information in foreign" &
+        " tables")
+        '
         'LWhereParamClause
         '
         Me.LWhereParamClause.AllowDrop = True
@@ -279,38 +295,23 @@ Partial Class DBSheetCreateForm
         Me.LTable.TabIndex = 100
         Me.LTable.Text = "Table"
         '
-        'DBSheetCols
-        '
-        Me.DBSheetCols.Anchor = CType((((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
-            Or System.Windows.Forms.AnchorStyles.Left) _
-            Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.DBSheetCols.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.AllCells
-        Me.DBSheetCols.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize
-        Me.DBSheetCols.Location = New System.Drawing.Point(5, 68)
-        Me.DBSheetCols.MultiSelect = False
-        Me.DBSheetCols.Name = "DBSheetCols"
-        Me.DBSheetCols.Size = New System.Drawing.Size(1096, 258)
-        Me.DBSheetCols.TabIndex = 13
-        Me.ToolTipMain.SetToolTip(Me.DBSheetCols, "Select one or more columns (fields) adding possible foreign key lookup informatio" &
-        "n in foreign tables")
-        '
         'DBSheetColsMoveMenu
         '
-        Me.DBSheetColsMoveMenu.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.MoveRowUpToolStripMenuItem, Me.MoveRowDownToolStripMenuItem})
+        Me.DBSheetColsMoveMenu.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.MoveRowUp, Me.MoveRowDown})
         Me.DBSheetColsMoveMenu.Name = "DBSheetColsContextMenu"
         Me.DBSheetColsMoveMenu.Size = New System.Drawing.Size(161, 48)
         '
-        'MoveRowUpToolStripMenuItem
+        'MoveRowUp
         '
-        Me.MoveRowUpToolStripMenuItem.Name = "MoveRowUpToolStripMenuItem"
-        Me.MoveRowUpToolStripMenuItem.Size = New System.Drawing.Size(160, 22)
-        Me.MoveRowUpToolStripMenuItem.Text = "move row up"
+        Me.MoveRowUp.Name = "MoveRowUp"
+        Me.MoveRowUp.Size = New System.Drawing.Size(160, 22)
+        Me.MoveRowUp.Text = "move row up"
         '
-        'MoveRowDownToolStripMenuItem
+        'MoveRowDown
         '
-        Me.MoveRowDownToolStripMenuItem.Name = "MoveRowDownToolStripMenuItem"
-        Me.MoveRowDownToolStripMenuItem.Size = New System.Drawing.Size(160, 22)
-        Me.MoveRowDownToolStripMenuItem.Text = "move row down"
+        Me.MoveRowDown.Name = "MoveRowDown"
+        Me.MoveRowDown.Size = New System.Drawing.Size(160, 22)
+        Me.MoveRowDown.Text = "move row down"
         '
         'LDatabase
         '
@@ -356,32 +357,38 @@ Partial Class DBSheetCreateForm
         '
         'DBSheetColsLookupMenu
         '
-        Me.DBSheetColsLookupMenu.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.ToolStripMenuItem3, Me.ToolStripMenuItem4, Me.ToolStripMenuItem5})
+        Me.DBSheetColsLookupMenu.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.RegenerateThisLookupQuery, Me.RegenerateAllLookupQueries, Me.TestLookupQuery, Me.RemoveLookupQueryTest})
         Me.DBSheetColsLookupMenu.Name = "DBSheetColsContextMenu"
-        Me.DBSheetColsLookupMenu.Size = New System.Drawing.Size(247, 70)
+        Me.DBSheetColsLookupMenu.Size = New System.Drawing.Size(227, 92)
         '
-        'ToolStripMenuItem3
+        'RegenerateThisLookupQuery
         '
-        Me.ToolStripMenuItem3.Name = "ToolStripMenuItem3"
-        Me.ToolStripMenuItem3.Size = New System.Drawing.Size(246, 22)
-        Me.ToolStripMenuItem3.Text = "regenerate lookup query/queries"
+        Me.RegenerateThisLookupQuery.Name = "RegenerateThisLookupQuery"
+        Me.RegenerateThisLookupQuery.Size = New System.Drawing.Size(226, 22)
+        Me.RegenerateThisLookupQuery.Text = "regenerate this lookup query"
         '
-        'ToolStripMenuItem4
+        'RegenerateAllLookupQueries
         '
-        Me.ToolStripMenuItem4.Name = "ToolStripMenuItem4"
-        Me.ToolStripMenuItem4.Size = New System.Drawing.Size(246, 22)
-        Me.ToolStripMenuItem4.Text = "test lookup query"
+        Me.RegenerateAllLookupQueries.Name = "RegenerateAllLookupQueries"
+        Me.RegenerateAllLookupQueries.Size = New System.Drawing.Size(226, 22)
+        Me.RegenerateAllLookupQueries.Text = "regenerate all lookup queries"
         '
-        'ToolStripMenuItem5
+        'TestLookupQuery
         '
-        Me.ToolStripMenuItem5.Name = "ToolStripMenuItem5"
-        Me.ToolStripMenuItem5.Size = New System.Drawing.Size(246, 22)
-        Me.ToolStripMenuItem5.Text = "remove lookup query test"
+        Me.TestLookupQuery.Name = "TestLookupQuery"
+        Me.TestLookupQuery.Size = New System.Drawing.Size(226, 22)
+        Me.TestLookupQuery.Text = "test lookup query"
+        '
+        'RemoveLookupQueryTest
+        '
+        Me.RemoveLookupQueryTest.Name = "RemoveLookupQueryTest"
+        Me.RemoveLookupQueryTest.Size = New System.Drawing.Size(226, 22)
+        Me.RemoveLookupQueryTest.Text = "remove lookup query test"
         '
         'CurrentFileLinkLabel
         '
         Me.CurrentFileLinkLabel.AutoSize = True
-        Me.CurrentFileLinkLabel.Location = New System.Drawing.Point(229, 44)
+        Me.CurrentFileLinkLabel.Location = New System.Drawing.Point(248, 44)
         Me.CurrentFileLinkLabel.Name = "CurrentFileLinkLabel"
         Me.CurrentFileLinkLabel.Size = New System.Drawing.Size(0, 13)
         Me.CurrentFileLinkLabel.TabIndex = 101
@@ -435,12 +442,13 @@ Partial Class DBSheetCreateForm
     Public WithEvents LPwd As Windows.Forms.Label
     Public WithEvents LQuery As Windows.Forms.Label
     Friend WithEvents DBSheetColsMoveMenu As Windows.Forms.ContextMenuStrip
-    Friend WithEvents MoveRowUpToolStripMenuItem As Windows.Forms.ToolStripMenuItem
-    Friend WithEvents MoveRowDownToolStripMenuItem As Windows.Forms.ToolStripMenuItem
+    Friend WithEvents MoveRowUp As Windows.Forms.ToolStripMenuItem
+    Friend WithEvents MoveRowDown As Windows.Forms.ToolStripMenuItem
     Friend WithEvents DBSheetColsLookupMenu As Windows.Forms.ContextMenuStrip
-    Friend WithEvents ToolStripMenuItem3 As Windows.Forms.ToolStripMenuItem
-    Friend WithEvents ToolStripMenuItem4 As Windows.Forms.ToolStripMenuItem
-    Friend WithEvents ToolStripMenuItem5 As Windows.Forms.ToolStripMenuItem
+    Friend WithEvents RegenerateThisLookupQuery As Windows.Forms.ToolStripMenuItem
+    Friend WithEvents TestLookupQuery As Windows.Forms.ToolStripMenuItem
+    Friend WithEvents RemoveLookupQueryTest As Windows.Forms.ToolStripMenuItem
     Friend WithEvents CurrentFileLinkLabel As Windows.Forms.LinkLabel
+    Friend WithEvents RegenerateAllLookupQueries As Windows.Forms.ToolStripMenuItem
 #End Region
 End Class

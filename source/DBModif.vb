@@ -574,7 +574,7 @@ Public Class DBMapper : Inherits DBModif
     ''' <summary>reset CUD FLags, either after completion of doDBModif or on request (refresh)</summary>
     Public Sub resetCUDFlags()
         ' in case CUDFlags was set to a single cell DBMapper avoid resetting CUDFlags
-        If CUDFlags And TargetRange.Columns.Count > 1 And TargetRange.Rows.Count > 1 Then
+        If CUDFlags And Not (TargetRange.Columns.Count = 1 And TargetRange.Rows.Count = 1) Then
             If TargetRange.Parent.ProtectContents Then
                 ErrorMsg("Worksheet " + TargetRange.Parent.Name + " is content protected, can't reset CUD Flags !")
                 Exit Sub
@@ -849,7 +849,7 @@ cleanup:
                     ' also resetCUDFlags for CUDFlags DBMapper that do not ask before execute and were called by a DBSequence
                     Try
                         ' reset CUDFlags before refresh to avoid problems with reduced TargetRange due to deletions!
-                        resetCUDFlags()
+                        Me.resetCUDFlags()
                     Catch ex As Exception
                         ErrorMsg("Error in resetting CUD Flags: " + ex.Message, "DBMapper Error")
                     End Try
@@ -859,6 +859,8 @@ cleanup:
                             doDBRefresh(Replace(DBFunctionSrcExtent, "DBFtarget", "DBFsource"))
                             ' clear CUD marks after completion is done with doDBRefresh/DBSetQueryAction/resizeDBMapperRange
                         End If
+                    Else
+                        LogWarn("no refresh took place for DBMapper " + dbmodifName)
                     End If
                 End If
             End If
@@ -1177,8 +1179,6 @@ Public Module DBModifs
                 Try
                     Dim extendedMapper As DBMapper = Globals.DBModifDefColl("DBMapper").Item(dbMapperRangeName)
                     extendedMapper.setTargetRange(theRange)
-                    ' in case of CUDFlags, reset them now...
-                    extendedMapper.resetCUDFlags()
                 Catch ex As Exception
                     Throw New Exception("Error notifying the associated DBMapper object when extending '" + dbMapperRangeName + "' to DBListFetch/DBSetQuery target range: " + ex.Message)
                 End Try

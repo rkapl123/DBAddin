@@ -27,6 +27,8 @@ Public Module Globals
     Public nonInteractive As Boolean = False
     ''' <summary>collect non interactive error messages here</summary>
     Public nonInteractiveErrMsgs As String
+    ''' <summary>set to true if warning was issued</summary>
+    Public WarningIssued As Boolean
 
     ' Global settings
     Public DebugAddin As Boolean
@@ -114,6 +116,8 @@ Public Module Globals
         Dim theMethod As Object = (New System.Diagnostics.StackTrace).GetFrame(1).GetMethod
         Dim caller As String = theMethod.ReflectedType.FullName + "." + theMethod.Name
         WriteToLog(LogMessage, EventLogEntryType.Warning, caller)
+        WarningIssued = True
+        theRibbon.InvalidateControl("showLog")
     End Sub
 
     ''' <summary>Logs informational messages</summary>
@@ -133,6 +137,8 @@ Public Module Globals
         Dim theMethod As Object = (New System.Diagnostics.StackTrace).GetFrame(1).GetMethod
         Dim caller As String = theMethod.ReflectedType.FullName + "." + theMethod.Name
         WriteToLog(LogMessage, EventLogEntryType.Warning, caller) ' to avoid popup of trace log
+        WarningIssued = True
+        theRibbon.InvalidateControl("showLog")
         If Not nonInteractive Then MsgBox(LogMessage, msgboxIcon + MsgBoxStyle.OkOnly, errTitle)
     End Sub
 
