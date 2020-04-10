@@ -672,6 +672,7 @@ Public Class DBSheetCreateForm
         End Try
     End Sub
 
+    'TODO: check bug when multiple DBSHeet dialogs are open and lookup/key fields are not filled...
     ''' <summary>fill foreign tables into list of strings (is called by and filled in DBSheetCols.CellValueChanged)</summary>
     Private Function getforeignTables() As List(Of String)
         getforeignTables = New List(Of String)({""})

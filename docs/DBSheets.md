@@ -111,9 +111,9 @@ You can copy/paste the foreign lookup definitions between fields by pressing Ctr
 
 Removing columns is possible by simply deleting a row, you can clear the whole DBsheet definitions by clicking "reset DBSheet creation".
 
-When dealing with foreign column lookups or other lookup restrictions (see below), you can edit the definition of the lookup directly by editing the lookup query field:
+When dealing with foreign column lookups or other lookup restrictions (see below), you can edit the definition of the lookup directly by editing the lookup query field (testing is possible with the context menu in the foreign lookup column).
 
-![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBSheetsDefForLookupRelation.PNG)
+![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBSheetsDefFullDefinedContextMenu.PNG)
 
 You can put any query into that, it just has to return the lookup value first and the ID to be looked up second. Duplicates should be strictly avoided in the return set of this query as they would lead to ambiguities and will produce error messages when generating the DBSheet.
 
@@ -137,7 +137,7 @@ You can also have a lookup field without defining a foreign table relation at al
 
 Also remember that lookups always check for uniqueness, so in case there are duplicate lines to be expected, an additional "distinct" clause will avoid the consequential error messages: "`select distinct lookupCol, lookupCol from someTable…`" (this approach is not to be used with foreign key lookups, as the exact/correct id should always be found out. Instead try to find a way to make the lookup values reflect their uniqueness, e.g. by concatenating/joining further identifiers, as in "`select lookupCol+additionalLookup, lookupID…`" )
 
-Even a lookup column without a lookup query is possible by just listing the possible values after the in the restriction separated by "||", e.g.: Yes||No||Maybe. IDs are not required here, just the values are sufficient:
+Even a lookup column without a lookup query is possible by just listing the possible values after the in the restriction separated by `||`, e.g.: `Yes||No||Maybe`. IDs are not required here, just the values are sufficient:
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBSheetsDefLookupList.PNG)
 
@@ -148,5 +148,7 @@ The DBSheet definition is created in four steps:
     However bear in mind that every change in the columns requires either an overwriting of the customizations and subsequent redoing them (cleaner) or constantly keeping the two synchronized. For customizing the data restriction part (Where Parameter Clause), a separate text input field can be used that allows the query to be regenerated without any intervening. Simply enter the restriction part (the Where clause without the "Where") and create the Query again.
 3.  Then the DBSheet Definition needs to be stored, simply click "save DBsheet def", which allows you to choose a filename (if it hasn't been already saved. The file choice dialog can always be achieved by clicking "save DBSheet def As..."). Afterwards the information currently contained in the DBSheet columns, the DBsheet query and other information is stored in a DBSheet definition file (extension: xml)
 4.  Finally, the DBSheet definition can be assigned to an Excel Worksheet with "assign DBsheet definition", creating a CUD enabled DBMapper with the selected DBSheet definition file to the currently opened Excel Worksheet (this only works if a workbook/sheet is active).
+
+![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBSheetsDefinitionButton.PNG)
 
 You can always test the main table query by clicking on "test DBSheet Query" next to the query definition. This opens an excel sheet with the results of the main table query being inserted. This Testsheet can be closed again either by simply closing it, or quicker by clicking on the same button again (that now changed its caption to "remove Testsheet").
