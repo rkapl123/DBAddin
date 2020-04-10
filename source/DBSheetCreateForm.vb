@@ -98,10 +98,10 @@ Public Class DBSheetCreateForm
                     .DataPropertyName = "primkey",
                     .SortMode = DataGridViewColumnSortMode.NotSortable
                 }
-        Dim ColTypeTB As DataGridViewTextBoxColumn = New DataGridViewTextBoxColumn With {
-                    .Name = "ColType",
-                    .HeaderText = "ColType",
-                    .DataPropertyName = "ColType",
+        Dim typeTB As DataGridViewTextBoxColumn = New DataGridViewTextBoxColumn With {
+                    .Name = "type",
+                    .HeaderText = "type",
+                    .DataPropertyName = "type",
                     .[ReadOnly] = True,
                     .SortMode = DataGridViewColumnSortMode.NotSortable
                 }
@@ -119,7 +119,7 @@ Public Class DBSheetCreateForm
                     .SortMode = DataGridViewColumnSortMode.NotSortable
                 }
         DBSheetCols.AutoGenerateColumns = False
-        DBSheetCols.Columns.AddRange(nameCB, ftableCB, fkeyCB, flookupCB, outerCB, primkeyCB, ColTypeTB, sortCB, lookupTB)
+        DBSheetCols.Columns.AddRange(nameCB, ftableCB, fkeyCB, flookupCB, outerCB, primkeyCB, typeTB, sortCB, lookupTB)
         DBSheetColsEditable(False)
 
         ' if we have a Password to enter, just display explanation text in title bar and let user enter password... 
@@ -271,7 +271,7 @@ Public Class DBSheetCreateForm
             ' if first column then always set primary key!
             If selIndex = 0 Then DBSheetCols.Rows(selIndex).Cells("primkey").Value = True
             ' fill field type for current column
-            DBSheetCols.Rows(selIndex).Cells("ColType").Value = TableDataTypes(DBSheetCols.Rows(selIndex).Cells("name").Value)
+            DBSheetCols.Rows(selIndex).Cells("type").Value = TableDataTypes(DBSheetCols.Rows(selIndex).Cells("name").Value)
             ' fill default values ..
             DBSheetCols.Rows(selIndex).Cells("ftable").Value = ""
             DBSheetCols.Rows(selIndex).Cells("fkey").Value = ""
@@ -331,7 +331,7 @@ Public Class DBSheetCreateForm
     Private selRowIndex As Integer
     Private selColIndex As Integer
 
-    ''' <summary>Shift F10 or menu key pressed to get the context menu</summary>
+    ''' <summary>catch key presses: Shift F10 or menu key to get the context menu, Ctrl-C/Ctrl-V for copy/pasting foreign lookup info</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub DBSheetCols_KeyDown(sender As Object, e As KeyEventArgs) Handles DBSheetCols.KeyDown
@@ -358,6 +358,8 @@ Public Class DBSheetCreateForm
             DBSheetCols.Rows(selRowIndex).Cells("fkey").Value = clipboardDataRow.fkey
             DBSheetCols.Rows(selRowIndex).Cells("flookup").Value = clipboardDataRow.flookup
             DBSheetCols.Rows(selRowIndex).Cells("lookup").Value = clipboardDataRow.lookup
+            DBSheetCols.Rows(selRowIndex).Cells("outer").Value = clipboardDataRow.outer
+            DBSheetCols.Rows(selRowIndex).Cells("primkey").Value = clipboardDataRow.primkey
             ' fill in the dropdown values
             If DBSheetCols.Rows(selRowIndex).Cells("ftable").Value.ToString = "" Then
                 DirectCast(DBSheetCols.Rows(selRowIndex).Cells("fkey"), DataGridViewComboBoxCell).DataSource = New List(Of String)({""})
@@ -370,8 +372,6 @@ Public Class DBSheetCreateForm
         End If
     End Sub
 
-    Private clipboardDataRow As DBSheetDefRow
-
     ''' <summary>display context menus depending on cell selected</summary>
     Private Sub displayContextMenus()
         If selColIndex = 8 And selRowIndex >= 0 Then
@@ -382,6 +382,7 @@ Public Class DBSheetCreateForm
             DBSheetCols.ContextMenuStrip = Nothing
         End If
     End Sub
+
     ''' <summary>prepare context menus to be displayed after right mouse click</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
@@ -551,7 +552,7 @@ Public Class DBSheetCreateForm
                     'fist field is always primary col by default:
                     If firstRow Then newRow.primkey = True
                     firstRow = False
-                    newRow.ColType = TableDataTypes(newRow.name)
+                    newRow.type = TableDataTypes(newRow.name)
                     theDBSheetDefTable.Add(newRow)
                 Next
                 DBSheetCols.DataSource = theDBSheetDefTable
@@ -691,12 +692,13 @@ Public Class DBSheetCreateForm
     End Function
 #End Region
 
+    'TODO: Complex select columns (anything that has more than just the table field) must have an alias associated, which has to be named like the foreign table key. If that is not the case, DBAddin wont be able to associate the foreign column in the main table with the lookup id, and thus displays following error message
 #Region "Query Creation and Testing"
     ''' <summary>create the final DBSheet Main Query</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub createQuery_Click(ByVal sender As Object, ByVal e As EventArgs) Handles createQuery.Click
-        testQuery.Text = "test DBSheet Query"
+        testQuery.Text = "&test DBSheet Query"
         If DBSheetCols.Rows.Count < 2 Then
             ErrorMsg("No columns defined yet, can't create query !", "DBSheet Definition Error")
             Exit Sub
@@ -791,15 +793,15 @@ Public Class DBSheetCreateForm
     Private Sub testQuery_Click(ByVal sender As Object, ByVal e As EventArgs) Handles testQuery.Click
         Try
             If Query.Text <> "" Then
-                If testQuery.Text = "test DBSheet Query" Then
+                If testQuery.Text = "&test DBSheet Query" Then
                     testTheQuery(Query.Text)
-                ElseIf testQuery.Text = "remove Testsheet" Then
+                ElseIf testQuery.Text = "&remove Testsheet" Then
                     If ExcelDnaUtil.Application.ActiveSheet.Name <> "TESTSHEETQ" Then
                         ErrorMsg("Active sheet doesn't seem to be a query test sheet !", "DBSheet Testsheet Remove Warning", MessageBoxIcon.Exclamation)
                     Else
                         ExcelDnaUtil.Application.ActiveWorkbook.Close(False)
                     End If
-                    testQuery.Text = "test DBSheet Query"
+                    testQuery.Text = "&test DBSheet Query"
                 End If
             Else
                 ErrorMsg("No Query created to test !!!", "DBSheet Query Test Warning", MessageBoxIcon.Exclamation)
@@ -851,7 +853,7 @@ Public Class DBSheetCreateForm
                 Preview.Name = "TESTSHEET"
             Else
                 Preview.Name = "TESTSHEETQ"
-                testQuery.Text = "remove Testsheet"
+                testQuery.Text = "&remove Testsheet"
             End If
             Exit Sub
         Catch ex As System.Exception
@@ -905,8 +907,8 @@ Public Class DBSheetCreateForm
                     newRow.flookup = DBSheetConfig.getEntry("flookup", DBSheetColumnDef)
                     newRow.outer = If(DBSheetConfig.getEntry("outer", DBSheetColumnDef) <> "", True, False)
                     newRow.primkey = If(DBSheetConfig.getEntry("primkey", DBSheetColumnDef) <> "", True, False)
-                    newRow.ColType = TableDataTypes(newRow.name)
-                    If newRow.ColType = "" Then Exit Sub
+                    newRow.type = TableDataTypes(newRow.name)
+                    If newRow.type = "" Then Exit Sub
                     Dim sortMode As String = DBSheetConfig.getEntry("sort", DBSheetColumnDef)
                     newRow.sort = If(sortMode = "Ascending", "ASC", If(sortMode = "Descending", "DESC", ""))
                     newRow.lookup = DBSheetConfig.getEntry("lookup", DBSheetColumnDef)
@@ -990,8 +992,8 @@ Public Class DBSheetCreateForm
                 Dim columnLine As String = "<field>"
                 For j As Integer = 0 To DBSheetCols.ColumnCount - 1
                     If DBSheetCols.Rows(i).Cells(j).Value.ToString <> "" Then
-                        ' store everything false values and ColType (is always inferred from Database)
-                        If Not (DBSheetCols.Columns(j).Name = "ColType" OrElse
+                        ' store everything false values and type (is always inferred from Database)
+                        If Not (DBSheetCols.Columns(j).Name = "type" OrElse
                             (TypeName(DBSheetCols.Rows(i).Cells(j).Value) = "Boolean" AndAlso Not DBSheetCols.Rows(i).Cells(j).Value)) Then
                             columnLine += DBSheetConfig.setEntry(DBSheetCols.Columns(j).Name, CStr(DBSheetCols.Rows(i).Cells(j).Value.ToString))
                         End If
@@ -1142,7 +1144,7 @@ Public Class DBSheetDefTable : Inherits DataTable
         Columns.Add(New DataColumn("flookup", GetType(String)))
         Columns.Add(New DataColumn("outer", GetType(Boolean)))
         Columns.Add(New DataColumn("primkey", GetType(Boolean)))
-        Columns.Add(New DataColumn("ColType", GetType(String)))
+        Columns.Add(New DataColumn("type", GetType(String)))
         Columns.Add(New DataColumn("sort", GetType(String)))
         Columns.Add(New DataColumn("lookup", GetType(String)))
     End Sub
@@ -1220,12 +1222,12 @@ Public Class DBSheetDefRow : Inherits DataRow
             MyBase.Item("primkey") = value
         End Set
     End Property
-    Public Property ColType As String
+    Public Property type As String
         Get
-            Return CStr(MyBase.Item("ColType"))
+            Return CStr(MyBase.Item("type"))
         End Get
         Set(ByVal value As String)
-            MyBase.Item("ColType") = value
+            MyBase.Item("type") = value
         End Set
     End Property
     Public Property sort As String
@@ -1252,7 +1254,7 @@ Public Class DBSheetDefRow : Inherits DataRow
         flookup = ""
         outer = False
         primkey = False
-        ColType = ""
+        type = ""
         sort = ""
         lookup = ""
     End Sub

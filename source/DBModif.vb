@@ -1275,8 +1275,8 @@ Public Module DBModifs
                 .DatabaseLabel.Hide()
                 .DBSeqenceDataGrid.Top = 55
                 .DBSeqenceDataGrid.Height = 320
-                .execOnSave.Top = .up.Top
-                .AskForExecute.Top = .up.Top
+                .execOnSave.Top = .CreateCB.Top
+                .AskForExecute.Top = .CreateCB.Top
                 .execOnSave.Anchor = AnchorStyles.Bottom Or AnchorStyles.Left
                 .AskForExecute.Anchor = AnchorStyles.Bottom Or AnchorStyles.Left
                 ' fill Datagridview for DBSequence
@@ -1336,8 +1336,6 @@ Public Module DBModifs
                     theDBModifCreateDlg.Size = New Drawing.Size(width:=490, height:=290)
                 End If
                 ' hide controls irrelevant for DBMapper and DBAction
-                .up.Hide()
-                .down.Hide()
                 .DBSeqenceDataGrid.Hide()
             End If
 

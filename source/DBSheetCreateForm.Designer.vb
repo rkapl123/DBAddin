@@ -74,7 +74,7 @@ Partial Class DBSheetCreateForm
         Me.createQuery.RightToLeft = System.Windows.Forms.RightToLeft.No
         Me.createQuery.Size = New System.Drawing.Size(133, 24)
         Me.createQuery.TabIndex = 14
-        Me.createQuery.Text = "create DBSheet query"
+        Me.createQuery.Text = "&create DBSheet query"
         Me.createQuery.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageAboveText
         Me.ToolTipMain.SetToolTip(Me.createQuery, "create query for DBsheet and foreign lookup informations")
         Me.createQuery.UseVisualStyleBackColor = False
@@ -111,7 +111,7 @@ Partial Class DBSheetCreateForm
         Me.testQuery.RightToLeft = System.Windows.Forms.RightToLeft.No
         Me.testQuery.Size = New System.Drawing.Size(121, 24)
         Me.testQuery.TabIndex = 15
-        Me.testQuery.Text = "test DBSheet Query"
+        Me.testQuery.Text = "&test DBSheet Query"
         Me.testQuery.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageAboveText
         Me.ToolTipMain.SetToolTip(Me.testQuery, "test the DBSheet query  in a new Excel Sheet...")
         Me.testQuery.UseVisualStyleBackColor = False
@@ -159,9 +159,9 @@ Partial Class DBSheetCreateForm
         Me.clearAllFields.Location = New System.Drawing.Point(114, 38)
         Me.clearAllFields.Name = "clearAllFields"
         Me.clearAllFields.RightToLeft = System.Windows.Forms.RightToLeft.No
-        Me.clearAllFields.Size = New System.Drawing.Size(128, 24)
+        Me.clearAllFields.Size = New System.Drawing.Size(134, 24)
         Me.clearAllFields.TabIndex = 8
-        Me.clearAllFields.Text = "reset DBSheet creation"
+        Me.clearAllFields.Text = "reset DBSheet definition"
         Me.clearAllFields.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageAboveText
         Me.ToolTipMain.SetToolTip(Me.clearAllFields, "clear all DBSheet definitions and enable database/table choice")
         Me.clearAllFields.UseVisualStyleBackColor = False

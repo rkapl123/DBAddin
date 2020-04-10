@@ -1,6 +1,6 @@
 ## DBModifications
 
-DBModifications can be used to 
+DBModifications can be used to
 * save Excel Range data to database table(s): DBMapper
 * modify DB Data using Data Manipulation SQL (update, delete, etc.): DBAction
 * and creating sequences of these activites: DBSequence.
@@ -58,10 +58,10 @@ You can always edit these parameters by selecting the Range of the DB Action are
 *   Exec on Save: Should the DBSequence be executed when the workbook is being saved?
 *   Ask for execution: Before execution of the DBSequence, ask for confirmation? A custom text can be given in the CustomXML definition element confirmText (see below)
 *   Sequence Step Datagrid: here the available DBMappers, DBActions and DBFunctions (DBListfetch/DBRowFetch/DBSetQuery) can be added that are then executed in Sequence. If you are executing all sequence steps in the same environment, its possible to run the sequence in a transaction context by placing DBBegin at the top and DBCommitRollback at the bottom of the sequence.
-*   ^/v buttons: used to move the sequence steps up and down.
+*   move the sequence steps up and down by selecting a row and using the context menu (right mouse button).
 *   Create CB: create a commandbutton for the DB Sequence in the current Worksheet.
 
-As DB Sequences have no Range with data/definitions, invoking the context menu always creates new DB Sequences. You can edit existing DB Sequences 
+As DB Sequences have no Range with data/definitions, invoking the context menu always creates new DB Sequences. You can edit existing DB Sequences
 by Ctrl-Shift clicking the Execute DBModifier Groups dropdown menus or by Ctrl-Shift clicking the created commandbuttons.
 
 #### Edit DBModifier Definitions  
@@ -70,7 +70,7 @@ All DBModifier definitions (done in XML) can be viewed by clicking the dialogBox
 together with Ctrl and Shift. This opens the Edit DBModifier Definitions Window:  
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/EditDBModifDefinitions.PNG)
 
-Here you can edit the definitions directly and also insert hidden features like the confirmText. 
+Here you can edit the definitions directly and also insert hidden features like the confirmText.
 
 The DBModifiers can be executed either  
 

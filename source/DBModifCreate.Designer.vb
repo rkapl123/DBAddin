@@ -45,19 +45,22 @@ Partial Class DBModifCreate
         Me.envSel = New System.Windows.Forms.ComboBox()
         Me.DBSeqenceDataGrid = New System.Windows.Forms.DataGridView()
         Me.TargetRangeAddress = New System.Windows.Forms.Label()
-        Me.up = New System.Windows.Forms.Button()
-        Me.down = New System.Windows.Forms.Button()
         Me.CUDflags = New System.Windows.Forms.CheckBox()
         Me.RepairDBSeqnce = New System.Windows.Forms.TextBox()
         Me.AskForExecute = New System.Windows.Forms.CheckBox()
         Me.IgnoreDataErrors = New System.Windows.Forms.CheckBox()
         Me.EnvironmentLabel = New System.Windows.Forms.Label()
+        Me.MoveMenu = New System.Windows.Forms.ContextMenuStrip(Me.components)
+        Me.MoveRowUp = New System.Windows.Forms.ToolStripMenuItem()
+        Me.MoveRowDown = New System.Windows.Forms.ToolStripMenuItem()
         CType(Me.DBSeqenceDataGrid, System.ComponentModel.ISupportInitialize).BeginInit()
+        Me.MoveMenu.SuspendLayout()
         Me.SuspendLayout()
         '
         'Cancel_Button
         '
         Me.Cancel_Button.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
+        Me.Cancel_Button.DialogResult = System.Windows.Forms.DialogResult.Cancel
         Me.Cancel_Button.Location = New System.Drawing.Point(401, 434)
         Me.Cancel_Button.Name = "Cancel_Button"
         Me.Cancel_Button.Size = New System.Drawing.Size(67, 23)
@@ -250,29 +253,6 @@ Partial Class DBModifCreate
         Me.TargetRangeAddress.TabIndex = 11
         Me.ToolTip1.SetToolTip(Me.TargetRangeAddress, "click to select Target Range with Data for DBMapper or SQL DML for DBAction")
         '
-        'up
-        '
-        Me.up.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.up.Font = New System.Drawing.Font("Courier New", 9.75!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        Me.up.Location = New System.Drawing.Point(221, 438)
-        Me.up.Name = "up"
-        Me.up.Size = New System.Drawing.Size(18, 19)
-        Me.up.TabIndex = 15
-        Me.up.Text = "^"
-        Me.ToolTip1.SetToolTip(Me.up, "Move selected sequence step up")
-        Me.up.UseVisualStyleBackColor = True
-        '
-        'down
-        '
-        Me.down.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.down.Location = New System.Drawing.Point(245, 438)
-        Me.down.Name = "down"
-        Me.down.Size = New System.Drawing.Size(18, 19)
-        Me.down.TabIndex = 16
-        Me.down.Text = "v"
-        Me.ToolTip1.SetToolTip(Me.down, "Move selected sequence step down")
-        Me.down.UseVisualStyleBackColor = True
-        '
         'CUDflags
         '
         Me.CUDflags.AutoSize = True
@@ -330,6 +310,24 @@ Partial Class DBModifCreate
         Me.EnvironmentLabel.TabIndex = 6
         Me.EnvironmentLabel.Text = "Env:"
         '
+        'MoveMenu
+        '
+        Me.MoveMenu.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.MoveRowUp, Me.MoveRowDown})
+        Me.MoveMenu.Name = "ContextMenuStrip1"
+        Me.MoveMenu.Size = New System.Drawing.Size(165, 48)
+        '
+        'MoveRowUp
+        '
+        Me.MoveRowUp.Name = "MoveRowUp"
+        Me.MoveRowUp.Size = New System.Drawing.Size(164, 22)
+        Me.MoveRowUp.Text = "Move Row Up"
+        '
+        'MoveRowDown
+        '
+        Me.MoveRowDown.Name = "MoveRowDown"
+        Me.MoveRowDown.Size = New System.Drawing.Size(164, 22)
+        Me.MoveRowDown.Text = "Move Row Down"
+        '
         'DBModifCreate
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
@@ -345,8 +343,6 @@ Partial Class DBModifCreate
         Me.Controls.Add(Me.AskForExecute)
         Me.Controls.Add(Me.CUDflags)
         Me.Controls.Add(Me.insertIfMissing)
-        Me.Controls.Add(Me.down)
-        Me.Controls.Add(Me.up)
         Me.Controls.Add(Me.DBSeqenceDataGrid)
         Me.Controls.Add(Me.envSel)
         Me.Controls.Add(Me.execOnSave)
@@ -372,6 +368,7 @@ Partial Class DBModifCreate
         Me.ShowInTaskbar = False
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent
         CType(Me.DBSeqenceDataGrid, System.ComponentModel.ISupportInitialize).EndInit()
+        Me.MoveMenu.ResumeLayout(False)
         Me.ResumeLayout(False)
         Me.PerformLayout()
 
@@ -397,11 +394,12 @@ Partial Class DBModifCreate
     Friend WithEvents EnvironmentLabel As Windows.Forms.Label
     Friend WithEvents DBSeqenceDataGrid As Windows.Forms.DataGridView
     Friend WithEvents TargetRangeAddress As Windows.Forms.Label
-    Friend WithEvents up As Windows.Forms.Button
-    Friend WithEvents down As Windows.Forms.Button
     Friend WithEvents CUDflags As Windows.Forms.CheckBox
     Friend WithEvents RepairDBSeqnce As Windows.Forms.TextBox
     Friend WithEvents AskForExecute As Windows.Forms.CheckBox
     Friend WithEvents CreateCB As Windows.Forms.Button
     Friend WithEvents IgnoreDataErrors As Windows.Forms.CheckBox
+    Friend WithEvents MoveMenu As Windows.Forms.ContextMenuStrip
+    Friend WithEvents MoveRowUp As Windows.Forms.ToolStripMenuItem
+    Friend WithEvents MoveRowDown As Windows.Forms.ToolStripMenuItem
 End Class

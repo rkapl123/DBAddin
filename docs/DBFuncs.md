@@ -335,7 +335,7 @@ The Aboutbox can be reached by clicking the small dialogBox Launcher in the righ
 There is a possibility to see the Log from there and set the future log events displayed (starting values are set in the config file). You can also fix legacy DBAddin functions, in case you decided to skip the possibility offered on opening a Workbook.
 
 The DBListFetch's and DBRowFetch's target areas' extent is stored in hidden named ranges assigned both to the calling function cell (DBFsource(Key)) and the target (DBFtarget(Key)). These hidden names are used to keep track of the previous content to prevent overwriting, clearing old values, etc.
-Sometimes during copying and pasting DB Functions, these names can get mixed up, leading to strange results or non-functioning of the "jump" function. In these cases, there is a tool in the DBAddin menu, which may be used to "purge" these hidden named ranges in case of any strange behaviour due to multiple name assignments to the same area.
+Sometimes during copying and pasting DB Functions, these names can get mixed up, leading to strange results or non-functioning of the "jump" function. In these cases, there is a tool in the DB Addin tools group, which may be used to "purge" these hidden named ranges in case of any strange behaviour due to multiple name assignments to the same area.
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/purgeNames.PNG)  
 
 ### Create DB Functions

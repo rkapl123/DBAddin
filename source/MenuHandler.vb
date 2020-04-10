@@ -25,11 +25,11 @@ Public Class MenuHandler
         "<group id='DBAddinGroup' label='DBAddin settings'>" +
             "<dropDown id='envDropDown' label='Environment:' sizeString='1234567890123456' getEnabled='GetEnabledSelect' getSelectedItemIndex='GetSelectedEnvironment' getItemCount='GetItemCount' getItemID='GetItemID' getItemLabel='GetItemLabel' getSupertip='getSelectedTooltip' onAction='selectEnvironment'/>" +
             "<buttonGroup id='buttonGroup1'>" +
-                "<menu id='configMenu' label='Configs'>" +
-                    "<button id='userconfig' label='User config' onAction='showAddinConfig' imageMso='ControlProperties' screentip='Show/edit user configuration for DB Addin' />" +
-                    "<button id='centralconfig' label='Central config' onAction='showAddinConfig' imageMso='TablePropertiesDialog' screentip='Show/edit central configuration for DB Addin' />" +
+                "<menu id='configMenu' label='Settings'>" +
+                    "<button id='usersetting' label='User settings' onAction='showAddinConfig' imageMso='ControlProperties' screentip='Show/edit user settings for DB Addin' />" +
+                    "<button id='centralsetting' label='Central settings' onAction='showAddinConfig' imageMso='TablePropertiesDialog' screentip='Show/edit central settings for DB Addin' />" +
                 "</menu>" +
-                "<button id='props' label='custom props' onAction='showCProps' getImage='getCPropsImage' screentip='Change custom properties relevant for DB Addin:' getSupertip='getToggleCPropsScreentip' />" +
+                "<button id='props' label='Properties' onAction='showCProps' getImage='getCPropsImage' screentip='Change custom properties relevant for DB Addin:' getSupertip='getToggleCPropsScreentip' />" +
             "</buttonGroup>" +
             "<dialogBoxLauncher><button id='dialog' label='About DBAddin' onAction='showAbout' screentip='Show Aboutbox with help, version information and project homepage'/></dialogBoxLauncher>" +
         "</group>"
@@ -38,16 +38,16 @@ Public Class MenuHandler
         "<group id='DBAddinToolsGroup' label='DB Addin Tools'>" +
             "<buttonGroup id='buttonGroup2'>" +
                 "<dynamicMenu id='DBConfigs' label='DB Configs' imageMso='QueryShowTable' screentip='DB Function Configuration Files quick access' getContent='getDBConfigMenu'/>" +
-                "<menu id='DBSheetMenu' label='DBSheets'>" +
-                    "<button id='DBSheetCreate' label='create DBsheet Def' screentip='click to create a new DBSheet or edit an existing definition' imageMso='TableDesign' onAction='clickCreateDBSheet'/>" +
-                    "<button id='DBSheetAssign' tag='DBSheet' label='assign DBsheet Def' screentip='click to assign a DBSheet definition to the current cell' imageMso='ChartResetToMatchStyle' onAction='clickCreateButton'/>" +
+                "<menu id='DBSheetMenu' label='DBSheet Def'>" +
+                    "<button id='DBSheetCreate' label='Create DBsheet definition' screentip='click to create a new or edit an existing DBSheet definition' imageMso='TableDesign' onAction='clickCreateDBSheet'/>" +
+                    "<button id='DBSheetAssign' tag='DBSheet' label='Assign DBsheet definition' screentip='click to assign a DBSheet definition to the current cell' imageMso='ChartResetToMatchStyle' onAction='clickCreateButton'/>" +
                 "</menu>" +
             "</buttonGroup>" +
             "<buttonGroup id='buttonGroup3'>" +
-                "<button id='purgetool' label='purge tool' screentip='purges underlying DBtarget/DBsource Names' imageMso='BorderErase' onAction='clickpurgetoolbutton'/>" +
-                "<button id='showLog' label='show log' screentip='shows Database Addins Diagnostic Display' getImage='getLogsImage' onAction='clickShowLog'/>" +
+                "<button id='purgetool' label='Purge' screentip='purges underlying DBtarget/DBsource Names' imageMso='BorderErase' onAction='clickpurgetoolbutton'/>" +
+                "<button id='showLog' label='Log' screentip='shows Database Addins Diagnostic Display' getImage='getLogsImage' onAction='clickShowLog'/>" +
+                "<button id='designmode' label='Buttons' onAction='showToggleDesignMode' getImage='getToggleDesignImage' getScreentip='getToggleDesignScreentip'/>" +
             "</buttonGroup>" +
-            "<button id='designmode' label='Buttondesign' onAction='showToggleDesignMode' getImage='getToggleDesignImage' getScreentip='getToggleDesignScreentip'/>" +
         "</group>"
         ' DBModif Group: maximum three DBModif types possible (depending on existence in current workbook): 
         customUIXml +=
@@ -164,17 +164,19 @@ Public Class MenuHandler
         End Try
     End Function
 
-    ''' <summary>click on change props: show Custom Properties Dialog</summary>
+    ''' <summary>click on change props: show builtin properties dialog</summary>
     ''' <param name="control"></param>
     Public Sub showCProps(control As IRibbonControl)
         ExcelDnaUtil.Application.Dialogs(Excel.XlBuiltInDialog.xlDialogProperties).Show
+        ' to check whether DBFskip has changed:
         Globals.theRibbon.InvalidateControl(control.Id)
     End Sub
 
     ''' <summary>show DBModif deefinitions edit box</summary>
     ''' <param name="control"></param>
     Sub showDBModifEdit(control As IRibbonControl)
-        If Not IsNothing(ExcelDnaUtil.Application.ActiveWorkbook) Then
+        ' only show dialog if there is a workbook and it has the relevant custom XML part.
+        If Not IsNothing(ExcelDnaUtil.Application.ActiveWorkbook) AndAlso ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef").Count > 0 Then
             Dim theEditDBModifDefDlg As EditDBModifDef = New EditDBModifDef()
             If theEditDBModifDefDlg.ShowDialog() = System.Windows.Forms.DialogResult.OK Then DBModifs.getDBModifDefinitions()
         End If

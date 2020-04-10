@@ -112,7 +112,7 @@ Public Class DBModifCreate
     ''' <summary>move row up in DataGridView of DB Sequence</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
-    Private Sub Up_Click(sender As Object, e As EventArgs) Handles up.Click
+    Private Sub MoveRowUp_Click(sender As Object, e As EventArgs) Handles MoveRowUp.Click
         If IsNothing(DBSeqenceDataGrid.CurrentRow) Then Return
         Dim rw As DataGridViewRow = DBSeqenceDataGrid.CurrentRow
         Dim selIndex As Integer = DBSeqenceDataGrid.CurrentRow.Index
@@ -126,7 +126,7 @@ Public Class DBModifCreate
     ''' <summary>move row down in DataGridView of DB Sequence</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
-    Private Sub Down_Click(sender As Object, e As EventArgs) Handles down.Click
+    Private Sub MoveRowDown_Click(sender As Object, e As EventArgs) Handles MoveRowDown.Click
         If IsNothing(DBSeqenceDataGrid.CurrentRow) Then Return
         Dim rw As DataGridViewRow = DBSeqenceDataGrid.CurrentRow
         Dim selIndex As Integer = DBSeqenceDataGrid.CurrentRow.Index
@@ -135,6 +135,20 @@ Public Class DBModifCreate
         DBSeqenceDataGrid.Rows.RemoveAt(selIndex)
         DBSeqenceDataGrid.Rows.Insert(selIndex + 1, rw)
         DBSeqenceDataGrid.Rows(selIndex + 1).Cells(0).Selected = True
+    End Sub
+
+    Private selRowIndex As Integer
+    Private selColIndex As Integer
+
+    ''' <summary>prepare context menus to be displayed after right mouse click</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub DBSeqenceDataGrid_CellMouseDown(sender As Object, e As DataGridViewCellMouseEventArgs) Handles DBSeqenceDataGrid.CellMouseDown
+        selRowIndex = e.RowIndex
+        selColIndex = e.ColumnIndex
+        If e.Button = Windows.Forms.MouseButtons.Right Then
+            DBSeqenceDataGrid.ContextMenuStrip = MoveMenu
+        End If
     End Sub
 
     ''' <summary>Shown Event to display Data Errors when adding DBSequence Grid elements</summary>

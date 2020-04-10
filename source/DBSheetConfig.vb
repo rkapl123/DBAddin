@@ -17,6 +17,8 @@ Public Module DBSheetConfig
     Dim curConfig As String
     ''' <summary>the added and hidden worksheet with lookups inside</summary>
     Dim lookupWS As Excel.Worksheet
+    ''' <summary>the database name</summary>
+    Dim databaseName As String
     ''' <summary>the Database table name of the DBSheet</summary>
     Dim tableName As String
     ''' <summary>counter to know how many cells we filled for the dbmapper query 
@@ -26,6 +28,8 @@ Public Module DBSheetConfig
     Dim addedCells As Integer
     ''' <summary>for DBSheetCreateForm, store the password so we don't have to enter it again...</summary>
     Public existingPwd As String
+    ''' <summary>public clipboard row for DBSheet definition rows (foreign lookup info)</summary>
+    Public clipboardDataRow As DBSheetDefRow
 
     Public Sub createDBSheet()
         Dim openFileDialog1 As OpenFileDialog = New OpenFileDialog With {
@@ -40,8 +44,11 @@ Public Module DBSheetConfig
             ' Get the DBSheet Definition file name and read into curConfig
             Dim dsdPath As String = openFileDialog1.FileName
             curConfig = File.ReadAllText(dsdPath, Text.Encoding.Default)
+            databaseName = Replace(getEntry("connID", curConfig), fetchSetting("connIDPrefixDBtype", "MSSQL"), "")
             ' get the table name of the DBSheet for setting the DBMapper name
             tableName = getEntry("table", curConfig)
+            ' if database is contained in table name, only get rightmost identifier as table name..
+            If InStr(tableName.ToLower, databaseName.ToLower + ".") > 0 Then tableName = Strings.Mid(tableName, InStrRev(tableName, ".") + 1)
             ' get query
             Dim queryStr As String = getEntry("query", curConfig)
             If queryStr = "" Then
@@ -173,7 +180,7 @@ Public Module DBSheetConfig
         ' store lookup columns (<>LU) to be ignored in DBMapper
         Dim queryErrorPos As Integer = InStr(curCell.Value.ToString, "Error")
         If queryErrorPos > 0 Then
-            ErrorMsg("DBSheet Query had and error:" + vbCrLf + Mid(curCell.Value.ToString, queryErrorPos + Len("Error in query table refresh: ")), "DBSheet Creation Error")
+            ErrorMsg("DBSheet Query had an error:" + vbCrLf + Mid(curCell.Value.ToString, queryErrorPos + Len("Error in query table refresh: ")), "DBSheet Creation Error")
             If Not IsNothing(lookupWS) Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
             Exit Sub
         End If
@@ -187,7 +194,7 @@ Public Module DBSheetConfig
                 Exit Sub
             End Try
         End If
-        ' some visual aid for DBSHeets
+        ' some visual aid for DBSheets
         If curCell.Column = 1 And curCell.Row = 1 Then curCell.EntireColumn.ColumnWidth = 0.4
         Dim ignoreColumns As String = ""
         Try
@@ -293,8 +300,6 @@ Public Module DBSheetConfig
             If Not IsNothing(lookupWS) Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
             Exit Sub
         End Try
-        ' get the database name
-        Dim databaseName = Replace(getEntry("connID", curConfig), fetchSetting("connIDPrefixDBtype", "MSSQL"), "")
         ' primary columns count (first <primCols> columns are primary columns)s
         Dim primCols As String = getEntry("primcols", curConfig)
         Try
