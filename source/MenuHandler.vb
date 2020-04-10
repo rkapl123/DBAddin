@@ -123,6 +123,7 @@ Public Class MenuHandler
         Return customUIXml
     End Function
 
+    'TODO: add Ctl-Sh-i for inserting and think of a way to show insert/delete menu items only in DBSheets
 #Disable Warning IDE0060 ' Hide not used Parameter warning
 
     ''' <summary>display warning button icon on Cprops change if DBFskip is set...</summary>
