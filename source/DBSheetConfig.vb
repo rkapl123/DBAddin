@@ -123,6 +123,7 @@ Public Module DBSheetConfig
                         ConfigFiles.createFunctionsInCells(lookupWS.Cells(1, lookupCol), {"RC", "=DBListFetch(RC[1],""""," + lookupName + "Lookup" + ")"})
                         ' database lookups have two columns
                         lookupCol += 2
+                        ' TODO: also allow fixed value lookups with a single value select statement !!
                     Else                                         'fixed value lookup only has one column, no need to resolve to an ID
                         Dim lookupValues As String() = Split(LookupQuery, "||")
                         Dim lrow As Integer

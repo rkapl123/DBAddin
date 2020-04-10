@@ -133,7 +133,7 @@ Following diagram should clarify the connection between lookup queries and the m
 
 You can also have a lookup field without defining a foreign table relation at all. This is done by simply defining the flookup for that field. Here the same applies as already said above. Beware that the first column is always the lookup value and the second always the id (the value that is actually being stored into the table), so in a "relationless" lookup, **both columns** bear the actual values. This means that a "relationless" restriction usually will look like `"select lookupCol, lookupCol from someTable…`":
 
-![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBSheetsDefLookupList.PNG)
+![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBSheetsDefLookupSelect.PNG)
 
 Also remember that lookups always check for uniqueness, so in case there are duplicate lines to be expected, an additional "distinct" clause will avoid the consequential error messages: "`select distinct lookupCol, lookupCol from someTable…`" (this approach is not to be used with foreign key lookups, as the exact/correct id should always be found out. Instead try to find a way to make the lookup values reflect their uniqueness, e.g. by concatenating/joining further identifiers, as in "`select lookupCol+additionalLookup, lookupID…`" )
 
