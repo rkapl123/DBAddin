@@ -1,19 +1,18 @@
-<DBsheetParams>
-<connID>MSSQLpubs</connID>
-<table>roysched</table>
+<DBsheetConfig>
+<connID>pubs</connID>
+<table>pubs.dbo.roysched</table>
 <query>SELECT T2.title+'/'+p.pub_name AS title_id, T1.lorange, T1.hirange, T1.royalty
 FROM pubs.dbo.roysched T1 INNER JOIN 
 pubs.dbo.titles T2 ON T1.title_id = T2.title_id LEFT JOIN 
-pubs.dbo.publishers p ON T2.pub_id = p.pub_id
+pubs.dbo.publishers p ON T2.pub_id = p.pub_id AND T2.title_id>3
 WHERE T1.lorange > ? and T1.hirange < ?
 </query>
 <whereClause>T1.lorange > ? and T1.hirange < ?</whereClause>
-<calcedcols>0</calcedcols>
 <primcols>3</primcols>
 <columns>
-<field><name>*title_id</name><ftable>pubs.dbo.titles</ftable><fkey>title_id</fkey><flookup>title</flookup><primkey>Y</primkey><lookup>SELECT !T!.title+'/'+p.pub_name AS title_id,!T!.title_id FROM pubs.dbo.titles !T! LEFT JOIN pubs.dbo.publishers p ON !T!.pub_id = p.pub_id ORDER BY !T!.title</lookup></field>
-<field><name>lorange</name><primkey>Y</primkey></field>
-<field><name>hirange</name><primkey>Y</primkey></field>
+<field><name>*title_id</name><ftable>pubs.dbo.titles</ftable><fkey>title_id</fkey><flookup>title</flookup><primkey>True</primkey><lookup>SELECT !T!.title+'/'+p.pub_name AS title_id,!T!.title_id FROM pubs.dbo.titles !T! LEFT JOIN pubs.dbo.publishers p ON !T!.pub_id = p.pub_id WHERE !T!.title_id>3 ORDER BY !T!.title</lookup></field>
+<field><name>lorange</name><primkey>True</primkey></field>
+<field><name>hirange</name><primkey>True</primkey></field>
 <field><name>royalty</name></field>
 </columns>
-<DBsheetParams>
+</DBsheetConfig>

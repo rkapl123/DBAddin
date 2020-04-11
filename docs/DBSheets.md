@@ -117,19 +117,22 @@ When dealing with foreign column lookups or other lookup restrictions (see below
 
 You can put any query into that, it just has to return the lookup value first and the ID to be looked up second. Duplicates should be strictly avoided in the return set of this query as they would lead to ambiguities and will produce error messages when generating the DBSheet.
 
-Customizations of the restriction field should observe a few rules to be used efficiently (thereby not forcing the DBSheet creating person to do unnecessary double work): First, any reference to the foreign table itself has to use the template placeholder (here: !T!), which is then replaced by the actual table enumerator (T2..T<N>, with T1 always being the primary table). Complex select columns (anything that has more than just the table field) must have an alias associated, which has to be named like the foreign table key. If that is not the case, DBAddin wont be able to associate the foreign column in the main table with the lookup id, and thus displays following error message:
+Customizations of the restriction field should observe a few rules to be used efficiently (thereby not forcing the DBSheet creating person to do unnecessary double work): First, any reference to the foreign table itself has to use the configured template placeholder (here: !T!), which is then replaced by an actual table enumerator (T2..T<N>, T1 always being the primary table).  
 
+Lookup value columns that differ from the table field's name must have an alias associated, which has to be the table field's name. If that is not the case, DBAddin wont be able to associate the foreign column in the main table with the lookup id, and thus displays following error message when creating the DBSheet query:
+
+![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBSheetsDefForLookupErrorMsg.PNG)
 
 The connection between the lookup queries and the main query is as follows:
 
 1.  The first column part of the lookup query select statement is copied into the respective field in the main table query (therefore the above restriction)
 2.  The foreign lookup table and all further additional tables needed for the lookup query are joined into the main query in the same way as they are defined in the lookup (inner/outer joins), `WHERE` clauses are added to those joins with `AND`.
 
-You can always test the foreign lookup query by selecting the context menu item "test lookup query" in the lookup column. This opens an excel sheet with the results of the lookup query being inserted. This Testsheet can be closed again either by simply closing it, or by selecting context menu item "remove lookup query test".
-
 Following diagram should clarify the connection between lookup queries and the main query:
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBSheetsDefForLookupRelation.PNG)
+
+You can always test the foreign lookup query by selecting the context menu item "test lookup query" in the lookup column. This opens an excel sheet with the results of the lookup query being inserted. This Testsheet can be closed again either by simply closing it, or by selecting context menu item "remove lookup query test".
 
 You can also have a lookup field without defining a foreign table relation at all. This is done by simply defining the flookup for that field. Here the same applies as already said above. Beware that the first column is always the lookup value and the second always the id (the value that is actually being stored into the table), so in a "relationless" lookup, **both columns** bear the actual values. This means that a "relationless" restriction usually will look like `"select lookupCol, lookupCol from someTable…`":
 

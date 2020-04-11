@@ -26,10 +26,13 @@ Public Module DBSheetConfig
     ''' add one for where clause, then one for each parameter)
     ''' </summary>
     Dim addedCells As Integer
+    Dim tblPlaceHolder As String
+    Dim specialNonNullableChar As String
     ''' <summary>for DBSheetCreateForm, store the password so we don't have to enter it again...</summary>
     Public existingPwd As String
     ''' <summary>public clipboard row for DBSheet definition rows (foreign lookup info)</summary>
     Public clipboardDataRow As DBSheetDefRow
+
 
     Public Sub createDBSheet()
         Dim openFileDialog1 As OpenFileDialog = New OpenFileDialog With {
@@ -44,6 +47,8 @@ Public Module DBSheetConfig
             ' Get the DBSheet Definition file name and read into curConfig
             Dim dsdPath As String = openFileDialog1.FileName
             curConfig = File.ReadAllText(dsdPath, Text.Encoding.Default)
+            tblPlaceHolder = fetchSetting("tblPlaceHolder" + env.ToString, "!T!")
+            specialNonNullableChar = fetchSetting("specialNonNullableChar" + env.ToString, "*")
             databaseName = Replace(getEntry("connID", curConfig), fetchSetting("connIDPrefixDBtype", "MSSQL"), "")
             ' get the table name of the DBSheet for setting the DBMapper name
             tableName = getEntry("table", curConfig)
@@ -93,8 +98,8 @@ Public Module DBSheetConfig
                 Dim lookupCol As Integer = 1
                 For Each LookupDef As String In lookupsList
                     ' fetch Lookupquery and get rid of template table def
-                    Dim LookupQuery As String = Replace(getEntry("lookup", LookupDef, 1), "!T!", "T1")
-                    Dim lookupName As String = Replace(getEntry("name", LookupDef, 1), "*", "")
+                    Dim LookupQuery As String = Replace(getEntry("lookup", LookupDef, 1), tblPlaceHolder, "T1")
+                    Dim lookupName As String = Replace(getEntry("name", LookupDef, 1), specialNonNullableChar, "")
                     ' replace fieldname of Lookups in query with fieldname + "LU" only for database lookups
                     If getEntry("fkey", LookupDef, 1) <> "" Then
                         ' replace looked up ID names with ID name + "LU" in query string
@@ -201,7 +206,7 @@ Public Module DBSheetConfig
         Try
             If Not IsNothing(lookupsList) Then
                 For Each LookupDef As String In lookupsList
-                    Dim lookupName As String = Replace(getEntry("name", LookupDef, 1), "*", "")
+                    Dim lookupName As String = Replace(getEntry("name", LookupDef, 1), specialNonNullableChar, "")
                     If IsNothing(ExcelDnaUtil.Application.Range(lookupName + "Lookup").Cells(1, 1).Value) Then
                         Dim answr As MsgBoxResult = QuestionMsg("lookup area '" + lookupName + "Lookup' probably contains no values (maybe an error), continue?", MsgBoxStyle.OkCancel, "DBSheet Creation Error")
                         If answr = vbCancel Then

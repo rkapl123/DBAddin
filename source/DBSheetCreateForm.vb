@@ -693,7 +693,6 @@ Public Class DBSheetCreateForm
     End Function
 #End Region
 
-    'TODO: Complex select columns (anything that has more than just the table field) must have an alias associated, which has to be named like the foreign table key. If that is not the case, DBAddin wont be able to associate the foreign column in the main table with the lookup id, and thus displays following error message
 #Region "Query Creation and Testing"
     ''' <summary>create the final DBSheet Main Query</summary>
     ''' <param name="sender"></param>
@@ -766,13 +765,18 @@ Public Class DBSheetCreateForm
                     ' remove second field in lookup query's select clause
                     restrPos = selectPart.LastIndexOf(",") + 1
                     selectPart = selectPart.Substring(0, Math.Min(restrPos - 1, selectPart.Length))
-                    ' complex select statement, take directly from lookup query..
+                    Dim aliasName As String = Strings.Mid(selectPart, InStrRev(selectPart, " ") + 1)
+                    If aliasName <> usedColumn Then
+                        ErrorMsg("Alias of lookup field '" + aliasName + "' is not consistent with field name '" + usedColumn + "', please change lookup definition !")
+                        Exit Sub
+                    End If
                     Dim flookupStr As String = DBSheetCols.Rows(i).Cells("flookup").Value.ToString
+                    ' customized select statement, take directly from lookup query..
                     If selectPart <> flookupStr Then
                         selectStr += quotedReplace(selectPart, "T" + tableCounter.ToString) + ", "
                     Else
                         ' simple select statement (only the lookup field and id), put together...
-                        selectStr += theTable + "." + flookupStr + " AS " + usedColumn + ", "
+                        selectStr += theTable + "." + flookupStr + " " + usedColumn + ", "
                     End If
                 End If
             Next
