@@ -11,5 +11,3 @@ DBAddin.NET is the successor to the VB6 based DBAddin (as found on [sourceforge]
 Testing for MS SQL Server and other databases (MySQL, Oracle, PostgreSQL, DB2, Sybase and Access) can be done using the Testing Workbook "DBFuncsTest.xls".
 To use that Testing Workbook you'll need the pubs database, where I have scripts available for Oracle, Sybase, DB2, PostgreSQL and MySql [here](PUBS_database_scripts.zip) (the MS-SQLserver version can be downloaded [here](https://www.microsoft.com/en-us/download/details.aspx?id=23654)).  
 I've also added a pubs.mdb Access database in the test folder.
-
-DBAddin is distributed under the [GNU Public License V3](http://www.gnu.org/copyleft/gpl.html).
