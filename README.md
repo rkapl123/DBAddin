@@ -5,4 +5,4 @@ Excel Addin that allows you to retrieve Data via userdefined functions (DBListfe
 
 Currently this is still work in progress, the migration from the VB6 Code to VB.Net is not finished completely!
 
-Details see https://rkapl123.github.io/DBAddin/
+For documentation, see https://rkapl123.github.io/DBAddin/
