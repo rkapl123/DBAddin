@@ -2,9 +2,9 @@
 
 DBAddin is a ExcelDNA based Add-in for Database interoperability.
 
-First DBaddin provides DB Functions (see [DBFuncs Userdoc](DBFuncs.md)), which are an alternative to the Excel built-in MSQuery (integrated statically into worksheets having severe limitations in terms of querying and constructing parameterized queries (MS-Query allows parameterized queries only in simple queries that can be displayed graphically)).  
+First, DBaddin provides DB Functions (see [DBFuncs Userdoc](DBFuncs.md)), which are an alternative to the Excel built-in MSQuery (integrated statically into worksheets having severe limitations in terms of querying and constructing parameterized queries (MS-Query allows parameterized queries only in simple queries that can be displayed graphically)).  
 
-Next, methods for working with database data ([DBModifications](DBModif.md): DBMapper, DBAction and DBSequences) are included. This also includes a entry oriented way to modify data in so called DBSheets (see [DBSheets](DBSheets.md)).
+Next, methods for working with database data ([DBModifications](DBModif.md): DBMapper, DBAction and DBSequences) are included. This also includes a row entry oriented way to modify data in so called DBSheets (see [DBSheets](DBSheets.md)).
 
 DBAddin.NET is the successor to the VB6 based DBAddin (as found on [sourceforge](https://sourceforge.net/projects/dbaddin/)).
 
