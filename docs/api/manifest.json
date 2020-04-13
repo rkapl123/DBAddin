@@ -12,7 +12,7 @@
           "hash": "4Uxm4k7WJZzkUCVvEmaGjw=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -21,10 +21,10 @@
       "output": {
         ".html": {
           "relative_path": "articles/intro.html",
-          "hash": "1pCRCoL1WtWwH9SiLO6Avg=="
+          "hash": "L40VeYNUZb/5qcdt3sDE2w=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -48,7 +48,7 @@
           "hash": "6/gsqc2NOyb5oxpTU0jAug=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -60,7 +60,7 @@
           "hash": "aewi2W3nr09Ep9smPpW5ZQ=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -72,7 +72,7 @@
           "hash": "QNDD3qB4eL3VlCz1TCr0fQ=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -84,7 +84,7 @@
           "hash": "xCRIPIpFbdAU1cAi7rkUGg=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -96,7 +96,7 @@
           "hash": "6l0RjPQ8zvLJ+yy0P3J/eg=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -108,7 +108,7 @@
           "hash": "MKGpWyiccBN94iEaAAo1ew=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -120,7 +120,7 @@
           "hash": "fkWYsiTmlagjlhkWfVmweA=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -129,10 +129,10 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.DBAction.html",
-          "hash": "5P7fMgU/8VL2bo1LUmQc4w=="
+          "hash": "RplZSP3qE5rciAi7JSukvw=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -141,10 +141,10 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.DBMapper.html",
-          "hash": "u1nLKtwAkgA6vEe0infb7A=="
+          "hash": "iWQWupbQv4WfG708G/eB7w=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -156,7 +156,7 @@
           "hash": "ZulyNPE6HM53+782tYavqQ=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -168,7 +168,7 @@
           "hash": "vnCxSWXfbYiXuGbSJIDnhg=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -177,10 +177,10 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.DBModifs.html",
-          "hash": "YCkv/vqY3ALEc+bW54Y3cw=="
+          "hash": "DIoqM0STmqttkhXKQBI4FA=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -189,10 +189,10 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.DBSeqnce.html",
-          "hash": "B2+tVsWWb98j6OyM9092mA=="
+          "hash": "L50XDJBARqVDmLYIBdc3fQ=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -204,7 +204,7 @@
           "hash": "TyQVTIiFYp6vJwPBzwJUGg=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -213,10 +213,10 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.DBSheetCreateForm.html",
-          "hash": "08XxJkEDZIkhz3a115uY0w=="
+          "hash": "hxYxTcTX0R7TMEjD88anAw=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -228,7 +228,7 @@
           "hash": "4NKegDZo+6olI4umACkQEg=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -240,7 +240,7 @@
           "hash": "HcMk5FAZ3/mXX2PZUxFP1A=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -249,10 +249,10 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.EditDBModifDef.html",
-          "hash": "5Veua3f2P6nUf3zn2tPZAQ=="
+          "hash": "G9ngzOpneCUsTEDnUQ+Chg=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -264,7 +264,7 @@
           "hash": "Cd9CBDz3PREGIg1RWb7RKQ=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -276,7 +276,7 @@
           "hash": "o9LJfp92glOwbnCycwDT/w=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -285,10 +285,10 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.MenuHandler.html",
-          "hash": "cvFu5jAEO6gLjVUAxlzJCQ=="
+          "hash": "XNNIjCLXg1b1nzphFh0OOQ=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -300,7 +300,7 @@
           "hash": "N09R0QeGXBVW5FqN/Si0Tg=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -312,7 +312,7 @@
           "hash": "hxvYqugP93ufVudul7R2bQ=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -321,10 +321,10 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.html",
-          "hash": "bleGwbkj6mxyPHb36NI6xg=="
+          "hash": "037kJEStmCKkxqG5sSimmg=="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -361,13 +361,6 @@
         "skipped_file_count": 0
       },
       "processors": {
-        "TocDocumentProcessor": {
-          "can_incremental": false,
-          "details": "Processor TocDocumentProcessor cannot support incremental build because the processor doesn't implement ISupportIncrementalDocumentProcessor interface.",
-          "incrementalPhase": "build",
-          "total_file_count": 0,
-          "skipped_file_count": 0
-        },
         "ConceptualDocumentProcessor": {
           "can_incremental": true,
           "incrementalPhase": "build",
@@ -379,6 +372,13 @@
           "incrementalPhase": "build",
           "total_file_count": 23,
           "skipped_file_count": 23
+        },
+        "TocDocumentProcessor": {
+          "can_incremental": false,
+          "details": "Processor TocDocumentProcessor cannot support incremental build because the processor doesn't implement ISupportIncrementalDocumentProcessor interface.",
+          "incrementalPhase": "build",
+          "total_file_count": 0,
+          "skipped_file_count": 0
         }
       }
     },

@@ -90,9 +90,11 @@
       <section><p>Provides a data structure for transporting information back from the calculation action procedure to the calling function</p>
 </section>
       <h4><a class="xref" href="DBaddin.DBAction.html">DBAction</a></h4>
-      <section></section>
+      <section><p>DBActions are used to issue DML commands defined in Cells against the database</p>
+</section>
       <h4><a class="xref" href="DBaddin.DBMapper.html">DBMapper</a></h4>
-      <section></section>
+      <section><p>DBMappers are used to store a range of data in Excel to the database. A special type of DBMapper is the CUD DBMapper for realizing the former DBSheets</p>
+</section>
       <h4><a class="xref" href="DBaddin.DBModif.html">DBModif</a></h4>
       <section><p>Abstraction of a DB Modification Object (concrete classes DBMapper, DBAction or DBSeqnce)</p>
 </section>
@@ -100,15 +102,16 @@
       <section><p>Dialog for creating DB Modifier configurations</p>
 </section>
       <h4><a class="xref" href="DBaddin.DBModifs.html">DBModifs</a></h4>
-      <section><p>Contains DBModif functions for storing/updating tabular excel data (DBMapper), doing DBActions, doing DBSequence (combinations of DBMapper/DBAction) and some helper functions</p>
+      <section><p>global helper functions for DBModifiers</p>
 </section>
       <h4><a class="xref" href="DBaddin.DBSeqnce.html">DBSeqnce</a></h4>
-      <section></section>
+      <section><p>DBSequences are used to group DBMappers and DBActions and run them in sequence together with refreshing DBFunctions and executing them in transaction brackets</p>
+</section>
       <h4><a class="xref" href="DBaddin.DBSheetConfig.html">DBSheetConfig</a></h4>
       <section><p>Helper module  for easier manipulation of DBSheet definition / Connection configuration data</p>
 </section>
       <h4><a class="xref" href="DBaddin.DBSheetCreateForm.html">DBSheetCreateForm</a></h4>
-      <section><p>Form for defining/creating DBSheets</p>
+      <section><p>Form for defining/creating DBSheet definitions</p>
 </section>
       <h4><a class="xref" href="DBaddin.DBSheetDefRow.html">DBSheetDefRow</a></h4>
       <section><p>DataRow Class for DBSheetDefTable</p>
@@ -117,7 +120,7 @@
       <section><p>DataTable Class for filling DBSheetCols DataGridView</p>
 </section>
       <h4><a class="xref" href="DBaddin.EditDBModifDef.html">EditDBModifDef</a></h4>
-      <section><p>Dialog used to display and edit the CustomXMLPart utilized for storing the DBModif definitions</p>
+      <section><p>Dialog used to display and edit the CustomXMLPart utilized for storing the DBModif definitions, reused to also show DBAddin settings</p>
 </section>
       <h4><a class="xref" href="DBaddin.Functions.html">Functions</a></h4>
       <section><p>Contains the public callable DB functions and helper functions</p>
@@ -126,7 +129,7 @@
       <section><p>Global variables and functions for DB Addin</p>
 </section>
       <h4><a class="xref" href="DBaddin.MenuHandler.html">MenuHandler</a></h4>
-      <section><p>handles all Menu related aspects (context menu for building/refreshing, &quot;DBAddin&quot;/&quot;Load Config&quot; tree menu for retrieving stored configuration files</p>
+      <section><p>handles all Menu related aspects (context menu for building/refreshing, &quot;DBAddin&quot;/&quot;Load Config&quot; tree menu for retrieving stored configuration files, etc.)</p>
 </section>
 </article>
           </div>
