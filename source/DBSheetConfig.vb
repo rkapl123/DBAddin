@@ -98,7 +98,7 @@ Public Module DBSheetConfig
                 Dim lookupCol As Integer = 1
                 For Each LookupDef As String In lookupsList
                     ' fetch Lookupquery and get rid of template table def
-                    Dim LookupQuery As String = Replace(getEntry("lookup", LookupDef, 1), tblPlaceHolder, "T1")
+                    Dim LookupQuery As String = Replace(getEntry("lookup", LookupDef, 1), tblPlaceHolder, "LT")
                     Dim lookupName As String = Replace(getEntry("name", LookupDef, 1), specialNonNullableChar, "")
                     ' replace fieldname of Lookups in query with fieldname + "LU" only for database lookups
                     If getEntry("fkey", LookupDef, 1) <> "" Then
@@ -128,16 +128,26 @@ Public Module DBSheetConfig
                         ConfigFiles.createFunctionsInCells(lookupWS.Cells(1, lookupCol), {"RC", "=DBListFetch(RC[1],""""," + lookupName + "Lookup" + ")"})
                         ' database lookups have two columns
                         lookupCol += 2
-                        ' TODO: also allow fixed value lookups with a single value select statement !!
-                    Else                                         'fixed value lookup only has one column, no need to resolve to an ID
-                        Dim lookupValues As String() = Split(LookupQuery, "||")
-                        Dim lrow As Integer
-                        For lrow = 0 To UBound(lookupValues)
-                            lookupWS.Cells(2 + lrow, lookupCol).value = lookupValues(lrow)
-                        Next
-                        lookupWS.Range(lookupWS.Cells(2, lookupCol), lookupWS.Cells(2 + lrow - 1, lookupCol)).Name = lookupName + "Lookup"
-                        ' fixed value lookups have only one column
-                        lookupCol += 1
+
+                    Else
+                        'simple value lookup (one column), no need to resolve to an ID
+                        If InStr(LookupQuery, "||") > 0 Then ' fixed values separated by ||
+                            Dim lrow As Integer
+                            Dim lookupValues As String() = Split(LookupQuery, "||")
+                            For lrow = 0 To UBound(lookupValues)
+                                lookupWS.Cells(2 + lrow, lookupCol).value = lookupValues(lrow)
+                            Next
+                            lookupWS.Range(lookupWS.Cells(2, lookupCol), lookupWS.Cells(2 + lrow - 1, lookupCol)).Name = lookupName + "Lookup"
+                            ' fixed value lookups have only one column
+                            lookupCol += 1
+                        Else ' single column DB lookup
+                            lookupWS.Cells(1, lookupCol + 1).Value = LookupQuery
+                            lookupWS.Cells(1, lookupCol + 1).WrapText = False
+                            lookupWS.Cells(2, lookupCol).Name = lookupName + "Lookup"
+                            ConfigFiles.createFunctionsInCells(lookupWS.Cells(1, lookupCol), {"RC", "=DBListFetch(RC[1],""""," + lookupName + "Lookup" + ")"})
+                            ' single column DB lookups have two columns because of dbfunction and query definition in two cells..
+                            lookupCol += 2
+                        End If
                     End If
                 Next
                 lookupWS.Visible = Excel.XlSheetVisibility.xlSheetHidden
@@ -195,9 +205,7 @@ Public Module DBSheetConfig
             Try
                 curCell.Parent.Name = Left(tableName, 31)
             Catch ex As Exception
-                ErrorMsg("DBSheet setting worksheet name exception:" + ex.Message, "DBSheet Creation Error")
-                If Not IsNothing(lookupWS) Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
-                Exit Sub
+                ErrorMsg("DBSheet setting worksheet name to '" + Left(tableName, 31) + "', error:" + ex.Message, "DBSheet Creation Error")
             End Try
         End If
         ' some visual aid for DBSheets

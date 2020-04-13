@@ -257,15 +257,16 @@ Other users can simply look up those config files with the hierarchical menu "DB
 
 DBAddin has a convenient feature to hierarchically order those config files further, if they are consistently named. For this to work, there either has to be a separation character between "grouping" prefixes (like "\_" in "Customer_Customers", "Customer_Addresses", "Customer_Pets", etc.) for grouping similar objects (tables, views) together or "CamelCase" Notation is used for that purpose (e.g. "CustomerCustomers", "CustomerAddresses", "CustomerPets").  
 
-There is one registry setting and two registry setting groups to configure this further hierarchical ordering:  
+There is one setting key and three setting key groups to configure this further hierarchical ordering:  
 
-<pre lang="vb.net">Windows Registry Editor Version 5.00  
-
-[HKEY_CURRENT_USER\\Software\\VB and VBA Program Settings\\DBAddin\\Settings]  
-"specialConfigStoreFolders"="(pathName):.pubs:.Northwind"  
-"(pathName)MaxDepth"="1"  
-"(pathName)Separator"=""  
-"(pathName)FirstLetterLevel"="True"</pre>
+<pre lang="xml">
+    <add key="specialConfigStoreFolders" value="_pubs:_Northwind"/>
+    <add key="_pubsMaxDepth" value="1"/>
+    <add key="_pubsSeparator" value=""/>
+    <add key="_NorthwindMaxDepth" value="1"/>
+    <add key="_NorthwindSeparator" value="."/>
+    <add key="_NorthwindFirstLetterLevel" value="True"/>
+</pre>
 
 If you add the (sub) foldername to "specialConfigStoreFolders" (colon separated list) then this subfolder is regarded as needing special grouping of object names. The separator ("\_" or similar) can be given in  "(pathName)Separator", where (pathName) denotes the path name used above in "specialConfigStoreFolders". If this is not given then CamelCase is assumed to be the separating criterion.  
 
@@ -287,56 +288,6 @@ There are no checks (except for Excels sheet boundaries) as whether any cells ar
 
 To save time when starting up DBAddin/Excel, refreshing the config tree is only done when you open the Config Menu and click "refresh DB Config Tree".  
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/ConfigMenu.PNG)
-
-### Installation
-
-#### Dependencies
-
-*   .NET 4.7 or higher
-*   Excel
-*   ADO 2.5 or higher (usually distributed with Windows)
-
-If any of these is missing, please install yourself before starting DBAddin.
-
-After installation you'd want to adapt the standard default connection string (ConstConnString) that is globally applied if no function-specific connection string is given. This can be done by modifying and importing DBAddinSettings.reg into your registry.
-
-<pre lang="vb.net">Windows Registry Editor Version 5.00  
-
-[HKEY_CURRENT_USER\\Software\\VB and VBA Program Settings\\DBAddin\\Settings]  
-"ConstConnString"="provider=SQLOLEDB;Server=(YourServer);Trusted_Connection=Yes;Database=(OneOfYourDatabases);Packet Size=32767"  
-"DBidentifierCCS"="Database="  
-"DBidentifierODBC"="Database="  
-"CnnTimeout"="15"  
-"DefaultDBDateFormatting"="0"  
-"ConfigStoreFolder"="(YourPathToTheConfigStore)\\ConfigStore"  
-"LocalHelp"="(YourPathToTheDocumentation)\\LocalHelp.htm"  
-</pre>
-
-The other settings:
-
-*   `DBidentifierCCS`: used to identify the database within the standard default connection string
-*   `DBidentifierODBC`: used to identify the database within the connection definition returned by MS-Query
-*   `CnnTimeout:` the default timeout for connecting
-*   `DefaultDBDateFormatting: `default formatting choice for DBDate
-*   `ConfigStoreFolder: `all config files (*.xcl) under this folder are shown in a hierarchical manner in "load config"
-*   `LocalHelp: `the path to local help files downloadable [here](doc.zip). To include it, put the contained folder and html file into the given folder
-
-When starting the Testworkbook, after waiting for the – probable – connection error, you have to change the connection string(s) to suit your needs (see below for explanations).
-
-![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/clip_image005.jpg)
-
-Several connection strings for "DBFuncsTest.xls" are placed to the right of the black line, the actual connection is then selected by choosing the appropriate shortname (dropdown) in the yellow input field. After the connection has been changed don't forget to refresh the queries/DBforms by right clicking and selecting "refresh data".
-
-### AboutBox, Logs and Purge hidden names
-
-The Aboutbox can be reached by clicking the small dialogBox Launcher in the right bottom corner of the General Settings group of the DBAddin Ribbon.
-![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/AboutBox.PNG)  
-
-There is a possibility to see the Log from there and set the future log events displayed (starting values are set in the config file). You can also fix legacy DBAddin functions, in case you decided to skip the possibility offered on opening a Workbook.
-
-The DBListFetch's and DBRowFetch's target areas' extent is stored in hidden named ranges assigned both to the calling function cell (DBFsource(Key)) and the target (DBFtarget(Key)). These hidden names are used to keep track of the previous content to prevent overwriting, clearing old values, etc.
-Sometimes during copying and pasting DB Functions, these names can get mixed up, leading to strange results or non-functioning of the "jump" function. In these cases, there is a tool in the DB Addin tools group, which may be used to "purge" these hidden named ranges in case of any strange behaviour due to multiple name assignments to the same area.
-![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/purgeNames.PNG)  
 
 ### Create DB Functions
 

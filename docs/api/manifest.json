@@ -12,7 +12,7 @@
           "hash": "4Uxm4k7WJZzkUCVvEmaGjw=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
@@ -24,7 +24,7 @@
           "hash": "1pCRCoL1WtWwH9SiLO6Avg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
@@ -45,10 +45,10 @@
       "output": {
         ".html": {
           "relative_path": "index.html",
-          "hash": "16XIUgCJQoBN25rAZeq2CQ=="
+          "hash": "6/gsqc2NOyb5oxpTU0jAug=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
@@ -57,10 +57,10 @@
       "output": {
         ".html": {
           "relative_path": "api/DBAddinUnitTests.UnitTest1.html",
-          "hash": "CUqvj1t5PUCXW5x3a9+AjA=="
+          "hash": "aewi2W3nr09Ep9smPpW5ZQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
@@ -72,19 +72,19 @@
           "hash": "QNDD3qB4eL3VlCz1TCr0fQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/api/DBaddin.AboutBox1.yml",
+      "source_relative_path": "obj/api/DBaddin.AboutBox.yml",
       "output": {
         ".html": {
-          "relative_path": "api/DBaddin.AboutBox1.html",
-          "hash": "/qu3Yv3lm6h5W23KnUVjaQ=="
+          "relative_path": "api/DBaddin.AboutBox.html",
+          "hash": "xCRIPIpFbdAU1cAi7rkUGg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
@@ -93,22 +93,10 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.AddInEvents.html",
-          "hash": "QsyBM3Rc7pv0LTCcicdlIw=="
+          "hash": "6l0RjPQ8zvLJ+yy0P3J/eg=="
         }
       },
-      "is_incremental": true,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "obj/api/DBaddin.CheckTypeFld.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/DBaddin.CheckTypeFld.html",
-          "hash": "CEhAdJGjDl0IlwzMfG2CnA=="
-        }
-      },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
@@ -117,10 +105,10 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.ConfigFiles.html",
-          "hash": "yn11JgJ3bSyMKqpEMpU2Sw=="
+          "hash": "MKGpWyiccBN94iEaAAo1ew=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
@@ -129,34 +117,142 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.ContainedStatusMsg.html",
-          "hash": "MJzPIpTXy5LMP5OdRtaaqw=="
+          "hash": "fkWYsiTmlagjlhkWfVmweA=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/api/DBaddin.DBAddin.yml",
+      "source_relative_path": "obj/api/DBaddin.DBAction.yml",
       "output": {
         ".html": {
-          "relative_path": "api/DBaddin.DBAddin.html",
-          "hash": "S2CxwPJ2hFrVGQybmwI9eg=="
+          "relative_path": "api/DBaddin.DBAction.html",
+          "hash": "5P7fMgU/8VL2bo1LUmQc4w=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/api/DBaddin.DBMapperCreate.yml",
+      "source_relative_path": "obj/api/DBaddin.DBMapper.yml",
       "output": {
         ".html": {
-          "relative_path": "api/DBaddin.DBMapperCreate.html",
-          "hash": "+AHQPV2E3+GRJbhslGawhw=="
+          "relative_path": "api/DBaddin.DBMapper.html",
+          "hash": "u1nLKtwAkgA6vEe0infb7A=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/DBaddin.DBModif.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DBaddin.DBModif.html",
+          "hash": "ZulyNPE6HM53+782tYavqQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/DBaddin.DBModifCreate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DBaddin.DBModifCreate.html",
+          "hash": "vnCxSWXfbYiXuGbSJIDnhg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/DBaddin.DBModifs.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DBaddin.DBModifs.html",
+          "hash": "YCkv/vqY3ALEc+bW54Y3cw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/DBaddin.DBSeqnce.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DBaddin.DBSeqnce.html",
+          "hash": "B2+tVsWWb98j6OyM9092mA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/DBaddin.DBSheetConfig.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DBaddin.DBSheetConfig.html",
+          "hash": "TyQVTIiFYp6vJwPBzwJUGg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/DBaddin.DBSheetCreateForm.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DBaddin.DBSheetCreateForm.html",
+          "hash": "08XxJkEDZIkhz3a115uY0w=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/DBaddin.DBSheetDefRow.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DBaddin.DBSheetDefRow.html",
+          "hash": "4NKegDZo+6olI4umACkQEg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/DBaddin.DBSheetDefTable.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DBaddin.DBSheetDefTable.html",
+          "hash": "HcMk5FAZ3/mXX2PZUxFP1A=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/DBaddin.EditDBModifDef.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DBaddin.EditDBModifDef.html",
+          "hash": "5Veua3f2P6nUf3zn2tPZAQ=="
+        }
+      },
+      "is_incremental": false,
       "version": ""
     },
     {
@@ -165,22 +261,22 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.Functions.html",
-          "hash": "On+LQMT7UUgpIotiEkekeg=="
+          "hash": "Cd9CBDz3PREGIg1RWb7RKQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "obj/api/DBaddin.Mapper.yml",
+      "source_relative_path": "obj/api/DBaddin.Globals.yml",
       "output": {
         ".html": {
-          "relative_path": "api/DBaddin.Mapper.html",
-          "hash": "ZFw2HM6W1JIF4399Q7s5iw=="
+          "relative_path": "api/DBaddin.Globals.html",
+          "hash": "o9LJfp92glOwbnCycwDT/w=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
@@ -189,10 +285,34 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.MenuHandler.html",
-          "hash": "oYhCP3ioCUSj6jWqmcJKGA=="
+          "hash": "cvFu5jAEO6gLjVUAxlzJCQ=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/DBaddin.My.Resources.SchemaFiles.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DBaddin.My.Resources.SchemaFiles.html",
+          "hash": "N09R0QeGXBVW5FqN/Si0Tg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/DBaddin.My.Resources.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DBaddin.My.Resources.html",
+          "hash": "hxvYqugP93ufVudul7R2bQ=="
+        }
+      },
+      "is_incremental": false,
       "version": ""
     },
     {
@@ -201,10 +321,10 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.html",
-          "hash": "vMfokA3z3MhIDky1tmRx0Q=="
+          "hash": "bleGwbkj6mxyPHb36NI6xg=="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
@@ -213,7 +333,7 @@
       "output": {
         ".html": {
           "relative_path": "api/toc.html",
-          "hash": "n0Bw4quep4SzPx+mgG9i4w=="
+          "hash": "OfGQcuforzVtS+ZZRChpeA=="
         }
       },
       "is_incremental": false,
@@ -248,17 +368,17 @@
           "total_file_count": 0,
           "skipped_file_count": 0
         },
-        "ManagedReferenceDocumentProcessor": {
-          "can_incremental": true,
-          "incrementalPhase": "build",
-          "total_file_count": 13,
-          "skipped_file_count": 13
-        },
         "ConceptualDocumentProcessor": {
           "can_incremental": true,
           "incrementalPhase": "build",
           "total_file_count": 3,
           "skipped_file_count": 3
+        },
+        "ManagedReferenceDocumentProcessor": {
+          "can_incremental": true,
+          "incrementalPhase": "build",
+          "total_file_count": 23,
+          "skipped_file_count": 23
         }
       }
     },

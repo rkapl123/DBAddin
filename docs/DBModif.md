@@ -75,7 +75,7 @@ Here you can edit the definitions directly and also insert hidden features like 
 The DBModifiers can be executed either  
 
 ... using the Execute DBModifier Groups dropdown menus..  
-![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBModifierMenu.PNG)
+![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/ConfigMenu.PNG)
 
 ... or using commandbuttons that were generated with the creation dialogs (the name of the control box has to be the same as the DBModifier definition/DBModifier Range)..  
 
@@ -84,3 +84,31 @@ The DBModifiers can be executed either
 You can edit the DBModifiers either by Ctrl-Shift clicking the Execute DBModifier Groups dropdown menus..  
 .. or by Ctrl-Shift clicking the created commandbuttons  
 .. or by using the Insert/Edit DBFunc/DBModif context menu within a DBMapper or DBAction range  
+
+#### Settings
+
+Following Settings in DBAddin.xll.config or the referred DBAddinCentral.config affect behaviour of DBModifiers:
+<pre lang="xml">
+    <add key="CmdTimeout" value="30" />
+    <add key="CnnTimeout" value="15" />
+    <add key="DefaultEnvironment" value="3" />
+    <add key="DontChangeEnvironment" value="False" />
+    <add key="DBMapperCUDFlagStyle" value="TableStyleLight11" />
+    <add key="DBMapperStandardStyle" value="TableStyleLight9" />
+    <add key="DebugAddin" value="False" />
+    <add key="maxNumberMassChange" value="10" />
+    <add key="connIDPrefixDBtype" value="MSSQL" />
+    <add key="DBSheetAutoname" value="True" />
+</pre>
+
+*   `CmdTimeout`: the default timeout for a command to execute
+*   `CnnTimeout`: the default timeout for connecting
+*   `DefaultEnvironment`: default selected environment on startup
+*   `DontChangeEnvironment`: prevent changing the environment selector (Non-Production environments might confuse some people)
+*   `DBMapperCUDFlagStyle`: Style for setting Excel data tables when having CUD Flags set on DBMappers
+*   `DBMapperStandardStyle`: Style for setting Excel data tables when not having CUD Flags set on DBMappers
+*   `DebugAddin`: activate Info messages to debug addin
+*   `maxNumberMassChange`: Threshold of Number of changes in CUDFlag DBMappers to issue a warning.
+*   `connIDPrefixDBtype`: Sometimes, legacy DBSheet definitions have a Prefix, this is the prefix to remove...
+*   `DBSheetAutoname`: When inserting DBSheet Definitions, automatically name Worksheet to the table name, if this is set
+

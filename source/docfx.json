@@ -1,10 +1,12 @@
 {
   "metadata": [
     {
+      "filter": "filterConfig.yml",
       "src": [
         {
           "files": [
-            "**/*.sln", "*.vbproj"
+            "**/*.sln",
+            "*.vbproj"
           ],
           "cwd": ".",
           "exclude": [
@@ -62,7 +64,7 @@
     ],
     "dest": "../docs/_site",
     "template": [
-      "default"
+      "docfxtemplate"
     ]
   }
 }

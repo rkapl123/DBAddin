@@ -1,7 +1,11 @@
 Set /P answr=deploy (r)elease (empty for debug)? 
 set source=bin\Debug
 If "%answr%"=="r" (
-set source=bin\Release
+	set source=bin\Release
+	copy /Y %source%\DBaddin-AddIn64-packed.xll "..\Distribution\DBaddin64.xll"
+	copy /Y %source%\DBaddin-AddIn-packed.xll "..\Distribution\DBaddin32.xll"
+	copy /Y %source%\DBaddin.dll.config "..\Distribution\DBaddin.xll.config"
+	copy /Y DBaddinCentral.config "..\Distribution\DBaddinCentral.config"
 )
 if exist "C:\Program Files\Microsoft Office\root\" (
 	echo 64bit office

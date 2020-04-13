@@ -11,6 +11,6 @@ FROM pubs.dbo.publishers T1
 <field><name>pub_name</name></field>
 <field><name>city</name></field>
 <field><name>state</name><lookup>select t.state, t.state from (values ('MA'),('DC'),('CA'),('IL'),('TX'),('NY')) t (state)</lookup></field>
-<field><name>country</name></field>
+<field><name>country</name><lookup>select t.country from (values ('USA'),('Germany'),('France'),('Italy'),('UK')) t (country)</lookup></field>
 </columns>
 </DBsheetConfig>

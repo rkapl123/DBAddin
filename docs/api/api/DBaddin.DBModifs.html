@@ -1,0 +1,571 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Class DBModifs
+   </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Class DBModifs
+   ">
+    <meta name="generator" content="docfx 2.43.2.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="DBaddin.DBModifs">
+  
+  
+  <h1 id="DBaddin_DBModifs" data-uid="DBaddin.DBModifs" class="text-break">Class DBModifs
+  </h1>
+  <div class="markdown level0 summary"><p>Contains DBModif functions for storing/updating tabular excel data (DBMapper), doing DBActions, doing DBSequence (combinations of DBMapper/DBAction) and some helper functions</p>
+</div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="inheritance">
+    <h5>Inheritance</h5>
+    <div class="level0"><span class="xref">DBModifs</span></div>
+  </div>
+  <h6><strong>Namespace</strong>: <a class="xref" href="DBaddin.html">DBaddin</a></h6>
+  <h6><strong>Assembly</strong>: DBaddin.dll</h6>
+  <h5 id="DBaddin_DBModifs_syntax">Syntax</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public class DBModifs</code></pre>
+  </div>
+  <h3 id="fields">Fields
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_DBModifs_dbcnn.md&amp;value=---%0Auid%3A%20DBaddin.DBModifs.dbcnn%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L1120">View Source</a>
+  </span>
+  <h4 id="DBaddin_DBModifs_dbcnn" data-uid="DBaddin.DBModifs.dbcnn">dbcnn</h4>
+  <div class="markdown level1 summary"><p>main db connection For mapper</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Connection dbcnn</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_DBModifs_hadError.md&amp;value=---%0Auid%3A%20DBaddin.DBModifs.hadError%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L1124">View Source</a>
+  </span>
+  <h4 id="DBaddin_DBModifs_hadError" data-uid="DBaddin.DBModifs.hadError">hadError</h4>
+  <div class="markdown level1 summary"><p>indicates an error in execution, used for commit/rollback</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool hadError</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_DBModifs_listSepLocal.md&amp;value=---%0Auid%3A%20DBaddin.DBModifs.listSepLocal%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L1126">View Source</a>
+  </span>
+  <h4 id="DBaddin_DBModifs_listSepLocal" data-uid="DBaddin.DBModifs.listSepLocal">listSepLocal</h4>
+  <div class="markdown level1 summary"><p>used to work around the fact that when started by Application.Run, Formulas are sometimes returned as local</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static string listSepLocal</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_DBModifs_preventChangeWhileFetching.md&amp;value=---%0Auid%3A%20DBaddin.DBModifs.preventChangeWhileFetching%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L1122">View Source</a>
+  </span>
+  <h4 id="DBaddin_DBModifs_preventChangeWhileFetching" data-uid="DBaddin.DBModifs.preventChangeWhileFetching">preventChangeWhileFetching</h4>
+  <div class="markdown level1 summary"><p>avoid entering Application.SheetChange Event handler during listfetch/setquery</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool preventChangeWhileFetching</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="methods">Methods
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_DBModifs_createDBModif_System_String_System_String_.md&amp;value=---%0Auid%3A%20DBaddin.DBModifs.createDBModif(System.String%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L1190">View Source</a>
+  </span>
+  <a id="DBaddin_DBModifs_createDBModif_" data-uid="DBaddin.DBModifs.createDBModif*"></a>
+  <h4 id="DBaddin_DBModifs_createDBModif_System_String_System_String_" data-uid="DBaddin.DBModifs.createDBModif(System.String,System.String)">createDBModif(String, String)</h4>
+  <div class="markdown level1 summary"><p>creates a DBModif at the current active cell or edits an existing one defined in targetDefName (after being called in defined range or from ribbon + Ctrl + Shift)</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static void createDBModif(string createdDBModifType, string targetDefName = &quot;&quot;)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">createdDBModifType</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="parametername">targetDefName</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_DBModifs_CVErrText_System_Int32_.md&amp;value=---%0Auid%3A%20DBaddin.DBModifs.CVErrText(System.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L1555">View Source</a>
+  </span>
+  <a id="DBaddin_DBModifs_CVErrText_" data-uid="DBaddin.DBModifs.CVErrText*"></a>
+  <h4 id="DBaddin_DBModifs_CVErrText_System_Int32_" data-uid="DBaddin.DBModifs.CVErrText(System.Int32)">CVErrText(Int32)</h4>
+  <div class="markdown level1 summary"><p>to convert the error number to text</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static string CVErrText(int whichError)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">whichError</span></td>
+        <td><p>integer error number</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><p>text of error</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_DBModifs_executeDBModif_System_String_System_Boolean_.md&amp;value=---%0Auid%3A%20DBaddin.DBModifs.executeDBModif(System.String%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L1571">View Source</a>
+  </span>
+  <a id="DBaddin_DBModifs_executeDBModif_" data-uid="DBaddin.DBModifs.executeDBModif*"></a>
+  <h4 id="DBaddin_DBModifs_executeDBModif_System_String_System_Boolean_" data-uid="DBaddin.DBModifs.executeDBModif(System.String,System.Boolean)">executeDBModif(String, Boolean)</h4>
+  <div class="markdown level1 summary"><p>execute given DBModifier, used for VBA call by Application.Run)</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">[ExcelCommand(Name = &quot;executeDBModif&quot;)]
+public static string executeDBModif(string DBModifName, bool headLess = false)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">DBModifName</span></td>
+        <td><p>Full name of DB Modifier, including type at beginning</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="parametername">headLess</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><p>empty string on success, error message otherwise</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_DBModifs_getDBModifDefinitions.md&amp;value=---%0Auid%3A%20DBaddin.DBModifs.getDBModifDefinitions%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L1439">View Source</a>
+  </span>
+  <a id="DBaddin_DBModifs_getDBModifDefinitions_" data-uid="DBaddin.DBModifs.getDBModifDefinitions*"></a>
+  <h4 id="DBaddin_DBModifs_getDBModifDefinitions" data-uid="DBaddin.DBModifs.getDBModifDefinitions">getDBModifDefinitions()</h4>
+  <div class="markdown level1 summary"><p>gets defined names for DBModifier (DBMapper/DBAction/DBSeqnce) invocation in the current workbook and updates Ribbon with it</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static void getDBModifDefinitions()</code></pre>
+  </div>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_DBModifs_getDBModifNameFromRange_Microsoft_Office_Interop_Excel_Range_.md&amp;value=---%0Auid%3A%20DBaddin.DBModifs.getDBModifNameFromRange(Microsoft.Office.Interop.Excel.Range)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L1517">View Source</a>
+  </span>
+  <a id="DBaddin_DBModifs_getDBModifNameFromRange_" data-uid="DBaddin.DBModifs.getDBModifNameFromRange*"></a>
+  <h4 id="DBaddin_DBModifs_getDBModifNameFromRange_Microsoft_Office_Interop_Excel_Range_" data-uid="DBaddin.DBModifs.getDBModifNameFromRange(Microsoft.Office.Interop.Excel.Range)">getDBModifNameFromRange(Range)</h4>
+  <div class="markdown level1 summary"><p>gets DB Modification Name (DBMapper or DBAction) from theRange</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static string getDBModifNameFromRange(Range theRange)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">theRange</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><p>the retrieved name as a string (not name object !)</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_DBModifs_IsXLCVErr_System_Object_.md&amp;value=---%0Auid%3A%20DBaddin.DBModifs.IsXLCVErr(System.Object)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L1548">View Source</a>
+  </span>
+  <a id="DBaddin_DBModifs_IsXLCVErr_" data-uid="DBaddin.DBModifs.IsXLCVErr*"></a>
+  <h4 id="DBaddin_DBModifs_IsXLCVErr_System_Object_" data-uid="DBaddin.DBModifs.IsXLCVErr(System.Object)">IsXLCVErr(Object)</h4>
+  <div class="markdown level1 summary"><p>To check for errors in passed range obj, makes use of the fact that Range.Value never passes Integer Values back except for Errors</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool IsXLCVErr(object rangeval)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">rangeval</span></td>
+        <td><p>Range.Value to be checked for errors</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><p>true if error</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_DBModifs_openConnection_System_Int32_System_String_.md&amp;value=---%0Auid%3A%20DBaddin.DBModifs.openConnection(System.Int32%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L1132">View Source</a>
+  </span>
+  <a id="DBaddin_DBModifs_openConnection_" data-uid="DBaddin.DBModifs.openConnection*"></a>
+  <h4 id="DBaddin_DBModifs_openConnection_System_Int32_System_String_" data-uid="DBaddin.DBModifs.openConnection(System.Int32,System.String)">openConnection(Int32, String)</h4>
+  <div class="markdown level1 summary"><p>opens a database connection</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool openConnection(int env, string database)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">env</span></td>
+        <td><p>number of the environment as given in the settings</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="parametername">database</span></td>
+        <td><p>database to replace database selection parameter in connection string of environment</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><p>True on success</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_DBModifs_resizeDBMapperRange_Microsoft_Office_Interop_Excel_Range_Microsoft_Office_Interop_Excel_Range_.md&amp;value=---%0Auid%3A%20DBaddin.DBModifs.resizeDBMapperRange(Microsoft.Office.Interop.Excel.Range%2CMicrosoft.Office.Interop.Excel.Range)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L1166">View Source</a>
+  </span>
+  <a id="DBaddin_DBModifs_resizeDBMapperRange_" data-uid="DBaddin.DBModifs.resizeDBMapperRange*"></a>
+  <h4 id="DBaddin_DBModifs_resizeDBMapperRange_Microsoft_Office_Interop_Excel_Range_Microsoft_Office_Interop_Excel_Range_" data-uid="DBaddin.DBModifs.resizeDBMapperRange(Microsoft.Office.Interop.Excel.Range,Microsoft.Office.Interop.Excel.Range)">resizeDBMapperRange(Range, Range)</h4>
+  <div class="markdown level1 summary"><p>in case there is a defined DBMapper underlying the DBListFetch/DBSetQuery target area then change the extent of that to the new area given in theRange</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static void resizeDBMapperRange(Range theRange, Range oldRange)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">theRange</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="parametername">oldRange</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                  <li>
+                    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_DBModifs.md&amp;value=---%0Auid%3A%20DBaddin.DBModifs%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
+                  </li>
+                  <li>
+                    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L1117" class="contribution-link">View Source</a>
+                  </li>
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>

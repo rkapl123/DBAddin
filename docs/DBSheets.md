@@ -21,11 +21,11 @@ In the following sections, the major capabilities of DBSheets are presented, fol
 Prerequisites for understanding this documentation and using DBSheets is a basic proficiency with SQL and database design.
 Good books on this topic are "The Practical SQL Handbook: Using Structured Query Language (3rd Edition)" and its successor "The Practical SQL Handbook: Using SQL Variants (4th Edition)", available free online courses are:  
 
-*   [http://www.sql-und-xml.de/sql-tutorial/](http://www.sql-und-xml.de/sql-tutorial/) (german)
-*   [http://www.w3schools.com/sql/default.asp](http://www.w3schools.com/sql/default.asp) (english)
-*   [http://www.sql-tutorial.net/](http://www.sql-tutorial.net/) (english)
-*   [http://sqlcourse.com](http://sqlcourse.com/) (english)
-*   [http://sqlcourse2.com](http://sqlcourse2.com/) (english)
+*   [http://www.sql-und-xml.de/sql-tutorial/](http://www.sql-und-xml.de/sql-tutorial/) (German)
+*   [http://www.w3schools.com/sql/default.asp](http://www.w3schools.com/sql/default.asp) (English)
+*   [http://www.sql-tutorial.net/](http://www.sql-tutorial.net/) (English)
+*   [http://sqlcourse.com](http://sqlcourse.com/) (English)
+*   [http://sqlcourse2.com](http://sqlcourse2.com/) (English)
 
 ### Working with DBSheets (DBMappers with CUDFlags)
 
@@ -64,7 +64,7 @@ The DBSheet definition file contains following information in XML format:
 1.  the query for fetching the main table data to be edited
 2.  the connection ID referring to the connection definition in the  global connection definition file. The connection definition contains the connection string, information on how parts of the connection string can be interpreted (database, password), how the collection of available databases can be retrieved and the windows users permitted to create/edit DBSheet definitions.
 3.  The primary column count.
-4.  all column definitions including the foreign key lookups. These consist of a lookupname, being the name of the column and either a select statement or a list of values. The select statement has to return exactly two columns returning the lookup values first and then the IDs to be looked up. (the main table's column value set should be contained in those, so every column value can be looked up).  
+4.  all column definitions including the foreign key lookups. These consist of a lookup name, being the name of the column and either a select statement or a list of values. The select statement has to return exactly two columns returning the lookup values first and then the IDs to be looked up. (the main table's column value set should be contained in those, so every column value can be looked up).  
     Duplicates naturally should be strictly avoided in the return set of a query for a referential foreign key column as they would lead to ambiguities.
 
 ### Supporting Tool "Create DBSheet definition"
@@ -77,11 +77,9 @@ In case of successfully connecting to the database server, the dropdown "databas
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBSheetsDefSelectDatabase.PNG)
 
-The entries DBisUserscheme and dbneedPwd are for Oracle databases where DBAddin sometimes has to switch to the scheme and therefore needs a password. After these two database specific fields, the command for retrieving all databases/schemas from the database can be entered (for (MS) SQL server this is "`sp_helpdb`" for Oracle its "`select username from sys.all_users`". If the result of this command has more than one column (like in sqlserver), you have to give the fieldname where the databases can be retrieved from.
-
 "Load DBSheet def from File" is used to directly load a stored definition into the tool.
 
-Next, select the main table for which a DBsheet should be created in the dropdown "Table", which fills the available fields of the table into the dropdowns of column "name". Once a field has been chosen, the password/database/table entry becomes unavailable. Only clearing ALL fields from the DBSheets definition will allow a change to the password/database/table entry again.
+After having selected a database, select the main table for which a DBsheet should be created in the dropdown "Table", which fills the available fields of the table into the dropdowns of column "name". Once a field has been chosen, the password/database/table entry becomes unavailable. Only clearing ALL fields from the DBSheets definition will allow a change to the password/database/table entry again.
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBSheetsDefSelectTableColumn.PNG)
 
@@ -100,7 +98,7 @@ To finish foreign table lookup, select the Foreign Table Lookup Column in the fl
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBSheetsDefSelectForLookupsGenerate.PNG)
 
-After selecting the flookup column, the tool asks if the flookup statetement, which is used to query the database for the key/lookup value pairs, should be created.
+After selecting the flookup column, the tool asks if the flookup statement, which is used to query the database for the key/lookup value pairs, should be created.
 
 You can always edit the fields already stored in the DBSheet-Column list by selecting a line and changing the values in the dropdowns.
 
@@ -117,9 +115,9 @@ When dealing with foreign column lookups or other lookup restrictions (see below
 
 You can put any query into that, it just has to return the lookup value first and the ID to be looked up second. Duplicates should be strictly avoided in the return set of this query as they would lead to ambiguities and will produce error messages when generating the DBSheet.
 
-Customizations of the restriction field should observe a few rules to be used efficiently (thereby not forcing the DBSheet creating person to do unnecessary double work): First, any reference to the foreign table itself has to use the configured template placeholder (here: !T!), which is then replaced by an actual table enumerator (T2..T<N>, T1 always being the primary table).  
+Customizations of the restriction field should observe a few rules to be used efficiently (thereby not forcing the DBSheet creating person to do unnecessary double work): First, any reference to the foreign table itself has to use the configured template placeholder (here: !T!), which is then replaced by an actual table enumerator (T2..TN, T1 always being the primary table).  
 
-Lookup value columns that differ from the table field's name must have an alias associated, which has to be the table field's name. If that is not the case, DBAddin wont be able to associate the foreign column in the main table with the lookup id, and thus displays following error message when creating the DBSheet query:
+Lookup value columns that differ from the table field's name must have an alias associated, which has to be the table field's name. If that is not the case, DBAddin won't be able to associate the foreign column in the main table with the lookup id, and thus displays following error message when creating the DBSheet query:
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBSheetsDefForLookupErrorMsg.PNG)
 
@@ -134,13 +132,13 @@ Following diagram should clarify the connection between lookup queries and the m
 
 You can always test the foreign lookup query by selecting the context menu item "test lookup query" in the lookup column. This opens an excel sheet with the results of the lookup query being inserted. This Testsheet can be closed again either by simply closing it, or by selecting context menu item "remove lookup query test".
 
-You can also have a lookup field without defining a foreign table relation at all. This is done by simply defining the flookup for that field. Here the same applies as already said above. Beware that the first column is always the lookup value and the second always the id (the value that is actually being stored into the table), so in a "relationless" lookup, **both columns** bear the actual values. This means that a "relationless" restriction usually will look like `"select lookupCol, lookupCol from someTable…`":
+You can also have a lookup field without defining a foreign table relation at all. This is done by simply defining the lookup query for that field. These lookup queries can either have one or two columns but only the **first column** is used for the lookup:
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBSheetsDefLookupSelect.PNG)
 
 Also remember that lookups always check for uniqueness, so in case there are duplicate lines to be expected, an additional "distinct" clause will avoid the consequential error messages: "`select distinct lookupCol, lookupCol from someTable…`" (this approach is not to be used with foreign key lookups, as the exact/correct id should always be found out. Instead try to find a way to make the lookup values reflect their uniqueness, e.g. by concatenating/joining further identifiers, as in "`select lookupCol+additionalLookup, lookupID…`" )
 
-Even a lookup column without a lookup query is possible by just listing the possible values after the in the restriction separated by `||`, e.g.: `Yes||No||Maybe`. IDs are not required here, just the values are sufficient:
+Even a lookup column without a lookup query is possible by just listing the possible values after the in the restriction separated by `||`, e.g.: `Yes||No||Maybe`:
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBSheetsDefLookupList.PNG)
 
@@ -155,3 +153,30 @@ The DBSheet definition is created in four steps:
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBSheetsDefinitionButton.PNG)
 
 You can always test the main table query by clicking on "test DBSheet Query" next to the query definition. This opens an excel sheet with the results of the main table query being inserted. This Testsheet can be closed again either by simply closing it, or quicker by clicking on the same button again (that now changed its caption to "remove Testsheet").
+
+#### Settings
+
+Following Settings in DBAddin.xll.config or the referred DBAddinCentral.config affect behaviour of DBSheet definitions:
+<pre lang="xml">
+    <add key="ConfigName3" value="MSSQL"/>
+    <add key="DBSheetConnString3" value="DRIVER=SQL SERVER;Server=Lenovo-PC;UID=sa;PWD=;Database=pubs;"/>
+    <add key="DBidentifierCCS3" value="Database="/>
+    <add key="DBSheetDefinitions3" value="C:\\dev\\DBAddin.NET\\definitions"/>
+    <add key="dbGetAll3" value="sp_helpdb"/>
+    <add key="dbGetAllFieldName3" value="name"/>
+    <add key="ownerQualifier3" value=".dbo."/>
+    <add key="dbPwdSpec3" value="PWD="/>
+</pre>
+
+
+Explanation:
+*   `ConfigName**N**`: freely definable name for your environment (e.g. Production or your database instance)
+*   `DBSheetConnString**N**`: the connection string used to connect to the database for the DBSheet definitions
+*   `DBidentifierCCS**N**`: used to identify the database within DBSheetConnString
+*   `DBSheetDefinitions**N**`: path to the stored DBSheetdefinitions (default directory of assign DBsheet definitions and load/save DBSheet Defintions)
+*   `dbGetAll**N**`: command for retrieving all databases/schemas from the database can be entered (for (MS) SQL server this is "`sp_helpdb`" for Oracle its "`select username from sys.all_users`".
+*   `dbGetAllFieldName**N**`: If the result of above command has more than one column (like in sqlserver), you have to give the fieldname where the databases can be retrieved from.
+*   `ownerQualifier**N**`: default owner qualifier for table when loading DBSheet definitions, if table name is not fully qualified (legacy DBSheet definitions)
+*   `dbPwdSpec**N**`: Password entry specifier within DBSheetConnString
+
+The entries DBisUserscheme and dbneedPwd are for Oracle databases where DBAddin has to switch to the scheme and therefore needs a password (Oracle has not been tested with the new DBAddin).
