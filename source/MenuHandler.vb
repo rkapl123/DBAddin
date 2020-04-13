@@ -5,7 +5,7 @@ Imports Microsoft.Office.Interop
 Imports System.Configuration
 
 
-''' <summary>handles all Menu related aspects (context menu for building/refreshing, "DBAddin"/"Load Config" tree menu for retrieving stored configuration files</summary>
+''' <summary>handles all Menu related aspects (context menu for building/refreshing, "DBAddin"/"Load Config" tree menu for retrieving stored configuration files, etc.)</summary>
 <ComVisible(True)>
 Public Class MenuHandler
     Inherits ExcelRibbon

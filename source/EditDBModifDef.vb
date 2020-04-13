@@ -6,7 +6,7 @@ Imports System.IO
 Imports System.Diagnostics
 Imports System.Configuration
 
-''' <summary>Dialog used to display and edit the CustomXMLPart utilized for storing the DBModif definitions</summary>
+''' <summary>Dialog used to display and edit the CustomXMLPart utilized for storing the DBModif definitions, reused to also show DBAddin settings</summary>
 Public Class EditDBModifDef
     ''' <summary>the edited CustomXmlParts for the DBModif definitions</summary>
     Private CustomXmlParts As Object

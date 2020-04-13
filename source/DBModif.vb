@@ -353,6 +353,7 @@ Public MustInherit Class DBModif
     End Function
 End Class
 
+''' <summary>DBMappers are used to store a range of data in Excel to the database. A special type of DBMapper is the CUD DBMapper for realizing the former DBSheets</summary>
 Public Class DBMapper : Inherits DBModif
 
     ''' <summary>DBModif name of target range</summary>
@@ -901,6 +902,7 @@ cleanup:
 
 End Class
 
+''' <summary>DBActions are used to issue DML commands defined in Cells against the database</summary>
 Public Class DBAction : Inherits DBModif
 
     ''' <summary>Database to store to</summary>
@@ -1009,6 +1011,7 @@ Public Class DBAction : Inherits DBModif
     End Sub
 End Class
 
+''' <summary>DBSequences are used to group DBMappers and DBActions and run them in sequence together with refreshing DBFunctions and executing them in transaction brackets</summary>
 Public Class DBSeqnce : Inherits DBModif
 
     ''' <summary>sequence of DB Mappers, DB Actions and DB Refreshes being executed in this sequence</summary>
@@ -1113,7 +1116,7 @@ Public Class DBSeqnce : Inherits DBModif
 End Class
 
 
-''' <summary>Contains DBModif functions for storing/updating tabular excel data (DBMapper), doing DBActions, doing DBSequence (combinations of DBMapper/DBAction) and some helper functions</summary>
+''' <summary>global helper functions for DBModifiers</summary>
 Public Module DBModifs
 
     ''' <summary>main db connection For mapper</summary>
@@ -1565,8 +1568,9 @@ Public Module DBModifs
         End Select
     End Function
 
-    ''' <summary>execute given DBModifier, used for VBA call by Application.Run)</summary>
+    ''' <summary>execute given DBModifier, used for VBA call by Application.Run</summary>
     ''' <param name="DBModifName">Full name of DB Modifier, including type at beginning</param>
+    ''' <param name="headLess">if set to true, DBAddin will avoid to issue messages and return messages in exceptions which are returned (headless)</param>
     ''' <returns>empty string on success, error message otherwise</returns>
     <ExcelCommand(Name:="executeDBModif")>
     Public Function executeDBModif(DBModifName As String, Optional headLess As Boolean = False) As String

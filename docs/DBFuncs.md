@@ -174,7 +174,7 @@ Would return `”('ABC',1,'20070115')”`, if DateRange contained `15/01/2007` a
 
 This builds a Database compliant string (quoted) from the open ended parameter list given in the argument. This can also be used to easily build wildcards into the String, like
 
-<pre lang="vb.net">DBString("\_",E1,"%")</pre>
+<pre lang="vb.net">DBString("_",E1,"%")</pre>
 
 When E1 contains "test", this results in '\_test%', thus matching in a like clause the strings 'stestString', 'atestAnotherString', etc.
 

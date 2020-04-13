@@ -6,7 +6,7 @@ Imports System.Data.Odbc
 Imports System.IO
 Imports System.Windows.Forms
 
-''' <summary>Form for defining/creating DBSheets</summary>
+''' <summary>Form for defining/creating DBSheet definitions</summary>
 Public Class DBSheetCreateForm
     Inherits System.Windows.Forms.Form
     ''' <summary>whether the form fields should react to changes (set if making changes within code)....</summary>
@@ -487,7 +487,7 @@ Public Class DBSheetCreateForm
         End If
         For i As Integer = 0 To DBSheetCols.Rows.Count - 2
             'only overwrite if forced regenerate or empty restriction def...
-            If (retval = MsgBoxResult.Yes Or DBSheetCols.Rows(i).Cells("lookup").Value.ToString = "") Then regenLookupForRow(i)
+            If DBSheetCols.Rows(i).Cells("ftable").Value.ToString <> "" And (retval = MsgBoxResult.Yes Or DBSheetCols.Rows(i).Cells("lookup").Value.ToString = "") Then regenLookupForRow(i)
         Next
         DBSheetCols.AutoResizeColumns()
     End Sub
