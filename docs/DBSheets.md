@@ -157,7 +157,7 @@ You can always test the main table query by clicking on "test DBSheet Query" nex
 #### Settings
 
 Following Settings in DBAddin.xll.config or the referred DBAddinCentral.config affect behaviour of DBSheet definitions:
-<pre lang="xml">
+```xml
     <add key="ConfigName3" value="MSSQL"/>
     <add key="DBSheetConnString3" value="DRIVER=SQL SERVER;Server=Lenovo-PC;UID=sa;PWD=;Database=pubs;"/>
     <add key="DBidentifierCCS3" value="Database="/>
@@ -166,7 +166,7 @@ Following Settings in DBAddin.xll.config or the referred DBAddinCentral.config a
     <add key="dbGetAllFieldName3" value="name"/>
     <add key="ownerQualifier3" value=".dbo."/>
     <add key="dbPwdSpec3" value="PWD="/>
-</pre>
+```
 
 
 Explanation:

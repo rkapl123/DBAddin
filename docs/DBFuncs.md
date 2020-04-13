@@ -259,14 +259,14 @@ DBAddin has a convenient feature to hierarchically order those config files furt
 
 There is one setting key and three setting key groups to configure this further hierarchical ordering:  
 
-<pre lang="xml">
+```xml
     <add key="specialConfigStoreFolders" value="_pubs:_Northwind"/>
     <add key="_pubsMaxDepth" value="1"/>
     <add key="_pubsSeparator" value=""/>
     <add key="_NorthwindMaxDepth" value="1"/>
     <add key="_NorthwindSeparator" value="."/>
     <add key="_NorthwindFirstLetterLevel" value="True"/>
-</pre>
+```
 
 If you add the (sub) foldername to "specialConfigStoreFolders" (colon separated list) then this subfolder is regarded as needing special grouping of object names. The separator ("\_" or similar) can be given in  "(pathName)Separator", where (pathName) denotes the path name used above in "specialConfigStoreFolders". If this is not given then CamelCase is assumed to be the separating criterion.  
 

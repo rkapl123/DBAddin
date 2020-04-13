@@ -23,14 +23,14 @@ This copies DBAddin.xll, DBAddin.xll.config and DBAddinCentral.config to your %a
 After installation you'd want to adapt the connection strings (ConstConnString**N**) that are globally applied if no function-specific connection string is given and environment **N** is selected. 
 This can be done by modifying DBAddin.xll.config or the referred DBAddinCentral.config (in this example the settings apply to environment 3):
 
-<pre lang="xml">
+```xml
 <appSettings>
     <add key="ConfigName3" value="MSSQL"/>
     <add key="ConstConnString3" value="provider=SQLOLEDB;Server=Lenovo-PC;Trusted_Connection=Yes;Database=pubs;Packet Size=32767"/>
     <add key="ConfigStoreFolder3" value="C:\\dev\\DBAddin.NET\\source\\ConfigStore"/>
     <add key="DBidentifierCCS3" value="Database="/>
 </appSettings>
-</pre>
+```
 
 Explanation:
 *   `ConfigName**N**`: freely definable name for your environment (e.g. Production or your database instance)
@@ -40,7 +40,7 @@ Explanation:
 *   `DBidentifierODBC**N**`: used to identify the database within the connection definition returned by MS-Query
 
 Other settings possible in DBAddin.xll.config (or DBAddinCentral.config):
-<pre lang="xml">
+```xml
     <add key="LocalHelp" value="C:\\dev\\DBAddin.NET\\docs\\LocalHelp.htm"/>
     <add key="CmdTimeout" value="30" />
     <add key="CnnTimeout" value="15" />
@@ -55,7 +55,7 @@ Other settings possible in DBAddin.xll.config (or DBAddinCentral.config):
     <add key="maxNumberMassChange" value="10" />
     <add key="connIDPrefixDBtype" value="MSSQL" />
     <add key="DBSheetAutoname" value="True" />
-</pre>
+```
 
 Explanation:
 *   `LocalHelp`: the path to local help files downloadable [here](doc.zip). To include it, put the contained folder and html file into the given folder
@@ -94,7 +94,8 @@ The Aboutbox can be reached by clicking the small dialogBox Launcher in the righ
 There is a possibility to see the Log from there and set the future log events displayed (starting values are set in the config file). You can also fix legacy DBAddin functions, in case you decided to skip the possibility offered on opening a Workbook.
 
 The DBListFetch's and DBRowFetch's target areas' extent is stored in hidden named ranges assigned both to the calling function cell (DBFsource(Key)) and the target (DBFtarget(Key)). These hidden names are used to keep track of the previous content to prevent overwriting, clearing old values, etc.
-Sometimes during copying and pasting DB Functions, these names can get mixed up, leading to strange results or non-functioning of the "jump" function. In these cases, there is a tool in the DB Addin tools group, which may be used to "purge" these hidden named ranges in case of any strange behaviour due to multiple name assignments to the same area.
+Sometimes during copying and pasting DB Functions, these names can get mixed up, leading to strange results or non-functioning of the "jump" function. In these cases, there is a tool in the DB Addin tools group, which may be used to "purge" these hidden named ranges in case of any strange behaviour due to multiple name assignments to the same area.  
+
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/purgeNames.PNG)  
 
 The tool "Buttons" is used for switching designmode for DBModifier Buttons (identical to standard Excel button "Design Mode" in Ribbon "Developer tab", Group "Controls")

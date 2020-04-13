@@ -88,7 +88,7 @@ You can edit the DBModifiers either by Ctrl-Shift clicking the Execute DBModifie
 #### Settings
 
 Following Settings in DBAddin.xll.config or the referred DBAddinCentral.config affect behaviour of DBModifiers:
-<pre lang="xml">
+```xml
     <add key="CmdTimeout" value="30" />
     <add key="CnnTimeout" value="15" />
     <add key="DefaultEnvironment" value="3" />
@@ -99,7 +99,7 @@ Following Settings in DBAddin.xll.config or the referred DBAddinCentral.config a
     <add key="maxNumberMassChange" value="10" />
     <add key="connIDPrefixDBtype" value="MSSQL" />
     <add key="DBSheetAutoname" value="True" />
-</pre>
+```
 
 *   `CmdTimeout`: the default timeout for a command to execute
 *   `CnnTimeout`: the default timeout for connecting
