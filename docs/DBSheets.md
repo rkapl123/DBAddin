@@ -170,13 +170,13 @@ Following Settings in DBAddin.xll.config or the referred DBAddinCentral.config a
 
 
 Explanation:
-*   `ConfigName**N**`: freely definable name for your environment (e.g. Production or your database instance)
-*   `DBSheetConnString**N**`: the connection string used to connect to the database for the DBSheet definitions
-*   `DBidentifierCCS**N**`: used to identify the database within DBSheetConnString
-*   `DBSheetDefinitions**N**`: path to the stored DBSheetdefinitions (default directory of assign DBsheet definitions and load/save DBSheet Defintions)
-*   `dbGetAll**N**`: command for retrieving all databases/schemas from the database can be entered (for (MS) SQL server this is "`sp_helpdb`" for Oracle its "`select username from sys.all_users`".
-*   `dbGetAllFieldName**N**`: If the result of above command has more than one column (like in sqlserver), you have to give the fieldname where the databases can be retrieved from.
-*   `ownerQualifier**N**`: default owner qualifier for table when loading DBSheet definitions, if table name is not fully qualified (legacy DBSheet definitions)
-*   `dbPwdSpec**N**`: Password entry specifier within DBSheetConnString
+*   `ConfigName`**N**: freely definable name for your environment (e.g. Production or your database instance)
+*   `DBSheetConnString`**N**: the connection string used to connect to the database for the DBSheet definitions
+*   `DBidentifierCCS`**N**: used to identify the database within DBSheetConnString
+*   `DBSheetDefinitions`**N**: path to the stored DBSheetdefinitions (default directory of assign DBsheet definitions and load/save DBSheet Defintions)
+*   `dbGetAll`**N**: command for retrieving all databases/schemas from the database can be entered (for (MS) SQL server this is "`sp_helpdb`" for Oracle its "`select username from sys.all_users`".
+*   `dbGetAllFieldName`**N**: If the result of above command has more than one column (like in sqlserver), you have to give the fieldname where the databases can be retrieved from.
+*   `ownerQualifier`**N**: default owner qualifier for table when loading DBSheet definitions, if table name is not fully qualified (legacy DBSheet definitions)
+*   `dbPwdSpec`**N**: Password entry specifier within DBSheetConnString
 
 The entries DBisUserscheme and dbneedPwd are for Oracle databases where DBAddin has to switch to the scheme and therefore needs a password (Oracle has not been tested with the new DBAddin).

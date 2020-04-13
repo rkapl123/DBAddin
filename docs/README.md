@@ -33,11 +33,11 @@ This can be done by modifying DBAddin.xll.config or the referred DBAddinCentral.
 ```
 
 Explanation:
-*   `ConfigName**N**`: freely definable name for your environment (e.g. Production or your database instance)
-*   `ConstConnString**N**`: the connection string used to connect to the database
-*   `ConfigStoreFolder**N**`: all config files (*.xcl) under this folder are shown in a hierarchical manner in "load config"
-*   `DBidentifierCCS**N**`: used to identify the database within the standard default connection string
-*   `DBidentifierODBC**N**`: used to identify the database within the connection definition returned by MS-Query
+*   `ConfigName`**N**: freely definable name for your environment (e.g. Production or your database instance)
+*   `ConstConnString`**N**: the connection string used to connect to the database
+*   `ConfigStoreFolder`**N**: all config files (*.xcl) under this folder are shown in a hierarchical manner in "load config"
+*   `DBidentifierCCS`**N**: used to identify the database within the standard default connection string
+*   `DBidentifierODBC`**N**: used to identify the database within the connection definition returned by MS-Query
 
 Other settings possible in DBAddin.xll.config (or DBAddinCentral.config):
 ```xml
