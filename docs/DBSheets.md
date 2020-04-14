@@ -6,11 +6,13 @@ The allowed IDs and the visible lookup values for those foreign key columns are 
 
 Work in DBSheets is done with context menus (right mouse) and shortcut keys to the context menu items:
 
-*   New records are added by either adding data in an empty row below the displayed data or by selecting "insert Row (Ctl-Sh-i)" in the cell context menu and adding the data into the inserted empty line.
+![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/ContextMenuDBSheets.PNG)
+
+*   New records are added by either adding data in an empty row below the displayed data or by selecting "insert Row (Ctl-Sh-I)" in the cell context menu and adding the data into the inserted empty line.
 *   Existing records are updated by simply changing cells.
-*   Existing records are deleted by selecting "delete Row (Ctl-Sh-d)" in the cell context menu.
+*   Existing records are deleted by selecting "delete Row (Ctl-Sh-D)" in the cell context menu.
 *   When the Excel-Workbook is saved (Ctl-s) then the current DBSheet is stored as well.
-*   Selecting "refresh Data (Ctl-Sh-r)" in the cell context menu will refresh data (undoing any changes made so far)
+*   Selecting "refresh Data (Ctl-Sh-R)" in the cell context menu will refresh data (undoing any changes made so far)
 
 There is also a supporting tool "Create DBSheet definition" (Ribbon menu: DB Addin tools, DBsheet def) available for building and editing DBSheet definitions.
 
@@ -45,19 +47,13 @@ Data is changed simply by editing existing data in cells, this marks the row(s) 
 
 Inserting is done by entering data into empty rows, either allowing the database to introduce a new primary key by leaving the primary column empty (only possible for singular primary keys) or by setting the primary key yourself. This marks the row(s) to be inserted.
 
-Empty rows can be created within the existing data area by using context menu "insert row" or pressing Ctl-Sh-i in the row where data should be inserted. If multiple rows are selected then the same amount of empty rows is inserted.
+Empty rows can be created within the existing data area by using context menu "insert row" or pressing Ctl-Sh-I in the row where data should be inserted. If multiple rows are selected then the same amount of empty rows is inserted.
 
-Deleting is done using context menu "delete row" or pressing Ctl-Sh-d in the row to be deleted. This marks the row(s) to be deleted.
+Deleting is done using context menu "delete row" or pressing Ctl-Sh-D in the row to be deleted. This marks the row(s) to be deleted.
 
-To make the editions permanent, save the workbook (save button or Ctl-s). After a warning message, the current DBSheet is stored to the database, producing warnings/errors as the database (or triggers) checks for validity.
+To make the editions permanent, save the workbook (save button or Ctl-s). After a potential warning message (as set in the DBMapper), the current DBSheet is stored to the database, producing warnings/errors as the database (or triggers) checks for validity.
 
-When editing, the constraints of the underlying data definition have to be observed, i.e. foreign keys must be entered using the restricted list provided as possible foreign values, numerical data cells do not allow character data, etc...
-
-There are four context menus (five in foreign lookup columns):
-
-*   refresh DBSheet (shortcut Ctl-Sh-R) for reading in the current DBSheet from the database thus discarding any changes
-*   delete row (shortcut Ctl-Sh-d) for deleting the row(s) of the currently selected cell(s)
-*   insert row (shortcut Ctl-Sh-i) for inserting rows above the currently selected cell(s)
+### DBSheet definition file
 
 The DBSheet definition file contains following information in XML format:
 

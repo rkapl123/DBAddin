@@ -253,15 +253,6 @@ Public Module Globals
         End Try
     End Sub
 
-    ''' <summary>marks a row in a DBMapper for deletion</summary>
-    <ExcelCommand(Name:="deleteRow", ShortCut:="^D")>
-    Public Sub deleteRow()
-        If Globals.DBModifDefColl.ContainsKey("DBMapper") Then
-            Dim targetName As String = getDBModifNameFromRange(ExcelDnaUtil.Application.Selection)
-            If Left(targetName, 8) = "DBMapper" Then DirectCast(Globals.DBModifDefColl("DBMapper").Item(targetName), DBMapper).doCUDMarks(ExcelDnaUtil.Application.Selection, True)
-        End If
-    End Sub
-
     ''' <summary>splits theString into tokens delimited by delimiter, ignoring delimiters inside quotes and brackets</summary>
     ''' <param name="theString">string to be split into tokens, case insensitive !</param>
     ''' <param name="delimiter">delimiter that string is to be split by</param>

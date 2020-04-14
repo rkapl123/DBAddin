@@ -1263,7 +1263,7 @@ err_1:
     Public Function DBAddinEnvironment() As String
         ExcelDnaUtil.Application.Volatile()
         Try
-            DBAddinEnvironment = fetchSetting("ConfigName", "")
+            DBAddinEnvironment = fetchSetting("ConfigName" + Globals.env(), "")
             If ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual Then DBAddinEnvironment = "calc Mode is manual, please press F9 to get current DBAddin environment !"
         Catch ex As Exception
             DBAddinEnvironment = "Error happened: " + ex.Message

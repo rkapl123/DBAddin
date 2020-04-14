@@ -306,4 +306,57 @@ done:
             End If
         End If
     End Sub
+
+    Private WithEvents mInsertButton As Microsoft.Office.Core.CommandBarButton
+    Private WithEvents mDeleteButton As Microsoft.Office.Core.CommandBarButton
+
+    Private Sub Application_SheetBeforeRightClick(Sh As Object, Target As Range, ByRef Cancel As Boolean) Handles Application.SheetBeforeRightClick
+        ' check if we are in a DBMapper, if not then leave...
+        If Globals.DBModifDefColl.ContainsKey("DBMapper") Then
+            Dim targetName As String = getDBModifNameFromRange(Target)
+            If Left(targetName, 8) <> "DBMapper" Then Exit Sub
+        Else
+            Exit Sub
+        End If
+        Dim appsCommandBars As String() = {"List Range Popup", "Row"}
+        'first delete buttons
+        For Each builtin As String In appsCommandBars
+            Dim srchInsertButton = ExcelDnaUtil.Application.CommandBars(builtin).FindControl(Tag:="insTag")
+            Dim srchDeleteButton = ExcelDnaUtil.Application.CommandBars(builtin).FindControl(Tag:="delTag")
+            If Not IsNothing(srchInsertButton) Then srchInsertButton.Delete()
+            If Not IsNothing(srchDeleteButton) Then srchDeleteButton.Delete()
+        Next
+        ' add context menus
+        ' for whole sheet don't display DBSheet context menus !!
+        If Not Target.Rows.Count = Target.EntireColumn.Rows.Count Then
+            For Each builtin As String In appsCommandBars
+                With ExcelDnaUtil.Application.CommandBars(builtin).Controls.Add(Type:=1, Before:=1, Temporary:=True)
+                    .caption = "delete Row (Ctl-Sh-D)"
+                    .FaceID = 214
+                    .Tag = "delTag"
+                End With
+                With ExcelDnaUtil.Application.CommandBars(builtin).Controls.Add(Type:=1, Before:=1, Temporary:=True)
+                    .caption = "insert Row (Ctl-Sh-I)"
+                    .FaceID = 213
+                    .Tag = "insTag"
+                End With
+            Next
+        End If
+        mInsertButton = ExcelDnaUtil.Application.CommandBars.FindControl(Tag:="insTag")
+        mDeleteButton = ExcelDnaUtil.Application.CommandBars.FindControl(Tag:="delTag")
+    End Sub
+
+    ''' <summary>dynamic context menu item delete: delete row in CUD Style DBMappers</summary>
+    ''' <param name="Ctrl"></param>
+    ''' <param name="CancelDefault"></param>
+    Private Sub mDeleteButton_Click(Ctrl As Microsoft.Office.Core.CommandBarButton, ByRef CancelDefault As Boolean) Handles mDeleteButton.Click
+        DBModifs.deleteRow()
+    End Sub
+
+    ''' <summary>dynamic context menu item insert: insert row in CUD Style DBMappers</summary>
+    ''' <param name="Ctrl"></param>
+    ''' <param name="CancelDefault"></param>
+    Private Sub mInsertButton_Click(Ctrl As Microsoft.Office.Core.CommandBarButton, ByRef CancelDefault As Boolean) Handles mInsertButton.Click
+        DBModifs.insertRow()
+    End Sub
 End Class

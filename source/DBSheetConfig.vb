@@ -28,7 +28,7 @@ Public Module DBSheetConfig
     Dim addedCells As Integer
     Dim tblPlaceHolder As String
     Dim specialNonNullableChar As String
-    ''' <summary>for DBSheetCreateForm, store the password so we don't have to enter it again...</summary>
+    ''' <summary>for DBSheetCreateForm, store the password once so we don't have to enter it again...</summary>
     Public existingPwd As String
     ''' <summary>public clipboard row for DBSheet definition rows (foreign lookup info)</summary>
     Public clipboardDataRow As DBSheetDefRow

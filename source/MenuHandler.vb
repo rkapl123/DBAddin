@@ -4,14 +4,13 @@ Imports System.Runtime.InteropServices
 Imports Microsoft.Office.Interop
 Imports System.Configuration
 
-
 ''' <summary>handles all Menu related aspects (context menu for building/refreshing, "DBAddin"/"Load Config" tree menu for retrieving stored configuration files, etc.)</summary>
 <ComVisible(True)>
 Public Class MenuHandler
     Inherits ExcelRibbon
 
     ''' <summary>callback after Excel loaded the Ribbon, used to initialize data for the Ribbon</summary>
-    Public Sub ribbonLoaded(theRibbon As IRibbonUI)
+    Public Sub ribbonLoaded(theRibbon As CustomUI.IRibbonUI)
         Globals.theRibbon = theRibbon
     End Sub
 
@@ -65,8 +64,7 @@ Public Class MenuHandler
         "<contextMenu idMso ='ContextMenuCell'>" +
             "<button id='refreshDataC' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
             "<button id='gotoDBFuncC' label='jump to DBFunc/target (Ctl-Sh-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
-            "<button id='DeleteRowC' label='delete Row (Ctl-Sh-D)' imageMso='SlicerDelete' onAction='deleteRowButton' insertBeforeMso='Cut'/>" +
-            "<menu id='createMenu' label='Insert/Edit DBFunc/DBModif' insertBeforeMso='Cut'>" +
+             "<menu id='createMenu' label='Insert/Edit DBFunc/DBModif' insertBeforeMso='Cut'>" +
                 "<button id='DBMapperC' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
                 "<button id='DBActionC' tag='DBAction' label='DBAction' imageMso='TableIndexes' onAction='clickCreateButton'/>" +
                 "<button id='DBSequenceC' tag='DBSeqnce' label='DBSequence' imageMso='ShowOnNewButton' onAction='clickCreateButton'/>" +
@@ -86,7 +84,6 @@ Public Class MenuHandler
         "<contextMenu idMso ='ContextMenuCellLayout'>" +
             "<button id='refreshDataCL' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
             "<button id='gotoDBFuncCL' label='jump to DBFunc/target (Ctl-Sh-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
-            "<button id='DeleteRowCL' label='delete Row (Ctl-Sh-D)' imageMso='SlicerDelete' onAction='deleteRowButton' insertBeforeMso='Cut'/>" +
             "<menu id='createMenuCL' label='Insert/Edit DBFunc/DBModif' insertBeforeMso='Cut'>" +
                 "<button id='DBMapperCL' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
                 "<button id='DBActionCL' tag='DBAction' label='DBAction' imageMso='TableIndexes' onAction='clickCreateButton'/>" +
@@ -101,7 +98,6 @@ Public Class MenuHandler
         "</contextMenu>" +
         "<contextMenu idMso='ContextMenuRow'>" +
             "<button id='refreshDataR' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
-            "<button id='DeleteRowR' label='delete Row (Ctl-Sh-D)' imageMso='SlicerDelete' onAction='deleteRowButton' insertBeforeMso='Cut'/>" +
             "<menuSeparator id='MySeparatorR' insertBeforeMso='Cut'/>" +
         "</contextMenu>" +
         "<contextMenu idMso='ContextMenuColumn'>" +
@@ -111,7 +107,6 @@ Public Class MenuHandler
         "<contextMenu idMso='ContextMenuListRange'>" +
             "<button id='refreshDataL' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
             "<button id='gotoDBFuncL' label='jump to DBFunc/target (Ctl-Sh-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
-            "<button id='DeleteRowL' label='delete Row (Ctl-Sh-D)' imageMso='SlicerDelete' onAction='deleteRowButton' insertBeforeMso='Cut'/>" +
             "<menu id='createMenuL' label='Insert/Edit DBFunc/DBModif' insertBeforeMso='Cut'>" +
                 "<button id='DBMapperL' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
                 "<button id='DBSequenceL' tag='DBSeqnce' label='DBSequence' imageMso='ShowOnNewButton' onAction='clickCreateButton'/>" +
@@ -129,7 +124,7 @@ Public Class MenuHandler
     ''' <summary>display warning button icon on Cprops change if DBFskip is set...</summary>
     ''' <param name="control"></param>
     ''' <returns></returns>
-    Public Function getCPropsImage(control As IRibbonControl) As String
+    Public Function getCPropsImage(control As CustomUI.IRibbonControl) As String
         If Globals.getCustPropertyBool("DBFskip", ExcelDnaUtil.Application.ActiveWorkbook) Then
             Return "DeclineTask"
         Else
@@ -140,7 +135,7 @@ Public Class MenuHandler
     ''' <summary>display warning icon on log button if warning has been logged...</summary>
     ''' <param name="control"></param>
     ''' <returns></returns>
-    Public Function getLogsImage(control As IRibbonControl) As String
+    Public Function getLogsImage(control As CustomUI.IRibbonControl) As String
         If Globals.WarningIssued Then
             Return "IndexUpdate"
         Else
@@ -151,7 +146,7 @@ Public Class MenuHandler
     ''' <summary>display state of designmode in screentip of dialogBox launcher</summary>
     ''' <param name="control"></param>
     ''' <returns>screentip and the state of designmode</returns>
-    Public Function getToggleCPropsScreentip(control As IRibbonControl) As String
+    Public Function getToggleCPropsScreentip(control As CustomUI.IRibbonControl) As String
         getToggleCPropsScreentip = ""
         Try
             Dim docproperty As Microsoft.Office.Core.DocumentProperty
@@ -167,7 +162,7 @@ Public Class MenuHandler
 
     ''' <summary>click on change props: show builtin properties dialog</summary>
     ''' <param name="control"></param>
-    Public Sub showCProps(control As IRibbonControl)
+    Public Sub showCProps(control As CustomUI.IRibbonControl)
         ExcelDnaUtil.Application.Dialogs(Excel.XlBuiltInDialog.xlDialogProperties).Show
         ' to check whether DBFskip has changed:
         Globals.theRibbon.InvalidateControl(control.Id)
@@ -175,7 +170,7 @@ Public Class MenuHandler
 
     ''' <summary>show DBModif deefinitions edit box</summary>
     ''' <param name="control"></param>
-    Sub showDBModifEdit(control As IRibbonControl)
+    Sub showDBModifEdit(control As CustomUI.IRibbonControl)
         ' only show dialog if there is a workbook and it has the relevant custom XML part.
         If Not IsNothing(ExcelDnaUtil.Application.ActiveWorkbook) AndAlso ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef").Count > 0 Then
             Dim theEditDBModifDefDlg As EditDBModifDef = New EditDBModifDef()
@@ -185,7 +180,7 @@ Public Class MenuHandler
 
     ''' <summary>toggle designmode button</summary>
     ''' <param name="control"></param>
-    Sub showToggleDesignMode(control As IRibbonControl)
+    Sub showToggleDesignMode(control As CustomUI.IRibbonControl)
         Dim cbrs As Object = ExcelDnaUtil.Application.CommandBars
         If Not IsNothing(cbrs) AndAlso cbrs.GetEnabledMso("DesignMode") Then
             cbrs.ExecuteMso("DesignMode")
@@ -199,7 +194,7 @@ Public Class MenuHandler
     ''' <summary>display state of designmode in screentip of button</summary>
     ''' <param name="control"></param>
     ''' <returns>screentip and the state of designmode</returns>
-    Public Function getToggleDesignScreentip(control As IRibbonControl) As String
+    Public Function getToggleDesignScreentip(control As CustomUI.IRibbonControl) As String
         Dim cbrs As Object = ExcelDnaUtil.Application.CommandBars
         If Not IsNothing(cbrs) AndAlso cbrs.GetEnabledMso("DesignMode") Then
             Return "Designmode is currently " + IIf(cbrs.GetPressedMso("DesignMode"), "on !", "off !")
@@ -211,7 +206,7 @@ Public Class MenuHandler
     ''' <summary>display state of designmode in icon of button</summary>
     ''' <param name="control"></param>
     ''' <returns>screentip and the state of designmode</returns>
-    Public Function getToggleDesignImage(control As IRibbonControl) As String
+    Public Function getToggleDesignImage(control As CustomUI.IRibbonControl) As String
         Dim cbrs As Object = ExcelDnaUtil.Application.CommandBars
         If Not IsNothing(cbrs) AndAlso cbrs.GetEnabledMso("DesignMode") Then
             If cbrs.GetPressedMso("DesignMode") Then
@@ -226,29 +221,29 @@ Public Class MenuHandler
 
     ''' <summary>for environment dropdown to get the total number of the entries</summary>
     ''' <returns></returns>
-    Public Function GetItemCount(control As IRibbonControl) As Integer
+    Public Function GetItemCount(control As CustomUI.IRibbonControl) As Integer
         Return Globals.environdefs.Length
     End Function
 
     ''' <summary>for environment dropdown to get the label of the entries</summary>
     ''' <returns></returns>
-    Public Function GetItemLabel(control As IRibbonControl, index As Integer) As String
+    Public Function GetItemLabel(control As CustomUI.IRibbonControl, index As Integer) As String
         Return Globals.environdefs(index)
     End Function
 
     ''' <summary>for environment dropdown to get the ID of the entries</summary>
     ''' <returns></returns>
-    Public Function GetItemID(control As IRibbonControl, index As Integer) As String
+    Public Function GetItemID(control As CustomUI.IRibbonControl, index As Integer) As String
         Return Globals.environdefs(index)
     End Function
 
     ''' <summary>after selection of environment (using selectEnvironment) used to return the selected environment</summary>
     ''' <returns></returns>
-    Public Function GetSelectedEnvironment(control As IRibbonControl) As Integer
+    Public Function GetSelectedEnvironment(control As CustomUI.IRibbonControl) As Integer
         Return Globals.selectedEnvironment
     End Function
 
-    Public Function getSelectedTooltip(control As IRibbonControl) As String
+    Public Function getSelectedTooltip(control As CustomUI.IRibbonControl) As String
         If CBool(fetchSetting("DontChangeEnvironment", "False")) Then
             Return "DontChangeEnvironment is set, therefore changing the Environment is prevented !"
         Else
@@ -256,12 +251,12 @@ Public Class MenuHandler
         End If
     End Function
 
-    Public Function GetEnabledSelect(control As IRibbonControl) As Integer
+    Public Function GetEnabledSelect(control As CustomUI.IRibbonControl) As Integer
         Return Not CBool(fetchSetting("DontChangeEnvironment", "False"))
     End Function
 
     ''' <summary>Choose environment (configured in registry with ConstConnString(N), ConfigStoreFolder(N))</summary>
-    Public Sub selectEnvironment(control As IRibbonControl, id As String, index As Integer)
+    Public Sub selectEnvironment(control As CustomUI.IRibbonControl, id As String, index As Integer)
         Globals.selectedEnvironment = index
         Globals.initSettings()
         ' provide a chance to reconnect when switching environment...
@@ -276,7 +271,7 @@ Public Class MenuHandler
 
     ''' <summary>show the user config (AppSetting) or the central config (referenced by App Settings)</summary>
     ''' <param name="control"></param>
-    Public Sub showAddinConfig(control As IRibbonControl)
+    Public Sub showAddinConfig(control As CustomUI.IRibbonControl)
         Dim theEditDBModifDefDlg As EditDBModifDef = New EditDBModifDef()
         theEditDBModifDefDlg.DBFskip.Hide()
         theEditDBModifDefDlg.doDBMOnSave.Hide()
@@ -288,7 +283,7 @@ Public Class MenuHandler
     End Sub
 
     ''' <summary>dialogBoxLauncher of DBAddin settings group: activate about box</summary>
-    Public Sub showAbout(control As IRibbonControl)
+    Public Sub showAbout(control As CustomUI.IRibbonControl)
         Dim myAbout As AboutBox = New AboutBox
         myAbout.ShowDialog()
         ' if disabling the addin was chosen, then suicide here..
@@ -298,7 +293,7 @@ Public Class MenuHandler
     End Sub
 
     ''' <summary>on demand, refresh the DB Config tree</summary>
-    Public Sub refreshDBConfigTree(control As IRibbonControl)
+    Public Sub refreshDBConfigTree(control As CustomUI.IRibbonControl)
         Globals.initSettings()
         ConfigFiles.createConfigTreeMenu()
         ErrorMsg("refreshed DB Config Tree Menu", "DBAddin: refresh Config tree...", MsgBoxStyle.Information)
@@ -307,25 +302,25 @@ Public Class MenuHandler
 
     ''' <summary>get DB Config Menu from File</summary>
     ''' <returns></returns>
-    Public Function getDBConfigMenu(control As IRibbonControl) As String
+    Public Function getDBConfigMenu(control As CustomUI.IRibbonControl) As String
         If ConfigMenuXML = vbNullString Then ConfigFiles.createConfigTreeMenu()
         Return ConfigMenuXML
     End Function
 
     ''' <summary>load config if config tree menu end-button has been activated (path to config xcl file is in control.Tag)</summary>
-    Public Sub getConfig(control As IRibbonControl)
+    Public Sub getConfig(control As CustomUI.IRibbonControl)
         ConfigFiles.loadConfig(control.Tag)
     End Sub
 
     ''' <summary>set the name of the DBModifType dropdown to the sheet name (for the WB dropdown this is the WB name)</summary>
     ''' <returns></returns>
-    Public Function getDBModifTypeLabel(control As IRibbonControl) As String
+    Public Function getDBModifTypeLabel(control As CustomUI.IRibbonControl) As String
         getDBModifTypeLabel = If(control.Id = "DBSeqnce", "DBSequence", control.Id)
     End Function
 
     ''' <summary>create the buttons in the DBModif sheet dropdown menu</summary>
     ''' <returns></returns>
-    Public Function getDBModifMenuContent(control As IRibbonControl) As String
+    Public Function getDBModifMenuContent(control As CustomUI.IRibbonControl) As String
         Dim xmlString As String = "<menu xmlns='http://schemas.microsoft.com/office/2009/07/customui'>"
         Try
             If Not Globals.DBModifDefColl.ContainsKey(control.Id) Then Return ""
@@ -346,13 +341,13 @@ Public Class MenuHandler
 
     ''' <summary>show a screentip for the dynamic DBMapper/DBAction/DBSequence Menus (also showing the ID behind)</summary>
     ''' <returns></returns>
-    Public Function getDBModifScreentip(control As IRibbonControl) As String
+    Public Function getDBModifScreentip(control As CustomUI.IRibbonControl) As String
         Return "Select DBModifier to store/do action/do sequence (" + control.Id + ")"
     End Function
 
     ''' <summary>shows the DBModif sheet button only if it was collected...</summary>
     ''' <returns></returns>
-    Public Function getDBModifMenuVisible(control As IRibbonControl) As Boolean
+    Public Function getDBModifMenuVisible(control As CustomUI.IRibbonControl) As Boolean
         Try
             Return Globals.DBModifDefColl.ContainsKey(control.Id)
         Catch ex As Exception
@@ -361,7 +356,7 @@ Public Class MenuHandler
     End Function
 
     ''' <summary>DBModif button activated, do DB Mapper/DB Action/DB Sequence or define existing (CtrlKey pressed)...</summary>
-    Public Sub DBModifClick(control As IRibbonControl)
+    Public Sub DBModifClick(control As CustomUI.IRibbonControl)
         Dim nodeName As String = Right(control.Id, Len(control.Id) - 1)
         If Not ExcelDnaUtil.Application.CommandBars.GetEnabledMso("FileNewDefault") Then
             ErrorMsg("Cannot execute DB Modifier while cell editing active !", "DB Modifier execution", MsgBoxStyle.Exclamation)
@@ -384,27 +379,22 @@ Public Class MenuHandler
     End Sub
 
     ''' <summary>context menu entry refreshData: refresh Data in db function (if area or cell selected) or all db functions</summary>
-    Public Sub deleteRowButton(control As IRibbonControl)
-        Globals.deleteRow()
-    End Sub
-
-    ''' <summary>context menu entry refreshData: refresh Data in db function (if area or cell selected) or all db functions</summary>
-    Public Sub clickrefreshData(control As IRibbonControl)
+    Public Sub clickrefreshData(control As CustomUI.IRibbonControl)
         Globals.refreshData()
     End Sub
 
     ''' <summary>context menu entry gotoDBFunc: jumps from DB function to data area and back</summary>
-    Public Sub clickjumpButton(control As IRibbonControl)
+    Public Sub clickjumpButton(control As CustomUI.IRibbonControl)
         Globals.jumpButton()
     End Sub
 
     ''' <summary>purge name tool button, purge names used for dbfunctions from workbook</summary>
-    Public Sub clickpurgetoolbutton(control As IRibbonControl)
+    Public Sub clickpurgetoolbutton(control As CustomUI.IRibbonControl)
         Globals.purgeNames()
     End Sub
 
     ''' <summary>show the trace log</summary>
-    Public Sub clickShowLog(control As IRibbonControl)
+    Public Sub clickShowLog(control As CustomUI.IRibbonControl)
         ExcelDna.Logging.LogDisplay.Show()
         ' reset warning flag
         WarningIssued = False
@@ -413,13 +403,13 @@ Public Class MenuHandler
 
     ''' <summary>ribbon menu button for DBSheet creation start</summary>
     ''' <param name="control"></param>
-    Public Sub clickCreateDBSheet(control As IRibbonControl)
+    Public Sub clickCreateDBSheet(control As CustomUI.IRibbonControl)
         Dim theDBSheetCreateForm As DBSheetCreateForm = New DBSheetCreateForm
         theDBSheetCreateForm.Show()
     End Sub
 
     ''' <summary>context menu entries below create...: create DB function or DB Modification definition</summary>
-    Public Sub clickCreateButton(control As IRibbonControl)
+    Public Sub clickCreateButton(control As CustomUI.IRibbonControl)
         ' check for existing DBMapper or DBAction definition and allow exit
         Dim activeCellDBModifName As String = DBModifs.getDBModifNameFromRange(ExcelDnaUtil.Application.ActiveCell)
         Dim activeCellDBModifType As String = Left(activeCellDBModifName, 8)

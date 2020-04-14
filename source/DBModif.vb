@@ -496,7 +496,7 @@ Public Class DBMapper : Inherits DBModif
         End If
         Dim changedRangeRows As Integer = changedRange.Rows.Count
         If changedRangeRows > CInt(fetchSetting("maxRowCountCUD", "10000")) Then
-            If Not QuestionMsg(theMessage:="A large range was changed (" + changedRange.Rows.Count + " > maxRowCountCUD:" + fetchSetting("maxRowCountCUD", "10000") + "), this will probably lead to CUD flag setting taking very long. Continue?", questionTitle:="Set CUD Flags for DB Mapper") Then Exit Sub
+            If Not QuestionMsg(theMessage:="A large range was changed (" + changedRange.Rows.Count.ToString + " > maxRowCountCUD:" + fetchSetting("maxRowCountCUD", "10000") + "), this will probably lead to CUD flag setting taking very long. Continue?", questionTitle:="Set CUD Flags for DB Mapper") Then Exit Sub
         End If
         If changedRange.Parent.ProtectContents Then
             ErrorMsg("Worksheet " + changedRange.Parent.Name + " is content protected, can't set CUD Flags !")
@@ -1604,5 +1604,24 @@ Public Module DBModifs
         End If
     End Function
 
+    ''' <summary>marks a row in a DBMapper for deletion</summary>
+    <ExcelCommand(Name:="deleteRow", ShortCut:="^D")>
+    Public Sub deleteRow()
+        Dim targetName As String = getDBModifNameFromRange(ExcelDnaUtil.Application.Selection)
+        If Left(targetName, 8) = "DBMapper" Then DirectCast(Globals.DBModifDefColl("DBMapper").Item(targetName), DBMapper).doCUDMarks(ExcelDnaUtil.Application.Selection, True)
+    End Sub
+
+    ''' <summary>inserts a row in a DBMapper</summary>
+    <ExcelCommand(Name:="insertRow", ShortCut:="^I")>
+    Public Sub insertRow()
+        Dim targetName As String = getDBModifNameFromRange(ExcelDnaUtil.Application.Selection)
+        If Left(targetName, 8) = "DBMapper" Then
+            ' get the target range for the DBMapper to get the ListObject
+            Dim insertTarget As Excel.Range = DirectCast(Globals.DBModifDefColl("DBMapper").Item(targetName), DBMapper).getTargetRange
+            ' calculate insert row from selection and top row of insert target
+            Dim insertRow As Integer = ExcelDnaUtil.Application.Selection.Row - insertTarget.Row
+            insertTarget.ListObject.ListRows.Add(insertRow)
+        End If
+    End Sub
 End Module
 

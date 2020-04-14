@@ -32,30 +32,25 @@ Public Class DBSheetCreateForm
     ''' <param name="e"></param>
     Private Sub DBSheetCreateForm_Shown(sender As Object, e As EventArgs) Handles Me.Shown
         ' get settings for DBSheet definition editing
-        Dim env As Integer = Globals.selectedEnvironment + 1
-        dbGetAllStr = fetchSetting("dbGetAll" + env.ToString, "NONEXISTENT")
+        dbGetAllStr = fetchSetting("dbGetAll" + Globals.env(), "NONEXISTENT")
         If dbGetAllStr = "NONEXISTENT" Then
-            ErrorMsg("No dbGetAllStr given for environment: " + env.ToString + ", please correct and rerun.", "DBSheet Definition Error")
+            ErrorMsg("No dbGetAllStr given for environment: " + Globals.env() + ", please correct and rerun.", "DBSheet Definition Error")
             Exit Sub
         End If
-        DBGetAllFieldName = fetchSetting("dbGetAllFieldName" + env.ToString, "NONEXISTENT")
+        DBGetAllFieldName = fetchSetting("dbGetAllFieldName" + Globals.env(), "NONEXISTENT")
         If DBGetAllFieldName = "NONEXISTENT" Then
-            ErrorMsg("No DBGetAllFieldName given for environment: " + env.ToString + ", please correct and rerun.", "DBSheet Definition Error")
+            ErrorMsg("No DBGetAllFieldName given for environment: " + Globals.env() + ", please correct and rerun.", "DBSheet Definition Error")
             Exit Sub
         End If
-        dbsheetConnString = fetchSetting("DBSheetConnString" + env.ToString, "NONEXISTENT")
-        If dbsheetConnString = "NONEXISTENT" Then
-            ErrorMsg("No Connectionstring given for environment: " + env.ToString + ", please correct and rerun.", "DBSheet Definition Error")
-            Exit Sub
-        End If
-        dbidentifier = fetchSetting("DBidentifierCCS" + env.ToString, "NONEXISTENT")
+        dbidentifier = fetchSetting("DBidentifierCCS" + Globals.env(), "NONEXISTENT")
         If dbidentifier = "NONEXISTENT" Then
-            ErrorMsg("No DB identifier given for environment: " + env.ToString + ", please correct and rerun.", "DBSheet Definition Error")
+            ErrorMsg("No DB identifier given for environment: " + Globals.env() + ", please correct and rerun.", "DBSheet Definition Error")
             Exit Sub
         End If
-        dbPwdSpec = fetchSetting("dbPwdSpec" + env.ToString, "")
-        tblPlaceHolder = fetchSetting("tblPlaceHolder" + env.ToString, "!T!")
-        specialNonNullableChar = fetchSetting("specialNonNullableChar" + env.ToString, "*")
+        dbPwdSpec = fetchSetting("dbPwdSpec" + Globals.env(), "")
+        tblPlaceHolder = fetchSetting("tblPlaceHolder" + Globals.env(), "!T!")
+        specialNonNullableChar = fetchSetting("specialNonNullableChar" + Globals.env(), "*")
+        Lenvironment.Text = "Environment: " + fetchSetting("ConfigName" + Globals.env(), "")
 
         ' set up columns for DBSheetCols gridview
         Dim nameCB As DataGridViewComboBoxColumn = New DataGridViewComboBoxColumn With {
@@ -124,33 +119,57 @@ Public Class DBSheetCreateForm
 
         ' if we have a Password to enter, just display explanation text in title bar and let user enter password... 
         If dbPwdSpec <> "" And existingPwd = "" Then
-            Me.Text = "DB Sheet creation: Please enter required Password into Pwd to access schema information"
-            TableEditable(False)
-            saveEnabled(False)
+            resetDBSheetCreateForm()
         Else ' otherwise jump in immediately
-            Password.Text = existingPwd
+            ' passwordless connection string, reset password and disable...
+            If dbPwdSpec = "" Then
+                Password.Enabled = False
+                existingPwd = ""
+            Else ' set to stored existig password
+                Password.Text = existingPwd
+            End If
             fillDatabasesAndSetDropDown()
             ' initialize with empty DBSheet definitions is done by above call, changing Database.SelectedIndex (Database_SelectedIndexChanged)
         End If
+    End Sub
+
+    Private Sub resetDBSheetCreateForm()
+        Me.Text = "DB Sheet creation: Please enter required Password into Pwd to access schema information"
+        TableEditable(False)
+        saveEnabled(False)
+        DBSheetColsEditable(False)
+        Try : dbshcnn.Close() : Catch ex As Exception : End Try
+        dbshcnn = Nothing
+        ' if called by error in openConnection, reset existing password to allow for refreshing...
+        existingPwd = ""
     End Sub
 
     ''' <summary>enter pressed in Password textbox triggering initialisation</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub Password_KeyPress(sender As Object, e As KeyPressEventArgs) Handles Password.KeyPress
-        If e.KeyChar = Microsoft.VisualBasic.ChrW(Keys.Return) Then setPasswordAndInit()
+        If e.KeyChar = Microsoft.VisualBasic.ChrW(Keys.Return) And FormLocalPwd <> Password.Text Then setPasswordAndInit()
+    End Sub
+
+    Private FormLocalPwd As String = ""
+    ''' <summary>entering Password box to remember local changed password</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub Password_Enter(sender As Object, e As EventArgs) Handles Password.Enter
+        FormLocalPwd = Password.Text
     End Sub
 
     ''' <summary>leaving Password textbox triggering initialisation</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub Password_Leave(sender As Object, e As EventArgs) Handles Password.Leave
-        If existingPwd <> Password.Text Then setPasswordAndInit()
+        If FormLocalPwd <> Password.Text Then setPasswordAndInit()
     End Sub
 
     ''' <summary>called after new password has been entered, reset stored password and fill database dropdown</summary>
     Private Sub setPasswordAndInit()
         existingPwd = Password.Text
+        FormLocalPwd = Password.Text
         Try : dbshcnn.Close() : Catch ex As Exception : End Try
         dbshcnn = Nothing
         fillDatabasesAndSetDropDown()
@@ -161,9 +180,7 @@ Public Class DBSheetCreateForm
         Try
             fillDatabases(Database)
         Catch ex As System.Exception
-            TableEditable(False)
-            saveEnabled(False)
-            DBSheetColsEditable(False)
+            resetDBSheetCreateForm()
             ErrorMsg(ex.Message)
             Exit Sub
         End Try
@@ -214,7 +231,7 @@ Public Class DBSheetCreateForm
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub Database_SelectedIndexChanged(sender As Object, e As EventArgs) Handles Database.SelectedIndexChanged
-        Try : openConnection() : Catch ex As Exception : ErrorMsg(ex.Message) : Exit Sub : End Try
+        Try : openConnection() : Catch ex As Exception : ErrorMsg(ex.Message) : resetDBSheetCreateForm() : Exit Sub : End Try
         Try
             fillTables()
             ' start with empty columns list
@@ -236,6 +253,7 @@ Public Class DBSheetCreateForm
     ''' <param name="e"></param>
     Private Sub Table_SelectedIndexChanged(ByVal sender As Object, ByVal e As EventArgs) Handles Table.SelectedIndexChanged
         If FormDisabled Then Exit Sub
+        Try : openConnection() : Catch ex As Exception : ErrorMsg(ex.Message) : resetDBSheetCreateForm() : Exit Sub : End Try
         Try
             FormDisabled = True
             If Table.SelectedIndex >= 0 Then DBSheetColsEditable(True)
@@ -278,7 +296,6 @@ Public Class DBSheetCreateForm
             DBSheetCols.Rows(selIndex).Cells("flookup").Value = ""
             DBSheetCols.Rows(selIndex).Cells("sort").Value = ""
             DBSheetCols.Rows(selIndex).Cells("lookup").Value = ""
-            'TODO: check bug when multiple DBSHeet dialogs are open and lookup/key fields are not filled...
         ElseIf e.ColumnIndex = 1 Then  ' ftable column 
             If DBSheetCols.Rows(selIndex).Cells("ftable").Value.ToString = "" Then ' reset fkey and flookup dropdown
                 DirectCast(DBSheetCols.Rows(selIndex).Cells("fkey"), DataGridViewComboBoxCell).DataSource = New List(Of String)({""})
@@ -1039,14 +1056,22 @@ Public Class DBSheetCreateForm
     ''' <summary>opens a database connection with active connstring</summary>
     Sub openConnection()
         ' connections are pooled by ADO depending on the connection string:
-        If InStr(1, dbsheetConnString, dbPwdSpec) > 0 And Strings.Len(existingPwd) = 0 Then
-            Throw New Exception("Password is required by connection string: " + dbsheetConnString)
-        End If
-        If Strings.Len(existingPwd) > 0 Then
+        If IsNothing(dbshcnn) Then
+            dbsheetConnString = fetchSetting("DBSheetConnString" + Globals.env(), "NONEXISTENT")
+            If dbsheetConnString = "NONEXISTENT" Then
+                ErrorMsg("No Connectionstring given for environment: " + Globals.env() + ", please correct and rerun.", "DBSheet Definition Error")
+                Exit Sub
+            End If
             If InStr(1, dbsheetConnString, dbPwdSpec) > 0 Then
-                dbsheetConnString = Change(dbsheetConnString, dbPwdSpec, existingPwd, ";")
-            Else
-                dbsheetConnString = dbsheetConnString + ";" + dbPwdSpec + existingPwd
+                If Strings.Len(existingPwd) > 0 Then
+                    If InStr(1, dbsheetConnString, dbPwdSpec) > 0 Then
+                        dbsheetConnString = Change(dbsheetConnString, dbPwdSpec, existingPwd, ";")
+                    Else
+                        dbsheetConnString = dbsheetConnString + ";" + dbPwdSpec + existingPwd
+                    End If
+                Else
+                    Throw New Exception("Password is required by connection string: " + dbsheetConnString)
+                End If
             End If
         End If
         Try

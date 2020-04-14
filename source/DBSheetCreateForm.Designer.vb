@@ -58,6 +58,7 @@ Partial Class DBSheetCreateForm
         Me.TestLookupQuery = New System.Windows.Forms.ToolStripMenuItem()
         Me.RemoveLookupQueryTest = New System.Windows.Forms.ToolStripMenuItem()
         Me.CurrentFileLinkLabel = New System.Windows.Forms.LinkLabel()
+        Me.Lenvironment = New System.Windows.Forms.Label()
         CType(Me.DBSheetCols, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.DBSheetColsMoveMenu.SuspendLayout()
         Me.DBSheetColsLookupMenu.SuspendLayout()
@@ -159,7 +160,7 @@ Partial Class DBSheetCreateForm
         Me.clearAllFields.Location = New System.Drawing.Point(114, 38)
         Me.clearAllFields.Name = "clearAllFields"
         Me.clearAllFields.RightToLeft = System.Windows.Forms.RightToLeft.No
-        Me.clearAllFields.Size = New System.Drawing.Size(134, 24)
+        Me.clearAllFields.Size = New System.Drawing.Size(132, 24)
         Me.clearAllFields.TabIndex = 8
         Me.clearAllFields.Text = "reset DBSheet definition"
         Me.clearAllFields.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageAboveText
@@ -229,10 +230,10 @@ Partial Class DBSheetCreateForm
         'Password
         '
         Me.Password.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.Password.Location = New System.Drawing.Point(719, 10)
+        Me.Password.Location = New System.Drawing.Point(708, 10)
         Me.Password.Name = "Password"
         Me.Password.PasswordChar = Global.Microsoft.VisualBasic.ChrW(42)
-        Me.Password.Size = New System.Drawing.Size(109, 20)
+        Me.Password.Size = New System.Drawing.Size(120, 20)
         Me.Password.TabIndex = 0
         Me.ToolTipMain.SetToolTip(Me.Password, "enter the password for the user required to access schema information (given in D" &
         "BSheetConnString)")
@@ -262,7 +263,7 @@ Partial Class DBSheetCreateForm
         Me.DBSheetCols.Location = New System.Drawing.Point(5, 68)
         Me.DBSheetCols.MultiSelect = False
         Me.DBSheetCols.Name = "DBSheetCols"
-        Me.DBSheetCols.Size = New System.Drawing.Size(1096, 258)
+        Me.DBSheetCols.Size = New System.Drawing.Size(1096, 263)
         Me.DBSheetCols.TabIndex = 13
         Me.ToolTipMain.SetToolTip(Me.DBSheetCols, "Select columns (fields) adding possible foreign key lookup information in foreign" &
         " tables")
@@ -291,9 +292,9 @@ Partial Class DBSheetCreateForm
         Me.LTable.Location = New System.Drawing.Point(868, 44)
         Me.LTable.Name = "LTable"
         Me.LTable.RightToLeft = System.Windows.Forms.RightToLeft.No
-        Me.LTable.Size = New System.Drawing.Size(33, 13)
+        Me.LTable.Size = New System.Drawing.Size(37, 13)
         Me.LTable.TabIndex = 100
-        Me.LTable.Text = "Table"
+        Me.LTable.Text = "Table:"
         '
         'DBSheetColsMoveMenu
         '
@@ -320,12 +321,12 @@ Partial Class DBSheetCreateForm
         Me.LDatabase.AutoSize = True
         Me.LDatabase.BackColor = System.Drawing.Color.Transparent
         Me.LDatabase.ForeColor = System.Drawing.SystemColors.ControlText
-        Me.LDatabase.Location = New System.Drawing.Point(848, 13)
+        Me.LDatabase.Location = New System.Drawing.Point(848, 14)
         Me.LDatabase.Name = "LDatabase"
         Me.LDatabase.RightToLeft = System.Windows.Forms.RightToLeft.No
-        Me.LDatabase.Size = New System.Drawing.Size(53, 13)
+        Me.LDatabase.Size = New System.Drawing.Size(57, 13)
         Me.LDatabase.TabIndex = 100
-        Me.LDatabase.Text = "Database"
+        Me.LDatabase.Text = "Database:"
         '
         'LPwd
         '
@@ -334,12 +335,12 @@ Partial Class DBSheetCreateForm
         Me.LPwd.AutoSize = True
         Me.LPwd.BackColor = System.Drawing.Color.Transparent
         Me.LPwd.ForeColor = System.Drawing.SystemColors.ControlText
-        Me.LPwd.Location = New System.Drawing.Point(686, 12)
+        Me.LPwd.Location = New System.Drawing.Point(675, 14)
         Me.LPwd.Name = "LPwd"
         Me.LPwd.RightToLeft = System.Windows.Forms.RightToLeft.No
-        Me.LPwd.Size = New System.Drawing.Size(27, 13)
+        Me.LPwd.Size = New System.Drawing.Size(31, 13)
         Me.LPwd.TabIndex = 100
-        Me.LPwd.Text = "Pwd"
+        Me.LPwd.Text = "Pwd:"
         '
         'LQuery
         '
@@ -388,10 +389,24 @@ Partial Class DBSheetCreateForm
         'CurrentFileLinkLabel
         '
         Me.CurrentFileLinkLabel.AutoSize = True
-        Me.CurrentFileLinkLabel.Location = New System.Drawing.Point(248, 44)
+        Me.CurrentFileLinkLabel.Location = New System.Drawing.Point(252, 44)
         Me.CurrentFileLinkLabel.Name = "CurrentFileLinkLabel"
         Me.CurrentFileLinkLabel.Size = New System.Drawing.Size(0, 13)
         Me.CurrentFileLinkLabel.TabIndex = 101
+        '
+        'Lenvironment
+        '
+        Me.Lenvironment.AllowDrop = True
+        Me.Lenvironment.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
+        Me.Lenvironment.AutoSize = True
+        Me.Lenvironment.BackColor = System.Drawing.Color.Transparent
+        Me.Lenvironment.ForeColor = System.Drawing.SystemColors.ControlText
+        Me.Lenvironment.Location = New System.Drawing.Point(365, 14)
+        Me.Lenvironment.Name = "Lenvironment"
+        Me.Lenvironment.RightToLeft = System.Windows.Forms.RightToLeft.No
+        Me.Lenvironment.Size = New System.Drawing.Size(71, 13)
+        Me.Lenvironment.TabIndex = 100
+        Me.Lenvironment.Text = "Environment:"
         '
         'DBSheetCreateForm
         '
@@ -401,12 +416,12 @@ Partial Class DBSheetCreateForm
         Me.BackColor = System.Drawing.SystemColors.Control
         Me.ClientSize = New System.Drawing.Size(1113, 543)
         Me.Controls.Add(Me.CurrentFileLinkLabel)
+        Me.Controls.Add(Me.Lenvironment)
         Me.Controls.Add(Me.LQuery)
         Me.Controls.Add(Me.LPwd)
         Me.Controls.Add(Me.LDatabase)
         Me.Controls.Add(Me.Database)
         Me.Controls.Add(Me.Password)
-        Me.Controls.Add(Me.DBSheetCols)
         Me.Controls.Add(Me.createQuery)
         Me.Controls.Add(Me.Query)
         Me.Controls.Add(Me.testQuery)
@@ -419,6 +434,7 @@ Partial Class DBSheetCreateForm
         Me.Controls.Add(Me.loadDefs)
         Me.Controls.Add(Me.LWhereParamClause)
         Me.Controls.Add(Me.LTable)
+        Me.Controls.Add(Me.DBSheetCols)
         Me.Font = New System.Drawing.Font("Tahoma", 8.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.Location = New System.Drawing.Point(3, 22)
@@ -450,5 +466,6 @@ Partial Class DBSheetCreateForm
     Friend WithEvents RemoveLookupQueryTest As Windows.Forms.ToolStripMenuItem
     Friend WithEvents CurrentFileLinkLabel As Windows.Forms.LinkLabel
     Friend WithEvents RegenerateAllLookupQueries As Windows.Forms.ToolStripMenuItem
+    Public WithEvents Lenvironment As Windows.Forms.Label
 #End Region
 End Class
