@@ -65,7 +65,7 @@ The DBSheet definition file contains following information in XML format:
 
 ### Supporting Tool "Create DBSheet definition"
 
-You start either entering a password for the connection string (if needed) or immediately selecting a database for your DBSheet. The connection informations are placed in the same central settings file (referenced by DBAddin.xll.config file attribute, in the example called "DBAddinCentral.config") as the other DBAddin connections. This settings file can be placed on a network drive to be available for all DBSheets users. You can also use the settings editor in the DBAddin ribbon to edit this file.
+You start either entering a password for the connection string (if needed) or immediately selecting a database for your DBSheet. The connection information are placed in the same central settings file (referenced by DBAddin.xll.config file attribute, in the example called "DBAddinCentral.config") as the other DBAddin connections. This settings file can be placed on a network drive to be available for all DBSheets users. You can also use the settings editor in the DBAddin ribbon to edit this file.
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBSheetsDefBlank.PNG)
 
@@ -113,9 +113,9 @@ After selecting the flookup column, the tool asks if the lookup statement, which
 If a the lookup table is located in a different database than the main database selected in the Database dropdown, you can choose the foreign database using the context menu on the ftable column.
 This will change the choices of the selected ftable cell to the tables available in the chosen foreign database, the other ftable cell's choices remain to the originally chosen database.
 
-When dealing with foreign column lookups or other lookup restrictions (see below), you can edit the the lookup query field directly (testing is possible with the context menu in the foreign lookup column).
+![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBSheetsDefForLookupTableChoice.PNG)
 
-![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBSheetsDefFullDefinedContextMenu.PNG)
+When dealing with foreign column lookups or other lookup restrictions (see below), you can edit the lookup query field directly (testing is possible with the context menu in the foreign lookup column).
 
 You can put any query into that, it just has to return the lookup value first and the ID to be looked up second. Duplicates should be strictly avoided in the return set of this query, as they would lead to ambiguities and will produce problems when using the DBSheet.
 
@@ -163,7 +163,7 @@ After saving, the definition file is displayed as a clickable link right besides
 
 #### Settings
 
-Following Settings in DBAddin.xll.config or the referred DBAddinCentral.config affect behaviour of DBSheet definitions:
+Following Settings in DBAddin.xll.config or the referred DBAddinCentral.config affect behavior of DBSheet definitions:
 ```xml
     <add key="ConfigName3" value="MSSQL"/>
     <add key="DBSheetConnString3" value="DRIVER=SQL SERVER;Server=Lenovo-PC;UID=sa;PWD=;Database=pubs;"/>

@@ -206,7 +206,7 @@ Public Class DBSheetCreateForm
         End Try
         If dbs.HasRows Then
             Try
-                Do
+                While dbs.Read()
                     Dim addVal As String
                     If Strings.Len(DBGetAllFieldName) = 0 Then
                         addVal = dbs(0)
@@ -214,7 +214,7 @@ Public Class DBSheetCreateForm
                         addVal = dbs(DBGetAllFieldName)
                     End If
                     Database.Items.Add(addVal)
-                Loop While dbs.Read()
+                End While
                 dbs.Close()
                 FormDisabled = False
             Catch ex As System.Exception
