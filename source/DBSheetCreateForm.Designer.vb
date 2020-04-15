@@ -59,10 +59,11 @@ Partial Class DBSheetCreateForm
         Me.RemoveLookupQueryTest = New System.Windows.Forms.ToolStripMenuItem()
         Me.CurrentFileLinkLabel = New System.Windows.Forms.LinkLabel()
         Me.Lenvironment = New System.Windows.Forms.Label()
+        Me.DBSheetColsForDatabases = New System.Windows.Forms.ContextMenuStrip(Me.components)
         CType(Me.DBSheetCols, System.ComponentModel.ISupportInitialize).BeginInit()
-        Me.DBSheetColsMoveMenu.SuspendLayout()
-        Me.DBSheetColsLookupMenu.SuspendLayout()
-        Me.SuspendLayout()
+        Me.DBSheetColsMoveMenu.SuspendLayout
+        Me.DBSheetColsLookupMenu.SuspendLayout
+        Me.SuspendLayout
         '
         'createQuery
         '
@@ -408,13 +409,18 @@ Partial Class DBSheetCreateForm
         Me.Lenvironment.TabIndex = 100
         Me.Lenvironment.Text = "Environment:"
         '
+        'DBSheetColsForDatabases
+        '
+        Me.DBSheetColsForDatabases.Name = "DBSheetColsContextMenu"
+        Me.DBSheetColsForDatabases.Size = New System.Drawing.Size(61, 4)
+        '
         'DBSheetCreateForm
         '
         Me.AllowDrop = True
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.BackColor = System.Drawing.SystemColors.Control
-        Me.ClientSize = New System.Drawing.Size(1113, 543)
+        Me.ClientSize = New System.Drawing.Size(1113, 544)
         Me.Controls.Add(Me.CurrentFileLinkLabel)
         Me.Controls.Add(Me.Lenvironment)
         Me.Controls.Add(Me.LQuery)
@@ -447,7 +453,7 @@ Partial Class DBSheetCreateForm
         Me.DBSheetColsMoveMenu.ResumeLayout(False)
         Me.DBSheetColsLookupMenu.ResumeLayout(False)
         Me.ResumeLayout(False)
-        Me.PerformLayout()
+        Me.PerformLayout
 
     End Sub
 
@@ -467,5 +473,6 @@ Partial Class DBSheetCreateForm
     Friend WithEvents CurrentFileLinkLabel As Windows.Forms.LinkLabel
     Friend WithEvents RegenerateAllLookupQueries As Windows.Forms.ToolStripMenuItem
     Public WithEvents Lenvironment As Windows.Forms.Label
+    Friend WithEvents DBSheetColsForDatabases As Windows.Forms.ContextMenuStrip
 #End Region
 End Class

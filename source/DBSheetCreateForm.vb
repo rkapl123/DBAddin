@@ -178,7 +178,7 @@ Public Class DBSheetCreateForm
     ''' <summary>fill the Database dropdown and set dropdown to database set in connection string</summary>
     Private Sub fillDatabasesAndSetDropDown()
         Try
-            fillDatabases(Database)
+            fillDatabases()
         Catch ex As System.Exception
             resetDBSheetCreateForm()
             ErrorMsg(ex.Message)
@@ -190,14 +190,13 @@ Public Class DBSheetCreateForm
     End Sub
 
     ''' <summary>fills all possible databases of current connection using db proprietary code in dbGetAllStr, data coming from field DBGetAllFieldName</summary>
-    Private Sub fillDatabases(DatabaseComboBox As ComboBox)
-        Dim addVal As String
+    Private Sub fillDatabases()
         Dim dbs As OdbcDataReader
 
         ' do not catch exception here, as it should be handled by fillDatabasesAndSetDropDown
         openConnection()
         FormDisabled = True
-        DatabaseComboBox.Items.Clear()
+        Database.Items.Clear()
         Dim sqlCommand As OdbcCommand = New OdbcCommand(dbGetAllStr, dbshcnn)
         Try
             dbs = sqlCommand.ExecuteReader()
@@ -208,12 +207,13 @@ Public Class DBSheetCreateForm
         If dbs.HasRows Then
             Try
                 Do
+                    Dim addVal As String
                     If Strings.Len(DBGetAllFieldName) = 0 Then
                         addVal = dbs(0)
                     Else
                         addVal = dbs(DBGetAllFieldName)
                     End If
-                    DatabaseComboBox.Items.Add(addVal)
+                    Database.Items.Add(addVal)
                 Loop While dbs.Read()
                 dbs.Close()
                 FormDisabled = False
@@ -231,7 +231,8 @@ Public Class DBSheetCreateForm
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub Database_SelectedIndexChanged(sender As Object, e As EventArgs) Handles Database.SelectedIndexChanged
-        Try : openConnection() : Catch ex As Exception : ErrorMsg(ex.Message) : resetDBSheetCreateForm() : Exit Sub : End Try
+        ' add database information to signal a change in connection string to selected database !
+        Try : openConnection(Database.Text) : Catch ex As Exception : ErrorMsg(ex.Message) : resetDBSheetCreateForm() : Exit Sub : End Try
         Try
             fillTables()
             ' start with empty columns list
@@ -253,7 +254,6 @@ Public Class DBSheetCreateForm
     ''' <param name="e"></param>
     Private Sub Table_SelectedIndexChanged(ByVal sender As Object, ByVal e As EventArgs) Handles Table.SelectedIndexChanged
         If FormDisabled Then Exit Sub
-        Try : openConnection() : Catch ex As Exception : ErrorMsg(ex.Message) : resetDBSheetCreateForm() : Exit Sub : End Try
         Try
             FormDisabled = True
             If Table.SelectedIndex >= 0 Then DBSheetColsEditable(True)
@@ -269,6 +269,49 @@ Public Class DBSheetCreateForm
             ErrorMsg("Exception in Table_SelectedIndexChanged: " + ex.Message)
         End Try
         Me.Text = "DB Sheet creation: Select one or more columns (fields) adding possible foreign key lookup information in foreign tables, finally click create query to finish DBSheet definition"
+    End Sub
+
+    ''' <summary>opens a database connection with active connstring</summary>
+    Sub openConnection(Optional databaseName As String = "")
+        ' connections are pooled by ADO depending on the connection string:
+        If IsNothing(dbshcnn) Or databaseName <> "" Then
+            dbsheetConnString = fetchSetting("DBSheetConnString" + Globals.env(), "NONEXISTENT")
+            If dbsheetConnString = "NONEXISTENT" Then
+                ErrorMsg("No Connectionstring given for environment: " + Globals.env() + ", please correct and rerun.", "DBSheet Definition Error")
+                Exit Sub
+            End If
+            ' add password to connection string
+            If InStr(1, dbsheetConnString, dbPwdSpec) > 0 Then
+                If Strings.Len(existingPwd) > 0 Then
+                    If InStr(1, dbsheetConnString, dbPwdSpec) > 0 Then
+                        dbsheetConnString = Change(dbsheetConnString, dbPwdSpec, existingPwd, ";")
+                    Else
+                        dbsheetConnString = dbsheetConnString + ";" + dbPwdSpec + existingPwd
+                    End If
+                Else
+                    Throw New Exception("Password is required by connection string: " + dbsheetConnString)
+                End If
+            End If
+            ' add database name to connection string, needed for schema retrieval!!!
+            If databaseName <> "" Then
+                If InStr(1, dbsheetConnString.ToUpper, dbidentifier.ToUpper) > 0 Then
+                    dbsheetConnString = Change(dbsheetConnString, dbidentifier, databaseName, ";")
+                Else
+                    dbsheetConnString = dbsheetConnString + ";" + dbidentifier + databaseName
+                End If
+            End If
+        End If
+        Try
+            dbshcnn = New OdbcConnection With {
+                .ConnectionString = dbsheetConnString,
+                .ConnectionTimeout = Globals.CnnTimeout
+            }
+            dbshcnn.Open()
+        Catch ex As Exception
+            dbsheetConnString = Replace(dbsheetConnString, dbPwdSpec + existingPwd, dbPwdSpec + "*******")
+            dbshcnn = Nothing
+            Throw New Exception("Error connecting to DB: " + ex.Message + ", connection string: " + dbsheetConnString)
+        End Try
     End Sub
 #End Region
 
@@ -313,7 +356,7 @@ Public Class DBSheetCreateForm
             If retval <> MsgBoxResult.Cancel Then regenLookupForRow(selIndex)
             DBSheetCols.AutoResizeColumns()
         ElseIf e.ColumnIndex = 5 Then ' primkey column
-        Try
+            Try
                 ' not first row selected: check for previous row (field) if also primary column..
                 If Not selIndex = 0 Then
                     If Not DBSheetCols.Rows(selIndex - 1).Cells("primkey").Value And DBSheetCols.Rows(selIndex).Cells("primkey").Value Then
@@ -395,17 +438,6 @@ Public Class DBSheetCreateForm
         End If
     End Sub
 
-    ''' <summary>display context menus depending on cell selected</summary>
-    Private Sub displayContextMenus()
-        If selColIndex = 8 And selRowIndex >= 0 Then
-            DBSheetCols.ContextMenuStrip = DBSheetColsLookupMenu
-        ElseIf selColIndex = -1 And selRowIndex >= 0 AndAlso DBSheetCols.SelectedRows.Count > 0 AndAlso DBSheetCols.SelectedRows(0).Index = selRowIndex Then
-            DBSheetCols.ContextMenuStrip = DBSheetColsMoveMenu
-        Else
-            DBSheetCols.ContextMenuStrip = Nothing
-        End If
-    End Sub
-
     ''' <summary>prepare context menus to be displayed after right mouse click</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
@@ -415,6 +447,32 @@ Public Class DBSheetCreateForm
         ' in case this was left somewhere, reset it here...
         FormDisabled = False
         If e.Button = Windows.Forms.MouseButtons.Right Then displayContextMenus()
+    End Sub
+
+    ''' <summary>display context menus depending on cell selected</summary>
+    Private Sub displayContextMenus()
+        If selColIndex = 8 And selRowIndex >= 0 Then
+            DBSheetCols.ContextMenuStrip = DBSheetColsLookupMenu
+        ElseIf selColIndex = 1 Then
+            DBSheetColsForDatabases.Items.Clear()
+            For Each entry As String In Database.Items
+                DBSheetColsForDatabases.Items.Add(entry)
+            Next
+            DBSheetCols.ContextMenuStrip = DBSheetColsForDatabases
+        ElseIf selColIndex = -1 And selRowIndex >= 0 AndAlso DBSheetCols.SelectedRows.Count > 0 AndAlso DBSheetCols.SelectedRows(0).Index = selRowIndex Then
+            DBSheetCols.ContextMenuStrip = DBSheetColsMoveMenu
+        Else
+            DBSheetCols.ContextMenuStrip = Nothing
+        End If
+    End Sub
+
+    Private Sub DBSheetColsForDatabases_ItemClicked(sender As Object, e As ToolStripItemClickedEventArgs) Handles DBSheetColsForDatabases.ItemClicked
+        ' connect to the selected foreign database...
+        Try : openConnection(e.ClickedItem.Text) : Catch ex As Exception : ErrorMsg(ex.Message) : Exit Sub : End Try
+        ' ... and get the tables into the ftable cell (!), the rest of the column still has the foreign tables of the main database...
+        DirectCast(DBSheetCols.Rows(selRowIndex).Cells("ftable"), DataGridViewComboBoxCell).DataSource = getforeignTables()
+        ' revert back to main database
+        Try : openConnection(Database.Text) : Catch ex As Exception : ErrorMsg(ex.Message) : Exit Sub : End Try
     End Sub
 
     ''' <summary>move (shift) row up</summary>
@@ -562,7 +620,6 @@ Public Class DBSheetCreateForm
             Dim firstRow As Boolean = True
             DBSheetCols.DataSource = Nothing
             DBSheetCols.Rows.Clear()
-            Try : openConnection() : Catch ex As Exception : ErrorMsg(ex.Message, "DBSheet Definition Error") : Exit Sub : End Try
             Dim rstSchema As OdbcDataReader
             Dim selectStmt As String = "SELECT TOP 1 * FROM " + Table.Text
             Dim sqlCommand As OdbcCommand = New OdbcCommand(selectStmt, dbshcnn)
@@ -618,7 +675,6 @@ Public Class DBSheetCreateForm
 
     ''' <summary>gets the types of currently selected table including size, precision and scale into DataTypes</summary>
     Private Sub getTableDataTypes()
-        Try : openConnection() : Catch ex As Exception : ErrorMsg(ex.Message, "DBSheet Definition Error") : Exit Sub : End Try
         TableDataTypes = New Dictionary(Of String, String)
         Dim rstSchema As OdbcDataReader
         Dim selectStmt As String = "SELECT TOP 1 * FROM " + Table.Text
@@ -645,7 +701,6 @@ Public Class DBSheetCreateForm
     ''' <returns>List of columns</returns>
     Private Function getforeignTables(foreignTable As String) As List(Of String)
         getforeignTables = New List(Of String)({""})
-        Try : openConnection() : Catch ex As Exception : ErrorMsg(ex.Message, "DBSheet Definition Error") : Exit Function : End Try
         Dim rstSchema As OdbcDataReader
         Dim selectStmt As String = "SELECT TOP 1 * FROM " + foreignTable
         Dim sqlCommand As OdbcCommand = New OdbcCommand(selectStmt, dbshcnn)
@@ -671,11 +726,10 @@ Public Class DBSheetCreateForm
         Next
     End Function
 
-    ''' <summary>fill all possible tables of configDatabase</summary>
+    ''' <summary>fill all possible tables of currently selected Database</summary>
     Private Sub fillTables()
         Dim schemaTable As DataTable
         Dim tableTemp As String
-        Try : openConnection() : Catch ex As Exception : ErrorMsg(ex.Message, "DBSheet Definition Error") : Exit Sub : End Try
         Try
             schemaTable = dbshcnn.GetSchema("Tables")
             If schemaTable.Rows.Count = 0 Then Throw New Exception("No Tables could be fetched from Schema")
@@ -892,7 +946,6 @@ Public Class DBSheetCreateForm
 #End Region
 
 #Region "DBSheet Definitionfiles Handling"
-
     ''' <summary>loads the DBSHeet definitions from a file (xml format)</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
@@ -913,8 +966,9 @@ Public Class DBSheetCreateForm
                 FormDisabled = True
                 ' get Database from (legacy) connID (legacy connID was prefixed with connIDPrefixDBtype)
                 Dim configDatabase As String = Replace(DBSheetConfig.getEntry("connID", DBSheetParams), fetchSetting("connIDPrefixDBtype", "MSSQL"), "")
+                Try : openConnection(configDatabase) : Catch ex As Exception : ErrorMsg(ex.Message) : Exit Sub : End Try
+                fillDatabases()
                 Database.SelectedIndex = Database.Items.IndexOf(configDatabase)
-                Try : openConnection() : Catch ex As Exception : ErrorMsg(ex.Message) : Exit Sub : End Try
                 fillTables()
                 DirectCast(DBSheetCols.Columns("ftable"), DataGridViewComboBoxColumn).DataSource = getforeignTables()
                 FormDisabled = True
@@ -1052,40 +1106,6 @@ Public Class DBSheetCreateForm
         Diagnostics.Process.Start(CurrentFileLinkLabel.Text)
     End Sub
 #End Region
-
-    ''' <summary>opens a database connection with active connstring</summary>
-    Sub openConnection()
-        ' connections are pooled by ADO depending on the connection string:
-        If IsNothing(dbshcnn) Then
-            dbsheetConnString = fetchSetting("DBSheetConnString" + Globals.env(), "NONEXISTENT")
-            If dbsheetConnString = "NONEXISTENT" Then
-                ErrorMsg("No Connectionstring given for environment: " + Globals.env() + ", please correct and rerun.", "DBSheet Definition Error")
-                Exit Sub
-            End If
-            If InStr(1, dbsheetConnString, dbPwdSpec) > 0 Then
-                If Strings.Len(existingPwd) > 0 Then
-                    If InStr(1, dbsheetConnString, dbPwdSpec) > 0 Then
-                        dbsheetConnString = Change(dbsheetConnString, dbPwdSpec, existingPwd, ";")
-                    Else
-                        dbsheetConnString = dbsheetConnString + ";" + dbPwdSpec + existingPwd
-                    End If
-                Else
-                    Throw New Exception("Password is required by connection string: " + dbsheetConnString)
-                End If
-            End If
-        End If
-        Try
-            dbshcnn = New OdbcConnection With {
-                .ConnectionString = dbsheetConnString,
-                .ConnectionTimeout = Globals.CnnTimeout
-            }
-            dbshcnn.Open()
-        Catch ex As Exception
-            dbsheetConnString = Replace(dbsheetConnString, dbPwdSpec + existingPwd, dbPwdSpec + "*******")
-            dbshcnn = Nothing
-            Throw New Exception("Error connecting to DB: " + ex.Message + ", connection string: " + dbsheetConnString)
-        End Try
-    End Sub
 
 #Region "GUI Helper functions"
     ''' <summary>Table/Database/Password change possible</summary>

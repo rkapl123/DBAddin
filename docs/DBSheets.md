@@ -82,7 +82,21 @@ After having selected a database, select the main table for which a DBsheet shou
 After that you can start to populate the fields that should be edited by selecting them in the column "name".
 A quick way to add all available columns is to click "add all Fields" (or pressing Alt-f)
 
+#### Common editing tasks
+
 If the field is required to be filled (non-nullable) then an special character (here: an asterisk) is put in front of it (shown also in the list of fields for choosing), the special character is removed however when generating/customizing queries and lookup queries). The first field is automatically set to be a primary key field, any subsequent fields that should serve as primary key can be marked as such by ticking the "primkey" column. Primary columns must always come first in a DBSheet, so any primary key column after a "non-primary key" column is prevented by DBsheet Creation.
+
+You can always edit the fields already stored in the DBSheet-Column list by selecting a line and changing the values in the dropdowns.
+
+You can change the order of fields by selecting a row and using the context menu up/down buttons:
+
+![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBSheetsDefFullDefinedMoveMenu.PNG)
+
+You can copy/paste the foreign lookup definitions between fields by pressing Ctrl-C on a field to be copied and Ctrl-V on the field where the definitions should be pasted. Everything except the field name and type is pasted.
+
+Removing columns is possible by simply deleting a row, you can clear the whole DBsheet definitions by clicking "reset DBSheet creation".
+
+#### Defining foreign key lookups
 
 If the field should be a lookup from a foreign table then select a foreign table in the ftable column:
 
@@ -94,22 +108,16 @@ To finish foreign table lookup, select the Foreign Table Lookup Column in the fl
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBSheetsDefSelectForLookupsGenerate.PNG)
 
-After selecting the flookup column, the tool asks if the flookup statement, which is used to query the database for the key/lookup value pairs, should be created.
+After selecting the flookup column, the tool asks if the lookup statement, which is used to query the database for the key/lookup value pairs, should be created.
 
-You can always edit the fields already stored in the DBSheet-Column list by selecting a line and changing the values in the dropdowns.
+If a the lookup table is located in a different database than the main database selected in the Database dropdown, you can choose the foreign database using the context menu on the ftable column.
+This will change the choices of the selected ftable cell to the tables available in the chosen foreign database, the other ftable cell's choices remain to the originally chosen database.
 
-You can change the order of fields by selecting a row and using the context menu up/down buttons:
-![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBSheetsDefFullDefinedMoveMenu.PNG)
-
-You can copy/paste the foreign lookup definitions between fields by pressing Ctrl-C on a field to be copied and Ctrl-V on the field where the definitions should be pasted. Everything except the field name and type is pasted.
-
-Removing columns is possible by simply deleting a row, you can clear the whole DBsheet definitions by clicking "reset DBSheet creation".
-
-When dealing with foreign column lookups or other lookup restrictions (see below), you can edit the definition of the lookup directly by editing the lookup query field (testing is possible with the context menu in the foreign lookup column).
+When dealing with foreign column lookups or other lookup restrictions (see below), you can edit the the lookup query field directly (testing is possible with the context menu in the foreign lookup column).
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBSheetsDefFullDefinedContextMenu.PNG)
 
-You can put any query into that, it just has to return the lookup value first and the ID to be looked up second. Duplicates should be strictly avoided in the return set of this query as they would lead to ambiguities and will produce error messages when generating the DBSheet.
+You can put any query into that, it just has to return the lookup value first and the ID to be looked up second. Duplicates should be strictly avoided in the return set of this query, as they would lead to ambiguities and will produce problems when using the DBSheet.
 
 Customizations of the restriction field should observe a few rules to be used efficiently (thereby not forcing the DBSheet creating person to do unnecessary double work): First, any reference to the foreign table itself has to use the configured template placeholder (here: !T!), which is then replaced by an actual table enumerator (T2..TN, T1 always being the primary table).  
 
@@ -118,7 +126,6 @@ Lookup value columns that differ from the table field's name must have an alias 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBSheetsDefForLookupErrorMsg.PNG)
 
 The connection between the lookup queries and the main query is as follows:
-
 1.  The first column part of the lookup query select statement is copied into the respective field in the main table query (therefore the above restriction)
 2.  The foreign lookup table and all further additional tables needed for the lookup query are joined into the main query in the same way as they are defined in the lookup (inner/outer joins), `WHERE` clauses are added to those joins with `AND`.
 
@@ -138,6 +145,8 @@ Even a lookup column without a lookup query is possible by just listing the poss
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBSheetsDefLookupList.PNG)
 
+#### Finishing DBSheet definition creation
+
 The DBSheet definition is created in four steps:
 
 1.  First, all column definitions should have been entered and additional lookups either generated or entered/edited directly.
@@ -149,6 +158,8 @@ The DBSheet definition is created in four steps:
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBSheetsDefinitionButton.PNG)
 
 You can always test the main table query by clicking on "test DBSheet Query" next to the query definition. This opens an excel sheet with the results of the main table query being inserted. This Testsheet can be closed again either by simply closing it, or quicker by clicking on the same button again (that now changed its caption to "remove Testsheet").
+
+After saving, the definition file is displayed as a clickable link right besides the "reset DBSheet definition" button and can be viewed or edited (the application that opens the file is choosable after clicking)
 
 #### Settings
 
