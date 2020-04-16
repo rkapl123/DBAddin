@@ -95,9 +95,14 @@ Public Module Globals
             End If
         Else
             Select Case eEventType
-                Case EventLogEntryType.Information : Trace.TraceInformation("{0}: {1}", caller, Message)
-                Case EventLogEntryType.Warning : Trace.TraceWarning("{0}: {1}", caller, Message)
-                Case EventLogEntryType.Error : Trace.TraceError("{0}: {1}", caller, Message)
+                Case EventLogEntryType.Information
+                    Trace.TraceInformation("{0}: {1}", caller, Message)
+                Case EventLogEntryType.Warning
+                    Trace.TraceWarning("{0}: {1}", caller, Message)
+                    WarningIssued = True
+                    theRibbon.InvalidateControl("showLog")
+                Case EventLogEntryType.Error
+                    Trace.TraceError("{0}: {1}", caller, Message)
             End Select
         End If
     End Sub
@@ -116,8 +121,6 @@ Public Module Globals
         Dim theMethod As Object = (New System.Diagnostics.StackTrace).GetFrame(1).GetMethod
         Dim caller As String = theMethod.ReflectedType.FullName + "." + theMethod.Name
         WriteToLog(LogMessage, EventLogEntryType.Warning, caller)
-        WarningIssued = True
-        theRibbon.InvalidateControl("showLog")
     End Sub
 
     ''' <summary>Logs informational messages</summary>
@@ -136,16 +139,14 @@ Public Module Globals
     Public Sub ErrorMsg(LogMessage As String, Optional errTitle As String = "DBAddin Error", Optional msgboxIcon As MsgBoxStyle = MsgBoxStyle.Critical)
         Dim theMethod As Object = (New System.Diagnostics.StackTrace).GetFrame(1).GetMethod
         Dim caller As String = theMethod.ReflectedType.FullName + "." + theMethod.Name
-        WriteToLog(LogMessage, EventLogEntryType.Warning, caller) ' to avoid popup of trace log
-        WarningIssued = True
-        theRibbon.InvalidateControl("showLog")
+        WriteToLog(LogMessage, EventLogEntryType.Warning, caller) ' to avoid popup of trace log in nonInteractive mode...
         If Not nonInteractive Then MsgBox(LogMessage, msgboxIcon + MsgBoxStyle.OkOnly, errTitle)
     End Sub
 
     Public Function QuestionMsg(theMessage As String, Optional questionType As MsgBoxStyle = MsgBoxStyle.OkCancel, Optional questionTitle As String = "DBAddin Question", Optional msgboxIcon As MsgBoxStyle = MsgBoxStyle.Question) As MsgBoxResult
         Dim theMethod As Object = (New System.Diagnostics.StackTrace).GetFrame(1).GetMethod
         Dim caller As String = theMethod.ReflectedType.FullName + "." + theMethod.Name
-        WriteToLog(theMessage, EventLogEntryType.Warning, caller) ' to avoid popup of trace log
+        WriteToLog(theMessage, If(msgboxIcon = MsgBoxStyle.Critical Or msgboxIcon = MsgBoxStyle.Exclamation, EventLogEntryType.Warning, EventLogEntryType.Information), caller) ' to avoid popup of trace log
         If nonInteractive Then
             If questionType = MsgBoxStyle.OkCancel Then Return MsgBoxResult.Cancel
             If questionType = MsgBoxStyle.YesNo Then Return MsgBoxResult.No

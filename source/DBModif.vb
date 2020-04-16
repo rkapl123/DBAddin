@@ -784,6 +784,15 @@ Public Class DBMapper : Inherits DBModif
                                             If Not notifyUserOfDataError("Field Value Update Error: " + CVErrText(fieldval) + " with Table: " + tableName + ", Field: " + fieldname + ", in sheet " + TargetRange.Parent.Name + " and row " + rowNum.ToString + ", col: " + colNum.ToString, rowNum, colNum) Then GoTo cleanup
                                         End If
                                     Else
+                                        ' special treatment for time and date fields as they are
+                                        If TypeName(fieldval) = "Date" Then
+                                            Dim fieldValDate As DateTime = DirectCast(fieldval, DateTime)
+                                            If fieldValDate.Hour() = 0 And fieldValDate.Minute() = 0 And fieldValDate.Second() = 0 And fieldValDate.Millisecond() = 0 Then
+                                                fieldval = Format(fieldValDate, "yyyy-MM-dd")  ' ISO 8601 standard SQL Date formatting
+                                            Else
+                                                fieldval = Format(fieldValDate, "yyyy-MM-dd HH:mm:ss")  ' ISO 8601 standard SQL Date/time formatting, 24h format...
+                                            End If
+                                        End If
                                         rst.Fields(fieldname).Value = IIf(fieldval.ToString().Length = 0, Nothing, fieldval)
                                     End If
                                 End If

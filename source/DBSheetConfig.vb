@@ -95,6 +95,7 @@ Public Module DBSheetConfig
                     Exit Sub
                 End Try
                 ' add lookup Queries in separate sheet
+                'TODO:check if the same lookup already exists and skip creation to avoid duplicates that influence each other...
                 Dim lookupCol As Integer = 1
                 For Each LookupDef As String In lookupsList
                     ' fetch Lookupquery and get rid of template table def
