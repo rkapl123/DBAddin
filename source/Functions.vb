@@ -57,7 +57,7 @@ Public Module Functions
                 If DBDate.Length > 0 Then DBDate = Left(DBDate, Len(DBDate) - 1)
             Else
                 ' direct value in DBDate..
-                If TypeName(DatePart) = "ExcelEmpty" Then
+                If TypeName(DatePart) = "ExcelEmpty" Or TypeName(DatePart) = "ExcelMissing" Then
                     ' do nothing here
                 Else
                     DBDate = formatDBDate(DatePart, formatting)
@@ -141,7 +141,7 @@ Public Module Functions
                             retval += myCell.ToString()
                         End If
                     Next
-                ElseIf TypeName(myRef) = "ExcelEmpty" Then
+                ElseIf TypeName(myRef) = "ExcelEmpty" Or TypeName(myRef) = "ExcelMissing" Then
                     ' do nothing here
                 Else
                     retval += myRef.ToString()
@@ -224,7 +224,7 @@ Public Module Functions
                     Next
                 Else
                     ' and other direct values in formulas..
-                    If TypeName(myRef) = "ExcelEmpty" Then
+                    If TypeName(myRef) = "ExcelEmpty" Or TypeName(myRef) = "ExcelMissing" Then
                         ' do nothing here
                     ElseIf IsNumeric(myRef) Then ' no separate Date type for direct formula values
                         retval = retval + separator + Convert.ToString(myRef, System.Globalization.CultureInfo.InvariantCulture)
@@ -255,6 +255,8 @@ Public Module Functions
         Dim EnvPrefix As String = ""
         If ExcelDnaUtil.IsInFunctionWizard() Then Return "invoked from function wizard..."
         Try
+            DBSetQuery = checkQueryAndTarget(Query, targetRange)
+            If DBSetQuery.Length > 0 Then Exit Function
             caller = ToRange(XlCall.Excel(XlCall.xlfCaller))
             resolveConnstring(ConnString, EnvPrefix)
             ' calcContainers are identified by wbname + Sheetname + function caller cell Address
@@ -387,10 +389,9 @@ Public Module Functions
                     Dim dbMapper As DBMapper = Globals.DBModifDefColl("DBMapper").Item(dbMapperRangeName)
                     dbMapper.resetCUDFlags()
                 End If
-                ' Attention Dirty Hack ! This works only for SQLOLEDB driver to ODBC driver setting change on SQL Server !!...
-                'TODO: use a generic procedure in DBSetQueryAction/ListObject to correct the Connection Strings "provider" part to "driver" (or use a recordset directly for the QueryTable)
-                theListObject.QueryTable.Connection = connType + Replace(ConnString, "provider=SQLOLEDB", "driver=SQL SERVER")
-                    theListObject.QueryTable.CommandType = Excel.XlCmdType.xlCmdSql
+                ' To get the connection string work also for SQLOLEDB provider for SQL Server, change to ODBC driver setting (this can be generally used to fix connection string problems with ListObjects)
+                theListObject.QueryTable.Connection = connType + Replace(ConnString, fetchSetting("DBSetQueryListObjConnStringSearch" + Globals.env(), "provider=SQLOLEDB"), fetchSetting("DBSetQueryListObjConnStringReplace" + Globals.env(), "driver=SQL SERVER"))
+                theListObject.QueryTable.CommandType = Excel.XlCmdType.xlCmdSql
                     theListObject.QueryTable.CommandText = Query
                     theListObject.QueryTable.BackgroundQuery = False
                     Try
@@ -458,6 +459,8 @@ Public Module Functions
         Dim EnvPrefix As String = ""
         If ExcelDnaUtil.IsInFunctionWizard() Then Return "invoked from function wizard..."
         Try
+            DBListFetch = checkQueryAndTarget(Query, targetRange)
+            If DBListFetch.Length > 0 Then Exit Function
             Dim caller As Excel.Range = ToRange(XlCall.Excel(XlCall.xlfCaller))
             resolveConnstring(ConnString, EnvPrefix)
             ' calcContainers are identified by wbname + Sheetname + function caller cell Address
@@ -756,7 +759,7 @@ Public Module Functions
                     End If
                     '2: add whole rows
                 ElseIf extendArea = 2 Then
-                    targetSH.Rows(startRow + oldRows + headingFirstRowPrevent + ":" + startRow + arrayRows - 1).Insert(Shift:=Excel.XlDirection.xlDown)
+                    targetSH.Rows((startRow + oldRows + headingFirstRowPrevent).ToString + ":" + (startRow + arrayRows - 1).ToString).Insert(Shift:=Excel.XlDirection.xlDown)
                     If Not formulaRange Is Nothing Then
                         ' take care not to insert twice (if we're having formulas in the same sheet)
                         If Not targetSH Is formulaSH Then formulaSH.Rows((startRow + oldFRows + headingOffset).ToString + ":" + (startRow + arrayRows - 1 - headingFirstRowPrevent).ToString).Insert(Shift:=Excel.XlDirection.xlDown)
@@ -993,6 +996,8 @@ err_0: ' errors where recordset was not opened or is already closed
         Dim EnvPrefix As String = ""
         If ExcelDnaUtil.IsInFunctionWizard() Then Return "invoked from function wizard..."
         Try
+            DBRowFetch = checkQueryAndTarget(Query, targetArray)
+            If DBRowFetch.Length > 0 Then Exit Function
             Dim caller As Excel.Range = ToRange(XlCall.Excel(XlCall.xlfCaller))
             resolveConnstring(ConnString, EnvPrefix)
             ' calcContainers are identified by wbname + sheetname + function caller cell Address
@@ -1015,6 +1020,7 @@ err_0: ' errors where recordset was not opened or is already closed
                     tempArray(i - 1) = ToRange(targetArray(i))
                 Next
             ElseIf TypeName(targetArray(0)) = "ExcelEmpty" Or TypeName(targetArray(0)) = "ExcelError" Or TypeName(targetArray(0)) = "ExcelMissing" Then
+                ' return appropriate error message...
                 DBRowFetch = EnvPrefix + ", First argument (header) " + Replace(TypeName(targetArray(0)), "Excel", "") + " !"
                 Exit Function
             Else
@@ -1285,6 +1291,22 @@ err_1:
             DBAddinServerSetting = "Error happened: " + ex.Message
             LogWarn(ex.Message)
         End Try
+    End Function
+
+    ''' <summary>checks Query and targetRange parameters for existence and return error message.</summary>
+    ''' <param name="Query"></param>
+    ''' <param name="targetRange"></param>
+    ''' <returns>Error String or cached status message (empty if OK)</returns>
+    Private Function checkQueryAndTarget(Query As Object, targetRange As Object) As String
+        If TypeName(Query) = "ExcelMissing" Then
+            checkQueryAndTarget = "missing Query parameter !"
+        ElseIf TypeName(targetRange) = "ExcelMissing" Then
+            checkQueryAndTarget = "missing target range parameter !"
+        ElseIf TypeName(targetRange) = "Object()" AndAlso targetRange.Length = 0 Then
+            checkQueryAndTarget = "missing target parameter array !"
+        Else
+            checkQueryAndTarget = ""
+        End If
     End Function
 
     ''' <summary>checks calculation mode, query and cached status message.</summary>

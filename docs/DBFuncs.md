@@ -78,11 +78,11 @@ The parameter ShowRowNums defines whether Row numbers should be displayed in the
 
 In case the "normal" connection string's driver (usually OLEDB) has problems in displaying data with DBListFetch and the problem is not existing in conventional MS-Query based query tables (using special ODBC connection strings that can't be used with DB functions), then following special connection string setting can be used:  
 
-<pre lang="vb.net">StandardConnectionString;SpecialODBCConnectionString</pre>
+`StandardConnectionString;SpecialODBCConnectionString`
 
 Example:  
 
-<pre lang="vb.net">provider=SQLOLEDB;Server=LENOVO-PC;Trusted_Connection=Yes;Database=pubs;ODBC;DRIVER=SQL Server;SERVER=LENOVO-PC;DATABASE=pubs;Trusted_Connection=Yes</pre>
+`provider=SQLOLEDB;Server=LENOVO-PC;Trusted_Connection=Yes;Database=pubs;ODBC;DRIVER=SQL Server;SERVER=LENOVO-PC;DATABASE=pubs;Trusted_Connection=Yes`
 
 This works around the issue with displaying GUID columns in SQL-Server.  
 
@@ -197,9 +197,11 @@ An Example is give below:
 *   When E1 contains the excel native date/time value 10/01/2004 08:05, this results in: `'20040110` `08:05:00``'` (ANSI: `timestamp '2004-01-10` `08:05:00``'`, ODBC: `{ts '2004-01-10` `08:05:00``'}`)
 *   When E1 contains the excel native time value 08:05:05, this results in `'``08:05:05'` (ANSI: `time '``08:05:05'`, ODBC: `{t '``08:05:05'``}`)
 
-Of course you can also change the default setting for formatting by changing the setting "`DefaultDBDateFormatting`" in the global settings
+Of course you can also change the default setting for formatting by changing the setting "`DefaultDBDateFormatting`" in the Addin settings
 
-<pre lang="vb.net">"DefaultDBDateFormatting"="0"</pre>
+```xml
+    <add key="DefaultDBDateFormatting" value="0"/>
+```
 
 ### Modifications of DBFunc Behaviour
 
@@ -235,13 +237,7 @@ To prevent storing of everything (incl. formats) for all DBFunctions create a bo
 
 There are two possibilities of connection strings: ODBC or OLEDB. ODBC hast the advantage to seamlessly work with MS-Query, native OLEDB is said to be faster and more reliable (there is also a generic OLEDB over ODBC by Microsoft, which emulates OLEDB if you have just a native ODBC driver available).
 
-Now, if using **ODBC** connection strings (those containing "Driver="), there is a straightforward way to redefine queries directly from the cell containing the DB function: just right click on the function cell and select "build DBfunc query". Then MS-query will allow you to redefine the query which you can use to overwrite the function's query.
-
-If using **OLEDB** connection strings, MS-query will try to connect using a system DSN named like the database as identified after the DBidentifierCCS given in the standard settings (see Installation section).
-
-The DBidentifierCCS is used to identify the database within the standard default connection string, The DBidentifierODBC is used to identify the database within the connection definition returned by MS-Query (to compare and possibly allow to insert a custom connection definition within the DB function/control). Usually these identifiers are called "Database=" (all SQLservers, MySQL), "location=" (PostgreSQL), "User ID/UID" (oracle), "Data source=" (DB2)
-
-Additionally the timeout (CnnTimeout, which can't be given in the functions) is also defined in the standard settings.
+Additionally the connection timeout (CnnTimeout, which can't be given in the functions) is also defined in the DBAddin settings.
 
 ### Cell Config Deployment
 
@@ -306,13 +302,20 @@ DBSetQuery also creates the target Object (a Pivot Table or a ListObject) below 
 
 ### Known Issues / Limitations
 
-*   All DB getting functions (DBListfetch, DBRowFetch, etc....)
- *   A fundamental restriction for these function is that they should only exist alone in a cell with no other DB getters. This is needed because linking the functions with their cell targets is done via a hidden name in the function cell (created on first invocation)  
- *   Query composition: Composing Queries (as these sometimes tends to be quite long) can become challenging, especially when handling parameters coming from cells. There is a simple way to avoid lots of trouble by placing the parts of a query in different lines/cells and chaining all these cells together in the DB functions first argument (query).
- *   When invoking an Excel Workbook from the commandline (from a cmd script or the task scheduler) Excel may register (call the connect method of the Add-in) the Add-in later than invoking the calculation which leads to an uninitialized host application object and therefore a non-functional dbfunctions (they all rely on the caller object of the Excel application to retrieve their calling cell's address). I'm still investigating into this.
- *   The Workbook containing the DB functions may not have any VBA Code with Compile Errors, or it will return an "Application defined Error". This relates to Excel not passing the Application.Caller object correctly to UDFs when having compile errors in VBA-Code.
+*  All DB getting functions (DBListfetch, DBRowFetch, etc....)
+	*   A fundamental restriction for these function is that they should only exist alone in a cell with no other DB getters. This is needed because linking the functions with their cell targets is done via a hidden name in the function cell (created on first invocation)  
+	*   Query composition: Composing Queries (as these sometimes tends to be quite long) can become challenging, especially when handling parameters coming from cells. There is a simple way to avoid lots of trouble by placing the parts of a query in different lines/cells and putting all these cells together as a range in the DB functions first argument (query).
+	*   When invoking an Excel Workbook from the commandline (from a cmd script or the task scheduler) Excel may register (call the connect method of the Add-in) the Add-in later than invoking the calculation which leads to an uninitialized host application object and therefore a non-functional dbfunctions (they all rely on the caller object of the Excel application to retrieve their calling cell's address). I'm still investigating into this.
+	*   The Workbook containing the DB functions may not have any VBA Code with Compile Errors, or it will return an "Application defined Error". This relates to Excel not passing the Application.Caller object correctly to UDFs when having compile errors in VBA-Code.
 
-*   DBListFetch:
- *   formulaRange and extendArea = 1 or 2: Don't place content in cells directly below the formula Range as this will be deleted when doing recalculations. One cell below is OK.
- *   In Worksheets with names like Cell references (Letter + number + blank + something else, eg. 'C701 Country') this leads to a fundamental error with the names used for the data target. Avoid using those sheet names in conjunction with DBListFetch, i.e. do not use a blank between the 'cell reference' and the rest (eg. 'C701Country' instead of 'C701 Country').
- *   GUID Columns are not displayed when working with the standard data fetching method used by DBListFetch (using an opened recordset for adding a - temporary - querytable). A workaround has been built that circumvents this problem by adding the querytable the way that excel does (using the connection string and query directly when adding the querytable). This however implicitly opens another connection, so is more resource intensive. For details see [Connection String Special Settings](#Connection_String_Special_Settings)
+* DBListFetch:
+	*   formulaRange and extendArea = 1 or 2: Don't place content in cells directly below the formula Range as this will be deleted when doing recalculations. One cell below is OK.
+	*   In Worksheets with names like Cell references (Letter + number + blank + something else, eg. 'C701 Country') this leads to a fundamental error with the names used for the data target. Avoid using those sheet names in conjunction with DBListFetch, i.e. do not use a blank between the 'cell reference' and the rest (eg. 'C701Country' instead of 'C701 Country').
+	*   GUID Columns are not displayed when working with the standard data fetching method used by DBListFetch (using an opened recordset for adding a - temporary - querytable). A workaround has been built that circumvents this problem by adding the querytable the way that excel does (using the connection string and query directly when adding the querytable). This however implicitly opens another connection, so is more resource intensive. For details see [Connection String Special Settings](#Connection_String_Special_Settings)
+
+* DBSetQuery
+	* in DBSetquery the underlying ListObject sometimes doesn't work with the SQLOLEDB provider, so there is a mechanism to change the provider part to something that works better. You can define a searched part of the connection string and its replacement in the settings of the environment (here environment 3):
+```xml
+    <add key="DBSetQueryListObjConnStringSearch3" value="provider=SQLOLEDB"/>
+    <add key="DBSetQueryListObjConnStringReplace3" value="driver=SQL SERVER"/>
+```

@@ -39,7 +39,7 @@ Public Class MenuHandler
                 "<dynamicMenu id='DBConfigs' label='DB Configs' imageMso='QueryShowTable' screentip='DB Function Configuration Files quick access' getContent='getDBConfigMenu'/>" +
                 "<menu id='DBSheetMenu' label='DBSheet Def'>" +
                     "<button id='DBSheetCreate' label='Create DBsheet definition' screentip='click to create a new or edit an existing DBSheet definition' imageMso='TableDesign' onAction='clickCreateDBSheet'/>" +
-                    "<button id='DBSheetAssign' tag='DBSheet' label='Assign DBsheet definition' screentip='click to assign a DBSheet definition to the current cell' imageMso='ChartResetToMatchStyle' onAction='clickCreateButton'/>" +
+                    "<button id='DBSheetAssign' tag='DBSheet' label='Assign DBsheet definition' screentip='click to assign a DBSheet definition to the current cell' imageMso='ChartResetToMatchStyle' onAction='clickAssignDBSheet'/>" +
                 "</menu>" +
             "</buttonGroup>" +
             "<buttonGroup id='buttonGroup3'>" +
@@ -118,7 +118,6 @@ Public Class MenuHandler
         Return customUIXml
     End Function
 
-    'TODO: add Ctl-Sh-i for inserting and think of a way to show insert/delete menu items only in DBSheets
 #Disable Warning IDE0060 ' Hide not used Parameter warning
 
     ''' <summary>display warning button icon on Cprops change if DBFskip is set...</summary>
@@ -243,6 +242,9 @@ Public Class MenuHandler
         Return Globals.selectedEnvironment
     End Function
 
+    ''' <summary>tooltip for the environment select drop down</summary>
+    ''' <param name="control"></param>
+    ''' <returns>the tooltip</returns>
     Public Function getSelectedTooltip(control As CustomUI.IRibbonControl) As String
         If CBool(fetchSetting("DontChangeEnvironment", "False")) Then
             Return "DontChangeEnvironment is set, therefore changing the Environment is prevented !"
@@ -251,18 +253,22 @@ Public Class MenuHandler
         End If
     End Function
 
+    ''' <summary>whether to enable environment select drop down</summary>
+    ''' <param name="control"></param>
+    ''' <returns>true if enabled</returns>
     Public Function GetEnabledSelect(control As CustomUI.IRibbonControl) As Integer
         Return Not CBool(fetchSetting("DontChangeEnvironment", "False"))
     End Function
 
     ''' <summary>Choose environment (configured in registry with ConstConnString(N), ConfigStoreFolder(N))</summary>
+    ''' <param name="control"></param>
     Public Sub selectEnvironment(control As CustomUI.IRibbonControl, id As String, index As Integer)
         Globals.selectedEnvironment = index
         Globals.initSettings()
         ' provide a chance to reconnect when switching environment...
         conn = Nothing
         If Not IsNothing(ExcelDnaUtil.Application.ActiveWorkbook) Then
-            Dim retval As MsgBoxResult = QuestionMsg("ConstConnString" + Globals.ConstConnString + vbCrLf + "ConfigStoreFolder:" + ConfigFiles.ConfigStoreFolder + vbCrLf + vbCrLf + "Refresh DBFunctions in active workbook to see effects?", MsgBoxStyle.YesNo, "Changed environment to: " + fetchSetting("ConfigName" + Globals.env(), ""))
+            Dim retval As MsgBoxResult = QuestionMsg("ConstConnString:" + Globals.ConstConnString + vbCrLf + "ConfigStoreFolder:" + ConfigFiles.ConfigStoreFolder + vbCrLf + vbCrLf + "Refresh DBFunctions in active workbook to see effects?", MsgBoxStyle.YesNo, "Changed environment to: " + fetchSetting("ConfigName" + Globals.env(), ""))
             If retval = vbYes Then Globals.refreshDBFunctions(ExcelDnaUtil.Application.ActiveWorkbook)
         Else
             ErrorMsg("ConstConnString" + Globals.ConstConnString + vbCrLf + "ConfigStoreFolder:" + ConfigFiles.ConfigStoreFolder, "Changed environment to: " + fetchSetting("ConfigName" + Globals.env(), ""), MsgBoxStyle.Information)
@@ -283,6 +289,7 @@ Public Class MenuHandler
     End Sub
 
     ''' <summary>dialogBoxLauncher of DBAddin settings group: activate about box</summary>
+    ''' <param name="control"></param>
     Public Sub showAbout(control As CustomUI.IRibbonControl)
         Dim myAbout As AboutBox = New AboutBox
         myAbout.ShowDialog()
@@ -293,6 +300,7 @@ Public Class MenuHandler
     End Sub
 
     ''' <summary>on demand, refresh the DB Config tree</summary>
+    ''' <param name="control"></param>
     Public Sub refreshDBConfigTree(control As CustomUI.IRibbonControl)
         Globals.initSettings()
         ConfigFiles.createConfigTreeMenu()
@@ -301,6 +309,7 @@ Public Class MenuHandler
     End Sub
 
     ''' <summary>get DB Config Menu from File</summary>
+    ''' <param name="control"></param>
     ''' <returns></returns>
     Public Function getDBConfigMenu(control As CustomUI.IRibbonControl) As String
         If ConfigMenuXML = vbNullString Then ConfigFiles.createConfigTreeMenu()
@@ -308,18 +317,21 @@ Public Class MenuHandler
     End Function
 
     ''' <summary>load config if config tree menu end-button has been activated (path to config xcl file is in control.Tag)</summary>
+    ''' <param name="control"></param>
     Public Sub getConfig(control As CustomUI.IRibbonControl)
         ConfigFiles.loadConfig(control.Tag)
     End Sub
 
     ''' <summary>set the name of the DBModifType dropdown to the sheet name (for the WB dropdown this is the WB name)</summary>
+    ''' <param name="control"></param>
     ''' <returns></returns>
     Public Function getDBModifTypeLabel(control As CustomUI.IRibbonControl) As String
         getDBModifTypeLabel = If(control.Id = "DBSeqnce", "DBSequence", control.Id)
     End Function
 
     ''' <summary>create the buttons in the DBModif sheet dropdown menu</summary>
-    ''' <returns></returns>
+    ''' <param name="control"></param>
+    ''' <returns>the menu content xml</returns>
     Public Function getDBModifMenuContent(control As CustomUI.IRibbonControl) As String
         Dim xmlString As String = "<menu xmlns='http://schemas.microsoft.com/office/2009/07/customui'>"
         Try
@@ -340,13 +352,15 @@ Public Class MenuHandler
     End Function
 
     ''' <summary>show a screentip for the dynamic DBMapper/DBAction/DBSequence Menus (also showing the ID behind)</summary>
-    ''' <returns></returns>
+    ''' <param name="control"></param>
+    ''' <returns>the screentip</returns>
     Public Function getDBModifScreentip(control As CustomUI.IRibbonControl) As String
         Return "Select DBModifier to store/do action/do sequence (" + control.Id + ")"
     End Function
 
-    ''' <summary>shows the DBModif sheet button only if it was collected...</summary>
-    ''' <returns></returns>
+    ''' <summary>to show the DBModif sheet button only if it was collected...</summary>
+    ''' <param name="control"></param>
+    ''' <returns>true if to be displayed</returns>
     Public Function getDBModifMenuVisible(control As CustomUI.IRibbonControl) As Boolean
         Try
             Return Globals.DBModifDefColl.ContainsKey(control.Id)
@@ -356,6 +370,7 @@ Public Class MenuHandler
     End Function
 
     ''' <summary>DBModif button activated, do DB Mapper/DB Action/DB Sequence or define existing (CtrlKey pressed)...</summary>
+    ''' <param name="control"></param>
     Public Sub DBModifClick(control As CustomUI.IRibbonControl)
         Dim nodeName As String = Right(control.Id, Len(control.Id) - 1)
         If Not ExcelDnaUtil.Application.CommandBars.GetEnabledMso("FileNewDefault") Then
@@ -379,21 +394,25 @@ Public Class MenuHandler
     End Sub
 
     ''' <summary>context menu entry refreshData: refresh Data in db function (if area or cell selected) or all db functions</summary>
+    ''' <param name="control"></param>
     Public Sub clickrefreshData(control As CustomUI.IRibbonControl)
         Globals.refreshData()
     End Sub
 
     ''' <summary>context menu entry gotoDBFunc: jumps from DB function to data area and back</summary>
+    ''' <param name="control"></param>
     Public Sub clickjumpButton(control As CustomUI.IRibbonControl)
         Globals.jumpButton()
     End Sub
 
     ''' <summary>purge name tool button, purge names used for dbfunctions from workbook</summary>
+    ''' <param name="control"></param>
     Public Sub clickpurgetoolbutton(control As CustomUI.IRibbonControl)
         Globals.purgeNames()
     End Sub
 
     ''' <summary>show the trace log</summary>
+    ''' <param name="control"></param>
     Public Sub clickShowLog(control As CustomUI.IRibbonControl)
         ExcelDna.Logging.LogDisplay.Show()
         ' reset warning flag
@@ -408,7 +427,8 @@ Public Class MenuHandler
         theDBSheetCreateForm.Show()
     End Sub
 
-    ''' <summary>context menu entries below create...: create DB function or DB Modification definition</summary>
+    ''' <summary>context menu entries in Insert/Edit DBFunc/DBModif and Assign DBSheet: create DB function or DB Modification definition</summary>
+    ''' <param name="control"></param>
     Public Sub clickCreateButton(control As CustomUI.IRibbonControl)
         ' check for existing DBMapper or DBAction definition and allow exit
         Dim activeCellDBModifName As String = DBModifs.getDBModifNameFromRange(ExcelDnaUtil.Application.ActiveCell)
@@ -437,9 +457,13 @@ Public Class MenuHandler
             Else                                         ' create new definition
                 DBModifs.createDBModif(control.Tag)
             End If
-        ElseIf control.Tag = "DBSheet" Then
-            DBSheetConfig.createDBSheet()
         End If
+    End Sub
+
+    ''' <summary>clicked Assign DBSheet: create DB Mapper with CUD Flags</summary>
+    ''' <param name="control"></param>
+    Public Sub clickAssignDBSheet(control As CustomUI.IRibbonControl)
+        If Not IsNothing(ExcelDnaUtil.Application.ActiveWorkbook) Then DBSheetConfig.createDBSheet()
     End Sub
 
 #Enable Warning IDE0060

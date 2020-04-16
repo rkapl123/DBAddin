@@ -29,15 +29,30 @@ This can be done by modifying DBAddin.xll.config or the referred DBAddinCentral.
     <add key="ConstConnString3" value="provider=SQLOLEDB;Server=Lenovo-PC;Trusted_Connection=Yes;Database=pubs;Packet Size=32767"/>
     <add key="ConfigStoreFolder3" value="C:\\dev\\DBAddin.NET\\source\\ConfigStore"/>
     <add key="DBidentifierCCS3" value="Database="/>
+    <add key="DBSheetDefinitions3" value="C:\\dev\\DBAddin.NET\\definitions"/>
+    <add key="dbGetAll3" value="sp_helpdb"/>
+    <add key="dbGetAllFieldName3" value="name"/>
+    <add key="ownerQualifier3" value=".dbo."/>
+    <add key="DBSheetConnString3" value="DRIVER=SQL SERVER;Server=Lenovo-PC;UID=sa;PWD=;Database=pubs;"/>
+    <add key="dbPwdSpec3" value="PWD="/>
+    <add key="DBSetQueryListObjConnStringSearch3" value="provider=SQLOLEDB"/>
+    <add key="DBSetQueryListObjConnStringReplace3" value="driver=SQL SERVER"/>
 </appSettings>
 ```
 
 Explanation:
 *   `ConfigName`**N**: freely definable name for your environment (e.g. Production or your database instance)
-*   `ConstConnString`**N**: the connection string used to connect to the database
+*   `ConstConnString`**N**: the standard connection string used to connect to the database
 *   `ConfigStoreFolder`**N**: all config files (*.xcl) under this folder are shown in a hierarchical manner in "load config"
-*   `DBidentifierCCS`**N**: used to identify the database within the standard default connection string
-*   `DBidentifierODBC`**N**: used to identify the database within the connection definition returned by MS-Query
+*   `DBidentifierCCS`**N**: used to identify the database within the standard connection string or within DBSheetConnString
+*   `DBSheetDefinitions`**N**: path to the stored DBSheetdefinitions (default directory of assign DBsheet definitions and load/save DBSheet Defintions)
+*   `dbGetAll`**N**: command for retrieving all databases/schemas from the database can be entered (for (MS) SQL server this is "`sp_helpdb`" for Oracle its "`select username from sys.all_users`".
+*   `dbGetAllFieldName`**N**: If the result of above command has more than one column (like in sqlserver), you have to give the fieldname where the databases can be retrieved from.
+*   `ownerQualifier`**N**: default owner qualifier for table when loading DBSheet definitions, if table name is not fully qualified (legacy DBSheet definitions)
+*   `DBSheetConnString`**N**: the connection string used to connect to the database for the DBSheet definitions
+*   `dbPwdSpec`**N**: Password entry specifier within DBSheetConnString
+*   `DBSetQueryListObjConnStringSearch`**N**: part to be searched for replacement within the standard connection string in DBSetQuery
+*   `DBSetQueryListObjConnStringReplace`**N**: replacement for above
 
 Other settings possible in DBAddin.xll.config (or DBAddinCentral.config):
 ```xml
@@ -65,15 +80,15 @@ Explanation:
 *   `DefaultEnvironment`: default selected environment on startup
 *   `DontChangeEnvironment`: prevent changing the environment selector (Non-Production environments might confuse some people)
 *   `maxCellCount`: Cells being filled in Excel Workbook to issue a warning for refreshing DBFunctions (searching for them might take a long time...)
-*   `maxCellCountIgnore`: DOn't issue a warning, therefore ignore above setting.
+*   `maxCellCountIgnore`: Don't issue a warning, therefore ignore above setting.
 *   `DebugAddin`: activate Info messages to debug addin
 *   `DBMapperCUDFlagStyle`: Style for setting Excel data tables when having CUD Flags set on DBMappers
 *   `DBMapperStandardStyle`: Style for setting Excel data tables when not having CUD Flags set on DBMappers
 *   `maxNumberMassChange`: Threshold of Number of changes in CUDFlag DBMappers to issue a warning.
-*   `connIDPrefixDBtype`: Sometimes, legacy DBSheet definitions have a Prefix, this is the prefix to remove...
+*   `connIDPrefixDBtype`: legacy DBSheet definitions have a Prefix in `connID` before the database that needs to be removed, this is the String to remove ...
 *   `DBSheetAutoname`: When inserting DBSheet Definitions, automatically name Worksheet to the table name, if this is set
 
-To change the settings, there is also a dropdown "settings", where you can modify the DBAddin.xll.config and the referred DBAddinCentral.config including XML validation.
+To change the settings, there is also a dropdown called "settings", where you can modify the DBAddin.xll.config and the referred DBAddinCentral.config including XML validation.
 
 ### Testing
 
