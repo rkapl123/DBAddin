@@ -546,7 +546,7 @@ Public Class DBMapper : Inherits DBModif
         ' only extend like this if no CUD Flags present (may have non existing first (primary) columns -> auto identity columns !)
         If Not CUDFlags Then
             preventChangeWhileFetching = True
-            Dim rowEnd = TargetRange.Cells(1, 1).End(Excel.XlDirection.xlDown).Row
+            Dim rowEnd As Integer = TargetRange.Cells(1, 1).End(Excel.XlDirection.xlDown).Row
             ' unfortunately the above method to find the column extent doesn't work with hidden columns, so count the filled cells directly...
             Dim colEnd As Integer = 1
             While Not (IsNothing(TargetRange.Cells(1, colEnd + 1).Value) OrElse TargetRange.Cells(1, colEnd + 1).Value = "")

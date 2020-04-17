@@ -85,22 +85,21 @@ Public Module DBSheetConfig
             Dim selectPart As String = Left(queryStr, InStr(queryStr, "FROM ") - 1)
             Dim selectPartModif As String = selectPart ' select part with appending LU to lookups
             If Not IsNothing(lookupsList) Then
-                lookupWS = ExcelDnaUtil.Application.ActiveWorkbook.Worksheets.Add()
-                Dim lookupWSname As String = Left(Replace(Guid.NewGuid().ToString, "-", ""), 31)
-                Try
-                    lookupWS.Name = lookupWSname
-                Catch ex As Exception
-                    ErrorMsg("Error setting lookup Worksheet Name to '" + lookupWSname + "': " + ex.Message, "DBSheet Creation Error")
-                    lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
-                    Exit Sub
-                End Try
+                ' get existing sheet DBSheetLookups, if it doesn't exist create it anew
+                If Not Globals.existsSheet("DBSheetLookups") Then
+                    lookupWS = ExcelDnaUtil.Application.ActiveWorkbook.Worksheets.Add()
+                    lookupWS.Name = "DBSheetLookups"
+                Else
+                    lookupWS = ExcelDnaUtil.Application.Worksheets("DBSheetLookups")
+                End If
                 ' add lookup Queries in separate sheet
-                'TODO:check if the same lookup already exists and skip creation to avoid duplicates that influence each other...
                 Dim lookupCol As Integer = 1
+                If Not IsNothing(lookupWS.Cells(1, lookupCol).Value) Then lookupCol = lookupWS.Cells(1, lookupCol).End(Excel.XlDirection.xlToRight).Column + 1
                 For Each LookupDef As String In lookupsList
                     ' fetch Lookupquery and get rid of template table def
                     Dim LookupQuery As String = Replace(getEntry("lookup", LookupDef, 1), tblPlaceHolder, "LT")
                     Dim lookupName As String = Replace(getEntry("name", LookupDef, 1), specialNonNullableChar, "")
+                    Dim lookupRangeName As String = tableName + lookupName + "Lookup"
                     ' replace fieldname of Lookups in query with fieldname + "LU" only for database lookups
                     If getEntry("fkey", LookupDef, 1) <> "" Then
                         ' replace looked up ID names with ID name + "LU" in query string
@@ -124,12 +123,11 @@ Public Module DBSheetConfig
                         End If
                         lookupWS.Cells(1, lookupCol + 1).Value = LookupQuery
                         lookupWS.Cells(1, lookupCol + 1).WrapText = False
-                        lookupWS.Cells(2, lookupCol).Name = lookupName + "Lookup"
+                        lookupWS.Cells(2, lookupCol).Name = lookupRangeName
                         ' then create the DBListFetch with the lookup query 
-                        ConfigFiles.createFunctionsInCells(lookupWS.Cells(1, lookupCol), {"RC", "=DBListFetch(RC[1],""""," + lookupName + "Lookup" + ")"})
+                        ConfigFiles.createFunctionsInCells(lookupWS.Cells(1, lookupCol), {"RC", "=DBListFetch(RC[1],""""," + lookupRangeName + ")"})
                         ' database lookups have two columns
                         lookupCol += 2
-
                     Else
                         'simple value lookup (one column), no need to resolve to an ID
                         If InStr(LookupQuery, "||") > 0 Then ' fixed values separated by ||
@@ -138,14 +136,14 @@ Public Module DBSheetConfig
                             For lrow = 0 To UBound(lookupValues)
                                 lookupWS.Cells(2 + lrow, lookupCol).value = lookupValues(lrow)
                             Next
-                            lookupWS.Range(lookupWS.Cells(2, lookupCol), lookupWS.Cells(2 + lrow - 1, lookupCol)).Name = lookupName + "Lookup"
+                            lookupWS.Range(lookupWS.Cells(2, lookupCol), lookupWS.Cells(2 + lrow - 1, lookupCol)).Name = lookupRangeName
                             ' fixed value lookups have only one column
                             lookupCol += 1
                         Else ' single column DB lookup
                             lookupWS.Cells(1, lookupCol + 1).Value = LookupQuery
                             lookupWS.Cells(1, lookupCol + 1).WrapText = False
-                            lookupWS.Cells(2, lookupCol).Name = lookupName + "Lookup"
-                            ConfigFiles.createFunctionsInCells(lookupWS.Cells(1, lookupCol), {"RC", "=DBListFetch(RC[1],""""," + lookupName + "Lookup" + ")"})
+                            lookupWS.Cells(2, lookupCol).Name = lookupRangeName
+                            ConfigFiles.createFunctionsInCells(lookupWS.Cells(1, lookupCol), {"RC", "=DBListFetch(RC[1],""""," + lookupRangeName + ")"})
                             ' single column DB lookups have two columns because of dbfunction and query definition in two cells..
                             lookupCol += 2
                         End If
@@ -216,8 +214,9 @@ Public Module DBSheetConfig
             If Not IsNothing(lookupsList) Then
                 For Each LookupDef As String In lookupsList
                     Dim lookupName As String = Replace(getEntry("name", LookupDef, 1), specialNonNullableChar, "")
-                    If IsNothing(ExcelDnaUtil.Application.Range(lookupName + "Lookup").Cells(1, 1).Value) Then
-                        Dim answr As MsgBoxResult = QuestionMsg("lookup area '" + lookupName + "Lookup' probably contains no values (maybe an error), continue?", MsgBoxStyle.OkCancel, "DBSheet Creation Error")
+                    Dim lookupRangeName As String = tableName + lookupName + "Lookup"
+                    If IsNothing(ExcelDnaUtil.Application.Range(lookupRangeName).Cells(1, 1).Value) Then
+                        Dim answr As MsgBoxResult = QuestionMsg("lookup area '" + lookupRangeName + "' contains no values (maybe an error), continue?", MsgBoxStyle.OkCancel, "DBSheet Creation Error")
                         If answr = vbCancel Then
                             lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
                             Exit Sub
@@ -226,7 +225,7 @@ Public Module DBSheetConfig
 
                     ' ..... create dropdown (validation) for lookup column
                     ' a workaround with getting the local formula is necessary as Formula1 in Validation.Add doesn't accept english formulas
-                    curCell.Offset(2 + addedCells, 0).Formula = "=OFFSET(" + lookupName + "Lookup,0,0,,1)"
+                    curCell.Offset(2 + addedCells, 0).Formula = "=OFFSET(" + lookupRangeName + ",0,0,,1)"
                     ' necessary as Excel>=2016 introduces the @operator automatically in formulas referring to list objects, referring to just that value in the same row. which is undesired here..
                     Dim localOffsetFormula As String = Replace(curCell.Offset(2 + addedCells, 0).FormulaLocal.ToString, "@", "")
                     ' get lookupColumn (lookupName + "LU" for 2-column database lookups, lookupName only for 1-column lookups)
@@ -252,7 +251,7 @@ Public Module DBSheetConfig
                                 Type:=Excel.XlDVType.xlValidateList, AlertStyle:=Excel.XlDVAlertStyle.xlValidAlertStop, Operator:=Excel.XlFormatConditionOperator.xlBetween,
                                 Formula1:=localOffsetFormula)
                         Else
-                            lookupColumn.DataBodyRange.Validation.Delete()  ' remove existing validations, just in case it exists, otherwise add would throw exception... 
+                            lookupColumn.DataBodyRange.Validation.Delete()   ' remove existing validations, just in case it exists, otherwise add would throw exception... 
                             lookupColumn.DataBodyRange.Validation.Add(
                                 Type:=Excel.XlDVType.xlValidateList, AlertStyle:=Excel.XlDVAlertStyle.xlValidAlertStop, Operator:=Excel.XlFormatConditionOperator.xlBetween,
                                 Formula1:=localOffsetFormula)
@@ -265,7 +264,7 @@ Public Module DBSheetConfig
                     ' adding resolution formulas is only necessary for 2-column database lookups
                     If getEntry("fkey", LookupDef, 1) <> "" Then
                         ' add vlookup function field for resolution of lookups to ID in main Query at the end of the DBMapper table
-                        Dim lookupFormula As String = "=IF([@[" + lookupName + "LU]]<>"""",VLOOKUP([@[" + lookupName + "LU]]" + "," + lookupName + "Lookup" + ",2,False),"""")"
+                        Dim lookupFormula As String = "=IF([@[" + lookupName + "LU]]<>"""",VLOOKUP([@[" + lookupName + "LU]]" + "," + lookupRangeName + ",2,False),"""")"
                         ' if no data was fetched, add a row...
                         If IsNothing(createdListObject.DataBodyRange) Then createdListObject.ListRows.AddEx()
                         ' now add the resolution formula column
