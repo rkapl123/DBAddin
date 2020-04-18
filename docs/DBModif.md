@@ -101,6 +101,8 @@ Following Settings in DBAddin.xll.config or the referred DBAddinCentral.config a
     <add key="DBSheetAutoname" value="True" />
 ```
 
+Explanation:
+
 *   `CmdTimeout`: the default timeout for a command to execute
 *   `CnnTimeout`: the default timeout for connecting
 *   `DefaultEnvironment`: default selected environment on startup

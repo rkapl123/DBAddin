@@ -166,7 +166,10 @@ After saving, the definition file is displayed as a clickable link right besides
 Following Settings in DBAddin.xll.config or the referred DBAddinCentral.config affect behavior of DBSheet definitions:
 ```xml
     <add key="ConfigName3" value="MSSQL"/>
-    <add key="DBSheetConnString3" value="DRIVER=SQL SERVER;Server=Lenovo-PC;UID=sa;PWD=;Database=pubs;"/>
+    <add key="ConstConnString3" value="provider=SQLOLEDB;Server=Lenovo-PC;Trusted_Connection=Yes;Database=pubs;Packet Size=32767"/>
+    <add key="ConnStringSearch3" value="provider=SQLOLEDB"/>
+    <add key="ConnStringReplace3" value="driver=SQL SERVER"/>
+    <add key="DBSheetConnString3" value="driver=SQL SERVER;Server=Lenovo-PC;UID=sa;PWD=;Database=pubs;"/>
     <add key="DBidentifierCCS3" value="Database="/>
     <add key="DBSheetDefinitions3" value="C:\\dev\\DBAddin.NET\\definitions"/>
     <add key="dbGetAll3" value="sp_helpdb"/>
@@ -178,12 +181,15 @@ Following Settings in DBAddin.xll.config or the referred DBAddinCentral.config a
 
 Explanation:
 *   `ConfigName`**N**: freely definable name for your environment (e.g. Production or your database instance)
-*   `DBSheetConnString`**N**: the connection string used to connect to the database for the DBSheet definitions
+*   `ConstConnString`**N**: the standard connection string used to connect to the database
+*   `ConnStringSearch`**N**: part to be searched for replacement within the standard connection string for the final DBSheet definition connection string
+*   `ConnStringReplace`**N**: replacement for above
+*   `DBSheetConnString`**N**: if existing, this connection string is used to connect to the database for the DBSheet definitions instead (without further replacements)
 *   `DBidentifierCCS`**N**: used to identify the database within DBSheetConnString
 *   `DBSheetDefinitions`**N**: path to the stored DBSheetdefinitions (default directory of assign DBsheet definitions and load/save DBSheet Defintions)
 *   `dbGetAll`**N**: command for retrieving all databases/schemas from the database can be entered (for (MS) SQL server this is "`sp_helpdb`" for Oracle its "`select username from sys.all_users`".
 *   `dbGetAllFieldName`**N**: If the result of above command has more than one column (like in sqlserver), you have to give the fieldname where the databases can be retrieved from.
 *   `ownerQualifier`**N**: default owner qualifier for table when loading DBSheet definitions, if table name is not fully qualified (legacy DBSheet definitions)
-*   `dbPwdSpec`**N**: Password entry specifier within DBSheetConnString
+*   `dbPwdSpec`**N**: Password entry specifier within DBSheetConnString, has to exist and be contained in the connection string if User (e.g. UID) is set in connection string...
 
 The entries DBisUserscheme and dbneedPwd are for Oracle databases where DBAddin has to switch to the scheme and therefore needs a password (Oracle has not been tested with the new DBAddin).

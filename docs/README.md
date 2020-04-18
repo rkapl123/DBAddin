@@ -51,8 +51,8 @@ Explanation:
 *   `ownerQualifier`**N**: default owner qualifier for table when loading DBSheet definitions, if table name is not fully qualified (legacy DBSheet definitions)
 *   `DBSheetConnString`**N**: the connection string used to connect to the database for the DBSheet definitions
 *   `dbPwdSpec`**N**: Password entry specifier within DBSheetConnString
-*   `DBSetQueryListObjConnStringSearch`**N**: part to be searched for replacement within the standard connection string in DBSetQuery
-*   `DBSetQueryListObjConnStringReplace`**N**: replacement for above
+*   `ConnStringSearch`**N**: part to be searched for replacement within the standard connection string in DBSetQuery
+*   `ConnStringReplace`**N**: replacement for above
 
 Other settings possible in DBAddin.xll.config (or DBAddinCentral.config):
 ```xml

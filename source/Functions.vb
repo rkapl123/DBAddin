@@ -390,7 +390,7 @@ Public Module Functions
                     dbMapper.resetCUDFlags()
                 End If
                 ' To get the connection string work also for SQLOLEDB provider for SQL Server, change to ODBC driver setting (this can be generally used to fix connection string problems with ListObjects)
-                theListObject.QueryTable.Connection = connType + Replace(ConnString, fetchSetting("DBSetQueryListObjConnStringSearch" + Globals.env(), "provider=SQLOLEDB"), fetchSetting("DBSetQueryListObjConnStringReplace" + Globals.env(), "driver=SQL SERVER"))
+                theListObject.QueryTable.Connection = connType + Replace(ConnString, fetchSetting("ConnStringSearch" + Globals.env(), "provider=SQLOLEDB"), fetchSetting("ConnStringReplace" + Globals.env(), "driver=SQL SERVER"))
                 theListObject.QueryTable.CommandType = Excel.XlCmdType.xlCmdSql
                     theListObject.QueryTable.CommandText = Query
                     theListObject.QueryTable.BackgroundQuery = False

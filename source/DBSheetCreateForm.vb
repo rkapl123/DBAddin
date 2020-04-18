@@ -32,6 +32,7 @@ Public Class DBSheetCreateForm
     ''' <param name="e"></param>
     Private Sub DBSheetCreateForm_Shown(sender As Object, e As EventArgs) Handles Me.Shown
         ' get settings for DBSheet definition editing
+        setConnectionString()
         dbGetAllStr = fetchSetting("dbGetAll" + Globals.env(), "NONEXISTENT")
         If dbGetAllStr = "NONEXISTENT" Then
             ErrorMsg("No dbGetAllStr given for environment: " + Globals.env() + ", please correct and rerun.", "DBSheet Definition Error")
@@ -117,12 +118,12 @@ Public Class DBSheetCreateForm
         DBSheetCols.Columns.AddRange(nameCB, ftableCB, fkeyCB, flookupCB, outerCB, primkeyCB, typeTB, sortCB, lookupTB)
         DBSheetColsEditable(False)
 
-        ' if we have a Password to enter, just display explanation text in title bar and let user enter password... 
-        If dbPwdSpec <> "" And existingPwd = "" Then
+        ' if we have a Password to enter (dbPwdSpec contained in dbsheetConnString and no password entered yet), just display explanation text in title bar and let user enter password... 
+        If InStr(dbsheetConnString, dbPwdSpec) > 0 And dbPwdSpec <> "" And existingPwd = "" Then
             resetDBSheetCreateForm()
         Else ' otherwise jump in immediately
             ' passwordless connection string, reset password and disable...
-            If dbPwdSpec = "" Then
+            If InStr(dbsheetConnString, dbPwdSpec) = 0 Or dbPwdSpec = "" Then
                 Password.Enabled = False
                 existingPwd = ""
             Else ' set to stored existig password
@@ -130,6 +131,21 @@ Public Class DBSheetCreateForm
             End If
             fillDatabasesAndSetDropDown()
             ' initialize with empty DBSheet definitions is done by above call, changing Database.SelectedIndex (Database_SelectedIndexChanged)
+        End If
+    End Sub
+
+    ''' <summary>set the dbSheet connection string, used in initialization and openConnection</summary>
+    Private Sub setConnectionString()
+        ' do we have a separate dbsheet connection string?
+        dbsheetConnString = fetchSetting("DBSheetConnString" + Globals.env(), "NONEXISTENT")
+        If dbsheetConnString = "NONEXISTENT" Then
+            ' no, try normal connection string but do provider/driver change
+            dbsheetConnString = Replace(fetchSetting("ConstConnString" + Globals.env(), "NONEXISTENT"), fetchSetting("ConnStringSearch" + Globals.env(), "provider=SQLOLEDB"), fetchSetting("ConnStringReplace" + Globals.env(), "driver=SQL SERVER"))
+            If dbsheetConnString = "NONEXISTENT" Then
+                ' actually this cannot happen....
+                ErrorMsg("No Connectionstring given for environment: " + Globals.env() + ", please correct and rerun.", "DBSheet Definition Error")
+                Exit Sub
+            End If
         End If
     End Sub
 
@@ -275,13 +291,9 @@ Public Class DBSheetCreateForm
     Sub openConnection(Optional databaseName As String = "")
         ' connections are pooled by ADO depending on the connection string:
         If IsNothing(dbshcnn) Or databaseName <> "" Then
-            dbsheetConnString = fetchSetting("DBSheetConnString" + Globals.env(), "NONEXISTENT")
-            If dbsheetConnString = "NONEXISTENT" Then
-                ErrorMsg("No Connectionstring given for environment: " + Globals.env() + ", please correct and rerun.", "DBSheet Definition Error")
-                Exit Sub
-            End If
+            setConnectionString()
             ' add password to connection string
-            If InStr(1, dbsheetConnString, dbPwdSpec) > 0 Then
+            If InStr(1, dbsheetConnString, dbPwdSpec) > 0 And dbPwdSpec <> "" Then
                 If Strings.Len(existingPwd) > 0 Then
                     If InStr(1, dbsheetConnString, dbPwdSpec) > 0 Then
                         dbsheetConnString = Change(dbsheetConnString, dbPwdSpec, existingPwd, ";")
@@ -663,12 +675,12 @@ Public Class DBSheetCreateForm
         Table.SelectedIndex = -1
         Query.Text = ""
         WhereClause.Text = ""
-        FormDisabled = False
         ' reset the current filename
         currentFilepath = ""
         CurrentFileLinkLabel.Text = ""
         saveEnabled(False)
         DBSheetColsEditable(False)
+        FormDisabled = False
     End Sub
 
     Private TableDataTypes As Dictionary(Of String, String)
@@ -1120,9 +1132,14 @@ Public Class DBSheetCreateForm
     ''' <summary>if DBSheetCols Definitions should be editable, enable relevant cotrols</summary>
     ''' <param name="choice">editable True, not editable False</param>
     Private Sub DBSheetColsEditable(choice As Boolean)
-        ' block password change if DBSheetDef is editable
-        Password.Enabled = Not choice
-        LPwd.Enabled = Not choice
+        ' block password change if DBSheetDef is editable or no password needed
+        If InStr(1, dbsheetConnString, dbPwdSpec) > 0 And dbPwdSpec <> "" Then
+            Password.Enabled = Not choice
+            LPwd.Enabled = Not choice
+        Else
+            Password.Enabled = False
+            LPwd.Enabled = False
+        End If
         addAllFields.Enabled = choice
         clearAllFields.Enabled = choice
         DBSheetCols.Enabled = choice

@@ -74,7 +74,7 @@ The parameter `AutoFormat` defines whether the first data row's format informati
 
 The parameter ShowRowNums defines whether Row numbers should be displayed in the first column (`TRUE`) or not (`FALSE` = Default).
 
-##### <a name="Connection_String_Special_Settings"></a>Connection String Special Settings:
+##### Connection String Special Settings
 
 In case the "normal" connection string's driver (usually OLEDB) has problems in displaying data with DBListFetch and the problem is not existing in conventional MS-Query based query tables (using special ODBC connection strings that can't be used with DB functions), then following special connection string setting can be used:  
 
@@ -300,13 +300,29 @@ Below the results for a DB Function created in Cell A1:
 
 DBSetQuery also creates the target Object (a Pivot Table or a ListObject) below resp. to the right of the DB Function, so it is easier to start with. In case you want to insert DB Configurations (see [Cell Config Deployment](#Cell_Config_Deployment)), just place the selection on the inserted DB function cell and select your config, the stored query will replace the empty query in the created DB function.
 
+#### Settings
+
+Following Settings in DBAddin.xll.config or the referred DBAddinCentral.config affect the behaviour of DB functions:
+```xml
+    <add key="CnnTimeout" value="15" />
+    <add key="DefaultEnvironment" value="3" />
+    <add key="DontChangeEnvironment" value="False" />
+    <add key="DebugAddin" value="False" />
+```
+
+Explanation:
+
+*   `CnnTimeout`: the default timeout for connecting
+*   `DefaultEnvironment`: default selected environment on startup
+*   `DontChangeEnvironment`: prevent changing the environment selector (Non-Production environments might confuse some people)
+*   `DebugAddin`: activate Info messages to debug addin
+
 ### Known Issues / Limitations
 
 *  All DB getting functions (DBListfetch, DBRowFetch, etc....)
-	*   A fundamental restriction for these function is that they should only exist alone in a cell with no other DB getters. This is needed because linking the functions with their cell targets is done via a hidden name in the function cell (created on first invocation)  
+	*   A fundamental restriction for DB functions is that they should only exist alone in a cell (with no other DB functions). This is needed because linking the functions with their cell targets is done via a hidden name in the function cell (created on first invocation)  
 	*   Query composition: Composing Queries (as these sometimes tends to be quite long) can become challenging, especially when handling parameters coming from cells. There is a simple way to avoid lots of trouble by placing the parts of a query in different lines/cells and putting all these cells together as a range in the DB functions first argument (query).
-	*   When invoking an Excel Workbook from the commandline (from a cmd script or the task scheduler) Excel may register (call the connect method of the Add-in) the Add-in later than invoking the calculation which leads to an uninitialized host application object and therefore a non-functional dbfunctions (they all rely on the caller object of the Excel application to retrieve their calling cell's address). I'm still investigating into this.
-	*   The Workbook containing the DB functions may not have any VBA Code with Compile Errors, or it will return an "Application defined Error". This relates to Excel not passing the Application.Caller object correctly to UDFs when having compile errors in VBA-Code.
+	*   When invoking an Excel Workbook from the commandline using CmdLogAddin (from a cmd script or the task scheduler) Excel may register (call the connect method of the Add-in) the Add-in later than invoking the calculation which leads to an uninitialized host application object and therefore a non-functional db functions (they all rely on the caller object of the Excel application to retrieve their calling cell's address). I'm still investigating into this.
 
 * DBListFetch:
 	*   formulaRange and extendArea = 1 or 2: Don't place content in cells directly below the formula Range as this will be deleted when doing recalculations. One cell below is OK.
@@ -316,6 +332,6 @@ DBSetQuery also creates the target Object (a Pivot Table or a ListObject) below 
 * DBSetQuery
 	* in DBSetquery the underlying ListObject sometimes doesn't work with the SQLOLEDB provider, so there is a mechanism to change the provider part to something that works better. You can define a searched part of the connection string and its replacement in the settings of the environment (here environment 3):
 ```xml
-    <add key="DBSetQueryListObjConnStringSearch3" value="provider=SQLOLEDB"/>
-    <add key="DBSetQueryListObjConnStringReplace3" value="driver=SQL SERVER"/>
+    <add key="ConnStringSearch3" value="provider=SQLOLEDB"/>
+    <add key="ConnStringReplace3" value="driver=SQL SERVER"/>
 ```
