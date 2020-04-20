@@ -70,8 +70,12 @@ Public Module ConfigFiles
     ''' <param name="TargetCell">the reference cell for the ListObject (will be the source cell for the DBSetQuery function)</param>
     Public Function createListObject(TargetCell As Excel.Range) As Object
         Dim createdQueryTable As Object
+        ' if an alternate connection string is given for Listobject, use this one...
+        Dim altConnString = fetchSetting("AltConnString" + Globals.env(), "")
+        ' To get the connection string work also for SQLOLEDB provider for SQL Server, change to ODBC driver setting (this can be generally used to fix connection string problems with ListObjects)
+        If altConnString = "" Then altConnString = "OLEDB;" + Replace(Globals.ConstConnString, fetchSetting("ConnStringSearch" + Globals.env(), "provider=SQLOLEDB"), fetchSetting("ConnStringReplace" + Globals.env(), "driver=SQL SERVER"))
         Try
-            createdQueryTable = TargetCell.Parent.ListObjects.Add(SourceType:=Excel.XlListObjectSourceType.xlSrcQuery, Source:="OLEDB;" + Globals.ConstConnString, Destination:=TargetCell.Offset(0, 1)).QueryTable
+            createdQueryTable = TargetCell.Parent.ListObjects.Add(SourceType:=Excel.XlListObjectSourceType.xlSrcQuery, Source:=altConnString, Destination:=TargetCell.Offset(0, 1)).QueryTable
             With createdQueryTable
                 .CommandType = Excel.XlCmdType.xlCmdSql
                 .CommandText = "select CURRENT_TIMESTAMP" ' this should be sufficient for all ansi sql compliant databases
@@ -101,10 +105,13 @@ Public Module ConfigFiles
     Public Sub createPivotTable(TargetCell As Excel.Range)
         Dim pivotcache As Excel.PivotCache = Nothing
         Dim pivotTables As Excel.PivotTables
+        ' if an alternate connection string is given for Listobject, use this one...
+        Dim altConnString = fetchSetting("AltConnString" + Globals.env(), "")
+        ' for standard connection strings only OLEDB drivers seem to work with pivot tables...
+        If altConnString = "" Then altConnString = "OLEDB;" + Globals.ConstConnString
         Try
             pivotcache = TargetCell.Parent.Parent.PivotCaches().Add(Excel.XlPivotTableSourceType.xlExternal)
-            ' only have tested it successfully for OLEDB connections, ODBC seem to have problems...
-            pivotcache.Connection = "OLEDB;" + Globals.ConstConnString
+            pivotcache.Connection = altConnString
             pivotcache.MaintainConnection = False
             pivotcache.CommandText = "select CURRENT_TIMESTAMP" ' this should be sufficient for most databases
             pivotcache.CommandType = Excel.XlCmdType.xlCmdSql

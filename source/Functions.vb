@@ -258,7 +258,7 @@ Public Module Functions
             DBSetQuery = checkQueryAndTarget(Query, targetRange)
             If DBSetQuery.Length > 0 Then Exit Function
             caller = ToRange(XlCall.Excel(XlCall.xlfCaller))
-            resolveConnstring(ConnString, EnvPrefix)
+            resolveConnstring(ConnString, EnvPrefix, True)
             ' calcContainers are identified by wbname + Sheetname + function caller cell Address
             callID = "[" + caller.Parent.Parent.Name + "]" + caller.Parent.Name + "!" + caller.Address
             LogInfo("entering function, callID: " + callID)
@@ -349,20 +349,35 @@ Public Module Functions
         Try : thePivotTable = TargetCell.PivotTable : Catch ex As Exception : End Try
         Try : theListObject = TargetCell.ListObject : Catch ex As Exception : End Try
 
-        Dim connType As String
+        Dim connType As String = ""
         Dim bgQuery As Boolean
         DBModifs.preventChangeWhileFetching = True
         Dim targetExtent As String = Replace(srcExtent, "DBFsource", "DBFtarget")
         StatusCollection(callID).statusMsg = ""
         Try
+            ' first, get the connection type from the underlying PivotCache or QueryTable (OLEDB or ODBC)
             If Not thePivotTable Is Nothing Then
                 Try
                     connType = Left$(thePivotTable.PivotCache.Connection.ToString, InStr(1, thePivotTable.PivotCache.Connection.ToString, ";"))
                 Catch ex As Exception
-                    Throw New Exception("couldn't get connection from Pivot Table, please create ListObject with external data source !")
+                    Throw New Exception("couldn't get connection from Pivot Table, please create Pivot Table with external data source !")
                 End Try
+            End If
+            If Not theListObject Is Nothing Then
+                Try
+                    connType = Left$(theListObject.QueryTable.Connection.ToString, InStr(1, theListObject.QueryTable.Connection.ToString, ";"))
+                Catch ex As Exception
+                    Throw New Exception("couldn't get connection from ListObject, please create ListObject with external data source !")
+                End Try
+            End If
+
+            ' if we haven't already set the connection type in the alternative connection string then set it now..
+            If Left(ConnString, 6) <> "OLEDB;" And Left(ConnString, 5) <> "ODBC;" Then ConnString = connType + ConnString
+
+            ' now set the connection string and the query and refresh it.
+            If Not thePivotTable Is Nothing Then
                 bgQuery = thePivotTable.PivotCache.BackgroundQuery
-                thePivotTable.PivotCache.Connection = connType + ConnString
+                thePivotTable.PivotCache.Connection = ConnString
                 thePivotTable.PivotCache.CommandType = Excel.XlCmdType.xlCmdSql
                 thePivotTable.PivotCache.CommandText = Query
                 thePivotTable.PivotCache.BackgroundQuery = False
@@ -374,11 +389,6 @@ Public Module Functions
                 thePivotTable.TableRange1.Parent.Parent.Names(targetExtent).Visible = False
             End If
             If Not theListObject Is Nothing Then
-                Try
-                    connType = Left$(theListObject.QueryTable.Connection.ToString, InStr(1, theListObject.QueryTable.Connection.ToString, ";"))
-                Catch ex As Exception
-                    Throw New Exception("couldn't get connection from ListObject, please create ListObject with external data source !")
-                End Try
                 bgQuery = theListObject.QueryTable.BackgroundQuery
                 ' check whether target range is actually a table Listobject reference, if so, replace with simple address as this doesn't produce a #REF! error on QueryTable.Refresh
                 ' this simple address is below being set to caller.Formula
@@ -389,33 +399,32 @@ Public Module Functions
                     Dim dbMapper As DBMapper = Globals.DBModifDefColl("DBMapper").Item(dbMapperRangeName)
                     dbMapper.resetCUDFlags()
                 End If
-                ' To get the connection string work also for SQLOLEDB provider for SQL Server, change to ODBC driver setting (this can be generally used to fix connection string problems with ListObjects)
-                theListObject.QueryTable.Connection = connType + Replace(ConnString, fetchSetting("ConnStringSearch" + Globals.env(), "provider=SQLOLEDB"), fetchSetting("ConnStringReplace" + Globals.env(), "driver=SQL SERVER"))
+                theListObject.QueryTable.Connection = ConnString
                 theListObject.QueryTable.CommandType = Excel.XlCmdType.xlCmdSql
-                    theListObject.QueryTable.CommandText = Query
-                    theListObject.QueryTable.BackgroundQuery = False
-                    Try
-                        theListObject.QueryTable.Refresh()
-                    Catch ex As Exception
-                        Throw New Exception("Error in query table refresh: " + ex.Message)
-                    End Try
-                    StatusCollection(callID).statusMsg = "Set " + connType + " ListObject to (bgQuery= " + bgQuery.ToString + ", " + If(theListObject.QueryTable.FetchedRowOverflow, "Too many rows fetched to display !", "") + "): " + Query
-                    theListObject.QueryTable.BackgroundQuery = bgQuery
-                    Try
-                        Dim testTarget = TargetCell.Address
-                    Catch ex As Exception
-                        caller.Formula = callerFormula ' restore formula as excel deletes target range when changing query fundamentally
-                    End Try
-                    ' give hidden name to target range of listobject (jump function)
-                    Dim oldRange As Excel.Range = Nothing
-                    ' first invocation of DBSetQuery will have no defined targetExtent Range name, so this will fail:
-                    Try : oldRange = theListObject.Range.Parent.Parent.Names(targetExtent).RefersToRange : Catch ex As Exception : End Try
-                    If IsNothing(oldRange) Then oldRange = theListObject.Range
-                    theListObject.Range.Name = targetExtent
-                    theListObject.Range.Parent.Parent.Names(targetExtent).Visible = False
-                    ' if refreshed range is a DBMapper and it is in the current workbook, resize it, but ONLY if it the DBMapper is the same area as the old range
-                    DBModifs.resizeDBMapperRange(theListObject.Range, oldRange)
-                End If
+                theListObject.QueryTable.CommandText = Query
+                theListObject.QueryTable.BackgroundQuery = False
+                Try
+                    theListObject.QueryTable.Refresh()
+                Catch ex As Exception
+                    Throw New Exception("Error in query table refresh: " + ex.Message)
+                End Try
+                StatusCollection(callID).statusMsg = "Set " + connType + " ListObject to (bgQuery= " + bgQuery.ToString + ", " + If(theListObject.QueryTable.FetchedRowOverflow, "Too many rows fetched to display !", "") + "): " + Query
+                theListObject.QueryTable.BackgroundQuery = bgQuery
+                Try
+                    Dim testTarget = TargetCell.Address
+                Catch ex As Exception
+                    caller.Formula = callerFormula ' restore formula as excel deletes target range when changing query fundamentally
+                End Try
+                ' give hidden name to target range of listobject (jump function)
+                Dim oldRange As Excel.Range = Nothing
+                ' first invocation of DBSetQuery will have no defined targetExtent Range name, so this will fail:
+                Try : oldRange = theListObject.Range.Parent.Parent.Names(targetExtent).RefersToRange : Catch ex As Exception : End Try
+                If IsNothing(oldRange) Then oldRange = theListObject.Range
+                theListObject.Range.Name = targetExtent
+                theListObject.Range.Parent.Parent.Names(targetExtent).Visible = False
+                ' if refreshed range is a DBMapper and it is in the current workbook, resize it, but ONLY if it the DBMapper is the same area as the old range
+                DBModifs.resizeDBMapperRange(theListObject.Range, oldRange)
+            End If
         Catch ex As Exception
             LogWarn(ex.Message + " in query: " + Query + ", caller: " + callID)
             StatusCollection(callID).statusMsg = ex.Message + " in query: " + Query
@@ -462,7 +471,7 @@ Public Module Functions
             DBListFetch = checkQueryAndTarget(Query, targetRange)
             If DBListFetch.Length > 0 Then Exit Function
             Dim caller As Excel.Range = ToRange(XlCall.Excel(XlCall.xlfCaller))
-            resolveConnstring(ConnString, EnvPrefix)
+            resolveConnstring(ConnString, EnvPrefix, False)
             ' calcContainers are identified by wbname + Sheetname + function caller cell Address
             callID = "[" + caller.Parent.Parent.Name + "]" + caller.Parent.Name + "!" + caller.Address
             LogInfo("entering function, callID: " + callID)
@@ -999,7 +1008,7 @@ err_0: ' errors where recordset was not opened or is already closed
             DBRowFetch = checkQueryAndTarget(Query, targetArray)
             If DBRowFetch.Length > 0 Then Exit Function
             Dim caller As Excel.Range = ToRange(XlCall.Excel(XlCall.xlfCaller))
-            resolveConnstring(ConnString, EnvPrefix)
+            resolveConnstring(ConnString, EnvPrefix, False)
             ' calcContainers are identified by wbname + sheetname + function caller cell Address
             callID = "[" + caller.Parent.Parent.Name + "]" + caller.Parent.Name + "!" + caller.Address
             LogInfo("entering function, callID: " + callID)
@@ -1388,18 +1397,39 @@ err_1:
     ''' <summary>create a final connection string from passed String or number (environment), as well as a EnvPrefix for showing the environment (or set ConnString)</summary>
     ''' <param name="ConnString">passed connection string or environment number, resolved (=returned) to actual connection string</param>
     ''' <param name="EnvPrefix">prefix for showing environment (ConnString set if no environment)</param>
-    Public Sub resolveConnstring(ByRef ConnString As Object, ByRef EnvPrefix As String)
+    Public Sub resolveConnstring(ByRef ConnString As Object, ByRef EnvPrefix As String, getConnStrForDBSet As Boolean)
         If Left(TypeName(ConnString), 10) = "ExcelError" Then Exit Sub
         If TypeName(ConnString) = "ExcelReference" Then ConnString = ConnString.Value
         If TypeName(ConnString) = "ExcelMissing" Then ConnString = ""
         ' in case ConnString is a number (set environment, retrieve ConnString from Setting ConstConnString<Number>
         If TypeName(ConnString) = "Double" Then
-            EnvPrefix = "Env:" + fetchSetting("ConfigName" + ConnString.ToString(), "")
-            ConnString = fetchSetting("ConstConnString" + ConnString.ToString(), "")
+            Dim env As String = ConnString.ToString()
+            EnvPrefix = "Env:" + fetchSetting("ConfigName" + env, "")
+            ConnString = fetchSetting("ConstConnString" + env, "")
+            If getConnStrForDBSet Then
+                ' if an alternate connection string is given, use this one...
+                Dim altConnString = fetchSetting("AltConnString" + env, "")
+                If altConnString <> "" Then
+                    ConnString = altConnString
+                Else
+                    ' To get the connection string work also for SQLOLEDB provider for SQL Server, change to ODBC driver setting (this can be generally used to fix connection string problems with ListObjects)
+                    ConnString = Replace(ConnString, fetchSetting("ConnStringSearch" + env, "provider=SQLOLEDB"), fetchSetting("ConnStringReplace" + env, "driver=SQL SERVER"))
+                End If
+            End If
         ElseIf TypeName(ConnString) = "String" Then
             If ConnString.ToString = "" Then ' no ConnString or environment number set: get connection string of currently selected evironment
                 EnvPrefix = "Env:" + fetchSetting("ConfigName" + Globals.env(), "")
                 ConnString = fetchSetting("ConstConnString" + Globals.env(), "")
+                If getConnStrForDBSet Then
+                    ' if an alternate connection string is given, use this one...
+                    Dim altConnString = fetchSetting("AltConnString" + Globals.env(), "")
+                    If altConnString <> "" Then
+                        ConnString = altConnString
+                    Else
+                        ' To get the connection string work also for SQLOLEDB provider for SQL Server, change to ODBC driver setting (this can be generally used to fix connection string problems with ListObjects)
+                        ConnString = Replace(ConnString, fetchSetting("ConnStringSearch" + Globals.env(), "provider=SQLOLEDB"), fetchSetting("ConnStringReplace" + Globals.env(), "driver=SQL SERVER"))
+                    End If
+                End If
             Else
                 EnvPrefix = "ConnString set"
             End If
