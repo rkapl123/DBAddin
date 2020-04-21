@@ -648,7 +648,7 @@ Public Class DBMapper : Inherits DBModif
         dbcnn.CursorLocation = CursorLocationEnum.adUseServer
 
         Dim finishLoop As Boolean
-        ' walk through rows
+        '''''''''''''''''''''''''''''''''''''''' walk through rows
         Do
             ' if CUDFlags are set, only insert/update/delete if CUDFlags column (right to DBMapper range) is filled...
             Dim rowCUDFlag As String = TargetRange.Cells(rowNum, TargetRange.Columns.Count + 1).Value
@@ -809,6 +809,8 @@ Public Class DBMapper : Inherits DBModif
                     Try
                         rst.Update()
                         changesDone = True
+                        ' remove CUD Flag if present
+                        If CUDFlags Then TargetRange.Cells(rowNum, TargetRange.Columns.Count + 1).Value = ""
                     Catch ex As Exception
                         Dim exMessage As String = ex.Message
                         rst.CancelUpdate()
@@ -820,6 +822,8 @@ Public Class DBMapper : Inherits DBModif
                     Try
                         rst.Delete(AffectEnum.adAffectCurrent)
                         changesDone = True
+                        ' remove CUD Flag if present
+                        TargetRange.Cells(rowNum, TargetRange.Columns.Count + 1).Value = ""
                     Catch ex As Exception
                         If Not notifyUserOfDataError("Error deleting row " + rowNum.ToString + " in sheet " + TargetRange.Parent.Name + ": " + ex.Message, rowNum) Then GoTo cleanup
                     End Try
