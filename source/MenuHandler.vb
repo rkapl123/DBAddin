@@ -25,8 +25,9 @@ Public Class MenuHandler
             "<dropDown id='envDropDown' label='Environment:' sizeString='1234567890123456' getEnabled='GetEnabledSelect' getSelectedItemIndex='GetSelectedEnvironment' getItemCount='GetItemCount' getItemID='GetItemID' getItemLabel='GetItemLabel' getSupertip='getSelectedTooltip' onAction='selectEnvironment'/>" +
             "<buttonGroup id='buttonGroup1'>" +
                 "<menu id='configMenu' label='Settings'>" +
-                    "<button id='usersetting' label='User settings' onAction='showAddinConfig' imageMso='ControlProperties' screentip='Show/edit user settings for DB Addin' />" +
-                    "<button id='centralsetting' label='Central settings' onAction='showAddinConfig' imageMso='TablePropertiesDialog' screentip='Show/edit central settings for DB Addin' />" +
+                    "<button id='user' label='User settings' onAction='showAddinConfig' imageMso='ControlProperties' screentip='Show/edit user settings for DB Addin' />" +
+                    "<button id='central' label='Central settings' onAction='showAddinConfig' imageMso='TablePropertiesDialog' screentip='Show/edit central settings for DB Addin' />" +
+                    "<button id='addin' label='DBAddin settings' onAction='showAddinConfig' imageMso='ServerProperties' screentip='Show/edit standard Addin settings for DB Addin' />" +
                 "</menu>" +
                 "<button id='props' label='Workbook Properties' onAction='showCProps' getImage='getCPropsImage' screentip='Change custom properties relevant for DB Addin:' getSupertip='getToggleCPropsScreentip' />" +
             "</buttonGroup>" +
@@ -275,17 +276,20 @@ Public Class MenuHandler
         End If
     End Sub
 
-    ''' <summary>show the user config (AppSetting) or the central config (referenced by App Settings)</summary>
+    ''' <summary>show xll standard config (AppSetting), central config (referenced by App Settings file attr) or user config (referenced by CustomSettings configSource attr)</summary>
     ''' <param name="control"></param>
     Public Sub showAddinConfig(control As CustomUI.IRibbonControl)
         Dim theEditDBModifDefDlg As EditDBModifDef = New EditDBModifDef()
         theEditDBModifDefDlg.DBFskip.Hide()
         theEditDBModifDefDlg.doDBMOnSave.Hide()
         theEditDBModifDefDlg.Tag = control.Id
-        If theEditDBModifDefDlg.ShowDialog() = System.Windows.Forms.DialogResult.OK Then
+        theEditDBModifDefDlg.ShowDialog()
+        If control.Id = "addin" Or control.Id = "central" Then
             ConfigurationManager.RefreshSection("appSettings")
-            Globals.theRibbon.Invalidate()
+        Else
+            ConfigurationManager.RefreshSection("UserSettings")
         End If
+        Globals.theRibbon.Invalidate()
     End Sub
 
     ''' <summary>dialogBoxLauncher of DBAddin settings group: activate about box</summary>

@@ -46,7 +46,13 @@ Public Module Globals
     ''' <param name="defaultValue">Value that is taken if Key was not found</param>
     ''' <returns>the setting value</returns>
     Public Function fetchSetting(Key As String, defaultValue As String) As String
-        fetchSetting = ConfigurationManager.AppSettings(Key)
+        Dim UserSettings As Collections.Specialized.NameValueCollection = ConfigurationManager.GetSection("UserSettings")
+        ' user specific settings are in UserSettings section in separate file
+        If IsNothing(UserSettings(Key)) Then
+            fetchSetting = ConfigurationManager.AppSettings(Key)
+        Else
+            fetchSetting = UserSettings(Key)
+        End If
         If IsNothing(fetchSetting) Then fetchSetting = defaultValue
     End Function
 
@@ -100,7 +106,8 @@ Public Module Globals
                 Case EventLogEntryType.Warning
                     Trace.TraceWarning("{0}: {1}", caller, Message)
                     WarningIssued = True
-                    theRibbon.InvalidateControl("showLog")
+                    ' at Addin Start ribbon has not been loaded so avoid call to it here..
+                    If Not IsNothing(theRibbon) Then theRibbon.InvalidateControl("showLog")
                 Case EventLogEntryType.Error
                     Trace.TraceError("{0}: {1}", caller, Message)
             End Select

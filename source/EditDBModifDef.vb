@@ -45,54 +45,61 @@ Public Class EditDBModifDef
                 Me.doDBMOnSave.CheckState = CheckState.Indeterminate
             End Try
         Else
-            ' get DBAddin user settings and display them
-            ' find path of xll:
-            For Each tModule As ProcessModule In Process.GetCurrentProcess().Modules
-                Dim sModule As String = tModule.FileName
-                If sModule.ToUpper.Contains("DBADDIN") Then
-                    settingsPath = tModule.FileName
-                    Exit For
-                End If
-            Next
-            ' read setting from xll path + ".config"
-            Dim configFileNameDisplay As String = "User settings in " + settingsPath
-            Dim settingsStr As String
-            Try
-                settingsPath += ".config"
-                settingsStr = File.ReadAllText(settingsPath, System.Text.Encoding.Default)
-            Catch ex As Exception
-                ErrorMsg("Couldn't read DB Addin user settings from " + settingsPath + ":" + ex.Message, "Edit DB Addin Settings")
-                Exit Sub
-            End Try
-            ' if central settings were chosen...
-            If Me.Tag = "centralsetting" Then
-                ' ...get central settings filename from user settings file attribute
-                Dim doc As New XmlDocument()
-                doc.LoadXml(settingsStr)
-                If Not IsNothing(doc.SelectSingleNode("/configuration/appSettings/@file")) Then
-                    Dim centralfilename As String = doc.SelectSingleNode("/configuration/appSettings/@file").Value
-                    ' no path given in centralfilename: assume it is in same directory
-                    If InStr(centralfilename, "\") = 0 Then centralfilename = Replace(settingsPath, "DBaddin.xll.config", "") + centralfilename
-                    ' and read central settings
-                    settingsPath = centralfilename
-                    Try
-                        settingsStr = File.ReadAllText(settingsPath, System.Text.Encoding.Default)
-                    Catch ex As Exception
-                        ErrorMsg("Couldn't read DB Addin central settings from " + settingsPath + ":" + ex.Message, "Edit DB Addin Settings")
-                        Exit Sub
-                    End Try
-                    configFileNameDisplay = "central settings in " + settingsPath
-                Else
-                    ErrorMsg("No file attribute in appSettings element available as reference to central settings!", "Edit DB Addin Settings")
-                    Exit Sub
-                End If
-            End If
-            Me.OKBtn.Text = "Save"
-            Me.ToolTip1.SetToolTip(OKBtn, "save DB Addin " + configFileNameDisplay)
-            Me.Text = "DB Addin " + configFileNameDisplay
-            Me.EditBox.Text = settingsStr
+            setSettings()
         End If
     End Sub
+
+    ''' <summary>set the appropriate config xml into EditBox (depending on Me.Tag)</summary>
+    Private Sub setSettings()
+        ' get DBAddin user settings and display them
+        ' find path of xll:
+        For Each tModule As ProcessModule In Process.GetCurrentProcess().Modules
+            Dim sModule As String = tModule.FileName
+            If sModule.ToUpper.Contains("DBADDIN") Then
+                settingsPath = tModule.FileName
+                Exit For
+            End If
+        Next
+        ' read setting from xll path + ".config"
+        Me.Text = "DBAddin.xll.config settings in " + settingsPath
+        Dim settingsStr As String
+        Try
+            settingsPath += ".config"
+            settingsStr = File.ReadAllText(settingsPath, System.Text.Encoding.Default)
+        Catch ex As Exception
+            ErrorMsg("Couldn't read DBAddin.xll.config settings from " + settingsPath + ":" + ex.Message, "Edit DB Addin Settings")
+            Exit Sub
+        End Try
+        ' if central settings were chosen...
+        If Me.Tag = "central" Or Me.Tag = "user" Then
+            ' get central settings filename from DBAddin.xll.config appSettings file attribute or
+            ' get user settings filename from DBAddin.xll.config UserSettings configSource attribute 
+            Dim doc As New XmlDocument()
+            Dim xpathStr As String = If(Me.Tag = "central", "/configuration/appSettings/@file", "/configuration/UserSettings/@configSource")
+            doc.LoadXml(settingsStr)
+            If Not IsNothing(doc.SelectSingleNode(xpathStr)) Then
+                Dim settingfilename As String = doc.SelectSingleNode(xpathStr).Value
+                ' no path given in centralfilename: assume it is in same directory
+                If InStr(settingfilename, "\") = 0 Then settingfilename = Replace(settingsPath, "DBaddin.xll.config", "") + settingfilename
+                ' and read central settings
+                settingsPath = settingfilename
+                Try
+                    settingsStr = File.ReadAllText(settingsPath, System.Text.Encoding.Default)
+                Catch ex As Exception
+                    ErrorMsg("Couldn't read DB Addin " + Me.Tag + " settings from " + settingsPath + ":" + ex.Message, "Edit DB Addin Settings")
+                    Exit Sub
+                End Try
+                Me.Text = Me.Tag + " settings in " + settingsPath
+            Else
+                ErrorMsg("No attribute available as filename reference to " + Me.Tag + " settings (searched xpath: " + xpathStr + ") !", "Edit DB Addin Settings")
+                Exit Sub
+            End If
+        End If
+        Me.OKBtn.Text = "Save"
+        Me.ToolTip1.SetToolTip(OKBtn, "save " + Me.Text)
+        Me.EditBox.Text = settingsStr
+    End Sub
+
 
     ''' <summary>store the displayed/edited textbox content back into the custom xml definition, indluding validation feedback</summary>
     ''' <param name="sender"></param>
@@ -145,25 +152,26 @@ Public Class EditDBModifDef
                 End Try
             End If
         Else
-            ' save the users app or central settings...
+            ' save Addin, users or central settings...
             Dim doc As New XmlDocument()
             Try
                 ' validate settings
                 Dim schemaString As String = My.Resources.SchemaFiles.DotNetConfig20
-                If Me.Tag = "centralsetting" Then schemaString = My.Resources.SchemaFiles.DBAddinCentral
+                If Me.Tag = "central" Then schemaString = My.Resources.SchemaFiles.DBAddinCentral
+                If Me.Tag = "user" Then schemaString = My.Resources.SchemaFiles.DBAddinUser
                 Dim schemadoc As XmlReader = XmlReader.Create(New StringReader(schemaString))
                 doc.Schemas.Add("", schemadoc)
                 Dim eventHandler As Schema.ValidationEventHandler = New Schema.ValidationEventHandler(AddressOf myValidationEventHandler)
                 doc.LoadXml(Me.EditBox.Text)
                 doc.Validate(eventHandler)
             Catch ex As Exception
-                ErrorMsg("Problems with parsing changed app settings: " + ex.Message, "Edit DB Addin Settings")
+                ErrorMsg("Problems with parsing changed " + Me.Tag + " settings: " + ex.Message, "Edit DB Addin Settings")
                 Exit Sub
             End Try
             Try
                 File.WriteAllText(settingsPath, Me.EditBox.Text, System.Text.Encoding.Default)
             Catch ex As Exception
-                ErrorMsg("Couldn't write DB Addin " + Me.Tag + "into " + settingsPath + ":" + ex.Message, "Edit DB Addin Settings")
+                ErrorMsg("Couldn't write " + Me.Tag + " settings into " + settingsPath + ": " + ex.Message, "Edit DB Addin Settings")
                 Exit Sub
             End Try
         End If

@@ -48,10 +48,6 @@ Public Class AddInEvents
         Functions.queryCache = New Dictionary(Of String, String)
         Functions.StatusCollection = New Dictionary(Of String, ContainedStatusMsg)
         Globals.DBModifDefColl = New Dictionary(Of String, Dictionary(Of String, DBModif))
-        ' get the default environment and initialize settings 
-        ' Configs are 1 based, selectedEnvironment(index of environment dropdown) is 0 based. negative values not allowed!
-        Globals.selectedEnvironment = Math.Max(CInt(fetchSetting("DefaultEnvironment", "1")) - 1, 0)
-        Globals.initSettings()
         ' get the ExcelDna LogDisplayTraceListener for filtering log messages by level in about box
         For Each srchdListener As Object In Trace.Listeners
             If srchdListener.ToString() = "ExcelDna.Logging.LogDisplayTraceListener" Then
@@ -59,6 +55,15 @@ Public Class AddInEvents
                 Exit For
             End If
         Next
+        ' initialize settings and get the default environment
+        Globals.initSettings()
+        ' Configs are 1 based, selectedEnvironment(index of environment dropdown) is 0 based. negative values not allowed!
+        Dim selEnv As Integer = CInt(fetchSetting("DefaultEnvironment", "1")) - 1
+        If selEnv > environdefs.Length - 1 OrElse selEnv < 0 Then
+            ErrorMsg("Default Environment " + (selEnv + 1).ToString + " not existing, setting to first environment !")
+            selEnv = 0
+        End If
+        Globals.selectedEnvironment = selEnv
     End Sub
 
     ''' <summary>AutoClose cleans up after finishing addin</summary>

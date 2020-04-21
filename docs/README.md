@@ -18,10 +18,22 @@ DBAddin.NET is the successor to the VB6 based DBAddin (still available on [sourc
 If any of these is missing, please install yourself before starting DBAddin.
 
 Download the asset DBAddinReleasePkg.zip in [https://github.com/rkapl123/DBAddin/releases](https://github.com/rkapl123/DBAddin/releases), unzip to any location and run deployAddin.cmd in the folder.
-This copies DBAddin.xll, DBAddin.xll.config and DBAddinCentral.config to your %appdata%\Microsoft\AddIns folder and starts Excel for activating DBAddin (adding it to the registered Addins).
+This copies DBAddin.xll, DBAddin.xll.config, DBaddinUser.config and DBAddinCentral.config to your %appdata%\Microsoft\AddIns folder and starts Excel for activating DBAddin (adding it to the registered Addins).
+
+### Settings
+
+Settings are done in three config files:
+
+* DBAddin.xll.config (expected in the same %appdata%\Microsoft\AddIns folder as the DBAddin.xll) in section appSettings
+	* DBAddin.xll.config has a reference in the file attribute of the appSettings element to DBAddinCentral.config and 
+	* a reference in the configSource attrivute of the UserSettings element to DBaddinUser.config
+* DBAddinCentral.config (this is a reference copy of the appSettings section, where the key/value pairs override the settings in DBAddin.xll.config)
+* DBaddinUser.config (this is a reference copy of the UserSettings section, where the key/value pairs override both the settings in DBAddin.xll.config and DBAddinCentral.config)
+
+In the DBAddin settings Group, there is a dropdown "settings", where you can modify these three settings inside Excel.
 
 After installation you'd want to adapt the connection strings (ConstConnString**N**) that are globally applied if no function-specific connection string is given and environment **N** is selected. 
-This can be done by modifying DBAddin.xll.config or the referred DBAddinCentral.config (in this example the settings apply to environment 3):
+This can be done by modifying DBAddin.xll.config or the referred DBaddinUser.config or DBAddinCentral.config (in this example the settings apply to environment 3):
 
 ```xml
 <appSettings>
@@ -117,7 +129,7 @@ Sometimes during copying and pasting DB Functions, these names can get mixed up,
 
 The tool "Buttons" is used for switching designmode for DBModifier Buttons (identical to standard Excel button "Design Mode" in Ribbon "Developer tab", Group "Controls")
 
-In the DBAddin settings Group, there is a dropdown "settings", where you can modify the DBAddin.xll.config and the referred DBAddinCentral.config including XML validation.
+In the DBAddin settings Group, there is a dropdown "settings", where you can modify the DBAddin.xll.config and the referred DBAddinUser.config and DBAddinCentral.config including XML validation.
 
 Right besides that dropdown, there is a shortcut to the Workbook properties (being the standard dialog Advanced Properties, accessible via File/Info) that allows you to change custom properties settings for DBAddin.
 A green check shows that custom property DBFskip is not set to true for this workbook, therefore refreshing DB functions on opening the Workbook.

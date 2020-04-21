@@ -166,6 +166,9 @@
     <None Include="DBAddinCentral.xsd">
       <SubType>Designer</SubType>
     </None>
+    <None Include="DBAddinUser.xsd">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="DBModifDef.xsd">
       <SubType>Designer</SubType>
     </None>
