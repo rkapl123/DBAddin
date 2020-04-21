@@ -24,9 +24,9 @@ This copies DBAddin.xll, DBAddin.xll.config, DBaddinUser.config and DBAddinCentr
 
 Settings are done in three config files:
 
-* DBAddin.xll.config (expected in the same %appdata%\Microsoft\AddIns folder as the DBAddin.xll) in section appSettings
-	* DBAddin.xll.config has a reference in the file attribute of the appSettings element to DBAddinCentral.config and 
-	* a reference in the configSource attrivute of the UserSettings element to DBaddinUser.config
+* DBAddin.xll.config (expected in the same %appdata%\Microsoft\AddIns folder as the DBAddin.xll) in section appSettings. DBAddin.xll.config has a reference
+	* in the file attribute of the appSettings element to DBAddinCentral.config and 
+	* in the configSource attribute of the UserSettings element to DBaddinUser.config
 * DBAddinCentral.config (this is a reference copy of the appSettings section, where the key/value pairs override the settings in DBAddin.xll.config)
 * DBaddinUser.config (this is a reference copy of the UserSettings section, where the key/value pairs override both the settings in DBAddin.xll.config and DBAddinCentral.config)
 
