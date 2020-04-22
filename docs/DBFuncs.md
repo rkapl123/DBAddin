@@ -331,6 +331,7 @@ Explanation:
 
 * DBSetQuery
 	* in DBSetquery the underlying ListObject sometimes doesn't work with the SQLOLEDB provider, so there is a mechanism to change the provider part to something that works better. You can define a searched part of the connection string and its replacement in the settings of the environment (here environment 3):
+
 ```xml
     <add key="ConnStringSearch3" value="provider=SQLOLEDB"/>
     <add key="ConnStringReplace3" value="driver=SQL SERVER"/>
