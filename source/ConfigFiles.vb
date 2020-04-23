@@ -307,14 +307,14 @@ Public Module ConfigFiles
                         ' e.g. SpecialTable and SpecialTableDetails (and afterwards SpecialTableMoreDetails) -> SpecialTable opens hierarchy
                         If i < UBound(fileList) Then
                             If InStr(1, Left$(fileList(i + 1).Name, Len(fileList(i + 1).Name) - 4), Left$(fileList(i).Name, Len(fileList(i).Name) - 4)) > 0 Then
-                                ' first process NEXT alphabetically ordered file
+                                ' first process NEXT alphabetically ordered file, returning nextLevel as new command bar element
                                 nameParts = stringParts(IIf(firstCharLevel, Left$(fileList(i + 1).Name, 1) + " ", "") +
                                                             Left$(fileList(i + 1).Name, Len(fileList(i + 1).Name) - 4), specialConfigStoreSeparator)
-                                buildFileSepMenuCtrl(nameParts, currentBar, rootPath + "\" + fileList(i + 1).Name, spclFolder, specialFolderMaxDepth)
-                                ' then process THIS file
+                                Dim nextLevel As XElement = buildFileSepMenuCtrl(nameParts, currentBar, rootPath + "\" + fileList(i + 1).Name, spclFolder, specialFolderMaxDepth)
+                                ' then process THIS file and insert in to nextLevel
                                 nameParts = stringParts(IIf(firstCharLevel, Left$(fileList(i).Name, 1) + " ", "") +
                                                             Left$(fileList(i).Name, Len(fileList(i).Name) - 4), specialConfigStoreSeparator)
-                                buildFileSepMenuCtrl(nameParts, currentBar, rootPath + "\" + fileList(i).Name, spclFolder, specialFolderMaxDepth)
+                                buildFileSepMenuCtrl(nameParts, nextLevel, rootPath + "\" + fileList(i).Name, spclFolder, specialFolderMaxDepth)
                                 ' skip this and next one
                                 i += 2
                                 If i > UBound(fileList) Then Exit For
@@ -362,7 +362,8 @@ Public Module ConfigFiles
     ''' <param name="fullPathName">full path name to xcl config file</param>
     ''' <param name="newRootName">the new root name for the menu, used avoid multiple placement of buttons in submenus</param>
     ''' <param name="specialFolderMaxDepth">limit for menu depth (required technically - depth limitation by Ribbon: 5 levels - and sometimes practically)</param>
-    Private Sub buildFileSepMenuCtrl(nameParts As String, ByRef currentBar As XElement, fullPathName As String, newRootName As String, specialFolderMaxDepth As Integer)
+    ''' <returns>new bar as Xelement (for containment)</returns>
+    Private Function buildFileSepMenuCtrl(nameParts As String, ByRef currentBar As XElement, fullPathName As String, newRootName As String, specialFolderMaxDepth As Integer) As XElement
         Try
             Dim newBar As XElement
             Static currentDepth As Integer
@@ -377,6 +378,7 @@ Public Module ConfigFiles
                 newBar.SetAttributeValue("tag", fullPathName)
                 newBar.SetAttributeValue("onAction", "getConfig")
                 currentBar.Add(newBar)
+                buildFileSepMenuCtrl = newBar
             Else  ' branch node: add new menu, recursively descend
                 Dim newName As String = Left$(nameParts, InStr(1, nameParts, " ") - 1)
                 ' prefix already exists: put new submenu below already existing prefix
@@ -393,11 +395,13 @@ Public Module ConfigFiles
                 currentDepth += 1
                 buildFileSepMenuCtrl(Mid$(nameParts, InStr(1, nameParts, " ") + 1), newBar, fullPathName, newRootName + newName, specialFolderMaxDepth)
                 currentDepth -= 1
+                buildFileSepMenuCtrl = newBar
             End If
         Catch ex As Exception
             ErrorMsg("Error (" + ex.Message + ") in MenuHandler.buildFileSepMenuCtrl")
+            buildFileSepMenuCtrl = Nothing
         End Try
-    End Sub
+    End Function
 
     ''' <summary>returns string in space separated parts (tokenize String following CamelCase switch or when given specialConfigStoreSeparator occurs)</summary>
     ''' <param name="theString">string to be tokenized</param>
