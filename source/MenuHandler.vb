@@ -111,7 +111,6 @@ Public Class MenuHandler
             "<menu id='createMenuL' label='Insert/Edit DBFunc/DBModif' insertBeforeMso='Cut'>" +
                 "<button id='DBMapperL' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
                 "<button id='DBSequenceL' tag='DBSeqnce' label='DBSequence' imageMso='ShowOnNewButton' onAction='clickCreateButton'/>" +
-                "<button id='DBSheetL' tag='DBSheet' label='DBSheetDef' imageMso='ChartResetToMatchStyle' onAction='clickCreateButton'/>" +
             "</menu>" +
             "<menuSeparator id='MySeparatorL' insertBeforeMso='Cut'/>" +
         "</contextMenu>" +
@@ -279,6 +278,11 @@ Public Class MenuHandler
     ''' <summary>show xll standard config (AppSetting), central config (referenced by App Settings file attr) or user config (referenced by CustomSettings configSource attr)</summary>
     ''' <param name="control"></param>
     Public Sub showAddinConfig(control As CustomUI.IRibbonControl)
+        ' if settings (addin, user, central) should not be displayed according to setting then exit...
+        If InStr(fetchSetting("disableSettingsDisplay", ""), control.Id) > 0 Then
+            ErrorMsg("Display of " + control.Id + " settings disabled !", "DBAddin Settings disabled", MsgBoxStyle.Information)
+            Exit Sub
+        End If
         Dim theEditDBModifDefDlg As EditDBModifDef = New EditDBModifDef()
         theEditDBModifDefDlg.DBFskip.Hide()
         theEditDBModifDefDlg.doDBMOnSave.Hide()

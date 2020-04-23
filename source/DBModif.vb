@@ -545,6 +545,7 @@ Public Class DBMapper : Inherits DBModif
         Dim NamesList As Excel.Names = ExcelDnaUtil.Application.ActiveWorkbook.Names
         ' only extend like this if no CUD Flags present (may have non existing first (primary) columns -> auto identity columns !)
         If Not CUDFlags Then
+            If IsNothing(TargetRange.Cells(2, 1).Value) Then Exit Sub ' only extend if there are multiple rows...
             preventChangeWhileFetching = True
             Dim rowEnd As Integer = TargetRange.Cells(1, 1).End(Excel.XlDirection.xlDown).Row
             ' unfortunately the above method to find the column extent doesn't work with hidden columns, so count the filled cells directly...
@@ -559,6 +560,7 @@ Public Class DBMapper : Inherits DBModif
                 preventChangeWhileFetching = False
             End Try
         Else
+            ' CUD Flags are only allowed with DBMappers in ListObjects
             Try : NamesList.Add(Name:=paramTargetName, RefersTo:=TargetRange.ListObject.Range)
             Catch ex As Exception
                 Throw New Exception("Error when reassigning name '" + paramTargetName + "' to DBMapper while extending DataRange: " + ex.Message)
@@ -933,13 +935,13 @@ Public Class DBAction : Inherits DBModif
             If IsNothing(paramTarget) Then Exit Sub
             paramTargetName = getDBModifNameFromRange(paramTarget)
             If Left(paramTargetName, 8) <> "DBAction" Then Throw New Exception("target " + paramTargetName + " not matching passed DBModif type DBAction for " + getTargetRangeAddress() + "/" + dbmodifName + " !")
-            If paramTarget.Cells(1, 1).Text = "" Then Throw New Exception("No Action defined in " + paramTargetName + "(" + getTargetRangeAddress() + ")")
             TargetRange = paramTarget
-
             ' fill parameters from definition
             env = getParamFromXML(definitionXML, "env")
             database = getParamFromXML(definitionXML, "database")
             If database = "" Then Throw New Exception("No database given in DBAction definition!")
+            ' AFTER setting TargetRange and all the rest check for defined action to have a decent getTargetRangeAddress for undefined actions...
+            If paramTarget.Cells(1, 1).Text = "" Then Throw New Exception("No Action defined in " + paramTargetName + "(" + getTargetRangeAddress() + ")")
         Catch ex As Exception
             ErrorMsg("Error when creating DB Sequence '" + dbmodifName + "': " + ex.Message, "DBModifier Definitions Error")
         End Try
@@ -1402,9 +1404,7 @@ Public Module DBModifs
             If CustomXmlParts.Count = 0 Then ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.Add("<root xmlns=""DBModifDef""></root>")
             CustomXmlParts = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
             ' remove old node in case of renaming DBModifier
-            ' ...old naming scheme, Elements named like ranges (<DBMapperGivenName>)
-            If Not IsNothing(CustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:" + existingDefName)) Then CustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:" + existingDefName).Delete
-            ' ...new naming scheme, Elements named like types, attribute Name is GivenName (<DBMapper Name="GivenName">)
+            ' Elements have names of DBModif types, attribute Name is given name (<DBMapper Name=existingDefName>)
             If Not IsNothing(CustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:" + createdDBModifType + "[@Name='" + Replace(existingDefName, createdDBModifType, "") + "']")) Then CustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:" + createdDBModifType + "[@Name='" + Replace(existingDefName, createdDBModifType, "") + "']").Delete
             ' NamespaceURI:="DBModifDef" is required to avoid adding a xmlns attribute to each element.
             CustomXmlParts(1).SelectSingleNode("/ns0:root").AppendChildNode(createdDBModifType, NamespaceURI:="DBModifDef")

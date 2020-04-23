@@ -9,14 +9,15 @@ The target data referred to by DBMapper and DBAction (data is the DML SQL statem
 
 Examples for the usage of DBMapper can be found in the DBMapperTests.xlsx Workbook.
 
-### Create DBModifiers
+## Create DBModifiers
 
 You can create the three DB Modifiers by using the cell context menu:  
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/ContextMenu.PNG)  
 
 The DBModifier creation/editing is shown below (examples already filled, when clicked on a blank cell all entries are empty):  
+(one feature that can not be set in the dialogs is a customized confirmation text for the "Ask for execution" dialog, this is done with Edit DBModifier Definitions, see below)
 
-#### DB Mappers are created/edited with following dialog:  
+### DB Mappers are created/edited with following dialog:  
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DbMapperCreate.PNG)  
 
 *   DBMapper Name: Enter the name for the selected Range that will be used to identify the DBMap in the "Execute DBModifier" Group dropdowns. If no name is given here, then UnnamedDBMapper will be used to identify it.
@@ -37,7 +38,7 @@ The DBModifier creation/editing is shown below (examples already filled, when cl
 
 You can always edit these parameters by selecting a cell in the DB Mapper area and invoking the context menu again.
 
-#### DB Actions are created/edited with following dialog:  
+### DB Actions are created/edited with following dialog:  
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DbActionCreate.PNG)  
 
 *   DBAction Name: Enter the name for the selected Range that will be used to identify the DBAction in the "Execute DBModifier" Group dropdowns. If no name is given here, then UnnamedDBAction will be used to identify it.
@@ -51,7 +52,7 @@ You can always edit these parameters by selecting a cell in the DB Mapper area a
 
 You can always edit these parameters by selecting the Range of the DB Action area and invoking the context menu again.
 
-#### DB Sequences are created/edited with following dialog:  
+### DB Sequences are created/edited with following dialog:  
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DbSequenceCreate.PNG)  
 
 *   DBSequence Name: Enter the name for the selected Range that will be used to identify the DBSequence in the "Execute DBModifier" Group dropdowns. If no name is given here, then UnnamedDBAction will be used to identify it.
@@ -64,13 +65,13 @@ You can always edit these parameters by selecting the Range of the DB Action are
 As DB Sequences have no Range with data/definitions, invoking the context menu always creates new DB Sequences. You can edit existing DB Sequences
 by Ctrl-Shift clicking the Execute DBModifier Groups dropdown menus or by Ctrl-Shift clicking the created commandbuttons.
 
-#### Edit DBModifier Definitions  
+## Edit DBModifier Definitions  
 
 All DBModifier definitions (done in XML) can be viewed by clicking the dialogBox Launcher on the right bottom corner of the Execute DBModifier Ribbon Group
 together with Ctrl and Shift. This opens the Edit DBModifier Definitions Window:  
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/EditDBModifDefinitions.PNG)
 
-Here you can edit the definitions directly and also insert hidden features like the confirmText.
+Here you can edit the definitions directly and also insert hidden features like the customized confirmation text in the element `confirmText`.
 
 The DBModifiers can be executed either  
 
@@ -85,7 +86,7 @@ You can edit the DBModifiers either by Ctrl-Shift clicking the Execute DBModifie
 .. or by Ctrl-Shift clicking the created commandbuttons  
 .. or by using the Insert/Edit DBFunc/DBModif context menu within a DBMapper or DBAction range  
 
-#### Settings
+## Settings
 
 Following Settings in DBAddin.xll.config or the referred DBAddinCentral.config affect behaviour of DBModifiers:
 ```xml

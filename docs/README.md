@@ -68,7 +68,7 @@ Explanation:
 
 Other settings possible in DBAddin.xll.config (or DBAddinCentral.config):
 ```xml
-    <add key="LocalHelp" value="C:\\dev\\DBAddin.NET\\docs\\LocalHelp.htm"/>
+    <add key="LocalHelp" value="C:\dev\DBAddin.NET\docs\doc\rkapl123.github.io\DBAddin\index.html"/>
     <add key="CmdTimeout" value="30" />
     <add key="CnnTimeout" value="15" />
     <add key="DefaultDBDateFormatting" value="0" />
@@ -85,7 +85,7 @@ Other settings possible in DBAddin.xll.config (or DBAddinCentral.config):
 ```
 
 Explanation:
-*   `LocalHelp`: the path to local help files downloadable [here](doc.zip). To include it, put the contained folder and html file into the given folder
+*   `LocalHelp`: the path to local help files downloadable [here](doc.zip). To include it, extract the package into the respective folder and assign the file accordingly.
 *   `CmdTimeout`: the default timeout for a command to execute
 *   `CnnTimeout`: the default timeout for connecting
 *   `DefaultDBDateFormatting`: default formatting choice for DBDate

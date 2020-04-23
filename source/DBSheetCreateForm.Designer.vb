@@ -61,9 +61,9 @@ Partial Class DBSheetCreateForm
         Me.Lenvironment = New System.Windows.Forms.Label()
         Me.DBSheetColsForDatabases = New System.Windows.Forms.ContextMenuStrip(Me.components)
         CType(Me.DBSheetCols, System.ComponentModel.ISupportInitialize).BeginInit()
-        Me.DBSheetColsMoveMenu.SuspendLayout
-        Me.DBSheetColsLookupMenu.SuspendLayout
-        Me.SuspendLayout
+        Me.DBSheetColsMoveMenu.SuspendLayout()
+        Me.DBSheetColsLookupMenu.SuspendLayout()
+        Me.SuspendLayout()
         '
         'createQuery
         '
@@ -398,7 +398,6 @@ Partial Class DBSheetCreateForm
         'Lenvironment
         '
         Me.Lenvironment.AllowDrop = True
-        Me.Lenvironment.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
         Me.Lenvironment.AutoSize = True
         Me.Lenvironment.BackColor = System.Drawing.Color.Transparent
         Me.Lenvironment.ForeColor = System.Drawing.SystemColors.ControlText
@@ -453,7 +452,7 @@ Partial Class DBSheetCreateForm
         Me.DBSheetColsMoveMenu.ResumeLayout(False)
         Me.DBSheetColsLookupMenu.ResumeLayout(False)
         Me.ResumeLayout(False)
-        Me.PerformLayout
+        Me.PerformLayout()
 
     End Sub
 
