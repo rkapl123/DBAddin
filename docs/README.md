@@ -82,6 +82,7 @@ Other settings possible in DBAddin.xll.config (or DBAddinCentral.config):
     <add key="maxNumberMassChange" value="10" />
     <add key="connIDPrefixDBtype" value="MSSQL" />
     <add key="DBSheetAutoname" value="True" />
+    <add key="disableSettingsDisplay" value="addin"/>
 ```
 
 Explanation:
@@ -99,6 +100,7 @@ Explanation:
 *   `maxNumberMassChange`: Threshold of Number of changes in CUDFlag DBMappers to issue a warning.
 *   `connIDPrefixDBtype`: legacy DBSheet definitions have a Prefix in `connID` before the database that needs to be removed, this is the String to remove ...
 *   `DBSheetAutoname`: When inserting DBSheet Definitions, automatically name Worksheet to the table name, if this is set
+*   `disableSettingsDisplay`: put the settings choices that should not be available to the user here (addin: DBAddin.xll.config, central: DBAddinCentral.config and user: DBaddinUser.config)
 
 To change the settings, there is also a dropdown called "settings", where you can modify the DBAddin.xll.config and the referred DBAddinCentral.config including XML validation.
 
