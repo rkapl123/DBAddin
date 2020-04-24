@@ -439,5 +439,4 @@ Public Module ConfigFiles
             stringParts = LTrim$(Replace(Replace(stringParts, "   ", " "), "  ", " "))
         End If
     End Function
-
 End Module

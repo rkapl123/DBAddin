@@ -1477,5 +1477,4 @@ err_1:
         Dim ws As Excel.Worksheet = ExcelDnaUtil.Application.Workbooks(wbname).Worksheets(item)
         Return ws.Range(ws.Cells(reference.RowFirst + 1, reference.ColumnFirst + 1), ws.Cells(reference.RowLast + 1, reference.ColumnLast + 1))
     End Function
-
 End Module

@@ -689,5 +689,4 @@ Public Module Globals
         End Try
         ExcelDnaUtil.Application.Calculation = calcMode
     End Sub
-
 End Module

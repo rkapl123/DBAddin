@@ -438,7 +438,4 @@ getEntry_Err:
         End Try
         getEntryList = list
     End Function
-
 End Module
-
-

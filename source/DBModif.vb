@@ -5,8 +5,6 @@ Imports System.Windows.Forms
 Imports System.Collections.Generic
 Imports Microsoft.Office.Core
 Imports System.Data
-Imports System.Data.SqlClient
-
 
 ''' <summary>Abstraction of a DB Modification Object (concrete classes DBMapper, DBAction or DBSeqnce)</summary>
 Public MustInherit Class DBModif
@@ -968,13 +966,8 @@ Public Class DBAction : Inherits DBModif
 
         'Dim ds As DataSet = New DataSet()
         'Dim dataAdapter As SqlDataAdapter = New SqlDataAdapter()
-        'Dim theConnString As String = fetchSetting("ConstConnString" + env, "")
-        'Dim dbidentifier As String = fetchSetting("DBidentifierCCS" + env, "")
-        'theConnString = Change(theConnString, dbidentifier, database, ";")
-        'Dim cn As SqlConnection = New SqlConnection(theConnString)
-        'cn.Open()
 
-        'Dim trans As SqlTransaction = cn.BeginTransaction
+        'Dim trans As SqlTransaction = adocnn.BeginTransaction
 
         'dataAdapter.InsertCommand.Transaction = trans
         'dataAdapter.UpdateCommand.Transaction = trans
@@ -1136,6 +1129,7 @@ Public Module DBModifs
 
     ''' <summary>main db connection For mapper</summary>
     Public dbcnn As ADODB.Connection
+    Public adocnn As System.Data.IDbConnection
     ''' <summary>avoid entering Application.SheetChange Event handler during listfetch/setquery</summary>
     Public preventChangeWhileFetching As Boolean = False
     ''' <summary>indicates an error in execution, used for commit/rollback</summary>
@@ -1172,6 +1166,39 @@ Public Module DBModifs
             dbcnn.CommandTimeout = Globals.CmdTimeout
             dbcnn.Open()
             openConnection = True
+        Catch ex As Exception
+            ErrorMsg("Error connecting to DB: " + ex.Message + ", connection string: " + theConnString, "Open Connection Error")
+            dbcnn = Nothing
+        End Try
+        ExcelDnaUtil.Application.StatusBar = False
+    End Function
+
+    Public Function openADOConnection(env As Integer, database As String) As Boolean
+        openADOConnection = False
+
+        Dim theConnString As String = fetchSetting("ConstConnString" + env.ToString, "")
+        If theConnString = "" Then
+            ErrorMsg("No Connectionstring given for environment: " + env.ToString + ", please correct and rerun.", "Open Connection Error")
+            Exit Function
+        End If
+        Dim dbidentifier As String = fetchSetting("DBidentifierCCS" + env.ToString, "")
+        If dbidentifier = "" Then
+            ErrorMsg("No DB identifier given for environment: " + env.ToString + ", please correct and rerun.", "Open Connection Error")
+            Exit Function
+        End If
+        theConnString = Change(theConnString, dbidentifier, database, ";")
+        theConnString = Change(theConnString, "Connection Timeout", Globals.CnnTimeout.ToString, ";")
+        If InStr(theConnString.ToLower, "provider=sqloledb") Or InStr(theConnString.ToLower, "driver=sql server") Then
+            adocnn = New System.Data.SqlClient.SqlConnection(theConnString)
+        Else
+            adocnn = New System.Data.Odbc.OdbcConnection(theConnString)
+        End If
+
+        LogInfo("open connection with " + theConnString)
+        ExcelDnaUtil.Application.StatusBar = "Trying " + Globals.CnnTimeout.ToString + " sec. with connstring: " + theConnString
+        Try
+            adocnn.Open()
+            openADOConnection = True
         Catch ex As Exception
             ErrorMsg("Error connecting to DB: " + ex.Message + ", connection string: " + theConnString, "Open Connection Error")
             dbcnn = Nothing
@@ -1637,4 +1664,3 @@ Public Module DBModifs
         End If
     End Sub
 End Module
-
