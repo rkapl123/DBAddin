@@ -37,11 +37,22 @@ Public Module ConfigFiles
             Dim fileReader As System.IO.StreamReader = My.Computer.FileSystem.OpenTextFileReader(theFileName, Text.Encoding.Default)
             Do
                 ItemLine = fileReader.ReadLine()
-                ' for existing dbfunction replace querystring in existing formula of active cell
+                ' ConfigArray: Configs are tab separated pairs of <RC location vbTab function formula> vbTab <...> vbTab...
+                Dim ConfigArray As String() = Split(ItemLine, vbTab)
+                ' if there is a ConfigSelect setting use it to replace the query with the template, replacing the contained table with the FROM <table>...
+                Dim ConfigSelect As String = fetchSetting("ConfigSelect", "")
+                ' replace query in function formula in second part of pairs with ConfigSelect template. 
+                ' This works only for templates with actual query string as first argument (not having reference(s) to cell(s) with query string(s))
+                If ConfigSelect <> "" Then
+                    For i As Integer = 0 To UBound(ConfigArray) Step 2
+                        ConfigArray(i + 1) = replaceConfigSelectInFormula(ConfigArray(i + 1), ConfigSelect)
+                    Next
+                End If
+                ' for existing dbfunction replace querystring in existing formula of active cell, only works for single pair config templates (or the first pair)
                 If srchdFunc <> "" Then
-                    ExcelDnaUtil.Application.ActiveCell.Formula = replaceQueryInFormula(Split(ItemLine, vbTab)(1), srchdFunc, ExcelDnaUtil.Application.ActiveCell.Formula)
-                Else ' for other cells simply insert the parsed information
-                    createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, Split(ItemLine, vbTab))
+                    ExcelDnaUtil.Application.ActiveCell.Formula = replaceQueryInFormula(ConfigArray(1), srchdFunc, ExcelDnaUtil.Application.ActiveCell.Formula.ToString)
+                Else ' for other cells simply insert the ConfigArray
+                    createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, ConfigArray)
                 End If
             Loop Until fileReader.EndOfStream
             fileReader.Close()
@@ -50,19 +61,43 @@ Public Module ConfigFiles
         End Try
     End Sub
 
-    ''' <summary>replace query given in theQueryFormula inside sourceFormula containing DB Function "theFunction"</summary>
-    ''' <param name="theQueryFormula"></param>
-    ''' <param name="theFunction"></param>
-    ''' <param name="sourceFormula"></param>
+    ''' <summary>replace query given in theQueryFormula with template query in ConfigSelect</summary>
+    ''' <param name="dbFunctionFormula"></param>
+    ''' <param name="ConfigSelect"></param>
     ''' <returns></returns>
-    Private Function replaceQueryInFormula(theQueryFormula As String, theFunction As String, sourceFormula As Object) As String
-        Dim queryString As String = functionSplit(theQueryFormula, ",", """", "DBListFetch", "(", ")")(0)
-        Dim formulaBody As String = Mid$(sourceFormula, Len(theFunction) + 3)
-        formulaBody = Left(formulaBody, Len(formulaBody) - 1)
-        Dim tempFormula As String = replaceDelimsWithSpecialSep(formulaBody, ",", """", "(", ")", vbTab)
+    Private Function replaceConfigSelectInFormula(dbFunctionFormula As String, ConfigSelect As String) As String
+        ' get the query from the config templates function formula (standard templates are created with DBListFetch)
+        Dim queryString As String = functionSplit(dbFunctionFormula, ",", """", "DBListFetch", "(", ")")(0)
+        ' fetch tablename from query string
+        Dim tableName As String = Mid$(queryString, InStr(queryString.ToUpper, "FROM ") + 5)
+        ' remove last quoting...
+        tableName = Left(tableName, Len(tableName) - 1)
+        ' now replace table template with actual table name
+        queryString = ConfigSelect.Replace("!Table!", tableName)
+        ' reconstruct the rest of the db function formula
+        Dim formulaParams As String = Mid$(dbFunctionFormula, Len("DBListFetch") + 3)
+        formulaParams = Left(formulaParams, Len(formulaParams) - 1)
+        Dim tempFormula As String = replaceDelimsWithSpecialSep(formulaParams, ",", """", "(", ")", vbTab)
         Dim restFormula As String = Mid$(tempFormula, InStr(tempFormula, vbTab))
-        ' for existing DB Functions DBSetQuery or DBRowFetch...
-        ' replace querystring in existing formula of active cell
+        ' replace querystring in existing formula
+        replaceConfigSelectInFormula = "=DBListFetch(""" + queryString + """" + Replace(restFormula, vbTab, ",")
+    End Function
+
+    ''' <summary>replace query given in dbFunctionFormula inside targetFormula containing DB Function "theFunction"</summary>
+    ''' <param name="dbFunctionFormula">passed config templates function formula</param>
+    ''' <param name="theFunction">db function in targetFormula</param>
+    ''' <param name="targetFormula">passed ActiveCell.Formula</param>
+    ''' <returns></returns>
+    Private Function replaceQueryInFormula(dbFunctionFormula As String, theFunction As String, targetFormula As String) As String
+        ' get the query from the config templates function formula (standard templates are created with DBListFetch)
+        Dim queryString As String = functionSplit(dbFunctionFormula, ",", """", "DBListFetch", "(", ")")(0)
+        ' get the parts of the targeted function formula
+        Dim formulaParams As String = Mid$(targetFormula, Len(theFunction) + 3)
+        formulaParams = Left(formulaParams, Len(formulaParams) - 1)
+        Dim tempFormula As String = replaceDelimsWithSpecialSep(formulaParams, ",", """", "(", ")", vbTab)
+        Dim restFormula As String = Mid$(tempFormula, InStr(tempFormula, vbTab))
+        ' for existing theFunction (DBSetQuery or DBRowFetch)...
+        ' replace querystring in existing formula and pass as result
         replaceQueryInFormula = "=" + theFunction + "(" + queryString + Replace(restFormula, vbTab, ",")
     End Function
 

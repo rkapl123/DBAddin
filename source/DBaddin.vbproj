@@ -151,7 +151,6 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Content Include=".gitignore" />
     <Content Include="DBaddin-AddIn.dna">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <SubType>Designer</SubType>
@@ -163,19 +162,7 @@
     <None Include="app.config" />
     <None Include="articles\intro.md" />
     <None Include="articles\toc.md" />
-    <None Include="DBAddinCentral.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="DBAddinUser.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="DBModifDef.xsd">
-      <SubType>Designer</SubType>
-    </None>
     <None Include="docfx.json" />
-    <None Include="DotNetConfig20.xsd">
-      <SubType>Designer</SubType>
-    </None>
     <None Include="index.md" />
     <None Include="My Project\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
