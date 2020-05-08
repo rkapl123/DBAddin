@@ -44,7 +44,7 @@ The select statement for querying the values is given as a text string in parame
 
 The query parameter can also be a Range, which means that the Query itself is taken as a concatenation of all cells comprising that Range, separating the single cells with blanks. This is useful to avoid the problems associated with packing a large (parameterized) Query in one cell, leading to "Formula is too long" errors. German readers might be interested in [XLimits](http://www.xlam.ch/xlimits/xllimit4.htm), describing lots (if not all) the limits Excel faces.  
 
-The connection string is either given in the formula, or for standard configuration can be left out and is then set globally in the registry key `[HKEY_CURRENT_USER\Software\VB and VBA Program Settings\DBAddin\Settings\ConstConnString]`
+The connection string is either given in the formula, or can be left out. The connection string is then taken from the standard configuration settings from the key `ConstConnString`**N** of the set environment **N**. You can also fix this environment in the formula by passing **N** as the "connection string".
 
 The returned list values are written into the Range denoted by "TargetRange". This can be  
 
@@ -174,7 +174,7 @@ Would return `”('ABC',1,'20070115')”`, if DateRange contained `15/01/2007` a
 
 This builds a Database compliant string (quoted) from the open ended parameter list given in the argument. This can also be used to easily build wildcards into the String, like
 
-<pre lang="vb.net">DBString("\_",E1,"%")</pre>
+<pre lang="vb.net">DBString("_",E1,"%")</pre>
 
 When E1 contains "test", this results in '\_test%', thus matching in a like clause the strings 'stestString', 'atestAnotherString', etc.
 
@@ -243,7 +243,7 @@ Additionally the connection timeout (CnnTimeout, which can't be given in the fun
 
 To easen the distribution of complex DB functions (resp. queries), there is a config file mechanism in DBAddin: DB function configurations can be created in config files (extension XCL) and are displayed with a tree-dropdown menu below "DB Configs" that displays the file hierarchy beneath ConfigStoreFolder for easy retrieval of the configs.  
 
-The layout of this file is a pairwise, tab separated instruction where to fill (first element) formulas(starting with "=", being in R1C1 representation) resp. values (second element). Values are simple values to be inserted into Excel (numbers, strings, dates (should be interpretable !)), formulas are best copied from the output of ActiveCell.FormulaR1C1 !
+The layout of this file is a pairwise, tab separated instruction where to fill (first element) formulas(starting with "=", being in R1C1 representation) resp. values (second element). Values are simple values to be inserted into Excel (numbers, strings, dates (should be interpretable by Excel !)), formulas are best copied from the output of ActiveCell.FormulaR1C1 !
 
 #### Creating configs
 
@@ -270,7 +270,7 @@ The maximum depth of the sub menus can be stated in "(pathName)MaxDepth", which 
 
 You can add another hierarchy layer by setting "(pathName)FirstLetterLevel" to "True", which adds the first letter as the top level hierarchy.  
 
-You can decide for each subfolder whether it's contents should be hierarchically organized by entering the relative path from ConfigStoreFolder for each subfolder in "specialConfigStoreFolders", or you can decide for all subfolders of that folder by just entering the topmost folder in "specialConfigStoreFolders". Beware that the backslash (path separator) in (pathName) needs to be entered quoted (two "\" !) to be recognized when importing the registry key files!  
+You can decide for each subfolder whether it's contents should be hierarchically organized by entering the relative path from ConfigStoreFolder for each subfolder in "specialConfigStoreFolders", or you can decide for all subfolders of that folder by just entering the topmost folder in "specialConfigStoreFolders".
 
 #### Inserting configs
 
@@ -332,7 +332,7 @@ Explanation:
 	*   GUID Columns are not displayed when working with the standard data fetching method used by DBListFetch (using an opened recordset for adding a - temporary - querytable). A workaround has been built that circumvents this problem by adding the querytable the way that excel does (using the connection string and query directly when adding the querytable). This however implicitly opens another connection, so is more resource intensive. For details see [Connection String Special Settings](#Connection_String_Special_Settings)
 
 * DBSetQuery
-	* in DBSetquery the underlying ListObject sometimes doesn't work with the SQLOLEDB provider, so there is a mechanism to change the provider part to something that works better. You can define a searched part of the connection string and its replacement in the settings of the environment (here environment 3):
+	* in DBSetQuery the underlying ListObject sometimes doesn't work with the SQLOLEDB provider, so there is a mechanism to change the provider part to something that works better. You can define a searched part of the connection string and its replacement in the settings of the environment (here environment 3):
 
 ```xml
     <add key="ConnStringSearch3" value="provider=SQLOLEDB"/>
