@@ -25,14 +25,14 @@ This copies DBAddin.xll, DBAddin.xll.config, DBaddinUser.config and DBAddinCentr
 Settings are done in three config files:
 
 * DBAddin.xll.config (expected in the same %appdata%\Microsoft\AddIns folder as the DBAddin.xll) in section appSettings. DBAddin.xll.config has a reference
-	* in the file attribute of the appSettings element to DBAddinCentral.config and 
+	* in the file attribute of the appSettings element to DBAddinCentral.config and
 	* in the configSource attribute of the UserSettings element to DBaddinUser.config
 * DBAddinCentral.config (this is a reference copy of the appSettings section, where the key/value pairs override the settings in DBAddin.xll.config)
 * DBaddinUser.config (this is a reference copy of the UserSettings section, where the key/value pairs override both the settings in DBAddin.xll.config and DBAddinCentral.config)
 
 In the DBAddin settings Group, there is a dropdown "settings", where you can modify these three settings inside Excel.
 
-After installation you'd want to adapt the connection strings (ConstConnString**N**) that are globally applied if no function-specific connection string is given and environment **N** is selected. 
+After installation you'd want to adapt the connection strings (ConstConnString**N**) that are globally applied if no function-specific connection string is given and environment **N** is selected.
 This can be done by modifying DBAddin.xll.config or the referred DBaddinUser.config or DBAddinCentral.config (in this example the settings apply to environment 3):
 
 ```xml
@@ -83,6 +83,7 @@ Other settings possible in DBAddin.xll.config (or DBAddinCentral.config):
     <add key="connIDPrefixDBtype" value="MSSQL" />
     <add key="DBSheetAutoname" value="True" />
     <add key="disableSettingsDisplay" value="addin"/>
+		<add key="ConfigSelect" value="SELECT (SELECT Count(*) FROM !Table!) Anzahl, TOP 10 * FROM !Table!" />
 ```
 
 Explanation:
@@ -101,8 +102,9 @@ Explanation:
 *   `connIDPrefixDBtype`: legacy DBSheet definitions have a Prefix in `connID` before the database that needs to be removed, this is the String to remove ...
 *   `DBSheetAutoname`: When inserting DBSheet Definitions, automatically name Worksheet to the table name, if this is set
 *   `disableSettingsDisplay`: put the settings that should not be available for viewing/editing to the user here (addin: DBAddin.xll.config, central: DBAddinCentral.config and user: DBaddinUser.config)
+*   `ConfigSelect`: Use this template instead of standard config (currently `SELECT TOP 10000 * FROM <Table>`) when inserting cell configurations. The respective Table is being replaced into `!Table!`.
 
-To change the settings, there is also a dropdown called "settings", where you can modify the DBAddin.xll.config and the referred DBAddinCentral.config including XML validation.
+To change the settings, there is also a dropdown called "settings", where you can modify the DBAddin.xll.config and the referred DBAddinCentral.config including XML validation. You can have multiple same named entries (e.g. `ConfigSelect`) in your settings files, always the last one is taken as the active setting. 
 
 ### Testing
 

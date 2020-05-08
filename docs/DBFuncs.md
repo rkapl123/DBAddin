@@ -174,7 +174,7 @@ Would return `”('ABC',1,'20070115')”`, if DateRange contained `15/01/2007` a
 
 This builds a Database compliant string (quoted) from the open ended parameter list given in the argument. This can also be used to easily build wildcards into the String, like
 
-<pre lang="vb.net">DBString("_",E1,"%")</pre>
+<pre lang="vb.net">DBString("\_",E1,"%")</pre>
 
 When E1 contains "test", this results in '\_test%', thus matching in a like clause the strings 'stestString', 'atestAnotherString', etc.
 
@@ -279,6 +279,8 @@ If the user finds/loads the relevant configuration, a warning is shown and then 
 Cells in other worksheets are also filled, these are also taking the reference relative to the current selection. If the worksheet doesn't exist it is created.  
 
 There are no checks (except for Excels sheet boundaries) as whether any cells are overwritten !  
+
+If the setting `ConfigSelect` is found in the settings, then the given template (e.g. `SELECT (SELECT Count(*) FROM !Table!) RecordCount, TOP 10 * FROM !Table!` to display the count of records at the beginning of the query while fetching only 10 rows...) is used instead of the standard config (currently `SELECT TOP 10000 * FROM <Table>`) when inserting cell configurations. The respective Table is being replaced into `!Table!`.
 
 #### Refreshing the config tree
 
