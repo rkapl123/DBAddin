@@ -249,7 +249,7 @@ Public Class MenuHandler
         If CBool(fetchSetting("DontChangeEnvironment", "False")) Then
             Return "DontChangeEnvironment is set, therefore changing the Environment is prevented !"
         Else
-            Return "configured for Database Access in user config %appdata%\Microsoft\Addins\DBaddin.xll.config"
+            Return "configured for Database Access in Addin config %appdata%\Microsoft\Addins\DBaddin.xll.config (or referenced central/user setting)"
         End If
     End Function
 
