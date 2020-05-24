@@ -324,7 +324,7 @@ Public MustInherit Class DBModif
     End Function
 
     ''' <summary>get connection string from passed function argument</summary>
-    ''' <param name="funcArg">function argument parsed from DBFunction formula, can be empty, a number or a String</param>
+    ''' <param name="funcArg">function argument parsed from DBFunction formula, can be empty, a number (as a string) or a String</param>
     ''' <param name="caller">function caller range</param>
     ''' <returns>resolved connection string</returns>
     Private Function getConnString(funcArg As String, caller As Excel.Range, getConnStrForDBSet As Boolean) As String
@@ -1127,9 +1127,10 @@ End Class
 ''' <summary>global helper functions for DBModifiers</summary>
 Public Module DBModifs
 
-    ''' <summary>main db connection For mapper</summary>
+    ''' <summary>main db connection for DB modifiers</summary>
     Public dbcnn As ADODB.Connection
-    Public adocnn As System.Data.IDbConnection
+    ''' <summary>main db connection for DB modifiers</summary>
+    Public idbcnn As System.Data.IDbConnection
     ''' <summary>avoid entering Application.SheetChange Event handler during listfetch/setquery</summary>
     Public preventChangeWhileFetching As Boolean = False
     ''' <summary>indicates an error in execution, used for commit/rollback</summary>
@@ -1173,8 +1174,12 @@ Public Module DBModifs
         ExcelDnaUtil.Application.StatusBar = False
     End Function
 
-    Public Function openADOConnection(env As Integer, database As String) As Boolean
-        openADOConnection = False
+    ''' <summary>opens a database connection</summary>
+    ''' <param name="env">number of the environment as given in the settings</param>
+    ''' <param name="database">database to replace database selection parameter in connection string of environment</param>
+    ''' <returns>True on success</returns>
+    Public Function openIdbConnection(env As Integer, database As String) As Boolean
+        openIdbConnection = False
 
         Dim theConnString As String = fetchSetting("ConstConnString" + env.ToString, "")
         If theConnString = "" Then
@@ -1189,16 +1194,16 @@ Public Module DBModifs
         theConnString = Change(theConnString, dbidentifier, database, ";")
         theConnString = Change(theConnString, "Connection Timeout", Globals.CnnTimeout.ToString, ";")
         If InStr(theConnString.ToLower, "provider=sqloledb") Or InStr(theConnString.ToLower, "driver=sql server") Then
-            adocnn = New System.Data.SqlClient.SqlConnection(theConnString)
+            idbcnn = New System.Data.SqlClient.SqlConnection(theConnString)
         Else
-            adocnn = New System.Data.Odbc.OdbcConnection(theConnString)
+            idbcnn = New System.Data.Odbc.OdbcConnection(theConnString)
         End If
 
         LogInfo("open connection with " + theConnString)
         ExcelDnaUtil.Application.StatusBar = "Trying " + Globals.CnnTimeout.ToString + " sec. with connstring: " + theConnString
         Try
-            adocnn.Open()
-            openADOConnection = True
+            idbcnn.Open()
+            openIdbConnection = True
         Catch ex As Exception
             ErrorMsg("Error connecting to DB: " + ex.Message + ", connection string: " + theConnString, "Open Connection Error")
             dbcnn = Nothing

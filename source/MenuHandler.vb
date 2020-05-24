@@ -271,7 +271,7 @@ Public Class MenuHandler
             Dim retval As MsgBoxResult = QuestionMsg("ConstConnString:" + Globals.ConstConnString + vbCrLf + "ConfigStoreFolder:" + ConfigFiles.ConfigStoreFolder + vbCrLf + vbCrLf + "Refresh DBFunctions in active workbook to see effects?", MsgBoxStyle.YesNo, "Changed environment to: " + fetchSetting("ConfigName" + Globals.env(), ""))
             If retval = vbYes Then Globals.refreshDBFunctions(ExcelDnaUtil.Application.ActiveWorkbook)
         Else
-            ErrorMsg("ConstConnString" + Globals.ConstConnString + vbCrLf + "ConfigStoreFolder:" + ConfigFiles.ConfigStoreFolder, "Changed environment to: " + fetchSetting("ConfigName" + Globals.env(), ""), MsgBoxStyle.Information)
+            ErrorMsg("ConstConnString:" + Globals.ConstConnString + vbCrLf + "ConfigStoreFolder:" + ConfigFiles.ConfigStoreFolder, "Changed environment to: " + fetchSetting("ConfigName" + Globals.env(), ""), MsgBoxStyle.Information)
         End If
     End Sub
 
