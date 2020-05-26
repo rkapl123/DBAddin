@@ -658,25 +658,23 @@ Public Module Globals
     ''' <summary>maintenance procedure to purge names used for dbfunctions from workbook</summary>
     Public Sub purgeNames()
         Dim resultingPurges As String = ""
-        Dim retval As MsgBoxResult = QuestionMsg("Should ExternalData names (from Queries) and names referring to missing references (thus containing #REF!) also be purged?", MsgBoxStyle.YesNoCancel, "purge Names")
+        Dim retval As MsgBoxResult = QuestionMsg("Should ExternalData names (from Queries) also be purged?", MsgBoxStyle.YesNoCancel, "purge Names")
         If retval = vbCancel Then Exit Sub
         Dim calcMode = ExcelDnaUtil.Application.Calculation
         ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual
         Try
-            Dim DBname As Excel.Name
-            For Each DBname In ExcelDnaUtil.Application.ActiveWorkbook.Names
-                If DBname.Name Like "*ExterneDaten*" Or DBname.Name Like "*ExternalData*" And retval = vbYes Then
-                    'resultingPurges += DBname.Name + ", "
-                    'DBname.Delete()
-                ElseIf DBname.Name Like "DBFtarget*" Then
-                    resultingPurges += DBname.Name + ", "
-                    DBname.Delete()
-                ElseIf DBname.Name Like "DBFsource*" Then
-                    resultingPurges += DBname.Name + ", "
-                    DBname.Delete()
-                ElseIf InStr(1, DBname.RefersTo, "#REF!") > 0 And retval = vbYes Then
-                    'resultingPurges += DBname.Name + "(refers to " + DBname.RefersTo + "), "
-                    'DBname.Delete()
+            For Each DBname As Excel.Name In ExcelDnaUtil.Application.ActiveWorkbook.Names
+                If Not DBname.Visible Then ' only hidden names...
+                    If (DBname.Name Like "*ExterneDaten*" Or DBname.Name Like "*ExternalData*") And retval = vbYes Then
+                        resultingPurges += DBname.Name + ", "
+                        DBname.Delete()
+                    ElseIf DBname.Name Like "*DBFtarget*" Then
+                        resultingPurges += DBname.Name + ", "
+                        DBname.Delete()
+                    ElseIf DBname.Name Like "*DBFsource*" Then
+                        resultingPurges += DBname.Name + ", "
+                        DBname.Delete()
+                    End If
                 End If
             Next
             If resultingPurges = "" Then
