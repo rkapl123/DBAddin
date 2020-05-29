@@ -162,6 +162,9 @@
     <None Include="app.config" />
     <None Include="articles\intro.md" />
     <None Include="articles\toc.md" />
+    <None Include="DBModifDef.xsd">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="docfx.json" />
     <None Include="index.md" />
     <None Include="My Project\Settings.settings">

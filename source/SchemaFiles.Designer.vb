@@ -110,9 +110,9 @@ Namespace My.Resources
         '''						&lt;xs:complexType&gt;
         '''							&lt;xs:sequence&gt;
         '''								&lt;xs:choice maxOccurs=&quot;unbounded&quot; minOccurs=&quot;1&quot;&gt;
-        '''									&lt;xs:element type=&quot;xs:byte&quot; name=&quot;env&quot;/&gt;
+        '''									&lt;xs:element type=&quot;xs:byte&quot; name=&quot;env&quot; minOccurs=&quot;0&quot;/&gt;
         '''									&lt;xs:element type=&quot;xs:string&quot; name=&quot;database&quot;/&gt;
-        '''									&lt;xs:element type=&quot;xs:string&quot; [Rest der Zeichenfolge wurde abgeschnitten]&quot;; ähnelt.
+        '''									&lt;xs:element ty [Rest der Zeichenfolge wurde abgeschnitten]&quot;; ähnelt.
         '''</summary>
         Public Shared ReadOnly Property DBModifDef() As String
             Get

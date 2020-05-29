@@ -28,8 +28,8 @@ Public MustInherit Class DBModif
         Else
             dbmodifName = definitionXML.BaseName
         End If
-        execOnSave = Convert.ToBoolean(getParamFromXML(definitionXML, "execOnSave"))
-        askBeforeExecute = Convert.ToBoolean(getParamFromXML(definitionXML, "askBeforeExecute"))
+        execOnSave = Convert.ToBoolean(getParamFromXML(definitionXML, "execOnSave", "Boolean"))
+        askBeforeExecute = Convert.ToBoolean(getParamFromXML(definitionXML, "askBeforeExecute", "Boolean"))
         confirmText = getParamFromXML(definitionXML, "confirmText")
     End Sub
 
@@ -79,13 +79,14 @@ Public MustInherit Class DBModif
     ''' <param name="nodeName">the definition element's name (eg "env")</param>
     ''' <returns>the definition element's value</returns>
     ''' <exception cref="Exception">if multiple elements exist for the definition element's name throw warning !</exception>
-    Protected Function getParamFromXML(definitionXML As CustomXMLNode, nodeName As String) As String
+    Protected Function getParamFromXML(definitionXML As CustomXMLNode, nodeName As String, Optional ReturnType As String = "") As String
         Dim nodeCount As Integer = definitionXML.SelectNodes("ns0:" + nodeName).Count
         If nodeCount = 0 Then
             getParamFromXML = "" ' optional nodes become empty strings
         Else
             getParamFromXML = definitionXML.SelectSingleNode("ns0:" + nodeName).Text
         End If
+        If ReturnType = "Boolean" And getParamFromXML = "" Then getParamFromXML = "False"
     End Function
 
     ''' <summary>to re-add hidden features only available in XML</summary>
@@ -442,13 +443,13 @@ Public Class DBMapper : Inherits DBModif
             Try
                 primKeysCount = Convert.ToInt32(getParamFromXML(definitionXML, "primKeysStr"))
             Catch ex As Exception
-                Throw New Exception("couldn't get primary key count given in DBMapper definition!")
+                Throw New Exception("couldn't get primary key count given in DBMapper definition:" + ex.Message)
             End Try
-            insertIfMissing = Convert.ToBoolean(getParamFromXML(definitionXML, "insertIfMissing"))
+            insertIfMissing = Convert.ToBoolean(getParamFromXML(definitionXML, "insertIfMissing", "Boolean"))
             executeAdditionalProc = getParamFromXML(definitionXML, "executeAdditionalProc")
             ignoreColumns = getParamFromXML(definitionXML, "ignoreColumns")
-            IgnoreDataErrors = Convert.ToBoolean(If(getParamFromXML(definitionXML, "IgnoreDataErrors") = "", "False", getParamFromXML(definitionXML, "IgnoreDataErrors")))
-            CUDFlags = Convert.ToBoolean(getParamFromXML(definitionXML, "CUDFlags"))
+            IgnoreDataErrors = Convert.ToBoolean(getParamFromXML(definitionXML, "IgnoreDataErrors", "Boolean"))
+            CUDFlags = Convert.ToBoolean(getParamFromXML(definitionXML, "CUDFlags", "Boolean"))
             If Not IsNothing(TargetRange.ListObject) Then
                 ' special grey table style for CUDFlags DBMapper
                 If CUDFlags Then
@@ -458,14 +459,14 @@ Public Class DBMapper : Inherits DBModif
                     TargetRange.ListObject.TableStyle = fetchSetting("DBMapperStandardStyle", "TableStyleLight9")
                 End If
             End If
-            ' only allow CUDFlags only on DBMappers that have underlying Listobjects that were created with a query
+            ' allow CUDFlags only on DBMappers with underlying Listobjects that were created with a query
             If CUDFlags And (IsNothing(TargetRange.ListObject) OrElse TargetRange.ListObject.SourceType <> Excel.XlListObjectSourceType.xlSrcQuery) Then
                 CUDFlags = False
                 definitionXML.SelectSingleNode("ns0:CUDFlags").Delete()
                 definitionXML.AppendChildNode("CUDFlags", NamespaceURI:="DBModifDef", NodeValue:="False")
                 Throw New Exception("CUDFlags only supported for DBMappers on ListObjects (created with DBSetQueryListObject)!")
             End If
-            altDBImpl = Convert.ToBoolean(getParamFromXML(definitionXML, "altDBImpl"))
+            altDBImpl = Convert.ToBoolean(getParamFromXML(definitionXML, "altDBImpl", "Boolean"))
         Catch ex As Exception
             ErrorMsg("Error when creating DBMapper '" + dbmodifName + "': " + ex.Message, "DBModifier Definitions Error")
         End Try
@@ -1747,7 +1748,7 @@ Public Module DBModifs
             dbModifNode.AppendChildNode("execOnSave", NamespaceURI:="DBModifDef", NodeValue:= .execOnSave.Checked.ToString())
             dbModifNode.AppendChildNode("askBeforeExecute", NamespaceURI:="DBModifDef", NodeValue:= .AskForExecute.Checked.ToString())
             If createdDBModifType = "DBMapper" Then
-                dbModifNode.AppendChildNode("env", NamespaceURI:="DBModifDef", NodeValue:=IIf(.envSel.SelectedIndex = -1, "", (.envSel.SelectedIndex + 1).ToString()))
+                dbModifNode.AppendChildNode("env", NamespaceURI:="DBModifDef", NodeValue:=(.envSel.SelectedIndex + 1).ToString()) ' if not selected, set environment to 0 (default anyway)
                 dbModifNode.AppendChildNode("database", NamespaceURI:="DBModifDef", NodeValue:= .Database.Text)
                 dbModifNode.AppendChildNode("tableName", NamespaceURI:="DBModifDef", NodeValue:= .Tablename.Text)
                 dbModifNode.AppendChildNode("primKeysStr", NamespaceURI:="DBModifDef", NodeValue:= .PrimaryKeys.Text)
@@ -1757,7 +1758,7 @@ Public Module DBModifs
                 dbModifNode.AppendChildNode("CUDFlags", NamespaceURI:="DBModifDef", NodeValue:= .CUDflags.Checked.ToString())
                 dbModifNode.AppendChildNode("IgnoreDataErrors", NamespaceURI:="DBModifDef", NodeValue:= .IgnoreDataErrors.Checked.ToString())
             ElseIf createdDBModifType = "DBAction" Then
-                dbModifNode.AppendChildNode("env", NamespaceURI:="DBModifDef", NodeValue:=IIf(.envSel.SelectedIndex = -1, "", (.envSel.SelectedIndex + 1).ToString()))
+                dbModifNode.AppendChildNode("env", NamespaceURI:="DBModifDef", NodeValue:=(.envSel.SelectedIndex + 1).ToString())
                 dbModifNode.AppendChildNode("database", NamespaceURI:="DBModifDef", NodeValue:= .Database.Text)
             ElseIf createdDBModifType = "DBSeqnce" Then
                 ' "repaired" mode (indicating rewriting DBSequence Steps)
@@ -1846,7 +1847,7 @@ Public Module DBModifs
                                 ' add definition to existing DBModiftype "menu"
                                 defColl = DBModifDefColl(DBModiftype)
                                 If defColl.ContainsKey(nodeName) Then
-                                    ErrorMsg("DBModifier " + nodeName + " added twice, this indicates legacy definitions that were modified!" + vbCrLf + "To fix, edit DB Modif Definitions directly and remove the legacy definition.", "get DBModif Definitions")
+                                    ErrorMsg("DBModifier " + nodeName + " added twice, this indicates legacy definitions that were modified!" + vbCrLf + "To fix, convert all other definitions in the same way and then remove the legacy definitions by editing the raw DB Modif definitions.", "get DBModif Definitions")
                                 Else
                                     defColl.Add(nodeName, newDBModif)
                                 End If
