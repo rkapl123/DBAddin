@@ -59,7 +59,8 @@ Public MustInherit Class DBModif
     Protected Function getEnv(Optional defaultEnv As Integer = 0) As Integer
         getEnv = defaultEnv
         If TypeName(Me) = "DBSeqnce" Then Throw New NotImplementedException()
-        If env <> "" Then getEnv = Convert.ToInt16(env)
+        ' set environment on DBModif overrides selected environment. Could be empty or 0 to indicate a not set environment...
+        If env <> "" AndAlso env <> "0" Then getEnv = Convert.ToInt16(env)
     End Function
 
     ''' <summary>is saving needed for this DBModifier</summary>
@@ -1249,6 +1250,7 @@ Public Class DBAction : Inherits DBModif
     ''' <summary>simply open a database connection, required for DBBegin Transaction (from next step)</summary>
     ''' <returns></returns>
     Public Overrides Function openDatabase() As Boolean
+        Dim env As Integer = getEnv(Globals.selectedEnvironment + 1)
         openDatabase = True
         If IsNothing(dbcnn) Then
             Return openConnection(env, database)
