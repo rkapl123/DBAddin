@@ -556,18 +556,24 @@ Public Class DBMapper : Inherits DBModif
             While Not (IsNothing(TargetRange.Cells(1, colEnd + 1).Value) OrElse TargetRange.Cells(1, colEnd + 1).Value = "")
                 colEnd += 1
             End While
-            Try : NamesList.Add(Name:=paramTargetName, RefersTo:=TargetRange.Parent.Range(TargetRange.Cells(1, 1), TargetRange.Cells(rowEnd, colEnd)))
+            Try
+                NamesList.Item(paramTargetName).RefersTo = NamesList.Item(paramTargetName).RefersToRange.Resize(rowEnd, colEnd)
+                ' this leads to a strange replacing of the rightdownmost cells formula by the value
+                'NamesList.Add(Name:=paramTargetName, RefersTo:=TargetRange.Parent.Range(TargetRange.Cells(1, 1), TargetRange.Cells(rowEnd, colEnd)))
             Catch ex As Exception
-                Throw New Exception("Error when reassigning name '" + paramTargetName + "' to DBMapper while extending DataRange: " + ex.Message)
+                Throw New Exception("Error when resizing name '" + paramTargetName + "' to DBMapper while extending DataRange: " + ex.Message)
             Finally
                 preventChangeWhileFetching = False
             End Try
-        Else
+            'Else
+            ' actually ListObjects enhance the named range automatically
             ' CUD Flags are only allowed with DBMappers in ListObjects
-            Try : NamesList.Add(Name:=paramTargetName, RefersTo:=TargetRange.ListObject.Range)
-            Catch ex As Exception
-                Throw New Exception("Error when reassigning name '" + paramTargetName + "' to DBMapper while extending DataRange: " + ex.Message)
-            End Try
+            'Try
+            '    NamesList.Item(paramTargetName).RefersTo = TargetRange.ListObject.Range
+            '    'NamesList.Add(Name:=paramTargetName, RefersTo:=TargetRange.ListObject.Range)
+            'Catch ex As Exception
+            '    Throw New Exception("Error when reassigning name '" + paramTargetName + "' to DBMapper while extending DataRange: " + ex.Message)
+            'End Try
         End If
         ' the Data range might have been extended (by inserting rows), so reassign it to the TargetRange
         Try
@@ -848,6 +854,7 @@ nextRow:
             End If
             rowNum += 1
         Loop Until rowNum > TargetRange.Rows.Count Or (finishLoop And Not CUDFlags)
+        checkrst.Close()
 
         ' any additional stored procedures to execute?
         If executeAdditionalProc.Length > 0 Then
@@ -876,7 +883,7 @@ cleanup:
                     Catch ex As Exception
                         ErrorMsg("Error in resetting CUD Flags: " + ex.Message, "DBMapper Error")
                     End Try
-                    If askBeforeExecute AndAlso calledByDBSeq = "" Then
+                    If calledByDBSeq = "" Then
                         Dim retval As MsgBoxResult = QuestionMsg(theMessage:="Refresh Data Range of DB Mapper '" + dbmodifName + "' ?", questionTitle:="Refresh DB Mapper")
                         If retval = vbOK Then
                             doDBRefresh(Replace(DBFunctionSrcExtent, "DBFtarget", "DBFsource"))
@@ -1141,6 +1148,7 @@ nextRow:
             End If
             rowNum += 1
         Loop Until rowNum > TargetRange.Rows.Count Or (finishLoop And Not CUDFlags)
+        checkrst.Close()
 
         ' any additional stored procedures to execute?
         If executeAdditionalProc.Length > 0 Then
@@ -1543,8 +1551,10 @@ Public Module DBModifs
     Sub createDBModif(createdDBModifType As String, Optional targetDefName As String = "")
         ' clipboard helper for legacy definitions:
         ' if saveRangeToDB<Single> macro calls were copied into clipboard, 1st parameter (datarange) removed (empty), connid moved to 2nd place as database name (remove MSSQL)
-        'mapper.saveRangeToDBSingle(Range("DB_DefName"), "tableName", "primKey1,primKey2,primKey3", "MSSQLDB_NAME", True) -> def(, "DB_NAME", "tableName", "primKey1,primKey2,primKey3", True)    DBMapperName = DB_DefName
-        'mapper.saveRangeToDBSingle(Range("DB_DefName"), "tableName", "primKey1,primKey2,primKey3", "MSSQLDB_NAME")       -> def(, "DB_NAME", "tableName", "primKey1,primKey2,primKey3")          DBMapperName = DB_DefName
+        'mapper.saveRangeToDBSingle(Range("DB_DefName"), "tableName", "primKey1,primKey2,primKey3", "MSSQLDB_NAME", True) 
+        '       -> def(, "DB_NAME", "tableName", "primKey1,primKey2,primKey3", True)    DBMapperName = DB_DefName
+        'mapper.saveRangeToDBSingle(Range("DB_DefName"), "tableName", "primKey1,primKey2,primKey3", "MSSQLDB_NAME")       
+        '       -> def(, "DB_NAME", "tableName", "primKey1,primKey2,primKey3")          DBMapperName = DB_DefName
         '
         ' for saveRangeToDB(DataRange, tableNamesStr, primKeysStr, primKeyColumnsStr, startDataColumn, connid, ParamArray optionalArray())
         ' remove primKeyColumnsStr and startDataColumn before copying to clipboard...

@@ -117,7 +117,7 @@ Public Module DBSheetConfig
                             End If
                         Next
                         If foundDelim = 0 Then
-                            ErrorMsg("Error in changing lookupName '" + lookupName + "' to '" + lookupName + "LU' in select statement of DBSheet query, it has to begin with blank and end with ','blank or CrLf !", "DBSheet Creation Error")
+                            ErrorMsg("Error in changing lookupName '" + lookupName + "' to '" + lookupName + "LU' in select statement of DBSheet query, it has to begin with blank and end with ',' blank or CrLf !", "DBSheet Creation Error")
                             lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
                             Exit Sub
                         End If

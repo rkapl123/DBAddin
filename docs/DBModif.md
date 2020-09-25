@@ -30,7 +30,7 @@ The DBModifier creation/editing is shown below (examples already filled, when cl
 *   Store DBMap on Save: should DBMap also be saved on Excel Workbook Saving? (default no)
 *   Environment: The Environment, where connection id should be taken from (if not existing, take from selected Environment in DB Addin General Settings Group)
 *   Exec on Save: Should the DBMap be executed when the workbook is being saved?
-*   Ask for execution: Before execution of the DBMap, ask for confirmation? A custom text can be given in the CustomXML definition element confirmText (see below)
+*   Ask for execution: Before execution of the DBMap, ask for confirmation. A custom text can be given in the CustomXML definition element confirmText (see below)
 *   C/U/D Flags: special mode used for row-by-row editing (inserting, updating and deleting rows). Only edited rows will be done when executing. Deleting rows is node with the special context menu item "delete Row" (or pressing Ctrl-Shift-D)
 *   Ignore data errors: replace excel errors like #VALUE! with null on updating/inserting. Otherwise an error message is passed and execution is skipped for that row.
 *   Create CB: create a commandbutton for the DB Sequence in the current Worksheet.
@@ -45,7 +45,7 @@ You can always edit these parameters by selecting a cell in the DB Mapper area a
 *   Database: Database to do the DBAction in
 *   Environment: The Environment, where connection id should be taken from (if not existing, take from selected Environment in DB Addin General Settings Group)
 *   Exec on Save: Should the DBAction be executed when the workbook is being saved?
-*   Ask for execution: Before execution of the DBAction, ask for confirmation? A custom text can be given in the CustomXML definition element confirmText (see below)
+*   Ask for execution: Before execution of the DBAction, ask for confirmation. A custom text can be given in the CustomXML definition element confirmText (see below)
 *   The actual DBAction to be done is defined in a range that is named like the DBAction definition (the hyperlink takes you there). This range can be dynamically computed as all ranges in excel.
 *   Create CB: create a commandbutton for the DB Sequence in the current Worksheet.
 *   Hyperlink: click on it to highlight/select the DB Action range
@@ -57,7 +57,7 @@ You can always edit these parameters by selecting the Range of the DB Action are
 
 *   DBSequence Name: Enter the name for the selected Range that will be used to identify the DBSequence in the "Execute DBModifier" Group dropdowns. If no name is given here, then UnnamedDBAction will be used to identify it.
 *   Exec on Save: Should the DBSequence be executed when the workbook is being saved?
-*   Ask for execution: Before execution of the DBSequence, ask for confirmation? A custom text can be given in the CustomXML definition element confirmText (see below)
+*   Ask for execution: Before execution of the DBSequence, ask for confirmation. A custom text can be given in the CustomXML definition element confirmText (see below)
 *   Sequence Step Datagrid: here the available DBMappers, DBActions and DBFunctions (DBListfetch/DBRowFetch/DBSetQuery) can be added that are then executed in Sequence. If you are executing all sequence steps in the same environment, its possible to run the sequence in a transaction context by placing DBBegin at the top and DBCommitRollback at the bottom of the sequence.
 *   move the sequence steps up and down by selecting a row and using the context menu (right mouse button).
 *   Create CB: create a commandbutton for the DB Sequence in the current Worksheet.
