@@ -312,16 +312,20 @@ Public MustInherit Class DBModif
         Dim Query As Object
         Dim rangePart() As String = Split(funcArg, "!")
         If UBound(rangePart) = 1 Then
+            ' funcArg is already a reference to a parent sheet
             Query = ExcelDnaUtil.Application.Evaluate(funcArg)
         Else
-            ' avoid appending worksheet name if argument is a string (only references get appended)
+            ' avoid adding parent WS name if argument is a string (only plain range references need adding)
             If Left(funcArg, 1) = """" Then
                 Query = ExcelDnaUtil.Application.Evaluate(funcArg)
             Else
-                Query = ExcelDnaUtil.Application.Evaluate(caller.Parent.Name + "!" + funcArg)
+                ' add parent name, otherwise evaluate will fail
+                Query = ExcelDnaUtil.Application.Evaluate("'" + caller.Parent.Name + "'!" + funcArg)
             End If
         End If
-            If TypeName(Query) = "Range" Then Query = Query.Value.ToString
+        ' either funcArg is already a string (direct contained/chained in the function) or it is a reference to a range. 
+        ' In the latter case derive actual Query from range...
+        If TypeName(Query) = "Range" Then Query = Query.Value.ToString
         getQuery = Query
     End Function
 
