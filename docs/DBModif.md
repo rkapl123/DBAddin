@@ -14,13 +14,13 @@ Examples for the usage of DBMapper can be found in the DBMapperTests.xlsx Workbo
 You can create the three DB Modifiers by using the cell context menu:  
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/ContextMenu.PNG)  
 
-The DBModifier creation/editing is shown below (examples already filled, when clicked on a blank cell all entries are empty):  
+The DBModifier creation/editing is shown below (examples already filled, when activated on a blank cell all entries are empty):  
 (one feature that can not be set in the dialogs is a customized confirmation text for the "Ask for execution" dialog, this is done with Edit DBModifier Definitions, see below)
 
 ### DB Mappers are created/edited with following dialog:  
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DbMapperCreate.PNG)  
 
-*   DBMapper Name: Enter the name for the selected Range that will be used to identify the DBMap in the "Execute DBModifier" Group dropdowns. If no name is given here, then UnnamedDBMapper will be used to identify it.
+*   DBMapper Name: Enter the name for the selected Range (containing the Data including header fields) that will be used to identify the DBMap in the "Execute DBModifier" Group dropdowns. If no name is given here, then UnnamedDBMapper will be used to identify it.
 *   Tablename: Database Table, where Data is to be stored.
 *   Primary Keys: String containing primary Key names for updating table data, comma separated.
 *   Database: Database to store DBMaps Data into
@@ -33,10 +33,19 @@ The DBModifier creation/editing is shown below (examples already filled, when cl
 *   Ask for execution: Before execution of the DBMap, ask for confirmation. A custom text can be given in the CustomXML definition element confirmText (see below)
 *   C/U/D Flags: special mode used for row-by-row editing (inserting, updating and deleting rows). Only edited rows will be done when executing. Deleting rows is node with the special context menu item "delete Row" (or pressing Ctrl-Shift-D)
 *   Ignore data errors: replace excel errors like #VALUE! with null on updating/inserting. Otherwise an error message is passed and execution is skipped for that row.
+*   Auto Increment: Allow empty primary column values (only for a single primary key!) in use with tables that have the IsAutoIncrement property set for this primary column (typically because of an identity specification for that column in the Database)
 *   Create CB: create a commandbutton for the DB Sequence in the current Worksheet.
 *   Hyperlink: click on it to highlight/select the DB Mapper area
 
 You can always edit these parameters by selecting a cell in the DB Mapper area and invoking the context menu again.
+
+The range that is used for holding the data to be stored can be identified in three different ways:
+*   A plain address: Here the range is automatically extended by using the first column and the first row (header row), if no Auto Increment or C/U/D Flags are set. In this case empty primary column(s) are allowed so automatic extension won't work.
+*   A named offset formula (that is used to dynamically assign the data range).
+*   A data list object (especially in use for C/U/D Flags)
+
+The clickable Hyperlink shows the range address of the data range, a named offset formula is displayed after the address:
+![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DbMapperCreateOffsetFormula.PNG)  
 
 ### DB Actions are created/edited with following dialog:  
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DbActionCreate.PNG)  

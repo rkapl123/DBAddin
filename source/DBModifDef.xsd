@@ -29,6 +29,7 @@
 									<xs:element type="xs:string" name="executeAdditionalProc" minOccurs="0"/>
 									<xs:element type="xs:string" name="ignoreColumns" minOccurs="0"/>
 									<xs:element type="xs:string" name="CUDFlags" minOccurs="0"/>
+									<xs:element type="xs:string" name="AutoIncFlag" minOccurs="0"/>
 									<xs:element type="xs:string" name="execOnSave" minOccurs="0"/>
 									<xs:element type="xs:string" name="askBeforeExecute" minOccurs="0"/>
 									<xs:element type="xs:string" name="IgnoreDataErrors" minOccurs="0"/>

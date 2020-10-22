@@ -49,6 +49,7 @@ Partial Class DBModifCreate
         Me.RepairDBSeqnce = New System.Windows.Forms.TextBox()
         Me.AskForExecute = New System.Windows.Forms.CheckBox()
         Me.IgnoreDataErrors = New System.Windows.Forms.CheckBox()
+        Me.AutoIncFlag = New System.Windows.Forms.CheckBox()
         Me.EnvironmentLabel = New System.Windows.Forms.Label()
         Me.MoveMenu = New System.Windows.Forms.ContextMenuStrip(Me.components)
         Me.MoveRowUp = New System.Windows.Forms.ToolStripMenuItem()
@@ -245,11 +246,12 @@ Partial Class DBModifCreate
         'TargetRangeAddress
         '
         Me.TargetRangeAddress.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
+        Me.TargetRangeAddress.AutoEllipsis = True
         Me.TargetRangeAddress.Font = New System.Drawing.Font("Microsoft Sans Serif", 8.25!, System.Drawing.FontStyle.Underline, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.TargetRangeAddress.ForeColor = System.Drawing.Color.DodgerBlue
-        Me.TargetRangeAddress.Location = New System.Drawing.Point(12, 439)
+        Me.TargetRangeAddress.Location = New System.Drawing.Point(12, 434)
         Me.TargetRangeAddress.Name = "TargetRangeAddress"
-        Me.TargetRangeAddress.Size = New System.Drawing.Size(269, 16)
+        Me.TargetRangeAddress.Size = New System.Drawing.Size(269, 23)
         Me.TargetRangeAddress.TabIndex = 11
         Me.ToolTip1.SetToolTip(Me.TargetRangeAddress, "click to select Target Range with Data for DBMapper or SQL DML for DBAction")
         '
@@ -301,6 +303,17 @@ Partial Class DBModifCreate
         "ues are used instead")
         Me.IgnoreDataErrors.UseVisualStyleBackColor = True
         '
+        'AutoIncFlag
+        '
+        Me.AutoIncFlag.AutoSize = True
+        Me.AutoIncFlag.Location = New System.Drawing.Point(216, 186)
+        Me.AutoIncFlag.Name = "AutoIncFlag"
+        Me.AutoIncFlag.Size = New System.Drawing.Size(98, 17)
+        Me.AutoIncFlag.TabIndex = 15
+        Me.AutoIncFlag.Text = "Auto Increment"
+        Me.ToolTip1.SetToolTip(Me.AutoIncFlag, resources.GetString("AutoIncFlag.ToolTip"))
+        Me.AutoIncFlag.UseVisualStyleBackColor = True
+        '
         'EnvironmentLabel
         '
         Me.EnvironmentLabel.AutoSize = True
@@ -335,6 +348,7 @@ Partial Class DBModifCreate
         Me.CancelButton = Me.Cancel_Button
         Me.ClientSize = New System.Drawing.Size(479, 469)
         Me.ControlBox = False
+        Me.Controls.Add(Me.AutoIncFlag)
         Me.Controls.Add(Me.CreateCB)
         Me.Controls.Add(Me.OK_Button)
         Me.Controls.Add(Me.Cancel_Button)
@@ -402,4 +416,5 @@ Partial Class DBModifCreate
     Friend WithEvents MoveMenu As Windows.Forms.ContextMenuStrip
     Friend WithEvents MoveRowUp As Windows.Forms.ToolStripMenuItem
     Friend WithEvents MoveRowDown As Windows.Forms.ToolStripMenuItem
+    Friend WithEvents AutoIncFlag As Windows.Forms.CheckBox
 End Class

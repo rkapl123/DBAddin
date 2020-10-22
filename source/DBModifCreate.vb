@@ -17,26 +17,29 @@ Public Class DBModifCreate
     ''' <param name="e"></param>
     Private Sub OK_Button_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles OK_Button.Click
         Dim NameValidationResult As String = ""
-        ' Check for valid range name
+        ' Check for valid range name, prepend "_" so we don't remove the existing name (need it later...)
         If Me.DBModifName.Text <> "" Then
             ' Add doesn't work directly with ExcelDnaUtil.Application.ActiveWorkbook.Names (late binding), so create an object here...
             Dim NamesList As Excel.Names = ExcelDnaUtil.Application.ActiveWorkbook.Names
             Try
-                NamesList.Add(Name:=Me.Tag + Me.DBModifName.Text, RefersTo:=ExcelDnaUtil.Application.ActiveCell)
+                NamesList.Add(Name:="_" + Me.Tag + Me.DBModifName.Text, RefersTo:=ExcelDnaUtil.Application.ActiveCell)
             Catch ex As Exception
                 NameValidationResult = ex.Message
             End Try
-            Try : NamesList.Item(Me.Tag + Me.DBModifName.Text).Delete() : Catch ex As Exception : End Try
+            Try : NamesList.Item("_" + Me.Tag + Me.DBModifName.Text).Delete() : Catch ex As Exception : End Try
         End If
+        Dim primKeys As Integer = 0
         ' check for requirements: mandatory fields filled (visible Tablename, Primary keys and Database), NameValidation above OK and no double invocation for execOnSave in DB Sequences and sequence parts
         If Me.Tablename.Text = "" And Me.Tablename.Visible Then
             ErrorMsg("Field Tablename is required, please fill in!", "DBModification Validation")
-        ElseIf Me.PrimaryKeys.Text = "" And Me.PrimaryKeys.Visible Then
-            ErrorMsg("Field Primary Keys is required, please fill in!", "DBModification Validation")
+        ElseIf Me.PrimaryKeys.Visible AndAlso Not Integer.TryParse(Me.PrimaryKeys.Text, primKeys) Then
+            ErrorMsg("Field Primary Keys is required and has to be an integer number, please fill in accordingly!", "DBModification Validation")
         ElseIf Me.Database.Text = "" And Me.Database.Visible Then
             ErrorMsg("Field Database is required, please fill in!", "DBModification Validation")
         ElseIf NameValidationResult <> "" Then
             ErrorMsg("Invalid " + Me.NameLabel.Text + ", Error: " + NameValidationResult, "DBModification Validation")
+        ElseIf Me.Tag = "DBMapper" AndAlso Me.AutoIncFlag.Checked Then
+            If primKeys > 1 Then ErrorMsg("Only one primary key is allowed when Auto Incrementing is enabled!", "DBModification Validation")
         Else
             ' check for double invocation because of execOnSave both being set on current DB Modifier ...
             If Me.execOnSave.Checked And Globals.DBModifDefColl.ContainsKey("DBSeqnce") Then
@@ -100,12 +103,14 @@ Public Class DBModifCreate
     ''' <param name="e"></param>
     Private Sub TargetRangeAddress_Click(sender As Object, e As EventArgs) Handles TargetRangeAddress.Click
         If Me.TargetRangeAddress.Text = "" Then Exit Sub
-        Dim rangePart() As String = Split(Me.TargetRangeAddress.Text, "!")
+        ' only get TargetRangeAddress up to bracket (possibly contained named range formula)
+        Dim clickAddress = Me.TargetRangeAddress.Text.Substring(0, IIf(Me.TargetRangeAddress.Text.IndexOf("(") < 0, Me.TargetRangeAddress.Text.Length, Me.TargetRangeAddress.Text.IndexOf("(")))
+        Dim rangePart() As String = Split(clickAddress, "!")
         Try
             ExcelDnaUtil.Application.Worksheets(rangePart(0)).Select()
             ExcelDnaUtil.Application.Range(rangePart(1)).Select()
         Catch ex As Exception
-            ErrorMsg("Couldn't select " + Me.TargetRangeAddress.Text + ":" + ex.Message)
+            ErrorMsg("Couldn't select " + clickAddress + ":" + ex.Message)
         End Try
     End Sub
 
@@ -206,4 +211,5 @@ Public Class DBModifCreate
             cbshp.Delete()
         End If
     End Sub
+
 End Class

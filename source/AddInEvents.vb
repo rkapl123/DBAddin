@@ -209,8 +209,10 @@ done:
 
     ''' <summary>WorkbookActivate: gets defined named ranges for DBMapper invocation in the current workbook after activation and updates Ribbon with it</summary>
     Private Sub Application_WorkbookActivate(Wb As Excel.Workbook) Handles Application.WorkbookActivate
+        LogInfo("Activating Workbook:" + Wb.Name)
         ' avoid when being activated by DBFuncsAction 
         If Not DBModifs.preventChangeWhileFetching Then
+            LogInfo("calling getDBModifDefinitions..")
             DBModifs.getDBModifDefinitions()
             ' unfortunately, Excel doesn't fire SheetActivate when opening workbooks, so do that here...
             assignHandler(Wb.ActiveSheet)

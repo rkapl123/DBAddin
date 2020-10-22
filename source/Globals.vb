@@ -99,6 +99,7 @@ Public Module Globals
                 ' only collect errors and warnings in non interactive mode
                 nonInteractiveErrMsgs += caller + ":" + Message + vbCrLf
             End If
+            Trace.TraceInformation("Noninteractive: {0}: {1}", caller, Message)
         Else
             Select Case eEventType
                 Case EventLogEntryType.Information

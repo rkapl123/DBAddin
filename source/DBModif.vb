@@ -43,7 +43,11 @@ Public MustInherit Class DBModif
     Public Function getTargetRangeAddress() As String
         getTargetRangeAddress = ""
         If TypeName(Me) <> "DBSeqnce" Then
-            getTargetRangeAddress = TargetRange.Parent.Name + "!" + TargetRange.Address
+            Dim addRefersToFormula As String = ""
+            If InStr(1, ExcelDnaUtil.Application.ActiveWorkbook.Names.Item(dbmodifName).RefersTo, "=OFFSET(") > 0 Then
+                addRefersToFormula = " (" + ExcelDnaUtil.Application.ActiveWorkbook.Names.Item(dbmodifName).RefersTo
+            End If
+            getTargetRangeAddress = TargetRange.Parent.Name + "!" + TargetRange.Address + addRefersToFormula
         End If
     End Function
 
@@ -382,6 +386,8 @@ Public Class DBMapper : Inherits DBModif
     Private changesDone As Boolean = False
     ''' <summary>alternative DB Implementation with native ADO</summary>
     Private altDBImpl As Boolean = False
+    '''<summary>first columnn is treated as an autoincrementing key column</summary>
+    Private AutoIncFlag As Boolean = False
 
     ''' <summary>legacy constructor for mapping existing DBMapper macro calls (copy in clipboard)</summary>
     ''' <param name="defkey"></param>
@@ -455,6 +461,7 @@ Public Class DBMapper : Inherits DBModif
             ignoreColumns = getParamFromXML(definitionXML, "ignoreColumns")
             IgnoreDataErrors = Convert.ToBoolean(getParamFromXML(definitionXML, "IgnoreDataErrors", "Boolean"))
             CUDFlags = Convert.ToBoolean(getParamFromXML(definitionXML, "CUDFlags", "Boolean"))
+            AutoIncFlag = Convert.ToBoolean(getParamFromXML(definitionXML, "AutoIncFlag", "Boolean"))
             If Not IsNothing(TargetRange.ListObject) Then
                 ' special grey table style for CUDFlags DBMapper
                 If CUDFlags Then
@@ -547,21 +554,24 @@ Public Class DBMapper : Inherits DBModif
         ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = True
     End Sub
 
-    ''' <summary>extend DataRange to "whole" DBMApper area (first row (field names) to the right and first column (primary key) down)</summary>
+    ''' <summary>extend DataRange to "whole" DBMApper area (first row (header/field names) to the right and first column (first primary key) down)</summary>
     Public Sub extendDataRange()
         Dim NamesList As Excel.Names = ExcelDnaUtil.Application.ActiveWorkbook.Names
-        ' only extend like this if no CUD Flags present (may have non existing first (primary) columns -> auto identity columns !)
-        If Not CUDFlags Then
+        ' only extend like this if no CUD Flags or AutoIncFlag present (may have non existing first (primary) columns -> auto identity columns !)
+        If Not (CUDFlags Or AutoIncFlag) Then
             If IsNothing(TargetRange.Cells(2, 1).Value) Then Exit Sub ' only extend if there are multiple rows...
             preventChangeWhileFetching = True
-            Dim rowEnd As Integer = TargetRange.Cells(1, 1).End(Excel.XlDirection.xlDown).Row
+            Dim rowCount As Integer = TargetRange.Cells(1, 1).End(Excel.XlDirection.xlDown).Row - TargetRange.Cells(1, 1).Row + 1
             ' unfortunately the above method to find the column extent doesn't work with hidden columns, so count the filled cells directly...
-            Dim colEnd As Integer = 1
-            While Not (IsNothing(TargetRange.Cells(1, colEnd + 1).Value) OrElse TargetRange.Cells(1, colEnd + 1).Value = "")
-                colEnd += 1
+            Dim colCount As Integer = 1
+            While Not (IsNothing(TargetRange.Cells(1, colCount + 1).Value) OrElse TargetRange.Cells(1, colCount + 1).Value.ToString() = "")
+                colCount += 1
             End While
             Try
-                NamesList.Item(paramTargetName).RefersTo = NamesList.Item(paramTargetName).RefersToRange.Resize(rowEnd, colEnd)
+                ' only if the referral is to a real range (not an offset formula !)
+                If InStr(1, NamesList.Item(paramTargetName).RefersTo, "=OFFSET(") = 0 Then
+                    NamesList.Item(paramTargetName).RefersTo = NamesList.Item(paramTargetName).RefersToRange.Resize(rowCount, colCount)
+                End If
                 ' this leads to a strange replacing of the rightdownmost cells formula by the value
                 'NamesList.Add(Name:=paramTargetName, RefersTo:=TargetRange.Parent.Range(TargetRange.Cells(1, 1), TargetRange.Cells(rowEnd, colEnd)))
             Catch ex As Exception
@@ -579,7 +589,7 @@ Public Class DBMapper : Inherits DBModif
             '    Throw New Exception("Error when reassigning name '" + paramTargetName + "' to DBMapper while extending DataRange: " + ex.Message)
             'End Try
         End If
-        ' the Data range might have been extended (by inserting rows), so reassign it to the TargetRange
+        ' reassign extended area to TargetRange
         Try
             TargetRange = TargetRange.Parent.Range(paramTargetName)
         Catch ex As Exception
@@ -700,7 +710,7 @@ Public Class DBMapper : Inherits DBModif
                         If Not notifyUserOfDataError("Primary key '" + primKey.ToString + "' not found in table '" + tableName + "' or IsAutoIncrement Property not provided:" + ex.Message, rowNum, i) Then GoTo cleanup
                         GoTo nextRow
                     End Try
-                    If primKeysCount = 1 And CUDFlags And primKeyValue.ToString().Length = 0 And checkAutoIncrement Then
+                    If primKeysCount = 1 And (CUDFlags Or AutoIncFlag) And primKeyValue.ToString().Length = 0 And checkAutoIncrement Then
                         AutoIncrement = True
                         Exit For
                     End If
@@ -857,7 +867,7 @@ nextRow:
                 End Try
             End If
             rowNum += 1
-        Loop Until rowNum > TargetRange.Rows.Count Or (finishLoop And Not CUDFlags)
+        Loop Until rowNum > TargetRange.Rows.Count Or (finishLoop And Not (CUDFlags Or AutoIncFlag))
         checkrst.Close()
 
         ' any additional stored procedures to execute?
@@ -1222,6 +1232,7 @@ cleanup:
             .addStoredProc.Text = executeAdditionalProc
             .IgnoreColumns.Text = ignoreColumns
             .CUDflags.Checked = CUDFlags
+            .AutoIncFlag.Checked = AutoIncFlag
             .IgnoreDataErrors.Checked = IgnoreDataErrors
             .AskForExecute.Checked = askBeforeExecute
         End With
@@ -1630,6 +1641,7 @@ Public Module DBModifs
                 .addStoredProc.Hide()
                 .IgnoreColumns.Hide()
                 .CUDflags.Hide()
+                .AutoIncFlag.Hide()
                 .IgnoreDataErrors.Hide()
             End If
             If createdDBModifType = "DBSeqnce" Then
@@ -1697,7 +1709,6 @@ Public Module DBModifs
                     .execOnSave.Top = .Tablename.Top
                     .AskForExecute.Top = .Tablename.Top
                     .envSel.Top = .Tablename.Top
-                    '.TargetRangeAddress.Location = .PrimaryKeysLabel.Location
                 Else
                     theDBModifCreateDlg.MinimumSize = New Drawing.Size(width:=490, height:=290)
                     theDBModifCreateDlg.Size = New Drawing.Size(width:=490, height:=290)
@@ -1718,7 +1729,7 @@ Public Module DBModifs
                 Exit Sub
             End If
 
-            ' only for DBMapper or DBAction: change target range name
+            ' only for DBMapper or DBAction: change or add target range name
             If createdDBModifType <> "DBSeqnce" Then
                 Dim targetRange As Excel.Range
                 If IsNothing(existingDBModif) Then
@@ -1727,26 +1738,17 @@ Public Module DBModifs
                     targetRange = existingDBModif.getTargetRange()
                 End If
 
-                ' set content range name: first clear name
-                Try : ExcelDnaUtil.Application.ActiveWorkbook.Names(existingDefName).Delete : Catch ex As Exception : End Try
-                ' then (re)set name
                 Dim NamesList As Excel.Names = ExcelDnaUtil.Application.ActiveWorkbook.Names
-                Dim alreadyExists As Boolean = False
-                Try
-                    Dim testExist As String = NamesList.Item(createdDBModifType + .DBModifName.Text).ToString
-                Catch ex As Exception
-                    alreadyExists = True
-                End Try
-                If Not alreadyExists Then
-                    ErrorMsg("Error adding DBModifier '" + createdDBModifType + .DBModifName.Text + "', Name already exists in Workbook!", "DBModifier Creation Error")
-                    Exit Sub
+                If existingDefName = "" Then
+                    Try
+                        NamesList.Add(Name:=createdDBModifType + .DBModifName.Text, RefersTo:=targetRange)
+                    Catch ex As Exception
+                        ErrorMsg("Error when assigning name '" + createdDBModifType + .DBModifName.Text + "' to active cell: " + ex.Message, "DBModifier Creation Error")
+                        Exit Sub
+                    End Try
+                Else
+                    NamesList.Item(existingDefName).Name = createdDBModifType + .DBModifName.Text
                 End If
-                Try
-                    NamesList.Add(Name:=createdDBModifType + .DBModifName.Text, RefersTo:=targetRange)
-                Catch ex As Exception
-                    ErrorMsg("Error when assigning name '" + createdDBModifType + .DBModifName.Text + "' to active cell: " + ex.Message, "DBModifier Creation Error")
-                    Exit Sub
-                End Try
             End If
 
             Dim CustomXmlParts As Object = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
@@ -1772,6 +1774,7 @@ Public Module DBModifs
                 dbModifNode.AppendChildNode("executeAdditionalProc", NamespaceURI:="DBModifDef", NodeValue:= .addStoredProc.Text)
                 dbModifNode.AppendChildNode("ignoreColumns", NamespaceURI:="DBModifDef", NodeValue:= .IgnoreColumns.Text)
                 dbModifNode.AppendChildNode("CUDFlags", NamespaceURI:="DBModifDef", NodeValue:= .CUDflags.Checked.ToString())
+                dbModifNode.AppendChildNode("AutoIncFlag", NamespaceURI:="DBModifDef", NodeValue:= .AutoIncFlag.Checked.ToString())
                 dbModifNode.AppendChildNode("IgnoreDataErrors", NamespaceURI:="DBModifDef", NodeValue:= .IgnoreDataErrors.Checked.ToString())
             ElseIf createdDBModifType = "DBAction" Then
                 dbModifNode.AppendChildNode("env", NamespaceURI:="DBModifDef", NodeValue:=(.envSel.SelectedIndex + 1).ToString())
@@ -1803,6 +1806,7 @@ Public Module DBModifs
     ''' <summary>gets defined names for DBModifier (DBMapper/DBAction/DBSeqnce) invocation in the current workbook and updates Ribbon with it</summary>
     Public Sub getDBModifDefinitions()
         ' load DBModifier definitions (objects) into Global collection DBModifDefColl
+        LogInfo("reading DBModifier Definitions for Workbook: " + ExcelDnaUtil.Application.ActiveWorkbook.Name)
         Try
             Globals.DBModifDefColl.Clear()
             Dim CustomXmlParts As Object = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
@@ -1811,6 +1815,7 @@ Public Module DBModifs
                 ' get DBModifier definitions from docproperties
                 For Each customXMLNodeDef As CustomXMLNode In CustomXmlParts(1).SelectSingleNode("/ns0:root").ChildNodes
                     Dim DBModiftype As String = Left(customXMLNodeDef.BaseName, 8)
+                    LogInfo("reading DBModifier Definition: " + DBModiftype)
                     If DBModiftype = "DBSeqnce" Or DBModiftype = "DBMapper" Or DBModiftype = "DBAction" Then
                         Dim nodeName As String
                         If customXMLNodeDef.Attributes.Count > 0 Then
@@ -1944,13 +1949,20 @@ Public Module DBModifs
         Dim DBModiftype As String = Left(DBModifName, 8)
         If DBModiftype = "DBSeqnce" Or DBModiftype = "DBMapper" Or DBModiftype = "DBAction" Then
             If Not Globals.DBModifDefColl(DBModiftype).ContainsKey(DBModifName) Then
+                If Globals.DBModifDefColl(DBModiftype).Count = 0 Then
+                    nonInteractive = False
+                    Return "No DBModifier contained in Workbook at all!"
+                End If
                 Dim DBModifavailable As String = ""
                 For Each DBMtype As String In {"DBMapper", "DBAction", "DBSeqnce"}
-                    For Each DBMkey As String In Globals.DBModifDefColl(DBMtype).Keys : DBModifavailable += "," + DBMkey : Next
+                    For Each DBMkey As String In Globals.DBModifDefColl(DBMtype).Keys
+                        DBModifavailable += "," + DBMkey
+                    Next
                 Next
                 nonInteractive = False
                 Return "DB Modifier '" + DBModifName + "' not existing, available: " + DBModifavailable
             End If
+            LogInfo("Doing DBModifier '" + DBModifName + "' ...")
             Try
                 Globals.DBModifDefColl(DBModiftype).Item(DBModifName).doDBModif()
             Catch ex As Exception

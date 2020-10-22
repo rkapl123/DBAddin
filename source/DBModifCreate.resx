@@ -120,9 +120,15 @@
   <metadata name="ToolTip1.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>17, 17</value>
   </metadata>
+  <metadata name="ToolTip1.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>17, 17</value>
+  </metadata>
   <data name="DBModifName.ToolTip" xml:space="preserve">
     <value>Enter the name for the selected Range or Definition that will be used to identify the DBModifier in the "DBModify Data" Group dropdowns.
 If no name is given here, then Unnamed DB&lt;type&gt; will be used to identify it in the Ribbon Menu.</value>
+  </data>
+  <data name="AutoIncFlag.ToolTip" xml:space="preserve">
+    <value>if set, then an empty primary field value is allowed and will be sent to the database for an automatically incremented key. Other consequences:  no extension of the data area is done and only one primary column is allowed. Default = False</value>
   </data>
   <metadata name="MoveMenu.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>116, 17</value>
