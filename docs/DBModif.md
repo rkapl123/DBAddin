@@ -44,7 +44,7 @@ The range that is used for holding the data to be stored can be identified in th
 *   A named offset formula (that is used to dynamically assign the data range).
 *   A data list object (especially in use for C/U/D Flags)
 
-The clickable Hyperlink shows the range address of the data range, a named offset formula is displayed after the address:
+The clickable Hyperlink shows the range address of the data range, a named offset formula is displayed after the address:  
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DbMapperCreateOffsetFormula.PNG)  
 
 ### DB Actions are created/edited with following dialog:  
