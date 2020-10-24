@@ -571,9 +571,22 @@ Public Class DBMapper : Inherits DBModif
                 ' only if the referral is to a real range (not an offset formula !)
                 If InStr(1, NamesList.Item(paramTargetName).RefersTo, "=OFFSET(") = 0 Then
                     NamesList.Item(paramTargetName).RefersTo = NamesList.Item(paramTargetName).RefersToRange.Resize(rowCount, colCount)
+                    ' this has lead to a strange replacing of the rightdownmost cell's formula by the cell's value
+                    'NamesList.Add(Name:=paramTargetName, RefersTo:=TargetRange.Parent.Range(TargetRange.Cells(1, 1), TargetRange.Cells(rowEnd, colEnd)))
+                Else
+                    ' if referral is to an offset formula then evaluate to get the current range...
+                    Try
+                        Dim retVal As Object
+                        retVal = ExcelDnaUtil.Application.Evaluate(NamesList.Item(paramTargetName).RefersTo)
+                        If IsXLCVErr(retVal) Then
+                            Throw New Exception("Error when evaluating offset function in named formula range for '" + paramTargetName + "': " + CVErrText(retVal))
+                        Else
+                            TargetRange = retVal
+                        End If
+                    Catch ex As Exception
+                        Throw New Exception("Error when evaluating offset function in named formula range for '" + paramTargetName + "': " + ex.Message)
+                    End Try
                 End If
-                ' this leads to a strange replacing of the rightdownmost cells formula by the value
-                'NamesList.Add(Name:=paramTargetName, RefersTo:=TargetRange.Parent.Range(TargetRange.Cells(1, 1), TargetRange.Cells(rowEnd, colEnd)))
             Catch ex As Exception
                 Throw New Exception("Error when resizing name '" + paramTargetName + "' to DBMapper while extending DataRange: " + ex.Message)
             Finally
@@ -1616,7 +1629,20 @@ Public Module DBModifs
         If DBModifDefColl.ContainsKey(createdDBModifType) AndAlso DBModifDefColl(createdDBModifType).ContainsKey(existingDefName) Then
             existingDBModif = DBModifDefColl(createdDBModifType).Item(existingDefName)
             ' reset the target range to a potentially changed area
-            If createdDBModifType <> "DBSeqnce" Then existingDBModif.setTargetRange(ExcelDnaUtil.Application.Range(existingDefName))
+            If createdDBModifType <> "DBSeqnce" Then
+                Dim existingDefRange As Excel.Range = Nothing
+                Try
+                    existingDefRange = ExcelDnaUtil.Application.Range(existingDefName)
+                Catch ex As Exception
+                    ' if target name relates to an invalid (offset) formula, getting a range fails  ...
+                    If InStr(ExcelDnaUtil.Application.ActiveWorkbook.Names.Item(existingDefName).RefersTo, "OFFSET(") > 0 Then
+                        ErrorMsg("Error, offset formula that '" + existingDefName + "' refers to, did not return a valid range." + vbCrLf + "Please check the offset formula to return a valid range !", "DBModifier Definitions Error")
+                        ExcelDnaUtil.Application.Dialogs(Excel.XlBuiltInDialog.xlDialogNameManager).Show()
+                        Exit Sub
+                    End If
+                End Try
+                existingDBModif.setTargetRange(existingDefRange)
+            End If
         End If
 
         ' prepare DBModifier Create Dialog
@@ -1815,7 +1841,6 @@ Public Module DBModifs
                 ' get DBModifier definitions from docproperties
                 For Each customXMLNodeDef As CustomXMLNode In CustomXmlParts(1).SelectSingleNode("/ns0:root").ChildNodes
                     Dim DBModiftype As String = Left(customXMLNodeDef.BaseName, 8)
-                    LogInfo("reading DBModifier Definition: " + DBModiftype)
                     If DBModiftype = "DBSeqnce" Or DBModiftype = "DBMapper" Or DBModiftype = "DBAction" Then
                         Dim nodeName As String
                         If customXMLNodeDef.Attributes.Count > 0 Then
@@ -1823,7 +1848,7 @@ Public Module DBModifs
                         Else
                             nodeName = customXMLNodeDef.BaseName
                         End If
-
+                        LogInfo("reading DBModifier Definition for " + nodeName)
                         Dim targetRange As Excel.Range = Nothing
                         ' for DBMappers and DBActions the data of the DBModification is stored in Ranges, so check for those and get the Range
                         If DBModiftype = "DBMapper" Or DBModiftype = "DBAction" Then
@@ -1834,7 +1859,16 @@ Public Module DBModifs
                                     Exit For
                                 ElseIf rangenameName = nodeName Then
                                     ' might fail...
-                                    Try : targetRange = rangename.RefersToRange : Catch ex As Exception : End Try
+                                    Try
+                                        targetRange = rangename.RefersToRange
+                                    Catch ex As Exception
+                                        ' if target name relates to an invalid (offset) formula, referstorange fails  ...
+                                        If InStr(rangename.RefersTo, "OFFSET(") > 0 Then
+                                            ErrorMsg("Error, offset formula that '" + nodeName + "' refers to, did not return a valid range." + vbCrLf + "Please check the offset formula to return a valid range !", "DBModifier Definitions Error")
+                                            ExcelDnaUtil.Application.Dialogs(Excel.XlBuiltInDialog.xlDialogNameManager).Show()
+                                            GoTo EndOuterLoop
+                                        End If
+                                    End Try
                                     Exit For
                                 End If
                             Next
@@ -1875,6 +1909,7 @@ Public Module DBModifs
                             End If
                         End If
                     End If
+EndOuterLoop:
                 Next
             ElseIf CustomXmlParts.Count > 1 Then
                 ErrorMsg("Multiple CustomXmlParts for DBModifDef existing!", "get DBModif Definitions")

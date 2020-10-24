@@ -209,10 +209,8 @@ done:
 
     ''' <summary>WorkbookActivate: gets defined named ranges for DBMapper invocation in the current workbook after activation and updates Ribbon with it</summary>
     Private Sub Application_WorkbookActivate(Wb As Excel.Workbook) Handles Application.WorkbookActivate
-        LogInfo("Activating Workbook:" + Wb.Name)
         ' avoid when being activated by DBFuncsAction 
         If Not DBModifs.preventChangeWhileFetching Then
-            LogInfo("calling getDBModifDefinitions..")
             DBModifs.getDBModifDefinitions()
             ' unfortunately, Excel doesn't fire SheetActivate when opening workbooks, so do that here...
             assignHandler(Wb.ActiveSheet)
@@ -245,8 +243,14 @@ done:
             Try
                 targetRange = ExcelDnaUtil.Application.ActiveWorkbook.Names.Item(cbName).RefersToRange
             Catch ex As Exception
-                ErrorMsg("No underlying " + Left(cbName, 8) + " Range named " + cbName + " found, exiting without DBModification.")
-                LogWarn("targetRange assignment failed: " + ex.Message)
+                ' if target name relates to an invalid (offset) formula, referstorange fails  ...
+                If InStr(ExcelDnaUtil.Application.ActiveWorkbook.Names.Item(cbName).RefersTo, "OFFSET(") > 0 Then
+                    ErrorMsg("Error, offset formula that '" + cbName + "' refers to, did not return a valid range." + vbCrLf + "Please check the offset formula to return a valid range !", "DBModifier Definitions Error")
+                    ExcelDnaUtil.Application.Dialogs(Excel.XlBuiltInDialog.xlDialogNameManager).Show()
+                Else
+                    ErrorMsg("No underlying " + Left(cbName, 8) + " Range named " + cbName + " found, exiting without DBModification.")
+                    LogWarn("targetRange assignment failed: " + ex.Message)
+                End If
                 Exit Sub
             End Try
             Dim DBModifName As String = getDBModifNameFromRange(targetRange)
