@@ -48,12 +48,12 @@ Public Module Globals
     Public Function fetchSetting(Key As String, defaultValue As String) As String
         Dim UserSettings As Collections.Specialized.NameValueCollection = ConfigurationManager.GetSection("UserSettings")
         ' user specific settings are in UserSettings section in separate file
-        If IsNothing(UserSettings(Key)) Then
+        If UserSettings(Key) Is Nothing Then
             fetchSetting = ConfigurationManager.AppSettings(Key)
         Else
             fetchSetting = UserSettings(Key)
         End If
-        If IsNothing(fetchSetting) Then fetchSetting = defaultValue
+        If fetchSetting Is Nothing Then fetchSetting = defaultValue
     End Function
 
     ''' <summary>environment for settings (+1 of selectedeEnvironment which is the index of the dropdown)</summary>
@@ -108,7 +108,7 @@ Public Module Globals
                     Trace.TraceWarning("{0}: {1}", caller, Message)
                     WarningIssued = True
                     ' at Addin Start ribbon has not been loaded so avoid call to it here..
-                    If Not IsNothing(theRibbon) Then theRibbon.InvalidateControl("showLog")
+                    If Not theRibbon Is Nothing Then theRibbon.InvalidateControl("showLog")
                 Case EventLogEntryType.Error
                     Trace.TraceError("{0}: {1}", caller, Message)
             End Select
@@ -439,7 +439,7 @@ Public Module Globals
                 If Not rng Is Nothing Then
                     testRng = Nothing
                     Try : testRng = ExcelDnaUtil.Application.Intersect(theRange, rng) : Catch ex As Exception : End Try
-                    If Not IsNothing(testRng) And (InStr(nm.Name, "DBFtarget") > 0 Or InStr(nm.Name, "DBFsource") > 0) Then
+                    If Not testRng Is Nothing And (InStr(nm.Name, "DBFtarget") > 0 Or InStr(nm.Name, "DBFsource") > 0) Then
                         Dim WbkSepPos As Integer = InStr(nm.Name, "!")
                         If WbkSepPos > 1 Then
                             getDBunderlyingNameFromRange = Mid(nm.Name, WbkSepPos + 1)
@@ -471,7 +471,7 @@ Public Module Globals
                 If Not rng Is Nothing And Not (nm.Name Like "*ExterneDaten*" Or nm.Name Like "*_FilterDatabase") Then
                     testRng = Nothing
                     Try : testRng = ExcelDnaUtil.Application.Intersect(theRange, rng) : Catch ex As Exception : End Try
-                    If Not IsNothing(testRng) And (InStr(1, nm.Name, "DBFtarget") >= 1 Or InStr(1, nm.Name, "DBFsource") >= 1) Then
+                    If Not testRng Is Nothing And (InStr(1, nm.Name, "DBFtarget") >= 1 Or InStr(1, nm.Name, "DBFsource") >= 1) Then
                         foundNames += 1
                     End If
                 End If
@@ -518,8 +518,8 @@ Public Module Globals
                 For Each theFunc In {"DBListFetch(", "DBRowFetch(", "DBSetQuery("}
                     searchCells = ws.Cells.Find(What:=theFunc, After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
                     Dim firstFoundAddress As String = ""
-                    If Not IsNothing(searchCells) Then firstFoundAddress = searchCells.Address
-                    While Not IsNothing(searchCells)
+                    If Not searchCells Is Nothing Then firstFoundAddress = searchCells.Address
+                    While Not searchCells Is Nothing
                         If ws.ProtectContents Then
                             ErrorMsg("Worksheet " + ws.Name + " is content protected, can't refresh DB Functions !")
                             Continue For
@@ -598,7 +598,7 @@ Public Module Globals
         Dim foundLegacyWS As Collection = New Collection
         Dim xlcalcmode As Long = ExcelDnaUtil.Application.Calculation
         Dim actWB As Excel.Workbook = ExcelDnaUtil.Application.ActiveWorkbook
-        If IsNothing(actWB) Then
+        If actWB Is Nothing Then
             LogWarn("no active workbook available !")
             Exit Sub
         End If

@@ -66,6 +66,7 @@ Partial Class DBModifCreate
         Me.Cancel_Button.Name = "Cancel_Button"
         Me.Cancel_Button.Size = New System.Drawing.Size(67, 23)
         Me.Cancel_Button.TabIndex = 3
+        Me.Cancel_Button.TabStop = False
         Me.Cancel_Button.Text = "Cancel"
         Me.ToolTip1.SetToolTip(Me.Cancel_Button, "discard changes in DB Modifier Creation")
         '
@@ -76,6 +77,7 @@ Partial Class DBModifCreate
         Me.OK_Button.Name = "OK_Button"
         Me.OK_Button.Size = New System.Drawing.Size(34, 23)
         Me.OK_Button.TabIndex = 2
+        Me.OK_Button.TabStop = False
         Me.OK_Button.Text = "OK"
         Me.ToolTip1.SetToolTip(Me.OK_Button, "use changes done in DB Modifier Creation")
         Me.OK_Button.UseVisualStyleBackColor = True
@@ -87,6 +89,7 @@ Partial Class DBModifCreate
         Me.CreateCB.Name = "CreateCB"
         Me.CreateCB.Size = New System.Drawing.Size(68, 23)
         Me.CreateCB.TabIndex = 1
+        Me.CreateCB.TabStop = False
         Me.CreateCB.Text = "Create CB"
         Me.ToolTip1.SetToolTip(Me.CreateCB, "Create a Commandbutton for the DB Modifier Definition (max. 5 Buttons possible pe" &
         "r Workbook)")
@@ -309,7 +312,7 @@ Partial Class DBModifCreate
         Me.AutoIncFlag.Location = New System.Drawing.Point(216, 186)
         Me.AutoIncFlag.Name = "AutoIncFlag"
         Me.AutoIncFlag.Size = New System.Drawing.Size(98, 17)
-        Me.AutoIncFlag.TabIndex = 15
+        Me.AutoIncFlag.TabIndex = 13
         Me.AutoIncFlag.Text = "Auto Increment"
         Me.ToolTip1.SetToolTip(Me.AutoIncFlag, resources.GetString("AutoIncFlag.ToolTip"))
         Me.AutoIncFlag.UseVisualStyleBackColor = True

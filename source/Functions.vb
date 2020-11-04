@@ -421,7 +421,7 @@ Public Module Functions
                 Dim oldRange As Excel.Range = Nothing
                 ' first invocation of DBSetQuery will have no defined targetExtent Range name, so this will fail:
                 Try : oldRange = theListObject.Range.Parent.Parent.Names(targetExtent).RefersToRange : Catch ex As Exception : End Try
-                If IsNothing(oldRange) Then oldRange = theListObject.Range
+                If oldRange Is Nothing Then oldRange = theListObject.Range
                 theListObject.Range.Name = targetExtent
                 theListObject.Range.Parent.Parent.Names(targetExtent).Visible = False
                 ' if refreshed range is a DBMapper and it is in the current workbook, resize it, but ONLY if it the DBMapper is the same area as the old range

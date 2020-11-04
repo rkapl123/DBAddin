@@ -29,7 +29,9 @@ Public Class DBModifCreate
             Try : NamesList.Item("_" + Me.Tag + Me.DBModifName.Text).Delete() : Catch ex As Exception : End Try
         End If
         Dim primKeys As Integer = 0
-        ' check for requirements: mandatory fields filled (visible Tablename, Primary keys and Database), NameValidation above OK and no double invocation for execOnSave in DB Sequences and sequence parts
+        ' check for requirements: 
+        ' mandatory fields filled (visible Tablename, Primary keys And Database), NameValidation above OK, no Double invocation for execOnSave in DB Sequences And sequence parts and only one primary key for AutoInc Flag
+        ' Beware: All If/ElseIf branches have to contain an ErrorMsg because the dialog stays open in this case. Only the Else branch closes the dialog.
         If Me.Tablename.Text = "" And Me.Tablename.Visible Then
             ErrorMsg("Field Tablename is required, please fill in!", "DBModification Validation")
         ElseIf Me.PrimaryKeys.Visible AndAlso Not Integer.TryParse(Me.PrimaryKeys.Text, primKeys) Then
@@ -38,8 +40,8 @@ Public Class DBModifCreate
             ErrorMsg("Field Database is required, please fill in!", "DBModification Validation")
         ElseIf NameValidationResult <> "" Then
             ErrorMsg("Invalid " + Me.NameLabel.Text + ", Error: " + NameValidationResult, "DBModification Validation")
-        ElseIf Me.Tag = "DBMapper" AndAlso Me.AutoIncFlag.Checked Then
-            If primKeys > 1 Then ErrorMsg("Only one primary key is allowed when Auto Incrementing is enabled!", "DBModification Validation")
+        ElseIf Me.Tag = "DBMapper" AndAlso Me.AutoIncFlag.Checked AndAlso primKeys > 1 Then
+            ErrorMsg("Only one primary key is allowed when Auto Incrementing is enabled!", "DBModification Validation")
         Else
             ' check for double invocation because of execOnSave both being set on current DB Modifier ...
             If Me.execOnSave.Checked And Globals.DBModifDefColl.ContainsKey("DBSeqnce") Then

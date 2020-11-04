@@ -174,8 +174,8 @@ Public MustInherit Class DBModif
     ''' <param name="TransactionIsOpen">in a DB Sequence, this parameter notifies of an open transaction, necessary to avoid deadlocks</param>
     ''' <returns></returns>
     Protected Function doDBRefresh(srcExtent As String, Optional executedDBMappers As Dictionary(Of String, Boolean) = Nothing, Optional modifiedDBMappers As Dictionary(Of String, Boolean) = Nothing, Optional TransactionIsOpen As Boolean = False) As Boolean
-        If IsNothing(executedDBMappers) Then executedDBMappers = New Dictionary(Of String, Boolean)
-        If IsNothing(modifiedDBMappers) Then modifiedDBMappers = New Dictionary(Of String, Boolean)
+        If executedDBMappers Is Nothing Then executedDBMappers = New Dictionary(Of String, Boolean)
+        If modifiedDBMappers Is Nothing Then modifiedDBMappers = New Dictionary(Of String, Boolean)
         doDBRefresh = False
         ' refresh DBFunction in sequence, invoke this "manually", simulating the call of the user defined function by excel
         Dim caller As Excel.Range
@@ -204,7 +204,7 @@ Public MustInherit Class DBModif
         Dim formulaRange As Excel.Range = Nothing
         ' formulaRange might not exist
         Try : formulaRange = ExcelDnaUtil.Application.Range(targetExtentF) : Catch ex As Exception : End Try
-        If Not IsNothing(formulaRange) AndAlso formulaRange.Parent.ProtectContents Then
+        If Not formulaRange Is Nothing AndAlso formulaRange.Parent.ProtectContents Then
             ErrorMsg("Worksheet " + formulaRange.Parent.Name + " is content protected, can't refresh DB Function !")
             Exit Function
         End If
@@ -396,7 +396,7 @@ Public Class DBMapper : Inherits DBModif
     Public Sub New(defkey As String, paramDefs As String, paramTarget As Excel.Range)
         dbmodifName = defkey
         ' if no target range is set, then no parameters can be found...
-        If IsNothing(paramTarget) Then
+        If paramTarget Is Nothing Then
             Throw New Exception("paramTarget is Nothing")
         End If
         paramTargetName = getDBModifNameFromRange(paramTarget)
@@ -407,7 +407,7 @@ Public Class DBMapper : Inherits DBModif
         TargetRange = paramTarget
 
         Dim DBModifParams() As String = functionSplit(paramText, ",", """", "def", "(", ")")
-        If IsNothing(DBModifParams) Then Exit Sub
+        If DBModifParams Is Nothing Then Exit Sub
         ' check for completeness
         If DBModifParams.Length < 4 Then
             Throw New Exception("At least environment (can be empty), database, Tablename and primary keys have to be provided as DBMapper parameters !")
@@ -441,7 +441,7 @@ Public Class DBMapper : Inherits DBModif
         MyBase.New(definitionXML)
         Try
             ' if no target range is set, then no parameters can be found...
-            If IsNothing(paramTarget) Then Throw New Exception("paramTarget is Nothing")
+            If paramTarget Is Nothing Then Throw New Exception("paramTarget is Nothing")
             paramTargetName = getDBModifNameFromRange(paramTarget)
             If Left(paramTargetName, 8) <> "DBMapper" Then Throw New Exception("target " + paramTargetName + " not matching passed DBModif type DBMapper for " + getTargetRangeAddress() + "/" + dbmodifName + "!")
             TargetRange = paramTarget
@@ -462,7 +462,7 @@ Public Class DBMapper : Inherits DBModif
             IgnoreDataErrors = Convert.ToBoolean(getParamFromXML(definitionXML, "IgnoreDataErrors", "Boolean"))
             CUDFlags = Convert.ToBoolean(getParamFromXML(definitionXML, "CUDFlags", "Boolean"))
             AutoIncFlag = Convert.ToBoolean(getParamFromXML(definitionXML, "AutoIncFlag", "Boolean"))
-            If Not IsNothing(TargetRange.ListObject) Then
+            If Not TargetRange.ListObject Is Nothing Then
                 ' special grey table style for CUDFlags DBMapper
                 If CUDFlags Then
                     TargetRange.ListObject.TableStyle = fetchSetting("DBMapperCUDFlagStyle", "TableStyleLight11")
@@ -472,7 +472,7 @@ Public Class DBMapper : Inherits DBModif
                 End If
             End If
             ' allow CUDFlags only on DBMappers with underlying Listobjects that were created with a query
-            If CUDFlags And (IsNothing(TargetRange.ListObject) OrElse TargetRange.ListObject.SourceType <> Excel.XlListObjectSourceType.xlSrcQuery) Then
+            If CUDFlags And (TargetRange.ListObject Is Nothing OrElse TargetRange.ListObject.SourceType <> Excel.XlListObjectSourceType.xlSrcQuery) Then
                 CUDFlags = False
                 definitionXML.SelectSingleNode("ns0:CUDFlags").Delete()
                 definitionXML.AppendChildNode("CUDFlags", NamespaceURI:="DBModifDef", NodeValue:="False")
@@ -493,7 +493,7 @@ Public Class DBMapper : Inherits DBModif
     Public Overrides Function openDatabase() As Boolean
         Dim env As Integer = getEnv(Globals.selectedEnvironment + 1)
         openDatabase = True
-        If IsNothing(dbcnn) Then
+        If dbcnn Is Nothing Then
             Return openConnection(env, database)
         End If
     End Function
@@ -528,13 +528,13 @@ Public Class DBMapper : Inherits DBModif
             For Each changedRow As Excel.Range In changedRange.Rows
                 Dim CUDMarkRow As Integer = changedRow.Row - TargetRange.Row + 1
                 ' change only if not already set or
-                If IsNothing(TargetRange.Cells(CUDMarkRow, TargetRange.Columns.Count + 1).Value) Then
+                If TargetRange.Cells(CUDMarkRow, TargetRange.Columns.Count + 1).Value Is Nothing Then
                     Dim RowContainsData As Boolean = False
                     For Each containedCell As Excel.Range In TargetRange.Rows(CUDMarkRow).Cells
                         ' check without newly inserted/updated cells (copy paste) 
                         Dim possibleIntersection As Excel.Range = ExcelDnaUtil.Application.Intersect(containedCell, changedRange)
                         ' check if whole row is empty (except for the changedRange), formulas do not count as filled (automatically filled for lookups or other things)..
-                        If Not IsNothing(containedCell.Value) AndAlso IsNothing(possibleIntersection) AndAlso Left(containedCell.Formula, 1) <> "=" Then
+                        If Not containedCell.Value Is Nothing AndAlso possibleIntersection Is Nothing AndAlso Left(containedCell.Formula, 1) <> "=" Then
                             RowContainsData = True
                             Exit For
                         End If
@@ -559,12 +559,12 @@ Public Class DBMapper : Inherits DBModif
         Dim NamesList As Excel.Names = ExcelDnaUtil.Application.ActiveWorkbook.Names
         ' only extend like this if no CUD Flags or AutoIncFlag present (may have non existing first (primary) columns -> auto identity columns !)
         If Not (CUDFlags Or AutoIncFlag) Then
-            If IsNothing(TargetRange.Cells(2, 1).Value) Then Exit Sub ' only extend if there are multiple rows...
+            If TargetRange.Cells(2, 1).Value Is Nothing Then Exit Sub ' only extend if there are multiple rows...
             preventChangeWhileFetching = True
             Dim rowCount As Integer = TargetRange.Cells(1, 1).End(Excel.XlDirection.xlDown).Row - TargetRange.Cells(1, 1).Row + 1
             ' unfortunately the above method to find the column extent doesn't work with hidden columns, so count the filled cells directly...
             Dim colCount As Integer = 1
-            While Not (IsNothing(TargetRange.Cells(1, colCount + 1).Value) OrElse TargetRange.Cells(1, colCount + 1).Value.ToString() = "")
+            While Not (TargetRange.Cells(1, colCount + 1).Value Is Nothing OrElse TargetRange.Cells(1, colCount + 1).Value.ToString() = "")
                 colCount += 1
             End While
             Try
@@ -705,7 +705,7 @@ Public Class DBMapper : Inherits DBModif
                         If Not notifyUserOfDataError("Error in primary key value: " + CVErrText(primKeyValue) + ", cell (" + rowNum.ToString + "," + i.ToString + ") in sheet " + TargetRange.Parent.Name + " and row " + rowNum.ToString, rowNum, i) Then GoTo cleanup
                         GoTo nextRow
                     End If
-                    If IsNothing(primKeyValue) Then primKeyValue = ""
+                    If primKeyValue Is Nothing Then primKeyValue = ""
                     Dim primKey = TargetRange.Cells(1, i).Value
                     ' if primKey is in ignoreColumns then the only reasonable reason is a lookup primary key in DBSHeets (CUDFlags only), so try with "real" (resolved key) instead...
                     If InStr(1, LCase(ignoreColumns) + ",", LCase(primKey) + ",") > 0 Then
@@ -734,7 +734,7 @@ Public Class DBMapper : Inherits DBModif
                     End If
                     ' now format the primary key value and construct the WHERE clause
                     Dim primKeyFormatted As String
-                    If IsNothing(primKeyValue) Then
+                    If primKeyValue Is Nothing Then
                         primKeyFormatted = "NULL"
                     ElseIf checkIsNumeric(checkrst.Fields(primKey).Type) Then ' only decimal points allowed in numeric data
                         primKeyFormatted = Replace(CStr(primKeyValue), ",", ".")
@@ -788,7 +788,7 @@ Public Class DBMapper : Inherits DBModif
                         rst.AddNew()
                         For i = 1 To primKeysCount
                             Dim primKeyValue As Object = TargetRange.Cells(rowNum, i).Value
-                            If IsNothing(primKeyValue) Then primKeyValue = ""
+                            If primKeyValue Is Nothing Then primKeyValue = ""
                             Dim primKey = TargetRange.Cells(1, i).Value
                             ' if primKey is in ignoreColumns then the only reasonable reason is a lookup primary key in DBSHeets (CUDFlags only), so try with "real" (resolved key) instead...
                             If InStr(1, LCase(ignoreColumns) + ",", LCase(primKey) + ",") > 0 AndAlso CUDFlags Then
@@ -816,7 +816,7 @@ Public Class DBMapper : Inherits DBModif
                         If InStr(1, LCase(ignoreColumns) + ",", LCase(fieldname) + ",") = 0 Then
                             Try
                                 Dim fieldval As Object = TargetRange.Cells(rowNum, colNum).Value
-                                If IsNothing(fieldval) Then
+                                If fieldval Is Nothing Then
                                     rst.Fields(fieldname).Value = Nothing
                                 Else
                                     If IsXLCVErr(fieldval) Then
@@ -873,7 +873,7 @@ Public Class DBMapper : Inherits DBModif
                 rst.Close()
 nextRow:
                 Try
-                    If IsNothing(TargetRange.Cells(rowNum + 1, 1).Value) OrElse TargetRange.Cells(rowNum + 1, 1).Value.ToString().Length = 0 Then finishLoop = True
+                    If TargetRange.Cells(rowNum + 1, 1).Value Is Nothing OrElse TargetRange.Cells(rowNum + 1, 1).Value.ToString().Length = 0 Then finishLoop = True
                 Catch ex As Exception
                     If Not notifyUserOfDataError("Error in first primary column: Cells(" + (rowNum + 1).ToString + ",1): " + ex.Message, rowNum + 1) Then GoTo cleanup
                     'finishLoop = True '-> do not finish to allow erroneous data  !!
@@ -999,7 +999,7 @@ cleanup:
                         If Not notifyUserOfDataError("Error in primary key value: " + CVErrText(primKeyValue) + ", cell (" + rowNum.ToString + "," + i.ToString + ") in sheet " + TargetRange.Parent.Name + " and row " + rowNum.ToString, rowNum, i) Then GoTo cleanup
                         GoTo nextRow
                     End If
-                    If IsNothing(primKeyValue) Then primKeyValue = ""
+                    If primKeyValue Is Nothing Then primKeyValue = ""
                     Dim primKey = TargetRange.Cells(1, i).Value
                     ' if primKey is in ignoreColumns then the only reasonable reason is a lookup primary key in DBSHeets (CUDFlags only), so try with "real" (resolved key) instead...
                     If InStr(1, LCase(ignoreColumns) + ",", LCase(primKey) + ",") > 0 Then
@@ -1028,7 +1028,7 @@ cleanup:
                     End If
                     ' now format the primary key value and construct the WHERE clause
                     Dim primKeyFormatted As String
-                    If IsNothing(primKeyValue) Then
+                    If primKeyValue Is Nothing Then
                         primKeyFormatted = "NULL"
                     ElseIf checkIsNumeric(checkrst.Fields(primKey).Type) Then ' only decimal points allowed in numeric data
                         primKeyFormatted = Replace(CStr(primKeyValue), ",", ".")
@@ -1082,7 +1082,7 @@ cleanup:
                         rst.AddNew()
                         For i = 1 To primKeysCount
                             Dim primKeyValue As Object = TargetRange.Cells(rowNum, i).Value
-                            If IsNothing(primKeyValue) Then primKeyValue = ""
+                            If primKeyValue Is Nothing Then primKeyValue = ""
                             Dim primKey = TargetRange.Cells(1, i).Value
                             ' if primKey is in ignoreColumns then the only reasonable reason is a lookup primary key in DBSHeets (CUDFlags only), so try with "real" (resolved key) instead...
                             If InStr(1, LCase(ignoreColumns) + ",", LCase(primKey) + ",") > 0 AndAlso CUDFlags Then
@@ -1110,7 +1110,7 @@ cleanup:
                         If InStr(1, LCase(ignoreColumns) + ",", LCase(fieldname) + ",") = 0 Then
                             Try
                                 Dim fieldval As Object = TargetRange.Cells(rowNum, colNum).Value
-                                If IsNothing(fieldval) Then
+                                If fieldval Is Nothing Then
                                     rst.Fields(fieldname).Value = Nothing
                                 Else
                                     If IsXLCVErr(fieldval) Then
@@ -1268,7 +1268,7 @@ Public Class DBAction : Inherits DBModif
         MyBase.New(definitionXML)
         Try
             ' if no target range is set, then no parameters can be found...
-            If IsNothing(paramTarget) Then Exit Sub
+            If paramTarget Is Nothing Then Exit Sub
             paramTargetName = getDBModifNameFromRange(paramTarget)
             If Left(paramTargetName, 8) <> "DBAction" Then Throw New Exception("target " + paramTargetName + " not matching passed DBModif type DBAction for " + getTargetRangeAddress() + "/" + dbmodifName + " !")
             TargetRange = paramTarget
@@ -1288,7 +1288,7 @@ Public Class DBAction : Inherits DBModif
     Public Overrides Function openDatabase() As Boolean
         Dim env As Integer = getEnv(Globals.selectedEnvironment + 1)
         openDatabase = True
-        If IsNothing(dbcnn) Then
+        If dbcnn Is Nothing Then
             Return openConnection(env, database)
         End If
     End Function
@@ -1415,7 +1415,7 @@ Public Class DBSeqnce : Inherits DBModif
                     End If
                 Case "DBBegin"
                     LogInfo("DBBeginTrans... ")
-                    If IsNothing(dbcnn) Then
+                    If dbcnn Is Nothing Then
                         ' take database connection properties from next sequence step
                         Dim nextdefinition() As String = Split(sequenceParams(i + 1), ":")
                         If Not DBModifDefColl(nextdefinition(0)).Item(nextdefinition(1)).openDatabase() Then Exit Sub
@@ -1708,8 +1708,8 @@ Public Module DBModifs
                     For Each theFunc As String In {"DBListFetch(", "DBSetQuery(", "DBRowFetch("}
                         searchCell = ws.Cells.Find(What:=theFunc, After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
                         Dim firstFoundAddress As String = ""
-                        If Not IsNothing(searchCell) Then firstFoundAddress = searchCell.Address
-                        While Not IsNothing(searchCell)
+                        If Not searchCell Is Nothing Then firstFoundAddress = searchCell.Address
+                        While Not searchCell Is Nothing
                             Dim underlyingName As String = getDBunderlyingNameFromRange(searchCell)
                             ds.Add("Refresh " + theFunc + searchCell.Parent.Name + "!" + searchCell.Address + "):" + underlyingName)
                             searchCell = ws.Cells.FindNext(searchCell)
@@ -1744,7 +1744,7 @@ Public Module DBModifs
             End If
 
             ' delegate filling of dialog fields to created DBModif object
-            If Not IsNothing(existingDBModif) Then existingDBModif.setDBModifCreateFields(theDBModifCreateDlg)
+            If Not existingDBModif Is Nothing Then existingDBModif.setDBModifCreateFields(theDBModifCreateDlg)
 
             ' display dialog for parameters
             If theDBModifCreateDlg.ShowDialog() = DialogResult.Cancel Then
@@ -1758,7 +1758,7 @@ Public Module DBModifs
             ' only for DBMapper or DBAction: change or add target range name
             If createdDBModifType <> "DBSeqnce" Then
                 Dim targetRange As Excel.Range
-                If IsNothing(existingDBModif) Then
+                If existingDBModif Is Nothing Then
                     targetRange = ExcelDnaUtil.Application.ActiveCell
                 Else
                     targetRange = existingDBModif.getTargetRange()
@@ -1819,7 +1819,7 @@ Public Module DBModifs
                 End If
             End If
             ' any features added directly to DBModif definition in XML need to be re-added now
-            If Not IsNothing(existingDBModif) Then existingDBModif.addHiddenFeatureDefs(dbModifNode)
+            If Not existingDBModif Is Nothing Then existingDBModif.addHiddenFeatureDefs(dbModifNode)
             ' refresh mapper definitions to reflect changes immediately...
             getDBModifDefinitions()
             ' extend Datarange for new DBMappers immediately after definition...
@@ -1872,7 +1872,7 @@ Public Module DBModifs
                                     Exit For
                                 End If
                             Next
-                            If IsNothing(targetRange) Then
+                            If targetRange Is Nothing Then
                                 ErrorMsg("Error, required target range named '" + nodeName + "' not existing for " + DBModiftype + "." + vbCrLf + "either create target range or delete CustomXML definition node named '" + nodeName + "' (Ctrl-Shift-Click on Store DBModif Data dialogBox launcher)!", "DBModifier Definitions Error")
                                 Continue For
                             End If
@@ -1891,7 +1891,7 @@ Public Module DBModifs
                         End If
                         ' ... and add it to the collection DBModifDefColl
                         Dim defColl As Dictionary(Of String, DBModif) ' definition lookup collection for DBModifiername -> object
-                        If Not IsNothing(newDBModif) Then
+                        If Not newDBModif Is Nothing Then
                             If Not DBModifDefColl.ContainsKey(DBModiftype) Then
                                 ' add to new DBModiftype "menu"
                                 defColl = New Dictionary(Of String, DBModif) From {
@@ -1928,7 +1928,7 @@ EndOuterLoop:
         Dim rng, testRng As Excel.Range
 
         getDBModifNameFromRange = ""
-        If IsNothing(theRange) Then Exit Function
+        If theRange Is Nothing Then Exit Function
         Try
             ' try all names in workbook
             For Each nm In theRange.Parent.Parent.Names
@@ -1939,7 +1939,7 @@ EndOuterLoop:
                     testRng = Nothing
                     ' ...intersects with the passed range
                     Try : testRng = ExcelDnaUtil.Application.Intersect(theRange, rng) : Catch ex As Exception : End Try
-                    If Not IsNothing(testRng) And (InStr(1, nm.Name, "DBMapper") >= 1 Or InStr(1, nm.Name, "DBAction") >= 1) Then
+                    If Not testRng Is Nothing And (InStr(1, nm.Name, "DBMapper") >= 1 Or InStr(1, nm.Name, "DBAction") >= 1) Then
                         ' and pass back the name if it does and is a DBMapper or a DBAction
                         getDBModifNameFromRange = nm.Name
                         Exit Function

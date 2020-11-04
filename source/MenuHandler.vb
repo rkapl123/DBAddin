@@ -167,11 +167,11 @@ Public Class MenuHandler
         Globals.theRibbon.InvalidateControl(control.Id)
     End Sub
 
-    ''' <summary>show DBModif deefinitions edit box</summary>
+    ''' <summary>show DBModif definitions edit box</summary>
     ''' <param name="control"></param>
     Sub showDBModifEdit(control As CustomUI.IRibbonControl)
         ' only show dialog if there is a workbook and it has the relevant custom XML part.
-        If Not IsNothing(ExcelDnaUtil.Application.ActiveWorkbook) AndAlso ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef").Count > 0 Then
+        If Not ExcelDnaUtil.Application.ActiveWorkbook Is Nothing AndAlso ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef").Count > 0 Then
             Dim theEditDBModifDefDlg As EditDBModifDef = New EditDBModifDef()
             If theEditDBModifDefDlg.ShowDialog() = System.Windows.Forms.DialogResult.OK Then DBModifs.getDBModifDefinitions()
         End If
@@ -181,7 +181,7 @@ Public Class MenuHandler
     ''' <param name="control"></param>
     Sub showToggleDesignMode(control As CustomUI.IRibbonControl)
         Dim cbrs As Object = ExcelDnaUtil.Application.CommandBars
-        If Not IsNothing(cbrs) AndAlso cbrs.GetEnabledMso("DesignMode") Then
+        If Not cbrs Is Nothing AndAlso cbrs.GetEnabledMso("DesignMode") Then
             cbrs.ExecuteMso("DesignMode")
         Else
             ErrorMsg("Couldn't toggle designmode, because Designmode commandbar button is not available (no button?)", "DBAddin toggle Designmode", MsgBoxStyle.Exclamation)
@@ -195,7 +195,7 @@ Public Class MenuHandler
     ''' <returns>screentip and the state of designmode</returns>
     Public Function getToggleDesignScreentip(control As CustomUI.IRibbonControl) As String
         Dim cbrs As Object = ExcelDnaUtil.Application.CommandBars
-        If Not IsNothing(cbrs) AndAlso cbrs.GetEnabledMso("DesignMode") Then
+        If Not cbrs Is Nothing AndAlso cbrs.GetEnabledMso("DesignMode") Then
             Return "Designmode is currently " + IIf(cbrs.GetPressedMso("DesignMode"), "on !", "off !")
         Else
             Return "Designmode commandbar button not available (no button on sheet)"
@@ -207,7 +207,7 @@ Public Class MenuHandler
     ''' <returns>screentip and the state of designmode</returns>
     Public Function getToggleDesignImage(control As CustomUI.IRibbonControl) As String
         Dim cbrs As Object = ExcelDnaUtil.Application.CommandBars
-        If Not IsNothing(cbrs) AndAlso cbrs.GetEnabledMso("DesignMode") Then
+        If Not cbrs Is Nothing AndAlso cbrs.GetEnabledMso("DesignMode") Then
             If cbrs.GetPressedMso("DesignMode") Then
                 Return "ObjectsGroupMenuOutlook"
             Else
@@ -267,7 +267,7 @@ Public Class MenuHandler
         Globals.initSettings()
         ' provide a chance to reconnect when switching environment...
         conn = Nothing
-        If Not IsNothing(ExcelDnaUtil.Application.ActiveWorkbook) Then
+        If Not ExcelDnaUtil.Application.ActiveWorkbook Is Nothing Then
             Dim retval As MsgBoxResult = QuestionMsg("ConstConnString:" + Globals.ConstConnString + vbCrLf + "ConfigStoreFolder:" + ConfigFiles.ConfigStoreFolder + vbCrLf + vbCrLf + "Refresh DBFunctions in active workbook to see effects?", MsgBoxStyle.YesNo, "Changed environment to: " + fetchSetting("ConfigName" + Globals.env(), ""))
             If retval = vbYes Then Globals.refreshDBFunctions(ExcelDnaUtil.Application.ActiveWorkbook)
         Else
@@ -471,7 +471,7 @@ Public Class MenuHandler
     ''' <summary>clicked Assign DBSheet: create DB Mapper with CUD Flags</summary>
     ''' <param name="control"></param>
     Public Sub clickAssignDBSheet(control As CustomUI.IRibbonControl)
-        If Not IsNothing(ExcelDnaUtil.Application.ActiveWorkbook) Then DBSheetConfig.createDBSheet()
+        If Not ExcelDnaUtil.Application.ActiveWorkbook Is Nothing Then DBSheetConfig.createDBSheet()
     End Sub
 
 #Enable Warning IDE0060

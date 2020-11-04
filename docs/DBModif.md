@@ -50,7 +50,7 @@ The clickable Hyperlink shows the range address of the data range, a named offse
 ### DB Actions are created/edited with following dialog:  
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DbActionCreate.PNG)  
 
-*   DBAction Name: Enter the name for the selected Range that will be used to identify the DBAction in the "Execute DBModifier" Group dropdowns. If no name is given here, then UnnamedDBAction will be used to identify it.
+*   DBAction Name: Enter the name for the selected cell or range that will be used to identify the DBAction in the "Execute DBModifier" Group dropdowns. If no name is given here, then UnnamedDBAction will be used to identify it.
 *   Database: Database to do the DBAction in
 *   Environment: The Environment, where connection id should be taken from (if not existing, take from selected Environment in DB Addin General Settings Group)
 *   Exec on Save: Should the DBAction be executed when the workbook is being saved?
@@ -59,7 +59,7 @@ The clickable Hyperlink shows the range address of the data range, a named offse
 *   Create CB: create a commandbutton for the DB Sequence in the current Worksheet.
 *   Hyperlink: click on it to highlight/select the DB Action range
 
-You can always edit these parameters by selecting the Range of the DB Action area and invoking the context menu again.
+You can always edit these parameters by selecting a cell in the range of the DB Action area and invoking the context menu again.
 
 ### DB Sequences are created/edited with following dialog:  
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DbSequenceCreate.PNG)  

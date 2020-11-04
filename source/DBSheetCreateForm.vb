@@ -290,7 +290,7 @@ Public Class DBSheetCreateForm
     ''' <summary>opens a database connection with active connstring</summary>
     Sub openConnection(Optional databaseName As String = "")
         ' connections are pooled by ADO depending on the connection string:
-        If IsNothing(dbshcnn) Or databaseName <> "" Then
+        If dbshcnn Is Nothing Or databaseName <> "" Then
             setConnectionString()
             ' add password to connection string
             If InStr(1, dbsheetConnString, dbPwdSpec) > 0 And dbPwdSpec <> "" Then
@@ -429,7 +429,7 @@ Public Class DBSheetCreateForm
             clipboardDataRow = DBSheetCols.DataSource.GetNewRow()
             clipboardDataRow.ItemArray = DBSheetCols.DataSource.Rows(selRowIndex).ItemArray.Clone()
             ' Ctrl-V only when clipboardDataRow has been copied available
-        ElseIf e.KeyCode = Keys.V And e.Modifiers = Keys.Control And Not IsNothing(clipboardDataRow) Then
+        ElseIf e.KeyCode = Keys.V And e.Modifiers = Keys.Control And Not clipboardDataRow Is Nothing Then
             FormDisabled = True
             DBSheetCols.Rows(selRowIndex).Cells("ftable").Value = clipboardDataRow.ftable
             DBSheetCols.Rows(selRowIndex).Cells("fkey").Value = clipboardDataRow.fkey

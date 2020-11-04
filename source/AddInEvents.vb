@@ -130,7 +130,7 @@ done:
         Try
             Dim ws As Excel.Worksheet = Nothing
             For Each ws In Wb.Worksheets
-                If IsNothing(ws) Then
+                If ws Is Nothing Then
                     LogWarn("no worksheet in saving workbook...")
                     Exit For
                 End If
@@ -175,7 +175,7 @@ done:
                 Next
             Next
             ' always reset the cell find dialog....
-            If Not IsNothing(ws) Then
+            If Not ws Is Nothing Then
                 searchCell = ws.Cells.Find(What:="", After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
             End If
 
@@ -209,8 +209,12 @@ done:
 
     ''' <summary>WorkbookActivate: gets defined named ranges for DBMapper invocation in the current workbook after activation and updates Ribbon with it</summary>
     Private Sub Application_WorkbookActivate(Wb As Excel.Workbook) Handles Application.WorkbookActivate
-        ' avoid when being activated by DBFuncsAction 
+        ' avoid when being activated by DBFuncsAction
         If Not DBModifs.preventChangeWhileFetching Then
+            ' in case AutoOpen hasn't been triggered (e.g. when started via IE)...
+            If Globals.DBModifDefColl Is Nothing Then
+                Globals.DBModifDefColl = New Dictionary(Of String, Dictionary(Of String, DBModif))
+            End If
             DBModifs.getDBModifDefinitions()
             ' unfortunately, Excel doesn't fire SheetActivate when opening workbooks, so do that here...
             assignHandler(Wb.ActiveSheet)
@@ -272,15 +276,15 @@ done:
             Dim ctrlName As String
             Try : ctrlName = Sh.OLEObjects(shp.Name).Object.Name : Catch ex As Exception : ctrlName = "" : End Try
             If Left(ctrlName, 8) = "DBMapper" Or Left(ctrlName, 8) = "DBAction" Or Left(ctrlName, 8) = "DBSeqnce" Then
-                If IsNothing(cb1) Then
+                If cb1 Is Nothing Then
                     cb1 = Sh.OLEObjects(shp.Name).Object
-                ElseIf IsNothing(cb2) Then
+                ElseIf cb2 Is Nothing Then
                     cb2 = Sh.OLEObjects(shp.Name).Object
-                ElseIf IsNothing(cb3) Then
+                ElseIf cb3 Is Nothing Then
                     cb3 = Sh.OLEObjects(shp.Name).Object
-                ElseIf IsNothing(cb4) Then
+                ElseIf cb4 Is Nothing Then
                     cb4 = Sh.OLEObjects(shp.Name).Object
-                ElseIf IsNothing(cb5) Then
+                ElseIf cb5 Is Nothing Then
                     cb5 = Sh.OLEObjects(shp.Name).Object
                 Else
                     ErrorMsg("only max. of five DBModifier Buttons allowed on a Worksheet, currently using " + cb1.Name + "," + cb2.Name + "," + cb3.Name + "," + cb4.Name + " and " + cb5.Name + " !")
@@ -296,7 +300,7 @@ done:
     Private Sub Application_SheetActivate(Sh As Object) Handles Application.SheetActivate
         ' avoid when being activated by DBFuncsAction 
         If Not DBModifs.preventChangeWhileFetching Then
-            DBModifs.getDBModifDefinitions()
+            'DBModifs.getDBModifDefinitions()
             ' only when needed assign button handler for this sheet ...
             If Globals.DBModifDefColl.Count > 0 Then assignHandler(Sh)
         End If
@@ -334,8 +338,8 @@ done:
         For Each builtin As String In appsCommandBars
             Dim srchInsertButton = ExcelDnaUtil.Application.CommandBars(builtin).FindControl(Tag:="insTag")
             Dim srchDeleteButton = ExcelDnaUtil.Application.CommandBars(builtin).FindControl(Tag:="delTag")
-            If Not IsNothing(srchInsertButton) Then srchInsertButton.Delete()
-            If Not IsNothing(srchDeleteButton) Then srchDeleteButton.Delete()
+            If Not srchInsertButton Is Nothing Then srchInsertButton.Delete()
+            If Not srchDeleteButton Is Nothing Then srchDeleteButton.Delete()
         Next
         ' add context menus
         ' for whole sheet don't display DBSheet context menus !!
