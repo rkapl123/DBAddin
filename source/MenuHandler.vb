@@ -162,9 +162,11 @@ Public Class MenuHandler
     ''' <summary>click on change props: show builtin properties dialog</summary>
     ''' <param name="control"></param>
     Public Sub showCProps(control As CustomUI.IRibbonControl)
-        ExcelDnaUtil.Application.Dialogs(Excel.XlBuiltInDialog.xlDialogProperties).Show
-        ' to check whether DBFskip has changed:
-        Globals.theRibbon.InvalidateControl(control.Id)
+        If Not ExcelDnaUtil.Application.ActiveWorkbook Is Nothing Then
+            ExcelDnaUtil.Application.Dialogs(Excel.XlBuiltInDialog.xlDialogProperties).Show
+            ' to check whether DBFskip has changed:
+            Globals.theRibbon.InvalidateControl(control.Id)
+        End If
     End Sub
 
     ''' <summary>show DBModif definitions edit box</summary>
