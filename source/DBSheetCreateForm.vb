@@ -972,7 +972,6 @@ Public Class DBSheetCreateForm
             If result = Windows.Forms.DialogResult.OK Then
                 ' remember path for possible storing in DBSheetParams
                 currentFilepath = openFileDialog1.FileName
-                CurrentFileLinkLabel.Text = currentFilepath
                 Dim DBSheetParams As String = File.ReadAllText(currentFilepath, System.Text.Encoding.Default)
                 ' fetch params into form from sheet or file
                 FormDisabled = True
@@ -1005,7 +1004,8 @@ Public Class DBSheetCreateForm
                     newRow.type = TableDataTypes(newRow.name)
                     If newRow.type = "" Then Exit Sub
                     Dim sortMode As String = DBSheetConfig.getEntry("sort", DBSheetColumnDef)
-                    newRow.sort = If(sortMode = "Ascending", "ASC", If(sortMode = "Descending", "DESC", ""))
+                    ' legacy naming: Ascending/Descending
+                    newRow.sort = If(sortMode = "Ascending", "ASC", If(sortMode = "Descending", "DESC", sortMode))
                     newRow.lookup = DBSheetConfig.getEntry("lookup", DBSheetColumnDef)
                     theDBSheetDefTable.Add(newRow)
                 Next
@@ -1024,6 +1024,7 @@ Public Class DBSheetCreateForm
                 TableEditable(False)
                 DBSheetColsEditable(True)
                 saveEnabled(True)
+                CurrentFileLinkLabel.Text = currentFilepath
             End If
         Catch ex As System.Exception
             ErrorMsg("Exception in loadDefs_Click: " + ex.Message)

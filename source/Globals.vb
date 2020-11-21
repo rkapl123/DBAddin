@@ -94,11 +94,9 @@ Public Module Globals
     ''' <param name="eEventType">event type: info, warning, error</param>
     ''' <param name="caller">reflection based caller information: module.method</param>
     Private Sub WriteToLog(Message As String, eEventType As EventLogEntryType, caller As String)
+        ' collect errors and warnings for returning messages in executeDBModif
+        If eEventType = EventLogEntryType.Error Or eEventType = EventLogEntryType.Warning Then nonInteractiveErrMsgs += caller + ":" + Message + vbCrLf
         If nonInteractive Then
-            If eEventType = EventLogEntryType.Error Or eEventType = EventLogEntryType.Warning Then
-                ' only collect errors and warnings in non interactive mode
-                nonInteractiveErrMsgs += caller + ":" + Message + vbCrLf
-            End If
             Trace.TraceInformation("Noninteractive: {0}: {1}", caller, Message)
         Else
             Select Case eEventType

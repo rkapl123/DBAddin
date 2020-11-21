@@ -209,7 +209,7 @@ Public MustInherit Class DBModif
             Exit Function
         End If
         Dim DBMapperUnderlyingF As String = getDBModifNameFromRange(formulaRange)
-        ' allow for avoidance of overwriting users changes with CUDFlags after an data error occurred
+        ' allow for avoidance of overwriting users changes with CUDFlags after a data error occurred
         If hadError Then
             If executedDBMappers.ContainsKey(DBMapperUnderlying) Then
                 Dim retval = QuestionMsg(theMessage:="Error(s) occured during sequence, really refresh Targetrange? This could lead to loss of entries.", questionTitle:="Refresh of DB Functions in DB Sequence")
@@ -632,8 +632,8 @@ Public Class DBMapper : Inherits DBModif
             Exit Sub
         End If
         changesDone = False
-        ' ask for saving only if a) is not done on WorkbookSave b) is set to ask and c) is not called by a DBSequence (asks already for saving)
-        If Not WbIsSaving And askBeforeExecute And calledByDBSeq = "" Then
+        ' ask for saving only if a) is not done on WorkbookSave b) is set to ask and c) is not called by a DBSequence (asks already for saving) and d) is in interactive mode
+        If Not WbIsSaving And askBeforeExecute And calledByDBSeq = "" And Not nonInteractive Then
             If confirmText = "" Then confirmText = "Really execute DB Mapper " + dbmodifName + "?"
             Dim retval As MsgBoxResult = QuestionMsg(theMessage:=confirmText, questionTitle:="Execute DB Mapper")
             If retval = vbCancel Then Exit Sub
@@ -926,8 +926,8 @@ cleanup:
 
     Public Sub doDBModif2(Optional WbIsSaving As Boolean = False, Optional calledByDBSeq As String = "", Optional TransactionOpen As Boolean = False)
         changesDone = False
-        ' ask for saving only if a) is not done on WorkbookSave b) is set to ask and c) is not called by a DBSequence (asks already for saving)
-        If Not WbIsSaving And askBeforeExecute And calledByDBSeq = "" Then
+        ' ask for saving only if a) is not done on WorkbookSave b) is set to ask and c) is not called by a DBSequence (asks already for saving) and d) is in interactive mode
+        If Not WbIsSaving And askBeforeExecute And calledByDBSeq = "" And Not nonInteractive Then
             If confirmText = "" Then confirmText = "Really execute DB Mapper " + dbmodifName + "?"
             Dim retval As MsgBoxResult = QuestionMsg(theMessage:=confirmText, questionTitle:="Execute DB Mapper")
             If retval = vbCancel Then Exit Sub
@@ -1294,8 +1294,8 @@ Public Class DBAction : Inherits DBModif
     End Function
 
     Public Overrides Sub doDBModif(Optional WbIsSaving As Boolean = False, Optional calledByDBSeq As String = "", Optional TransactionOpen As Boolean = False)
-        ' ask for saving only if a) is not done on WorkbookSave b) is set to ask and c) is not called by a DBSequence (asks already for saving)
-        If Not WbIsSaving And askBeforeExecute And calledByDBSeq = "" Then
+        ' ask for saving only if a) is not done on WorkbookSave b) is set to ask and c) is not called by a DBSequence (asks already for saving) and d) is in interactive mode
+        If Not WbIsSaving And askBeforeExecute And calledByDBSeq = "" And Not nonInteractive Then
             If confirmText = "" Then confirmText = "Really execute DB Action " + dbmodifName + "?"
             Dim retval As MsgBoxResult = QuestionMsg(theMessage:=confirmText, questionTitle:="Execute DB Action")
             If retval = vbCancel Then Exit Sub
@@ -1391,8 +1391,8 @@ Public Class DBSeqnce : Inherits DBModif
             ErrorMsg("DB Sequence '" + dbmodifName + "' is being called by another DB Sequence (" + calledByDBSeq + "), this should not occur as infinite recursions are possible !", "Execute DB Sequence")
             Exit Sub
         End If
-        ' ask for saving only if a) is not done on WorkbookSave b) is set to ask and c) is not called by a DBSequence (asks already for saving)
-        If Not WbIsSaving And askBeforeExecute Then
+        ' ask for saving only if a) is not done on WorkbookSave b) is set to ask and c) is in interactive mode
+        If Not WbIsSaving And askBeforeExecute And Not nonInteractive Then
             If confirmText = "" Then confirmText = "Really execute DB Sequence " + dbmodifName + "?"
             Dim retval As MsgBoxResult = QuestionMsg(theMessage:=confirmText, questionTitle:="Execute DB Sequence")
             If retval = vbCancel Then Exit Sub
@@ -1472,7 +1472,7 @@ Public Module DBModifs
     Public idbcnn As System.Data.IDbConnection
     ''' <summary>avoid entering Application.SheetChange Event handler during listfetch/setquery</summary>
     Public preventChangeWhileFetching As Boolean = False
-    ''' <summary>indicates an error in execution, used for commit/rollback</summary>
+    ''' <summary>indicates an error in execution of DBModifiers, used for commit/rollback and for noninteractive message return</summary>
     Public hadError As Boolean
     ''' <summary>used to work around the fact that when started by Application.Run, Formulas are sometimes returned as local</summary>
     Public listSepLocal As String = ExcelDnaUtil.Application.International(Excel.XlApplicationInternational.xlListSeparator)
@@ -1576,7 +1576,7 @@ Public Module DBModifs
     End Sub
 
     ''' <summary>creates a DBModif at the current active cell or edits an existing one defined in targetDefName (after being called in defined range or from ribbon + Ctrl + Shift)</summary>
-    Sub createDBModif(createdDBModifType As String, Optional targetDefName As String = "")
+    Public Sub createDBModif(createdDBModifType As String, Optional targetDefName As String = "")
         ' clipboard helper for legacy definitions:
         ' if saveRangeToDB<Single> macro calls were copied into clipboard, 1st parameter (datarange) removed (empty), connid moved to 2nd place as database name (remove MSSQL)
         'mapper.saveRangeToDBSingle(Range("DB_DefName"), "tableName", "primKey1,primKey2,primKey3", "MSSQLDB_NAME", True) 
@@ -1980,7 +1980,8 @@ EndOuterLoop:
     ''' <returns>empty string on success, error message otherwise</returns>
     <ExcelCommand(Name:="executeDBModif")>
     Public Function executeDBModif(DBModifName As String, Optional headLess As Boolean = False) As String
-        hadError = False : nonInteractiveErrMsgs = "" : nonInteractive = headLess
+        hadError = False : nonInteractive = headLess
+        nonInteractiveErrMsgs = "" ' reset noninteractive messages
         Dim DBModiftype As String = Left(DBModifName, 8)
         If DBModiftype = "DBSeqnce" Or DBModiftype = "DBMapper" Or DBModiftype = "DBAction" Then
             If Not Globals.DBModifDefColl(DBModiftype).ContainsKey(DBModifName) Then
@@ -2004,13 +2005,9 @@ EndOuterLoop:
                 nonInteractive = False
                 Return "DB Modifier '" + DBModifName + "' doDBModif had following error(s): " + ex.Message
             End Try
-            If hadError Then
-                nonInteractive = False
-                Return nonInteractiveErrMsgs
-            Else
-                nonInteractive = False
-                Return ""
-            End If
+            nonInteractive = False
+            If hadError Then Return nonInteractiveErrMsgs
+            Return "" ' no error, no message
         Else
             nonInteractive = False
             Return "No valid type (" + DBModiftype + ") in passed DB Modifier '" + DBModifName + "', DB Modifier name must start with 'DBSeqnce', 'DBMapper' Or 'DBAction' !"

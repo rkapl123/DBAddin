@@ -308,16 +308,16 @@ Public Module DBSheetConfig
             Exit Sub
         End If
         Try
-            NamesList.Add(Name:="DBMapper" + tableName, RefersTo:=curCell.Offset(0, 1))
+            NamesList.Add(Name:="DBMapper" + tableName, RefersTo:=createdListObject.Range) ' curCell.Offset(0, 1) DBMapper starting cell (one cell to the right of active cell)
         Catch ex As Exception
-            ErrorMsg("Error when assigning name 'DBMapper" + tableName + "' to DBMapper starting cell (one cell to the right of active cell): " + ex.Message, "DBSheet Creation Error")
+            ErrorMsg("Error when assigning name 'DBMapper" + tableName + "' to DBSetQuery Target: " + ex.Message, "DBSheet Creation Error")
             If Not lookupWS Is Nothing Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
             Exit Sub
         End Try
-        ' primary columns count (first <primCols> columns are primary columns)s
+        ' primary columns count (first <primCols> columns are primary columns)
         Dim primCols As String = getEntry("primcols", curConfig)
         Try
-            ' some visual aid for DBSHeets
+            ' some visual aid for DBSheets
             If curCell.Column = 1 And curCell.Row = 1 Then
                 ' freeze top row and primary column(s) if more than one column...
                 curCell.Offset(1, If(createdListObject.ListColumns.Count > 1, 1 + CInt(primCols), 0)).Select()

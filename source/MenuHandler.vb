@@ -382,6 +382,8 @@ Public Class MenuHandler
     ''' <summary>DBModif button activated, do DB Mapper/DB Action/DB Sequence or define existing (CtrlKey pressed)...</summary>
     ''' <param name="control"></param>
     Public Sub DBModifClick(control As CustomUI.IRibbonControl)
+        ' reset noninteractive messages (used for VBA invocations) and hadError for interactive invocations
+        nonInteractiveErrMsgs = "" : hadError = False
         Dim nodeName As String = Right(control.Id, Len(control.Id) - 1)
         If Not ExcelDnaUtil.Application.CommandBars.GetEnabledMso("FileNewDefault") Then
             ErrorMsg("Cannot execute DB Modifier while cell editing active !", "DB Modifier execution", MsgBoxStyle.Exclamation)
