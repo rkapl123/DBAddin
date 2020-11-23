@@ -10,3 +10,5 @@ TestResults
 PUBS_database_scripts
 /docs/httrackCopyGithubDoc
 /test/pubs.ldb
+/compare.WinMerge
+/DBAddinReleasePkg.zip
