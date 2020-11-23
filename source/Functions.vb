@@ -160,8 +160,18 @@ Public Module Functions
     ''' <returns>database compliant in-clause string</returns>
     <ExcelFunction(Description:="Create an in clause from cell values, strings are created with quotation marks")>
     Public Function DBinClause(<ExcelArgument(AllowReference:=True, Description:="array of values or ranges containing values")> ParamArray inClausePart As Object()) As String
-        Dim concatResult As String = DoConcatCellsSep(",", True, inClausePart)
+        Dim concatResult As String = DoConcatCellsSep(",", True, False, inClausePart)
         DBinClause = If(Left(concatResult, 5) = "Error", concatResult, "in (" + concatResult + ")")
+    End Function
+
+    ''' <summary>Create an in clause from cell values, strings are created with quotation marks,
+    '''             dates are created with DBDate</summary>
+    ''' <param name="inClausePart">array of values or ranges containing values</param>
+    ''' <returns>database compliant in-clause string</returns>
+    <ExcelFunction(Description:="Create an in clause from cell values, all arguments are treated as strings (and will be created with quotation marks)")>
+    Public Function DBinClauseStr(<ExcelArgument(AllowReference:=True, Description:="array of values or ranges containing values")> ParamArray inClausePart As Object()) As String
+        Dim concatResult As String = DoConcatCellsSep(",", True, True, inClausePart)
+        DBinClauseStr = If(Left(concatResult, 5) = "Error", concatResult, "in (" + concatResult + ")")
     End Function
 
     ''' <summary>concatenates values contained in thetarget together (using .value attribute for cells)</summary>
@@ -169,7 +179,7 @@ Public Module Functions
     ''' <returns>concatenated String</returns>
     <ExcelFunction(Description:="concatenates values contained in thetarget together (using .value attribute for cells)")>
     Public Function concatCells(<ExcelArgument(AllowReference:=True, Description:="all cells/values which should be concatenated")> ParamArray concatPart As Object()) As String
-        concatCells = DoConcatCellsSep("", False, concatPart)
+        concatCells = DoConcatCellsSep("", False, False, concatPart)
     End Function
 
     ''' <summary>concatenates values contained in thetarget (using .value for cells) using a separator</summary>
@@ -179,7 +189,7 @@ Public Module Functions
     <ExcelFunction(Description:="concatenates values contained in thetarget (using .value for cells) using a separator")>
     Public Function concatCellsSep(<ExcelArgument(AllowReference:=True, Description:="the separator")> separator As String,
                                    <ExcelArgument(AllowReference:=True, Description:="all cells/values which should be concatenated")> ParamArray concatPart As Object()) As String
-        concatCellsSep = DoConcatCellsSep(separator, False, concatPart)
+        concatCellsSep = DoConcatCellsSep(separator, False, False, concatPart)
     End Function
 
     ''' <summary>chains values contained in thetarget together with commas, mainly used for creating select header</summary>
@@ -187,7 +197,7 @@ Public Module Functions
     ''' <returns>chained String</returns>
     <ExcelFunction(Description:="chains values contained in thetarget together with commas, mainly used for creating select header")>
     Public Function chainCells(<ExcelArgument(AllowReference:=True, Description:="range where values should be chained")> ParamArray chainPart As Object()) As String
-        chainCells = DoConcatCellsSep(",", False, chainPart)
+        chainCells = DoConcatCellsSep(",", False, False, chainPart)
     End Function
 
     ''' <summary>private function that actually concatenates values contained in Object array myRange together (either using .text or .value for cells in myrange) using a separator</summary>
@@ -195,7 +205,7 @@ Public Module Functions
     ''' <param name="DBcompliant">should a potential string or date part be formatted database compliant (surrounded by quotes)?</param>
     ''' <param name="concatParts">Object array, whose values should be concatenated</param>
     ''' <returns>concatenated String</returns>
-    Private Function DoConcatCellsSep(separator As String, DBcompliant As Boolean, ParamArray concatParts As Object()) As String
+    Private Function DoConcatCellsSep(separator As String, DBcompliant As Boolean, OnlyString As Boolean, ParamArray concatParts As Object()) As String
         Dim myRef, myCell
 
         Try
@@ -216,7 +226,11 @@ Public Module Functions
                         If TypeName(myCell) = "ExcelEmpty" Then
                             ' do nothing here
                         ElseIf IsNumeric(myCell) Then
-                            retval = retval + separator + Convert.ToString(myCell, System.Globalization.CultureInfo.InvariantCulture)
+                            If OnlyString Then
+                                retval = retval + separator + IIf(DBcompliant, "'", "") + Convert.ToString(myCell, System.Globalization.CultureInfo.InvariantCulture) + IIf(DBcompliant, "'", "")
+                            Else
+                                retval = retval + separator + Convert.ToString(myCell, System.Globalization.CultureInfo.InvariantCulture)
+                            End If
                         Else
                             ' avoid double quoting if passed string is already quoted (by using DBDate or DBString as input to this) and DBcompliant quoting is requested
                             retval = retval + separator + IIf(DBcompliant And Left(myCell, 1) <> "'", "'", "") + myCell + IIf(DBcompliant And Right(myCell, 1) <> "'", "'", "")
@@ -226,8 +240,12 @@ Public Module Functions
                     ' and other direct values in formulas..
                     If TypeName(myRef) = "ExcelEmpty" Or TypeName(myRef) = "ExcelMissing" Then
                         ' do nothing here
-                    ElseIf IsNumeric(myRef) Then ' no separate Date type for direct formula values
-                        retval = retval + separator + Convert.ToString(myRef, System.Globalization.CultureInfo.InvariantCulture)
+                    ElseIf IsNumeric(myRef) And Not OnlyString Then ' no separate Date type for direct formula values
+                        If OnlyString Then
+                            retval = retval + separator + IIf(DBcompliant, "'", "") + Convert.ToString(myRef, System.Globalization.CultureInfo.InvariantCulture) + IIf(DBcompliant, "'", "")
+                        Else
+                            retval = retval + separator + Convert.ToString(myRef, System.Globalization.CultureInfo.InvariantCulture)
+                        End If
                     Else
                         ' avoid double quoting if passed string is already quoted (by using DBDate or DBString as input to this) and DBcompliant quoting is requested
                         retval = retval + separator + IIf(DBcompliant And Left(myRef, 1) <> "'", "'", "") + myRef + IIf(DBcompliant And Right(myRef, 1) <> "'", "'", "")
