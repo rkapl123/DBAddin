@@ -215,7 +215,8 @@ Public Module DBSheetConfig
                 For Each LookupDef As String In lookupsList
                     Dim lookupName As String = Replace(getEntry("name", LookupDef, 1), specialNonNullableChar, "")
                     Dim lookupRangeName As String = tableName + lookupName + "Lookup"
-                    If IsNothing(ExcelDnaUtil.Application.Range(lookupRangeName).Cells(1, 1).Value) Then
+                    ' check if both columns of the lookup are empty (lookup key can be empty but the value may not) to check for empty lookup query results
+                    If IsNothing(ExcelDnaUtil.Application.Range(lookupRangeName).Cells(1, 1).Value) And IsNothing(ExcelDnaUtil.Application.Range(lookupRangeName).Cells(1, 2).Value) Then
                         Dim answr As MsgBoxResult = QuestionMsg("lookup area '" + lookupRangeName + "' contains no values (maybe an error), continue?", MsgBoxStyle.OkCancel, "DBSheet Creation Error")
                         If answr = vbCancel Then
                             lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible

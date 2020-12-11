@@ -54,7 +54,10 @@ Public MustInherit Class DBModif
     ''' <summary>public accessor function</summary>
     ''' <returns>the targetRange itself</returns>
     Public Function getTargetRange() As Excel.Range
-        getTargetRange = TargetRange
+        getTargetRange = Nothing
+        If TypeName(Me) <> "DBSeqnce" Then
+            getTargetRange = TargetRange
+        End If
     End Function
 
     ''' <summary>public accessor function: get Environment (integer) where connection id should be taken from (if not existing, take from selectedEnvironment being passed in defaultEnv)</summary>

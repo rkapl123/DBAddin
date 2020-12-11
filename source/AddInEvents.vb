@@ -82,7 +82,7 @@ Public Class AddInEvents
         ' ask if modifications should be done if no overriding flag is defined...
         Dim doDBMOnSave As Boolean = Globals.getCustPropertyBool("doDBMOnSave", Wb)
         ' if overriding flag not given and Readonly is NOT recommended on this workbook and workbook IS NOT Readonly, ...
-        ' ...ask for saving if it is necessary for any DBmodifier...
+        ' ...ask for saving, if this is necessary for any DBmodifier...
         If Not (Wb.ReadOnlyRecommended And Wb.ReadOnly) And Not doDBMOnSave Then
             For Each DBmodifType As String In Globals.DBModifDefColl.Keys
                 For Each dbmapdefkey As String In Globals.DBModifDefColl(DBmodifType).Keys
@@ -97,10 +97,23 @@ Public Class AddInEvents
 done:
         ' save all DBmaps/DBActions/DBSequences on saving if above resulted in YES!
         If doDBMOnSave Then
+            ' first do DBModifiers defined on active sheet:
             For Each DBmodifType As String In Globals.DBModifDefColl.Keys
                 For Each dbmapdefkey As String In Globals.DBModifDefColl(DBmodifType).Keys
                     With Globals.DBModifDefColl(DBmodifType).Item(dbmapdefkey)
-                        If .DBModifSaveNeeded Then .doDBModif(WbIsSaving:=True)
+                        If .getTargetRange().Parent Is ExcelDnaUtil.Application.ActiveSheet And .DBModifSaveNeeded Then
+                            .doDBModif(WbIsSaving:=True)
+                        End If
+                    End With
+                Next
+            Next
+            ' then all the rest (no defined order!)
+            For Each DBmodifType As String In Globals.DBModifDefColl.Keys
+                For Each dbmapdefkey As String In Globals.DBModifDefColl(DBmodifType).Keys
+                    With Globals.DBModifDefColl(DBmodifType).Item(dbmapdefkey)
+                        If .getTargetRange().Parent IsNot ExcelDnaUtil.Application.ActiveSheet And .DBModifSaveNeeded Then
+                            .doDBModif(WbIsSaving:=True)
+                        End If
                     End With
                 Next
             Next

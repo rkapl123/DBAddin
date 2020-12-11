@@ -23,7 +23,9 @@ Public Class DBSheetCreateForm
     Private dbshcnn As OdbcConnection
     ''' <summary>identifier needed to put password into connection string (eg PWD=)</summary>
     Private dbPwdSpec As String
+    ''' <summary>placeholder used in lookup queries to identify the current field's lookup table</summary>
     Private tblPlaceHolder As String = "!T!"
+    ''' <summary>character prepended before field name to specify non nullable fields</summary>
     Private specialNonNullableChar As String = "*"
 
 #Region "Initialization of DBSheetDefs"
@@ -360,13 +362,16 @@ Public Class DBSheetCreateForm
                 DirectCast(DBSheetCols.Rows(selIndex).Cells("fkey"), DataGridViewComboBoxCell).DataSource = forColsList
                 DirectCast(DBSheetCols.Rows(selIndex).Cells("flookup"), DataGridViewComboBoxCell).DataSource = forColsList
             End If
-            ' reset fkey and flookup
             DBSheetCols.Rows(selIndex).Cells("fkey").Value = ""
             DBSheetCols.Rows(selIndex).Cells("flookup").Value = ""
-        ElseIf e.ColumnIndex = 3 Then  ' flookup column -> ask for regeneration of flookup
-            Dim retval As MsgBoxResult = QuestionMsg("regenerate foreign lookup (overwriting all customizations there)?",, "DBSheet Definition")
-            If retval <> MsgBoxResult.Cancel Then regenLookupForRow(selIndex)
-            DBSheetCols.AutoResizeColumns()
+        ElseIf e.ColumnIndex = 2 Then ' fkey column
+            If DBSheetCols.Rows(selIndex).Cells("fkey").Value.ToString <> "" AndAlso DBSheetCols.Rows(selIndex).Cells("flookup").Value.ToString <> "" AndAlso DBSheetCols.Rows(selIndex).Cells("ftable").Value.ToString <> "" Then
+                regenLookupForRow(selIndex, True)
+            End If
+        ElseIf e.ColumnIndex = 3 Then ' flookup column
+            If DBSheetCols.Rows(selIndex).Cells("fkey").Value.ToString <> "" AndAlso DBSheetCols.Rows(selIndex).Cells("flookup").Value.ToString <> "" AndAlso DBSheetCols.Rows(selIndex).Cells("ftable").Value.ToString <> "" Then
+                regenLookupForRow(selIndex, True)
+            End If
         ElseIf e.ColumnIndex = 5 Then ' primkey column
             Try
                 ' not first row selected: check for previous row (field) if also primary column..
@@ -553,13 +558,21 @@ Public Class DBSheetCreateForm
         DBSheetCols.AutoResizeColumns()
     End Sub
 
-    ''' <summary>regenerate lookup for row in rowIndex</summary>
+    ''' <summary>(re)generate lookup for row in rowIndex</summary>
     ''' <param name="rowIndex"></param>
-    Private Sub regenLookupForRow(rowIndex As Integer)
+    Private Sub regenLookupForRow(rowIndex As Integer, Optional askForRegenerate As Boolean = False)
+        If askForRegenerate Then
+            Dim retval As MsgBoxResult = QuestionMsg("(re)generate foreign lookup, overwriting customizations?",, "DBSheet Definition")
+            If retval = MsgBoxResult.Cancel Then Exit Sub
+        End If
         If DBSheetCols.Rows(rowIndex).Cells("ftable").Value.ToString <> "" And DBSheetCols.Rows(rowIndex).Cells("fkey").Value.ToString <> "" And DBSheetCols.Rows(rowIndex).Cells("flookup").Value.ToString <> "" Then
             DBSheetCols.Rows(rowIndex).Cells("lookup").Value = "SELECT " + tblPlaceHolder + "." + DBSheetCols.Rows(rowIndex).Cells("flookup").Value.ToString + " " + correctNonNull(DBSheetCols.Rows(rowIndex).Cells("name").Value.ToString) + "," + tblPlaceHolder + "." + DBSheetCols.Rows(rowIndex).Cells("fkey").Value.ToString + " FROM " + DBSheetCols.Rows(rowIndex).Cells("ftable").Value.ToString + " " + tblPlaceHolder + " ORDER BY " + DBSheetCols.Rows(rowIndex).Cells("flookup").Value.ToString
+            If askForRegenerate Then DBSheetCols.AutoResizeColumns()
+        ElseIf DBSheetCols.Rows(rowIndex).Cells("ftable").Value.ToString = "" And DBSheetCols.Rows(rowIndex).Cells("fkey").Value.ToString = "" And DBSheetCols.Rows(rowIndex).Cells("flookup").Value.ToString = "" Then
+            Dim retval As MsgBoxResult = QuestionMsg("clear foreign lookup ?", MsgBoxStyle.OkCancel, "DBSheet Definition")
+            If retval = MsgBoxResult.Ok Then DBSheetCols.Rows(rowIndex).Cells("lookup").Value = ""
         Else
-            ErrorMsg("No lookup query to regenerate as foreign keys are not (fully) defined for field " + DBSheetCols.Rows(rowIndex).Cells("name").Value, "DBSheet Definition Error")
+            ErrorMsg("lookup query cannot be (re)generated as foreign table, key and lookup is not (fully) defined for field " + DBSheetCols.Rows(rowIndex).Cells("name").Value, "DBSheet Definition Error")
         End If
     End Sub
 
@@ -1001,8 +1014,15 @@ Public Class DBSheetCreateForm
                     newRow.flookup = DBSheetConfig.getEntry("flookup", DBSheetColumnDef)
                     newRow.outer = If(DBSheetConfig.getEntry("outer", DBSheetColumnDef) <> "", True, False)
                     newRow.primkey = If(DBSheetConfig.getEntry("primkey", DBSheetColumnDef) <> "", True, False)
+                    If Not TableDataTypes.ContainsKey(newRow.name) Then
+                        ErrorMsg("couldn't find type information for field " + newRow.name + " in database (maybe wrong non-nullable information for field in definition) !", "DBSheet Definition Error")
+                        Exit Sub
+                    End If
                     newRow.type = TableDataTypes(newRow.name)
-                    If newRow.type = "" Then Exit Sub
+                    If newRow.type = "" Then
+                        ErrorMsg("empty type information for field " + newRow.name + " in database !", "DBSheet Definition Error")
+                        Exit Sub
+                    End If
                     Dim sortMode As String = DBSheetConfig.getEntry("sort", DBSheetColumnDef)
                     ' legacy naming: Ascending/Descending
                     newRow.sort = If(sortMode = "Ascending", "ASC", If(sortMode = "Descending", "DESC", sortMode))
