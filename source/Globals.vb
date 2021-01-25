@@ -235,7 +235,6 @@ Public Module Globals
         End Try
     End Sub
 
-
     ''' <summary>jumps between DB Function and target area</summary>
     <ExcelCommand(Name:="jumpButton", ShortCut:="^J")>
     Public Sub jumpButton()
@@ -422,6 +421,16 @@ Public Module Globals
         End Try
     End Function
 
+    ''' <summary>helper function for check whether name exists in workbook</summary>
+    ''' <param name="CheckForName">name to be checked</param>
+    ''' <returns>true if name exists</returns>
+    Public Function existsName(CheckForName As String) As Boolean
+        existsName = False
+        On Error GoTo Last
+        If Len(ExcelDnaUtil.Application.ActiveWorkbook.Names(CheckForName).Name) <> 0 Then existsName = True
+Last:
+    End Function
+
     ''' <summary>gets underlying DBtarget/DBsource Name from theRange</summary>
     ''' <param name="theRange"></param>
     ''' <returns>the retrieved name</returns>
@@ -581,6 +590,10 @@ Public Module Globals
         Next
     End Sub
 
+    ''' <summary>get a boolean type custom property</summary>
+    ''' <param name="name">name of the property</param>
+    ''' <param name="Wb">workbook of the property</param>
+    ''' <returns>the value of the custom property</returns>
     Public Function getCustPropertyBool(name As String, Wb As Excel.Workbook) As Boolean
         Try
             getCustPropertyBool = Wb.CustomDocumentProperties(name).Value
@@ -600,7 +613,7 @@ Public Module Globals
             LogWarn("no active workbook available !")
             Exit Sub
         End If
-        If Globals.getCustPropertyBool("DBFNoLegacyCheck", actWB) Then Exit Sub
+        If getCustPropertyBool("DBFNoLegacyCheck", actWB) Then Exit Sub
         DBModifs.preventChangeWhileFetching = True ' WorksheetFunction.CountIf trigger Change event with target in argument 1, so make sure this doesn't change anything)
         Try
             ' count nonempty cells in workbook...

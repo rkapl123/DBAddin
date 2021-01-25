@@ -37,17 +37,17 @@ Public Class DBSheetCreateForm
         setConnectionString()
         dbGetAllStr = fetchSetting("dbGetAll" + Globals.env(), "NONEXISTENT")
         If dbGetAllStr = "NONEXISTENT" Then
-            ErrorMsg("No dbGetAllStr given for environment: " + Globals.env() + ", please correct and rerun.", "DBSheet Definition Error")
+            Globals.ErrorMsg("No dbGetAllStr given for environment: " + Globals.env() + ", please correct and rerun.", "DBSheet Definition Error")
             Exit Sub
         End If
         DBGetAllFieldName = fetchSetting("dbGetAllFieldName" + Globals.env(), "NONEXISTENT")
         If DBGetAllFieldName = "NONEXISTENT" Then
-            ErrorMsg("No DBGetAllFieldName given for environment: " + Globals.env() + ", please correct and rerun.", "DBSheet Definition Error")
+            Globals.ErrorMsg("No DBGetAllFieldName given for environment: " + Globals.env() + ", please correct and rerun.", "DBSheet Definition Error")
             Exit Sub
         End If
         dbidentifier = fetchSetting("DBidentifierCCS" + Globals.env(), "NONEXISTENT")
         If dbidentifier = "NONEXISTENT" Then
-            ErrorMsg("No DB identifier given for environment: " + Globals.env() + ", please correct and rerun.", "DBSheet Definition Error")
+            Globals.ErrorMsg("No DB identifier given for environment: " + Globals.env() + ", please correct and rerun.", "DBSheet Definition Error")
             Exit Sub
         End If
         dbPwdSpec = fetchSetting("dbPwdSpec" + Globals.env(), "")
@@ -145,7 +145,7 @@ Public Class DBSheetCreateForm
             dbsheetConnString = Replace(fetchSetting("ConstConnString" + Globals.env(), "NONEXISTENT"), fetchSetting("ConnStringSearch" + Globals.env(), "provider=SQLOLEDB"), fetchSetting("ConnStringReplace" + Globals.env(), "driver=SQL SERVER"))
             If dbsheetConnString = "NONEXISTENT" Then
                 ' actually this cannot happen....
-                ErrorMsg("No Connectionstring given for environment: " + Globals.env() + ", please correct and rerun.", "DBSheet Definition Error")
+                Globals.ErrorMsg("No Connectionstring given for environment: " + Globals.env() + ", please correct and rerun.", "DBSheet Definition Error")
                 Exit Sub
             End If
         End If
@@ -199,11 +199,11 @@ Public Class DBSheetCreateForm
             fillDatabases()
         Catch ex As System.Exception
             resetDBSheetCreateForm()
-            ErrorMsg(ex.Message)
+            Globals.ErrorMsg(ex.Message)
             Exit Sub
         End Try
         Me.Text = "DB Sheet creation: Select Database and Table to start building a DBSheet Definition"
-        Database.SelectedIndex = Database.Items.IndexOf(fetch(dbsheetConnString, dbidentifier, ";"))
+        Database.SelectedIndex = Database.Items.IndexOf(Globals.fetch(dbsheetConnString, dbidentifier, ";"))
         'initialization of everything else is triggered by above change and caught by Database_SelectedIndexChanged
     End Sub
 
@@ -250,7 +250,7 @@ Public Class DBSheetCreateForm
     ''' <param name="e"></param>
     Private Sub Database_SelectedIndexChanged(sender As Object, e As EventArgs) Handles Database.SelectedIndexChanged
         ' add database information to signal a change in connection string to selected database !
-        Try : openConnection(Database.Text) : Catch ex As Exception : ErrorMsg(ex.Message) : resetDBSheetCreateForm() : Exit Sub : End Try
+        Try : openConnection(Database.Text) : Catch ex As Exception : Globals.ErrorMsg(ex.Message) : resetDBSheetCreateForm() : Exit Sub : End Try
         Try
             fillTables()
             ' start with empty columns list
@@ -263,7 +263,7 @@ Public Class DBSheetCreateForm
             DBSheetCols.Rows.Clear()
             FormDisabled = False
         Catch ex As System.Exception
-            ErrorMsg("Exception in Database_SelectedIndexChanged: " + ex.Message)
+            Globals.ErrorMsg("Exception in Database_SelectedIndexChanged: " + ex.Message)
         End Try
     End Sub
 
@@ -284,7 +284,7 @@ Public Class DBSheetCreateForm
             DirectCast(DBSheetCols.Columns("ftable"), DataGridViewComboBoxColumn).DataSource = getforeignTables()
             FormDisabled = False
         Catch ex As System.Exception
-            ErrorMsg("Exception in Table_SelectedIndexChanged: " + ex.Message)
+            Globals.ErrorMsg("Exception in Table_SelectedIndexChanged: " + ex.Message)
         End Try
         Me.Text = "DB Sheet creation: Select one or more columns (fields) adding possible foreign key lookup information in foreign tables, finally click create query to finish DBSheet definition"
     End Sub
@@ -298,7 +298,7 @@ Public Class DBSheetCreateForm
             If InStr(1, dbsheetConnString, dbPwdSpec) > 0 And dbPwdSpec <> "" Then
                 If Strings.Len(existingPwd) > 0 Then
                     If InStr(1, dbsheetConnString, dbPwdSpec) > 0 Then
-                        dbsheetConnString = Change(dbsheetConnString, dbPwdSpec, existingPwd, ";")
+                        dbsheetConnString = Globals.Change(dbsheetConnString, dbPwdSpec, existingPwd, ";")
                     Else
                         dbsheetConnString = dbsheetConnString + ";" + dbPwdSpec + existingPwd
                     End If
@@ -309,7 +309,7 @@ Public Class DBSheetCreateForm
             ' add database name to connection string, needed for schema retrieval!!!
             If databaseName <> "" Then
                 If InStr(1, dbsheetConnString.ToUpper, dbidentifier.ToUpper) > 0 Then
-                    dbsheetConnString = Change(dbsheetConnString, dbidentifier, databaseName, ";")
+                    dbsheetConnString = Globals.Change(dbsheetConnString, dbidentifier, databaseName, ";")
                 Else
                     dbsheetConnString = dbsheetConnString + ";" + dbidentifier + databaseName
                 End If
@@ -377,22 +377,22 @@ Public Class DBSheetCreateForm
                 ' not first row selected: check for previous row (field) if also primary column..
                 If Not selIndex = 0 Then
                     If Not DBSheetCols.Rows(selIndex - 1).Cells("primkey").Value And DBSheetCols.Rows(selIndex).Cells("primkey").Value Then
-                        ErrorMsg("All primary keys have to be first and there is at least one non-primary key column before that one !", "DBSheet Definition Error")
+                        Globals.ErrorMsg("All primary keys have to be first and there is at least one non-primary key column before that one !", "DBSheet Definition Error")
                         DBSheetCols.Rows(selIndex).Cells("primkey").Value = False
                     End If
                     ' check if next row (field) is primary key column (only for non-last rows)
                     If selIndex <> DBSheetCols.Rows.Count - 2 Then
                         If DBSheetCols.Rows(selIndex + 1).Cells("primkey").Value And Not DBSheetCols.Rows(selIndex).Cells("primkey").Value Then
-                            ErrorMsg("All primary keys have to be first and there is at least one primary key column after that one !", "DBSheet Definition Error")
+                            Globals.ErrorMsg("All primary keys have to be first and there is at least one primary key column after that one !", "DBSheet Definition Error")
                             DBSheetCols.Rows(selIndex).Cells("primkey").Value = True
                         End If
                     End If
                 ElseIf Not DBSheetCols.Rows(selIndex).Cells("primkey").Value Then
-                    ErrorMsg("first column always has to be primary key", "DBSheet Definition Error")
+                    Globals.ErrorMsg("first column always has to be primary key", "DBSheet Definition Error")
                     DBSheetCols.Rows(selIndex).Cells("primkey").Value = True
                 End If
             Catch ex As System.Exception
-                ErrorMsg("Exception in DBSheetCols_CellValueChanged: " + ex.Message)
+                Globals.ErrorMsg("Exception in DBSheetCols_CellValueChanged: " + ex.Message)
             End Try
         End If
         DBSheetCols.AutoResizeColumns()
@@ -485,11 +485,11 @@ Public Class DBSheetCreateForm
 
     Private Sub DBSheetColsForDatabases_ItemClicked(sender As Object, e As ToolStripItemClickedEventArgs) Handles DBSheetColsForDatabases.ItemClicked
         ' connect to the selected foreign database...
-        Try : openConnection(e.ClickedItem.Text) : Catch ex As Exception : ErrorMsg(ex.Message) : Exit Sub : End Try
+        Try : openConnection(e.ClickedItem.Text) : Catch ex As Exception : Globals.ErrorMsg(ex.Message) : Exit Sub : End Try
         ' ... and get the tables into the ftable cell (!), the rest of the column still has the foreign tables of the main database...
         DirectCast(DBSheetCols.Rows(selRowIndex).Cells("ftable"), DataGridViewComboBoxCell).DataSource = getforeignTables()
         ' revert back to main database
-        Try : openConnection(Database.Text) : Catch ex As Exception : ErrorMsg(ex.Message) : Exit Sub : End Try
+        Try : openConnection(Database.Text) : Catch ex As Exception : Globals.ErrorMsg(ex.Message) : Exit Sub : End Try
     End Sub
 
     ''' <summary>move (shift) row up</summary>
@@ -500,11 +500,11 @@ Public Class DBSheetCreateForm
             ' avoid moving up of first row
             If selRowIndex = 0 Then Return
             If (DBSheetCols.DataSource.Rows.Count - 1 < selRowIndex) Then
-                ErrorMsg("Editing not finished in selected row (values not committed), cannot move up!", "DBSheet Definition Error")
+                Globals.ErrorMsg("Editing not finished in selected row (values not committed), cannot move up!", "DBSheet Definition Error")
                 Exit Sub
             End If
             If DBSheetCols.Rows(selRowIndex - 1).Cells("primkey").Value And Not DBSheetCols.Rows(selRowIndex).Cells("primkey").Value Then
-                ErrorMsg("All primary keys have to be first and there is a primary key column that would be shifted below this non-primary one !", "DBSheet Definition Error")
+                Globals.ErrorMsg("All primary keys have to be first and there is a primary key column that would be shifted below this non-primary one !", "DBSheet Definition Error")
                 Exit Sub
             End If
             Dim rw As DBSheetDefRow = DBSheetCols.DataSource.GetNewRow()
@@ -518,7 +518,7 @@ Public Class DBSheetCreateForm
             DBSheetCols.CurrentCell = DBSheetCols.Rows(selRowIndex - 1).Cells(0)
             DBSheetCols.Rows(selRowIndex - 1).Selected = True
         Catch ex As System.Exception
-            ErrorMsg("Exception in MoveRowUpToolStripMenuItem_Click: " + ex.Message)
+            Globals.ErrorMsg("Exception in MoveRowUpToolStripMenuItem_Click: " + ex.Message)
         End Try
         FormDisabled = False
     End Sub
@@ -531,7 +531,7 @@ Public Class DBSheetCreateForm
             ' avoid moving down of last row, DBSeqenceDataGrid.Rows.Count is 1 more than the actual inserted rows because of the "new" row, selIndex is 0 based
             If selRowIndex = DBSheetCols.Rows.Count - 2 Then Exit Sub
             If Not DBSheetCols.Rows(selRowIndex + 1).Cells("primkey").Value And DBSheetCols.Rows(selRowIndex).Cells("primkey").Value Then
-                ErrorMsg("All primary keys have to be first and there is a non primary key column that would be shifted above this primary one !", "DBSheet Definition Error")
+                Globals.ErrorMsg("All primary keys have to be first and there is a non primary key column that would be shifted above this primary one !", "DBSheet Definition Error")
                 Exit Sub
             End If
             Dim rw As DBSheetDefRow = DBSheetCols.DataSource.GetNewRow()
@@ -545,7 +545,7 @@ Public Class DBSheetCreateForm
             DBSheetCols.CurrentCell = DBSheetCols.Rows(selRowIndex + 1).Cells(0)
             DBSheetCols.Rows(selRowIndex + 1).Selected = True
         Catch ex As System.Exception
-            ErrorMsg("Exception in MoveRowDownToolStripMenuItem_Click: " + ex.Message)
+            Globals.ErrorMsg("Exception in MoveRowDownToolStripMenuItem_Click: " + ex.Message)
         End Try
         FormDisabled = False
     End Sub
@@ -572,7 +572,7 @@ Public Class DBSheetCreateForm
             Dim retval As MsgBoxResult = QuestionMsg("clear foreign lookup ?", MsgBoxStyle.OkCancel, "DBSheet Definition")
             If retval = MsgBoxResult.Ok Then DBSheetCols.Rows(rowIndex).Cells("lookup").Value = ""
         Else
-            ErrorMsg("lookup query cannot be (re)generated as foreign table, key and lookup is not (fully) defined for field " + DBSheetCols.Rows(rowIndex).Cells("name").Value, "DBSheet Definition Error")
+            Globals.ErrorMsg("lookup query cannot be (re)generated as foreign table, key and lookup is not (fully) defined for field " + DBSheetCols.Rows(rowIndex).Cells("name").Value, "DBSheet Definition Error")
         End If
     End Sub
 
@@ -599,7 +599,7 @@ Public Class DBSheetCreateForm
         If Strings.Len(DBSheetCols.Rows(selRowIndex).Cells("lookup").Value) > 0 Then
             testTheQuery(DBSheetCols.Rows(selRowIndex).Cells("lookup").Value, True)
         Else
-            ErrorMsg("No restriction query created to test !!!", "DBSheet Definition Error")
+            Globals.ErrorMsg("No restriction query created to test !!!", "DBSheet Definition Error")
         End If
     End Sub
 
@@ -608,7 +608,7 @@ Public Class DBSheetCreateForm
     ''' <param name="e"></param>
     Private Sub RemoveLookupQueryTest_Click(sender As Object, e As EventArgs) Handles RemoveLookupQueryTest.Click
         If ExcelDnaUtil.Application.ActiveSheet.Name <> "TESTSHEET" Then
-            ErrorMsg("Active sheet doesn't seem to be a query test sheet !!!", "DBSheet Definition Error")
+            Globals.ErrorMsg("Active sheet doesn't seem to be a query test sheet !!!", "DBSheet Definition Error")
         Else
             ExcelDnaUtil.Application.ActiveWorkbook.Close(False)
         End If
@@ -665,14 +665,14 @@ Public Class DBSheetCreateForm
                 DBSheetCols.DataSource = theDBSheetDefTable
                 DBSheetCols.AutoResizeColumns()
             Catch ex As Exception
-                ErrorMsg("Could not get schema information for table fields with query: '" + selectStmt + "', error: " + ex.Message, "DBSheet Definition Error")
+                Globals.ErrorMsg("Could not get schema information for table fields with query: '" + selectStmt + "', error: " + ex.Message, "DBSheet Definition Error")
             End Try
             rstSchema.Close()
             FormDisabled = False
             ' after changing the column no more change to table allowed !!
             TableEditable(False)
         Catch ex As System.Exception
-            ErrorMsg("Exception in addAllFields_Click: " + ex.Message)
+            Globals.ErrorMsg("Exception in addAllFields_Click: " + ex.Message)
         End Try
     End Sub
 
@@ -716,7 +716,7 @@ Public Class DBSheetCreateForm
                 TableDataTypes(appendInfo + schemaRow("ColumnName")) = schemaRow("DataType").Name + "(" + schemaRow("ColumnSize").ToString + precInfo + ")"
             Next
         Catch ex As Exception
-            ErrorMsg("Could not get type information for table fields with query: '" + selectStmt + "', error: " + ex.Message, "DBSheet Definition Error")
+            Globals.ErrorMsg("Could not get type information for table fields with query: '" + selectStmt + "', error: " + ex.Message, "DBSheet Definition Error")
         End Try
         rstSchema.Close()
     End Sub
@@ -736,7 +736,7 @@ Public Class DBSheetCreateForm
                 getforeignTables.Add(schemaRow("ColumnName"))
             Next
         Catch ex As Exception
-            ErrorMsg("Could not get type information for table fields with query: '" + selectStmt + "', error: " + ex.Message, "DBSheet Definition Error")
+            Globals.ErrorMsg("Could not get type information for table fields with query: '" + selectStmt + "', error: " + ex.Message, "DBSheet Definition Error")
         End Try
         rstSchema.Close()
     End Function
@@ -803,7 +803,7 @@ Public Class DBSheetCreateForm
     Private Sub createQuery_Click(ByVal sender As Object, ByVal e As EventArgs) Handles createQuery.Click
         testQuery.Text = "&test DBSheet Query"
         If DBSheetCols.Rows.Count < 2 Then
-            ErrorMsg("No columns defined yet, can't create query !", "DBSheet Definition Error")
+            Globals.ErrorMsg("No columns defined yet, can't create query !", "DBSheet Definition Error")
             Exit Sub
         End If
         Dim retval As DialogResult = QuestionMsg("regenerate DBSheet query, overwriting all customizations there?",, "DBSheet Definition")
@@ -829,14 +829,14 @@ Public Class DBSheetCreateForm
                     Dim lookupStr As String = DBSheetCols.Rows(i).Cells("lookup").Value.ToString
                     If lookupStr = "" Then
                         DBSheetCols.Rows(i).Selected = True
-                        ErrorMsg("No lookup query created for field " + DBSheetCols.Rows(i).Cells("name").Value + ", can't proceed !", "DBSheet Definition Error")
+                        Globals.ErrorMsg("No lookup query created for field " + DBSheetCols.Rows(i).Cells("name").Value + ", can't proceed !", "DBSheet Definition Error")
                         Exit Sub
                     End If
                     Dim theTable As String = "T" + tableCounter.ToString
                     ' either we go for the whole part after the last join
-                    Dim completeJoin As String = fetch(lookupStr, "JOIN ", "")
+                    Dim completeJoin As String = Globals.fetch(lookupStr, "JOIN ", "")
                     ' or we have a simple WHERE and just "AND" it to the created join
-                    Dim addRestrict As String = quotedReplace(fetch(lookupStr, "WHERE ", ""), "T" + tableCounter.ToString)
+                    Dim addRestrict As String = quotedReplace(Globals.fetch(lookupStr, "WHERE ", ""), "T" + tableCounter.ToString)
 
                     ' remove any ORDER BY clause from additional restrict...
                     Dim restrPos As Integer = addRestrict.ToUpper().LastIndexOf(" ORDER") + 1
@@ -864,13 +864,13 @@ Public Class DBSheetCreateForm
                         fromStr += " LEFT JOIN " + vbCrLf + completeJoin
                     End If
 
-                    selectPart = fetch(lookupStr, "SELECT ", " FROM ").Trim()
+                    selectPart = Globals.fetch(lookupStr, "SELECT ", " FROM ").Trim()
                     ' remove second field in lookup query's select clause
                     restrPos = selectPart.LastIndexOf(",") + 1
                     selectPart = selectPart.Substring(0, Math.Min(restrPos - 1, selectPart.Length))
                     Dim aliasName As String = Strings.Mid(selectPart, InStrRev(selectPart, " ") + 1)
                     If aliasName <> usedColumn Then
-                        ErrorMsg("Alias of lookup field '" + aliasName + "' is not consistent with field name '" + usedColumn + "', please change lookup definition !", "DBSheet Definition Error")
+                        Globals.ErrorMsg("Alias of lookup field '" + aliasName + "' is not consistent with field name '" + usedColumn + "', please change lookup definition !", "DBSheet Definition Error")
                         Exit Sub
                     End If
                     Dim flookupStr As String = DBSheetCols.Rows(i).Cells("flookup").Value.ToString
@@ -890,7 +890,7 @@ Public Class DBSheetCreateForm
                      If(orderByStr <> "", "ORDER BY " + orderByStr, "")
             saveEnabled(True)
         Catch ex As System.Exception
-            ErrorMsg("Exception in createQuery_Click: " + ex.Message)
+            Globals.ErrorMsg("Exception in createQuery_Click: " + ex.Message)
         End Try
         If queryStr <> "" Then Query.Text = queryStr
     End Sub
@@ -905,17 +905,17 @@ Public Class DBSheetCreateForm
                     testTheQuery(Query.Text)
                 ElseIf testQuery.Text = "&remove Testsheet" Then
                     If ExcelDnaUtil.Application.ActiveSheet.Name <> "TESTSHEETQ" Then
-                        ErrorMsg("Active sheet doesn't seem to be a query test sheet !", "DBSheet Testquery Remove Warning", MessageBoxIcon.Exclamation)
+                        Globals.ErrorMsg("Active sheet doesn't seem to be a query test sheet !", "DBSheet Testquery Remove Warning", MessageBoxIcon.Exclamation)
                     Else
                         ExcelDnaUtil.Application.ActiveWorkbook.Close(False)
                     End If
                     testQuery.Text = "&test DBSheet Query"
                 End If
             Else
-                ErrorMsg("No Query created to test !!!", "DBSheet Query Test Warning", MessageBoxIcon.Exclamation)
+                Globals.ErrorMsg("No Query created to test !!!", "DBSheet Query Test Warning", MessageBoxIcon.Exclamation)
             End If
         Catch ex As System.Exception
-            ErrorMsg("Exception in testQuery_Click: " + ex.Message)
+            Globals.ErrorMsg("Exception in testQuery_Click: " + ex.Message)
         End Try
     End Sub
 
@@ -942,7 +942,7 @@ Public Class DBSheetCreateForm
                 j += 1
             End While
             If InStr(theQueryText, whereClauseText) = 0 Then
-                ErrorMsg("Didn't find where clause " + whereClauseText + " in theQueryText: " + theQueryText + vbCrLf + "maybe creating DBSheet query again helps..", "DBSheet Definition Error")
+                Globals.ErrorMsg("Didn't find where clause " + whereClauseText + " in theQueryText: " + theQueryText + vbCrLf + "maybe creating DBSheet query again helps..", "DBSheet Definition Error")
                 Exit Sub
             Else
                 theQueryText = Replace(theQueryText, whereClauseText, replacedStr)
@@ -965,7 +965,7 @@ Public Class DBSheetCreateForm
             End If
             Exit Sub
         Catch ex As System.Exception
-            ErrorMsg("Exception In testTheQuery: " + ex.Message)
+            Globals.ErrorMsg("Exception In testTheQuery: " + ex.Message)
         End Try
     End Sub
 #End Region
@@ -990,7 +990,7 @@ Public Class DBSheetCreateForm
                 FormDisabled = True
                 ' get Database from (legacy) connID (legacy connID was prefixed with connIDPrefixDBtype)
                 Dim configDatabase As String = Replace(DBSheetConfig.getEntry("connID", DBSheetParams), fetchSetting("connIDPrefixDBtype", "MSSQL"), "")
-                Try : openConnection(configDatabase) : Catch ex As Exception : ErrorMsg(ex.Message) : Exit Sub : End Try
+                Try : openConnection(configDatabase) : Catch ex As Exception : Globals.ErrorMsg(ex.Message) : Exit Sub : End Try
                 fillDatabases()
                 Database.SelectedIndex = Database.Items.IndexOf(configDatabase)
                 fillTables()
@@ -999,7 +999,7 @@ Public Class DBSheetCreateForm
                 Dim theTable As String = If(InStr(DBSheetConfig.getEntry("table", DBSheetParams), Database.Text + ".") > 0, DBSheetConfig.getEntry("table", DBSheetParams), Database.Text + fetchSetting("ownerQualifier" + env.ToString, "") + DBSheetConfig.getEntry("table", DBSheetParams))
                 Table.SelectedIndex = Table.Items.IndexOf(theTable)
                 If Table.SelectedIndex = -1 Then
-                    ErrorMsg("couldn't find table " + theTable + " defined in definitions file in database " + Database.Text + "!", "DBSheet Definition Error")
+                    Globals.ErrorMsg("couldn't find table " + theTable + " defined in definitions file in database " + Database.Text + "!", "DBSheet Definition Error")
                     FormDisabled = False
                     Exit Sub
                 End If
@@ -1015,12 +1015,12 @@ Public Class DBSheetCreateForm
                     newRow.outer = If(DBSheetConfig.getEntry("outer", DBSheetColumnDef) <> "", True, False)
                     newRow.primkey = If(DBSheetConfig.getEntry("primkey", DBSheetColumnDef) <> "", True, False)
                     If Not TableDataTypes.ContainsKey(newRow.name) Then
-                        ErrorMsg("couldn't find type information for field " + newRow.name + " in database (maybe wrong non-nullable information for field in definition) !", "DBSheet Definition Error")
+                        Globals.ErrorMsg("couldn't find type information for field " + newRow.name + " in database (maybe wrong non-nullable information for field in definition) !", "DBSheet Definition Error")
                         Exit Sub
                     End If
                     newRow.type = TableDataTypes(newRow.name)
                     If newRow.type = "" Then
-                        ErrorMsg("empty type information for field " + newRow.name + " in database !", "DBSheet Definition Error")
+                        Globals.ErrorMsg("empty type information for field " + newRow.name + " in database !", "DBSheet Definition Error")
                         Exit Sub
                     End If
                     Dim sortMode As String = DBSheetConfig.getEntry("sort", DBSheetColumnDef)
@@ -1047,7 +1047,7 @@ Public Class DBSheetCreateForm
                 CurrentFileLinkLabel.Text = currentFilepath
             End If
         Catch ex As System.Exception
-            ErrorMsg("Exception in loadDefs_Click: " + ex.Message)
+            Globals.ErrorMsg("Exception in loadDefs_Click: " + ex.Message)
         End Try
     End Sub
 
@@ -1092,7 +1092,7 @@ Public Class DBSheetCreateForm
             FileSystem.PrintLine(1, xmlDbsheetConfig())
             FileSystem.FileClose(1)
         Catch ex As System.Exception
-            ErrorMsg("Exception in saveDefinitionsToFile: " + ex.Message)
+            Globals.ErrorMsg("Exception in saveDefinitionsToFile: " + ex.Message)
         End Try
     End Sub
 
@@ -1127,7 +1127,7 @@ Public Class DBSheetCreateForm
             ' finally put everything together:
             Return "<DBsheetConfig>" + vbCrLf + namedParams + vbCrLf + "<columns>" + columnsDef + vbCrLf + "</columns>" + vbCrLf + "</DBsheetConfig>"
         Catch ex As System.Exception
-            ErrorMsg("Exception in xmlDbsheetConfig: " + ex.Message)
+            Globals.ErrorMsg("Exception in xmlDbsheetConfig: " + ex.Message)
             Return ""
         End Try
     End Function

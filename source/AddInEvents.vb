@@ -35,7 +35,7 @@ Public Class AddInEvents
         Application = ExcelDnaUtil.Application
         Try
             If ExcelDnaUtil.Application.AddIns("DBAddin.Functions").Installed Then
-                ErrorMsg("Attention: legacy DBAddin (DBAddin.Functions) still active, this might lead to unexpected results!")
+                Globals.ErrorMsg("Attention: legacy DBAddin (DBAddin.Functions) still active, this might lead to unexpected results!")
             End If
         Catch ex As Exception : End Try
         ' for finding out what happened...
@@ -44,7 +44,7 @@ Public Class AddInEvents
         ExcelDna.IntelliSense.IntelliSenseServer.Install()
         ' Ribbon and context menu setup
         Globals.theMenuHandler = New MenuHandler
-        LogInfo("initialize configuration settings")
+        Globals.LogInfo("initialize configuration settings")
         Functions.queryCache = New Dictionary(Of String, String)
         Functions.StatusCollection = New Dictionary(Of String, ContainedStatusMsg)
         Globals.DBModifDefColl = New Dictionary(Of String, Dictionary(Of String, DBModif))
@@ -60,10 +60,13 @@ Public Class AddInEvents
         ' Configs are 1 based, selectedEnvironment(index of environment dropdown) is 0 based. negative values not allowed!
         Dim selEnv As Integer = CInt(fetchSetting("DefaultEnvironment", "1")) - 1
         If selEnv > environdefs.Length - 1 OrElse selEnv < 0 Then
-            ErrorMsg("Default Environment " + (selEnv + 1).ToString + " not existing, setting to first environment !")
+            Globals.ErrorMsg("Default Environment " + (selEnv + 1).ToString + " not existing, setting to first environment !")
             selEnv = 0
         End If
         Globals.selectedEnvironment = selEnv
+        ' after getting the default environment (should exist), set the Const Connection String again to avoid problems in generating DB ListObjects
+        ConstConnString = fetchSetting("ConstConnString" + Globals.env(), "")
+        ConfigStoreFolder = fetchSetting("ConfigStoreFolder" + Globals.env(), "")
     End Sub
 
     ''' <summary>AutoClose cleans up after finishing addin</summary>
@@ -72,7 +75,7 @@ Public Class AddInEvents
             Globals.theMenuHandler = Nothing
             ExcelDna.IntelliSense.IntelliSenseServer.Uninstall()
         Catch ex As Exception
-            ErrorMsg("DBAddin unloading error: " + ex.Message, "AutoClose")
+            Globals.ErrorMsg("DBAddin unloading error: " + ex.Message, "AutoClose")
         End Try
     End Sub
 
@@ -134,7 +137,7 @@ done:
                 End If
             Next
         Catch ex As Exception
-            ErrorMsg("Error getting docproperties: " + Wb.Name + ex.Message)
+            Globals.ErrorMsg("Error getting docproperties: " + Wb.Name + ex.Message)
         End Try
 
         ' now clear content/all
@@ -144,7 +147,7 @@ done:
             Dim ws As Excel.Worksheet = Nothing
             For Each ws In Wb.Worksheets
                 If ws Is Nothing Then
-                    LogWarn("no worksheet in saving workbook...")
+                    Globals.LogWarn("no worksheet in saving workbook...")
                     Exit For
                 End If
                 For Each theFunc As String In {"DBListFetch(", "DBRowFetch("}
@@ -166,7 +169,7 @@ done:
                                 Dim theTargetRange As Excel.Range
                                 Try : theTargetRange = ExcelDnaUtil.Application.Range(targetName)
                                 Catch ex As Exception
-                                    LogWarn("Error in finding target range of DB Function " + theFunc + "in " + firstAddress + "), refreshing all DB functions should solve this.")
+                                    Globals.LogWarn("Error in finding target range of DB Function " + theFunc + "in " + firstAddress + "), refreshing all DB functions should solve this.")
                                     searchCell = Nothing
                                     searchCell = ws.Cells.Find(What:="", After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
                                     dontCalcWhileClearing = False
@@ -174,12 +177,12 @@ done:
                                 End Try
                                 If DBFCC Then
                                     theTargetRange.Parent.Range(theTargetRange.Parent.Cells(theTargetRange.Row, theTargetRange.Column), theTargetRange.Parent.Cells(theTargetRange.Row + theTargetRange.Rows.Count - 1, theTargetRange.Column + theTargetRange.Columns.Count - 1)).ClearContents
-                                    LogInfo("Contents of selected DB Functions targets cleared")
+                                    Globals.LogInfo("Contents of selected DB Functions targets cleared")
                                 End If
                                 If DBFCA Then
                                     theTargetRange.Parent.Range(theTargetRange.Parent.Cells(theTargetRange.Row + 2, theTargetRange.Column), theTargetRange.Parent.Cells(theTargetRange.Row + theTargetRange.Rows.Count - 1, theTargetRange.Column + theTargetRange.Columns.Count - 1)).Clear
                                     theTargetRange.Parent.Range(theTargetRange.Parent.Cells(theTargetRange.Row, theTargetRange.Column), theTargetRange.Parent.Cells(theTargetRange.Row + 2, theTargetRange.Column + theTargetRange.Columns.Count - 1)).ClearContents
-                                    LogInfo("All cleared from selected DB Functions targets")
+                                    Globals.LogInfo("All cleared from selected DB Functions targets")
                                 End If
                             End If
                             searchCell = ws.Cells.FindNext(searchCell)
@@ -199,7 +202,7 @@ done:
                                             End Sub)
             End If
         Catch ex As Exception
-            ErrorMsg("Error clearing DBfunction targets in Workbook " + Wb.Name + ": " + ex.Message)
+            Globals.ErrorMsg("Error clearing DBfunction targets in Workbook " + Wb.Name + ": " + ex.Message)
         End Try
         dontCalcWhileClearing = False
     End Sub
@@ -264,11 +267,11 @@ done:
             Catch ex As Exception
                 ' if target name relates to an invalid (offset) formula, referstorange fails  ...
                 If InStr(ExcelDnaUtil.Application.ActiveWorkbook.Names.Item(cbName).RefersTo, "OFFSET(") > 0 Then
-                    ErrorMsg("Error, offset formula that '" + cbName + "' refers to, did not return a valid range." + vbCrLf + "Please check the offset formula to return a valid range !", "DBModifier Definitions Error")
+                    Globals.ErrorMsg("Error, offset formula that '" + cbName + "' refers to, did not return a valid range." + vbCrLf + "Please check the offset formula to return a valid range !", "DBModifier Definitions Error")
                     ExcelDnaUtil.Application.Dialogs(Excel.XlBuiltInDialog.xlDialogNameManager).Show()
                 Else
-                    ErrorMsg("No underlying " + Left(cbName, 8) + " Range named " + cbName + " found, exiting without DBModification.")
-                    LogWarn("targetRange assignment failed: " + ex.Message)
+                    Globals.ErrorMsg("No underlying " + Left(cbName, 8) + " Range named " + cbName + " found, exiting without DBModification.")
+                    Globals.LogWarn("targetRange assignment failed: " + ex.Message)
                 End If
                 Exit Sub
             End Try
@@ -302,7 +305,7 @@ done:
                 ElseIf cb5 Is Nothing Then
                     cb5 = Sh.OLEObjects(shp.Name).Object
                 Else
-                    ErrorMsg("only max. of five DBModifier Buttons allowed on a Worksheet, currently using " + cb1.Name + "," + cb2.Name + "," + cb3.Name + "," + cb4.Name + " and " + cb5.Name + " !")
+                    Globals.ErrorMsg("only max. of five DBModifier Buttons allowed on a Worksheet, currently using " + cb1.Name + "," + cb2.Name + "," + cb3.Name + "," + cb4.Name + " and " + cb5.Name + " !")
                     assignHandler = False
                     Exit For
                 End If

@@ -238,10 +238,10 @@ Public MustInherit Class DBModif
             If Not StatusCollection.ContainsKey(callID) Then StatusCollection.Add(callID, New ContainedStatusMsg)
             Dim functionFormula As String = ExcelDnaUtil.Application.Range(srcExtent).Formula
             If UCase(Left(functionFormula, 12)) = "=DBLISTFETCH" Then
-                LogInfo("Refresh DBListFetch: " + callID)
-                Dim functionArgs = functionSplit(functionFormula, ",", """", "DBListFetch", "(", ")")
+                Globals.LogInfo("Refresh DBListFetch: " + callID)
+                Dim functionArgs = Globals.functionSplit(functionFormula, ",", """", "DBListFetch", "(", ")")
                 If functionArgs.Length() < 3 Then
-                    functionArgs = functionSplit(functionFormula, listSepLocal, """", "DBListFetch", "(", ")")
+                    functionArgs = Globals.functionSplit(functionFormula, listSepLocal, """", "DBListFetch", "(", ")")
                 End If
                 Dim targetRangeName As String : targetRangeName = functionArgs(2)
                 ' check if fetched argument targetRangeName is really a name or just a plain range address
@@ -276,19 +276,19 @@ Public MustInherit Class DBModif
                 ' call action procedure directly as we can avoid the external context required in the UDF
                 DBListFetchAction(callID, getQuery(functionArgs(0), caller), caller, target, getConnString(functionArgs(1), caller, False), formulaRange, extendDataArea, HeaderInfo, AutoFit, autoformat, ShowRowNums, targetRangeName, formulaRangeName)
             ElseIf UCase(Left(functionFormula, 11)) = "=DBSETQUERY" Then
-                LogInfo("Refresh DBSetQuery: " + callID)
-                Dim functionArgs = functionSplit(functionFormula, ",", """", "DBSetQuery", "(", ")")
+                Globals.LogInfo("Refresh DBSetQuery: " + callID)
+                Dim functionArgs = Globals.functionSplit(functionFormula, ",", """", "DBSetQuery", "(", ")")
                 If functionArgs.Length() < 3 Then
-                    functionArgs = functionSplit(functionFormula, listSepLocal, """", "DBSetQuery", "(", ")")
+                    functionArgs = Globals.functionSplit(functionFormula, listSepLocal, """", "DBSetQuery", "(", ")")
                 End If
                 Dim targetRangeName As String : targetRangeName = functionArgs(2)
                 If UBound(functionArgs) = 3 Then targetRangeName += "," + functionArgs(3)
                 Functions.DBSetQueryAction(callID, getQuery(functionArgs(0), caller), target, getConnString(functionArgs(1), caller, True), caller, targetRangeName)
             ElseIf UCase(Left(functionFormula, 11)) = "=DBROWFETCH" Then
-                LogInfo("Refresh DBRowFetch: " + callID)
-                Dim functionArgs = functionSplit(functionFormula, ",", """", "DBRowFetch", "(", ")")
+                Globals.LogInfo("Refresh DBRowFetch: " + callID)
+                Dim functionArgs = Globals.functionSplit(functionFormula, ",", """", "DBRowFetch", "(", ")")
                 If functionArgs.Length() < 3 Then
-                    functionArgs = functionSplit(functionFormula, listSepLocal, """", "DBRowFetch", "(", ")")
+                    functionArgs = Globals.functionSplit(functionFormula, listSepLocal, """", "DBRowFetch", "(", ")")
                 End If
                 Dim HeaderInfo As Boolean = False
                 Dim tempArray() As Excel.Range = Nothing
@@ -409,7 +409,7 @@ Public Class DBMapper : Inherits DBModif
         Dim paramText As String = paramDefs
         TargetRange = paramTarget
 
-        Dim DBModifParams() As String = functionSplit(paramText, ",", """", "def", "(", ")")
+        Dim DBModifParams() As String = Globals.functionSplit(paramText, ",", """", "def", "(", ")")
         If DBModifParams Is Nothing Then Exit Sub
         ' check for completeness
         If DBModifParams.Length < 4 Then
@@ -785,11 +785,9 @@ Public Class DBMapper : Inherits DBModif
                 ' If we have an autoincrementing primary key (empty primary key value !) or didn't find a record with the given primary key (rst.EOF),
                 ' add a new record if insertIfMissing flag is set Or CUD Flag insert is given
                 If AutoIncrement OrElse rst.EOF Then
-                    Dim i As Integer
                     If insertIfMissing Or rowCUDFlag = "i" Then
-                        ExcelDnaUtil.Application.StatusBar = Left("Inserting " + primKeyDisplay + " into " + tableName, 255)
                         rst.AddNew()
-                        For i = 1 To primKeysCount
+                        For i As Integer = 1 To primKeysCount
                             Dim primKeyValue As Object = TargetRange.Cells(rowNum, i).Value
                             If primKeyValue Is Nothing Then primKeyValue = ""
                             Dim primKey = TargetRange.Cells(1, i).Value
@@ -806,13 +804,16 @@ Public Class DBMapper : Inherits DBModif
                             End Try
                         Next
                     Else
-                        If Not notifyUserOfDataError("Did not find recordset with statement '" + getStmt + "', insertIfMissing = " + insertIfMissing.ToString() + " in sheet " + TargetRange.Parent.Name + " and row " + rowNum.ToString, rowNum, i) Then GoTo cleanup
+                        If Not notifyUserOfDataError("Did not find recordset with statement '" + getStmt + "', insertIfMissing = " + insertIfMissing.ToString() + " in sheet " + TargetRange.Parent.Name + " and row " + rowNum.ToString(), rowNum) Then GoTo cleanup
+                        ' makes no sense to do rest as this is a failure...
+                        GoTo nextRow
                     End If
-                    ExcelDnaUtil.Application.StatusBar = Left("Updating " + primKeyDisplay + " in " + tableName, 255)
+                    ExcelDnaUtil.Application.StatusBar = Left("Inserting " + IIf(AutoIncrement, "new autoincremented key", primKeyDisplay) + " into " + tableName, 255)
                 End If
 
+                ' insert or update
                 If Not CUDFlags Or (CUDFlags And (rowCUDFlag = "i" Or rowCUDFlag = "u")) Then
-                    ' walk through non primary columns and fill fields
+                    ' walk through non primary columns and fill fields to prepare recordset for insert or update
                     colNum = primKeysCount + 1
                     Do
                         Dim fieldname As String = TargetRange.Cells(1, colNum).Value
@@ -827,6 +828,7 @@ Public Class DBMapper : Inherits DBModif
                                             rst.Fields(fieldname).Value = Nothing
                                         Else
                                             If Not notifyUserOfDataError("Field Value Update Error: " + CVErrText(fieldval) + " with Table: " + tableName + ", Field: " + fieldname + ", in sheet " + TargetRange.Parent.Name + " and row " + rowNum.ToString + ", col: " + colNum.ToString, rowNum, colNum) Then GoTo cleanup
+                                            GoTo nextRow
                                         End If
                                     Else
                                         ' special treatment for time and date fields as they are
@@ -845,6 +847,7 @@ Public Class DBMapper : Inherits DBModif
                                 Dim exMessage As String = ex.Message
                                 rst.CancelUpdate()
                                 If Not notifyUserOfDataError("Field Value Update Error: " + exMessage + " with Table: " + tableName + ", Field: " + fieldname + ", in sheet " + TargetRange.Parent.Name + " and row " + rowNum.ToString + ", col: " + colNum.ToString, rowNum, colNum) Then GoTo cleanup
+                                GoTo nextRow
                             End Try
                         End If
                         colNum += 1
@@ -861,9 +864,11 @@ Public Class DBMapper : Inherits DBModif
                         rst.CancelUpdate()
                         If Not notifyUserOfDataError("Row Update Error, Table: " + rst.Source.ToString + ", Error: " + exMessage + " in sheet " + TargetRange.Parent.Name + " and row " + rowNum.ToString, rowNum) Then GoTo cleanup
                     End Try
+                    ExcelDnaUtil.Application.StatusBar = Left("Ins/Updted " + IIf(AutoIncrement, "new autoincremented key", primKeyDisplay) + " in " + tableName, 255)
                 End If
+
+                ' delete only with CUDFlags...
                 If (CUDFlags And rowCUDFlag = "d") Then
-                    ExcelDnaUtil.Application.StatusBar = Left("Deleting " + primKeyDisplay + " in " + tableName, 255)
                     Try
                         rst.Delete(AffectEnum.adAffectCurrent)
                         changesDone = True
@@ -872,9 +877,10 @@ Public Class DBMapper : Inherits DBModif
                     Catch ex As Exception
                         If Not notifyUserOfDataError("Error deleting row " + rowNum.ToString + " in sheet " + TargetRange.Parent.Name + ": " + ex.Message, rowNum) Then GoTo cleanup
                     End Try
+                    ExcelDnaUtil.Application.StatusBar = Left("Deleted " + primKeyDisplay + " in " + tableName, 255)
                 End If
-                rst.Close()
 nextRow:
+                rst.Close()
                 Try
                     If TargetRange.Cells(rowNum + 1, 1).Value Is Nothing OrElse TargetRange.Cells(rowNum + 1, 1).Value.ToString().Length = 0 Then finishLoop = True
                 Catch ex As Exception
@@ -899,7 +905,7 @@ nextRow:
         End If
 cleanup:
         ExcelDnaUtil.Application.StatusBar = False
-        ' close connection to return it to the pool (automatically closes recordset objects)...
+        ' close connection to return it to the pool (automatically closes recordset objects, so no need for checkrst.Close() or rst.Close())...
         If calledByDBSeq = "" Then dbcnn.Close()
         ' DBSheet surrogate (CUDFlags), ask for refresh after DB Modification was done
         If changesDone Then
@@ -920,7 +926,7 @@ cleanup:
                             ' clear CUD marks after completion is done with doDBRefresh/DBSetQueryAction/resizeDBMapperRange
                         End If
                     Else
-                        LogWarn("no refresh took place for DBMapper " + dbmodifName)
+                        Globals.LogWarn("no refresh took place for DBMapper " + dbmodifName)
                     End If
                 End If
             End If
@@ -1214,7 +1220,7 @@ cleanup:
                             ' clear CUD marks after completion is done with doDBRefresh/DBSetQueryAction/resizeDBMapperRange
                         End If
                     Else
-                        LogWarn("no refresh took place for DBMapper " + dbmodifName)
+                        Globals.LogWarn("no refresh took place for DBMapper " + dbmodifName)
                     End If
                 End If
             End If
@@ -1410,14 +1416,14 @@ Public Class DBSeqnce : Inherits DBModif
             Dim DBModifname As String = definition(1)
             Select Case DBModiftype
                 Case "DBMapper", "DBAction"
-                    LogInfo(DBModifname + "... ")
+                    Globals.LogInfo(DBModifname + "... ")
                     DBModifDefColl(DBModiftype).Item(DBModifname).doDBModif(WbIsSaving, calledByDBSeq:=MyBase.dbmodifName, TransactionOpen:=TransactionIsOpen)
                     If DBModiftype = "DBMapper" Then
                         If DirectCast(DBModifDefColl("DBMapper").Item(DBModifname), DBMapper).CUDFlags Then executedDBMappers(DBModifname) = True
                         If DirectCast(DBModifDefColl("DBMapper").Item(DBModifname), DBMapper).hadChanges Then modifiedDBMappers(DBModifname) = True
                     End If
                 Case "DBBegin"
-                    LogInfo("DBBeginTrans... ")
+                    Globals.LogInfo("DBBeginTrans... ")
                     If dbcnn Is Nothing Then
                         ' take database connection properties from next sequence step
                         Dim nextdefinition() As String = Split(sequenceParams(i + 1), ":")
@@ -1428,10 +1434,10 @@ Public Class DBSeqnce : Inherits DBModif
                     TransactionIsOpen = True
                 Case "DBCommitRollback"
                     If Not hadError Then
-                        LogInfo("DBCommitTrans... ")
+                        Globals.LogInfo("DBCommitTrans... ")
                         dbcnn.CommitTrans()
                     Else
-                        LogInfo("DBRollbackTrans... ")
+                        Globals.LogInfo("DBRollbackTrans... ")
                         dbcnn.RollbackTrans()
                     End If
                     TransactionIsOpen = False
@@ -1500,8 +1506,8 @@ Public Module DBModifs
 
         ' connections are pooled by ADO depending on the connection string:
         dbcnn = New Connection
-        theConnString = Change(theConnString, dbidentifier, database, ";")
-        LogInfo("open connection with " + theConnString)
+        theConnString = Globals.Change(theConnString, dbidentifier, database, ";")
+        Globals.LogInfo("open connection with " + theConnString)
         ExcelDnaUtil.Application.StatusBar = "Trying " + Globals.CnnTimeout.ToString + " sec. with connstring: " + theConnString
         Try
             dbcnn.ConnectionString = theConnString
@@ -1533,15 +1539,15 @@ Public Module DBModifs
             ErrorMsg("No DB identifier given for environment: " + env.ToString + ", please correct and rerun.", "Open Connection Error")
             Exit Function
         End If
-        theConnString = Change(theConnString, dbidentifier, database, ";")
-        theConnString = Change(theConnString, "Connection Timeout", Globals.CnnTimeout.ToString, ";")
+        theConnString = Globals.Change(theConnString, dbidentifier, database, ";")
+        theConnString = Globals.Change(theConnString, "Connection Timeout", Globals.CnnTimeout.ToString, ";")
         If InStr(theConnString.ToLower, "provider=sqloledb") Or InStr(theConnString.ToLower, "driver=sql server") Then
             idbcnn = New System.Data.SqlClient.SqlConnection(theConnString)
         Else
             idbcnn = New System.Data.Odbc.OdbcConnection(theConnString)
         End If
 
-        LogInfo("open connection with " + theConnString)
+        Globals.LogInfo("open connection with " + theConnString)
         ExcelDnaUtil.Application.StatusBar = "Trying " + Globals.CnnTimeout.ToString + " sec. with connstring: " + theConnString
         Try
             idbcnn.Open()
@@ -1782,6 +1788,7 @@ Public Module DBModifs
 
             Dim CustomXmlParts As Object = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
             If CustomXmlParts.Count = 0 Then ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.Add("<root xmlns=""DBModifDef""></root>")
+            'TODO: check whether that is really needed:
             CustomXmlParts = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
             ' remove old node in case of renaming DBModifier
             ' Elements have names of DBModif types, attribute Name is given name (<DBMapper Name=existingDefName>)
@@ -1835,7 +1842,7 @@ Public Module DBModifs
     ''' <summary>gets defined names for DBModifier (DBMapper/DBAction/DBSeqnce) invocation in the current workbook and updates Ribbon with it</summary>
     Public Sub getDBModifDefinitions()
         ' load DBModifier definitions (objects) into Global collection DBModifDefColl
-        LogInfo("reading DBModifier Definitions for Workbook: " + ExcelDnaUtil.Application.ActiveWorkbook.Name)
+        Globals.LogInfo("reading DBModifier Definitions for Workbook: " + ExcelDnaUtil.Application.ActiveWorkbook.Name)
         Try
             Globals.DBModifDefColl.Clear()
             Dim CustomXmlParts As Object = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
@@ -1851,7 +1858,7 @@ Public Module DBModifs
                         Else
                             nodeName = customXMLNodeDef.BaseName
                         End If
-                        LogInfo("reading DBModifier Definition for " + nodeName)
+                        Globals.LogInfo("reading DBModifier Definition for " + nodeName)
                         Dim targetRange As Excel.Range = Nothing
                         ' for DBMappers and DBActions the data of the DBModification is stored in Ranges, so check for those and get the Range
                         If DBModiftype = "DBMapper" Or DBModiftype = "DBAction" Then
@@ -2001,7 +2008,7 @@ EndOuterLoop:
                 nonInteractive = False
                 Return "DB Modifier '" + DBModifName + "' not existing, available: " + DBModifavailable
             End If
-            LogInfo("Doing DBModifier '" + DBModifName + "' ...")
+            Globals.LogInfo("Doing DBModifier '" + DBModifName + "' ...")
             Try
                 Globals.DBModifDefColl(DBModiftype).Item(DBModifName).doDBModif()
             Catch ex As Exception

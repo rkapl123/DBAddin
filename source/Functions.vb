@@ -64,7 +64,7 @@ Public Module Functions
                 End If
             End If
         Catch ex As Exception
-            LogWarn(ex.Message)
+            Globals.LogWarn(ex.Message)
             DBDate = "Error (" + ex.Message + ") in function DBDate"
         End Try
     End Function
@@ -149,7 +149,7 @@ Public Module Functions
             Next
             DBString = "'" + retval + "'"
         Catch ex As Exception
-            LogWarn(ex.Message)
+            Globals.LogWarn(ex.Message)
             DBString = "Error (" + ex.Message + ") in DBString"
         End Try
     End Function
@@ -254,7 +254,7 @@ Public Module Functions
             Next
             DoConcatCellsSep = Mid$(retval, Len(separator) + 1) ' skip first separator
         Catch ex As Exception
-            LogWarn(ex.Message)
+            Globals.LogWarn(ex.Message)
             DoConcatCellsSep = "Error (" + ex.Message + ") in DoConcatCellsSep"
         End Try
     End Function
@@ -279,7 +279,7 @@ Public Module Functions
             resolveConnstring(ConnString, EnvPrefix, True)
             ' calcContainers are identified by wbname + Sheetname + function caller cell Address
             callID = "[" + caller.Parent.Parent.Name + "]" + caller.Parent.Name + "!" + caller.Address
-            LogInfo("entering function, callID: " + callID)
+            Globals.LogInfo("entering function, callID: " + callID)
             ' check query, also converts query to string (if it is a range)
             ' error message or cached status message is returned from checkParamsAndCache, if query OK and result was not already calculated (cached) then empty string
             DBSetQuery = checkParamsAndCache(Query, callID, ConnString)
@@ -289,7 +289,7 @@ Public Module Functions
             End If
 
             ' needed for check whether target range is actually a table Listobject reference
-            Dim functionArgs = functionSplit(caller.Formula, ",", """", "DBSetQuery", "(", ")")
+            Dim functionArgs = Globals.functionSplit(caller.Formula, ",", """", "DBSetQuery", "(", ")")
             Dim targetRangeName As String = functionArgs(2)
             If UBound(functionArgs) = 3 Then targetRangeName += "," + functionArgs(3)
 
@@ -304,10 +304,10 @@ Public Module Functions
             End If
 
         Catch ex As Exception
-            LogWarn(ex.Message + ", callID: " + callID)
+            Globals.LogWarn(ex.Message + ", callID: " + callID)
             DBSetQuery = EnvPrefix + ", Error (" + ex.Message + ") in DBSetQuery, callID: " + callID
         End Try
-        LogInfo("leaving function, callID: " + callID)
+        Globals.LogInfo("leaving function, callID: " + callID)
     End Function
 
     ''' <summary>set Query parameters (query text and connection string) of Query List or pivot table (incl. chart)</summary>
@@ -331,7 +331,7 @@ Public Module Functions
         ' when selecting a value from a list of a validated field or being invoked from a hyperlink (e.g. word), excel won't react to
         ' Application.Calculation changes, so just leave here...
         If ExcelDnaUtil.Application.Calculation <> Excel.XlCalculation.xlCalculationManual Then
-            LogWarn("Error in setting Application.Calculation to Manual in query: " + Query + ", caller: " + callID)
+            Globals.LogWarn("Error in setting Application.Calculation to Manual in query: " + Query + ", caller: " + callID)
             StatusCollection(callID).statusMsg = "Error in setting Application.Calculation to Manual in query: " + Query
             caller.Formula += " " ' trigger recalculation to return error message to calling function
             Exit Sub
@@ -446,7 +446,7 @@ Public Module Functions
                 DBModifs.resizeDBMapperRange(theListObject.Range, oldRange)
             End If
         Catch ex As Exception
-            LogWarn(ex.Message + " in query: " + Query + ", caller: " + callID)
+            Globals.LogWarn(ex.Message + " in query: " + Query + ", caller: " + callID)
             StatusCollection(callID).statusMsg = ex.Message + " in query: " + Query
         End Try
 
@@ -494,7 +494,7 @@ Public Module Functions
             resolveConnstring(ConnString, EnvPrefix, False)
             ' calcContainers are identified by wbname + Sheetname + function caller cell Address
             callID = "[" + caller.Parent.Parent.Name + "]" + caller.Parent.Name + "!" + caller.Address
-            LogInfo("entering function, callID: " + callID)
+            Globals.LogInfo("entering function, callID: " + callID)
             ' prepare information for action proc
             If dontCalcWhileClearing Then
                 DBListFetch = EnvPrefix + ", dontCalcWhileClearing = True !"
@@ -518,7 +518,7 @@ Public Module Functions
             End If
 
             ' get target range name ...
-            Dim functionArgs = functionSplit(caller.Formula, ",", """", "DBListFetch", "(", ")")
+            Dim functionArgs = Globals.functionSplit(caller.Formula, ",", """", "DBListFetch", "(", ")")
             Dim targetRangeName As String : targetRangeName = functionArgs(2)
             ' check if fetched argument targetRangeName is really a name or just a plain range address
             If Not existsNameInWb(targetRangeName, caller.Parent.Parent) And Not existsNameInSheet(targetRangeName, caller.Parent) Then targetRangeName = ""
@@ -541,10 +541,10 @@ Public Module Functions
                                             End Sub)
             End If
         Catch ex As Exception
-            LogWarn(ex.Message + ", callID : " + callID)
+            Globals.LogWarn(ex.Message + ", callID : " + callID)
             DBListFetch = EnvPrefix + ", Error (" + ex.Message + ") in DBListFetch, callID : " + callID
         End Try
-        LogInfo("leaving function, callID: " + callID)
+        Globals.LogInfo("leaving function, callID: " + callID)
     End Function
 
     Function convertToBool(value As Object) As Boolean
@@ -584,7 +584,7 @@ Public Module Functions
         Dim oldRows, oldCols, oldFRows, oldFCols, retrievedRows, targetColumns, formulaStart As Integer
         Dim warning As String, errMsg As String, tmpname As String
 
-        LogInfo("Entering DBListFetchAction: callID " + callID)
+        Globals.LogInfo("Entering DBListFetchAction: callID " + callID)
 
         On Error Resume Next
         Dim calcMode = ExcelDnaUtil.Application.Calculation
@@ -689,7 +689,7 @@ Public Module Functions
             conn.Open(ConnString)
 
             If Err.Number <> 0 Then
-                LogWarn("Connection Error: " + Err.Description)
+                Globals.LogWarn("Connection Error: " + Err.Description)
                 ' prevent multiple reconnecting if connection errors present...
                 dontTryConnection = True
                 StatusCollection(callID).statusMsg = "Connection Error: " + Err.Description
@@ -960,7 +960,7 @@ Public Module Functions
 
         If Err.Number <> 0 Then
             errMsg = "Error in restoring formats: " + Err.Description + " in query: " + Query
-            LogWarn(errMsg + ", caller: " + callID)
+            Globals.LogWarn(errMsg + ", caller: " + callID)
             GoTo err_0
         End If
 
@@ -991,7 +991,7 @@ err_1: ' errors where recordset was opened
 err_0: ' errors where recordset was not opened or is already closed
         'targetRange.Cells(1, 1).Value = IIf(targetRange.Cells(1, 1).Value = "", " ", "")
         If errMsg.Length = 0 Then errMsg = Err.Description + " in query: " + Query
-        LogWarn(errMsg + ", caller: " + callID)
+        Globals.LogWarn(errMsg + ", caller: " + callID)
         StatusCollection(callID).statusMsg = errMsg
         finishAction(calcMode, callID, "Error")
         caller.Formula += " " ' recalculate to trigger return of error messages to calling function
@@ -1005,7 +1005,7 @@ err_0: ' errors where recordset was not opened or is already closed
         DBModifs.preventChangeWhileFetching = False
         ExcelDnaUtil.Application.Cursor = Excel.XlMousePointer.xlDefault  ' To return cursor to normal
         ExcelDnaUtil.Application.StatusBar = False
-        LogInfo("callID: " + callID + If(additionalLogInfo <> "", ", additionalInfo: " + additionalLogInfo, ""))
+        Globals.LogInfo("callID: " + callID + If(additionalLogInfo <> "", ", additionalInfo: " + additionalLogInfo, ""))
         ExcelDnaUtil.Application.ScreenUpdating = True ' coming from refresh, this might be off for dirtying "foreign" (being on a different sheet than the calling function) data targets 
         ExcelDnaUtil.Application.Calculation = calcMode
     End Sub
@@ -1031,7 +1031,7 @@ err_0: ' errors where recordset was not opened or is already closed
             resolveConnstring(ConnString, EnvPrefix, False)
             ' calcContainers are identified by wbname + sheetname + function caller cell Address
             callID = "[" + caller.Parent.Parent.Name + "]" + caller.Parent.Name + "!" + caller.Address
-            LogInfo("entering function, callID: " + callID)
+            Globals.LogInfo("entering function, callID: " + callID)
             If dontCalcWhileClearing Then
                 DBRowFetch = EnvPrefix + ", dontCalcWhileClearing = True !"
                 Exit Function
@@ -1080,10 +1080,10 @@ err_0: ' errors where recordset was not opened or is already closed
                                             End Sub)
             End If
         Catch ex As Exception
-            LogWarn(ex.Message + ", callID: " + callID)
+            Globals.LogWarn(ex.Message + ", callID: " + callID)
             DBRowFetch = EnvPrefix + ", Error (" + ex.Message + ") in DBRowFetch, callID: " + callID
         End Try
-        LogInfo("leaving function, callID: " + callID)
+        Globals.LogInfo("leaving function, callID: " + callID)
     End Function
 
     ''' <summary>Actually do the work for DBRowFetch: Query (assumed) one row of data, write it into targetCells</summary>
@@ -1155,7 +1155,7 @@ err_0: ' errors where recordset was not opened or is already closed
             conn.Open(ConnString)
 
             If Err.Number <> 0 Then
-                LogWarn("Connection Error: " + Err.Description)
+                Globals.LogWarn("Connection Error: " + Err.Description)
                 ' prevent multiple reconnecting if connection errors present...
                 dontTryConnection = True
                 StatusCollection(callID).statusMsg = "Connection Error: " + Err.Description
@@ -1250,7 +1250,7 @@ err_0: ' errors where recordset was not opened or is already closed
 err_1:
         If errMsg.Length = 0 Then errMsg = Err.Description + " in query: " + Query
         If tableRst.State <> 0 Then tableRst.Close()
-        LogWarn(errMsg + ", caller: " + callID)
+        Globals.LogWarn(errMsg + ", caller: " + callID)
         StatusCollection(callID).statusMsg = errMsg
         finishAction(calcMode, callID, "Error")
         caller.Formula += " " ' recalculate to trigger return of error messages to calling function
@@ -1302,7 +1302,7 @@ err_1:
             If ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual Then DBAddinEnvironment = "calc Mode is manual, please press F9 to get current DBAddin environment !"
         Catch ex As Exception
             DBAddinEnvironment = "Error happened: " + ex.Message
-            LogWarn(ex.Message)
+            Globals.LogWarn(ex.Message)
         End Try
     End Function
 
@@ -1318,7 +1318,7 @@ err_1:
             If ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual Then DBAddinServerSetting = "calc Mode is manual, please press F9 to get current DBAddin server setting !"
         Catch ex As Exception
             DBAddinServerSetting = "Error happened: " + ex.Message
-            LogWarn(ex.Message)
+            Globals.LogWarn(ex.Message)
         End Try
     End Function
 

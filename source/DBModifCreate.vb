@@ -33,15 +33,15 @@ Public Class DBModifCreate
         ' mandatory fields filled (visible Tablename, Primary keys And Database), NameValidation above OK, no Double invocation for execOnSave in DB Sequences And sequence parts and only one primary key for AutoInc Flag
         ' Beware: All If/ElseIf branches have to contain an ErrorMsg because the dialog stays open in this case. Only the Else branch closes the dialog.
         If Me.Tablename.Text = "" And Me.Tablename.Visible Then
-            ErrorMsg("Field Tablename is required, please fill in!", "DBModification Validation")
+            Globals.ErrorMsg("Field Tablename is required, please fill in!", "DBModification Validation")
         ElseIf Me.PrimaryKeys.Visible AndAlso Not Integer.TryParse(Me.PrimaryKeys.Text, primKeys) Then
-            ErrorMsg("Field Primary Keys is required and has to be an integer number, please fill in accordingly!", "DBModification Validation")
+            Globals.ErrorMsg("Field Primary Keys is required and has to be an integer number, please fill in accordingly!", "DBModification Validation")
         ElseIf Me.Database.Text = "" And Me.Database.Visible Then
-            ErrorMsg("Field Database is required, please fill in!", "DBModification Validation")
+            Globals.ErrorMsg("Field Database is required, please fill in!", "DBModification Validation")
         ElseIf NameValidationResult <> "" Then
-            ErrorMsg("Invalid " + Me.NameLabel.Text + ", Error: " + NameValidationResult, "DBModification Validation")
+            Globals.ErrorMsg("Invalid " + Me.NameLabel.Text + ", Error: " + NameValidationResult, "DBModification Validation")
         ElseIf Me.Tag = "DBMapper" AndAlso Me.AutoIncFlag.Checked AndAlso primKeys > 1 Then
-            ErrorMsg("Only one primary key is allowed when Auto Incrementing is enabled!", "DBModification Validation")
+            Globals.ErrorMsg("Only one primary key is allowed when Auto Incrementing is enabled!", "DBModification Validation")
         Else
             ' check for double invocation because of execOnSave both being set on current DB Modifier ...
             If Me.execOnSave.Checked And Globals.DBModifDefColl.ContainsKey("DBSeqnce") Then
@@ -58,7 +58,7 @@ Public Class DBModifCreate
                                     Dim DBModifTargetAddress As String = "(Target Address could not be found...)"
                                     If Globals.DBModifDefColl(definition(0)).ContainsKey(definition(1)) Then DBModifTargetAddress = Globals.DBModifDefColl(definition(0)).Item(definition(1)).getTargetRangeAddress()
                                     Dim foundDBModifName As String = IIf(DBModifierCheck.getName = "DBSeqnce", "Unnamed DBSequence", DBModifierCheck.getName)
-                                    ErrorMsg(Me.Tag + Me.DBModifName.Text + " in " + DBModifTargetAddress + " will be executed twice on saving, because it is part of '" + foundDBModifName + "', which is also executed on saving." + vbCrLf + IIf(Me.execOnSave.Checked, "Disabling 'Execute on save' now, you ", "You") + " can reenable after disabling it on '" + foundDBModifName + "'", "DBModification Validation")
+                                    Globals.ErrorMsg(Me.Tag + Me.DBModifName.Text + " in " + DBModifTargetAddress + " will be executed twice on saving, because it is part of '" + foundDBModifName + "', which is also executed on saving." + vbCrLf + IIf(Me.execOnSave.Checked, "Disabling 'Execute on save' now, you ", "You") + " can reenable after disabling it on '" + foundDBModifName + "'", "DBModification Validation")
                                     Me.execOnSave.Checked = False
                                 End If
                             Next
@@ -71,7 +71,7 @@ Public Class DBModifCreate
                         If (definition(0) = "DBAction" Or definition(0) = "DBMapper") AndAlso Globals.DBModifDefColl(definition(0)).ContainsKey(definition(1)) AndAlso Globals.DBModifDefColl(definition(0)).Item(definition(1)).DBModifSaveNeeded Then
                             Dim foundDBModifName As String = IIf(definition(1) = "", "Unnamed " + definition(0), definition(1))
                             Dim DBModifTargetAddress As String = Globals.DBModifDefColl(definition(0)).Item(definition(1)).getTargetRangeAddress()
-                            ErrorMsg(foundDBModifName + " in " + DBModifTargetAddress + " will be executed twice on saving, because it is part of this DBSequence, which is also executed on saving." + vbCrLf + IIf(Me.execOnSave.Checked, "Disabling 'Execute on save' now, you ", "You") + " can reenable after disabling it on '" + foundDBModifName + "'", "DBModification Validation")
+                            Globals.ErrorMsg(foundDBModifName + " in " + DBModifTargetAddress + " will be executed twice on saving, because it is part of this DBSequence, which is also executed on saving." + vbCrLf + IIf(Me.execOnSave.Checked, "Disabling 'Execute on save' now, you ", "You") + " can reenable after disabling it on '" + foundDBModifName + "'", "DBModification Validation")
                             Me.execOnSave.Checked = False
                         End If
                     Next
@@ -112,7 +112,7 @@ Public Class DBModifCreate
             ExcelDnaUtil.Application.Worksheets(rangePart(0)).Select()
             ExcelDnaUtil.Application.Range(rangePart(1)).Select()
         Catch ex As Exception
-            ErrorMsg("Couldn't select " + clickAddress + ":" + ex.Message)
+            Globals.ErrorMsg("Couldn't select " + clickAddress + ":" + ex.Message)
         End Try
     End Sub
 
@@ -182,7 +182,7 @@ Public Class DBModifCreate
             Me.DBSeqenceDataGrid.Hide()
             ' go into "repaired" mode (indicating rewriting DBSequence Steps in DBModif.createDBModif)
             Me.Tag = "repaired"
-            ErrorMsg("Defined DBSequence steps did not match allowed values." + vbCrLf + "Please follow the instructions in textbox to fix it...", "DBSequence definition Insert error")
+            Globals.ErrorMsg("Defined DBSequence steps did not match allowed values." + vbCrLf + "Please follow the instructions in textbox to fix it...", "DBSequence definition Insert error")
         End If
         DBSeqStepValidationErrorsShown = True
     End Sub
@@ -200,12 +200,12 @@ Public Class DBModifCreate
             cb.Caption = IIf(Me.DBModifName.Text = "", "Unnamed " + Me.Tag, Me.Tag + Me.DBModifName.Text)
         Catch ex As Exception
             cbshp.Delete()
-            ErrorMsg("Couldn't name CommandButton '" + cbName + "': " + ex.Message, "CommandButton create Error")
+            Globals.ErrorMsg("Couldn't name CommandButton '" + cbName + "': " + ex.Message, "CommandButton create Error")
             Exit Sub
         End Try
         If Len(cbName) > 31 Then
             cbshp.Delete()
-            ErrorMsg("CommandButton codenames cannot be longer than 31 characters ! '" + cbName + "': ", "CommandButton create Error")
+            Globals.ErrorMsg("CommandButton codenames cannot be longer than 31 characters ! '" + cbName + "': ", "CommandButton create Error")
             Exit Sub
         End If
         ' fail to assign a handler? remove commandbutton (otherwise it gets hard to edit an existing DBModification with a different name).
