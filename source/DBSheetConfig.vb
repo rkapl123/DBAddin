@@ -32,18 +32,25 @@ Public Module DBSheetConfig
     Public existingPwd As String
     ''' <summary>public clipboard row for DBSheet definition rows (foreign lookup info)</summary>
     Public clipboardDataRow As DBSheetDefRow
+    ''' <summary>if an existing DBSheet is overwritten, this is set to the existing DBModifier Name</summary>
+    Public existingName As String
+
 
     ''' <summary>create lookups (with dblistfetch) and a dbsetquery that acts as a listobject for a CUD DB Mapper</summary>
     Public Sub createDBSheet()
-        Dim dbsheetOverwrite As Boolean = False
         ' store currently selected cell, where DBSetQuery for DBMapper will be placed.
         curCell = ExcelDnaUtil.Application.ActiveCell
-        Dim existingName As String = getDBModifNameFromRange(curCell)
+        existingName = getDBModifNameFromRange(curCell)
         If InStr(1, existingName, "DBMapper") > 0 OrElse (UCase(Left(curCell.Formula, 11)) = "=DBSETQUERY" And InStr(1, getDBModifNameFromRange(curCell.Offset(0, 1)), "DBMapper") > 0) Then
-            Dim answer As MsgBoxResult = QuestionMsg("Existing DBSheet detected in selected area, shall this be overwritten?", MsgBoxStyle.YesNoCancel)
+            Dim answer As MsgBoxResult = QuestionMsg("Existing DBSheet detected in selected area, shall this be overwritten?", MsgBoxStyle.OkCancel)
             If answer = MsgBoxResult.Cancel Then Exit Sub
-            If answer = MsgBoxResult.Yes Then dbsheetOverwrite = True
-            If dbsheetOverwrite And UCase(Left(curCell.Formula, 11)) <> "=DBSETQUERY" Then curCell = ExcelDnaUtil.Application.Range(existingName).Cells(1, 1).Offset(0, -1)
+            If UCase(Left(curCell.Formula, 11)) <> "=DBSETQUERY" Then
+                ' either dbsetquery (needed for curCell) is to the cell to the left
+                curCell = ExcelDnaUtil.Application.Range(existingName).Cells(1, 1).Offset(0, -1)
+            Else
+                ' or the dbmapper area (needed for existingName for removing definitions and dbmapper name) is to the right
+                existingName = getDBModifNameFromRange(curCell.Offset(0, 1))
+            End If
         End If
         ' ask for DBsheet definitions stored in xml file
         Dim openFileDialog1 As OpenFileDialog = New OpenFileDialog With {
@@ -104,14 +111,22 @@ Public Module DBSheetConfig
                 ' add lookup Queries in separate sheet
                 Dim lookupCol As Integer = 1
                 For Each LookupDef As String In lookupsList
-                    ' step to the right
-                    If Not IsNothing(lookupWS.Cells(1, lookupCol).Value) Then lookupCol = lookupWS.Cells(1, lookupCol).End(Excel.XlDirection.xlToRight).Column + 1
                     ' fetch Lookupquery and get rid of template table def
                     Dim LookupQuery As String = Replace(getEntry("lookup", LookupDef, 1), tblPlaceHolder, "LT")
                     Dim lookupName As String = Replace(getEntry("name", LookupDef, 1), specialNonNullableChar, "")
                     Dim lookupRangeName As String = tableName + lookupName + "Lookup"
                     If Globals.existsName(lookupRangeName) Then
+                        ' overwrite existing lookup with warning...
                         lookupCol = lookupWS.Range(lookupRangeName).Column
+                    Else
+                        ' step to the right
+                        If Not IsNothing(lookupWS.Cells(1, lookupCol).Value) Then
+                            If Not IsNothing(lookupWS.Cells(1, lookupCol + 1).Value) Then
+                                lookupCol = lookupWS.Cells(1, lookupCol).End(Excel.XlDirection.xlToRight).Column + 1
+                            Else
+                                lookupCol += 1
+                            End If
+                        End If
                     End If
                     ' replace fieldname of Lookups in query with fieldname + "LU" only for database lookups
                     If getEntry("fkey", LookupDef, 1) <> "" Then
@@ -152,6 +167,8 @@ Public Module DBSheetConfig
                             For lrow = 0 To UBound(lookupValues)
                                 lookupWS.Cells(2 + lrow, lookupCol).value = lookupValues(lrow)
                             Next
+                            ' add the name, so there is something in the top row (for moving to right...
+                            lookupWS.Cells(1, lookupCol).Value = lookupRangeName
                             ' only create name and dblistfetch if lookup doesn't already exist!
                             If Not Globals.existsName(lookupRangeName) Then
                                 ' fixed value lookups have only one column
@@ -180,7 +197,7 @@ Public Module DBSheetConfig
             ' then create the DBSetQuery assigning the (yet to be filled) query to the above listobject
             ' add DBSetQuery with queryStr as Basis for the final DBMapper
             ' first create a ListObject, but only if it doesn't exist already (to allow recreating DBSheets)
-            If dbsheetOverwrite Then
+            If existingName <> "" Then
                 ' get the existing listobject
                 Try
                     createdListObject = curCell.Offset(0, 1).ListObject
@@ -216,13 +233,7 @@ Public Module DBSheetConfig
             End With
             ' finally add the DBSetQuery for the main DB Mapper, only taking the query without the where clause (because we can't prefill the where parameters, 
             ' the user has to do that before extending the query definition to the where clause as well)
-            If dbsheetOverwrite Then
-                ' if there is already an existing dbsheet, remove the Range name, the DBMapper definition and finally the Listobject
-                ExcelDnaUtil.Application.ActiveWindow.FreezePanes = False ' remove the freezepane, it will be applied later again.
-                ExcelDnaUtil.Application.ActiveWorkbook.Names(existingName).Delete
-                Dim CustomXmlParts As Object = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
-                ' remove old node of DBMapper in definitions
-                If Not IsNothing(CustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:DBMapper[@Name='" + Replace(existingName, "DBMapper", "") + "']")) Then CustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:DBMapper[@Name='" + Replace(existingName, "DBMapper", "") + "']").Delete
+            If existingName <> "" Then
                 createdListObject.QueryTable.PreserveColumnInfo = False
             Else
                 ConfigFiles.createFunctionsInCells(curCell, {"RC", "=DBSetQuery(R[1]C,"""",RC[1])"})
@@ -236,8 +247,21 @@ Public Module DBSheetConfig
 
     ''' <summary>after creating lookups and setting the dbsetquery finish the listobject area with reverse lookups and dropdowns</summary>
     Private Sub finishDBMapperCreation()
-        ' delete last column when refreshing DBSheets (remains...)
-        'If dbsheetOverwrite Then createdListObject.ListColumns(createdListObject.ListColumns.Count).Delete()
+        If existingName <> "" Then
+            ' if there was an already an existing dbsheet, remove the Range name, the DBMapper definition and finally the validations
+            ExcelDnaUtil.Application.ActiveWindow.FreezePanes = False ' remove the freezepane, it will be applied later again.
+            ExcelDnaUtil.Application.ActiveWorkbook.Names(existingName).Delete
+            Dim curColumnCount As Integer = getEntryList("columns", "field", "", curConfig).Length()
+            curColumnCount = createdListObject.ListColumns.Count - curColumnCount
+            For i As Integer = 1 To curColumnCount
+                createdListObject.ListColumns(createdListObject.ListColumns.Count).Delete()
+            Next
+            Dim theCustomXmlParts As Object = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
+            ' remove old node of DBMapper in definitions
+            If Not IsNothing(theCustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:DBMapper[@Name='" + Replace(existingName, "DBMapper", "") + "']")) Then theCustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:DBMapper[@Name='" + Replace(existingName, "DBMapper", "") + "']").Delete
+            createdListObject.Range.Validation.Delete()
+        End If
+
         ' store lookup columns (<>LU) to be ignored in DBMapper
         Dim queryErrorPos As Integer = InStr(curCell.Value.ToString, "Error")
         If queryErrorPos > 0 Then
