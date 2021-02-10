@@ -475,7 +475,11 @@ Public Class MenuHandler
     ''' <summary>clicked Assign DBSheet: create DB Mapper with CUD Flags</summary>
     ''' <param name="control"></param>
     Public Sub clickAssignDBSheet(control As CustomUI.IRibbonControl)
-        If Not ExcelDnaUtil.Application.ActiveWorkbook Is Nothing Then DBSheetConfig.createDBSheet()
+        If Not ExcelDnaUtil.Application.ActiveWorkbook Is Nothing Then
+            DBSheetConfig.createDBSheet()
+        Else
+            Globals.ErrorMsg("Cannot assign DBSheet DB Mapper as there is no Workbook active !", "DB Sheet Assignment", MsgBoxStyle.Exclamation)
+        End If
     End Sub
 
 #Enable Warning IDE0060

@@ -6,18 +6,18 @@ First, DBaddin provides DB Functions (see [DBFuncs Userdoc](DBFuncs.md)), which 
 
 Next, methods for working with database data ([DBModifications](DBModif.md): DBMapper, DBAction and DBSequences) are included. This also includes a row entry oriented way to modify data in so called DBSheets (see [DBSheets](DBSheets.md)).
 
-DBAddin.NET is the successor to the VB6 based DBAddin (still available on [sourceforge](https://sourceforge.net/projects/dbaddin/)).
+DBAddin.NET is the successor to the VB6 based Office Database Addin.
 
 ### Installation
 
 * Dependencies
 	* .NET 4.7 or higher (usually distributed with Windows)
-	* Excel
+	* Excel (minimum 2003)
 	* ADO 2.5 or higher (usually distributed with Windows)
 
 If any of these is missing, please install yourself before starting DBAddin.
 
-Download the asset DBAddinReleasePkg.zip in [https://github.com/rkapl123/DBAddin/releases](https://github.com/rkapl123/DBAddin/releases), unzip to any location and run deployAddin.cmd in the folder.
+Download the latest zip package in [https://github.com/rkapl123/DBAddin/tags](https://github.com/rkapl123/DBAddin/tags), unzip to any location and run deployAddin.cmd in the folder Distribution.
 This copies DBAddin.xll, DBAddin.xll.config, DBaddinUser.config and DBAddinCentral.config to your %appdata%\Microsoft\AddIns folder and starts Excel for activating DBAddin (adding it to the registered Addins).
 
 ### Settings

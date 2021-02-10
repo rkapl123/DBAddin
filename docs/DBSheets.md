@@ -35,15 +35,17 @@ I use the enclosed the test workbook called "DBSheetsTest.xlsx" as an example to
 
 This Workbook uses the pubs database for MSSQL, (available for download/installation [from Microsoft](http://www.microsoft.com/downloads/details.aspx?FamilyId=06616212-0356-46A0-8DA2-EEBC53A68034&displaylang=en) or search "pubs download" on Microsoft.com, if this is not installed on your DB server already). For MySQL, Sybase, Oracle and DB2, I enclosed the pubs database myself in the test folder.
 
-DBSheets consist of an Excel data table containing the table data, the header and - if any foreign lookup fields are present - the resolution formulas for those foreign lookups, and one (hidden) sheet containing the (foreign table) lookups.
+DBSheets consist of an Excel data table containing the table data, the header and - if any foreign lookup fields are present - the lookup resolutions for those foreign lookups in usually hidden columns.  
+
+Additionally, if there are lookups, there is also a hidden sheet containing the lookup keys and values.
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBSheetInAction.PNG)
 
 The header row and the primary key column(s), which are located leftmost, should not be modified, except for new rows where there is no primary key yet.
 
-Lookup columns are restricted with excels cell validation, including a dropdown of allowed values.
+Lookup columns are restricted with excel's cell validation, including a dropdown of allowed values.
 
-Data is changed simply by editing existing data in cells, this marks the row(s) to be changed at the rightmost end of the data table.
+Data is changed simply by editing existing data in cells, this marks the row(s) to be changed at the rightmost end of the data table as (c)reated, (u)pdated or (i)nserted.
 
 Inserting is done by entering data into empty rows, either allowing the database to introduce a new primary key by leaving the primary column empty (only possible for singular primary keys) or by setting the primary key yourself. This marks the row(s) to be inserted.
 
@@ -147,19 +149,30 @@ Even a lookup column without a lookup query is possible by just listing the poss
 
 #### Finishing DBSheet definition creation
 
-The DBSheet definition is created in four steps:
+A DBSheet is created in four steps:
 
-1.  First, all column definitions should have been entered and additional lookups either generated or entered/edited directly.
-2.  Then the main query for retrieving the fields to be edited has to be generated. It can also be further customized, if needed.  
+1.  First, all necessary columns are defined and supporting lookups are either generated or entered/edited directly.
+2.  Then the main query for retrieving the data to be edited is generated with "create DBSheet query". It can also be further customized, if needed.  
     However bear in mind that every change in the columns requires either an overwriting of the customizations and subsequent redoing them (cleaner) or constantly keeping the two synchronized. For customizing the data restriction part (Where Parameter Clause), a separate text input field can be used that allows the query to be regenerated without any intervening. Simply enter the restriction part (the Where clause without the "Where") and create the Query again.
-3.  Then the DBSheet Definition needs to be stored, simply click "save DBsheet def", which allows you to choose a filename (if it hasn't been already saved. The file choice dialog can always be achieved by clicking "save DBSheet def As..."). Afterwards the information currently contained in the DBSheet columns, the DBsheet query and other information is stored in a DBSheet definition file (extension: xml)
-4.  Finally, the DBSheet definition can be assigned to an Excel Worksheet with "assign DBsheet definition", creating a CUD enabled DBMapper with the selected DBSheet definition file to the currently opened Excel Worksheet (this only works if a workbook/sheet is active).
+3.  Then the DBSheet Definition is stored with "save DBsheet def", which allows you to choose a filename (if it hasn't been already saved). The file choice dialog can always be accessed by clicking "save DBSheet def As...". With this, the information currently contained in the DBSheet columns, the DBsheet query and other information is stored in a DBSheet definition file (extension: xml)
+4.  Finally, the DBSheet definition is assigned to an Excel Worksheet with "assign DBsheet definition", creating a CUD enabled DBMapper with the chosen DBSheet definition in the currently active Excel Worksheet at the selected cell. Assignment also works on an already existing DBSheet DBMapper (or it's associated DBSetQuery function cell), the DB Mapper is replaced then.
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBSheetsDefinitionButton.PNG)
 
 You can always test the main table query by clicking on "test DBSheet Query" next to the query definition. This opens an excel sheet with the results of the main table query being inserted. This Testsheet can be closed again either by simply closing it, or quicker by clicking on the same button again (that now changed its caption to "remove Testsheet").
 
 After saving, the definition file is displayed as a clickable link right besides the "reset DBSheet definition" button and can be viewed or edited (the application that opens the file is choosable after clicking)
+
+#### Relaxing foreign key existence on non strictly relational integrity tables
+
+Sometimes, there is no strict relational integrity definition on a table field having a lookup relation, which could thus lead to "dangling" keys. In such cases there is a workaround possible, by first defining that the key itself should be displayed if the lookup fails using an isnull function:
+
+![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBSheetsNotExistingLookupDef.PNG)
+
+The lookup resolution function checks for the existence in the lookup key/value area and passes the key through, thus allowing also "naked" keys to be used for updating data in such a table (here I have purposely removed the FK restriction on the au_id column):
+
+![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBSheetsNotExistingLookup.PNG)
+
 
 #### Settings
 

@@ -333,7 +333,7 @@ Public Module DBSheetConfig
                     ' adding resolution formulas is only necessary for 2-column database lookups
                     If getEntry("fkey", LookupDef, 1) <> "" Then
                         ' add vlookup function field for resolution of lookups to ID in main Query at the end of the DBMapper table
-                        Dim lookupFormula As String = "=IF([@[" + lookupName + "LU]]<>"""",VLOOKUP([@[" + lookupName + "LU]]" + "," + lookupRangeName + ",2,False),"""")"
+                        Dim lookupFormula As String = "=IF([@[" + lookupName + "LU]]<>"""",IF(ISERROR(VLOOKUP([@[" + lookupName + "LU]]," + lookupRangeName + ",2,False)),[@[" + lookupName + "LU]],VLOOKUP([@[" + lookupName + "LU]]," + lookupRangeName + ",2,False)),"""")"
                         ' if no data was fetched, add a row...
                         If IsNothing(createdListObject.DataBodyRange) Then createdListObject.ListRows.AddEx()
                         ' now add the resolution formula column
