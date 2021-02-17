@@ -13,6 +13,9 @@ For each ai in XLApp.AddIns
 		If err <> 0 Then 
 			WScript.Echo "no legacy DB-Addin installed."
 		Else
+			' deactivate old DB Addin Startup (needs restart of excel)
+			Set WshShell = CreateObject("WScript.Shell")
+			WshShell.RegWrite "HKCU\Software\Microsoft\Office\Excel\Addins\DBAddin.Connection\LoadBehavior",2,"REG_DWORD"
 			WScript.Echo "legacy DB-Addin uninstalled."
 		End If
 		On Error goto 0
@@ -20,7 +23,4 @@ For each ai in XLApp.AddIns
 		ai.Installed = True
 	end if
 next
-' deactivate old DB Addin Startup (needs restart of excel)
-Set WshShell = CreateObject("WScript.Shell")
-WshShell.RegWrite "HKCU\Software\Microsoft\Office\Excel\Addins\DBAddin.Connection\LoadBehavior",2,"REG_DWORD"
 Wscript.Echo ("Please restart Excel to make Installation effective ...")

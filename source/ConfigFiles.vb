@@ -156,7 +156,7 @@ Public Module ConfigFiles
 
         Try
             pivotTables = TargetCell.Parent.PivotTables()
-            pivotTables.Add(pivotcache, TargetCell.Offset(1, 0), "PivotTable1")
+            pivotTables.Add(pivotcache, TargetCell.Offset(1, 0))
         Catch ex As Exception
             Globals.ErrorMsg("Exception adding pivot table:" + ex.Message, "Create Pivot Table")
             Exit Sub

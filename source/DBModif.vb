@@ -705,25 +705,34 @@ Public Class DBMapper : Inherits DBModif
                 For i As Integer = 1 To primKeysCount
                     Dim primKeyValue = TargetRange.Cells(rowNum, i).Value
                     If IsXLCVErr(primKeyValue) Then
-                        If Not notifyUserOfDataError("Error in primary key value: " + CVErrText(primKeyValue) + ", cell (" + rowNum.ToString + "," + i.ToString + ") in sheet " + TargetRange.Parent.Name + " and row " + rowNum.ToString, rowNum, i) Then GoTo cleanup
-                        GoTo nextRow
+                        notifyUserOfDataError("Error in primary key value: " + CVErrText(primKeyValue) + ", cell (" + rowNum.ToString + "," + i.ToString + ") in sheet " + TargetRange.Parent.Name + " and row " + rowNum.ToString, rowNum, i)
+                        GoTo cleanup
                     End If
                     If primKeyValue Is Nothing Then primKeyValue = ""
                     Dim primKey = TargetRange.Cells(1, i).Value
+                    If primKey Is Nothing OrElse primKey = "" Then
+                        notifyUserOfDataError("Primary key in column " + i.ToString() + " is blank !", 1, i)
+                        GoTo cleanup
+                    End If
                     ' if primKey is in ignoreColumns then the only reasonable reason is a lookup primary key in DBSHeets (CUDFlags only), so try with "real" (resolved key) instead...
                     If InStr(1, LCase(ignoreColumns) + ",", LCase(primKey) + ",") > 0 Then
                         If CUDFlags Then
                             primKey = Left(primKey, Len(primKey) - 2) ' correct the LU to real primary Key
                             primKeyValue = TargetRange.ListObject.ListColumns(primKey).Range(rowNum, 1).Value ' get the value from there
                         Else
-                            If Not notifyUserOfDataError("Primary key '" + primKey + "' contained in ignoreColumns !", rowNum, i) Then GoTo cleanup
-                            GoTo nextRow
+                            notifyUserOfDataError("Primary key '" + primKey + "' contained in ignoreColumns !", 1, i)
+                            GoTo cleanup
                         End If
                     End If
+                    Try : primKey = checkrst.Fields(primKey).Name
+                    Catch ex As Exception
+                        notifyUserOfDataError("Primary key '" + primKey.ToString + "' not found in table '" + tableName + "':" + ex.Message, 1, i)
+                        GoTo cleanup
+                    End Try
                     Dim checkAutoIncrement As Boolean
                     Try : checkAutoIncrement = checkrst.Fields(primKey).Properties("IsAutoIncrement").Value
                     Catch ex As Exception
-                        If Not notifyUserOfDataError("Primary key '" + primKey.ToString + "' not found in table '" + tableName + "' or IsAutoIncrement Property not provided:" + ex.Message, rowNum, i) Then GoTo cleanup
+                        If Not notifyUserOfDataError("ADO provided no IsAutoIncrement property for primary key '" + primKey.ToString + "':" + ex.Message, 1, i) Then GoTo cleanup
                         GoTo nextRow
                     End Try
                     If primKeysCount = 1 And (CUDFlags Or AutoIncFlag) And primKeyValue.ToString().Length = 0 And checkAutoIncrement Then
@@ -747,8 +756,8 @@ Public Class DBMapper : Inherits DBModif
                         ElseIf TypeName(primKeyValue) = "Double" Then ' got a double
                             primKeyFormatted = "'" + Format(Date.FromOADate(primKeyValue), "yyyy-MM-dd") + "'" ' ISO 8601 standard SQL Date formatting
                         Else
-                            notifyUserOfDataError("provided value neither Date nor Double, cannot convert into formatted primary key for lookup !", rowNum, i)
-                            GoTo cleanup
+                            If Not notifyUserOfDataError("provided value neither Date nor Double, cannot convert into formatted primary key for lookup !", rowNum, i) Then GoTo cleanup
+                            GoTo nextRow
                         End If
                     ElseIf checkIsTime(checkrst.Fields(primKey).Type) Then
                         If TypeName(primKeyValue) = "Date" Then
@@ -756,8 +765,8 @@ Public Class DBMapper : Inherits DBModif
                         ElseIf TypeName(primKeyValue) = "Double" Then
                             primKeyFormatted = "'" + Format(Date.FromOADate(primKeyValue), "yyyy-MM-dd HH:mm:ss.fff") + "'" ' ISO 8601 standard SQL Date/time formatting, 24h format...
                         Else
-                            notifyUserOfDataError("provided value neither Date nor Double, cannot convert into formatted primary key for lookup !", rowNum, i)
-                            GoTo cleanup
+                            If Not notifyUserOfDataError("provided value neither Date nor Double, cannot convert into formatted primary key for lookup !", rowNum, i) Then GoTo cleanup
+                            GoTo nextRow
                         End If
                     ElseIf TypeName(primKeyValue) = "Boolean" Then
                         primKeyFormatted = IIf(primKeyValue, "1", "0")
@@ -773,8 +782,8 @@ Public Class DBMapper : Inherits DBModif
                         rst.Open(getStmt, dbcnn, CursorTypeEnum.adOpenDynamic, LockTypeEnum.adLockOptimistic)
                         Dim check As Boolean = rst.EOF
                     Catch ex As Exception
-                        notifyUserOfDataError("Problem getting recordset, Error: " + ex.Message + " in sheet " + TargetRange.Parent.Name + " and row " + rowNum.ToString + ", doing " + getStmt, rowNum)
-                        GoTo cleanup
+                        If Not notifyUserOfDataError("Problem getting recordset, Error: " + ex.Message + " in sheet " + TargetRange.Parent.Name + " and row " + rowNum.ToString + ", doing " + getStmt, rowNum) Then GoTo cleanup
+                        GoTo nextRow
                     End Try
                     primKeyDisplay = Replace(Mid(primKeyCompound, 7), " AND ", ";")
                 Else
@@ -801,11 +810,11 @@ Public Class DBMapper : Inherits DBModif
                                 If CStr(primKeyValue) <> "" Then rst.Fields(primKey).Value = primKeyValue
                             Catch ex As Exception
                                 If Not notifyUserOfDataError("Error inserting primary key value into table " + tableName + ": " + dbcnn.Errors(0).Description, rowNum, i) Then GoTo cleanup
+                                GoTo nextRow
                             End Try
                         Next
                     Else
                         If Not notifyUserOfDataError("Did not find recordset with statement '" + getStmt + "', insertIfMissing = " + insertIfMissing.ToString() + " in sheet " + TargetRange.Parent.Name + " and row " + rowNum.ToString(), rowNum) Then GoTo cleanup
-                        ' makes no sense to do rest as this is a failure...
                         GoTo nextRow
                     End If
                     ExcelDnaUtil.Application.StatusBar = Left("Inserting " + IIf(AutoIncrement, "new autoincremented key", primKeyDisplay) + " into " + tableName, 255)
@@ -1787,9 +1796,12 @@ Public Module DBModifs
             End If
 
             Dim CustomXmlParts As Object = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
-            If CustomXmlParts.Count = 0 Then ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.Add("<root xmlns=""DBModifDef""></root>")
-            'TODO: check whether that is really needed:
-            CustomXmlParts = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
+            If CustomXmlParts.Count = 0 Then
+                ' in case no CustomXmlPart in Namespace DBModifDef exists in the workbook, add one
+                ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.Add("<root xmlns=""DBModifDef""></root>")
+                CustomXmlParts = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
+            End If
+
             ' remove old node in case of renaming DBModifier
             ' Elements have names of DBModif types, attribute Name is given name (<DBMapper Name=existingDefName>)
             If Not IsNothing(CustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:" + createdDBModifType + "[@Name='" + Replace(existingDefName, createdDBModifType, "") + "']")) Then CustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:" + createdDBModifType + "[@Name='" + Replace(existingDefName, createdDBModifType, "") + "']").Delete

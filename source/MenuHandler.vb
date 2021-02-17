@@ -118,7 +118,7 @@ Public Class MenuHandler
         Return customUIXml
     End Function
 
-#Disable Warning IDE0060 ' Hide not used Parameter warning
+#Disable Warning IDE0060 ' Hide not used Parameter warning as this is very often the case with the below callbacks from the ribbon
 
     ''' <summary>display warning button icon on Cprops change if DBFskip is set...</summary>
     ''' <param name="control"></param>
