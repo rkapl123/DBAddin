@@ -147,16 +147,18 @@ Public Class MenuHandler
     ''' <returns>screentip and the state of designmode</returns>
     Public Function getToggleCPropsScreentip(control As CustomUI.IRibbonControl) As String
         getToggleCPropsScreentip = ""
-        Try
-            Dim docproperty As Microsoft.Office.Core.DocumentProperty
-            For Each docproperty In ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties
-                If Left$(docproperty.Name, 5) = "DBFC" Or docproperty.Name = "DBFskip" Or docproperty.Name = "doDBMOnSave" Or docproperty.Name = "DBFNoLegacyCheck" Then
-                    getToggleCPropsScreentip += docproperty.Name + ":" + docproperty.Value.ToString + vbCrLf
-                End If
-            Next
-        Catch ex As Exception
-            getToggleCPropsScreentip += "exception: " + ex.Message
-        End Try
+        If Not ExcelDnaUtil.Application.ActiveWorkbook Is Nothing Then
+            Try
+                Dim docproperty As Microsoft.Office.Core.DocumentProperty
+                For Each docproperty In ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties
+                    If Left$(docproperty.Name, 5) = "DBFC" Or docproperty.Name = "DBFskip" Or docproperty.Name = "doDBMOnSave" Or docproperty.Name = "DBFNoLegacyCheck" Then
+                        getToggleCPropsScreentip += docproperty.Name + ":" + docproperty.Value.ToString + vbCrLf
+                    End If
+                Next
+            Catch ex As Exception
+                getToggleCPropsScreentip += "exception when collecting docproperties: " + ex.Message
+            End Try
+        End If
     End Function
 
     ''' <summary>click on change props: show builtin properties dialog</summary>

@@ -7,10 +7,6 @@ Imports System.Xml.Linq
 
 '''<summary>procedures used for loading config files (containing DBFunctions and general sheet content) and building the config menu</summary>
 Public Module ConfigFiles
-    ''' <summary>the folder used to store predefined DB item definitions</summary>
-    Public ConfigStoreFolder As String
-    ''' <summary>Array of special ConfigStoreFolders for non default treatment of Name Separation (Camelcase) and max depth</summary>
-    Public specialConfigStoreFolders() As String
 
     ''' <summary>loads config from file given in theFileName</summary>
     ''' <param name="theFileName">the File name of the config file</param>
@@ -270,12 +266,19 @@ Public Module ConfigFiles
         End If
     End Function
 
-
+    ''' <summary>the folder used to store predefined DB item definitions</summary>
+    Public ConfigStoreFolder As String
+    ''' <summary>Array of special ConfigStoreFolders for non default treatment of Name Separation (Camelcase) and max depth</summary>
+    Public specialConfigStoreFolders() As String
+    ''' <summary>fixed max Depth for Ribbon</summary>
+    Const maxMenuDepth As Integer = 5
+    ''' <summary>fixed max size for menu XML</summary>
+    Const maxSizeRibbonMenu = 320000
     ''' <summary>used to create menu and button ids</summary>
     Private menuID As Integer
     ''' <summary>tree menu stored here</summary>
     Public ConfigMenuXML As String = vbNullString
-    ''' <summary>max depth limitation by Ribbon: 5 levels: 1 top level, 1 folder level (Database foldername) -> 3 left</summary>
+    ''' <summary>individual limitation of grouping of entries in special folders (set by _DBname_MaxDepth)</summary>
     Public specialFolderMaxDepth As Integer
     ''' <summary>store found submenus in this collection</summary>
     Private specialConfigFoldersTempColl As Collection
@@ -306,59 +309,72 @@ Public Module ConfigFiles
             specialConfigFoldersTempColl = Nothing
             ExcelDnaUtil.Application.StatusBar = ""
             currentBar.SetAttributeValue("xmlns", "http://schemas.microsoft.com/office/2009/07/customui")
+            ' avoid exception in ribbon...
             ConfigMenuXML = currentBar.ToString()
+            If ConfigMenuXML.Length > maxSizeRibbonMenu Then
+                MsgBox("Too many entries in " + ConfigStoreFolder + ", can't display them in a ribbon menu ..")
+                ConfigMenuXML = "<menu xmlns='http://schemas.microsoft.com/office/2009/07/customui'><button id='refreshDBConfig' label='refresh DBConfig Tree' imageMso='Refresh' onAction='refreshDBConfigTree'/></menu>"
+            End If
         End If
     End Sub
 
     ''' <summary>reads all files contained in rootPath and its subfolders (recursively) and adds them to the DBConfig menu (sub)structure (recursively). For folders contained in specialConfigStoreFolders, apply further structuring by splitting names on camelcase or specialConfigStoreSeparator</summary>
     ''' <param name="rootPath">root folder to be searched for config files</param>
     ''' <param name="currentBar">current menu element, where submenus and buttons are added</param>
-    Private Sub readAllFiles(rootPath As String, ByRef currentBar As XElement)
+    ''' <param name="Folderpath">for sub menus path of current folder is passed (recursively)</param>
+    Private Sub readAllFiles(rootPath As String, ByRef currentBar As XElement, Optional Folderpath As String = vbNullString)
         Try
             Dim newBar As XElement = Nothing
-            Dim i As Long
+            Static MenuFolderDepth As Integer = 1 ' needed to not exceed max. menu depth (currently 5)
+
             ' read all leaf node entries (files) and sort them by name to create action menus
             Dim di As DirectoryInfo = New DirectoryInfo(rootPath)
             Dim fileList() As FileSystemInfo = di.GetFileSystemInfos("*.xcl").OrderBy(Function(fi) fi.Name).ToArray()
             If fileList.Length > 0 Then
                 ' for special folders split menu further into camelcase (or other special) separated names
-                Dim aFolder : Dim spclFolder As String : spclFolder = ""
-                Dim theFolder As String
-                theFolder = Mid$(rootPath, InStrRev(rootPath, "\") + 1)
-                For Each aFolder In specialConfigStoreFolders
-                    If UCase$(theFolder) = UCase$(aFolder) Then
+                Dim spclFolder As String = ""
+                For Each aFolder As String In specialConfigStoreFolders
+                    ' is current folder contained in special config folders?
+                    If UCase$(Mid$(rootPath, InStrRev(rootPath, "\") + 1)) = UCase$(aFolder) Then
                         spclFolder = aFolder
                         Exit For
                     End If
                 Next
-                If spclFolder.Length > 0 Then
+                If spclFolder <> "" And MenuFolderDepth < maxMenuDepth Then
                     Dim firstCharLevel As Boolean = CBool(fetchSetting(spclFolder + "FirstLetterLevel", "False"))
                     Dim specialConfigStoreSeparator As String = fetchSetting(spclFolder + "Separator", "")
-                    ' max depth limitation by Ribbon: 5 levels: 1 top level, 1 folder level (Database foldername) -> 3 left
-                    specialFolderMaxDepth = IIf(fetchSetting(spclFolder + "MaxDepth", 1) <= 3, fetchSetting(spclFolder + "MaxDepth", 1), 3)
+                    specialFolderMaxDepth = CInt(fetchSetting(spclFolder + "MaxDepth", 4))
                     Dim nameParts As String
-                    For i = 0 To UBound(fileList)
+                    For i As Long = 0 To UBound(fileList)
                         ' is current entry contained in next entry then revert order to allow for containment in next entry's hierarchy..
                         ' e.g. SpecialTable and SpecialTableDetails (and afterwards SpecialTableMoreDetails) -> SpecialTable opens hierarchy
                         If i < UBound(fileList) Then
-                            If InStr(1, Left$(fileList(i + 1).Name, Len(fileList(i + 1).Name) - 4), Left$(fileList(i).Name, Len(fileList(i).Name) - 4)) > 0 Then
-                                ' first process NEXT alphabetically ordered file, returning nextLevel as new command bar element
-                                nameParts = stringParts(IIf(firstCharLevel, Left$(fileList(i + 1).Name, 1) + " ", "") +
-                                                            Left$(fileList(i + 1).Name, Len(fileList(i + 1).Name) - 4), specialConfigStoreSeparator)
-                                Dim nextLevel As XElement = buildFileSepMenuCtrl(nameParts, currentBar, rootPath + "\" + fileList(i + 1).Name, spclFolder, specialFolderMaxDepth)
-                                ' then process THIS file and insert in to nextLevel
-                                nameParts = stringParts(IIf(firstCharLevel, Left$(fileList(i).Name, 1) + " ", "") +
-                                                            Left$(fileList(i).Name, Len(fileList(i).Name) - 4), specialConfigStoreSeparator)
-                                buildFileSepMenuCtrl(nameParts, nextLevel, rootPath + "\" + fileList(i).Name, spclFolder, specialFolderMaxDepth)
+                            Dim nextEntry As String = Left(fileList(i + 1).Name, Len(fileList(i + 1).Name) - 4)
+                            Dim thisEntry As String = Left(fileList(i).Name, Len(fileList(i).Name) - 4)
+                            Dim firstCharNextEntry As String = Left$(fileList(i + 1).Name, 1)
+                            Dim firstCharThisEntry As String = Left$(fileList(i).Name, 1)
+                            If InStr(1, nextEntry, thisEntry) > 0 Then
+                                ' first process NEXT alphabetically ordered entry, returning nextLevel as new command bar element (menu or button)
+                                nameParts = stringParts(IIf(firstCharLevel, firstCharNextEntry + " ", "") + nextEntry, specialConfigStoreSeparator)
+                                Dim nextLevel As XElement = buildFileSepMenuCtrl(nameParts, currentBar, rootPath + "\" + fileList(i + 1).Name, spclFolder, Folderpath, MenuFolderDepth, specialFolderMaxDepth)
+                                ' only if a menu was created...
+                                If Right(nextLevel.Name.ToString(), 4) = "menu" Then
+                                    ' ... process THIS entry and insert in to nextLevel
+                                    nameParts = stringParts(IIf(firstCharLevel, firstCharThisEntry + " ", "") + thisEntry, specialConfigStoreSeparator)
+                                    buildFileSepMenuCtrl(nameParts, nextLevel, rootPath + "\" + fileList(i).Name, spclFolder, Folderpath, MenuFolderDepth, specialFolderMaxDepth)
+                                Else
+                                    ' otherwise insert THIS entry in the same level (currentBar)
+                                    buildFileSepMenuCtrl(nameParts, currentBar, rootPath + "\" + fileList(i).Name, spclFolder, Folderpath, MenuFolderDepth, specialFolderMaxDepth)
+                                End If
                                 ' skip this and next one
                                 i += 2
                                 If i > UBound(fileList) Then Exit For
                             End If
                         End If
                         nameParts = stringParts(IIf(firstCharLevel, Left$(fileList(i).Name, 1) + " ", "") + Left$(fileList(i).Name, Len(fileList(i).Name) - 4), specialConfigStoreSeparator)
-                        buildFileSepMenuCtrl(nameParts, currentBar, rootPath + "\" + fileList(i).Name, spclFolder, specialFolderMaxDepth)
+                        buildFileSepMenuCtrl(nameParts, currentBar, rootPath + "\" + fileList(i).Name, spclFolder, Folderpath, MenuFolderDepth, specialFolderMaxDepth)
                     Next
-                    ' normal case: just follow the path and enter all entries as buttons
+                    ' normal case or max menu depth branch: just follow the path and enter all entries as buttons
                 Else
                     For i = 0 To UBound(fileList)
                         newBar = New XElement(xnspace + "button")
@@ -366,7 +382,7 @@ Public Module ConfigFiles
                         newBar.SetAttributeValue("id", "m" + menuID.ToString())
                         newBar.SetAttributeValue("screentip", "click to insert DBListFetch for " + Left$(fileList(i).Name, Len(fileList(i).Name) - 4) + " in active cell")
                         newBar.SetAttributeValue("tag", rootPath + "\" + fileList(i).Name)
-                        newBar.SetAttributeValue("label", Left$(fileList(i).Name, Len(fileList(i).Name) - 4))
+                        newBar.SetAttributeValue("label", Folderpath + Left$(fileList(i).Name, Len(fileList(i).Name) - 4))
                         newBar.SetAttributeValue("onAction", "getConfig")
                         currentBar.Add(newBar)
                     Next
@@ -379,12 +395,20 @@ Public Module ConfigFiles
             ' recursively build branched menu structure from dirEntries
             For i = 0 To UBound(DirList)
                 ExcelDnaUtil.Application.StatusBar = "Filling DBConfigs Menu: " + rootPath + "\" + DirList(i).Name
-                newBar = New XElement(xnspace + "menu")
-                menuID += 1
-                newBar.SetAttributeValue("id", "m" + menuID.ToString())
-                newBar.SetAttributeValue("label", DirList(i).Name)
-                currentBar.Add(newBar)
-                readAllFiles(rootPath + "\" + DirList(i).Name, newBar)
+                ' only add new menu element if below max. menu depth for ribbons
+                If MenuFolderDepth < maxMenuDepth Then
+                    newBar = New XElement(xnspace + "menu")
+                    menuID += 1
+                    newBar.SetAttributeValue("id", "m" + menuID.ToString())
+                    newBar.SetAttributeValue("label", DirList(i).Name)
+                    currentBar.Add(newBar)
+                    MenuFolderDepth += 1
+                    readAllFiles(rootPath + "\" + DirList(i).Name, newBar, Folderpath + DirList(i).Name + "\")
+                    MenuFolderDepth -= 1
+                Else
+                    newBar = currentBar
+                    readAllFiles(rootPath + "\" + DirList(i).Name, newBar, Folderpath + DirList(i).Name + "\")
+                End If
             Next
         Catch ex As Exception
             Globals.ErrorMsg("Error (" + ex.Message + ") in MenuHandler.readAllFiles")
@@ -396,14 +420,15 @@ Public Module ConfigFiles
     ''' <param name="currentBar">current menu element, where submenus and buttons are added</param>
     ''' <param name="fullPathName">full path name to xcl config file</param>
     ''' <param name="newRootName">the new root name for the menu, used avoid multiple placement of buttons in submenus</param>
-    ''' <param name="specialFolderMaxDepth">limit for menu depth (required technically - depth limitation by Ribbon: 5 levels - and sometimes practically)</param>
+    ''' <param name="Folderpath">Path of enclosing Folder(s)</param>
+    ''' <param name="MenuFolderDepth">required for keeping maxMenuDepth limit</param>
     ''' <returns>new bar as Xelement (for containment)</returns>
-    Private Function buildFileSepMenuCtrl(nameParts As String, ByRef currentBar As XElement, fullPathName As String, newRootName As String, specialFolderMaxDepth As Integer) As XElement
+    Private Function buildFileSepMenuCtrl(nameParts As String, ByRef currentBar As XElement, fullPathName As String, newRootName As String, Folderpath As String, MenuFolderDepth As Integer, specialFolderMaxDepth As Integer) As XElement
+        Static MenuDepth As Integer = 0
         Try
             Dim newBar As XElement
-            Static currentDepth As Integer
             ' end node: add callable entry (= button)
-            If InStr(1, nameParts, " ") = 0 Or currentDepth > specialFolderMaxDepth - 1 Then
+            If InStr(1, nameParts, " ") = 0 Or MenuDepth >= specialFolderMaxDepth Or MenuDepth + MenuFolderDepth >= maxMenuDepth Then
                 Dim entryName As String = Mid$(fullPathName, InStrRev(fullPathName, "\") + 1)
                 newBar = New XElement(xnspace + "button")
                 menuID += 1
@@ -427,9 +452,9 @@ Public Module ConfigFiles
                     specialConfigFoldersTempColl.Add(newBar, newRootName + newName)
                     currentBar.Add(newBar)
                 End If
-                currentDepth += 1
-                buildFileSepMenuCtrl(Mid$(nameParts, InStr(1, nameParts, " ") + 1), newBar, fullPathName, newRootName + newName, specialFolderMaxDepth)
-                currentDepth -= 1
+                MenuDepth += 1
+                buildFileSepMenuCtrl(Mid$(nameParts, InStr(1, nameParts, " ") + 1), newBar, fullPathName, newRootName + newName, Folderpath, MenuFolderDepth, specialFolderMaxDepth)
+                MenuDepth -= 1
                 buildFileSepMenuCtrl = newBar
             End If
         Catch ex As Exception
@@ -461,12 +486,10 @@ Public Module ConfigFiles
                         If Not (pre = 36 Or pre = 45 Or pre = 95) _
                             Then stringParts += " "
                     End If
-                    ' Uppercase characters separate unless the are preceding
+                    ' Uppercase characters separate unless they are preceded by other ppercase characters 
+                    ' also numbers can precede: And Not (pre >= 48 And pre <= 57) _
                     If (charAsc >= 65 And charAsc <= 90) Then
-                        If Not (pre >= 65 And pre <= 90) _
-                           And Not (pre = 36 Or pre = 45 Or pre = 95) _
-                           And Not (pre >= 48 And pre <= 57) _
-                           Then stringParts += " "
+                        If Not (pre >= 65 And pre <= 90) And Not (pre = 36 Or pre = 45 Or pre = 95) Then stringParts += " "
                     End If
                 End If
                 stringParts += aChar

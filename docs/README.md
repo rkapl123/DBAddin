@@ -104,7 +104,7 @@ Explanation:
 *   `disableSettingsDisplay`: put the settings that should not be available for viewing/editing to the user here (addin: DBAddin.xll.config, central: DBAddinCentral.config and user: DBaddinUser.config)
 *   `ConfigSelect`: Use this template instead of standard config (currently `SELECT TOP 10000 * FROM <Table>`) when inserting cell configurations. The respective Table is being replaced into `!Table!`.
 
-To change the settings, there is also a dropdown called "settings", where you can modify the DBAddin.xll.config and the referred DBAddinCentral.config including XML validation. You can have multiple same named entries (e.g. `ConfigSelect`) in your settings files, always the last one is taken as the active setting. 
+To change the settings, there is also a dropdown called "settings", where you can modify the DBAddin.xll.config and the referred DBAddinCentral.config including XML validation. You can have multiple same named entries (e.g. `ConfigSelect`) in your settings files, always the last one is taken as the active setting.
 
 ### Testing
 
@@ -137,6 +137,10 @@ In the DBAddin settings Group, there is a dropdown "settings", where you can mod
 
 Right besides that dropdown, there is a shortcut to the Workbook properties (being the standard dialog Advanced Properties, accessible via File/Info) that allows you to change custom properties settings for DBAddin.
 A green check shows that custom property DBFskip is not set to true for this workbook, therefore refreshing DB functions on opening the Workbook.
+
+### Building
+
+All packages necessary for building are contained, simply open DBaddin.sln and build the solution. The script deployForTest.cmd can be used to deploy the built xll and configs to %appdata%\Microsoft\AddIns
 
 ### docfx generated API documentation
 [DBFuncs API documentation](api/index.html).
