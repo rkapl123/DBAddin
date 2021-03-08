@@ -422,7 +422,9 @@ Public Class MenuHandler
     ''' <summary>purge name tool button, purge names used for dbfunctions from workbook</summary>
     ''' <param name="control"></param>
     Public Sub clickpurgetoolbutton(control As CustomUI.IRibbonControl)
-        Globals.purgeNames()
+        If Not ExcelDnaUtil.Application.ActiveWorkbook Is Nothing Then
+            Globals.purgeNames()
+        End If
     End Sub
 
     ''' <summary>show the trace log</summary>
