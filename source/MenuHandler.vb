@@ -1,4 +1,3 @@
-Imports ExcelDna.Integration.CustomUI
 Imports ExcelDna.Integration
 Imports System.Runtime.InteropServices
 Imports Microsoft.Office.Interop
@@ -7,7 +6,7 @@ Imports System.Configuration
 ''' <summary>handles all Menu related aspects (context menu for building/refreshing, "DBAddin"/"Load Config" tree menu for retrieving stored configuration files, etc.)</summary>
 <ComVisible(True)>
 Public Class MenuHandler
-    Inherits ExcelRibbon
+    Inherits CustomUI.ExcelRibbon
 
     ''' <summary>callback after Excel loaded the Ribbon, used to initialize data for the Ribbon</summary>
     Public Sub ribbonLoaded(theRibbon As CustomUI.IRibbonUI)
@@ -324,8 +323,8 @@ Public Class MenuHandler
     ''' <param name="control"></param>
     ''' <returns></returns>
     Public Function getDBConfigMenu(control As CustomUI.IRibbonControl) As String
-        If ConfigMenuXML = vbNullString Then ConfigFiles.createConfigTreeMenu()
-        Return ConfigMenuXML
+        If ConfigFiles.ConfigMenuXML = vbNullString Then ConfigFiles.createConfigTreeMenu()
+        Return ConfigFiles.ConfigMenuXML
     End Function
 
     ''' <summary>load config if config tree menu end-button has been activated (path to config xcl file is in control.Tag)</summary>
@@ -352,7 +351,7 @@ Public Class MenuHandler
             For Each nodeName As String In Globals.DBModifDefColl(control.Id).Keys
                 Dim descName As String = IIf(nodeName = control.Id, "Unnamed " + DBModifTypeName, Replace(nodeName, DBModifTypeName, ""))
                 Dim imageMsoStr As String = IIf(control.Id = "DBSeqnce", "ShowOnNewButton", IIf(control.Id = "DBMapper", "TableSave", IIf(control.Id = "DBAction", "TableIndexes", "undefined imageMso")))
-                Dim superTipStr As String = IIf(control.Id = "DBSeqnce", "executes " + DBModifTypeName + " defined in docproperty: " + nodeName, IIf(control.Id = "DBMapper", "stores data defined in DBMapper (named " + nodeName + ") range on " + Globals.DBModifDefColl(control.Id).Item(nodeName).getTargetRangeAddress(), IIf(control.Id = "DBAction", "executes Action defined in DBAction (named " + nodeName + ") range on " + Globals.DBModifDefColl(control.Id).Item(nodeName).getTargetRangeAddress(), "undefined superTip")))
+                Dim superTipStr As String = IIf(control.Id = "DBSeqnce", "executes " + DBModifTypeName + " defined in " + nodeName, IIf(control.Id = "DBMapper", "stores data defined in DBMapper (named " + nodeName + ") range on " + Globals.DBModifDefColl(control.Id).Item(nodeName).getTargetRangeAddress(), IIf(control.Id = "DBAction", "executes Action defined in DBAction (named " + nodeName + ") range on " + Globals.DBModifDefColl(control.Id).Item(nodeName).getTargetRangeAddress(), "undefined superTip")))
                 xmlString = xmlString + "<button id='_" + nodeName + "' label='do " + descName + "' imageMso='" + imageMsoStr + "' onAction='DBModifClick' tag='" + control.Id + "' screentip='do " + DBModifTypeName + ": " + descName + "' supertip='" + superTipStr + "' />"
             Next
             xmlString += "</menu>"

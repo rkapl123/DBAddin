@@ -291,7 +291,7 @@ Public Module ConfigFiles
 
         If Not Directory.Exists(ConfigStoreFolder) Then
             Globals.ErrorMsg("No predefined config store folder '" + ConfigStoreFolder + "' found, please correct setting and refresh!")
-            ConfigMenuXML = "<menu xmlns='http://schemas.microsoft.com/office/2009/07/customui'><button id='refreshDBConfig' label='refresh DBConfig Tree' imageMso='Refresh' onAction='refreshDBConfigTree'/></menu>"
+            ConfigMenuXML = "<menu xmlns='" + xnspace.ToString() + "'><button id='refreshDBConfig' label='refresh DBConfig Tree' imageMso='Refresh' onAction='refreshDBConfigTree'/></menu>"
         Else
             ' top level menu
             currentBar = New XElement(xnspace + "menu")
@@ -308,12 +308,12 @@ Public Module ConfigFiles
             readAllFiles(ConfigStoreFolder, currentBar)
             specialConfigFoldersTempColl = Nothing
             ExcelDnaUtil.Application.StatusBar = ""
-            currentBar.SetAttributeValue("xmlns", "http://schemas.microsoft.com/office/2009/07/customui")
+            currentBar.SetAttributeValue("xmlns", xnspace)
             ' avoid exception in ribbon...
             ConfigMenuXML = currentBar.ToString()
             If ConfigMenuXML.Length > maxSizeRibbonMenu Then
                 MsgBox("Too many entries in " + ConfigStoreFolder + ", can't display them in a ribbon menu ..")
-                ConfigMenuXML = "<menu xmlns='http://schemas.microsoft.com/office/2009/07/customui'><button id='refreshDBConfig' label='refresh DBConfig Tree' imageMso='Refresh' onAction='refreshDBConfigTree'/></menu>"
+                ConfigMenuXML = "<menu xmlns='" + xnspace.ToString() + "'><button id='refreshDBConfig' label='refresh DBConfig Tree' imageMso='Refresh' onAction='refreshDBConfigTree'/></menu>"
             End If
         End If
     End Sub

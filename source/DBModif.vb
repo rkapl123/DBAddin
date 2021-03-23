@@ -1859,8 +1859,7 @@ Public Module DBModifs
             Globals.DBModifDefColl.Clear()
             Dim CustomXmlParts As Object = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
             If CustomXmlParts.Count = 1 Then
-                ' read definitions from CustomXMLParts
-                ' get DBModifier definitions from docproperties
+                ' read DBModifier definitions from CustomXMLParts
                 For Each customXMLNodeDef As CustomXMLNode In CustomXmlParts(1).SelectSingleNode("/ns0:root").ChildNodes
                     Dim DBModiftype As String = Left(customXMLNodeDef.BaseName, 8)
                     If DBModiftype = "DBSeqnce" Or DBModiftype = "DBMapper" Or DBModiftype = "DBAction" Then
