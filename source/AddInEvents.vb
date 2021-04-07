@@ -87,13 +87,24 @@ Public Class AddInEvents
         ' if overriding flag not given and Readonly is NOT recommended on this workbook and workbook IS NOT Readonly, ...
         ' ...ask for saving, if this is necessary for any DBmodifier...
         If Not (Wb.ReadOnlyRecommended And Wb.ReadOnly) And Not doDBMOnSave Then
+            ' first ask for DBModifiers defined on active sheet:
             For Each DBmodifType As String In Globals.DBModifDefColl.Keys
                 For Each dbmapdefkey As String In Globals.DBModifDefColl(DBmodifType).Keys
-                    If Globals.DBModifDefColl(DBmodifType).Item(dbmapdefkey).DBModifSaveNeeded() Then
-                        Dim answer As MsgBoxResult = QuestionMsg("do the DB Modifications defined in Workbook ?", MsgBoxStyle.YesNo, "DB Modifications on Save")
-                        If answer = vbYes Then doDBMOnSave = True
-                        GoTo done
-                    End If
+                    With Globals.DBModifDefColl(DBmodifType).Item(dbmapdefkey)
+                        If (DBmodifType = "DBSeqnce" OrElse .getTargetRange().Parent Is ExcelDnaUtil.Application.ActiveSheet) And .DBModifSaveNeeded Then
+                            doDBMOnSave = .confirmExecution(WbIsSaving:=True)
+                        End If
+                    End With
+                Next
+            Next
+            ' then for all the rest (no defined order!)
+            For Each DBmodifType As String In Globals.DBModifDefColl.Keys
+                For Each dbmapdefkey As String In Globals.DBModifDefColl(DBmodifType).Keys
+                    With Globals.DBModifDefColl(DBmodifType).Item(dbmapdefkey)
+                        If Not (DBmodifType = "DBSeqnce" OrElse .getTargetRange().Parent Is ExcelDnaUtil.Application.ActiveSheet) And .DBModifSaveNeeded Then
+                            doDBMOnSave = .confirmExecution(WbIsSaving:=True)
+                        End If
+                    End With
                 Next
             Next
         End If
@@ -104,7 +115,7 @@ done:
             For Each DBmodifType As String In Globals.DBModifDefColl.Keys
                 For Each dbmapdefkey As String In Globals.DBModifDefColl(DBmodifType).Keys
                     With Globals.DBModifDefColl(DBmodifType).Item(dbmapdefkey)
-                        If .getTargetRange().Parent Is ExcelDnaUtil.Application.ActiveSheet And .DBModifSaveNeeded Then
+                        If (DBmodifType = "DBSeqnce" OrElse .getTargetRange().Parent Is ExcelDnaUtil.Application.ActiveSheet) And .DBModifSaveNeeded Then
                             .doDBModif(WbIsSaving:=True)
                         End If
                     End With
@@ -114,7 +125,7 @@ done:
             For Each DBmodifType As String In Globals.DBModifDefColl.Keys
                 For Each dbmapdefkey As String In Globals.DBModifDefColl(DBmodifType).Keys
                     With Globals.DBModifDefColl(DBmodifType).Item(dbmapdefkey)
-                        If .getTargetRange().Parent IsNot ExcelDnaUtil.Application.ActiveSheet And .DBModifSaveNeeded Then
+                        If Not (DBmodifType = "DBSeqnce" OrElse .getTargetRange().Parent Is ExcelDnaUtil.Application.ActiveSheet) And .DBModifSaveNeeded Then
                             .doDBModif(WbIsSaving:=True)
                         End If
                     End With

@@ -74,7 +74,7 @@ Namespace My.Resources
         '''            &lt;xs:simpleContent&gt;
         '''              &lt;xs:extension base=&quot;xs:string&quot;&gt;
         '''                &lt;xs:attribute type=&quot;xs:string&quot; name=&quot;key&quot; use=&quot;required&quot;/&gt;
-        '''                &lt;xs:attribute type=&quot;xs:string&quot; name=&quot;value&quot; use=&quot;req [Rest der Zeichenfolge wurde abgeschnitten]&quot;; ähnelt.
+        '''                &lt;xs:attribute type=&quot;xs:string&quot; name=&quot;value&quot; [Rest der Zeichenfolge wurde abgeschnitten]&quot;; ähnelt.
         '''</summary>
         Public Shared ReadOnly Property DBAddinCentral() As String
             Get
@@ -92,7 +92,7 @@ Namespace My.Resources
         '''            &lt;xs:simpleContent&gt;
         '''              &lt;xs:extension base=&quot;xs:string&quot;&gt;
         '''                &lt;xs:attribute type=&quot;xs:string&quot; name=&quot;key&quot; use=&quot;required&quot;/&gt;
-        '''                &lt;xs:attribute type=&quot;xs:string&quot; name=&quot;value&quot; use=&quot;re [Rest der Zeichenfolge wurde abgeschnitten]&quot;; ähnelt.
+        '''                &lt;xs:attribute type=&quot;xs:string&quot; name=&quot;value [Rest der Zeichenfolge wurde abgeschnitten]&quot;; ähnelt.
         '''</summary>
         Public Shared ReadOnly Property DBAddinUser() As String
             Get
@@ -106,13 +106,14 @@ Namespace My.Resources
         '''		&lt;xs:complexType&gt;
         '''			&lt;xs:sequence&gt;
         '''				&lt;xs:choice maxOccurs=&quot;unbounded&quot; minOccurs=&quot;1&quot;&gt;
+        '''					&lt;xs:element type=&quot;xs:string&quot; name=&quot;altDBImpl&quot; minOccurs=&quot;0&quot;/&gt;
         '''					&lt;xs:element name=&quot;DBAction&quot;&gt;
         '''						&lt;xs:complexType&gt;
         '''							&lt;xs:sequence&gt;
         '''								&lt;xs:choice maxOccurs=&quot;unbounded&quot; minOccurs=&quot;1&quot;&gt;
-        '''									&lt;xs:element type=&quot;xs:byte&quot; name=&quot;env&quot; minOccurs=&quot;0&quot;/&gt;
-        '''									&lt;xs:element type=&quot;xs:string&quot; name=&quot;database&quot;/&gt;
-        '''									&lt;xs:element ty [Rest der Zeichenfolge wurde abgeschnitten]&quot;; ähnelt.
+        '''									&lt;xs:element name=&quot;env&quot; minOccurs=&quot;0&quot;&gt;
+        '''										&lt;xs:simpleType&gt;
+        '''		 [Rest der Zeichenfolge wurde abgeschnitten]&quot;; ähnelt.
         '''</summary>
         Public Shared ReadOnly Property DBModifDef() As String
             Get
@@ -127,7 +128,7 @@ Namespace My.Resources
         '''        &lt;xs:complexType&gt;
         '''            &lt;xs:choice minOccurs=&quot;0&quot; maxOccurs=&quot;unbounded&quot;&gt;
         '''                &lt;xs:any namespace=&quot;##any&quot; processContents=&quot;lax&quot; /&gt;
-        '''            &lt;/xs:cho [Rest der Zeichenfolge wurde abgeschnitten]&quot;; ähnelt.
+        '''            &lt;/ [Rest der Zeichenfolge wurde abgeschnitten]&quot;; ähnelt.
         '''</summary>
         Public Shared ReadOnly Property DotNetConfig20() As String
             Get

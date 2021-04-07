@@ -85,7 +85,7 @@ Public Module Globals
                 i += 1
             Loop Until Len(ConfigName) = 0
         Catch ex As Exception
-            ErrorMsg("Error in initialization of Settings (DBAddin.initSettings):" + ex.Message)
+            ErrorMsg("Error in initialization of Settings: " + ex.Message)
         End Try
     End Sub
 
@@ -386,7 +386,7 @@ Public Module Globals
 
         replaceBeg = InStr(1, UCase$(theString), UCase$(keystr))
         If replaceBeg = 0 Then
-            Change = ""
+            Change = theString
             Exit Function
         End If
         replaceEnd = InStr(replaceBeg, UCase$(theString), UCase$(separator))

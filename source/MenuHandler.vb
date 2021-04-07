@@ -17,7 +17,7 @@ Public Class MenuHandler
     ''' <returns></returns>
     Public Overrides Function GetCustomUI(RibbonID As String) As String
         ' Ribbon definition XML
-        Dim customUIXml As String = "<customUI xmlns='http://schemas.microsoft.com/office/2009/07/customui' onLoad='ribbonLoaded' ><ribbon><tabs><tab id='DBaddinTab' label='DB Addin'>"
+        Dim customUIXml As String = "<customUI xmlns='http://schemas.microsoft.com/office/2009/07/customui' onLoad='ribbonLoaded'><ribbon><tabs><tab id='DBaddinTab' label='DB Addin'>"
         ' DBAddin Group: environment choice, DBConfics selection tree, purge names tool button and dialogBoxLauncher for AboutBox
         customUIXml +=
         "<group id='DBAddinGroup' label='DBAddin settings'>" +
@@ -337,10 +337,10 @@ Public Class MenuHandler
     ''' <param name="control"></param>
     ''' <returns></returns>
     Public Function getDBModifTypeLabel(control As CustomUI.IRibbonControl) As String
-        getDBModifTypeLabel = If(control.Id = "DBSeqnce", "DBSequence", control.Id)
+        getDBModifTypeLabel = If(control.Id = "DBSeqnce", "DBSequence", control.Id) + IIf(DBModifs.altDBImpl, "_newImpl", "")
     End Function
 
-    ''' <summary>create the buttons in the DBModif sheet dropdown menu</summary>
+    ''' <summary>create the buttons in the DBModif dropdown menu</summary>
     ''' <param name="control"></param>
     ''' <returns>the menu content xml</returns>
     Public Function getDBModifMenuContent(control As CustomUI.IRibbonControl) As String

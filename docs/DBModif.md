@@ -17,7 +17,7 @@ You can create the three DB Modifiers by using the cell context menu:
 The DBModifier creation/editing is shown below (examples already filled, when activated on a blank cell all entries are empty):  
 (one feature that can not be set in the dialogs is a customized confirmation text for the "Ask for execution" dialog, this is done with Edit DBModifier Definitions, see below)
 
-### DB Mappers are created/edited with following dialog:  
+### DB Mappers are created/edited with the following dialog:  
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DbMapperCreate.PNG)  
 
 *   DBMapper Name: Enter the name for the selected Range (containing the Data including header fields) that will be used to identify the DBMap in the "Execute DBModifier" Group dropdowns. If no name is given here, then UnnamedDBMapper will be used to identify it.

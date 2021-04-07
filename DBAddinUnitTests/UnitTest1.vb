@@ -1,6 +1,7 @@
 ﻿Imports System.Text
 Imports Microsoft.VisualStudio.TestTools.UnitTesting
 Imports DBaddin.Globals
+Imports ExcelDna.Integration
 
 <TestClass()> Public Class UnitTest1
 
@@ -49,6 +50,21 @@ Imports DBaddin.Globals
     <TestMethod()> Public Sub TestBalancedString()
         Assert.AreEqual(balancedString("ignored,(start,""ignore '(' , but include"",(go on, the end)),this should (all()) be excluded", "(", ")", """"), "start,""ignore '(' , but include"",(go on, the end)")
         Assert.AreEqual(balancedString("""(ignored"",(start,""ignore '(' , but include"",(go on, the end)),this should (all) be excluded", "(", ")", """"), "start,""ignore '(' , but include"",(go on, the end)")
+    End Sub
+
+    <TestMethod()> Public Sub TestChange()
+        Assert.AreEqual(Change("database=to be changed;user=not changed;password=not changed;", "database=", "changed", ";"), "database=changed;user=not changed;password=not changed;")
+        Assert.AreEqual(Change("database=not found not changed;user=not changed;password=not changed;", "Something=", "changed", ";"), "database=not found not changed;user=not changed;password=not changed;")
+    End Sub
+
+    <TestMethod()> Public Sub Testfetch()
+        Assert.AreEqual(fetch("SELECT <selectpart> FROM Table", "SELECT ", " FROM "), "<selectpart>")
+        Assert.AreEqual(fetch("SELECT <selectpart> FROM Table", "SELECT ", ""), "<selectpart> FROM Table")
+    End Sub
+
+    <TestMethod()> Public Sub TestReplaceDelims()
+        Assert.AreEqual(replaceDelimsWithSpecialSep("A1,""1,2,3"",B2", ",", """", "(", ")", vbTab), "A1" + vbTab + """1,2,3""" + vbTab + "B2")
+        Assert.AreEqual(replaceDelimsWithSpecialSep("A1,(1,2,3),B2", ",", """", "(", ")", vbTab), "A1" + vbTab + "(1,2,3)" + vbTab + "B2")
     End Sub
 
 End Class

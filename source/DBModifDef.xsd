@@ -3,11 +3,25 @@
 		<xs:complexType>
 			<xs:sequence>
 				<xs:choice maxOccurs="unbounded" minOccurs="1">
+					<xs:element type="xs:string" name="altDBImpl" minOccurs="0"/>
 					<xs:element name="DBAction">
 						<xs:complexType>
 							<xs:sequence>
 								<xs:choice maxOccurs="unbounded" minOccurs="1">
-									<xs:element type="xs:byte" name="env" minOccurs="0"/>
+									<xs:element name="env" minOccurs="0">
+										<xs:simpleType>
+											<xs:union>
+												<xs:simpleType>
+													<xs:restriction base='xs:string'>
+														<xs:length value="0"/>
+													</xs:restriction>
+												</xs:simpleType>
+												<xs:simpleType>
+													<xs:restriction base='xs:byte' />
+												</xs:simpleType>
+											</xs:union>
+										</xs:simpleType>
+									</xs:element>
 									<xs:element type="xs:string" name="database"/>
 									<xs:element type="xs:string" name="execOnSave" minOccurs="0"/>
 									<xs:element type="xs:string" name="askBeforeExecute" minOccurs="0"/>
@@ -21,7 +35,20 @@
 						<xs:complexType>
 							<xs:sequence>
 								<xs:choice maxOccurs="unbounded" minOccurs="1">
-									<xs:element type="xs:byte" name="env" minOccurs="0"/>
+									<xs:element name="env" minOccurs="0">
+										<xs:simpleType>
+											<xs:union>
+												<xs:simpleType>
+													<xs:restriction base='xs:string'>
+														<xs:length value="0"/>
+													</xs:restriction>
+												</xs:simpleType>
+												<xs:simpleType>
+													<xs:restriction base='xs:byte' />
+												</xs:simpleType>
+											</xs:union>
+										</xs:simpleType>
+									</xs:element>
 									<xs:element type="xs:string" name="database"/>
 									<xs:element type="xs:string" name="tableName"/>
 									<xs:element type="xs:byte" name="primKeysStr"/>

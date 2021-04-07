@@ -10,12 +10,12 @@ DBAddin.NET is the successor to the VB6 based Office Database Addin.
 
 ### Installation
 
-* Dependencies
+* Dependencies/Prerequisites
 	* .NET 4.7 or higher (usually distributed with Windows)
-	* Excel (minimum 2003)
-	* ADO 2.5 or higher (usually distributed with Windows)
+	* Excel (minimum 2007 because of Ribbons)
+	* ADO 2.5 or higher (usually distributed with Windows, this will be removed with the migration to ADO.NET for DB Modifiers)
 
-If any of these is missing, please install yourself before starting DBAddin.
+If any of these are missing, please install them yourself before starting DBAddin.
 
 Download the latest zip package in [https://github.com/rkapl123/DBAddin/tags](https://github.com/rkapl123/DBAddin/tags), unzip to any location and run deployAddin.cmd in the folder Distribution.
 This copies DBAddin.xll, DBAddin.xll.config, DBaddinUser.config and DBAddinCentral.config to your %appdata%\Microsoft\AddIns folder and starts Excel for activating DBAddin (adding it to the registered Addins).
@@ -47,8 +47,8 @@ This can be done by modifying DBAddin.xll.config or the referred DBaddinUser.con
     <add key="ownerQualifier3" value=".dbo."/>
     <add key="DBSheetConnString3" value="DRIVER=SQL SERVER;Server=Lenovo-PC;UID=sa;PWD=;Database=pubs;"/>
     <add key="dbPwdSpec3" value="PWD="/>
-    <add key="DBSetQueryListObjConnStringSearch3" value="provider=SQLOLEDB"/>
-    <add key="DBSetQueryListObjConnStringReplace3" value="driver=SQL SERVER"/>
+    <add key="ConnStringSearch3" value="provider=SQLOLEDB"/>
+    <add key="ConnStringReplace3" value="driver=SQL SERVER"/>
 </appSettings>
 ```
 
@@ -83,7 +83,7 @@ Other settings possible in DBAddin.xll.config (or DBAddinCentral.config):
     <add key="connIDPrefixDBtype" value="MSSQL" />
     <add key="DBSheetAutoname" value="True" />
     <add key="disableSettingsDisplay" value="addin"/>
-		<add key="ConfigSelect" value="SELECT (SELECT Count(*) FROM !Table!) Anzahl, TOP 10 * FROM !Table!" />
+    <add key="ConfigSelect" value="SELECT (SELECT Count(*) FROM !Table!) Anzahl, TOP 10 * FROM !Table!" />
 ```
 
 Explanation:
