@@ -67,7 +67,7 @@ Public Class EditDBModifDef
             settingsPath += ".config"
             settingsStr = File.ReadAllText(settingsPath, System.Text.Encoding.Default)
         Catch ex As Exception
-            Globals.ErrorMsg("Couldn't read DBAddin.xll.config settings from " + settingsPath + ":" + ex.Message, "Edit DB Addin Settings")
+            Globals.UserMsg("Couldn't read DBAddin.xll.config settings from " + settingsPath + ":" + ex.Message, "Edit DB Addin Settings")
             Exit Sub
         End Try
         ' if central or user settings were chosen, overwrite settingsStr
@@ -86,12 +86,12 @@ Public Class EditDBModifDef
                 Try
                     settingsStr = File.ReadAllText(settingsPath, System.Text.Encoding.Default)
                 Catch ex As Exception
-                    Globals.ErrorMsg("Couldn't read DB Addin " + Me.Tag + " settings from " + settingsPath + ":" + ex.Message, "Edit DB Addin Settings")
+                    Globals.UserMsg("Couldn't read DB Addin " + Me.Tag + " settings from " + settingsPath + ":" + ex.Message, "Edit DB Addin Settings")
                     Exit Sub
                 End Try
                 Me.Text = Me.Tag + " settings in " + settingsPath
             Else
-                Globals.ErrorMsg("No attribute available as filename reference to " + Me.Tag + " settings (searched xpath: " + xpathStr + ") !", "Edit DB Addin Settings")
+                Globals.UserMsg("No attribute available as filename reference to " + Me.Tag + " settings (searched xpath: " + xpathStr + ") !", "Edit DB Addin Settings")
                 Exit Sub
             End If
         End If
@@ -122,7 +122,7 @@ Public Class EditDBModifDef
                         doc.LoadXml(Me.EditBox.Text)
                         doc.Validate(eventHandler)
                     Catch ex As Exception
-                        Globals.ErrorMsg("Problems with parsing changed definition: " + ex.Message, "Edit DB Modifier Definitions XML")
+                        Globals.UserMsg("Problems with parsing changed definition: " + ex.Message, "Edit DB Modifier Definitions XML")
                         Exit Sub
                     End Try
                     doc.WriteTo(xml_writer)
@@ -138,7 +138,7 @@ Public Class EditDBModifDef
                     Try : ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties("DBFskip").Delete : Catch ex As Exception : End Try
                     ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties.Add(Name:="DBFskip", LinkToContent:=False, Type:=MsoDocProperties.msoPropertyTypeBoolean, Value:=Me.DBFskip.Checked)
                 Catch ex As Exception
-                    Globals.ErrorMsg("Error when adding DBFskip to Workbook:" + ex.Message, "Edit DB Modifier Definitions XML")
+                    Globals.UserMsg("Error when adding DBFskip to Workbook:" + ex.Message, "Edit DB Modifier Definitions XML")
                     Exit Sub
                 End Try
             End If
@@ -147,7 +147,7 @@ Public Class EditDBModifDef
                     Try : ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties("doDBMOnSave").Delete : Catch ex As Exception : End Try
                     ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties.Add(Name:="doDBMOnSave", LinkToContent:=False, Type:=MsoDocProperties.msoPropertyTypeBoolean, Value:=Me.doDBMOnSave.Checked)
                 Catch ex As Exception
-                    Globals.ErrorMsg("Error when adding doDBMOnSave to Workbook:" + ex.Message, "Edit DB Modifier Definitions XML")
+                    Globals.UserMsg("Error when adding doDBMOnSave to Workbook:" + ex.Message, "Edit DB Modifier Definitions XML")
                     Exit Sub
                 End Try
             End If
@@ -165,13 +165,13 @@ Public Class EditDBModifDef
                 doc.LoadXml(Me.EditBox.Text)
                 doc.Validate(eventHandler)
             Catch ex As Exception
-                Globals.ErrorMsg("Problems with parsing changed " + Me.Tag + " settings: " + ex.Message, "Edit DB Addin Settings")
+                Globals.UserMsg("Problems with parsing changed " + Me.Tag + " settings: " + ex.Message, "Edit DB Addin Settings")
                 Exit Sub
             End Try
             Try
                 File.WriteAllText(settingsPath, Me.EditBox.Text, System.Text.Encoding.Default)
             Catch ex As Exception
-                Globals.ErrorMsg("Couldn't write " + Me.Tag + " settings into " + settingsPath + ": " + ex.Message, "Edit DB Addin Settings")
+                Globals.UserMsg("Couldn't write " + Me.Tag + " settings into " + settingsPath + ": " + ex.Message, "Edit DB Addin Settings")
                 Exit Sub
             End Try
         End If

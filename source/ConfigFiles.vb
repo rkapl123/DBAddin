@@ -53,7 +53,7 @@ Public Module ConfigFiles
             Loop Until fileReader.EndOfStream
             fileReader.Close()
         Catch ex As Exception
-            Globals.ErrorMsg("Error (" + ex.Message + ") during filling items from config file '" + theFileName + "' in ConfigFiles.loadConfig")
+            Globals.UserMsg("Error (" + ex.Message + ") during filling items from config file '" + theFileName + "' in ConfigFiles.loadConfig")
         End Try
     End Sub
 
@@ -123,7 +123,7 @@ Public Module ConfigFiles
                 .Refresh(BackgroundQuery:=False)
             End With
         Catch ex As Exception
-            Globals.ErrorMsg("Exception adding listobject query table:" + ex.Message, "Create List Object")
+            Globals.UserMsg("Exception adding listobject query table:" + ex.Message, "Create List Object")
             createListObject = Nothing
             Exit Function
         End Try
@@ -147,14 +147,14 @@ Public Module ConfigFiles
             pivotcache.CommandText = "select CURRENT_TIMESTAMP" ' this should be sufficient for most databases
             pivotcache.CommandType = Excel.XlCmdType.xlCmdSql
         Catch ex As Exception
-            Globals.ErrorMsg("Exception creating pivot cache:" + ex.Message, "Create Pivot Table")
+            Globals.UserMsg("Exception creating pivot cache:" + ex.Message, "Create Pivot Table")
         End Try
 
         Try
             pivotTables = TargetCell.Parent.PivotTables()
             pivotTables.Add(pivotcache, TargetCell.Offset(1, 0))
         Catch ex As Exception
-            Globals.ErrorMsg("Exception adding pivot table:" + ex.Message, "Create Pivot Table")
+            Globals.UserMsg("Exception adding pivot table:" + ex.Message, "Create Pivot Table")
             Exit Sub
         End Try
     End Sub
@@ -192,7 +192,7 @@ Public Module ConfigFiles
                 ' get target cell respecting relative cellToBeStoredAddress starting from originCell
                 Dim TargetCell As Excel.Range = Nothing
                 If Not getRangeFromRelative(originCell, cellToBeStoredAddress, TargetCell) Then
-                    Globals.ErrorMsg("Excel Borders would be violated by placing target cell (relative address:" + cellToBeStoredAddress + ")" + vbLf + "Cell content: " + cellToBeStoredContent + vbLf + "Please select different cell !!")
+                    Globals.UserMsg("Excel Borders would be violated by placing target cell (relative address:" + cellToBeStoredAddress + ")" + vbLf + "Cell content: " + cellToBeStoredContent + vbLf + "Please select different cell !!")
                 End If
 
                 ' finally fill function target cell with function text (relative cell references to target cell) or value
@@ -203,7 +203,7 @@ Public Module ConfigFiles
                         TargetCell.Value = cellToBeStoredContent
                     End If
                 Catch ex As Exception
-                    Globals.ErrorMsg("Error in setting Cell: " + ex.Message, "Create functions in cells")
+                    Globals.UserMsg("Error in setting Cell: " + ex.Message, "Create functions in cells")
                 End Try
             End If
         Next
@@ -290,7 +290,7 @@ Public Module ConfigFiles
         Dim currentBar, button As XElement
 
         If Not Directory.Exists(ConfigStoreFolder) Then
-            Globals.ErrorMsg("No predefined config store folder '" + ConfigStoreFolder + "' found, please correct setting and refresh!")
+            Globals.UserMsg("No predefined config store folder '" + ConfigStoreFolder + "' found, please correct setting and refresh!")
             ConfigMenuXML = "<menu xmlns='" + xnspace.ToString() + "'><button id='refreshDBConfig' label='refresh DBConfig Tree' imageMso='Refresh' onAction='refreshDBConfigTree'/></menu>"
         Else
             ' top level menu
@@ -411,7 +411,7 @@ Public Module ConfigFiles
                 End If
             Next
         Catch ex As Exception
-            Globals.ErrorMsg("Error (" + ex.Message + ") in MenuHandler.readAllFiles")
+            Globals.UserMsg("Error (" + ex.Message + ") in MenuHandler.readAllFiles")
         End Try
     End Sub
 
@@ -458,7 +458,7 @@ Public Module ConfigFiles
                 buildFileSepMenuCtrl = newBar
             End If
         Catch ex As Exception
-            Globals.ErrorMsg("Error (" + ex.Message + ") in MenuHandler.buildFileSepMenuCtrl")
+            Globals.UserMsg("Error (" + ex.Message + ") in MenuHandler.buildFileSepMenuCtrl")
             buildFileSepMenuCtrl = Nothing
         End Try
     End Function

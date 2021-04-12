@@ -1,19 +1,19 @@
 <DBsheetConfig>
 <connID>pubs</connID>
 <table>pubs.dbo.sales</table>
-<query>SELECT T2.stor_name AS stor_id, T1.ord_num, T1.ord_date, T1.qty, T1.payterms, T7.title AS title_id
+<query>SELECT T2.stor_name stor_id, T1.ord_num, T4.title title_id, T1.ord_date, T1.qty, T1.payterms
 FROM pubs.dbo.sales T1 INNER JOIN 
 pubs.dbo.stores T2 ON T1.stor_id = T2.stor_id INNER JOIN 
-pubs.dbo.titles T7 ON T1.title_id = T7.title_id
+pubs.dbo.titles T4 ON T1.title_id = T4.title_id
 </query>
 <whereClause></whereClause>
-<primcols>1</primcols>
+<primcols>3</primcols>
 <columns>
-<field><name>*stor_id</name><ftable>pubs.dbo.stores</ftable><fkey>stor_id</fkey><flookup>stor_name</flookup><primkey>True</primkey><lookup>SELECT stor_name,stor_id FROM pubs.dbo.stores ORDER BY stor_name</lookup></field>
-<field><name>*ord_num</name></field>
+<field><name>*stor_id</name><ftable>pubs.dbo.stores</ftable><fkey>stor_id</fkey><flookup>stor_name</flookup><primkey>True</primkey><lookup>SELECT !T!.stor_name stor_id,!T!.stor_id FROM pubs.dbo.stores !T! ORDER BY stor_name</lookup></field>
+<field><name>*ord_num</name><primkey>True</primkey></field>
+<field><name>*title_id</name><ftable>pubs.dbo.titles</ftable><fkey>title_id</fkey><flookup>title</flookup><primkey>True</primkey><lookup>SELECT !T!.title title_id,!T!.title_id FROM pubs.dbo.titles !T! ORDER BY title</lookup></field>
 <field><name>*ord_date</name></field>
 <field><name>*qty</name></field>
 <field><name>*payterms</name></field>
-<field><name>*title_id</name><ftable>pubs.dbo.titles</ftable><fkey>title_id</fkey><flookup>title</flookup><lookup>SELECT title,title_id FROM pubs.dbo.titles ORDER BY title</lookup></field>
 </columns>
 </DBsheetConfig>

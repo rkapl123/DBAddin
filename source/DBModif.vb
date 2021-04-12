@@ -5,7 +5,9 @@ Imports System.Windows.Forms
 Imports System.Collections.Generic
 Imports Microsoft.Office.Core
 Imports System.Data
-
+Imports System
+Imports System.Collections
+Imports System.Text
 
 ''' <summary>Abstraction of a DB Modification Object (concrete classes DBMapper, DBAction or DBSeqnce)</summary>
 Public MustInherit Class DBModif
@@ -14,6 +16,10 @@ Public MustInherit Class DBModif
     Protected dbmodifName As String
     ''' <summary>Range where DBMapper data is located (only DBMapper and DBAction; paramText is stored in custom doc properties having the same Name)</summary>
     Protected TargetRange As Excel.Range
+    ''' <summary>DBModif name of target range</summary>
+    Protected paramTargetName As String
+    ''' <summary>Database to store to, not available to DB Sequences</summary>
+    Protected database As String
     '''<summary>should DBMap be saved / DBAction be done on Excel Saving? (default no)</summary>
     Protected execOnSave As Boolean = False
     ''' <summary>ask for confirmation before executtion of DBModif</summary>
@@ -39,24 +45,21 @@ Public MustInherit Class DBModif
 
     End Sub
 
-    ''' <summary>asks user the confirmation question, </summary>
-    ''' <returns></returns>
-    Public Function confirmExecution(Optional WbIsSaving As Boolean = False) As Boolean
-        If execOnSave Or WbIsSaving Or askBeforeExecute Then
-            Dim execConfirmTitle As String = IIf(WbIsSaving, "DB Modifications on Save", "Execute " + TypeName(Me)) + IIf(WbIsSaving, " (last confirm overrules all before)", "")
-            Dim answer As MsgBoxResult
+    ''' <summary>asks user the confirmation question, in case it is required by the DB Modifier</summary>
+    ''' <returns>Yes, No or Cancel (only possible when saving to finish questions)</returns>
+    Public Function confirmExecution(Optional WbIsSaving As Boolean = False) As MsgBoxResult
+        ' when saving always ask for DBModifiers that are to be executed, otherwise ask only if required....
+        If (WbIsSaving And execOnSave) Or (Not WbIsSaving And askBeforeExecute) Then
+            Dim executeTitle As String = "Execute " + TypeName(Me) + IIf(WbIsSaving, " on save", "")
             If askBeforeExecute Then
                 If confirmText <> "" Then
-                    answer = QuestionMsg(theMessage:=confirmText, questionType:=MsgBoxStyle.YesNo, questionTitle:=execConfirmTitle)
+                    Return QuestionMsg(theMessage:=confirmText, questionType:=MsgBoxStyle.YesNo, questionTitle:=executeTitle)
                 Else
-                    answer = QuestionMsg(theMessage:="Really execute " + dbmodifName + "?", questionType:=MsgBoxStyle.YesNo, questionTitle:=execConfirmTitle)
+                    Return QuestionMsg(theMessage:="Really execute " + dbmodifName + "?", questionType:=MsgBoxStyle.YesNo, questionTitle:=executeTitle)
                 End If
-            Else
-                answer = QuestionMsg(theMessage:="do the DB Modifications defined in Workbook ?", questionType:=MsgBoxStyle.YesNo, questionTitle:=execConfirmTitle)
             End If
-            If answer = vbYes Then Return True
         End If
-        Return False
+        Return MsgBoxResult.No
     End Function
 
     ''' <summary>public accessor function</summary>
@@ -144,12 +147,36 @@ Public MustInherit Class DBModif
         TargetRange = newTargetRange
     End Sub
 
-    ''' <summary>simply open a database connection, required for DBBegin Transaction (from next step)</summary>
+    ''' <summary>open a database specific connection, not available to DB Sequences</summary>
     ''' <returns></returns>
-    Public Overridable Function openDatabase(Optional DBSequenceEnv As String = "") As Boolean
-        Throw New NotImplementedException()
+    Public Function openDatabase(Optional DBSequenceEnv As String = "") As Boolean
+        If TypeName(Me) = "DBSeqnce" Then Throw New NotImplementedException() ' DB Sequences have no database
+        Dim setEnv As Integer = getEnv()
+        If DBSequenceEnv = "" Then
+            ' if Environment is not existing (default environment = 0), take from selectedEnvironment
+            If setEnv = 0 Then setEnv = Globals.selectedEnvironment + 1
+        Else
+            ' if Environment is not existing (default environment = 0), take from sequence environment
+            If setEnv = 0 Then
+                setEnv = CInt(DBSequenceEnv)
+            Else
+                ' otherwise check if set environment is different from sequence environment and set to sequence environment after warning message.
+                If setEnv <> CInt(DBSequenceEnv) Then
+                    Globals.UserMsg("Environment in " + TypeName(Me) + " (" + env + ") different than given environment of DB Sequence (" + DBSequenceEnv + "), overruling with sequence environment !")
+                    setEnv = CInt(DBSequenceEnv)
+                End If
+            End If
+        End If
+        openDatabase = True
+        ' TODO: revert when migration to ADO.NET finished...
+        If altDBImpl Then
+            openDatabase = openIdbConnection(setEnv, database)
+        Else
+            If dbcnn Is Nothing Then openDatabase = openConnection(setEnv, database)
+        End If
     End Function
 
+    ' TODO: remove following 4 functions when migration to ADO.NET finished...
     ''' <summary>checks whether ADO type theType is a date or time type</summary>
     ''' <param name="theType"></param>
     ''' <returns>True if DateTime</returns>
@@ -205,22 +232,22 @@ Public MustInherit Class DBModif
         Dim caller As Excel.Range
         Try : caller = ExcelDnaUtil.Application.Range(srcExtent)
         Catch ex As Exception
-            Globals.ErrorMsg("Didn't find caller cell of DBRefresh using srcExtent " + srcExtent + "!", "Refresh of DB Functions")
+            Globals.UserMsg("Didn't find caller cell of DBRefresh using srcExtent " + srcExtent + "!", "Refresh of DB Functions")
             Exit Function
         End Try
         If caller.Parent.ProtectContents Then
-            Globals.ErrorMsg("Worksheet " + caller.Parent.Name + " is content protected, can't refresh DB Function !")
+            Globals.UserMsg("Worksheet " + caller.Parent.Name + " is content protected, can't refresh DB Function !")
             Exit Function
         End If
         Dim targetExtent = Replace(srcExtent, "DBFsource", "DBFtarget")
         Dim target As Excel.Range
         Try : target = ExcelDnaUtil.Application.Range(targetExtent)
         Catch ex As Exception
-            Globals.ErrorMsg("Didn't find target of DBRefresh using targetExtent " + targetExtent + "!", "Refresh of DB Functions")
+            Globals.UserMsg("Didn't find target of DBRefresh using targetExtent " + targetExtent + "!", "Refresh of DB Functions")
             Exit Function
         End Try
         If target.Parent.ProtectContents Then
-            Globals.ErrorMsg("Worksheet " + target.Parent.Name + " is content protected, can't refresh DB Function !")
+            Globals.UserMsg("Worksheet " + target.Parent.Name + " is content protected, can't refresh DB Function !")
             Exit Function
         End If
         Dim DBMapperUnderlying As String = getDBModifNameFromRange(target)
@@ -229,7 +256,7 @@ Public MustInherit Class DBModif
         ' formulaRange might not exist
         Try : formulaRange = ExcelDnaUtil.Application.Range(targetExtentF) : Catch ex As Exception : End Try
         If Not formulaRange Is Nothing AndAlso formulaRange.Parent.ProtectContents Then
-            Globals.ErrorMsg("Worksheet " + formulaRange.Parent.Name + " is content protected, can't refresh DB Function !")
+            Globals.UserMsg("Worksheet " + formulaRange.Parent.Name + " is content protected, can't refresh DB Function !")
             Exit Function
         End If
         Dim DBMapperUnderlyingF As String = getDBModifNameFromRange(formulaRange)
@@ -242,7 +269,7 @@ Public MustInherit Class DBModif
         End If
         ' prevent deadlock if we are in a transaction and want to refresh the area that was changed.
         If (modifiedDBMappers.ContainsKey(DBMapperUnderlying) Or modifiedDBMappers.ContainsKey(DBMapperUnderlyingF)) And TransactionIsOpen Then
-            Globals.ErrorMsg("Transaction affecting the target area is still open, refreshing it would result in a deadlock on the database table. Skipping refresh, consider placing refresh outside of transaction.", "Refresh of DB Functions in DB Sequence")
+            Globals.UserMsg("Transaction affecting the target area is still open, refreshing it would result in a deadlock on the database table. Skipping refresh, consider placing refresh outside of transaction.", "Refresh of DB Functions in DB Sequence")
             Exit Function
         End If
         ' reset query cache, so we really get new data !
@@ -251,7 +278,7 @@ Public MustInherit Class DBModif
             ' get the callID of the underlying name of the target (key of the queryCache and StatusCollection)
             callID = "[" + caller.Parent.Parent.Name + "]" + caller.Parent.Name + "!" + caller.Address
         Catch ex As Exception
-            Globals.ErrorMsg("Didn't find target of DBRefresh !", "Refresh of DB Functions")
+            Globals.UserMsg("Didn't find target of DBRefresh !", "Refresh of DB Functions")
             Exit Function
         End Try
         Try
@@ -327,7 +354,7 @@ Public MustInherit Class DBModif
                 Functions.DBRowFetchAction(callID, getQuery(functionArgs(0), caller), caller, tempArray, getConnString(functionArgs(1), caller, False), HeaderInfo)
             End If
         Catch ex As Exception
-            Globals.ErrorMsg("Exception: " + ex.Message, "DBRefresh")
+            Globals.UserMsg("Exception: " + ex.Message, "DBRefresh")
         End Try
         doDBRefresh = True
     End Function
@@ -388,10 +415,6 @@ End Class
 ''' <summary>DBMappers are used to store a range of data in Excel to the database. A special type of DBMapper is the CUD DBMapper for realizing the former DBSheets</summary>
 Public Class DBMapper : Inherits DBModif
 
-    ''' <summary>DBModif name of target range</summary>
-    Private paramTargetName As String
-    ''' <summary>Database to store to</summary>
-    Private database As String
     ''' <summary>Database Table, where Data is to be stored</summary>
     Private tableName As String = ""
     ''' <summary>count of primary keys in datatable, starting from the leftmost column</summary>
@@ -408,7 +431,7 @@ Public Class DBMapper : Inherits DBModif
     Private IgnoreDataErrors As Boolean = False
     ''' <summary>used to pass whether changes were done</summary>
     Private changesDone As Boolean = False
-    '''<summary>first columnn is treated as an autoincrementing key column</summary>
+    '''<summary>first columnn is treated as an autoincrementing key column, needed to ignore empty values there (otherwise DBMappers stop here)</summary>
     Private AutoIncFlag As Boolean = False
 
     ''' <summary>legacy constructor for mapping existing DBMapper macro calls (copy in clipboard)</summary>
@@ -501,42 +524,12 @@ Public Class DBMapper : Inherits DBModif
                 Throw New Exception("CUDFlags only supported for DBMappers on ListObjects (created with DBSetQueryListObject)!")
             End If
         Catch ex As Exception
-            Globals.ErrorMsg("Error when creating DBMapper '" + dbmodifName + "': " + ex.Message, "DBModifier Definitions Error")
+            Globals.UserMsg("Error when creating DBMapper '" + dbmodifName + "': " + ex.Message, "DBModifier Definitions Error")
         End Try
     End Sub
 
     Public Function hadChanges() As Boolean
         Return changesDone
-    End Function
-
-    ''' <summary>simply open a database connection, required for DBBegin Transaction (from next step)</summary>
-    ''' <returns></returns>
-    Public Overrides Function openDatabase(Optional DBSequenceEnv As String = "") As Boolean
-        ' if Environment is not existing, take from selectedEnvironment
-        Dim setEnv As Integer
-        If DBSequenceEnv = "" Then
-            If env = "" Then
-                setEnv = getEnv(Globals.selectedEnvironment + 1)
-            Else
-                setEnv = CInt(env)
-            End If
-        Else
-            If env = "" Then
-                setEnv = CInt(DBSequenceEnv)
-            Else
-                setEnv = CInt(env)
-                If setEnv <> CInt(DBSequenceEnv) Then
-                    Globals.ErrorMsg("Environment in DBAction (" + env + ") different than given environment of DB Sequence (" + DBSequenceEnv + "), overruling with sequence environment !")
-                    setEnv = CInt(DBSequenceEnv)
-                End If
-            End If
-        End If
-        openDatabase = True
-        If altDBImpl Then
-            If idbcnn Is Nothing Then openDatabase = openIdbConnection(setEnv, database)
-        Else
-            If dbcnn Is Nothing Then openDatabase = openConnection(setEnv, database)
-        End If
     End Function
 
     ''' <summary>inserts CUD (Create/Update/Delete) Marks at the right end of the DBMapper range</summary>
@@ -554,7 +547,7 @@ Public Class DBMapper : Inherits DBModif
             If Not QuestionMsg(theMessage:="A large range was changed (" + changedRange.Rows.Count.ToString + " > maxRowCountCUD:" + fetchSetting("maxRowCountCUD", "10000") + "), this will probably lead to CUD flag setting taking very long. Continue?", questionTitle:="Set CUD Flags for DB Mapper") Then Exit Sub
         End If
         If changedRange.Parent.ProtectContents Then
-            Globals.ErrorMsg("Worksheet " + changedRange.Parent.Name + " is content protected, can't set CUD Flags !")
+            Globals.UserMsg("Worksheet " + changedRange.Parent.Name + " is content protected, can't set CUD Flags !")
             Exit Sub
         End If
         ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = False ' to prevent automatic creation of new column
@@ -634,13 +627,18 @@ Public Class DBMapper : Inherits DBModif
         ' in case CUDFlags was set to a single cell DBMapper avoid resetting CUDFlags
         If CUDFlags And Not (TargetRange.Columns.Count = 1 And TargetRange.Rows.Count = 1) Then
             If TargetRange.Parent.ProtectContents Then
-                Globals.ErrorMsg("Worksheet " + TargetRange.Parent.Name + " is content protected, can't reset CUD Flags !")
+                Globals.UserMsg("Worksheet " + TargetRange.Parent.Name + " is content protected, can't reset CUD Flags !")
                 Exit Sub
             End If
             ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = False ' to prevent automatic creation of new column
             TargetRange.Columns(TargetRange.Columns.Count + 1).ClearContents
+            ' remove updated rows cell style
             TargetRange.Font.Italic = False
+            ' remove deleted rows cell style
             TargetRange.Font.Strikethrough = False
+            ' remove automatically created hyperlink formatting (link is removed by refresh, but formats stay)
+            TargetRange.Font.ColorIndex = Excel.XlColorIndex.xlColorIndexAutomatic
+            TargetRange.Font.Underline = Excel.XlUnderlineStyle.xlUnderlineStyleNone
             ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = True ' to prevent automatic creation of new column
         End If
     End Sub
@@ -653,7 +651,7 @@ Public Class DBMapper : Inherits DBModif
         changesDone = False
         ' ask for saving only if a) is not done on WorkbookSave b) is set to ask and c) is not called by a DBSequence (asks already for saving) and d) is in interactive mode
         If Not WbIsSaving And askBeforeExecute And calledByDBSeq = "" And Not nonInteractive Then
-            If Not confirmExecution() Then Exit Sub
+            If Not confirmExecution() = MsgBoxResult.Yes Then Exit Sub
         End If
         ' if Environment is not existing, take from selectedEnvironment
         Dim env As Integer = getEnv(Globals.selectedEnvironment + 1)
@@ -680,7 +678,7 @@ Public Class DBMapper : Inherits DBModif
             checkrst.Open(tableName, dbcnn, CursorTypeEnum.adOpenDynamic, LockTypeEnum.adLockReadOnly, CommandTypeEnum.adCmdTableDirect)
         Catch ex As Exception
             hadError = True
-            Globals.ErrorMsg("Opening table '" + tableName + "' caused following error: " + ex.Message + " for DBMapper " + paramTargetName, "DBMapper Error")
+            Globals.UserMsg("Opening table '" + tableName + "' caused following error: " + ex.Message + " for DBMapper " + paramTargetName, "DBMapper Error")
             GoTo cleanup
         End Try
 
@@ -696,7 +694,7 @@ Public Class DBMapper : Inherits DBModif
                     hadError = True
                     TargetRange.Parent.Activate
                     TargetRange.Cells(1, colNum).Select
-                    Globals.ErrorMsg("Field '" + fieldname + "' does not exist in Table '" + tableName + "' and is not in ignoreColumns, Error in sheet " + TargetRange.Parent.Name, "DBMapper Error")
+                    Globals.UserMsg("Field '" + fieldname + "' does not exist in Table '" + tableName + "' and is not in ignoreColumns, Error in sheet " + TargetRange.Parent.Name, "DBMapper Error")
                     GoTo cleanup
                 End Try
             End If
@@ -922,7 +920,7 @@ nextRow:
                 dbcnn.Execute(executeAdditionalProc)
             Catch ex As Exception
                 hadError = True
-                Globals.ErrorMsg("Error in executing additional stored procedure: " + ex.Message, "DBMapper Error")
+                Globals.UserMsg("Error in executing additional stored procedure: " + ex.Message, "DBMapper Error")
                 GoTo cleanup
             End Try
         End If
@@ -940,7 +938,7 @@ cleanup:
                         ' reset CUDFlags before refresh to avoid problems with reduced TargetRange due to deletions!
                         Me.resetCUDFlags()
                     Catch ex As Exception
-                        Globals.ErrorMsg("Error in resetting CUD Flags: " + ex.Message, "DBMapper Error")
+                        Globals.UserMsg("Error in resetting CUD Flags: " + ex.Message, "DBMapper Error")
                     End Try
                     If calledByDBSeq = "" Then
                         Dim retval As MsgBoxResult = QuestionMsg(theMessage:="Refresh Data Range of DB Mapper '" + dbmodifName + "' ?", questionTitle:="Refresh DB Mapper")
@@ -960,7 +958,7 @@ cleanup:
         changesDone = False
         ' ask for saving only if a) is not done on WorkbookSave b) is set to ask and c) is not called by a DBSequence (asks already for saving) and d) is in interactive mode
         If Not WbIsSaving And askBeforeExecute And calledByDBSeq = "" And Not nonInteractive Then
-            If Not confirmExecution() Then Exit Sub
+            If Not confirmExecution() = MsgBoxResult.Yes Then Exit Sub
         End If
         extendDataRange()
         ' check for mass changes and warn if necessary
@@ -977,47 +975,26 @@ cleanup:
         If Not TransactionOpen Then
             If Not openDatabase() Then Exit Sub
         End If
+        Dim primKeyColumns(primKeysCount - 1) As DataColumn
 
         Dim da As Common.DbDataAdapter = Nothing
-        Dim ds As DataSet = Nothing
-        initDataSetAndAdapter(tableName, ds, da)
-
-        'Dim pColCount As Integer = 2
-        'Dim colPk(pColCount - 1) As DataColumn
-        'colPk(0) = ds.Tables(0).Columns("au_id")
-        'colPk(1) = ds.Tables(0).Columns("au_id2")
-        'ds.Tables(0).PrimaryKey = colPk
-
-        'Dim primKeyValues(pColCount - 1) As Object
-        'primKeyValues(0) = "172-32-1177"
-        'primKeyValues(1) = 1
-        'Try
-        '    Dim foundRow As DataRow = ds.Tables(0).Rows.Find(primKeyValues)
-        '    'foundRow("au_lname") = DBNull.Value
-        '    If foundRow Is Nothing Then
-        '        foundRow = ds.Tables(0).NewRow()
-        '        foundRow("au_id") = "172-32-1177"
-        '        foundRow("au_id2") = 2
-        '        foundRow("au_lname") = "testL"
-        '        foundRow("au_fname") = "testF"
-        '        foundRow("phone") = "12345"
-        '        foundRow("address") = "232 sdfsdf sdfsdf"
-        '        foundRow("city") = "erwer"
-        '        foundRow("state") = "sd"
-        '        foundRow("zip") = "12345"
-        '        foundRow("contract") = True
-        '        ds.Tables(0).Rows.Add(foundRow)
-        '    Else
-        '        foundRow.Delete()
-        '    End If
-        '    da.Update(ds, tableName)
-        '    trans.Commit()
-        'Catch ex As Exception
-        '    Globals.ErrorMsg("updating table '" + tableName + "' caused following error: " + ex.Message + " (in " + paramTargetName + ")", "DBMapper Error")
-        '    trans.Rollback()
-        '    GoTo cleanup
-        'End Try
-        'Exit Sub
+        Dim ds As DataSet = New DataSet()
+        ' initialise the Data Adapter and fill the dataset (with data and schema)
+        Try
+            If TypeName(idbcnn) = "SqlConnection" Then
+                da = New SqlClient.SqlDataAdapter(New SqlClient.SqlCommand("select * from " + tableName, idbcnn))
+            Else
+                da = New Odbc.OdbcDataAdapter(New Odbc.OdbcCommand("select * from " + tableName, idbcnn))
+            End If
+        Catch ex As Exception
+            Globals.UserMsg("Error in initializing Data Adapter for " + tableName + ": " + ex.Message, "DBMapper Error")
+        End Try
+        Try
+            da.SelectCommand.Transaction = DBModifs.trans
+            da.FillSchema(ds, SchemaType.Source, tableName)
+        Catch ex As Exception
+            Globals.UserMsg("Error in retrieving Schema for " + tableName + ": " + ex.Message, "DBMapper Error")
+        End Try
 
         ' check if all column names (except ignored) of DBMapper Range exist in table
         Dim colNum As Long = 1
@@ -1029,24 +1006,74 @@ cleanup:
                     hadError = True
                     TargetRange.Parent.Activate
                     TargetRange.Cells(1, colNum).Select
-                    Globals.ErrorMsg("Field '" + fieldname + "' does not exist in Table '" + tableName + "' and is not in ignoreColumns, Error in sheet " + TargetRange.Parent.Name, "DBMapper Error")
+                    Globals.UserMsg("Field '" + fieldname + "' does not exist in Table '" + tableName + "' and is not in ignoreColumns, Error in sheet " + TargetRange.Parent.Name, "DBMapper Error")
                     GoTo cleanup
                 End If
             End If
             colNum += 1
         Loop Until colNum > TargetRange.Columns.Count
 
-        Dim rowNum As Long = 2
-        Dim primKeyColumns(primKeysCount - 1) As DataColumn
+        ' before setting the commands for the adapter, we need to have the primary key information, or update/delete command builder will fail...
+        For i As Integer = 1 To primKeysCount
+            Dim primKey = TargetRange.Cells(1, i).Value
+            If primKey Is Nothing OrElse primKey = "" Then
+                notifyUserOfDataError("Primary key field name in column " + i.ToString() + " is blank !", 1, i)
+                GoTo cleanup
+            End If
+            ' if primKey is in ignoreColumns then the only reasonable reason is a lookup primary key in DBSHeets (CUDFlags only), so try with "real" (resolved key) instead...
+            If InStr(1, LCase(ignoreColumns) + ",", LCase(primKey) + ",") > 0 Then
+                If CUDFlags Then
+                    primKey = Left(primKey, Len(primKey) - 2) ' correct the LU to real primary Key
+                Else
+                    notifyUserOfDataError("Primary key '" + primKey + "' is contained in ignoreColumns !", 1, i)
+                    GoTo cleanup
+                End If
+            End If
+            If Not ds.Tables(0).Columns.Contains(primKey) Then
+                notifyUserOfDataError("Primary key '" + primKey.ToString + "' not found in table '" + tableName, 1, i)
+                GoTo cleanup
+            End If
+            primKeyColumns(i - 1) = ds.Tables(0).Columns(primKey)
+        Next
+        ' assign primary key columns externally in case there are none defined on the table (might be)
+        Try
+            ds.Tables(0).PrimaryKey = primKeyColumns
+        Catch ex As Exception
+            Globals.UserMsg("Error in setting primary keys for " + tableName + ": " + ex.Message, "DBMapper Error")
+        End Try
+        ' fill the table data into dataset
+        Try
+            da.Fill(ds.Tables(0))
+        Catch ex As Exception
+            Globals.UserMsg("Error in retrieving Data for " + tableName + ": " + ex.Message, "DBMapper Error")
+        End Try
+        ' fill the CommandBuilders and assign the transaction if required/existing (nothing = immediate commit)
+        Try
+            If TypeName(idbcnn) = "SqlConnection" Then
+                da.InsertCommand = New SqlClient.SqlCommandBuilder(da).GetInsertCommand()
+                da.UpdateCommand = New CustomSqlCommandBuilder(ds.Tables(0), idbcnn).UpdateCommand()
+                da.DeleteCommand = New CustomSqlCommandBuilder(ds.Tables(0), idbcnn).DeleteCommand()
+            Else
+                da.InsertCommand = New Odbc.OdbcCommandBuilder(da).GetInsertCommand()
+                da.UpdateCommand = New CustomOdbcCommandBuilder(ds.Tables(0), idbcnn).UpdateCommand()
+                da.DeleteCommand = New CustomOdbcCommandBuilder(ds.Tables(0), idbcnn).DeleteCommand()
+            End If
+            da.InsertCommand.Transaction = DBModifs.trans
+            da.UpdateCommand.Transaction = DBModifs.trans
+            da.DeleteCommand.Transaction = DBModifs.trans
+        Catch ex As Exception
+            Globals.UserMsg("Error in setting Commands or Transaction for Data Adapter for " + tableName + ": " + ex.Message, "DBMapper Error")
+        End Try
 
+        Dim rowNum As Long = 2
+        ' walk through all rows in DBMapper Targetrange
         Dim finishLoop As Boolean
-        '''''''''''''''''''''''''''''''''''''''' walk through rows
         Do
             ' if CUDFlags are set, only insert/update/delete if CUDFlags column (right to DBMapper range) is filled...
             Dim rowCUDFlag As String = TargetRange.Cells(rowNum, TargetRange.Columns.Count + 1).Value
             If Not CUDFlags Or (CUDFlags And rowCUDFlag <> "") Then
                 Dim AutoIncrement As Boolean = False
-                ' try to find record for update in dataset
+                ' try to find record for update in dataset based on primary key information
                 Dim primKeyDisplay As String = ""
                 Dim primKeyValues(primKeysCount - 1) As Object
                 For i As Integer = 1 To primKeysCount
@@ -1057,26 +1084,19 @@ cleanup:
                     End If
                     If primKeyValue Is Nothing Then primKeyValue = ""
                     Dim primKey = TargetRange.Cells(1, i).Value
-                    If primKey Is Nothing OrElse primKey = "" Then
-                        notifyUserOfDataError("Primary key field name in column " + i.ToString() + " is blank !", 1, i)
-                        GoTo cleanup
-                    End If
                     ' if primKey is in ignoreColumns then the only reasonable reason is a lookup primary key in DBSHeets (CUDFlags only), so try with "real" (resolved key) instead...
                     If InStr(1, LCase(ignoreColumns) + ",", LCase(primKey) + ",") > 0 Then
                         If CUDFlags Then
                             primKey = Left(primKey, Len(primKey) - 2) ' correct the LU to real primary Key
                             primKeyValue = TargetRange.ListObject.ListColumns(primKey).Range(rowNum, 1).Value ' get the value from there
-                        Else
-                            notifyUserOfDataError("Primary key '" + primKey + "' is contained in ignoreColumns !", 1, i)
-                            GoTo cleanup
+                            ' special treatment for time and date fields
+                            If TypeName(primKeyValue) = "Date" Or Left(ds.Tables(0).Columns(primKey).DataType.Name, 4) = "Date" Then
+                                primKeyValue = convertToDateString(primKeyValue)
+                            End If
                         End If
                     End If
-                    If Not ds.Tables(0).Columns.Contains(primKey) Then
-                        notifyUserOfDataError("Primary key '" + primKey.ToString + "' not found in table '" + tableName, 1, i)
-                        GoTo cleanup
-                    End If
-                    primKeyColumns(i - 1) = ds.Tables(0).Columns(primKey)
-                    primKeyValues(i - 1) = primKeyValue ' todo: check Date values !
+                    ' empty primary keys are valid if primary key has autoincrement property defined, so pass DBNull Value here to avoid exception in finding record below (record is not found of course)...
+                    primKeyValues(i - 1) = IIf(IsNothing(primKeyValue) OrElse primKeyValue.ToString() = "", DBNull.Value, primKeyValue)
                     primKeyDisplay += primKeyDisplay + primKey + ":" + primKeyValue.ToString() + ","
 
                     Dim checkAutoIncrement As Boolean = ds.Tables(0).Columns(primKey).AutoIncrement
@@ -1084,16 +1104,16 @@ cleanup:
                         If Not notifyUserOfDataError("AutoIncrement property for primary key '" + primKey.ToString + "' is false and primary key value is empty!", 1, i) Then GoTo cleanup
                         GoTo nextRow
                     End If
+                    ' single primary key, AutoIncFlag is to indicate first column might be left empty in such cases. CUD DBMappers can have multiple empty primary keys as long as they have auto identity.
                     If primKeysCount = 1 And (CUDFlags Or AutoIncFlag) And primKeyValue.ToString().Length = 0 And checkAutoIncrement Then
-                        AutoIncrement = True
+                        AutoIncrement = True ' needed to avoid searching for primary key(s) that are empty because of auto identity
                         Exit For
                     End If
-                    ' with CUDFlags there can be empty primary keys (auto identity columns), leave error checking to database in this case ...
+                    ' with CUDFlags and multiple primary keys there can be empty primary keys (auto identity columns), leave error checking to database in this case ...
                     If (Not CUDFlags Or (CUDFlags And rowCUDFlag = "u")) And primKeyValue.ToString().Length = 0 Then
                         If Not notifyUserOfDataError("Empty primary key value, cell (" + rowNum.ToString + "," + i.ToString + ") in sheet " + TargetRange.Parent.Name + " and row " + rowNum.ToString, rowNum, i) Then GoTo cleanup
                         GoTo nextRow
                     End If
-
                 Next
                 ds.Tables(0).PrimaryKey = primKeyColumns
 
@@ -1123,7 +1143,10 @@ cleanup:
                             If InStr(1, LCase(ignoreColumns) + ",", LCase(primKey) + ",") > 0 AndAlso CUDFlags Then
                                 primKey = Left(primKey, Len(primKey) - 2) ' correct the LU to real primary Key
                                 primKeyValue = TargetRange.ListObject.ListColumns(primKey).Range(rowNum, 1).Value ' get the value from there
-                                ' todo: check Date values !
+                                ' special treatment for time and date fields
+                                If TypeName(primKeyValue) = "Date" Or Left(ds.Tables(0).Columns(primKey).DataType.Name, 4) = "Date" Then
+                                    primKeyValue = convertToDateString(primKeyValue)
+                                End If
                             End If
                             Try
                                 ' skip empty primary field values for autoincrementing identity fields ..
@@ -1150,7 +1173,7 @@ cleanup:
                             Try
                                 Dim fieldval As Object = TargetRange.Cells(rowNum, colNum).Value
                                 If fieldval Is Nothing Then
-                                    foundRow(fieldname) = DBNull.Value
+                                    foundRow(fieldname) = DBNull.Value ' explicitly set DBNull Value, Nothing or null doesn't work here
                                 Else
                                     If IsXLCVErr(fieldval) Then
                                         If IgnoreDataErrors Then
@@ -1160,14 +1183,9 @@ cleanup:
                                             GoTo nextRow
                                         End If
                                     Else
-                                        ' special treatment for time and date fields as they are
-                                        If TypeName(fieldval) = "Date" Or Left(ds.Tables(0).Columns(fieldname).DataType.ToString(), 4) = "Date" Then
-                                            Dim fieldValDate As DateTime = DirectCast(fieldval, DateTime)
-                                            If fieldValDate.Hour() = 0 And fieldValDate.Minute() = 0 And fieldValDate.Second() = 0 And fieldValDate.Millisecond() = 0 Then
-                                                fieldval = Format(fieldValDate, "yyyy-MM-dd")  ' ISO 8601 standard SQL Date formatting
-                                            Else
-                                                fieldval = Format(fieldValDate, "yyyy-MM-dd HH:mm:ss")  ' ISO 8601 standard SQL Date/time formatting, 24h format...
-                                            End If
+                                        ' special treatment for time and date fields
+                                        If TypeName(fieldval) = "Date" Or Left(ds.Tables(0).Columns(fieldname).DataType.Name, 4) = "Date" Then
+                                            fieldval = convertToDateString(fieldval)
                                         End If
                                         foundRow(fieldname) = IIf(fieldval.ToString().Length = 0, DBNull.Value, fieldval)
                                     End If
@@ -1175,7 +1193,7 @@ cleanup:
                             Catch ex As Exception
                                 Dim exMessage As String = ex.Message
                                 foundRow.CancelEdit()
-                                If Not notifyUserOfDataError("Field Value Update Error: " + exMessage + " with Table: " + tableName + ", Field: " + fieldname + ", in sheet " + TargetRange.Parent.Name + " and row " + rowNum.ToString + ", col: " + colNum.ToString, rowNum, colNum) Then GoTo cleanup
+                                If Not notifyUserOfDataError("Field Value Insert or Update Error: " + exMessage + " with Table: " + tableName + ", Field: " + fieldname + ", in sheet " + TargetRange.Parent.Name + " and row " + rowNum.ToString + ", col: " + colNum.ToString, rowNum, colNum) Then GoTo cleanup
                                 GoTo nextRow
                             End Try
                         End If
@@ -1203,7 +1221,6 @@ cleanup:
                         foundRow.Delete()
                         ' immediately remove..
                         da.Update(ds, tableName)
-                        ds.Tables(0).AcceptChanges()
                         changesDone = True
                         ' remove CUD Flag if present
                         TargetRange.Cells(rowNum, TargetRange.Columns.Count + 1).Value = ""
@@ -1228,16 +1245,23 @@ nextRow:
 
         ' any additional stored procedures to execute?
         If executeAdditionalProc.Length > 0 Then
+            Dim result As Integer
             Try
                 ExcelDnaUtil.Application.StatusBar = "executing stored procedure " + executeAdditionalProc
-                Dim storedProcCmd As IDbCommand = idbcnn.CreateCommand()
+                Dim storedProcCmd As IDbCommand
+                If TypeName(idbcnn) = "SqlConnection" Then
+                    storedProcCmd = New SqlClient.SqlCommand(executeAdditionalProc, idbcnn, trans)
+                Else
+                    storedProcCmd = New Odbc.OdbcCommand(executeAdditionalProc, idbcnn, trans)
+                End If
                 storedProcCmd.CommandText = executeAdditionalProc
-                storedProcCmd.ExecuteNonQuery()
+                result = storedProcCmd.ExecuteNonQuery()
             Catch ex As Exception
                 hadError = True
-                Globals.ErrorMsg("Error in executing additional stored procedure: " + ex.Message, "DBMapper Error")
+                Globals.UserMsg("Error in executing additional stored procedure: " + ex.Message, "DBMapper Error")
                 GoTo cleanup
             End Try
+            LogInfo("executed " + executeAdditionalProc + ", affected rows: " + result.ToString())
         End If
 cleanup:
         ExcelDnaUtil.Application.StatusBar = False
@@ -1253,7 +1277,7 @@ cleanup:
                         ' reset CUDFlags before refresh to avoid problems with reduced TargetRange due to deletions!
                         Me.resetCUDFlags()
                     Catch ex As Exception
-                        Globals.ErrorMsg("Error in resetting CUD Flags: " + ex.Message, "DBMapper Error")
+                        Globals.UserMsg("Error in resetting CUD Flags: " + ex.Message, "DBMapper Error")
                     End Try
                     If calledByDBSeq = "" Then
                         Dim retval As MsgBoxResult = QuestionMsg(theMessage:="Refresh Data Range of DB Mapper '" + dbmodifName + "' ?", questionTitle:="Refresh DB Mapper")
@@ -1269,31 +1293,23 @@ cleanup:
         End If
     End Sub
 
-    Private Sub initDataSetAndAdapter(tableName As String, ByRef ds As DataSet, ByRef da As Common.DbDataAdapter)
-        ds = New DataSet()
-        If TypeName(idbcnn) = "SqlConnection" Then
-            da = New SqlClient.SqlDataAdapter(New SqlClient.SqlCommand("select * from " + tableName, idbcnn))
-            da.SelectCommand.Transaction = DBModifs.trans
-            da.InsertCommand = New SqlClient.SqlCommandBuilder(da).GetInsertCommand()
-            da.InsertCommand.Transaction = DBModifs.trans
-            da.UpdateCommand = New SqlClient.SqlCommandBuilder(da).GetUpdateCommand()
-            da.UpdateCommand.Transaction = DBModifs.trans
-            da.DeleteCommand = New SqlClient.SqlCommandBuilder(da).GetDeleteCommand()
-            da.DeleteCommand.Transaction = DBModifs.trans
+    ''' <summary>convert date fields to date strings</summary>
+    ''' <param name="fieldval">date value as object</param>
+    ''' <returns>date string</returns>
+    Private Function convertToDateString(fieldval As Object) As String
+        Dim fieldValDate As DateTime = DirectCast(fieldval, DateTime)
+        If fieldValDate.Hour() = 0 And fieldValDate.Minute() = 0 And fieldValDate.Second() = 0 And fieldValDate.Millisecond() = 0 Then
+            convertToDateString = Format(fieldValDate, "yyyy-MM-dd")  ' ISO 8601 standard SQL Date formatting
         Else
-            da = New Odbc.OdbcDataAdapter(New Odbc.OdbcCommand("select * from " + tableName, idbcnn))
-            da.SelectCommand.Transaction = DBModifs.trans
-            da.InsertCommand = New Odbc.OdbcCommandBuilder(da).GetInsertCommand()
-            da.InsertCommand.Transaction = DBModifs.trans
-            da.UpdateCommand = New Odbc.OdbcCommandBuilder(da).GetUpdateCommand()
-            da.UpdateCommand.Transaction = DBModifs.trans
-            da.DeleteCommand = New Odbc.OdbcCommandBuilder(da).GetDeleteCommand()
-            da.DeleteCommand.Transaction = DBModifs.trans
+            convertToDateString = Format(fieldValDate, "yyyy-MM-dd HH:mm:ss")  ' ISO 8601 standard SQL Date/time formatting, 24h format...
         End If
-        da.FillSchema(ds, SchemaType.Source, tableName)
-        da.Fill(ds, tableName)
-    End Sub
+    End Function
 
+    ''' <summary>notfication of error for user including selection of error cell</summary>
+    ''' <param name="message">error message</param>
+    ''' <param name="rowNum">error cell row</param>
+    ''' <param name="colNum">error cell column</param>
+    ''' <returns></returns>
     Private Function notifyUserOfDataError(message As String, rowNum As Long, Optional colNum As Integer = -1) As Boolean
         hadError = True
         If Not nonInteractive Then
@@ -1309,6 +1325,8 @@ cleanup:
         Return True
     End Function
 
+    ''' <summary>set the fields in the DB Modifier Create Dialog with attributes of object</summary>
+    ''' <param name="theDBModifCreateDlg"></param>
     Public Overrides Sub setDBModifCreateFields(ByRef theDBModifCreateDlg As DBModifCreate)
         With theDBModifCreateDlg
             .envSel.SelectedIndex = getEnv() - 1
@@ -1332,11 +1350,6 @@ End Class
 ''' <summary>DBActions are used to issue DML commands defined in Cells against the database</summary>
 Public Class DBAction : Inherits DBModif
 
-    ''' <summary>Database to store to</summary>
-    Private database As String
-    ''' <summary>DBModif name of target range</summary>
-    Private paramTargetName As String
-
     ''' <summary>normal constructor with definition xml</summary>
     ''' <param name="definitionXML"></param>
     ''' <param name="paramTarget"></param>
@@ -1355,39 +1368,9 @@ Public Class DBAction : Inherits DBModif
             ' AFTER setting TargetRange and all the rest check for defined action to have a decent getTargetRangeAddress for undefined actions...
             If paramTarget.Cells(1, 1).Text = "" Then Throw New Exception("No Action defined in " + paramTargetName + "(" + getTargetRangeAddress() + ")")
         Catch ex As Exception
-            Globals.ErrorMsg("Error when creating DB Sequence '" + dbmodifName + "': " + ex.Message, "DBModifier Definitions Error")
+            Globals.UserMsg("Error when creating DB Action '" + dbmodifName + "': " + ex.Message, "DBModifier Definitions Error")
         End Try
     End Sub
-
-    ''' <summary>simply open a database connection, required for DBBegin Transaction (from next step)</summary>
-    ''' <returns></returns>
-    Public Overrides Function openDatabase(Optional DBSequenceEnv As String = "") As Boolean
-        ' if Environment is not existing, take from selectedEnvironment
-        Dim setEnv As Integer
-        If DBSequenceEnv = "" Then
-            If env = "" Then
-                setEnv = getEnv(Globals.selectedEnvironment + 1)
-            Else
-                setEnv = CInt(env)
-            End If
-        Else
-            If env = "" Then
-                setEnv = CInt(DBSequenceEnv)
-            Else
-                setEnv = CInt(env)
-                If setEnv <> CInt(DBSequenceEnv) Then
-                    Globals.ErrorMsg("Environment in DBAction (" + env + ") different than given environment of DB Sequence (" + DBSequenceEnv + "), overruling with sequence environment !")
-                    setEnv = CInt(DBSequenceEnv)
-                End If
-            End If
-        End If
-        openDatabase = True
-        If altDBImpl Then
-            If idbcnn Is Nothing Then openDatabase = openIdbConnection(setEnv, database)
-        Else
-            If dbcnn Is Nothing Then openDatabase = openConnection(setEnv, database)
-        End If
-    End Function
 
     Public Overrides Sub doDBModif(Optional WbIsSaving As Boolean = False, Optional calledByDBSeq As String = "", Optional TransactionOpen As Boolean = False)
         If altDBImpl Then
@@ -1397,7 +1380,7 @@ Public Class DBAction : Inherits DBModif
 
         ' ask for saving only if a) is not done on WorkbookSave b) is set to ask and c) is not called by a DBSequence (asks already for saving) and d) is in interactive mode
         If Not WbIsSaving And askBeforeExecute And calledByDBSeq = "" And Not nonInteractive Then
-            If Not confirmExecution() Then Exit Sub
+            If Not confirmExecution() = MsgBoxResult.Yes Then Exit Sub
         End If
         ' if Environment is not existing, take from selectedEnvironment
         Dim env As Integer = getEnv(Globals.selectedEnvironment + 1)
@@ -1416,12 +1399,12 @@ Public Class DBAction : Inherits DBModif
             dbcnn.Execute(executeText, result, Options:=CommandTypeEnum.adCmdText)
         Catch ex As Exception
             hadError = True
-            Globals.ErrorMsg("Error: " + paramTargetName + ": " + ex.Message, "DBAction Error")
+            Globals.UserMsg("Error: " + paramTargetName + ": " + ex.Message, "DBAction Error")
             ExcelDnaUtil.Application.StatusBar = False
             Exit Sub
         End Try
         If Not WbIsSaving And calledByDBSeq = "" Then
-            Globals.ErrorMsg("DBAction " + paramTargetName + " executed, affected records: " + result.ToString, "DBAction executed", MsgBoxStyle.Information)
+            Globals.UserMsg("DBAction " + paramTargetName + " executed, affected records: " + result.ToString, "DBAction executed", MsgBoxStyle.Information)
         End If
         ExcelDnaUtil.Application.StatusBar = False
         ' close connection to return it to the pool...
@@ -1431,42 +1414,45 @@ Public Class DBAction : Inherits DBModif
     Private Sub doDBModif2(Optional WbIsSaving As Boolean = False, Optional calledByDBSeq As String = "", Optional TransactionOpen As Boolean = False)
         ' ask for saving only if a) is not done on WorkbookSave b) is set to ask and c) is not called by a DBSequence (asks already for saving) and d) is in interactive mode
         If Not WbIsSaving And askBeforeExecute And calledByDBSeq = "" And Not nonInteractive Then
-            If Not confirmExecution() Then Exit Sub
+            If Not confirmExecution() = MsgBoxResult.Yes Then Exit Sub
         End If
 
-        'now create/get a connection (dbcnn) for env(ironment) in case it was not already created by the sequence (transactions!)
+        'now create/get a database specific connection (idbcnn) in case it was not already created by the sequence (transactions!)
         If Not TransactionOpen Then
             If Not openDatabase() Then Exit Sub
-            trans = idbcnn.BeginTransaction()
         End If
 
-        Dim result As Long = 0
+        Dim result As Integer
         Try
             ExcelDnaUtil.Application.StatusBar = "executing DBAction " + paramTargetName
             Dim executeText As String = ""
             For Each targetCell As Excel.Range In TargetRange
                 executeText += targetCell.Text + " "
             Next
-            Dim storedProcCmd As IDbCommand = idbcnn.CreateCommand()
-            storedProcCmd.CommandText = executeText
-            storedProcCmd.Transaction = trans
-            storedProcCmd.ExecuteNonQuery()
-            If Not TransactionOpen Then trans.Commit()
+            Dim DmlCmd As IDbCommand
+            If TypeName(idbcnn) = "SqlConnection" Then
+                DmlCmd = New SqlClient.SqlCommand(executeText, idbcnn, trans)
+            Else
+                DmlCmd = New Odbc.OdbcCommand(executeText, idbcnn, trans)
+            End If
+            DmlCmd.CommandType = CommandType.Text
+            result = DmlCmd.ExecuteNonQuery()
         Catch ex As Exception
             hadError = True
-            If Not TransactionOpen Then trans.Rollback()
-            Globals.ErrorMsg("Error: " + paramTargetName + ": " + ex.Message, "DBAction Error")
+            Globals.UserMsg("Error in executing DB Action " + paramTargetName + ": " + ex.Message, "DBAction Error")
             ExcelDnaUtil.Application.StatusBar = False
             Exit Sub
         End Try
         If Not WbIsSaving And calledByDBSeq = "" Then
-            Globals.ErrorMsg("DBAction " + paramTargetName + " executed, affected records: " + result.ToString, "DBAction executed", MsgBoxStyle.Information)
+            Globals.UserMsg("DBAction " + paramTargetName + " executed, affected records: " + result.ToString(), "DBAction executed", MsgBoxStyle.Information)
         End If
         ExcelDnaUtil.Application.StatusBar = False
         ' close connection to return it to the pool...
-        If calledByDBSeq = "" Then dbcnn.Close()
+        If calledByDBSeq = "" Then idbcnn.Close()
     End Sub
 
+    ''' <summary>set the fields in the DB Modifier Create Dialog with attributes of object</summary>
+    ''' <param name="theDBModifCreateDlg"></param>
     Public Overrides Sub setDBModifCreateFields(ByRef theDBModifCreateDlg As DBModifCreate)
         With theDBModifCreateDlg
             .envSel.SelectedIndex = getEnv() - 1
@@ -1499,7 +1485,7 @@ Public Class DBSeqnce : Inherits DBModif
                 Next
             End If
         Catch ex As Exception
-            Globals.ErrorMsg("Error when creating DB Sequence '" + dbmodifName + "': " + ex.Message, "DBModifier Definitions Error")
+            Globals.UserMsg("Error when creating DB Sequence '" + dbmodifName + "': " + ex.Message, "DBModifier Definitions Error")
         End Try
     End Sub
 
@@ -1513,12 +1499,12 @@ Public Class DBSeqnce : Inherits DBModif
         hadError = False
         ' warning against recursions (should not happen...)
         If calledByDBSeq <> "" Then
-            Globals.ErrorMsg("DB Sequence '" + dbmodifName + "' is being called by another DB Sequence (" + calledByDBSeq + "), this should not occur as infinite recursions are possible !", "Execute DB Sequence")
+            Globals.UserMsg("DB Sequence '" + dbmodifName + "' is being called by another DB Sequence (" + calledByDBSeq + "), this should not occur as infinite recursions are possible !", "Execute DB Sequence")
             Exit Sub
         End If
         ' ask for saving only if a) is not done on WorkbookSave b) is set to ask and c) is in interactive mode
         If Not WbIsSaving And askBeforeExecute And Not nonInteractive Then
-            If Not confirmExecution() Then Exit Sub
+            If Not confirmExecution() = MsgBoxResult.Yes Then Exit Sub
         End If
         ' reset the db connection in any case to allow for new connections at DBBegin
         dbcnn = Nothing
@@ -1558,7 +1544,7 @@ Public Class DBSeqnce : Inherits DBModif
                     If Left(DBModiftype, 8) = "Refresh " Then
                         doDBRefresh(srcExtent:=DBModifname, executedDBMappers:=executedDBMappers, modifiedDBMappers:=modifiedDBMappers, TransactionIsOpen:=TransactionIsOpen)
                     Else
-                        Globals.ErrorMsg("Unknown type of sequence step '" + DBModiftype + "' being called in DB Sequence (" + calledByDBSeq + ") !", "Execute DB Sequence")
+                        Globals.UserMsg("Unknown type of sequence step '" + DBModiftype + "' being called in DB Sequence (" + calledByDBSeq + ") !", "Execute DB Sequence")
                     End If
             End Select
         Next
@@ -1569,12 +1555,12 @@ Public Class DBSeqnce : Inherits DBModif
         hadError = False
         ' warning against recursions (should not happen...)
         If calledByDBSeq <> "" Then
-            Globals.ErrorMsg("DB Sequence '" + dbmodifName + "' is being called by another DB Sequence (" + calledByDBSeq + "), this should not occur as infinite recursions are possible !", "Execute DB Sequence")
+            Globals.UserMsg("DB Sequence '" + dbmodifName + "' is being called by another DB Sequence (" + calledByDBSeq + "), this should not occur as infinite recursions are possible !", "Execute DB Sequence")
             Exit Sub
         End If
         ' ask for saving only if a) is not done on WorkbookSave b) is set to ask and c) is in interactive mode
         If Not WbIsSaving And askBeforeExecute And Not nonInteractive Then
-            If Not confirmExecution() Then Exit Sub
+            If Not confirmExecution() = MsgBoxResult.Yes Then Exit Sub
         End If
 
         ' reset the db connection in any case to allow for new connections at DBBegin
@@ -1615,16 +1601,20 @@ Public Class DBSeqnce : Inherits DBModif
                     If Left(DBModiftype, 8) = "Refresh " Then
                         doDBRefresh(srcExtent:=DBModifname, executedDBMappers:=executedDBMappers, modifiedDBMappers:=modifiedDBMappers, TransactionIsOpen:=TransactionIsOpen)
                     Else
-                        Globals.ErrorMsg("Unknown type of sequence step '" + DBModiftype + "' being called in DB Sequence (" + calledByDBSeq + ") !", "Execute DB Sequence")
+                        Globals.UserMsg("Unknown type of sequence step '" + DBModiftype + "' being called in DB Sequence (" + calledByDBSeq + ") !", "Execute DB Sequence")
                     End If
             End Select
         Next
     End Sub
 
+    ''' <summary>required for creation of DB Sequences after finishing dialog with OK button</summary>
+    ''' <returns></returns>
     Public Function getSequenceSteps() As String()
         Return sequenceParams
     End Function
 
+    ''' <summary>set the fields in the DB Modifier Create Dialog with attributes of object</summary>
+    ''' <param name="theDBModifCreateDlg"></param>
     Public Overrides Sub setDBModifCreateFields(ByRef theDBModifCreateDlg As DBModifCreate)
         With theDBModifCreateDlg
             .execOnSave.Checked = execOnSave
@@ -1656,7 +1646,8 @@ Public Module DBModifs
     Public listSepLocal As String = ExcelDnaUtil.Application.International(Excel.XlApplicationInternational.xlListSeparator)
     ''' <summary>common transaction, needed for DBSequence and all other DB Modifiers</summary>
     Public trans As Common.DbTransaction = Nothing
-    ''' <summary>alternative DB Implementation with native ADO</summary>
+    ' TODO: revert when migration to ADO.NET finished...
+    ''' <summary>alternative DB Implementation with ADO.NET</summary>
     Public altDBImpl As Boolean = False
 
     ''' <summary>opens a database connection</summary>
@@ -1668,12 +1659,12 @@ Public Module DBModifs
 
         Dim theConnString As String = fetchSetting("ConstConnString" + env.ToString, "")
         If theConnString = "" Then
-            Globals.ErrorMsg("No Connectionstring given for environment: " + env.ToString + ", please correct and rerun.", "Open Connection Error")
+            Globals.UserMsg("No Connectionstring given for environment: " + env.ToString + ", please correct and rerun.", "Open Connection Error")
             Exit Function
         End If
         Dim dbidentifier As String = fetchSetting("DBidentifierCCS" + env.ToString, "")
         If dbidentifier = "" Then
-            Globals.ErrorMsg("No DB identifier given for environment: " + env.ToString + ", please correct and rerun.", "Open Connection Error")
+            Globals.UserMsg("No DB identifier given for environment: " + env.ToString + ", please correct and rerun.", "Open Connection Error")
             Exit Function
         End If
 
@@ -1690,7 +1681,7 @@ Public Module DBModifs
             dbcnn.Open()
             openConnection = True
         Catch ex As Exception
-            Globals.ErrorMsg("Error connecting to DB: " + ex.Message + ", connection string: " + theConnString, "Open Connection Error")
+            Globals.UserMsg("Error connecting to DB: " + ex.Message + ", connection string: " + theConnString, "Open Connection Error")
             dbcnn = Nothing
         End Try
         ExcelDnaUtil.Application.StatusBar = False
@@ -1703,14 +1694,14 @@ Public Module DBModifs
     Public Function openIdbConnection(env As Integer, database As String) As Boolean
         openIdbConnection = False
 
-        Dim theConnString As String = Globals.fetchSetting("ConstConnString" + Globals.env(), "")
+        Dim theConnString As String = Globals.fetchSetting("ConstConnString" + env.ToString, "")
         If theConnString = "" Then
-            Globals.ErrorMsg("No Connectionstring given for environment: " + env.ToString + ", please correct and rerun.", "Open Connection Error")
+            Globals.UserMsg("No Connectionstring given for environment: " + env.ToString + ", please correct and rerun.", "Open Connection Error")
             Exit Function
         End If
         Dim dbidentifier As String = fetchSetting("DBidentifierCCS" + env.ToString, "")
         If dbidentifier = "" Then
-            Globals.ErrorMsg("No DB identifier given for environment: " + env.ToString + ", please correct and rerun.", "Open Connection Error")
+            Globals.UserMsg("No DB identifier given for environment: " + env.ToString + ", please correct and rerun.", "Open Connection Error")
             Exit Function
         End If
         theConnString = Globals.Change(theConnString, dbidentifier, database, ";")
@@ -1724,7 +1715,7 @@ Public Module DBModifs
                 idbcnn = New Odbc.OdbcConnection(theConnString)
             End If
         Catch ex As Exception
-            Globals.ErrorMsg("Error creating connection object: " + ex.Message + ", connection string: " + theConnString, "Open Connection Error")
+            Globals.UserMsg("Error creating connection object: " + ex.Message + ", connection string: " + theConnString, "Open Connection Error")
             idbcnn = Nothing
             ExcelDnaUtil.Application.StatusBar = False
             Exit Function
@@ -1736,7 +1727,7 @@ Public Module DBModifs
             idbcnn.Open()
             openIdbConnection = True
         Catch ex As Exception
-            Globals.ErrorMsg("Error connecting to DB: " + ex.Message + ", connection string: " + theConnString, "Open Connection Error")
+            Globals.UserMsg("Error connecting to DB: " + ex.Message + ", connection string: " + theConnString, "Open Connection Error")
             idbcnn = Nothing
         End Try
         ExcelDnaUtil.Application.StatusBar = False
@@ -1794,18 +1785,18 @@ Public Module DBModifs
                 RangeDefName = Mid(cpbdtext, firstBracket + 1, firstComma - firstBracket - 1)
                 Try : DB_DefName = "DBMapper" + Replace(Replace(Mid(RangeDefName, InStr(RangeDefName, "Range(""") + 7), """)", ""), ":", "")
                 Catch ex As Exception
-                    Globals.ErrorMsg("Error when retrieving DB_DefName from clipboard: " + ex.Message, "DBMapper Legacy Creation Error") : Exit Sub
+                    Globals.UserMsg("Error when retrieving DB_DefName from clipboard: " + ex.Message, "DBMapper Legacy Creation Error") : Exit Sub
                 End Try
                 Try : newDefString = "def(" + Replace(Mid(cpbdtext, commaBeforeConnDef, commaAfterConnDef - commaBeforeConnDef), "MSSQL", "") + Mid(cpbdtext, firstComma, commaBeforeConnDef - firstComma - 1) + Mid(cpbdtext, commaAfterConnDef - 1)
                 Catch ex As Exception
-                    Globals.ErrorMsg("Error when building new definition from clipboard: " + ex.Message, "DBMapper Legacy Creation Error") : Exit Sub
+                    Globals.UserMsg("Error when building new definition from clipboard: " + ex.Message, "DBMapper Legacy Creation Error") : Exit Sub
                 End Try
                 ' assign new name to active cell
                 ' Add doesn't work directly with ExcelDnaUtil.Application.ActiveWorkbook.Names (late binding), so create an object here...
                 Dim NamesList As Excel.Names = ExcelDnaUtil.Application.ActiveWorkbook.Names
                 Try : NamesList.Add(Name:=DB_DefName, RefersTo:=ExcelDnaUtil.Application.ActiveCell)
                 Catch ex As Exception
-                    Globals.ErrorMsg("Error when assigning name '" + DB_DefName + "' to active cell: " + ex.Message, "DBMapper Legacy Creation Error")
+                    Globals.UserMsg("Error when assigning name '" + DB_DefName + "' to active cell: " + ex.Message, "DBMapper Legacy Creation Error")
                     Exit Sub
                 End Try
 
@@ -1828,7 +1819,7 @@ Public Module DBModifs
                 Catch ex As Exception
                     ' if target name relates to an invalid (offset) formula, getting a range fails  ...
                     If InStr(ExcelDnaUtil.Application.ActiveWorkbook.Names.Item(existingDefName).RefersTo, "OFFSET(") > 0 Then
-                        Globals.ErrorMsg("Error, offset formula that '" + existingDefName + "' refers to, did not return a valid range." + vbCrLf + "Please check the offset formula to return a valid range !", "DBModifier Definitions Error")
+                        Globals.UserMsg("Offset formula that '" + existingDefName + "' refers to, did not return a valid range." + vbCrLf + "Please check the offset formula to return a valid range !", "DBModifier Definitions Error")
                         ExcelDnaUtil.Application.Dialogs(Excel.XlBuiltInDialog.xlDialogNameManager).Show()
                         Exit Sub
                     End If
@@ -1961,7 +1952,7 @@ Public Module DBModifs
                     Try
                         NamesList.Add(Name:=createdDBModifType + .DBModifName.Text, RefersTo:=targetRange)
                     Catch ex As Exception
-                        Globals.ErrorMsg("Error when assigning name '" + createdDBModifType + .DBModifName.Text + "' to active cell: " + ex.Message, "DBModifier Creation Error")
+                        Globals.UserMsg("Error when assigning name '" + createdDBModifType + .DBModifName.Text + "' to active cell: " + ex.Message, "DBModifier Creation Error")
                         Exit Sub
                     End Try
                 Else
@@ -2033,7 +2024,9 @@ Public Module DBModifs
             Globals.DBModifDefColl.Clear()
             Dim CustomXmlParts As Object = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
             If CustomXmlParts.Count = 1 Then
-                DBModifs.altDBImpl = Convert.ToBoolean(CustomXmlParts(1).SelectSingleNode("//ns0:altDBImpl").Text)
+                ' TODO: revert when migration to ADO.NET finished...
+                DBModifs.altDBImpl = False
+                Try : DBModifs.altDBImpl = Convert.ToBoolean(CustomXmlParts(1).SelectSingleNode("//ns0:altDBImpl").Text) : Catch ex As Exception : End Try
                 ' read DBModifier definitions from CustomXMLParts
                 For Each customXMLNodeDef As CustomXMLNode In CustomXmlParts(1).SelectSingleNode("/ns0:root").ChildNodes
                     Dim DBModiftype As String = Left(customXMLNodeDef.BaseName, 8)
@@ -2051,7 +2044,7 @@ Public Module DBModifs
                             For Each rangename As Excel.Name In ExcelDnaUtil.Application.ActiveWorkbook.Names
                                 Dim rangenameName As String = Replace(rangename.Name, rangename.Parent.Name + "!", "")
                                 If rangenameName = nodeName And InStr(rangename.RefersTo, "#REF!") > 0 Then
-                                    Globals.ErrorMsg(DBModiftype + " definitions range [" + rangename.Parent.Name + "]" + rangename.Name + " contains #REF!", "DBModifier Definitions Error")
+                                    Globals.UserMsg(DBModiftype + " definitions range [" + rangename.Parent.Name + "]" + rangename.Name + " contains #REF!", "DBModifier Definitions Error")
                                     Exit For
                                 ElseIf rangenameName = nodeName Then
                                     ' might fail...
@@ -2060,7 +2053,7 @@ Public Module DBModifs
                                     Catch ex As Exception
                                         ' if target name relates to an invalid (offset) formula, referstorange fails  ...
                                         If InStr(rangename.RefersTo, "OFFSET(") > 0 Then
-                                            Globals.ErrorMsg("Error, offset formula that '" + nodeName + "' refers to, did not return a valid range." + vbCrLf + "Please check the offset formula to return a valid range !", "DBModifier Definitions Error")
+                                            Globals.UserMsg("Offset formula that '" + nodeName + "' refers to, did not return a valid range." + vbCrLf + "Please check the offset formula to return a valid range !", "DBModifier Definitions Error")
                                             ExcelDnaUtil.Application.Dialogs(Excel.XlBuiltInDialog.xlDialogNameManager).Show()
                                             GoTo EndOuterLoop
                                         End If
@@ -2069,7 +2062,14 @@ Public Module DBModifs
                                 End If
                             Next
                             If targetRange Is Nothing Then
-                                Globals.ErrorMsg("Error, required target range named '" + nodeName + "' not existing for " + DBModiftype + "." + vbCrLf + "either create target range or delete CustomXML definition node named '" + nodeName + "' (Ctrl-Shift-Click on Store DBModif Data dialogBox launcher)!", "DBModifier Definitions Error")
+                                Dim answer As MsgBoxResult = Globals.QuestionMsg("Required target range named '" + nodeName + "' not existing for this " + DBModiftype + " definition." + vbCrLf + "Should the target range and definition be removed (If you still need the " + DBModiftype + ", (re)create the target range with this name again)?", MsgBoxStyle.Critical, "DBModifier Definitions Error")
+                                'named '" + nodeName + "' (Click on Execute DBModifier dialogBox launcher)!
+                                If answer = MsgBoxResult.Ok Then
+                                    ' remove name
+                                    ExcelDnaUtil.Application.ActiveWorkbook.Names(nodeName).Delete()
+                                    ' remove node
+                                    If Not IsNothing(CustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:" + DBModiftype + "[@Name='" + Replace(nodeName, DBModiftype, "") + "']")) Then CustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:" + DBModiftype + "[@Name='" + Replace(nodeName, DBModiftype, "") + "']").Delete
+                                End If
                                 Continue For
                             End If
                         End If
@@ -2083,7 +2083,7 @@ Public Module DBModifs
                         ElseIf DBModiftype = "DBSeqnce" Then
                             newDBModif = New DBSeqnce(customXMLNodeDef)
                         Else
-                            Globals.ErrorMsg("Error, not supported DBModiftype: " + DBModiftype, "DBModifier Definitions Error")
+                            Globals.UserMsg("Not supported DBModiftype: " + DBModiftype, "DBModifier Definitions Error")
                         End If
                         ' ... and add it to the collection DBModifDefColl
                         Dim defColl As Dictionary(Of String, DBModif) ' definition lookup collection for DBModifiername -> object
@@ -2098,7 +2098,7 @@ Public Module DBModifs
                                 ' add definition to existing DBModiftype "menu"
                                 defColl = DBModifDefColl(DBModiftype)
                                 If defColl.ContainsKey(nodeName) Then
-                                    Globals.ErrorMsg("DBModifier " + nodeName + " added twice, this indicates legacy definitions that were modified!" + vbCrLf + "To fix, convert all other definitions in the same way and then remove the legacy definitions by editing the raw DB Modif definitions.", "get DBModif Definitions")
+                                    Globals.UserMsg("DBModifier " + nodeName + " added twice, this indicates legacy definitions that were modified!" + vbCrLf + "To fix, convert all other definitions in the same way and then remove the legacy definitions by editing the raw DB Modif definitions.", "get DBModif Definitions")
                                 Else
                                     defColl.Add(nodeName, newDBModif)
                                 End If
@@ -2108,11 +2108,11 @@ Public Module DBModifs
 EndOuterLoop:
                 Next
             ElseIf CustomXmlParts.Count > 1 Then
-                Globals.ErrorMsg("Multiple CustomXmlParts for DBModifDef existing!", "get DBModif Definitions")
+                Globals.UserMsg("Multiple CustomXmlParts for DBModifDef existing!", "get DBModif Definitions")
             End If
             Globals.theRibbon.Invalidate()
         Catch ex As Exception
-            Globals.ErrorMsg("Exception:  " + ex.Message, "get DBModif Definitions")
+            Globals.UserMsg("Exception:  " + ex.Message, "get DBModif Definitions")
         End Try
     End Sub
 
@@ -2143,7 +2143,7 @@ EndOuterLoop:
                 End If
             Next
         Catch ex As Exception
-            Globals.ErrorMsg("Exception: " + ex.Message, "get DBModif Name From Range")
+            Globals.UserMsg("Exception: " + ex.Message, "get DBModif Name From Range")
         End Try
     End Function
 
@@ -2210,14 +2210,14 @@ EndOuterLoop:
         End If
     End Function
 
-    ''' <summary>marks a row in a DBMapper for deletion</summary>
+    ''' <summary>marks a row in a DBMapper for deletion, used as a ExcelCommand to have a keyboard shortcut</summary>
     <ExcelCommand(Name:="deleteRow", ShortCut:="^D")>
     Public Sub deleteRow()
         Dim targetName As String = getDBModifNameFromRange(ExcelDnaUtil.Application.Selection)
         If Left(targetName, 8) = "DBMapper" Then DirectCast(Globals.DBModifDefColl("DBMapper").Item(targetName), DBMapper).doCUDMarks(ExcelDnaUtil.Application.Selection, True)
     End Sub
 
-    ''' <summary>inserts a row in a DBMapper</summary>
+    ''' <summary>inserts a row in a DBMapper, used as a ExcelCommand to have a keyboard shortcut</summary>
     <ExcelCommand(Name:="insertRow", ShortCut:="^I")>
     Public Sub insertRow()
         Dim targetName As String = getDBModifNameFromRange(ExcelDnaUtil.Application.Selection)
@@ -2230,3 +2230,168 @@ EndOuterLoop:
         End If
     End Sub
 End Module
+
+
+''' <summary>Custom Command builder for SQLServer to avoid primary key problems with builtin ones</summary>
+Public Class CustomSqlCommandBuilder
+    Private dataTable As DataTable
+    Private connection As SqlClient.SqlConnection
+
+    Public Sub New(dataTable As DataTable, connection As SqlClient.SqlConnection)
+        Me.dataTable = dataTable
+        Me.connection = connection
+    End Sub
+
+    Public Function DeleteCommand() As SqlClient.SqlCommand
+        Dim command As SqlClient.SqlCommand = GetTextCommand("")
+        Dim whereString As StringBuilder = New StringBuilder()
+        For Each column As DataColumn In dataTable.PrimaryKey
+            If (whereString.Length > 0) Then
+                whereString.Append(" AND ")
+            End If
+            whereString.Append(column.ColumnName).Append(" = @").Append(column.ColumnName)
+            command.Parameters.Add(CreateParam(column))
+        Next
+        Dim commandText As String = "DELETE FROM " + TableName() + " WHERE " + whereString.ToString()
+        command.CommandText = commandText
+        Return command
+    End Function
+
+    Public Function UpdateCommand() As SqlClient.SqlCommand
+        Dim command As SqlClient.SqlCommand = GetTextCommand("")
+        Dim setString As StringBuilder = New StringBuilder()
+        Dim whereString As StringBuilder = New StringBuilder()
+
+        Dim primaryKeyColumns() As DataColumn = dataTable.PrimaryKey
+        For Each column As DataColumn In dataTable.Columns
+            If (System.Array.IndexOf(primaryKeyColumns, column) <> -1) Then
+                ' primary key
+                If (whereString.Length > 0) Then
+                    whereString.Append(" AND ")
+                End If
+                whereString.Append(column.ColumnName).Append("= @old").Append(column.ColumnName)
+            Else
+                If (setString.Length > 0) Then
+                    setString.Append(", ")
+                End If
+                setString.Append(column.ColumnName).Append(" = @").Append(column.ColumnName)
+            End If
+            command.Parameters.Add(CreateParam(column))
+            command.Parameters.Add(CreateOldParam(column))
+        Next
+        Dim commandText As String = "UPDATE " + TableName() + " SET " + setString.ToString() + " WHERE " + whereString.ToString()
+        command.CommandText = commandText
+        Return command
+    End Function
+
+    Private Function CreateOldParam(column As DataColumn) As SqlClient.SqlParameter
+        Dim sqlParam As SqlClient.SqlParameter = New SqlClient.SqlParameter()
+        Dim columnName As String = column.ColumnName
+        sqlParam.ParameterName = "@old" + columnName
+        sqlParam.SourceColumn = columnName
+        sqlParam.SourceVersion = DataRowVersion.Original
+        Return sqlParam
+    End Function
+
+    Private Function CreateParam(column As DataColumn) As SqlClient.SqlParameter
+        Dim sqlParam As SqlClient.SqlParameter = New SqlClient.SqlParameter()
+        Dim columnName As String = column.ColumnName
+        sqlParam.ParameterName = "@" + columnName
+        sqlParam.SourceColumn = columnName
+        Return sqlParam
+    End Function
+
+    Private Function GetTextCommand(text As String) As SqlClient.SqlCommand
+        Dim command As SqlClient.SqlCommand = New SqlClient.SqlCommand()
+        command.CommandType = CommandType.Text
+        command.CommandText = text
+        command.Connection = connection
+        Return command
+    End Function
+
+    Private Function TableName() As String
+        Return "[" + dataTable.TableName + "]"
+    End Function
+End Class
+
+''' <summary>Custom Command builder for ODBC to avoid primary key problems with builtin ones</summary>
+Public Class CustomOdbcCommandBuilder
+    Private dataTable As DataTable
+    Private connection As Odbc.OdbcConnection
+
+    Public Sub New(dataTable As DataTable, connection As Odbc.OdbcConnection)
+        Me.dataTable = dataTable
+        Me.connection = connection
+    End Sub
+
+    Public Function DeleteCommand() As Odbc.OdbcCommand
+        Dim command As Odbc.OdbcCommand = GetTextCommand("")
+        Dim whereString As StringBuilder = New StringBuilder()
+        For Each column As DataColumn In dataTable.PrimaryKey
+            If (whereString.Length > 0) Then
+                whereString.Append(" AND ")
+            End If
+            whereString.Append(column.ColumnName).Append(" = @").Append(column.ColumnName)
+            command.Parameters.Add(CreateParam(column))
+        Next
+        Dim commandText As String = "DELETE FROM " + TableName() + " WHERE " + whereString.ToString()
+        command.CommandText = commandText
+        Return command
+    End Function
+
+    Public Function UpdateCommand() As Odbc.OdbcCommand
+        Dim command As Odbc.OdbcCommand = GetTextCommand("")
+        Dim setString As StringBuilder = New StringBuilder()
+        Dim whereString As StringBuilder = New StringBuilder()
+
+        Dim primaryKeyColumns() As DataColumn = dataTable.PrimaryKey
+        For Each column As DataColumn In dataTable.Columns
+            If (System.Array.IndexOf(primaryKeyColumns, column) <> -1) Then
+                ' primary key
+                If (whereString.Length > 0) Then
+                    whereString.Append(" AND ")
+                End If
+                whereString.Append(column.ColumnName).Append("= @old").Append(column.ColumnName)
+            Else
+                If (setString.Length > 0) Then
+                    setString.Append(", ")
+                End If
+                setString.Append(column.ColumnName).Append(" = @").Append(column.ColumnName)
+            End If
+            command.Parameters.Add(CreateParam(column))
+            command.Parameters.Add(CreateOldParam(column))
+        Next
+        Dim commandText As String = "UPDATE " + TableName() + " SET " + setString.ToString() + " WHERE " + whereString.ToString()
+        command.CommandText = commandText
+        Return command
+    End Function
+
+    Private Function CreateOldParam(column As DataColumn) As Odbc.OdbcParameter
+        Dim sqlParam As Odbc.OdbcParameter = New Odbc.OdbcParameter()
+        Dim columnName As String = column.ColumnName
+        sqlParam.ParameterName = "@old" + columnName
+        sqlParam.SourceColumn = columnName
+        sqlParam.SourceVersion = DataRowVersion.Original
+        Return sqlParam
+    End Function
+
+    Private Function CreateParam(column As DataColumn) As Odbc.OdbcParameter
+        Dim sqlParam As Odbc.OdbcParameter = New Odbc.OdbcParameter()
+        Dim columnName As String = column.ColumnName
+        sqlParam.ParameterName = "@" + columnName
+        sqlParam.SourceColumn = columnName
+        Return sqlParam
+    End Function
+
+    Private Function GetTextCommand(text As String) As Odbc.OdbcCommand
+        Dim command As Odbc.OdbcCommand = New Odbc.OdbcCommand()
+        command.CommandType = CommandType.Text
+        command.CommandText = text
+        command.Connection = connection
+        Return command
+    End Function
+
+    Private Function TableName() As String
+        Return "[" + dataTable.TableName + "]"
+    End Function
+End Class

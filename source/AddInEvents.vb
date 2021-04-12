@@ -35,7 +35,7 @@ Public Class AddInEvents
         Application = ExcelDnaUtil.Application
         Try
             If ExcelDnaUtil.Application.AddIns("DBAddin.Functions").Installed Then
-                Globals.ErrorMsg("Attention: legacy DBAddin (DBAddin.Functions) still active, this might lead to unexpected results!")
+                Globals.UserMsg("Attention: legacy DBAddin (DBAddin.Functions) still active, this might lead to unexpected results!")
             End If
         Catch ex As Exception : End Try
         ' for finding out what happened...
@@ -60,7 +60,7 @@ Public Class AddInEvents
         ' Configs are 1 based, selectedEnvironment(index of environment dropdown) is 0 based. negative values not allowed!
         Dim selEnv As Integer = CInt(fetchSetting("DefaultEnvironment", "1")) - 1
         If selEnv > environdefs.Length - 1 OrElse selEnv < 0 Then
-            Globals.ErrorMsg("Default Environment " + (selEnv + 1).ToString + " not existing, setting to first environment !")
+            Globals.UserMsg("Default Environment " + (selEnv + 1).ToString + " not existing, setting to first environment !")
             selEnv = 0
         End If
         Globals.selectedEnvironment = selEnv
@@ -75,7 +75,7 @@ Public Class AddInEvents
             Globals.theMenuHandler = Nothing
             ExcelDna.IntelliSense.IntelliSenseServer.Uninstall()
         Catch ex As Exception
-            Globals.ErrorMsg("DBAddin unloading error: " + ex.Message, "AutoClose")
+            Globals.UserMsg("DBAddin unloading error: " + ex.Message, "AutoClose")
         End Try
     End Sub
 
@@ -84,55 +84,63 @@ Public Class AddInEvents
     Private Sub Application_WorkbookSave(Wb As Excel.Workbook, ByVal SaveAsUI As Boolean, ByRef Cancel As Boolean) Handles Application.WorkbookBeforeSave
         ' ask if modifications should be done if no overriding flag is defined...
         Dim doDBMOnSave As Boolean = Globals.getCustPropertyBool("doDBMOnSave", Wb)
+
         ' if overriding flag not given and Readonly is NOT recommended on this workbook and workbook IS NOT Readonly, ...
         ' ...ask for saving, if this is necessary for any DBmodifier...
         If Not (Wb.ReadOnlyRecommended And Wb.ReadOnly) And Not doDBMOnSave Then
-            ' first ask for DBModifiers defined on active sheet:
-            For Each DBmodifType As String In Globals.DBModifDefColl.Keys
-                For Each dbmapdefkey As String In Globals.DBModifDefColl(DBmodifType).Keys
-                    With Globals.DBModifDefColl(DBmodifType).Item(dbmapdefkey)
-                        If (DBmodifType = "DBSeqnce" OrElse .getTargetRange().Parent Is ExcelDnaUtil.Application.ActiveSheet) And .DBModifSaveNeeded Then
-                            doDBMOnSave = .confirmExecution(WbIsSaving:=True)
-                        End If
-                    End With
+            Dim askForEveryModifier As Boolean = False
+            If Globals.DBModifDefColl("DBMapper").Count + Globals.DBModifDefColl("DBAction").Count + Globals.DBModifDefColl("DBSeqnce").Count > 1 Then
+                ' multiple DBmodifiers, ask how to proceed
+                Dim answer As MsgBoxResult = QuestionMsg(theMessage:="do all DB Modifications defined in Workbook (Yes=All with exec on Save, No=Ask everytime. Cancel=Don't do any DB Modifications) ?", questionType:=MsgBoxStyle.YesNoCancel, questionTitle:="Do DB Modifiers on Save")
+                If answer = MsgBoxResult.Yes Then doDBMOnSave = True
+                If answer = MsgBoxResult.Cancel Then doDBMOnSave = False
+                If answer = MsgBoxResult.No Then
+                    doDBMOnSave = True
+                    askForEveryModifier = True
+                End If
+            ElseIf Globals.DBModifDefColl("DBMapper").Count + Globals.DBModifDefColl("DBAction").Count + Globals.DBModifDefColl("DBSeqnce").Count = 1 Then
+                ' only one DBModifier, ask only once for saving...
+                For Each DBmodifType As String In Globals.DBModifDefColl.Keys
+                    For Each dbmapdefkey As String In Globals.DBModifDefColl(DBmodifType).Keys
+                        With Globals.DBModifDefColl(DBmodifType).Item(dbmapdefkey)
+                            doDBMOnSave = IIf(.confirmExecution(WbIsSaving:=True) = MsgBoxResult.Yes, True, False)
+                        End With
+                    Next
                 Next
-            Next
-            ' then for all the rest (no defined order!)
-            For Each DBmodifType As String In Globals.DBModifDefColl.Keys
-                For Each dbmapdefkey As String In Globals.DBModifDefColl(DBmodifType).Keys
-                    With Globals.DBModifDefColl(DBmodifType).Item(dbmapdefkey)
-                        If Not (DBmodifType = "DBSeqnce" OrElse .getTargetRange().Parent Is ExcelDnaUtil.Application.ActiveSheet) And .DBModifSaveNeeded Then
-                            doDBMOnSave = .confirmExecution(WbIsSaving:=True)
-                        End If
-                    End With
-                Next
-            Next
-        End If
+            End If
 done:
-        ' save all DBmaps/DBActions/DBSequences on saving if above resulted in YES!
-        If doDBMOnSave Then
-            ' first do DBModifiers defined on active sheet:
-            For Each DBmodifType As String In Globals.DBModifDefColl.Keys
-                For Each dbmapdefkey As String In Globals.DBModifDefColl(DBmodifType).Keys
-                    With Globals.DBModifDefColl(DBmodifType).Item(dbmapdefkey)
-                        If (DBmodifType = "DBSeqnce" OrElse .getTargetRange().Parent Is ExcelDnaUtil.Application.ActiveSheet) And .DBModifSaveNeeded Then
-                            .doDBModif(WbIsSaving:=True)
-                        End If
-                    End With
+            ' save all DBmappers/DBActions/DBSequences on saving if above resulted in YES!
+            If doDBMOnSave Then
+                ' first do DBModifiers defined on active sheet or any DB Sequence:
+                For Each DBmodifType As String In Globals.DBModifDefColl.Keys
+                    For Each dbmapdefkey As String In Globals.DBModifDefColl(DBmodifType).Keys
+                        With Globals.DBModifDefColl(DBmodifType).Item(dbmapdefkey)
+                            If (DBmodifType = "DBSeqnce" OrElse .getTargetRange().Parent Is ExcelDnaUtil.Application.ActiveSheet) And .DBModifSaveNeeded Then
+                                If askForEveryModifier Then
+                                    If .confirmExecution(WbIsSaving:=True) = MsgBoxResult.Yes Then .doDBModif(WbIsSaving:=True)
+                                Else
+                                    .doDBModif(WbIsSaving:=True)
+                                End If
+                            End If
+                        End With
+                    Next
                 Next
-            Next
-            ' then all the rest (no defined order!)
-            For Each DBmodifType As String In Globals.DBModifDefColl.Keys
-                For Each dbmapdefkey As String In Globals.DBModifDefColl(DBmodifType).Keys
-                    With Globals.DBModifDefColl(DBmodifType).Item(dbmapdefkey)
-                        If Not (DBmodifType = "DBSeqnce" OrElse .getTargetRange().Parent Is ExcelDnaUtil.Application.ActiveSheet) And .DBModifSaveNeeded Then
-                            .doDBModif(WbIsSaving:=True)
-                        End If
-                    End With
+                ' then all the rest (no defined order!)
+                For Each DBmodifType As String In Globals.DBModifDefColl.Keys
+                    For Each dbmapdefkey As String In Globals.DBModifDefColl(DBmodifType).Keys
+                        With Globals.DBModifDefColl(DBmodifType).Item(dbmapdefkey)
+                            If Not (DBmodifType = "DBSeqnce" OrElse .getTargetRange().Parent Is ExcelDnaUtil.Application.ActiveSheet) And .DBModifSaveNeeded Then
+                                If askForEveryModifier Then
+                                    If .confirmExecution(WbIsSaving:=True) = MsgBoxResult.Yes Then .doDBModif(WbIsSaving:=True)
+                                Else
+                                    .doDBModif(WbIsSaving:=True)
+                                End If
+                            End If
+                        End With
+                    Next
                 Next
-            Next
+            End If
         End If
-
         ' clear DB Functions content and refresh afterwards..
         Dim DBFCContentColl As Collection = New Collection
         Dim DBFCAllColl As Collection = New Collection
@@ -148,7 +156,7 @@ done:
                 End If
             Next
         Catch ex As Exception
-            Globals.ErrorMsg("Error getting docproperties: " + Wb.Name + ex.Message)
+            Globals.UserMsg("Error getting docproperties: " + Wb.Name + ex.Message)
         End Try
 
         ' now clear content/all
@@ -213,7 +221,7 @@ done:
                                             End Sub)
             End If
         Catch ex As Exception
-            Globals.ErrorMsg("Error clearing DBfunction targets in Workbook " + Wb.Name + ": " + ex.Message)
+            Globals.UserMsg("Error clearing DBfunction targets in Workbook " + Wb.Name + ": " + ex.Message)
         End Try
         dontCalcWhileClearing = False
     End Sub
@@ -278,10 +286,10 @@ done:
             Catch ex As Exception
                 ' if target name relates to an invalid (offset) formula, referstorange fails  ...
                 If InStr(ExcelDnaUtil.Application.ActiveWorkbook.Names.Item(cbName).RefersTo, "OFFSET(") > 0 Then
-                    Globals.ErrorMsg("Error, offset formula that '" + cbName + "' refers to, did not return a valid range." + vbCrLf + "Please check the offset formula to return a valid range !", "DBModifier Definitions Error")
+                    Globals.UserMsg("Offset formula that '" + cbName + "' refers to, did not return a valid range." + vbCrLf + "Please check the offset formula to return a valid range !", "DBModifier Definitions Error")
                     ExcelDnaUtil.Application.Dialogs(Excel.XlBuiltInDialog.xlDialogNameManager).Show()
                 Else
-                    Globals.ErrorMsg("No underlying " + Left(cbName, 8) + " Range named " + cbName + " found, exiting without DBModification.")
+                    Globals.UserMsg("No underlying " + Left(cbName, 8) + " Range named " + cbName + " found, exiting without DBModification.")
                     Globals.LogWarn("targetRange assignment failed: " + ex.Message)
                 End If
                 Exit Sub
@@ -316,7 +324,7 @@ done:
                 ElseIf cb5 Is Nothing Then
                     cb5 = Sh.OLEObjects(shp.Name).Object
                 Else
-                    Globals.ErrorMsg("only max. of five DBModifier Buttons allowed on a Worksheet, currently using " + cb1.Name + "," + cb2.Name + "," + cb3.Name + "," + cb4.Name + " and " + cb5.Name + " !")
+                    Globals.UserMsg("only max. of five DBModifier Buttons allowed on a Worksheet, currently using " + cb1.Name + "," + cb2.Name + "," + cb3.Name + "," + cb4.Name + " and " + cb5.Name + " !")
                     assignHandler = False
                     Exit For
                 End If

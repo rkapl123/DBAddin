@@ -653,20 +653,22 @@ Public Module Functions
             oldTotalTargetRange = targetSH.Range(targetSH.Cells(startRow, startCol), targetSH.Cells(startRow + oldRows - 1, startCol + oldCols + additionalFormulaColumns))
         End If
 
-        On Error Resume Next
-        oldFRows = formulaSH.Parent.Names(targetExtentF).RefersToRange.Rows.Count
-        oldFCols = formulaSH.Parent.Names(targetExtentF).RefersToRange.Columns.Count
-        If Err.Number = 0 And oldFRows > 2 Then
-            Err.Clear()
-            ' clear old formulas
-            formulaSH.Range(formulaSH.Cells(formulaRange.Row + 1, formulaRange.Column), formulaSH.Cells(formulaRange.Row + oldFRows - 1, formulaRange.Column + oldFCols - 1)).ClearContents()
+        If Not IsNothing(formulaSH) Then
+            On Error Resume Next
+            oldFRows = formulaSH.Parent.Names(targetExtentF).RefersToRange.Rows.Count
+            oldFCols = formulaSH.Parent.Names(targetExtentF).RefersToRange.Columns.Count
+            If Err.Number = 0 And oldFRows > 2 Then
+                Err.Clear()
+                ' clear old formulas
+                formulaSH.Range(formulaSH.Cells(formulaRange.Row + 1, formulaRange.Column), formulaSH.Cells(formulaRange.Row + oldFRows - 1, formulaRange.Column + oldFCols - 1)).ClearContents()
 
-            If Err.Number <> 0 Then
-                errMsg = "Error in clearing old data for formulaSH: (" + Err.Description + ") in query: " + Query
-                GoTo err_0
+                If Err.Number <> 0 Then
+                    errMsg = "Error in clearing old data for formulaSH: (" + Err.Description + ") in query: " + Query
+                    GoTo err_0
+                End If
             End If
+            Err.Clear()
         End If
-        Err.Clear()
 
         Dim ODBCconnString As String = ""
         If InStr(1, UCase$(ConnString), ";ODBC;") > 0 Then
