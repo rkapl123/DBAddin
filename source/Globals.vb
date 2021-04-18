@@ -66,6 +66,8 @@ Public Module Globals
     Public Sub initSettings()
         Try
             DebugAddin = CBool(fetchSetting("DebugAddin", "False"))
+            ' TODO: remove when migration to ADO.NET finished...
+            DBModifs.altDBImpl = CBool(fetchSetting("altDBImpl", "False"))
             ConstConnString = fetchSetting("ConstConnString" + Globals.env(), "")
             CnnTimeout = CInt(fetchSetting("CnnTimeout", "15"))
             CmdTimeout = CInt(fetchSetting("CmdTimeout", "60"))
@@ -509,7 +511,7 @@ Last:
         Try
             Dim cellcount As Long = 0
             For Each ws In Wb.Worksheets
-                cellcount += ExcelDnaUtil.Application.WorksheetFunction.CountIf(ws.Range("1:" + ws.Rows.Count.ToString), "<>")
+                cellcount += ExcelDnaUtil.Application.WorksheetFunction.CountIf(ws.Range("1:" + ws.Rows.Count.ToString()), "<>")
             Next
             If cellcount > CLng(fetchSetting("maxCellCount", "300000")) And Not CBool(fetchSetting("maxCellCountIgnore", "False")) Then
                 Dim retval As MsgBoxResult = QuestionMsg("This large workbook (" + cellcount.ToString() + " filled cells >" + fetchSetting("maxCellCount", "300000") + ") might take long to search for DB functions to refresh, continue ?" + vbCrLf + "Click Cancel to add DBFskip to this Workbook, avoiding this search in the future (no DB Data will be refreshed then !)...", vbYesNoCancel, "Refresh DB functions")
@@ -624,11 +626,11 @@ Last:
             ' count nonempty cells in workbook...
             Dim cellcount As Long = 0
             For Each ws In actWB.Worksheets
-                cellcount += ExcelDnaUtil.Application.WorksheetFunction.CountIf(ws.Range("1:" + ws.Rows.Count.ToString), "<>")
+                cellcount += ExcelDnaUtil.Application.WorksheetFunction.CountIf(ws.Range("1:" + ws.Rows.Count.ToString()), "<>")
             Next
             ' warn if above threshold
             If cellcount > CLng(fetchSetting("maxCellCount", "300000")) Then
-                Dim retval As MsgBoxResult = QuestionMsg("This large workbook (" + cellcount.ToString + " filled cells >" + fetchSetting("maxCellCount", "300000") + ") might take long to search for legacy functions, continue ?" + vbCrLf + "Cancel to disable legacy function checking for this workbook ...", MsgBoxStyle.YesNoCancel, "Legacy DBAddin functions")
+                Dim retval As MsgBoxResult = QuestionMsg("This large workbook (" + cellcount.ToString() + " filled cells >" + fetchSetting("maxCellCount", "300000") + ") might take long to search for legacy functions, continue ?" + vbCrLf + "Cancel to disable legacy function checking for this workbook ...", MsgBoxStyle.YesNoCancel, "Legacy DBAddin functions")
                 If retval <> vbYes Then
                     If retval = vbCancel Then
                         Try

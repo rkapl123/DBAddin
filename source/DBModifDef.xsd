@@ -61,6 +61,7 @@
 									<xs:element type="xs:string" name="askBeforeExecute" minOccurs="0"/>
 									<xs:element type="xs:string" name="IgnoreDataErrors" minOccurs="0"/>
 									<xs:element type="xs:string" name="confirmText" minOccurs="0"/>
+									<xs:element type="xs:string" name="avoidFill" minOccurs="0"/>
 								</xs:choice>
 							</xs:sequence>
 							<xs:attribute name="Name" type="xs:string"/>

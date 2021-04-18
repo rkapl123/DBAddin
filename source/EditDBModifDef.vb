@@ -31,7 +31,7 @@ Public Class EditDBModifDef
                     doc.WriteTo(xml_writer)
                     xml_writer.Flush()
                     ' Display the result.
-                    Me.EditBox.Text = sw.ToString
+                    Me.EditBox.Text = sw.ToString()
                 End Using
             End Using
             Try
@@ -129,7 +129,7 @@ Public Class EditDBModifDef
                     xml_writer.Flush()
                     ' store the result in CustomXmlParts
                     CustomXmlParts(1).Delete
-                    CustomXmlParts.Add(sw.ToString)
+                    CustomXmlParts.Add(sw.ToString())
                 End Using
             End Using
             ' add/change the tickboxes doDBMOnSave and DBFskip
@@ -199,6 +199,6 @@ Public Class EditDBModifDef
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub EditBox_SelectionChanged(sender As Object, e As EventArgs) Handles EditBox.SelectionChanged
-        Me.PosIndex.Text = "Line: " + (Me.EditBox.GetLineFromCharIndex(Me.EditBox.SelectionStart) + 1).ToString + ", Column: " + (Me.EditBox.SelectionStart - Me.EditBox.GetFirstCharIndexOfCurrentLine + 1).ToString
+        Me.PosIndex.Text = "Line: " + (Me.EditBox.GetLineFromCharIndex(Me.EditBox.SelectionStart) + 1).ToString() + ", Column: " + (Me.EditBox.SelectionStart - Me.EditBox.GetFirstCharIndexOfCurrentLine + 1).ToString()
     End Sub
 End Class

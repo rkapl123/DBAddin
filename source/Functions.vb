@@ -345,7 +345,7 @@ Public Module Functions
 
         targetSH = TargetCell.Parent
         targetWB = TargetCell.Parent.Parent
-        Dim callerFormula As String = caller.Formula.ToString
+        Dim callerFormula As String = caller.Formula.ToString()
         Dim srcExtent As String = ""
         Dim errHappened As Boolean = False
         Try
@@ -354,7 +354,7 @@ Public Module Functions
             errHappened = True
         End Try
         If errHappened Or InStr(1, srcExtent, "DBFsource") = 0 Then
-            srcExtent = "DBFsource" + Replace(Guid.NewGuid().ToString, "-", "")
+            srcExtent = "DBFsource" + Replace(Guid.NewGuid().ToString(), "-", "")
             Try
                 caller.Name = srcExtent
                 caller.Parent.Parent.Names(srcExtent).Visible = False
@@ -376,14 +376,14 @@ Public Module Functions
             ' first, get the connection type from the underlying PivotCache or QueryTable (OLEDB or ODBC)
             If Not thePivotTable Is Nothing Then
                 Try
-                    connType = Left$(thePivotTable.PivotCache.Connection.ToString, InStr(1, thePivotTable.PivotCache.Connection.ToString, ";"))
+                    connType = Left$(thePivotTable.PivotCache.Connection.ToString(), InStr(1, thePivotTable.PivotCache.Connection.ToString(), ";"))
                 Catch ex As Exception
                     Throw New Exception("couldn't get connection from Pivot Table, please create Pivot Table with external data source !")
                 End Try
             End If
             If Not theListObject Is Nothing Then
                 Try
-                    connType = Left$(theListObject.QueryTable.Connection.ToString, InStr(1, theListObject.QueryTable.Connection.ToString, ";"))
+                    connType = Left$(theListObject.QueryTable.Connection.ToString(), InStr(1, theListObject.QueryTable.Connection.ToString(), ";"))
                 Catch ex As Exception
                     Throw New Exception("couldn't get connection from ListObject, please create ListObject with external data source !")
                 End Try
@@ -400,7 +400,7 @@ Public Module Functions
                 thePivotTable.PivotCache.CommandText = Query
                 thePivotTable.PivotCache.BackgroundQuery = False
                 thePivotTable.PivotCache.Refresh()
-                StatusCollection(callID).statusMsg = "Set " + connType + " PivotTable to (bgQuery= " + bgQuery.ToString + "): " + Query
+                StatusCollection(callID).statusMsg = "Set " + connType + " PivotTable to (bgQuery= " + bgQuery.ToString() + "): " + Query
                 thePivotTable.PivotCache.BackgroundQuery = bgQuery
                 ' give hidden name to target range of pivot query (jump function)
                 thePivotTable.TableRange1.Name = targetExtent
@@ -428,7 +428,7 @@ Public Module Functions
                 Catch ex As Exception
                     Throw New Exception("Error in query table refresh: " + ex.Message)
                 End Try
-                StatusCollection(callID).statusMsg = "Set " + connType + " ListObject to (bgQuery= " + bgQuery.ToString + ", " + If(theListObject.QueryTable.FetchedRowOverflow, "Too many rows fetched to display !", "") + "): " + Query
+                StatusCollection(callID).statusMsg = "Set " + connType + " ListObject to (bgQuery= " + bgQuery.ToString() + ", " + If(theListObject.QueryTable.FetchedRowOverflow, "Too many rows fetched to display !", "") + "): " + Query
                 theListObject.QueryTable.BackgroundQuery = bgQuery
                 Try
                     Dim testTarget = TargetCell.Address
@@ -605,7 +605,7 @@ Public Module Functions
         srcExtent = caller.Name.Name
         If Err.Number <> 0 Or InStr(1, srcExtent, "DBFsource") = 0 Then
             Err.Clear()
-            srcExtent = "DBFsource" + Replace(Guid.NewGuid().ToString, "-", "")
+            srcExtent = "DBFsource" + Replace(Guid.NewGuid().ToString(), "-", "")
             caller.Name = srcExtent
             caller.Parent.Parent.Names(srcExtent).Visible = False
             If Err.Number <> 0 Then
@@ -686,7 +686,7 @@ Public Module Functions
             conn.ConnectionTimeout = CnnTimeout
             conn.CommandTimeout = CmdTimeout
             conn.CursorLocation = CursorLocationEnum.adUseClient
-            ExcelDnaUtil.Application.StatusBar = "Trying " + CnnTimeout.ToString + " sec. with connstring: " + ConnString
+            ExcelDnaUtil.Application.StatusBar = "Trying " + CnnTimeout.ToString() + " sec. with connstring: " + ConnString
             Err.Clear()
             conn.Open(ConnString)
 
@@ -739,12 +739,12 @@ Public Module Functions
         ' check whether retrieved data exceeds excel's limits and limit output (arrayRows/arrayCols) in case ...
         ' check rows
         If targetRange.Row + arrayRows > (targetRange.EntireColumn.Rows.Count + 1) Then
-            warning = "row count of returned data exceeds max row of excel: start row:" + targetRange.Row.ToString + " + row count:" + arrayRows.ToString + " > max row+1:" + (targetRange.EntireColumn.Rows.Count + 1).ToString
+            warning = "row count of returned data exceeds max row of excel: start row:" + targetRange.Row.ToString() + " + row count:" + arrayRows.ToString() + " > max row+1:" + (targetRange.EntireColumn.Rows.Count + 1).ToString()
             arrayRows = targetRange.EntireColumn.Rows.Count - startRow + 1
         End If
         ' check columns
         If targetRange.Column + arrayCols > (targetRange.EntireRow.Columns.Count + 1) Then
-            warning = warning + ", column count of returned data exceed max column of excel: start column:" + targetRange.Column.ToString + " + column count:" + arrayCols.ToString + " > max column+1:" + (targetRange.EntireRow.Columns.Count + 1).ToString
+            warning = warning + ", column count of returned data exceed max column of excel: start column:" + targetRange.Column.ToString() + " + column count:" + arrayCols.ToString() + " > max column+1:" + (targetRange.EntireRow.Columns.Count + 1).ToString()
             arrayCols = targetRange.EntireRow.Columns.Count - startCol + 1
         End If
 
@@ -790,10 +790,10 @@ Public Module Functions
                     End If
                     '2: add whole rows
                 ElseIf extendArea = 2 Then
-                    targetSH.Rows((startRow + oldRows + headingFirstRowPrevent).ToString + ":" + (startRow + arrayRows - 1).ToString).Insert(Shift:=Excel.XlDirection.xlDown)
+                    targetSH.Rows((startRow + oldRows + headingFirstRowPrevent).ToString() + ":" + (startRow + arrayRows - 1).ToString()).Insert(Shift:=Excel.XlDirection.xlDown)
                     If Not formulaRange Is Nothing Then
                         ' take care not to insert twice (if we're having formulas in the same sheet)
-                        If Not targetSH Is formulaSH Then formulaSH.Rows((startRow + oldFRows + headingOffset).ToString + ":" + (startRow + arrayRows - 1 - headingFirstRowPrevent).ToString).Insert(Shift:=Excel.XlDirection.xlDown)
+                        If Not targetSH Is formulaSH Then formulaSH.Rows((startRow + oldFRows + headingOffset).ToString() + ":" + (startRow + arrayRows - 1 - headingFirstRowPrevent).ToString()).Insert(Shift:=Excel.XlDirection.xlDown)
                     End If
                 End If
                 'else 0: just overwrite -> no special action
@@ -808,10 +808,10 @@ Public Module Functions
                     If Not formulaRange Is Nothing Then formulaSH.Range(formulaSH.Cells(startRow + arrayRows + headingLastRowPrevent, formulaRange.Column), formulaSH.Cells(startRow + oldFRows - 1 + headingOffset, formulaRange.Column + oldFCols - 1)).Delete(Shift:=Excel.XlDirection.xlUp)
                     '2: add whole rows
                 ElseIf extendArea = 2 Then
-                    targetSH.Rows((startRow + arrayRows + headingLastRowPrevent).ToString + ":" + (startRow + oldRows - 1).ToString).Delete(Shift:=Excel.XlDirection.xlUp)
+                    targetSH.Rows((startRow + arrayRows + headingLastRowPrevent).ToString() + ":" + (startRow + oldRows - 1).ToString()).Delete(Shift:=Excel.XlDirection.xlUp)
                     If Not formulaRange Is Nothing Then
                         ' take care not to delete twice (if we're having formulas in the same sheet)
-                        If Not targetSH Is formulaSH Then formulaSH.Rows((startRow + arrayRows + headingLastRowPrevent).ToString + ":" + (startRow + oldFRows - 1 + headingOffset).ToString).Delete(Shift:=Excel.XlDirection.xlUp)
+                        If Not targetSH Is formulaSH Then formulaSH.Rows((startRow + arrayRows + headingLastRowPrevent).ToString() + ":" + (startRow + oldFRows - 1 + headingOffset).ToString()).Delete(Shift:=Excel.XlDirection.xlUp)
                     End If
                 End If
                 '0: just overwrite -> no special action
@@ -875,7 +875,7 @@ Public Module Functions
                     ' retrieve bottom of formula range
                     ' check for excels boundaries !!
                     If .Cells.Row + arrayRows > .EntireColumn.Rows.Count + 1 Then
-                        warning += ", formulas would exceed max row of excel: start row:" + formulaStart.ToString + " + row count:" + arrayRows.ToString + " > max row+1:" + (.EntireColumn.Rows.Count + 1).ToString
+                        warning += ", formulas would exceed max row of excel: start row:" + formulaStart.ToString() + " + row count:" + arrayRows.ToString() + " > max row+1:" + (.EntireColumn.Rows.Count + 1).ToString()
                         copyDown = .EntireColumn.Rows.Count
                     Else
                         'the normal end of our autofilled rows = formula start + list size,
@@ -939,12 +939,12 @@ Public Module Functions
                 If Left$(warning, 1) = "," Then
                     warning = Right$(warning, Len(warning) - 2)
                 End If
-                StatusCollection(callID).statusMsg = "Retrieved " + retrievedRows.ToString + " record" + If(retrievedRows > 1, "s", "") + ", Warning: " + warning
+                StatusCollection(callID).statusMsg = "Retrieved " + retrievedRows.ToString() + " record" + If(retrievedRows > 1, "s", "") + ", Warning: " + warning
             Else
                 StatusCollection(callID).statusMsg = warning
             End If
         Else
-            StatusCollection(callID).statusMsg = "Retrieved " + retrievedRows.ToString + " record" + If(retrievedRows > 1, "s", "") + " from: " + Query
+            StatusCollection(callID).statusMsg = "Retrieved " + retrievedRows.ToString() + " record" + If(retrievedRows > 1, "s", "") + " from: " + Query
         End If
 
         ' autoformat: restore formats
@@ -1126,7 +1126,7 @@ err_0: ' errors where recordset was not opened or is already closed
         srcExtent = caller.Name.Name
         If Err.Number <> 0 Or InStr(1, srcExtent, "DBFsource") = 0 Then
             Err.Clear()
-            srcExtent = "DBFsource" + Replace(Guid.NewGuid().ToString, "-", "")
+            srcExtent = "DBFsource" + Replace(Guid.NewGuid().ToString(), "-", "")
             caller.Name = srcExtent
             ' dbfsource is a workbook name
             caller.Parent.Parent.Names(srcExtent).Visible = False
@@ -1152,7 +1152,7 @@ err_0: ' errors where recordset was not opened or is already closed
             conn.ConnectionTimeout = CnnTimeout
             conn.CommandTimeout = CmdTimeout
             conn.CursorLocation = CursorLocationEnum.adUseClient
-            ExcelDnaUtil.Application.StatusBar = "Trying " + CnnTimeout.ToString + " sec. with connstring: " + ConnString
+            ExcelDnaUtil.Application.StatusBar = "Trying " + CnnTimeout.ToString() + " sec. with connstring: " + ConnString
             Err.Clear()
             conn.Open(ConnString)
 
@@ -1225,7 +1225,7 @@ err_0: ' errors where recordset was not opened or is already closed
                         End If
                         If fieldIter = tableRst.Fields.Count - 1 Then
                             If headerFilled Then
-                                ExcelDnaUtil.Application.StatusBar = "Displaying data for DBRows: " + targetSH.Name + "!" + targetCells(0).Address.ToString + ", record " + tableRst.AbsolutePosition.ToString + "/" + returnedRows.ToString
+                                ExcelDnaUtil.Application.StatusBar = "Displaying data for DBRows: " + targetSH.Name + "!" + targetCells(0).Address.ToString() + ", record " + tableRst.AbsolutePosition.ToString() + "/" + returnedRows.ToString()
                                 tableRst.MoveNext()
                             Else
                                 headerFilled = True
@@ -1245,7 +1245,7 @@ err_0: ' errors where recordset was not opened or is already closed
         refCollector.Parent.Parent.Names(targetExtent).Visible = False
 
         tableRst.Close()
-        If StatusCollection(callID).statusMsg.Length = 0 Then StatusCollection(callID).statusMsg = "Retrieved " + returnedRows.ToString + " record" + If(returnedRows > 1, "s", "") + " from: " + Query
+        If StatusCollection(callID).statusMsg.Length = 0 Then StatusCollection(callID).statusMsg = "Retrieved " + returnedRows.ToString() + " record" + If(returnedRows > 1, "s", "") + " from: " + Query
         finishAction(calcMode, callID)
         Exit Sub
 
@@ -1376,13 +1376,13 @@ err_1:
                     ElseIf IsNumeric(myCell) Then
                         retval += Convert.ToString(myCell, System.Globalization.CultureInfo.InvariantCulture) + " "
                     Else
-                        retval += myCell.ToString + " "
+                        retval += myCell.ToString() + " "
                     End If
                     Query = retval
                 Next
                 If retval.Length = 0 Then checkParamsAndCache = "empty query provided !"
             ElseIf TypeName(Query) = "String" Then
-                If Query.ToString.Length = 0 Then checkParamsAndCache = "empty query provided !"
+                If Query.ToString().Length = 0 Then checkParamsAndCache = "empty query provided !"
             Else
                 checkParamsAndCache = "query parameter invalid (not a range and not a string) !"
             End If
@@ -1396,12 +1396,12 @@ err_1:
         ' caching check mechanism to avoid unnecessary recalculations/refetching
         Dim doFetching As Boolean
         If queryCache.ContainsKey(callID) Then
-            doFetching = (ConnString + Query.ToString <> queryCache(callID))
+            doFetching = (ConnString + Query.ToString() <> queryCache(callID))
             ' refresh the query cache with new query/connstring ...
             queryCache.Remove(callID)
-            queryCache.Add(callID, ConnString + Query.ToString)
+            queryCache.Add(callID, ConnString + Query.ToString())
         Else
-            queryCache.Add(callID, ConnString + Query.ToString)
+            queryCache.Add(callID, ConnString + Query.ToString())
             doFetching = True
         End If
         If doFetching Then
@@ -1439,7 +1439,7 @@ err_1:
                 End If
             End If
         ElseIf TypeName(ConnString) = "String" Then
-            If ConnString.ToString = "" Then ' no ConnString or environment number set: get connection string of currently selected evironment
+            If ConnString.ToString() = "" Then ' no ConnString or environment number set: get connection string of currently selected evironment
                 EnvPrefix = "Env:" + fetchSetting("ConfigName" + Globals.env(), "")
                 ConnString = fetchSetting("ConstConnString" + Globals.env(), "")
                 If getConnStrForDBSet Then

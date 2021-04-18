@@ -151,7 +151,7 @@ Public Class MenuHandler
                 Dim docproperty As Microsoft.Office.Core.DocumentProperty
                 For Each docproperty In ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties
                     If Left$(docproperty.Name, 5) = "DBFC" Or docproperty.Name = "DBFskip" Or docproperty.Name = "doDBMOnSave" Or docproperty.Name = "DBFNoLegacyCheck" Then
-                        getToggleCPropsScreentip += docproperty.Name + ":" + docproperty.Value.ToString + vbCrLf
+                        getToggleCPropsScreentip += docproperty.Name + ":" + docproperty.Value.ToString() + vbCrLf
                     End If
                 Next
             Catch ex As Exception

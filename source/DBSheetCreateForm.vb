@@ -354,22 +354,22 @@ Public Class DBSheetCreateForm
             DBSheetCols.Rows(selIndex).Cells("sort").Value = ""
             DBSheetCols.Rows(selIndex).Cells("lookup").Value = ""
         ElseIf e.ColumnIndex = 1 Then  ' ftable column 
-            If DBSheetCols.Rows(selIndex).Cells("ftable").Value.ToString = "" Then ' reset fkey and flookup dropdown
+            If DBSheetCols.Rows(selIndex).Cells("ftable").Value.ToString() = "" Then ' reset fkey and flookup dropdown
                 DirectCast(DBSheetCols.Rows(selIndex).Cells("fkey"), DataGridViewComboBoxCell).DataSource = New List(Of String)({""})
                 DirectCast(DBSheetCols.Rows(selIndex).Cells("flookup"), DataGridViewComboBoxCell).DataSource = New List(Of String)({""})
             Else ' fill fkey and flookup with fields of ftable
-                Dim forColsList As List(Of String) = getforeignTables(DBSheetCols.Rows(selIndex).Cells("ftable").Value.ToString)
+                Dim forColsList As List(Of String) = getforeignTables(DBSheetCols.Rows(selIndex).Cells("ftable").Value.ToString())
                 DirectCast(DBSheetCols.Rows(selIndex).Cells("fkey"), DataGridViewComboBoxCell).DataSource = forColsList
                 DirectCast(DBSheetCols.Rows(selIndex).Cells("flookup"), DataGridViewComboBoxCell).DataSource = forColsList
             End If
             DBSheetCols.Rows(selIndex).Cells("fkey").Value = ""
             DBSheetCols.Rows(selIndex).Cells("flookup").Value = ""
         ElseIf e.ColumnIndex = 2 Then ' fkey column
-            If DBSheetCols.Rows(selIndex).Cells("fkey").Value.ToString <> "" AndAlso DBSheetCols.Rows(selIndex).Cells("flookup").Value.ToString <> "" AndAlso DBSheetCols.Rows(selIndex).Cells("ftable").Value.ToString <> "" Then
+            If DBSheetCols.Rows(selIndex).Cells("fkey").Value.ToString() <> "" AndAlso DBSheetCols.Rows(selIndex).Cells("flookup").Value.ToString() <> "" AndAlso DBSheetCols.Rows(selIndex).Cells("ftable").Value.ToString() <> "" Then
                 regenLookupForRow(selIndex, True)
             End If
         ElseIf e.ColumnIndex = 3 Then ' flookup column
-            If DBSheetCols.Rows(selIndex).Cells("fkey").Value.ToString <> "" AndAlso DBSheetCols.Rows(selIndex).Cells("flookup").Value.ToString <> "" AndAlso DBSheetCols.Rows(selIndex).Cells("ftable").Value.ToString <> "" Then
+            If DBSheetCols.Rows(selIndex).Cells("fkey").Value.ToString() <> "" AndAlso DBSheetCols.Rows(selIndex).Cells("flookup").Value.ToString() <> "" AndAlso DBSheetCols.Rows(selIndex).Cells("ftable").Value.ToString() <> "" Then
                 regenLookupForRow(selIndex, True)
             End If
         ElseIf e.ColumnIndex = 5 Then ' primkey column
@@ -443,11 +443,11 @@ Public Class DBSheetCreateForm
             DBSheetCols.Rows(selRowIndex).Cells("outer").Value = clipboardDataRow.outer
             DBSheetCols.Rows(selRowIndex).Cells("primkey").Value = clipboardDataRow.primkey
             ' fill in the dropdown values
-            If DBSheetCols.Rows(selRowIndex).Cells("ftable").Value.ToString = "" Then
+            If DBSheetCols.Rows(selRowIndex).Cells("ftable").Value.ToString() = "" Then
                 DirectCast(DBSheetCols.Rows(selRowIndex).Cells("fkey"), DataGridViewComboBoxCell).DataSource = New List(Of String)({""})
                 DirectCast(DBSheetCols.Rows(selRowIndex).Cells("flookup"), DataGridViewComboBoxCell).DataSource = New List(Of String)({""})
             Else
-                Dim forColsList As List(Of String) = getforeignTables(DBSheetCols.Rows(selRowIndex).Cells("ftable").Value.ToString)
+                Dim forColsList As List(Of String) = getforeignTables(DBSheetCols.Rows(selRowIndex).Cells("ftable").Value.ToString())
                 DirectCast(DBSheetCols.Rows(selRowIndex).Cells("fkey"), DataGridViewComboBoxCell).DataSource = forColsList
                 DirectCast(DBSheetCols.Rows(selRowIndex).Cells("flookup"), DataGridViewComboBoxCell).DataSource = forColsList
             End If
@@ -565,10 +565,10 @@ Public Class DBSheetCreateForm
             Dim retval As MsgBoxResult = QuestionMsg("(re)generate foreign lookup, overwriting customizations?",, "DBSheet Definition")
             If retval = MsgBoxResult.Cancel Then Exit Sub
         End If
-        If DBSheetCols.Rows(rowIndex).Cells("ftable").Value.ToString <> "" And DBSheetCols.Rows(rowIndex).Cells("fkey").Value.ToString <> "" And DBSheetCols.Rows(rowIndex).Cells("flookup").Value.ToString <> "" Then
-            DBSheetCols.Rows(rowIndex).Cells("lookup").Value = "SELECT " + tblPlaceHolder + "." + DBSheetCols.Rows(rowIndex).Cells("flookup").Value.ToString + " " + correctNonNull(DBSheetCols.Rows(rowIndex).Cells("name").Value.ToString) + "," + tblPlaceHolder + "." + DBSheetCols.Rows(rowIndex).Cells("fkey").Value.ToString + " FROM " + DBSheetCols.Rows(rowIndex).Cells("ftable").Value.ToString + " " + tblPlaceHolder + " ORDER BY " + DBSheetCols.Rows(rowIndex).Cells("flookup").Value.ToString
+        If DBSheetCols.Rows(rowIndex).Cells("ftable").Value.ToString() <> "" And DBSheetCols.Rows(rowIndex).Cells("fkey").Value.ToString() <> "" And DBSheetCols.Rows(rowIndex).Cells("flookup").Value.ToString() <> "" Then
+            DBSheetCols.Rows(rowIndex).Cells("lookup").Value = "SELECT " + tblPlaceHolder + "." + DBSheetCols.Rows(rowIndex).Cells("flookup").Value.ToString() + " " + correctNonNull(DBSheetCols.Rows(rowIndex).Cells("name").Value.ToString()) + "," + tblPlaceHolder + "." + DBSheetCols.Rows(rowIndex).Cells("fkey").Value.ToString() + " FROM " + DBSheetCols.Rows(rowIndex).Cells("ftable").Value.ToString() + " " + tblPlaceHolder + " ORDER BY " + DBSheetCols.Rows(rowIndex).Cells("flookup").Value.ToString()
             If askForRegenerate Then DBSheetCols.AutoResizeColumns()
-        ElseIf DBSheetCols.Rows(rowIndex).Cells("ftable").Value.ToString = "" And DBSheetCols.Rows(rowIndex).Cells("fkey").Value.ToString = "" And DBSheetCols.Rows(rowIndex).Cells("flookup").Value.ToString = "" Then
+        ElseIf DBSheetCols.Rows(rowIndex).Cells("ftable").Value.ToString() = "" And DBSheetCols.Rows(rowIndex).Cells("fkey").Value.ToString() = "" And DBSheetCols.Rows(rowIndex).Cells("flookup").Value.ToString() = "" Then
             Dim retval As MsgBoxResult = QuestionMsg("clear foreign lookup ?", MsgBoxStyle.OkCancel, "DBSheet Definition")
             If retval = MsgBoxResult.Ok Then DBSheetCols.Rows(rowIndex).Cells("lookup").Value = ""
         Else
@@ -587,7 +587,7 @@ Public Class DBSheetCreateForm
         End If
         For i As Integer = 0 To DBSheetCols.Rows.Count - 2
             'only overwrite if forced regenerate or empty restriction def...
-            If DBSheetCols.Rows(i).Cells("ftable").Value.ToString <> "" And (retval = MsgBoxResult.Yes Or DBSheetCols.Rows(i).Cells("lookup").Value.ToString = "") Then regenLookupForRow(i)
+            If DBSheetCols.Rows(i).Cells("ftable").Value.ToString() <> "" And (retval = MsgBoxResult.Yes Or DBSheetCols.Rows(i).Cells("lookup").Value.ToString() = "") Then regenLookupForRow(i)
         Next
         DBSheetCols.AutoResizeColumns()
     End Sub
@@ -715,9 +715,9 @@ Public Class DBSheetCreateForm
                 Dim appendInfo As String = If(schemaRow("AllowDBNull"), "", specialNonNullableChar)
                 Dim precInfo As String = ""
                 If schemaRow("DataType").Name <> "String" And schemaRow("DataType").Name <> "Boolean" Then
-                    precInfo = "/" + schemaRow("NumericPrecision").ToString + "/" + schemaRow("NumericScale").ToString
+                    precInfo = "/" + schemaRow("NumericPrecision").ToString() + "/" + schemaRow("NumericScale").ToString()
                 End If
-                TableDataTypes(appendInfo + schemaRow("ColumnName")) = schemaRow("DataType").Name + "(" + schemaRow("ColumnSize").ToString + precInfo + ")"
+                TableDataTypes(appendInfo + schemaRow("ColumnName")) = schemaRow("DataType").Name + "(" + schemaRow("ColumnSize").ToString() + precInfo + ")"
             Next
         Catch ex As Exception
             Globals.UserMsg("Could not get type information for table fields with query: '" + selectStmt + "', error: " + ex.Message, "DBSheet Definition Error")
@@ -819,28 +819,28 @@ Public Class DBSheetCreateForm
             Dim selectPart As String = ""
             For i As Integer = 0 To DBSheetCols.Rows.Count - 2
                 ' plain table field
-                Dim usedColumn As String = correctNonNull(DBSheetCols.Rows(i).Cells("name").Value.ToString)
+                Dim usedColumn As String = correctNonNull(DBSheetCols.Rows(i).Cells("name").Value.ToString())
                 ' used for foreign table lookups
                 tableCounter += 1
-                If DBSheetCols.Rows(i).Cells("sort").Value.ToString <> "" Then
-                    orderByStr = If(orderByStr = "", "", orderByStr + ", ") + (i + 1).ToString + " " + DBSheetCols.Rows(i).Cells("sort").Value.ToString
+                If DBSheetCols.Rows(i).Cells("sort").Value.ToString() <> "" Then
+                    orderByStr = If(orderByStr = "", "", orderByStr + ", ") + (i + 1).ToString() + " " + DBSheetCols.Rows(i).Cells("sort").Value.ToString()
                 End If
-                Dim ftableStr As String = DBSheetCols.Rows(i).Cells("ftable").Value.ToString
+                Dim ftableStr As String = DBSheetCols.Rows(i).Cells("ftable").Value.ToString()
                 If ftableStr = "" Then
                     selectStr += "T1." + usedColumn + ", "
                     ' create (inner or outer) joins for foreign key lookup id
                 Else
-                    Dim lookupStr As String = DBSheetCols.Rows(i).Cells("lookup").Value.ToString
+                    Dim lookupStr As String = DBSheetCols.Rows(i).Cells("lookup").Value.ToString()
                     If lookupStr = "" Then
                         DBSheetCols.Rows(i).Selected = True
                         Globals.UserMsg("No lookup query created for field " + DBSheetCols.Rows(i).Cells("name").Value + ", can't proceed !", "DBSheet Definition Error")
                         Exit Sub
                     End If
-                    Dim theTable As String = "T" + tableCounter.ToString
+                    Dim theTable As String = "T" + tableCounter.ToString()
                     ' either we go for the whole part after the last join
                     Dim completeJoin As String = Globals.fetch(lookupStr, "JOIN ", "")
                     ' or we have a simple WHERE and just "AND" it to the created join
-                    Dim addRestrict As String = quotedReplace(Globals.fetch(lookupStr, "WHERE ", ""), "T" + tableCounter.ToString)
+                    Dim addRestrict As String = quotedReplace(Globals.fetch(lookupStr, "WHERE ", ""), "T" + tableCounter.ToString())
 
                     ' remove any ORDER BY clause from additional restrict...
                     Dim restrPos As Integer = addRestrict.ToUpper().LastIndexOf(" ORDER") + 1
@@ -849,9 +849,9 @@ Public Class DBSheetCreateForm
                         ' when having the complete join, use additional restriction not for main subtable
                         addRestrict = ""
                         ' instead make it an additional condition for the join and replace placeholder with tablealias
-                        completeJoin = quotedReplace(ciReplace(completeJoin, "WHERE", "AND"), "T" + tableCounter.ToString)
+                        completeJoin = quotedReplace(ciReplace(completeJoin, "WHERE", "AND"), "T" + tableCounter.ToString())
                     End If
-                    Dim fkeyStr As String = DBSheetCols.Rows(i).Cells("fkey").Value.ToString
+                    Dim fkeyStr As String = DBSheetCols.Rows(i).Cells("fkey").Value.ToString()
                     If DBSheetCols.Rows(i).Cells("outer").Value Then
                         fromStr += " LEFT JOIN " + vbCrLf + ftableStr + " " + theTable +
                                        " ON " + "T1." + usedColumn + " = " + theTable + "." + fkeyStr + If(addRestrict <> "", " AND " + addRestrict, "")
@@ -877,10 +877,10 @@ Public Class DBSheetCreateForm
                         Globals.UserMsg("Alias of lookup field '" + aliasName + "' is not consistent with field name '" + usedColumn + "', please change lookup definition !", "DBSheet Definition Error")
                         Exit Sub
                     End If
-                    Dim flookupStr As String = DBSheetCols.Rows(i).Cells("flookup").Value.ToString
+                    Dim flookupStr As String = DBSheetCols.Rows(i).Cells("flookup").Value.ToString()
                     ' customized select statement, take directly from lookup query..
                     If selectPart <> flookupStr Then
-                        selectStr += quotedReplace(selectPart, "T" + tableCounter.ToString) + ", "
+                        selectStr += quotedReplace(selectPart, "T" + tableCounter.ToString()) + ", "
                     Else
                         ' simple select statement (only the lookup field and id), put together...
                         selectStr += theTable + "." + flookupStr + " " + usedColumn + ", "
@@ -940,7 +940,7 @@ Public Class DBSheetCreateForm
             Dim j As Integer = 1
             While InStr(1, replacedStr, "?") > 0
                 Dim questionMarkLoc As Integer = InStr(1, replacedStr, "?")
-                Dim paramVal As String = InputBox("Value for parameter " + j.ToString + " ?", "Enter parameter values..")
+                Dim paramVal As String = InputBox("Value for parameter " + j.ToString() + " ?", "Enter parameter values..")
                 If Len(paramVal) = 0 Then Exit Sub
                 replacedStr = Strings.Mid(replacedStr, 1, questionMarkLoc - 1) + paramVal + Strings.Mid(replacedStr, questionMarkLoc + 1)
                 j += 1
@@ -1000,7 +1000,7 @@ Public Class DBSheetCreateForm
                 fillTables()
                 DirectCast(DBSheetCols.Columns("ftable"), DataGridViewComboBoxColumn).DataSource = getforeignTables()
                 FormDisabled = True
-                Dim theTable As String = If(InStr(DBSheetConfig.getEntry("table", DBSheetParams), Database.Text + ".") > 0, DBSheetConfig.getEntry("table", DBSheetParams), Database.Text + fetchSetting("ownerQualifier" + env.ToString, "") + DBSheetConfig.getEntry("table", DBSheetParams))
+                Dim theTable As String = If(InStr(DBSheetConfig.getEntry("table", DBSheetParams), Database.Text + ".") > 0, DBSheetConfig.getEntry("table", DBSheetParams), Database.Text + fetchSetting("ownerQualifier" + env.ToString(), "") + DBSheetConfig.getEntry("table", DBSheetParams))
                 Table.SelectedIndex = Table.Items.IndexOf(theTable)
                 If Table.SelectedIndex = -1 Then
                     Globals.UserMsg("couldn't find table " + theTable + " defined in definitions file in database " + Database.Text + "!", "DBSheet Definition Error")
@@ -1036,8 +1036,8 @@ Public Class DBSheetCreateForm
                 DBSheetCols.DataSource = theDBSheetDefTable
                 ' re-add the fkey and flookup combobox values...
                 For i As Integer = 0 To DBSheetCols.Rows.Count - 2
-                    If DBSheetCols.Rows(i).Cells("ftable").Value.ToString <> "" Then
-                        Dim colnameList As List(Of String) = getforeignTables(DBSheetCols.Rows(i).Cells("ftable").Value.ToString)
+                    If DBSheetCols.Rows(i).Cells("ftable").Value.ToString() <> "" Then
+                        Dim colnameList As List(Of String) = getforeignTables(DBSheetCols.Rows(i).Cells("ftable").Value.ToString())
                         DirectCast(DBSheetCols.Rows(i).Cells("fkey"), DataGridViewComboBoxCell).DataSource = colnameList
                         DirectCast(DBSheetCols.Rows(i).Cells("flookup"), DataGridViewComboBoxCell).DataSource = colnameList
                     End If
@@ -1111,11 +1111,11 @@ Public Class DBSheetCreateForm
             For i As Integer = 0 To DBSheetCols.RowCount - 2 ' respect the insert row !!!
                 Dim columnLine As String = "<field>"
                 For j As Integer = 0 To DBSheetCols.ColumnCount - 1
-                    If DBSheetCols.Rows(i).Cells(j).Value.ToString <> "" Then
+                    If DBSheetCols.Rows(i).Cells(j).Value.ToString() <> "" Then
                         ' store everything false values and type (is always inferred from Database)
                         If Not (DBSheetCols.Columns(j).Name = "type" OrElse
                             (TypeName(DBSheetCols.Rows(i).Cells(j).Value) = "Boolean" AndAlso Not DBSheetCols.Rows(i).Cells(j).Value)) Then
-                            columnLine += DBSheetConfig.setEntry(DBSheetCols.Columns(j).Name, CStr(DBSheetCols.Rows(i).Cells(j).Value.ToString))
+                            columnLine += DBSheetConfig.setEntry(DBSheetCols.Columns(j).Name, CStr(DBSheetCols.Rows(i).Cells(j).Value.ToString()))
                         End If
                     End If
                 Next
@@ -1127,7 +1127,7 @@ Public Class DBSheetCreateForm
             namedParams += DBSheetConfig.setEntry("table", Table.Text) + vbCrLf
             namedParams += DBSheetConfig.setEntry("query", Query.Text) + vbCrLf
             namedParams += DBSheetConfig.setEntry("whereClause", WhereClause.Text) + vbCrLf
-            namedParams += DBSheetConfig.setEntry("primcols", primKeyCount.ToString)
+            namedParams += DBSheetConfig.setEntry("primcols", primKeyCount.ToString())
             ' finally put everything together:
             Return "<DBsheetConfig>" + vbCrLf + namedParams + vbCrLf + "<columns>" + columnsDef + vbCrLf + "</columns>" + vbCrLf + "</DBsheetConfig>"
         Catch ex As System.Exception
@@ -1217,7 +1217,7 @@ Public Class DBSheetCreateForm
             If i Mod 2 = 0 Then
                 subresult = Replace(teststr(i), tblPlaceHolder, changed)
             Else
-                subresult = teststr(i).ToString
+                subresult = teststr(i).ToString()
             End If
             quotedReplace += subresult + IIf(i < UBound(teststr), "'", "")
         Next

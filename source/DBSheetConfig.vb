@@ -63,7 +63,7 @@ Public Module DBSheetConfig
             ' Get the DBSheet Definition file name and read into curConfig
             Dim dsdPath As String = openFileDialog1.FileName
             curConfig = File.ReadAllText(dsdPath, Text.Encoding.Default)
-            tblPlaceHolder = Globals.fetchSetting("tblPlaceHolder" + env.ToString, "!T!")
+            tblPlaceHolder = Globals.fetchSetting("tblPlaceHolder" + env.ToString(), "!T!")
             specialNonNullableChar = Globals.fetchSetting("specialNonNullableChar" + env.ToString, "*")
             databaseName = Replace(getEntry("connID", curConfig), Globals.fetchSetting("connIDPrefixDBtype", "MSSQL"), "")
             ' get the table name of the DBSheet for setting the DBMapper name
@@ -89,7 +89,7 @@ Public Module DBSheetConfig
                         ' each parameter adds a cell below DBSetQuery
                         addedCells += 1
                         ' create concatenation formula for parameter setting, each ? is replaced by a separate row reference below the where clause
-                        changedWhereClause += If(i = 0, """WHERE ", "&""") + whereParts(i) + """&R[" + (i + 1).ToString + "]C"
+                        changedWhereClause += If(i = 0, """WHERE ", "&""") + whereParts(i) + """&R[" + (i + 1).ToString() + "]C"
                     End If
                 Next
                 queryStr = Replace(queryStr, "WHERE " + whereClause, "")
@@ -263,9 +263,9 @@ Public Module DBSheetConfig
         End If
 
         ' store lookup columns (<>LU) to be ignored in DBMapper
-        Dim queryErrorPos As Integer = InStr(curCell.Value.ToString, "Error")
+        Dim queryErrorPos As Integer = InStr(curCell.Value.ToString(), "Error")
         If queryErrorPos > 0 Then
-            Globals.UserMsg("DBSheet Query had an error:" + vbCrLf + Mid(curCell.Value.ToString, queryErrorPos + Len("Error in query table refresh: ")), "DBSheet Creation Error")
+            Globals.UserMsg("DBSheet Query had an error:" + vbCrLf + Mid(curCell.Value.ToString(), queryErrorPos + Len("Error in query table refresh: ")), "DBSheet Creation Error")
             If Not lookupWS Is Nothing Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
             Exit Sub
         End If
@@ -298,7 +298,7 @@ Public Module DBSheetConfig
                     ' a workaround with getting the local formula is necessary as Formula1 in Validation.Add doesn't accept english formulas
                     curCell.Offset(2 + addedCells, 0).Formula = "=OFFSET(" + lookupRangeName + ",0,0,,1)"
                     ' necessary as Excel>=2016 introduces the @operator automatically in formulas referring to list objects, referring to just that value in the same row. which is undesired here..
-                    Dim localOffsetFormula As String = Replace(curCell.Offset(2 + addedCells, 0).FormulaLocal.ToString, "@", "")
+                    Dim localOffsetFormula As String = Replace(curCell.Offset(2 + addedCells, 0).FormulaLocal.ToString(), "@", "")
                     ' get lookupColumn (lookupName + "LU" for 2-column database lookups, lookupName only for 1-column lookups)
                     Dim lookupColumn As Excel.ListColumn
                     Dim finalLookupname = ""
@@ -367,7 +367,7 @@ Public Module DBSheetConfig
         Dim NamesList As Excel.Names = ExcelDnaUtil.Application.ActiveWorkbook.Names
         Dim alreadyExists As Boolean = True
         Try
-            Dim testExist As String = NamesList.Item("DBMapper" + tableName).ToString
+            Dim testExist As String = NamesList.Item("DBMapper" + tableName).ToString()
         Catch ex As Exception
             ' exception only triggered if name not already exists !
             alreadyExists = False

@@ -46,7 +46,7 @@ Public Module ConfigFiles
                 End If
                 ' for existing dbfunction replace querystring in existing formula of active cell, only works for single pair config templates (or the first pair)
                 If srchdFunc <> "" Then
-                    ExcelDnaUtil.Application.ActiveCell.Formula = replaceQueryInFormula(ConfigArray(1), srchdFunc, ExcelDnaUtil.Application.ActiveCell.Formula.ToString)
+                    ExcelDnaUtil.Application.ActiveCell.Formula = replaceQueryInFormula(ConfigArray(1), srchdFunc, ExcelDnaUtil.Application.ActiveCell.Formula.ToString())
                 Else ' for other cells simply insert the ConfigArray
                     createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, ConfigArray)
                 End If

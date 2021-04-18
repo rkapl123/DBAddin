@@ -24,7 +24,7 @@ Public NotInheritable Class AboutBox
         ' set the UI elements
         Me.Text = String.Format("About {0}", My.Application.Info.Title)
         Me.LabelProductName.Text = "DB Addin Help"
-        Me.LabelVersion.Text = String.Format("Version {0} Buildtime {1}", My.Application.Info.Version.ToString, sModuleInfo)
+        Me.LabelVersion.Text = String.Format("Version {0} Buildtime {1}", My.Application.Info.Version.ToString(), sModuleInfo)
         Me.LabelCopyright.Text = My.Application.Info.Copyright
         Me.LabelCompanyName.Text = "Information: " + My.Application.Info.CompanyName
         Me.TextBoxDescription.Text = My.Application.Info.Description

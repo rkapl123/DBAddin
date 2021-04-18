@@ -50,7 +50,7 @@ Public Class DBModifCreate
                 If Me.Tag <> "DBSeqnce" Then
                     For Each DBModifierCheck As DBSeqnce In Globals.DBModifDefColl("DBSeqnce").Values
                         ' check for Sequences that have execOnSave set...
-                        If DBModifierCheck.DBModifSaveNeeded Then
+                        If DBModifierCheck.execOnSave Then
                             ' ...if they contain the current DBAction/DBMapper
                             For Each sequenceParam As String In DBModifierCheck.getSequenceSteps
                                 Dim definition() As String = Split(sequenceParam, ":")
@@ -68,7 +68,7 @@ Public Class DBModifCreate
                 Else ' or on any DB Modifier being contained in current DB Sequence:
                     For i As Integer = 0 To Me.DBSeqenceDataGrid.Rows().Count - 2
                         Dim definition() As String = Split(Me.DBSeqenceDataGrid.Rows(i).Cells(0).Value, ":")
-                        If (definition(0) = "DBAction" Or definition(0) = "DBMapper") AndAlso Globals.DBModifDefColl(definition(0)).ContainsKey(definition(1)) AndAlso Globals.DBModifDefColl(definition(0)).Item(definition(1)).DBModifSaveNeeded Then
+                        If (definition(0) = "DBAction" Or definition(0) = "DBMapper") AndAlso Globals.DBModifDefColl(definition(0)).ContainsKey(definition(1)) AndAlso Globals.DBModifDefColl(definition(0)).Item(definition(1)).execOnSave Then
                             Dim foundDBModifName As String = IIf(definition(1) = "", "Unnamed " + definition(0), definition(1))
                             Dim DBModifTargetAddress As String = Globals.DBModifDefColl(definition(0)).Item(definition(1)).getTargetRangeAddress()
                             Globals.UserMsg(foundDBModifName + " in " + DBModifTargetAddress + " will be executed twice on saving, because it is part of this DBSequence, which is also executed on saving." + vbCrLf + IIf(Me.execOnSave.Checked, "Disabling 'Execute on save' now, you ", "You") + " can reenable after disabling it on '" + foundDBModifName + "'", "DBModification Validation")
@@ -96,7 +96,7 @@ Public Class DBModifCreate
     ''' <param name="e"></param>
     Private Sub DBSeqenceDataGrid_DataError(sender As Object, e As DataGridViewDataErrorEventArgs) Handles DBSeqenceDataGrid.DataError
         If Not DBSeqStepValidationErrorsShown Then
-            DBSeqStepValidationErrors += "Error in row " + (e.RowIndex + 1).ToString + ",content: " + Me.DBSeqenceDataGrid.Rows(e.RowIndex).Cells(0).Value + vbCrLf
+            DBSeqStepValidationErrors += "Error in row " + (e.RowIndex + 1).ToString() + ",content: " + Me.DBSeqenceDataGrid.Rows(e.RowIndex).Cells(0).Value + vbCrLf
         End If
     End Sub
 
