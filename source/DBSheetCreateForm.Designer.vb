@@ -60,6 +60,7 @@ Partial Class DBSheetCreateForm
         Me.CurrentFileLinkLabel = New System.Windows.Forms.LinkLabel()
         Me.Lenvironment = New System.Windows.Forms.Label()
         Me.DBSheetColsForDatabases = New System.Windows.Forms.ContextMenuStrip(Me.components)
+        Me.assignDBSheet = New System.Windows.Forms.Button()
         CType(Me.DBSheetCols, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.DBSheetColsMoveMenu.SuspendLayout()
         Me.DBSheetColsLookupMenu.SuspendLayout()
@@ -97,7 +98,7 @@ Partial Class DBSheetCreateForm
         Me.Query.RightToLeft = System.Windows.Forms.RightToLeft.No
         Me.Query.ScrollBars = System.Windows.Forms.ScrollBars.Vertical
         Me.Query.Size = New System.Drawing.Size(840, 164)
-        Me.Query.TabIndex = 16
+        Me.Query.TabIndex = 17
         Me.Query.Text = "__"
         Me.ToolTipMain.SetToolTip(Me.Query, "Query: If needed, modify the query for the DBSheet data being displayed. Attentio" &
         "n: create DBSheet query will destroy all custom information here !!")
@@ -133,7 +134,7 @@ Partial Class DBSheetCreateForm
         Me.WhereClause.RightToLeft = System.Windows.Forms.RightToLeft.No
         Me.WhereClause.ScrollBars = System.Windows.Forms.ScrollBars.Vertical
         Me.WhereClause.Size = New System.Drawing.Size(250, 164)
-        Me.WhereClause.TabIndex = 17
+        Me.WhereClause.TabIndex = 18
         Me.ToolTipMain.SetToolTip(Me.WhereClause, "Where Parameter Clause: Restrict the data displayed with the Where part of an SQL" &
         " Select statement (enter without ""WHERE"" !).")
         '
@@ -413,6 +414,17 @@ Partial Class DBSheetCreateForm
         Me.DBSheetColsForDatabases.Name = "DBSheetColsContextMenu"
         Me.DBSheetColsForDatabases.Size = New System.Drawing.Size(61, 4)
         '
+        'assignDBSheet
+        '
+        Me.assignDBSheet.AllowDrop = True
+        Me.assignDBSheet.Location = New System.Drawing.Point(696, 338)
+        Me.assignDBSheet.Name = "assignDBSheet"
+        Me.assignDBSheet.Size = New System.Drawing.Size(98, 23)
+        Me.assignDBSheet.TabIndex = 16
+        Me.assignDBSheet.Text = "assign DBSheet"
+        Me.ToolTipMain.SetToolTip(Me.assignDBSheet, "assigns the current definition to active sheet.")
+        Me.assignDBSheet.UseVisualStyleBackColor = False
+        '
         'DBSheetCreateForm
         '
         Me.AllowDrop = True
@@ -420,6 +432,7 @@ Partial Class DBSheetCreateForm
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.BackColor = System.Drawing.SystemColors.Control
         Me.ClientSize = New System.Drawing.Size(1113, 544)
+        Me.Controls.Add(Me.assignDBSheet)
         Me.Controls.Add(Me.CurrentFileLinkLabel)
         Me.Controls.Add(Me.Lenvironment)
         Me.Controls.Add(Me.LQuery)
@@ -473,5 +486,6 @@ Partial Class DBSheetCreateForm
     Friend WithEvents RegenerateAllLookupQueries As Windows.Forms.ToolStripMenuItem
     Public WithEvents Lenvironment As Windows.Forms.Label
     Friend WithEvents DBSheetColsForDatabases As Windows.Forms.ContextMenuStrip
+    Friend WithEvents assignDBSheet As Windows.Forms.Button
 #End Region
 End Class

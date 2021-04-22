@@ -13,7 +13,7 @@ DBAddin.NET is the successor to the VB6 based Office Database Addin.
 * Dependencies/Prerequisites
 	* .NET 4.7 or higher (usually distributed with Windows)
 	* Excel (minimum 2007 because of Ribbons)
-	* ADO 2.5 or higher (usually distributed with Windows, this will be removed with the migration to ADO.NET for DB Modifiers)
+	* ADO 2.5 or higher (usually distributed with Windows)
 
 If any of these are missing, please install them yourself before starting DBAddin.
 
@@ -129,7 +129,7 @@ To see the Log, there is a separate Button in the log group of the DBAddin ribbo
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/ConfigMenu.PNG)  
 
 The DBListFetch's and DBRowFetch's target areas' extent is stored in hidden named ranges assigned both to the calling function cell (DBFsource(Key)) and the target (DBFtarget(Key)). These hidden names are used to keep track of the previous content to prevent overwriting, clearing old values, etc.
-Sometimes during copying and pasting DB Functions, these names can get mixed up, leading to strange results or non-functioning of the "jump" function. In these cases, there is a tool in the DB Addin tools group, which may be used to "purge" these hidden named ranges in case of any strange behaviour due to multiple name assignments to the same area.  
+Sometimes during copying and pasting DB Functions, these names can get mixed up, leading to strange results or non-functioning of the "jump" function. In these cases, there is a tool in the DB Addin tools group, which may be used to "purge" these hidden named ranges in case of any strange behaviour due to multiple name assignments to the same area.  This button is only usable if clicked while pressing the Shift button. If the purge button is clicked while pressing the Ctrl Button, the hidden names used for the DB functions are unhidden and the Name manager is displayed.
 
 The tool "Buttons" is used for switching designmode for DBModifier Buttons (identical to standard Excel button "Design Mode" in Ribbon "Developer tab", Group "Controls")
 

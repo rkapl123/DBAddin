@@ -43,6 +43,8 @@ Additionally, if there are lookups, there is also a hidden sheet containing the 
 
 The header row and the primary key column(s), which are located leftmost, should not be modified, except for new rows where there is no primary key yet.
 
+Non-nullable columns have a darker pattern than nullable columns, this is however only effected once at creation/assigning the DBSheet. If column definitions change, you have to reflect this in the DBSheet Definition and recreate the DBSheet again (see [Finishing DBSheet definition creation](#Finishing-DBSheet-definition-creation)).
+
 Lookup columns are restricted with excel's cell validation, including a dropdown of allowed values.
 
 Data is changed simply by editing existing data in cells, this marks the row(s) to be changed at the rightmost end of the data table as (c)reated, (u)pdated or (i)nserted.
@@ -155,7 +157,7 @@ A DBSheet is created in four steps:
 2.  Then the main query for retrieving the data to be edited is generated with "create DBSheet query". It can also be further customized, if needed.  
     However bear in mind that every change in the columns requires either an overwriting of the customizations and subsequent redoing them (cleaner) or constantly keeping the two synchronized. For customizing the data restriction part (Where Parameter Clause), a separate text input field can be used that allows the query to be regenerated without any intervening. Simply enter the restriction part (the Where clause without the "Where") and create the Query again.
 3.  Then the DBSheet Definition is stored with "save DBsheet def", which allows you to choose a filename (if it hasn't been already saved). The file choice dialog can always be accessed by clicking "save DBSheet def As...". With this, the information currently contained in the DBSheet columns, the DBsheet query and other information is stored in a DBSheet definition file (extension: xml)
-4.  Finally, the DBSheet definition is assigned to an Excel Worksheet with "assign DBsheet definition", creating a CUD enabled DBMapper with the chosen DBSheet definition in the currently active Excel Worksheet at the selected cell. Assignment also works on an already existing DBSheet DBMapper (or it's associated DBSetQuery function cell), the DB Mapper is replaced then.
+4.  Finally, the DBSheet definition is assigned to an Excel Worksheet with the button "assign DBSheet" or the dropdown menu-item "assign DBsheet definition", creating a CUD enabled DBMapper with the active/chosen DBSheet definition in the currently active Excel Worksheet at the selected cell. Assignment also works on an already existing DBSheet DBMapper (or it's associated DBSetQuery function cell), the DB Mapper is replaced then by the new definition.
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBSheetsDefinitionButton.PNG)
 

@@ -124,6 +124,7 @@ Public Class DBSheetCreateForm
         If InStr(dbsheetConnString, dbPwdSpec) > 0 And dbPwdSpec <> "" And existingPwd = "" Then
             resetDBSheetCreateForm()
         Else ' otherwise jump in immediately
+            assignDBSheet.Enabled = False
             ' passwordless connection string, reset password and disable...
             If InStr(dbsheetConnString, dbPwdSpec) = 0 Or dbPwdSpec = "" Then
                 Password.Enabled = False
@@ -156,6 +157,7 @@ Public Class DBSheetCreateForm
         TableEditable(False)
         saveEnabled(False)
         DBSheetColsEditable(False)
+        assignDBSheet.Enabled = False
         Try : dbshcnn.Close() : Catch ex As Exception : End Try
         dbshcnn = Nothing
         ' if called by error in openConnection, reset existing password to allow for refreshing...
@@ -697,6 +699,7 @@ Public Class DBSheetCreateForm
         CurrentFileLinkLabel.Text = ""
         saveEnabled(False)
         DBSheetColsEditable(False)
+        assignDBSheet.Enabled = False
         FormDisabled = False
     End Sub
 
@@ -975,6 +978,14 @@ Public Class DBSheetCreateForm
 #End Region
 
 #Region "DBSheet Definitionfiles Handling"
+
+    ''' <summary>direct assignment from Create Form...</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub assignDBSheet_Click(sender As Object, e As EventArgs) Handles assignDBSheet.Click
+        DBSheetConfig.createDBSheet(currentFilepath)
+    End Sub
+
     ''' <summary>loads the DBSHeet definitions from a file (xml format)</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
@@ -1049,6 +1060,7 @@ Public Class DBSheetCreateForm
                 DBSheetColsEditable(True)
                 saveEnabled(True)
                 CurrentFileLinkLabel.Text = currentFilepath
+                assignDBSheet.Enabled = True
             End If
         Catch ex As System.Exception
             Globals.UserMsg("Exception in loadDefs_Click: " + ex.Message)
@@ -1095,6 +1107,7 @@ Public Class DBSheetCreateForm
             FileSystem.FileOpen(1, currentFilepath, OpenMode.Output)
             FileSystem.PrintLine(1, xmlDbsheetConfig())
             FileSystem.FileClose(1)
+            assignDBSheet.Enabled = True
         Catch ex As System.Exception
             Globals.UserMsg("Exception in saveDefinitionsToFile: " + ex.Message)
         End Try

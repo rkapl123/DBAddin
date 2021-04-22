@@ -188,7 +188,7 @@ done:
                         Dim firstAddress As String = searchCell.Address
                         Do
                             ' get DB function target names from source names
-                            Dim targetName As String = getDBunderlyingNameFromRange(searchCell)
+                            Dim targetName As String = getUnderlyingDBNameFromRange(searchCell)
                             ' in case of commented cells and purged db underlying names, getDBunderlyingNameFromRange doesn't return a name ...
                             If InStr(UCase(targetName), "DBFSOURCE") > 0 Then
                                 targetName = Replace(targetName, "DBFsource", "DBFtarget", 1, , vbTextCompare)

@@ -95,6 +95,13 @@ You can edit the DBModifiers either by Ctrl-Shift clicking the Execute DBModifie
 .. or by Ctrl-Shift clicking the created commandbuttons.  
 .. or by using the Insert/Edit DBFunc/DBModif context menu within a DBMapper or DBAction range.  
 
+## Hidden settings (not available in creation dialogs)
+
+Following Settings of DBModifiers can only be edited in the Edit DBModifier Definitions Window:
+
+*  `confirmText` (all DB Modifiers, String): an alternative text displayed in the confirmation of DB Modifiers.
+*  `avoidFill` (only DBMappers, Boolean): prevent filling of whole table during execution of DB Mappers, this is useful for very large tables that are incrementally filled and would take unnecessary long time to start the DB Mapper. If set to true then each record is searched independently by going to the database. If the records to be stored are not too many, then this is more efficient than loading a very large table.
+
 ## Settings
 
 Following Settings in DBAddin.xll.config or the referred DBAddinCentral.config affect behaviour of DBModifiers:
@@ -117,10 +124,9 @@ Explanation:
 *   `CnnTimeout`: the default timeout for connecting.
 *   `DefaultEnvironment`: default selected environment on startup.
 *   `DontChangeEnvironment`: prevent changing the environment selector (Non-Production environments might confuse some people).
-*   `DBMapperCUDFlagStyle`: Style for setting Excel data tables when having CUD Flags set on DBMappers.
+*   `DBMapperCUDFlagStyle`: Style for setting Excel data tables when having CUD Flags set on DBMappers (to find the correct name for this enter `? ActiveCell.ListObject.TableStyle` in the VBE direct window having selected a cell in the desirably formatted data table).
 *   `DBMapperStandardStyle`: Style for setting Excel data tables when not having CUD Flags set on DBMappers.
 *   `DebugAddin`: activate Info messages to debug addin.
 *   `maxNumberMassChange`: Threshold of Number of changes in CUDFlag DBMappers to issue a warning.
 *   `connIDPrefixDBtype`: Sometimes, legacy DBSheet definitions have a Prefix, this is the prefix to remove.
 *   `DBSheetAutoname`: When inserting DBSheet Definitions, automatically name Worksheet to the table name, if this is set.
-

@@ -960,7 +960,7 @@ cleanup:
         If calledByDBSeq = "" Then dbcnn.Close()
         ' DBSheet surrogate (CUDFlags), ask for refresh after DB Modification was done
         If changesDone Then
-            Dim DBFunctionSrcExtent = getDBunderlyingNameFromRange(TargetRange)
+            Dim DBFunctionSrcExtent = getUnderlyingDBNameFromRange(TargetRange)
             If DBFunctionSrcExtent <> "" Then
                 If CUDFlags Then
                     ' also resetCUDFlags for CUDFlags DBMapper that do not ask before execute and were called by a DBSequence
@@ -1344,7 +1344,7 @@ cleanup:
         If calledByDBSeq = "" Then idbcnn.Close()
         ' DBSheet surrogate (CUDFlags), ask for refresh after DB Modification was done
         If changesDone Then
-            Dim DBFunctionSrcExtent = getDBunderlyingNameFromRange(TargetRange)
+            Dim DBFunctionSrcExtent = getUnderlyingDBNameFromRange(TargetRange)
             If DBFunctionSrcExtent <> "" Then
                 If CUDFlags Then
                     ' also resetCUDFlags for CUDFlags DBMapper that do not ask before execute and were called by a DBSequence
@@ -1967,7 +1967,7 @@ Public Module DBModifs
                         Dim firstFoundAddress As String = ""
                         If Not searchCell Is Nothing Then firstFoundAddress = searchCell.Address
                         While Not searchCell Is Nothing
-                            Dim underlyingName As String = getDBunderlyingNameFromRange(searchCell)
+                            Dim underlyingName As String = getUnderlyingDBNameFromRange(searchCell)
                             ds.Add("Refresh " + theFunc + searchCell.Parent.Name + "!" + searchCell.Address + "):" + underlyingName)
                             searchCell = ws.Cells.FindNext(searchCell)
                             If searchCell.Address = firstFoundAddress Then Exit While
@@ -2135,13 +2135,16 @@ Public Module DBModifs
                                 End If
                             Next
                             If targetRange Is Nothing Then
-                                Dim answer As MsgBoxResult = Globals.QuestionMsg("Required target range named '" + nodeName + "' not existing for this " + DBModiftype + " definition." + vbCrLf + "Should the target range and definition be removed (If you still need the " + DBModiftype + ", (re)create the target range with this name again)?", MsgBoxStyle.Critical, "DBModifier Definitions Error")
-                                'named '" + nodeName + "' (Click on Execute DBModifier dialogBox launcher)!
+                                Dim answer As MsgBoxResult = Globals.QuestionMsg("Required target range named '" + nodeName + "' cannot be found for this " + DBModiftype + " definition." + vbCrLf + "Should the target range name and definition be removed (If you still need the " + DBModiftype + ", (re)create the target range with this name again)?", , "DBModifier Definitions Error", MsgBoxStyle.Critical)
                                 If answer = MsgBoxResult.Ok Then
-                                    ' remove name
-                                    ExcelDnaUtil.Application.ActiveWorkbook.Names(nodeName).Delete()
+                                    ' remove name, in case it still exists
+                                    Try : ExcelDnaUtil.Application.ActiveWorkbook.Names(nodeName).Delete() : Catch ex As Exception : End Try
                                     ' remove node
-                                    If Not IsNothing(CustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:" + DBModiftype + "[@Name='" + Replace(nodeName, DBModiftype, "") + "']")) Then CustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:" + DBModiftype + "[@Name='" + Replace(nodeName, DBModiftype, "") + "']").Delete
+                                    If Not IsNothing(CustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:" + DBModiftype + "[@Name='" + Replace(nodeName, DBModiftype, "") + "']")) Then
+                                        Try : CustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:" + DBModiftype + "[@Name='" + Replace(nodeName, DBModiftype, "") + "']").Delete : Catch ex As Exception
+                                            Globals.UserMsg("Error removing node in DBModif definitions: " + ex.Message)
+                                        End Try
+                                    End If
                                 End If
                                 Continue For
                             End If

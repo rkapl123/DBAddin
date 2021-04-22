@@ -43,7 +43,7 @@ Public Class MenuHandler
                 "</menu>" +
             "</buttonGroup>" +
             "<buttonGroup id='buttonGroup3'>" +
-                "<button id='purgetool' label='Purge' screentip='purges underlying DBtarget/DBsource Names' imageMso='BorderErase' onAction='clickpurgetoolbutton'/>" +
+                "<button id='purgetool' label='Purge' screentip='purges underlying DBtarget/DBsource Names or unhides hidden names' imageMso='BorderErase' onAction='clickpurgetoolbutton' supertip='hold: Ctrl to unhide all DB names and show Name Manager, Shift to purge hidden names'/>" +
                 "<button id='showLog' label='Log' screentip='shows Database Addins Diagnostic Display' getImage='getLogsImage' onAction='clickShowLog'/>" +
                 "<button id='designmode' label='Buttons' onAction='showToggleDesignMode' getImage='getToggleDesignImage' getScreentip='getToggleDesignScreentip'/>" +
             "</buttonGroup>" +

@@ -37,7 +37,7 @@ Public Module DBSheetConfig
 
 
     ''' <summary>create lookups (with dblistfetch) and a dbsetquery that acts as a listobject for a CUD DB Mapper</summary>
-    Public Sub createDBSheet()
+    Public Sub createDBSheet(Optional dbsheetDefPath As String = "")
         ' store currently selected cell, where DBSetQuery for DBMapper will be placed.
         curCell = ExcelDnaUtil.Application.ActiveCell
         existingName = getDBModifNameFromRange(curCell)
@@ -52,17 +52,22 @@ Public Module DBSheetConfig
                 existingName = getDBModifNameFromRange(curCell.Offset(0, 1))
             End If
         End If
-        ' ask for DBsheet definitions stored in xml file
-        Dim openFileDialog1 As OpenFileDialog = New OpenFileDialog With {
-            .InitialDirectory = Globals.fetchSetting("DBSheetDefinitions" + Globals.env, ""),
-            .Filter = "XML files (*.xml)|*.xml",
-            .RestoreDirectory = True
-        }
-        Dim result As DialogResult = openFileDialog1.ShowDialog()
-        If result = Windows.Forms.DialogResult.OK Then
+        Dim openFileDialog1 As OpenFileDialog = Nothing
+        Dim result As DialogResult
+        If dbsheetDefPath = "" Then
+            ' ask for DBsheet definitions stored in xml file
+            openFileDialog1 = New OpenFileDialog With {
+                .InitialDirectory = Globals.fetchSetting("DBSheetDefinitions" + Globals.env, ""),
+                .Filter = "XML files (*.xml)|*.xml",
+                .RestoreDirectory = True
+            }
+            result = openFileDialog1.ShowDialog()
+            If result = Windows.Forms.DialogResult.OK Then dbsheetDefPath = openFileDialog1.FileName
+        End If
+
+        If dbsheetDefPath <> "" Then
             ' Get the DBSheet Definition file name and read into curConfig
-            Dim dsdPath As String = openFileDialog1.FileName
-            curConfig = File.ReadAllText(dsdPath, Text.Encoding.Default)
+            curConfig = File.ReadAllText(dbsheetDefPath, Text.Encoding.Default)
             tblPlaceHolder = Globals.fetchSetting("tblPlaceHolder" + env.ToString(), "!T!")
             specialNonNullableChar = Globals.fetchSetting("specialNonNullableChar" + env.ToString, "*")
             databaseName = Replace(getEntry("connID", curConfig), Globals.fetchSetting("connIDPrefixDBtype", "MSSQL"), "")
@@ -384,6 +389,7 @@ Public Module DBSheetConfig
             If Not lookupWS Is Nothing Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
             Exit Sub
         End Try
+
         ' primary columns count (first <primCols> columns are primary columns)
         Dim primCols As String = getEntry("primcols", curConfig)
         Try
@@ -423,6 +429,26 @@ Public Module DBSheetConfig
 
         'get new definitions into ribbon right now...
         DBModifs.getDBModifDefinitions()
+
+        ' format non-nullable fields specially, this needs to be after DB Mapper has been initialized (theme colours!)
+        Dim existingHeaderColour As Integer = createdListObject.TableStyle.TableStyleElements(Excel.XlTableStyleElementType.xlHeaderRow).Interior.Color
+        ' walk through all fields of DBSheet
+        Dim fieldList() As String = getEntryList("columns", "field", "", curConfig, True)
+        For Each fieldDef As String In fieldList
+            Dim fieldName As String = getEntry("name", fieldDef)
+            ' for non nullable fields ...
+            If Left(fieldName, 1) = specialNonNullableChar Then
+                fieldName = Replace(fieldName, specialNonNullableChar, "")
+                ' with 2 column lookups the LU column is visible (actual resolved field column is hidden)
+                If getEntry("fkey", fieldDef) <> "" Then fieldName += "LU"
+                ' ... fill non-null field headers with darker pattern
+                With createdListObject.ListColumns(fieldName).Range(1, 1).Interior
+                    .Pattern = Excel.XlPattern.xlPatternGray25
+                    .Color = existingHeaderColour
+                End With
+            End If
+        Next
+
         ' extend Datarange for new DBMappers immediately after definition...
         DirectCast(Globals.DBModifDefColl("DBMapper").Item("DBMapper" + tableName), DBMapper).extendDataRange()
         ' switch back to DBAddin tab for easier handling...

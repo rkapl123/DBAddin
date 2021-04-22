@@ -27,9 +27,9 @@ An additional cell context menu is available:
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/ContextMenu.PNG)  
 
 It provides:
-*   a "jump" feature that allows to move the focus from the DB function's cell to the data area and from the data area back to the DB function's cell (useful in complex workbooks with lots of remote (not on same-sheet) target ranges)
-*   refreshing the currently selected DB function or it's data area. If no DB function or a corresponding data area is selected, then all DB Functions are refreshed.
-*   [creation of DB Functions](#create-db-functions)  
+*   A "jump" feature that allows to move the focus from the DB function's cell to the data area and from the data area back to the DB function's cell (useful in complex workbooks with lots of remote (not on same-sheet) target ranges)
+*   Refreshing the currently selected DB function or it's data area. If no DB function or a corresponding data area is selected, then all DB Functions are refreshed.
+*   [Creation of DB Functions](#create-db-functions)  
 
 ### Using the Functions
 
@@ -300,7 +300,7 @@ Below the results for a DB Function created in Cell A1:
 *   DBSetQueryPivot:   `=DBSetQuery("";"";A2)`
 *   DBSetQueryListObject:   `=DBSetQuery("";"";B1)`
 
-DBSetQuery also creates the target Object (a Pivot Table or a ListObject) below resp. to the right of the DB Function, so it is easier to start with. In case you want to insert DB Configurations (see [Cell Config Deployment](#Cell_Config_Deployment)), just place the selection on the inserted DB function cell and select your config, the stored query will replace the empty query in the created DB function.
+DBSetQuery also creates the target Object (a Pivot Table or a ListObject) below resp. to the right of the DB Function, so it is easier to start with. In case you want to insert DB Configurations (see [Cell Config Deployment](#Cell-Config-Deployment)), just place the selection on the inserted DB function cell and select your config, the stored query will replace the empty query in the created DB function.
 
 #### Settings
 

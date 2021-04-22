@@ -607,12 +607,12 @@ Public Module Functions
             Err.Clear()
             srcExtent = "DBFsource" + Replace(Guid.NewGuid().ToString(), "-", "")
             caller.Name = srcExtent
-            caller.Parent.Parent.Names(srcExtent).Visible = False
             If Err.Number <> 0 Then
                 errMsg = "Error in setting srcExtent name: " + Err.Description + " in query: " + Query
                 GoTo err_0
             End If
         End If
+        caller.Parent.Parent.Names(srcExtent).Visible = False
         targetExtent = Replace(srcExtent, "DBFsource", "DBFtarget")
         targetExtentF = Replace(srcExtent, "DBFsource", "DBFtargetF")
 

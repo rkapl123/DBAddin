@@ -187,7 +187,7 @@ Public Module Globals
         Try
             ' look for old query caches and status collections (returned error messages) in active workbook and reset them to get new data
             resetCachesForWorkbook(ExcelDnaUtil.Application.ActiveWorkbook.Name)
-            Dim underlyingName As String = getDBunderlyingNameFromRange(ExcelDnaUtil.Application.ActiveCell)
+            Dim underlyingName As String = getUnderlyingDBNameFromRange(ExcelDnaUtil.Application.ActiveCell)
             ' now for DBListfetch/DBRowfetch resetting, first outside of all db function areas...
             If underlyingName = "" Then
                 refreshDBFunctions(ExcelDnaUtil.Application.ActiveWorkbook)
@@ -249,7 +249,7 @@ Public Module Globals
             UserMsg("Multiple hidden DB Function names in selected cell (making 'jump' ambigous/impossible), please use purge names tool!")
             Exit Sub
         End If
-        Dim underlyingName As String = getDBunderlyingNameFromRange(ExcelDnaUtil.Application.ActiveCell)
+        Dim underlyingName As String = getUnderlyingDBNameFromRange(ExcelDnaUtil.Application.ActiveCell)
         If underlyingName = "" Then Exit Sub
         If Left$(underlyingName, 10) = "DBFtargetF" Then
             underlyingName = Replace(underlyingName, "DBFtargetF", "DBFsource", 1, , vbTextCompare)
@@ -441,11 +441,11 @@ Last:
     ''' <summary>gets underlying DBtarget/DBsource Name from theRange</summary>
     ''' <param name="theRange"></param>
     ''' <returns>the retrieved name</returns>
-    Public Function getDBunderlyingNameFromRange(theRange As Excel.Range) As String
+    Public Function getUnderlyingDBNameFromRange(theRange As Excel.Range) As String
         Dim nm As Excel.Name
         Dim rng, testRng As Excel.Range
 
-        getDBunderlyingNameFromRange = ""
+        getUnderlyingDBNameFromRange = ""
         Try
             For Each nm In theRange.Parent.Parent.Names
                 rng = Nothing
@@ -456,9 +456,9 @@ Last:
                     If Not testRng Is Nothing And (InStr(nm.Name, "DBFtarget") > 0 Or InStr(nm.Name, "DBFsource") > 0) Then
                         Dim WbkSepPos As Integer = InStr(nm.Name, "!")
                         If WbkSepPos > 1 Then
-                            getDBunderlyingNameFromRange = Mid(nm.Name, WbkSepPos + 1)
+                            getUnderlyingDBNameFromRange = Mid(nm.Name, WbkSepPos + 1)
                         Else
-                            getDBunderlyingNameFromRange = nm.Name
+                            getUnderlyingDBNameFromRange = nm.Name
                         End If
                         Exit Function
                     End If
@@ -545,10 +545,9 @@ Last:
                             ' remove query cache to force refetching
                             queryCache.Remove(callID)
                             ' trigger recalculation by changing formula of DB Function
-                            underlyingName = getDBunderlyingNameFromRange(searchCells)
-                            ExcelDnaUtil.Application.Range(underlyingName).Formula += " "
+                            searchCells.Formula += " "
                         Catch ex As Exception
-                            LogWarn("Exception when setting Formula or getting callID (" + callID + ") of DB Function " + theFunc + ") in searchCells (" + searchCells.Address + ") with underlyingName " + underlyingName + ": " + ex.Message)
+                            LogWarn("Exception when setting Formula or getting callID (" + callID + ") of DB Function " + theFunc + ") in searchCells (" + searchCells.Address + "): " + ex.Message)
                         End Try
                         searchCells = ws.Cells.FindNext(searchCells)
                         If searchCells.Address = firstFoundAddress Then Exit While
@@ -674,36 +673,47 @@ Last:
         DBModifs.preventChangeWhileFetching = False
     End Sub
 
-    ''' <summary>maintenance procedure to purge names used for dbfunctions from workbook</summary>
+    ''' <summary>maintenance procedure to purge names used for dbfunctions from workbook, or unhide DB names</summary>
     Public Sub purgeNames()
-        Dim resultingPurges As String = ""
-        Dim retval As MsgBoxResult = QuestionMsg("Should ExternalData names (from Queries) also be purged?", MsgBoxStyle.YesNoCancel, "purge Names")
-        If retval = vbCancel Then Exit Sub
-        Dim calcMode = ExcelDnaUtil.Application.Calculation
-        ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual
-        Try
+        ' with Ctrl unhide all DB names and show Name Manager...
+        If My.Computer.Keyboard.CtrlKeyDown Then
+            Dim retval As MsgBoxResult = QuestionMsg("Unhiding all hidden DB function names, continue (refreshing will hide them again)?", MsgBoxStyle.OkCancel, "Unhide names")
+            If retval = vbCancel Then Exit Sub
             For Each DBname As Excel.Name In ExcelDnaUtil.Application.ActiveWorkbook.Names
-                If Not DBname.Visible Then ' only hidden names...
-                    If (DBname.Name Like "*ExterneDaten*" Or DBname.Name Like "*ExternalData*") And retval = vbYes Then
-                        resultingPurges += DBname.Name + ", "
-                        DBname.Delete()
-                    ElseIf DBname.Name Like "*DBFtarget*" Then
-                        resultingPurges += DBname.Name + ", "
-                        DBname.Delete()
-                    ElseIf DBname.Name Like "*DBFsource*" Then
-                        resultingPurges += DBname.Name + ", "
-                        DBname.Delete()
-                    End If
-                End If
+                If DBname.Name Like "*DBFtarget*" Or DBname.Name Like "*DBFsource*" Then DBname.Visible = True
             Next
-            If resultingPurges = "" Then
-                UserMsg("nothing purged...", "purge Names", MsgBoxStyle.Exclamation)
-            Else
-                UserMsg("removed " + resultingPurges, "purge Names", MsgBoxStyle.Exclamation)
-            End If
-        Catch ex As Exception
-            UserMsg("Exception: " + ex.Message, "purge Names")
-        End Try
-        ExcelDnaUtil.Application.Calculation = calcMode
+            ExcelDnaUtil.Application.Dialogs(Excel.XlBuiltInDialog.xlDialogNameManager).Show()
+            ' with Shift remove hidden names
+        ElseIf My.Computer.Keyboard.ShiftKeyDown Then
+            Dim resultingPurges As String = ""
+            Dim retval As MsgBoxResult = QuestionMsg("Purging hidden names, should ExternalData names (from Queries) also be purged?", MsgBoxStyle.YesNoCancel, "Purge names")
+            If retval = vbCancel Then Exit Sub
+            Dim calcMode = ExcelDnaUtil.Application.Calculation
+            ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual
+            Try
+                For Each DBname As Excel.Name In ExcelDnaUtil.Application.ActiveWorkbook.Names
+                    If Not DBname.Visible Then ' only hidden names...
+                        If (DBname.Name Like "*ExterneDaten*" Or DBname.Name Like "*ExternalData*") And retval = vbYes Then
+                            resultingPurges += DBname.Name + ", "
+                            DBname.Delete()
+                        ElseIf DBname.Name Like "*DBFtarget*" Then
+                            resultingPurges += DBname.Name + ", "
+                            DBname.Delete()
+                        ElseIf DBname.Name Like "*DBFsource*" Then
+                            resultingPurges += DBname.Name + ", "
+                            DBname.Delete()
+                        End If
+                    End If
+                Next
+                If resultingPurges = "" Then
+                    UserMsg("nothing purged...", "purge Names", MsgBoxStyle.Exclamation)
+                Else
+                    UserMsg("removed " + resultingPurges, "purge Names", MsgBoxStyle.Exclamation)
+                End If
+            Catch ex As Exception
+                UserMsg("Exception: " + ex.Message, "purge Names")
+            End Try
+            ExcelDnaUtil.Application.Calculation = calcMode
+        End If
     End Sub
 End Module
