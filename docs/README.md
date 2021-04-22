@@ -6,7 +6,7 @@ First, DBaddin provides DB Functions (see [DBFuncs Userdoc](DBFuncs.md)), which 
 
 Next, methods for working with database data ([DBModifications](DBModif.md): DBMapper, DBAction and DBSequences) are included. This also includes a row entry oriented way to modify data in so called DBSheets (see [DBSheets](DBSheets.md)).
 
-DBAddin.NET is the successor to the VB6 based Office Database Addin, see also https://rkapl123.github.io/dbaddinslides/ for a quick overview (slideshow).
+DBAddin.NET is the successor to the VB6 based Office Database Addin, see also the [slideshow](https://rkapl123.github.io/dbaddinslides/) for a quick overview.
 
 ### Installation
 
