@@ -412,7 +412,7 @@ Public Module Functions
                 ' this simple address is below being set to caller.Formula
                 If InStr(targetRangeName, theListObject.Name) > 0 Then callerFormula = Replace(callerFormula, targetRangeName, Replace(TargetCell.Cells(1, 1).Address, "$", ""))
                 ' in case list object is sorted externally, give a warning (otherwise this leads to confusion when trying to order in the query)...
-                If theListObject.Sort.SortFields.Count > 0 Then MsgBox("List Object " + theListObject.Name + " set by DBSetQuery in " + callID + " is already sorted by Excel, ordering statements in the query don't have any effect !", MsgBoxStyle.Exclamation)
+                If theListObject.Sort.SortFields.Count > 0 Then UserMsg("List Object " + theListObject.Name + " set by DBSetQuery in " + callID + " is already sorted by Excel, ordering statements in the query don't have any effect !", MsgBoxStyle.Exclamation)
                 ' in case of CUDFlags, reset them now (before resizing)...
                 Dim dbMapperRangeName As String = getDBModifNameFromRange(TargetCell)
                 If Left(dbMapperRangeName, 8) = "DBMapper" Then

@@ -44,6 +44,7 @@ Partial Class DBSheetCreateForm
         Me.Password = New System.Windows.Forms.TextBox()
         Me.Database = New System.Windows.Forms.ComboBox()
         Me.DBSheetCols = New System.Windows.Forms.DataGridView()
+        Me.assignDBSheet = New System.Windows.Forms.Button()
         Me.LWhereParamClause = New System.Windows.Forms.Label()
         Me.LTable = New System.Windows.Forms.Label()
         Me.DBSheetColsMoveMenu = New System.Windows.Forms.ContextMenuStrip(Me.components)
@@ -60,7 +61,6 @@ Partial Class DBSheetCreateForm
         Me.CurrentFileLinkLabel = New System.Windows.Forms.LinkLabel()
         Me.Lenvironment = New System.Windows.Forms.Label()
         Me.DBSheetColsForDatabases = New System.Windows.Forms.ContextMenuStrip(Me.components)
-        Me.assignDBSheet = New System.Windows.Forms.Button()
         CType(Me.DBSheetCols, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.DBSheetColsMoveMenu.SuspendLayout()
         Me.DBSheetColsLookupMenu.SuspendLayout()
@@ -270,6 +270,18 @@ Partial Class DBSheetCreateForm
         Me.ToolTipMain.SetToolTip(Me.DBSheetCols, "Select columns (fields) adding possible foreign key lookup information in foreign" &
         " tables")
         '
+        'assignDBSheet
+        '
+        Me.assignDBSheet.AllowDrop = True
+        Me.assignDBSheet.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
+        Me.assignDBSheet.Location = New System.Drawing.Point(696, 338)
+        Me.assignDBSheet.Name = "assignDBSheet"
+        Me.assignDBSheet.Size = New System.Drawing.Size(98, 23)
+        Me.assignDBSheet.TabIndex = 16
+        Me.assignDBSheet.Text = "assign DBSheet"
+        Me.ToolTipMain.SetToolTip(Me.assignDBSheet, "assigns the current definition to active sheet.")
+        Me.assignDBSheet.UseVisualStyleBackColor = False
+        '
         'LWhereParamClause
         '
         Me.LWhereParamClause.AllowDrop = True
@@ -413,17 +425,6 @@ Partial Class DBSheetCreateForm
         '
         Me.DBSheetColsForDatabases.Name = "DBSheetColsContextMenu"
         Me.DBSheetColsForDatabases.Size = New System.Drawing.Size(61, 4)
-        '
-        'assignDBSheet
-        '
-        Me.assignDBSheet.AllowDrop = True
-        Me.assignDBSheet.Location = New System.Drawing.Point(696, 338)
-        Me.assignDBSheet.Name = "assignDBSheet"
-        Me.assignDBSheet.Size = New System.Drawing.Size(98, 23)
-        Me.assignDBSheet.TabIndex = 16
-        Me.assignDBSheet.Text = "assign DBSheet"
-        Me.ToolTipMain.SetToolTip(Me.assignDBSheet, "assigns the current definition to active sheet.")
-        Me.assignDBSheet.UseVisualStyleBackColor = False
         '
         'DBSheetCreateForm
         '

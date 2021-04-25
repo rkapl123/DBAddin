@@ -312,7 +312,7 @@ Public Module ConfigFiles
             ' avoid exception in ribbon...
             ConfigMenuXML = currentBar.ToString()
             If ConfigMenuXML.Length > maxSizeRibbonMenu Then
-                MsgBox("Too many entries in " + ConfigStoreFolder + ", can't display them in a ribbon menu ..")
+                UserMsg("Too many entries in " + ConfigStoreFolder + ", can't display them in a ribbon menu ..")
                 ConfigMenuXML = "<menu xmlns='" + xnspace.ToString() + "'><button id='refreshDBConfig' label='refresh DBConfig Tree' imageMso='Refresh' onAction='refreshDBConfigTree'/></menu>"
             End If
         End If

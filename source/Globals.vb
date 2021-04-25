@@ -108,7 +108,7 @@ Public Module Globals
                     Trace.TraceWarning("{0}: {1}", caller, Message)
                     WarningIssued = True
                     ' at Addin Start ribbon has not been loaded so avoid call to it here..
-                    If Not theRibbon Is Nothing Then theRibbon.InvalidateControl("showLog")
+                    If theRibbon IsNot Nothing Then theRibbon.InvalidateControl("showLog")
                 Case EventLogEntryType.Error
                     Trace.TraceError("{0}: {1}", caller, Message)
             End Select
@@ -150,8 +150,8 @@ Public Module Globals
         Dim caller As String = theMethod.ReflectedType.FullName + "." + theMethod.Name
         WriteToLog(LogMessage, If(msgboxIcon = MsgBoxStyle.Critical Or msgboxIcon = MsgBoxStyle.Exclamation, EventLogEntryType.Warning, EventLogEntryType.Information), caller) ' to avoid popup of trace log in nonInteractive mode...
         If Not nonInteractive Then
-            theRibbon.ActivateTab("DBaddinTab")
             MsgBox(LogMessage, msgboxIcon + MsgBoxStyle.OkOnly, errTitle)
+            theRibbon.ActivateTab("DBaddinTab")
         End If
     End Sub
 
@@ -165,6 +165,7 @@ Public Module Globals
             If questionType = MsgBoxStyle.YesNoCancel Then Return MsgBoxResult.No
             If questionType = MsgBoxStyle.RetryCancel Then Return MsgBoxResult.Cancel
         End If
+        ' tab is not activated BEFORE Msgbox as Excel first has to get into the interaction thread outside this one..
         theRibbon.ActivateTab("DBaddinTab")
         Return MsgBox(theMessage, msgboxIcon + questionType, questionTitle)
     End Function
@@ -450,10 +451,10 @@ Last:
             For Each nm In theRange.Parent.Parent.Names
                 rng = Nothing
                 Try : rng = nm.RefersToRange : Catch ex As Exception : End Try
-                If Not rng Is Nothing Then
+                If rng IsNot Nothing Then
                     testRng = Nothing
                     Try : testRng = ExcelDnaUtil.Application.Intersect(theRange, rng) : Catch ex As Exception : End Try
-                    If Not testRng Is Nothing And (InStr(nm.Name, "DBFtarget") > 0 Or InStr(nm.Name, "DBFsource") > 0) Then
+                    If testRng IsNot Nothing And (InStr(nm.Name, "DBFtarget") > 0 Or InStr(nm.Name, "DBFsource") > 0) Then
                         Dim WbkSepPos As Integer = InStr(nm.Name, "!")
                         If WbkSepPos > 1 Then
                             getUnderlyingDBNameFromRange = Mid(nm.Name, WbkSepPos + 1)
@@ -482,10 +483,10 @@ Last:
             For Each nm In theRange.Parent.Parent.Names
                 rng = Nothing
                 Try : rng = nm.RefersToRange : Catch ex As Exception : End Try
-                If Not rng Is Nothing And Not (nm.Name Like "*ExterneDaten*" Or nm.Name Like "*_FilterDatabase") Then
+                If rng IsNot Nothing And Not (nm.Name Like "*ExterneDaten*" Or nm.Name Like "*_FilterDatabase") Then
                     testRng = Nothing
                     Try : testRng = ExcelDnaUtil.Application.Intersect(theRange, rng) : Catch ex As Exception : End Try
-                    If Not testRng Is Nothing And (InStr(1, nm.Name, "DBFtarget") >= 1 Or InStr(1, nm.Name, "DBFsource") >= 1) Then
+                    If testRng IsNot Nothing And (InStr(1, nm.Name, "DBFtarget") >= 1 Or InStr(1, nm.Name, "DBFsource") >= 1) Then
                         foundNames += 1
                     End If
                 End If
@@ -532,8 +533,8 @@ Last:
                 For Each theFunc In {"DBListFetch(", "DBRowFetch(", "DBSetQuery("}
                     searchCells = ws.Cells.Find(What:=theFunc, After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
                     Dim firstFoundAddress As String = ""
-                    If Not searchCells Is Nothing Then firstFoundAddress = searchCells.Address
-                    While Not searchCells Is Nothing
+                    If searchCells IsNot Nothing Then firstFoundAddress = searchCells.Address
+                    While searchCells IsNot Nothing
                         If ws.ProtectContents Then
                             UserMsg("Worksheet " + ws.Name + " is content protected, can't refresh DB Functions !")
                             Continue For
@@ -571,7 +572,7 @@ Last:
     Public Sub refreshDBFuncLater()
         Dim previouslySaved As Boolean
         Try
-            If Not ExcelDnaUtil.Application.ActiveWorkbook Is Nothing Then
+            If ExcelDnaUtil.Application.ActiveWorkbook IsNot Nothing Then
                 previouslySaved = ExcelDnaUtil.Application.ActiveWorkbook.Saved
                 LogInfo("clearing DBfunction targets: refreshDBFunctions after clearing")
                 refreshDBFunctions(ExcelDnaUtil.Application.ActiveWorkbook, True)

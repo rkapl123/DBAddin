@@ -105,7 +105,7 @@ Public Module DBSheetConfig
             lookupsList = getEntryList("columns", "field", "lookup", curConfig, True)
             Dim selectPart As String = Left(queryStr, InStr(queryStr, "FROM ") - 1)
             Dim selectPartModif As String = selectPart ' select part with appending LU to lookups
-            If Not lookupsList Is Nothing Then
+            If lookupsList IsNot Nothing Then
                 ' get existing sheet DBSheetLookups, if it doesn't exist create it anew
                 If Not Globals.existsSheet("DBSheetLookups") Then
                     lookupWS = ExcelDnaUtil.Application.ActiveWorkbook.Worksheets.Add()
@@ -271,7 +271,7 @@ Public Module DBSheetConfig
         Dim queryErrorPos As Integer = InStr(curCell.Value.ToString(), "Error")
         If queryErrorPos > 0 Then
             Globals.UserMsg("DBSheet Query had an error:" + vbCrLf + Mid(curCell.Value.ToString(), queryErrorPos + Len("Error in query table refresh: ")), "DBSheet Creation Error")
-            If Not lookupWS Is Nothing Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
+            If lookupWS IsNot Nothing Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
             Exit Sub
         End If
         ' name the worksheet to tableName, if defined in the settings
@@ -286,7 +286,7 @@ Public Module DBSheetConfig
         If curCell.Column = 1 And curCell.Row = 1 Then curCell.EntireColumn.ColumnWidth = 0.4
         Dim ignoreColumns As String = ""
         Try
-            If Not lookupsList Is Nothing Then
+            If lookupsList IsNot Nothing Then
                 For Each LookupDef As String In lookupsList
                     Dim lookupName As String = Replace(getEntry("name", LookupDef, 1), specialNonNullableChar, "")
                     Dim lookupRangeName As String = tableName + lookupName + "Lookup"
@@ -363,7 +363,7 @@ Public Module DBSheetConfig
             End If
         Catch ex As Exception
             Globals.UserMsg("Error in DBSheet Creation: " + ex.Message, "DBSheet Creation Error")
-            If Not lookupWS Is Nothing Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
+            If lookupWS IsNot Nothing Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
             Exit Sub
         End Try
         ' remove autofilter...
@@ -379,14 +379,14 @@ Public Module DBSheetConfig
         End Try
         If alreadyExists Then
             Globals.UserMsg("Error adding DBModifier 'DBMapper" + tableName + "', Name already exists in Workbook!", "DBSheet Creation Error")
-            If Not lookupWS Is Nothing Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
+            If lookupWS IsNot Nothing Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
             Exit Sub
         End If
         Try
             NamesList.Add(Name:="DBMapper" + tableName, RefersTo:=createdListObject.Range) ' curCell.Offset(0, 1) DBMapper starting cell (one cell to the right of active cell)
         Catch ex As Exception
             Globals.UserMsg("Error when assigning name 'DBMapper" + tableName + "' to DBSetQuery Target: " + ex.Message, "DBSheet Creation Error")
-            If Not lookupWS Is Nothing Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
+            If lookupWS IsNot Nothing Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
             Exit Sub
         End Try
 
@@ -401,7 +401,7 @@ Public Module DBSheetConfig
             End If
         Catch ex As Exception
             Globals.UserMsg("Exception: " + ex.Message, "DBSheet Creation Error")
-            If Not lookupWS Is Nothing Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
+            If lookupWS IsNot Nothing Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
             Exit Sub
         End Try
 

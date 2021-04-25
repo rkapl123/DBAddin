@@ -411,32 +411,34 @@ Public Class DBSheetCreateForm
     Private selRowIndex As Integer
     Private selColIndex As Integer
 
-    ''' <summary>catch key presses: Shift F10 or menu key to get the context menu, Ctrl-C/Ctrl-V for copy/pasting foreign lookup info</summary>
+    ''' <summary>catch key presses: Shift F10 or menu key to get the context menu, Ctrl-C/Ctrl-V for copy/pasting foreign lookup info, DEL for clearing cells</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub DBSheetCols_KeyDown(sender As Object, e As KeyEventArgs) Handles DBSheetCols.KeyDown
         selRowIndex = DBSheetCols.CurrentCell.RowIndex
         selColIndex = DBSheetCols.CurrentCell.ColumnIndex
-        ' menu key
+        ' menu via menu key 
         If e.KeyCode = Keys.Apps Or (e.KeyCode = Keys.F10 And e.Modifiers = Keys.Shift) Or (e.KeyCode = Keys.Down And e.Modifiers = Keys.Alt) Then
+            ' only for whole rows ...
             If DBSheetCols.SelectedRows.Count > 0 Then
                 ' whole row selection -> move up/down menu...
                 selColIndex = -1
                 displayContextMenus()
                 ' need show here as the context menu is not displayed otherwise...
                 DBSheetCols.ContextMenuStrip.Show()
+                ' ... or lookup column
             ElseIf selColIndex = 8 And selRowIndex >= 0 Then
                 displayContextMenus()
                 DBSheetCols.ContextMenuStrip.Show()
             End If
             ' set to handled to avoid moving down cell selection (Keys.Down)
             e.Handled = True
-            ' Ctrl-C only when rows are available top copy
+            ' Ctrl-C only when rows are available to copy
         ElseIf e.KeyCode = Keys.C And e.Modifiers = Keys.Control And DBSheetCols.DataSource.Rows.Count > 0 Then
             clipboardDataRow = DBSheetCols.DataSource.GetNewRow()
             clipboardDataRow.ItemArray = DBSheetCols.DataSource.Rows(selRowIndex).ItemArray.Clone()
-            ' Ctrl-V only when clipboardDataRow has been copied available
-        ElseIf e.KeyCode = Keys.V And e.Modifiers = Keys.Control And Not clipboardDataRow Is Nothing Then
+            ' Ctrl-V only when clipboardDataRow has been copied
+        ElseIf e.KeyCode = Keys.V And e.Modifiers = Keys.Control And clipboardDataRow IsNot Nothing Then
             FormDisabled = True
             DBSheetCols.Rows(selRowIndex).Cells("ftable").Value = clipboardDataRow.ftable
             DBSheetCols.Rows(selRowIndex).Cells("fkey").Value = clipboardDataRow.fkey
@@ -454,6 +456,12 @@ Public Class DBSheetCreateForm
                 DirectCast(DBSheetCols.Rows(selRowIndex).Cells("flookup"), DataGridViewComboBoxCell).DataSource = forColsList
             End If
             FormDisabled = False
+            ' Delete key sets column values to empty
+        ElseIf e.KeyCode = Keys.Delete Then
+            If selRowIndex >= 0 Then
+                ' avoid setting tickboxes and type column to empty...
+                If Not (selColIndex >= 4 And selColIndex <= 6) Then DBSheetCols.Rows(selRowIndex).Cells().Item(selColIndex).Value = ""
+            End If
         End If
     End Sub
 
@@ -506,7 +514,7 @@ Public Class DBSheetCreateForm
                 Exit Sub
             End If
             If DBSheetCols.Rows(selRowIndex - 1).Cells("primkey").Value And Not DBSheetCols.Rows(selRowIndex).Cells("primkey").Value Then
-                Globals.UserMsg("All primary keys have to be first and there is a primary key column that would be shifted below this non-primary one !", "DBSheet Definition Error")
+                Globals.UserMsg("All primary keys have to be first and there is a primary key column that would be shifted below this NON-primary one !", "DBSheet Definition Error")
                 Exit Sub
             End If
             Dim rw As DBSheetDefRow = DBSheetCols.DataSource.GetNewRow()
@@ -533,7 +541,7 @@ Public Class DBSheetCreateForm
             ' avoid moving down of last row, DBSeqenceDataGrid.Rows.Count is 1 more than the actual inserted rows because of the "new" row, selIndex is 0 based
             If selRowIndex = DBSheetCols.Rows.Count - 2 Then Exit Sub
             If Not DBSheetCols.Rows(selRowIndex + 1).Cells("primkey").Value And DBSheetCols.Rows(selRowIndex).Cells("primkey").Value Then
-                Globals.UserMsg("All primary keys have to be first and there is a non primary key column that would be shifted above this primary one !", "DBSheet Definition Error")
+                Globals.UserMsg("All primary keys have to be first and there is a NON-primary key column that would be shifted above this primary one !", "DBSheet Definition Error")
                 Exit Sub
             End If
             Dim rw As DBSheetDefRow = DBSheetCols.DataSource.GetNewRow()
@@ -582,14 +590,19 @@ Public Class DBSheetCreateForm
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub RegenerateAllLookupQueries_Click(sender As Object, e As EventArgs) Handles RegenerateAllLookupQueries.Click
-        Dim retval As MsgBoxResult = QuestionMsg("regenerate foreign lookups completely, overwriting all customizations there: yes" + vbCrLf + "generate only new: no", MsgBoxStyle.YesNoCancel, "DBSheet Definition")
+        Dim retval As MsgBoxResult = QuestionMsg("regenerate foreign lookups completely, overwriting all customizations there: yes" + vbCrLf + "generate only new for empty lookups: no", MsgBoxStyle.YesNoCancel, "DBSheet Definition")
         If retval = MsgBoxResult.Cancel Then
             FormDisabled = False
             Exit Sub
         End If
         For i As Integer = 0 To DBSheetCols.Rows.Count - 2
             'only overwrite if forced regenerate or empty restriction def...
-            If DBSheetCols.Rows(i).Cells("ftable").Value.ToString() <> "" And (retval = MsgBoxResult.Yes Or DBSheetCols.Rows(i).Cells("lookup").Value.ToString() = "") Then regenLookupForRow(i)
+            If DBSheetCols.Rows(i).Cells("ftable").Value.ToString() <> "" Then
+                If (retval = MsgBoxResult.Yes Or DBSheetCols.Rows(i).Cells("lookup").Value.ToString() = "") Then regenLookupForRow(i)
+                ' remove lookup if forced regenerate and empty ftable...
+            Else
+                If retval = MsgBoxResult.Yes Then DBSheetCols.Rows(i).Cells("lookup").Value = ""
+            End If
         Next
         DBSheetCols.AutoResizeColumns()
     End Sub
@@ -1027,8 +1040,8 @@ Public Class DBSheetCreateForm
                     newRow.ftable = DBSheetConfig.getEntry("ftable", DBSheetColumnDef)
                     newRow.fkey = DBSheetConfig.getEntry("fkey", DBSheetColumnDef)
                     newRow.flookup = DBSheetConfig.getEntry("flookup", DBSheetColumnDef)
-                    newRow.outer = If(DBSheetConfig.getEntry("outer", DBSheetColumnDef) <> "", True, False)
-                    newRow.primkey = If(DBSheetConfig.getEntry("primkey", DBSheetColumnDef) <> "", True, False)
+                    newRow.outer = DBSheetConfig.getEntry("outer", DBSheetColumnDef) <> ""
+                    newRow.primkey = DBSheetConfig.getEntry("primkey", DBSheetColumnDef) <> ""
                     If Not TableDataTypes.ContainsKey(newRow.name) Then
                         Globals.UserMsg("couldn't find type information for field " + newRow.name + " in database (maybe wrong non-nullable information for field in definition) !", "DBSheet Definition Error")
                         Exit Sub

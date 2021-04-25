@@ -5,8 +5,6 @@ Imports System.Windows.Forms
 Imports System.Collections.Generic
 Imports Microsoft.Office.Core
 Imports System.Data
-Imports System
-Imports System.Collections
 Imports System.Text
 Imports System.Linq
 
@@ -257,7 +255,7 @@ Public MustInherit Class DBModif
         Dim formulaRange As Excel.Range = Nothing
         ' formulaRange might not exist
         Try : formulaRange = ExcelDnaUtil.Application.Range(targetExtentF) : Catch ex As Exception : End Try
-        If Not formulaRange Is Nothing AndAlso formulaRange.Parent.ProtectContents Then
+        If formulaRange IsNot Nothing AndAlso formulaRange.Parent.ProtectContents Then
             Globals.UserMsg("Worksheet " + formulaRange.Parent.Name + " is content protected, can't refresh DB Function !")
             Exit Function
         End If
@@ -512,7 +510,7 @@ Public Class DBMapper : Inherits DBModif
             CUDFlags = Convert.ToBoolean(getParamFromXML(definitionXML, "CUDFlags", "Boolean"))
             AutoIncFlag = Convert.ToBoolean(getParamFromXML(definitionXML, "AutoIncFlag", "Boolean"))
             avoidFill = Convert.ToBoolean(getParamFromXML(definitionXML, "avoidFill", "Boolean"))
-            If Not TargetRange.ListObject Is Nothing Then
+            If TargetRange.ListObject IsNot Nothing Then
                 ' special grey table style for CUDFlags DBMapper
                 If CUDFlags Then
                     TargetRange.ListObject.TableStyle = fetchSetting("DBMapperCUDFlagStyle", "TableStyleLight11")
@@ -590,7 +588,7 @@ Public Class DBMapper : Inherits DBModif
                         ' check without newly inserted/updated cells (copy paste) 
                         Dim possibleIntersection As Excel.Range = ExcelDnaUtil.Application.Intersect(containedCell, changedRange)
                         ' check if whole row is empty (except for the changedRange), formulas do not count as filled (automatically filled for lookups or other things)..
-                        If Not containedCell.Value Is Nothing AndAlso possibleIntersection Is Nothing AndAlso Left(containedCell.Formula, 1) <> "=" Then
+                        If containedCell.Value IsNot Nothing AndAlso possibleIntersection Is Nothing AndAlso Left(containedCell.Formula, 1) <> "=" Then
                             RowContainsData = True
                             Exit For
                         End If
@@ -984,6 +982,10 @@ cleanup:
         End If
     End Sub
 
+    ''' <summary>execute the modifications for the DB Mapper by storing the data modifications in the DBMapper range to the database</summary>
+    ''' <param name="WbIsSaving">flag for being called during Workbook saving</param>
+    ''' <param name="calledByDBSeq">the name of the DB Sequence that called the DBMapper</param>
+    ''' <param name="TransactionOpen">flag whether a transaction is open during the DB Sequence</param>
     Private Sub doDBModif2(Optional WbIsSaving As Boolean = False, Optional calledByDBSeq As String = "", Optional TransactionOpen As Boolean = False)
         changesDone = False
         ' ask for saving only if a) is not done on WorkbookSave b) is set to ask and c) is not called by a DBSequence (asks already for saving) and d) is in interactive mode
@@ -1965,8 +1967,8 @@ Public Module DBModifs
                     For Each theFunc As String In {"DBListFetch(", "DBSetQuery(", "DBRowFetch("}
                         searchCell = ws.Cells.Find(What:=theFunc, After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
                         Dim firstFoundAddress As String = ""
-                        If Not searchCell Is Nothing Then firstFoundAddress = searchCell.Address
-                        While Not searchCell Is Nothing
+                        If searchCell IsNot Nothing Then firstFoundAddress = searchCell.Address
+                        While searchCell IsNot Nothing
                             Dim underlyingName As String = getUnderlyingDBNameFromRange(searchCell)
                             ds.Add("Refresh " + theFunc + searchCell.Parent.Name + "!" + searchCell.Address + "):" + underlyingName)
                             searchCell = ws.Cells.FindNext(searchCell)
@@ -2001,7 +2003,7 @@ Public Module DBModifs
             End If
 
             ' delegate filling of dialog fields to created DBModif object
-            If Not existingDBModif Is Nothing Then existingDBModif.setDBModifCreateFields(theDBModifCreateDlg)
+            If existingDBModif IsNot Nothing Then existingDBModif.setDBModifCreateFields(theDBModifCreateDlg)
 
             ' display dialog for parameters
             If theDBModifCreateDlg.ShowDialog() = DialogResult.Cancel Then
@@ -2080,7 +2082,7 @@ Public Module DBModifs
                 End If
             End If
             ' any features added directly to DBModif definition in XML need to be re-added now
-            If Not existingDBModif Is Nothing Then existingDBModif.addHiddenFeatureDefs(dbModifNode)
+            If existingDBModif IsNot Nothing Then existingDBModif.addHiddenFeatureDefs(dbModifNode)
             ' refresh mapper definitions to reflect changes immediately...
             getDBModifDefinitions()
             ' extend Datarange for new DBMappers immediately after definition...
@@ -2163,7 +2165,7 @@ Public Module DBModifs
                         End If
                         ' ... and add it to the collection DBModifDefColl
                         Dim defColl As Dictionary(Of String, DBModif) ' definition lookup collection for DBModifiername -> object
-                        If Not newDBModif Is Nothing Then
+                        If newDBModif IsNot Nothing Then
                             If Not DBModifDefColl.ContainsKey(DBModiftype) Then
                                 ' add to new DBModiftype "menu"
                                 defColl = New Dictionary(Of String, DBModif) From {
@@ -2207,11 +2209,11 @@ EndOuterLoop:
                 rng = Nothing
                 ' test whether range referring to that name (if it is a real range)...
                 Try : rng = nm.RefersToRange : Catch ex As Exception : End Try
-                If Not rng Is Nothing Then
+                If rng IsNot Nothing Then
                     testRng = Nothing
                     ' ...intersects with the passed range
                     Try : testRng = ExcelDnaUtil.Application.Intersect(theRange, rng) : Catch ex As Exception : End Try
-                    If Not testRng Is Nothing And (InStr(1, nm.Name, "DBMapper") >= 1 Or InStr(1, nm.Name, "DBAction") >= 1) Then
+                    If testRng IsNot Nothing And (InStr(1, nm.Name, "DBMapper") >= 1 Or InStr(1, nm.Name, "DBAction") >= 1) Then
                         ' and pass back the name if it does and is a DBMapper or a DBAction
                         getDBModifNameFromRange = nm.Name
                         Exit Function
@@ -2396,10 +2398,11 @@ Public Class CustomSqlCommandBuilder
     End Function
 
     Private Function GetTextCommand(text As String) As SqlClient.SqlCommand
-        Dim command As SqlClient.SqlCommand = New SqlClient.SqlCommand()
-        command.CommandType = CommandType.Text
-        command.CommandText = text
-        command.Connection = connection
+        Dim command As SqlClient.SqlCommand = New SqlClient.SqlCommand With {
+            .CommandType = CommandType.Text,
+            .CommandText = text,
+            .Connection = connection
+        }
         Return command
     End Function
 
@@ -2496,10 +2499,11 @@ Public Class CustomOdbcCommandBuilder
     End Function
 
     Private Function GetTextCommand(text As String) As Odbc.OdbcCommand
-        Dim command As Odbc.OdbcCommand = New Odbc.OdbcCommand()
-        command.CommandType = CommandType.Text
-        command.CommandText = text
-        command.Connection = connection
+        Dim command As Odbc.OdbcCommand = New Odbc.OdbcCommand With {
+            .CommandType = CommandType.Text,
+            .CommandText = text,
+            .Connection = connection
+        }
         Return command
     End Function
 

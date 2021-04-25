@@ -218,12 +218,12 @@ done:
                                 End If
                             End If
                             searchCell = ws.Cells.FindNext(searchCell)
-                        Loop While Not searchCell Is Nothing AndAlso searchCell.Address <> firstAddress
+                        Loop While searchCell IsNot Nothing AndAlso searchCell.Address <> firstAddress
                     End If
                 Next
             Next
             ' always reset the cell find dialog....
-            If Not ws Is Nothing Then
+            If ws IsNot Nothing Then
                 searchCell = ws.Cells.Find(What:="", After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
             End If
 
@@ -401,8 +401,8 @@ done:
         For Each builtin As String In appsCommandBars
             Dim srchInsertButton = ExcelDnaUtil.Application.CommandBars(builtin).FindControl(Tag:="insTag")
             Dim srchDeleteButton = ExcelDnaUtil.Application.CommandBars(builtin).FindControl(Tag:="delTag")
-            If Not srchInsertButton Is Nothing Then srchInsertButton.Delete()
-            If Not srchDeleteButton Is Nothing Then srchDeleteButton.Delete()
+            If srchInsertButton IsNot Nothing Then srchInsertButton.Delete()
+            If srchDeleteButton IsNot Nothing Then srchDeleteButton.Delete()
         Next
         ' add context menus
         ' for whole sheet don't display DBSheet context menus !!
