@@ -50,14 +50,12 @@ Public MustInherit Class DBModif
         ' when saving always ask for DBModifiers that are to be executed, otherwise ask only if required....
         If (WbIsSaving And execOnSave) Or (Not WbIsSaving And askBeforeExecute) Then
             Dim executeTitle As String = "Execute " + TypeName(Me) + IIf(WbIsSaving, " on save", "")
+            ' special confirm text or standard text?
+            Dim executeMessage As String = IIf(confirmText <> "", confirmText, "Really execute " + dbmodifName + "?")
+            ' for confirmation on Workbook saving provide cancel possibility as shortcut.
             Dim setQuestionType As MsgBoxStyle = IIf(WbIsSaving, MsgBoxStyle.YesNoCancel, MsgBoxStyle.YesNo)
-            If askBeforeExecute Then
-                If confirmText <> "" Then
-                    Return QuestionMsg(theMessage:=confirmText, questionType:=setQuestionType, questionTitle:=executeTitle)
-                Else
-                    Return QuestionMsg(theMessage:="Really execute " + dbmodifName + "?", questionType:=setQuestionType, questionTitle:=executeTitle)
-                End If
-            End If
+            ' only ask if set to ask...
+            If askBeforeExecute Then Return QuestionMsg(theMessage:=executeMessage, questionType:=setQuestionType, questionTitle:=executeTitle)
         End If
         Return MsgBoxResult.No
     End Function
@@ -1101,7 +1099,7 @@ cleanup:
             Try
                 da.Fill(ds.Tables(0))
             Catch ex As Exception
-                Globals.UserMsg("Error in retrieving Data for " + tableName + ": " + ex.Message, "DBMapper Error")
+                Globals.UserMsg("Error in retrieving Data for " + tableName + ": " + ex.Message + vbCrLf + "Following primary keys are defined (check whether enough): " + String.Join(Of DataColumn)("|", primKeyColumns), "DBMapper Error")
             End Try
         End If
         ExcelDnaUtil.Application.StatusBar = "setting the CommandBuilders"
@@ -1155,11 +1153,7 @@ cleanup:
                     End If
                     ' special treatment for date(time) fields, try to convert from double (OLE Automation standard: julian datetime values) if not properly formatted
                     If Left(ds.Tables(0).Columns(primKey).DataType.Name, 4) = "Date" Then
-                        Try
-                            If Not TypeName(primKeyValue) = "Date" Then primKeyValue = Date.FromOADate(primKeyValue)
-                        Catch ex As Exception
-                            notifyUserOfDataError("Error in converting primary key date value: " + ex.Message + " on " + TargetRange.Parent.Name + ", row " + rowNum.ToString() + ", col " + i.ToString(), rowNum, i)
-                        End Try
+                        If TypeName(primKeyValue) = "Double" Then primKeyValue = Date.FromOADate(primKeyValue)
                     End If
                     ' empty primary keys are valid if primary key has autoincrement property defined, so pass DBNull Value here to avoid exception in finding record below (record is not found of course)...
                     primKeyValues(i - 1) = IIf(IsNothing(primKeyValue) OrElse primKeyValue.ToString() = "", DBNull.Value, primKeyValue)
@@ -1223,11 +1217,7 @@ cleanup:
                             End If
                             ' special treatment for date(time) fields, try to convert from double (OLE Automation standard: julian datetime values) if not properly formatted
                             If Left(ds.Tables(0).Columns(primKey).DataType.Name, 4) = "Date" Then
-                                Try
-                                    If Not TypeName(primKeyValue) = "Date" Then primKeyValue = Date.FromOADate(primKeyValue)
-                                Catch ex As Exception
-                                    notifyUserOfDataError("Error in converting primary key date value: " + ex.Message + " on " + TargetRange.Parent.Name + ", row " + rowNum.ToString() + ", col " + i.ToString(), rowNum, i)
-                                End Try
+                                If TypeName(primKeyValue) = "Double" Then primKeyValue = Date.FromOADate(primKeyValue)
                             End If
                             Try
                                 ' skip empty primary field values for autoincrementing identity fields ..
@@ -1264,13 +1254,13 @@ cleanup:
                                     Else
                                         ' special treatment for date(time) fields, try to convert from double (OLE Automation standard: julian datetime values) if not properly formatted
                                         If Left(ds.Tables(0).Columns(fieldname).DataType.Name, 4) = "Date" Then
-                                            Try
-                                                If Not TypeName(fieldval) = "Date" Then fieldval = Date.FromOADate(fieldval)
-                                            Catch ex As Exception
-                                                notifyUserOfDataError("Error in converting date value: " + ex.Message + " on " + TargetRange.Parent.Name + ", row " + rowNum.ToString() + ", col " + colNum.ToString(), rowNum, colNum)
-                                            End Try
+                                            If TypeName(fieldval) = "Double" Then fieldval = Date.FromOADate(fieldval)
                                         End If
-                                        foundRow(fieldname) = IIf(fieldval.ToString().Length = 0, DBNull.Value, fieldval)
+                                        Try
+                                            foundRow(fieldname) = IIf(fieldval.ToString().Length = 0, DBNull.Value, fieldval)
+                                        Catch ex As Exception
+                                            notifyUserOfDataError("Error in assigning date value: " + ex.Message + " on " + TargetRange.Parent.Name + ", row " + rowNum.ToString() + ", col " + colNum.ToString(), rowNum, colNum)
+                                        End Try
                                     End If
                                 End If
                             Catch ex As Exception

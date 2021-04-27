@@ -661,30 +661,34 @@ Public Class DBSheetCreateForm
             DBSheetCols.DataSource = Nothing
             DBSheetCols.Rows.Clear()
             Dim rstSchema As OdbcDataReader
-            Dim selectStmt As String = "SELECT TOP 1 * FROM " + Table.Text
-            Dim sqlCommand As OdbcCommand = New OdbcCommand(selectStmt, dbshcnn)
-            rstSchema = sqlCommand.ExecuteReader()
+            Dim sqlCommand As OdbcCommand = New OdbcCommand() With {
+                .CommandText = "SELECT TOP 1 * FROM " + Table.Text,
+                .CommandType = CommandType.Text,
+                .Connection = dbshcnn
+            }
+            sqlCommand.Prepare()
+            rstSchema = sqlCommand.ExecuteReader(CommandBehavior.KeyInfo)
             Try
                 Dim schemaInfo As DataTable = rstSchema.GetSchemaTable()
                 Dim theDBSheetDefTable = New DBSheetDefTable
                 For Each schemaRow As DataRow In schemaInfo.Rows
-                    Dim appendInfo As String = If(schemaRow("AllowDBNull"), "", specialNonNullableChar)
                     Dim newRow As DBSheetDefRow = theDBSheetDefTable.GetNewRow()
-                    newRow.name = appendInfo + schemaRow("ColumnName")
-                    ' first field is always primary col by default, otherwise us IsKey property:
+                    newRow.name = If(schemaRow("AllowDBNull"), "", specialNonNullableChar) + schemaRow("ColumnName")
+                    ' first field is always primary col by default, otherwise use IsKey property:
                     If firstRow Then
                         newRow.primkey = True
                         firstRow = False
                     Else
                         newRow.primkey = schemaRow("IsKey")
                     End If
+                    ' having the specialNonNullableChar prepended to name is no problem as TableDataTypes respects this already!
                     newRow.type = TableDataTypes(newRow.name)
                     theDBSheetDefTable.Add(newRow)
                 Next
                 DBSheetCols.DataSource = theDBSheetDefTable
                 DBSheetCols.AutoResizeColumns()
             Catch ex As Exception
-                Globals.UserMsg("Could not get schema information for table fields with query: '" + selectStmt + "', error: " + ex.Message, "DBSheet Definition Error")
+                Globals.UserMsg("Could not get schema information for fields of table: '" + Table.Text + "', error: " + ex.Message, "DBSheet Definition Error")
             End Try
             rstSchema.Close()
             FormDisabled = False

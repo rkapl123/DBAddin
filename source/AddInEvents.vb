@@ -91,9 +91,11 @@ Public Class AddInEvents
         Dim askForEveryModifier As Boolean = False
         ' if overriding flag not given and Readonly is NOT recommended on this workbook and workbook IS NOT Readonly, ...
         If Not (Wb.ReadOnlyRecommended And Wb.ReadOnly) And Not doDBMOnSave Then
-            Dim TotalDBModifCount As Integer
+            Dim TotalDBModifCount As Integer = 0
             For Each DBmodifType As String In Globals.DBModifDefColl.Keys
-                TotalDBModifCount += Globals.DBModifDefColl(DBmodifType).Count
+                For Each dbmapdefkey As String In Globals.DBModifDefColl(DBmodifType).Keys
+                    If Globals.DBModifDefColl(DBmodifType).Item(dbmapdefkey).execOnSave Then TotalDBModifCount += 1
+                Next
             Next
             ' ...ask for saving, if this is necessary for any DBmodifier...
             If TotalDBModifCount > 1 Then
@@ -106,12 +108,16 @@ Public Class AddInEvents
                     askForEveryModifier = True
                 End If
             ElseIf TotalDBModifCount = 1 Then
-                ' only one DBModifier, ask only once for saving...
+                ' only one DBModifier needs saving, ask only once for saving...
                 For Each DBmodifType As String In Globals.DBModifDefColl.Keys
                     For Each dbmapdefkey As String In Globals.DBModifDefColl(DBmodifType).Keys
-                        With Globals.DBModifDefColl(DBmodifType).Item(dbmapdefkey)
-                            doDBMOnSave = IIf(.confirmExecution(WbIsSaving:=True) = MsgBoxResult.Yes, True, False)
-                        End With
+                        If Globals.DBModifDefColl(DBmodifType).Item(dbmapdefkey).execOnSave Then
+                            If nonInteractive Then
+                                doDBMOnSave = IIf(Globals.DBModifDefColl(DBmodifType).Item(dbmapdefkey).confirmExecution(WbIsSaving:=True) = MsgBoxResult.Yes, True, False)
+                            Else
+                                doDBMOnSave = True
+                            End If
+                        End If
                     Next
                 Next
             End If
@@ -371,8 +377,8 @@ done:
     ''' <param name="Sh"></param>
     ''' <param name="Target"></param>
     Private Sub Application_SheetChange(Sh As Object, Target As Range) Handles Application.SheetChange
-        ' avoid entering into check or doCUDMarks if not table, DBMapper and prevention while fetching (refresh)
-        If Not IsNothing(Target.ListObject) AndAlso Globals.DBModifDefColl.ContainsKey("DBMapper") AndAlso Not DBModifs.preventChangeWhileFetching Then
+        ' avoid entering into check or doCUDMarks if not table, whole row/column modified, no DBMapper and prevention while fetching (on refresh) being set
+        If Not IsNothing(Target.ListObject) AndAlso Not Target.Columns.Count = Sh.Columns.Count AndAlso Not Target.Rows.Count = Sh.Rows.Count AndAlso Globals.DBModifDefColl.ContainsKey("DBMapper") AndAlso Not DBModifs.preventChangeWhileFetching Then
             Dim targetName As String = DBModifs.getDBModifNameFromRange(Target)
             If Left(targetName, 8) = "DBMapper" Then
                 DirectCast(Globals.DBModifDefColl("DBMapper").Item(targetName), DBMapper).insertCUDMarks(Target)

@@ -161,7 +161,8 @@ Public Module Functions
     <ExcelFunction(Description:="Create an in clause from cell values, strings are created with quotation marks")>
     Public Function DBinClause(<ExcelArgument(AllowReference:=True, Description:="array of values or ranges containing values")> ParamArray inClausePart As Object()) As String
         Dim concatResult As String = DoConcatCellsSep(",", True, False, inClausePart)
-        DBinClause = If(Left(concatResult, 5) = "Error", concatResult, "in (" + concatResult + ")")
+        ' for empty concatenation results, return "in (NULL)" to get a valid SQL String (required for chained queries!)
+        DBinClause = If(Left(concatResult, 5) = "Error", concatResult, If(concatResult = "", "in (NULL)", "in (" + concatResult + ")"))
     End Function
 
     ''' <summary>Create an in clause from cell values, strings are created with quotation marks,
@@ -171,7 +172,8 @@ Public Module Functions
     <ExcelFunction(Description:="Create an in clause from cell values, all arguments are treated as strings (and will be created with quotation marks)")>
     Public Function DBinClauseStr(<ExcelArgument(AllowReference:=True, Description:="array of values or ranges containing values")> ParamArray inClausePart As Object()) As String
         Dim concatResult As String = DoConcatCellsSep(",", True, True, inClausePart)
-        DBinClauseStr = If(Left(concatResult, 5) = "Error", concatResult, "in (" + concatResult + ")")
+        ' for empty concatenation results, return "in (NULL)" to get a valid SQL String (required for chained queries!)
+        DBinClauseStr = If(Left(concatResult, 5) = "Error", concatResult, If(concatResult = "", "in (NULL)", "in (" + concatResult + ")"))
     End Function
 
     ''' <summary>concatenates values contained in thetarget together (using .value attribute for cells)</summary>
