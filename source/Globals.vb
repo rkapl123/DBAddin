@@ -144,7 +144,7 @@ Public Module Globals
     ''' <summary>show message to User (default Errormessage) and log as warning if Critical Or Exclamation (logged errors would pop up the trace information window)</summary> 
     ''' <param name="LogMessage">the message to be shown/logged</param>
     ''' <param name="errTitle">optionally pass a title for the msgbox instead of default DBAddin Error</param>
-    ''' <param name="msgboxIcon">optionally pass a different Msgbox icon (style) instead of default critical</param>
+    ''' <param name="msgboxIcon">optionally pass a different Msgbox icon (style) instead of default MsgBoxStyle.Critical</param>
     Public Sub UserMsg(LogMessage As String, Optional errTitle As String = "DBAddin Error", Optional msgboxIcon As MsgBoxStyle = MsgBoxStyle.Critical)
         Dim theMethod As Object = (New System.Diagnostics.StackTrace).GetFrame(1).GetMethod
         Dim caller As String = theMethod.ReflectedType.FullName + "." + theMethod.Name
@@ -155,6 +155,13 @@ Public Module Globals
         End If
     End Sub
 
+
+    ''' <summary>ask User (default OKCancel) and log as warning if Critical Or Exclamation (logged errors would pop up the trace information window)</summary> 
+    ''' <param name="theMessage">the question to be shown/logged</param>
+    ''' <param name="questionType">optionally pass question box type, default MsgBoxStyle.OKCancel</param>
+    ''' <param name="questionTitle">optionally pass a title for the msgbox instead of default DBAddin Question</param>
+    ''' <param name="msgboxIcon">optionally pass a different Msgbox icon (style) instead of default MsgBoxStyle.Question</param>
+    ''' <returns>choice as MsgBoxResult (Yes, No, OK, Cancel...)</returns>
     Public Function QuestionMsg(theMessage As String, Optional questionType As MsgBoxStyle = MsgBoxStyle.OkCancel, Optional questionTitle As String = "DBAddin Question", Optional msgboxIcon As MsgBoxStyle = MsgBoxStyle.Question) As MsgBoxResult
         Dim theMethod As Object = (New System.Diagnostics.StackTrace).GetFrame(1).GetMethod
         Dim caller As String = theMethod.ReflectedType.FullName + "." + theMethod.Name
