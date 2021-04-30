@@ -113,9 +113,10 @@ Public Class AddInEvents
                     For Each dbmapdefkey As String In Globals.DBModifDefColl(DBmodifType).Keys
                         If Globals.DBModifDefColl(DBmodifType).Item(dbmapdefkey).execOnSave Then
                             If nonInteractive Then
-                                doDBMOnSave = IIf(Globals.DBModifDefColl(DBmodifType).Item(dbmapdefkey).confirmExecution(WbIsSaving:=True) = MsgBoxResult.Yes, True, False)
-                            Else
+                                ' always save in noninteractive (headless/automation) mode
                                 doDBMOnSave = True
+                            Else
+                                doDBMOnSave = IIf(Globals.DBModifDefColl(DBmodifType).Item(dbmapdefkey).confirmExecution(WbIsSaving:=True) = MsgBoxResult.Yes, True, False)
                             End If
                         End If
                     Next

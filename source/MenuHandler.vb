@@ -30,6 +30,7 @@ Public Class MenuHandler
                 "</menu>" +
                 "<button id='props' label='Workbook Properties' onAction='showCProps' getImage='getCPropsImage' screentip='Change custom properties relevant for DB Addin:' getSupertip='getToggleCPropsScreentip' />" +
             "</buttonGroup>" +
+            "<labelControl id='InfoLabel' getLabel='getInfoLabel'/>" +
             "<dialogBoxLauncher><button id='dialog' label='About DBAddin' onAction='showAbout' screentip='Show Aboutbox with help, version information and project homepage'/></dialogBoxLauncher>" +
         "</group>"
         ' DBAddin Tools Group:
@@ -118,6 +119,10 @@ Public Class MenuHandler
     End Function
 
 #Disable Warning IDE0060 ' Hide not used Parameter warning as this is very often the case with the below callbacks from the ribbon
+
+    Public Function getInfoLabel(ByRef control As CustomUI.IRibbonControl)
+        getInfoLabel = "DBModif Impl: " + IIf(DBModifs.altDBImpl, "ADO.NET", "ADODB")
+    End Function
 
     ''' <summary>display warning button icon on Cprops change if DBFskip is set...</summary>
     ''' <param name="control"></param>
@@ -296,6 +301,9 @@ Public Class MenuHandler
         Else
             ConfigurationManager.RefreshSection("UserSettings")
         End If
+        ' reflect changes in settings
+        Globals.initSettings()
+        ' also display in ribbon
         Globals.theRibbon.Invalidate()
     End Sub
 
@@ -337,8 +345,7 @@ Public Class MenuHandler
     ''' <param name="control"></param>
     ''' <returns></returns>
     Public Function getDBModifTypeLabel(control As CustomUI.IRibbonControl) As String
-        ' TODO: revert when migration to ADO.NET finished...
-        getDBModifTypeLabel = If(control.Id = "DBSeqnce", "DBSequence", control.Id) + IIf(DBModifs.altDBImpl, "_newImpl", "")
+        getDBModifTypeLabel = If(control.Id = "DBSeqnce", "DBSequence", control.Id)
     End Function
 
     ''' <summary>create the buttons in the DBModif dropdown menu</summary>

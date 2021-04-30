@@ -4,6 +4,7 @@ Imports Microsoft.Office.Interop
 Imports System.Windows.Forms
 Imports System.Collections.Generic
 Imports Microsoft.Office.Core
+Imports System.Collections
 Imports System.Data
 Imports System.Text
 Imports System.Linq
@@ -92,8 +93,8 @@ Public MustInherit Class DBModif
         If env <> "" AndAlso env <> "0" Then getEnv = Convert.ToInt16(env)
     End Function
 
-    ''' <summary>is saving needed for this DBModifier</summary>
-    ''' <returns>true for saving necessary</returns>
+    ''' <summary>checks whether DBModifier needs saving, usually because execOnSave is set (in case of CUD DBMappers if any i/u/d Flages are present)</summary>
+    ''' <returns>true if save needed</returns>
     Public Overridable Function DBModifSaveNeeded() As Boolean
         Return execOnSave
     End Function
@@ -529,9 +530,13 @@ Public Class DBMapper : Inherits DBModif
         End Try
     End Sub
 
+    ''' <summary>checks whether DBModifier needs saving, either because execOnSave is set or in case of CUD DBMappers if any i/u/d Flages are present</summary>
+    ''' <returns>true if save needed</returns>
     Public Overrides Function DBModifSaveNeeded() As Boolean
         If CUDFlags Then
-            Dim testRange As Excel.Range = TargetRange.Columns(TargetRange.Columns.Count).Offset(0, 1)
+            ' use TargetRange.ListObject.Range instead of TargetRange here because TargetRange is updated only after Saving/executing the DBMapper...
+            Dim testRange As Excel.Range = TargetRange.ListObject.Range.Columns(TargetRange.ListObject.Range.Columns.Count).Offset(0, 1)
+            ' check whether i/u/d column (one to the right of DBMapper range) is empty..
             Dim existingCUDFlags As Integer = ExcelDnaUtil.Application.WorksheetFunction.CountIfs(testRange, "<>")
             Return existingCUDFlags > 0
         Else
@@ -1007,10 +1012,9 @@ cleanup:
             If Not openDatabase() Then Exit Sub
         End If
 
-        ' set up data adapter and data set
-        Dim primKeyColumns(primKeysCount - 1) As DataColumn
+        ' set up data adapter and data set for checking DBMapper columns
         Dim da As Common.DbDataAdapter = Nothing
-        Dim ds As DataSet = New DataSet()
+        Dim dscheck As DataSet = New DataSet()
         ExcelDnaUtil.Application.StatusBar = "initialising the Data Adapter"
         Try
             If TypeName(idbcnn) = "SqlConnection" Then
@@ -1018,103 +1022,126 @@ cleanup:
             Else
                 da = New Odbc.OdbcDataAdapter(New Odbc.OdbcCommand("select * from " + tableName, idbcnn))
             End If
+            da.SelectCommand.CommandTimeout = Globals.CmdTimeout
         Catch ex As Exception
             Globals.UserMsg("Error in initializing Data Adapter for " + tableName + ": " + ex.Message, "DBMapper Error")
         End Try
         ExcelDnaUtil.Application.StatusBar = "retrieving the schema for " + tableName
         Try
             da.SelectCommand.Transaction = DBModifs.trans
-            da.FillSchema(ds, SchemaType.Source, tableName)
+            da.FillSchema(dscheck, SchemaType.Source, tableName)
         Catch ex As Exception
             Globals.UserMsg("Error in retrieving Schema for " + tableName + ": " + ex.Message, "DBMapper Error")
         End Try
 
-        ExcelDnaUtil.Application.StatusBar = "checking if all column names (except ignored) of DBMapper Range exist in table"
+        ' first check if all column names (except ignored) of DBMapper Range exist in table and collect fieldnames
+        Dim allColumnsStr(TargetRange.Columns.Count - 1) As String
         Dim colNum As Long = 1
         Do
             Dim fieldname As String = Trim(TargetRange.Cells(1, colNum).Value)
             ' only if not ignored...
             If InStr(1, LCase(ignoreColumns) + ",", LCase(fieldname) + ",") = 0 Then
-                If Not ds.Tables(0).Columns.Contains(fieldname) Then
+                If Not dscheck.Tables(0).Columns.Contains(fieldname) Then
                     hadError = True
                     TargetRange.Parent.Activate
                     TargetRange.Cells(1, colNum).Select
                     Globals.UserMsg("Field '" + fieldname + "' does not exist in Table '" + tableName + "' and is not in ignoreColumns, Error in sheet " + TargetRange.Parent.Name, "DBMapper Error")
                     GoTo cleanup
+                Else
+                    allColumnsStr(colNum - 1) = fieldname
                 End If
             End If
             colNum += 1
         Loop Until colNum > TargetRange.Columns.Count
 
         ' before setting the commands for the adapter, we need to have the primary key information, or update/delete command builder will fail...
-        ExcelDnaUtil.Application.StatusBar = "getting primary key information and setting it in data schema"
-        ' try to find record for update in dataset based on primary key information
-        Dim primKeyCompound As String = " WHERE "
+        Dim primKeyColumnsStr(primKeysCount - 1) As String
+        Dim primKeyCompound As String = " WHERE " ' try to find record for update in dataset based on primary key where clause for avoidFill
         For i As Integer = 1 To primKeysCount
             Dim primKey = TargetRange.Cells(1, i).Value
             If primKey Is Nothing OrElse primKey = "" Then
                 notifyUserOfDataError("Primary key field name in column " + i.ToString() + " is blank !", 1, i)
                 GoTo cleanup
             End If
+            primKeyColumnsStr(i - 1) = primKey.ToString()
             ' if primKey is in ignoreColumns then the only reasonable reason is a lookup primary key in DBSHeets (CUDFlags only), so try with "real" (resolved key) instead...
-            If InStr(1, LCase(ignoreColumns) + ",", LCase(primKey) + ",") > 0 Then
+            If InStr(1, LCase(ignoreColumns) + ",", LCase(primKeyColumnsStr(i - 1)) + ",") > 0 Then
                 If CUDFlags Then
-                    primKey = Left(primKey, Len(primKey) - 2) ' correct the LU to real primary Key
+                    primKey = Left(primKeyColumnsStr(i - 1), Len(primKeyColumnsStr(i - 1)) - 2) ' correct the LU to real primary Key
                 Else
-                    notifyUserOfDataError("Primary key '" + primKey + "' is contained in ignoreColumns !", 1, i)
+                    notifyUserOfDataError("Primary key '" + primKeyColumnsStr(i - 1) + "' is contained in ignoreColumns !", 1, i)
                     GoTo cleanup
                 End If
             End If
-            If Not ds.Tables(0).Columns.Contains(primKey) Then
-                notifyUserOfDataError("Primary key '" + primKey.ToString() + "' not found in table '" + tableName, 1, i)
+            If Not dscheck.Tables(0).Columns.Contains(primKey) Then
+                notifyUserOfDataError("Primary key '" + primKeyColumnsStr(i - 1) + "' not found in table '" + tableName, 1, i)
                 GoTo cleanup
             End If
-            primKeyCompound += primKey.ToString() + " = @" + primKey.ToString() + IIf(i = primKeysCount, "", " AND ")
-            primKeyColumns(i - 1) = ds.Tables(0).Columns(primKey)
-            ' for avoidFill (no uploading of whole table) set up query for getting records for updating ...
+            primKeyCompound += primKey.ToString() + " = @" + primKeyColumnsStr(i - 1) + IIf(i = primKeysCount, "", " AND ")
+        Next
+
+        ' the actual dataset
+        Dim ds As DataSet = New DataSet()
+        ' replace the select command to avoid columns that are default filled but non-nullable (will produce errors if not assigned to new row)
+        da.SelectCommand.CommandText = "SELECT " + String.Join(",", allColumnsStr) + " FROM " + tableName
+        ' fill schema again to reflect the changed columns
+        da.FillSchema(ds, SchemaType.Source, tableName)
+        ' for avoidFill mode (no uploading of whole table) replace select with parameterized query (params are added below)
+        If avoidFill Then da.SelectCommand.CommandText = "SELECT " + String.Join(",", allColumnsStr) + " FROM " + tableName + primKeyCompound
+
+        Dim allColumns(TargetRange.Columns.Count - 1) As DataColumn
+        For i As Integer = 0 To UBound(allColumnsStr)
+            allColumns(i) = ds.Tables(0).Columns(allColumnsStr(i))
+        Next
+
+        ' assign primary key columns externally in case there are none defined on the table (might be)
+        Dim primKeyColumns(primKeysCount - 1) As DataColumn
+        For i As Integer = 0 To UBound(primKeyColumnsStr)
+            primKeyColumns(i) = ds.Tables(0).Columns(primKeyColumnsStr(i))
+            ' for avoidFill mode (no uploading of whole table) set up params for parameterized query from primary keys
             If avoidFill Then
                 Dim param As Common.DbParameter = da.SelectCommand.CreateParameter()
                 With param
-                    .ParameterName = "@" + primKey.ToString()
-                    .SourceColumn = primKey.ToString()
+                    .ParameterName = "@" + primKeyColumnsStr(i)
+                    .SourceColumn = primKeyColumnsStr(i)
                     .DbType = TypeToDbType(ds.Tables(0).Columns.GetType())
                 End With
                 da.SelectCommand.Parameters.Add(param)
             End If
         Next
-        ' ...and replace the select command here
-        If avoidFill Then
-            da.SelectCommand.CommandText = "SELECT * FROM " + tableName + primKeyCompound
-            da.SelectCommand.Connection = idbcnn
-            da.SelectCommand.Transaction = DBModifs.trans
-        End If
-        ' assign primary key columns externally in case there are none defined on the table (might be)
         Try
             ds.Tables(0).PrimaryKey = primKeyColumns
         Catch ex As Exception
-            Globals.UserMsg("Error in setting primary keys for " + tableName + ": " + ex.Message, "DBMapper Error")
+            notifyUserOfDataError("Error in setting primary keys for " + tableName + ": " + ex.Message, 1)
+            GoTo cleanup
         End Try
+        ' fill the dataset in normal mode (needed to find records in memory)
         If Not avoidFill Then
             ExcelDnaUtil.Application.StatusBar = "filling the table data into dataset"
             Try
                 da.Fill(ds.Tables(0))
             Catch ex As Exception
-                Globals.UserMsg("Error in retrieving Data for " + tableName + ": " + ex.Message + vbCrLf + "Following primary keys are defined (check whether enough): " + String.Join(Of DataColumn)("|", primKeyColumns), "DBMapper Error")
+                notifyUserOfDataError("Error in retrieving Data for " + tableName + ": " + ex.Message + vbCrLf + "Following primary keys are defined (check whether enough): " + String.Join(Of DataColumn)(", ", primKeyColumns), 1)
+                GoTo cleanup
             End Try
         End If
-        ExcelDnaUtil.Application.StatusBar = "setting the CommandBuilders"
+        ' set up the insert/update/delete CommandBuilders
         Try
+            Dim custCmdBuilder As CustomCommandBuilder
             If TypeName(idbcnn) = "SqlConnection" Then
-                da.UpdateCommand = New CustomSqlCommandBuilder(ds.Tables(0), idbcnn).UpdateCommand()
-                da.DeleteCommand = New CustomSqlCommandBuilder(ds.Tables(0), idbcnn).DeleteCommand()
-                da.InsertCommand = New CustomSqlCommandBuilder(ds.Tables(0), idbcnn).InsertCommand()
+                custCmdBuilder = New CustomSqlCommandBuilder(ds.Tables(0), idbcnn, allColumns)
             Else
-                da.UpdateCommand = New CustomOdbcCommandBuilder(ds.Tables(0), idbcnn).UpdateCommand()
-                da.DeleteCommand = New CustomOdbcCommandBuilder(ds.Tables(0), idbcnn).DeleteCommand()
-                da.InsertCommand = New CustomOdbcCommandBuilder(ds.Tables(0), idbcnn).InsertCommand()
+                custCmdBuilder = New CustomOdbcCommandBuilder(ds.Tables(0), idbcnn, allColumns)
             End If
+            da.UpdateCommand = custCmdBuilder.UpdateCommand()
+            da.UpdateCommand.CommandTimeout = Globals.CmdTimeout
+            da.DeleteCommand = custCmdBuilder.DeleteCommand()
+            da.DeleteCommand.CommandTimeout = Globals.CmdTimeout
+            da.InsertCommand = custCmdBuilder.InsertCommand()
+            da.InsertCommand.CommandTimeout = Globals.CmdTimeout
         Catch ex As Exception
-            Globals.UserMsg("Error in setting Insert/Update/Delete Commands for Data Adapter for " + tableName + ": " + ex.Message, "DBMapper Error")
+            notifyUserOfDataError("Error in setting Insert/Update/Delete Commands for Data Adapter for " + tableName + ": " + ex.Message, 1)
+            GoTo cleanup
         End Try
         ExcelDnaUtil.Application.StatusBar = "Assigning transaction to CommandBuilders"
         ' if DBModifs.trans is nothing -> immediate commit
@@ -1123,7 +1150,8 @@ cleanup:
             da.DeleteCommand.Transaction = DBModifs.trans
             da.InsertCommand.Transaction = DBModifs.trans
         Catch ex As Exception
-            Globals.UserMsg("Error in setting Transaction for Insert/Update/Delete Commands for Data Adapter for " + tableName + ": " + ex.Message, "DBMapper Error")
+            notifyUserOfDataError("Error in setting Transaction for Insert/Update/Delete Commands for Data Adapter for " + tableName + ": " + ex.Message, 1)
+            GoTo cleanup
         End Try
 
         Dim rowNum As Long = 2
@@ -1184,7 +1212,8 @@ cleanup:
                         da.SelectCommand.Prepare()
                         da.Fill(ds.Tables(0))
                     Catch ex As Exception
-                        Globals.UserMsg("Error in retrieving Data for " + tableName + ": " + ex.Message, "DBMapper Error")
+                        If Not notifyUserOfDataError("Error in retrieving Data for " + tableName + ": " + ex.Message, rowNum) Then GoTo cleanup
+                        GoTo nextRow
                     End Try
                 End If
 
@@ -1259,7 +1288,7 @@ cleanup:
                                         Try
                                             foundRow(fieldname) = IIf(fieldval.ToString().Length = 0, DBNull.Value, fieldval)
                                         Catch ex As Exception
-                                            notifyUserOfDataError("Error in assigning date value: " + ex.Message + " on " + TargetRange.Parent.Name + ", row " + rowNum.ToString() + ", col " + colNum.ToString(), rowNum, colNum)
+                                            notifyUserOfDataError("Error: " + ex.Message + " in assigning value in sheet " + TargetRange.Parent.Name + ", row " + rowNum.ToString() + ", col " + colNum.ToString(), rowNum, colNum)
                                         End Try
                                     End If
                                 End If
@@ -1273,7 +1302,13 @@ cleanup:
                         colNum += 1
                     Loop Until colNum > TargetRange.Columns.Count
                     ExcelDnaUtil.Application.StatusBar = Left("Filled fields for " + primKeyValueStr + " in " + tableName, 255)
-                    If insertRecord Then ds.Tables(0).Rows.Add(foundRow)
+                    If insertRecord Then
+                        Try
+                            ds.Tables(0).Rows.Add(foundRow)
+                        Catch ex As Exception
+                            If Not notifyUserOfDataError("Error inserting row " + rowNum.ToString() + " in sheet " + TargetRange.Parent.Name + ": " + ex.Message, rowNum) Then GoTo cleanup
+                        End Try
+                    End If
                 End If
 
                 ' delete only with CUDFlags...
@@ -1573,11 +1608,13 @@ Public Class DBSeqnce : Inherits DBModif
             Dim DBModifname As String = definition(1)
             Select Case DBModiftype
                 Case "DBMapper", "DBAction"
-                    Globals.LogInfo(DBModifname + "... ")
-                    DBModifDefColl(DBModiftype).Item(DBModifname).doDBModif(WbIsSaving, calledByDBSeq:=MyBase.dbmodifName, TransactionOpen:=TransactionIsOpen)
-                    If DBModiftype = "DBMapper" Then
-                        If DirectCast(DBModifDefColl("DBMapper").Item(DBModifname), DBMapper).CUDFlags Then executedDBMappers(DBModifname) = True
-                        If DirectCast(DBModifDefColl("DBMapper").Item(DBModifname), DBMapper).hadChanges Then modifiedDBMappers(DBModifname) = True
+                    If Not hadError Then
+                        Globals.LogInfo(DBModifname + "... ")
+                        DBModifDefColl(DBModiftype).Item(DBModifname).doDBModif(WbIsSaving, calledByDBSeq:=MyBase.dbmodifName, TransactionOpen:=TransactionIsOpen)
+                        If DBModiftype = "DBMapper" Then
+                            If DirectCast(DBModifDefColl("DBMapper").Item(DBModifname), DBMapper).CUDFlags Then executedDBMappers(DBModifname) = True
+                            If DirectCast(DBModifDefColl("DBMapper").Item(DBModifname), DBMapper).hadChanges Then modifiedDBMappers(DBModifname) = True
+                        End If
                     End If
                 Case "DBBegin"
                     Globals.LogInfo("DBBeginTrans... ")
@@ -1598,10 +1635,12 @@ Public Class DBSeqnce : Inherits DBModif
                     End If
                     TransactionIsOpen = False
                 Case Else
-                    If Left(DBModiftype, 8) = "Refresh " Then
-                        doDBRefresh(srcExtent:=DBModifname, executedDBMappers:=executedDBMappers, modifiedDBMappers:=modifiedDBMappers, TransactionIsOpen:=TransactionIsOpen)
-                    Else
-                        Globals.UserMsg("Unknown type of sequence step '" + DBModiftype + "' being called in DB Sequence (" + calledByDBSeq + ") !", "Execute DB Sequence")
+                    If Not hadError Then
+                        If Left(DBModiftype, 8) = "Refresh " Then
+                            doDBRefresh(srcExtent:=DBModifname, executedDBMappers:=executedDBMappers, modifiedDBMappers:=modifiedDBMappers, TransactionIsOpen:=TransactionIsOpen)
+                        Else
+                            Globals.UserMsg("Unknown type of sequence step '" + DBModiftype + "' being called in DB Sequence (" + calledByDBSeq + ") !", "Execute DB Sequence")
+                        End If
                     End If
             End Select
         Next
@@ -1630,16 +1669,18 @@ Public Class DBSeqnce : Inherits DBModif
             Dim DBModifname As String = definition(1)
             Select Case DBModiftype
                 Case "DBMapper", "DBAction"
-                    Globals.LogInfo(DBModifname + "... ")
-                    DBModifDefColl(DBModiftype).Item(DBModifname).doDBModif(WbIsSaving, calledByDBSeq:=MyBase.dbmodifName, TransactionOpen:=TransactionIsOpen)
-                    If DBModiftype = "DBMapper" Then
-                        If DirectCast(DBModifDefColl("DBMapper").Item(DBModifname), DBMapper).CUDFlags Then executedDBMappers(DBModifname) = True
-                        If DirectCast(DBModifDefColl("DBMapper").Item(DBModifname), DBMapper).hadChanges Then modifiedDBMappers(DBModifname) = True
+                    If Not hadError Then
+                        Globals.LogInfo(DBModifname + "... ")
+                        DBModifDefColl(DBModiftype).Item(DBModifname).doDBModif(WbIsSaving, calledByDBSeq:=MyBase.dbmodifName, TransactionOpen:=TransactionIsOpen)
+                        If DBModiftype = "DBMapper" Then
+                            If DirectCast(DBModifDefColl("DBMapper").Item(DBModifname), DBMapper).CUDFlags Then executedDBMappers(DBModifname) = True
+                            If DirectCast(DBModifDefColl("DBMapper").Item(DBModifname), DBMapper).hadChanges Then modifiedDBMappers(DBModifname) = True
+                        End If
                     End If
                 Case "DBBegin"
                     Globals.LogInfo("DBBeginTrans... ")
                     If idbcnn Is Nothing Then
-                        ' take database connection properties from next sequence step
+                        ' take database connection properties from sequence step after DBBegin. (checked) requirement: all steps have the same connection in this case!
                         Dim nextdefinition() As String = Split(sequenceParams(i + 1), ":")
                         If Not DBModifDefColl(nextdefinition(0)).Item(nextdefinition(1)).openDatabase(env) Then Exit Sub
                     End If
@@ -1655,10 +1696,12 @@ Public Class DBSeqnce : Inherits DBModif
                     End If
                     TransactionIsOpen = False
                 Case Else
-                    If Left(DBModiftype, 8) = "Refresh " Then
-                        doDBRefresh(srcExtent:=DBModifname, executedDBMappers:=executedDBMappers, modifiedDBMappers:=modifiedDBMappers, TransactionIsOpen:=TransactionIsOpen)
-                    Else
-                        Globals.UserMsg("Unknown type of sequence step '" + DBModiftype + "' being called in DB Sequence (" + calledByDBSeq + ") !", "Execute DB Sequence")
+                    If Not hadError Then
+                        If Left(DBModiftype, 8) = "Refresh " Then
+                            doDBRefresh(srcExtent:=DBModifname, executedDBMappers:=executedDBMappers, modifiedDBMappers:=modifiedDBMappers, TransactionIsOpen:=TransactionIsOpen)
+                        Else
+                            Globals.UserMsg("Unknown type of sequence step '" + DBModiftype + "' being called in DB Sequence (" + calledByDBSeq + ") !", "Execute DB Sequence")
+                        End If
                     End If
             End Select
         Next
@@ -1708,6 +1751,9 @@ Public Module DBModifs
     Public altDBImpl As Boolean = False
 
 
+    ''' <summary>cast .NET data type to ADO.NET DbType</summary>
+    ''' <param name="t">given .NET data type</param>
+    ''' <returns>ADO.NET DbType</returns>
     Public Function TypeToDbType(t As Type) As DbType
         Try
             TypeToDbType = DirectCast([Enum].Parse(GetType(DbType), t.Name), DbType)
@@ -1770,11 +1816,20 @@ Public Module DBModifs
             Globals.UserMsg("No DB identifier given for environment: " + env.ToString() + ", please correct and rerun.", "Open Connection Error")
             Exit Function
         End If
+        ' change the database in the connection string
         theConnString = Globals.Change(theConnString, dbidentifier, database, ";")
-        theConnString = Globals.Change(theConnString, "Connection Timeout", Globals.CnnTimeout.ToString(), ";")
+        ' need to change/set the connection timeout in the connection string as the property is readonly then...
+        If InStr(theConnString, "Connection Timeout=") > 0 Then
+            theConnString = Globals.Change(theConnString, "Connection Timeout=", Globals.CnnTimeout.ToString(), ";")
+        ElseIf InStr(theConnString, "Connect Timeout=") > 0 Then
+            theConnString = Globals.Change(theConnString, "Connect Timeout=", Globals.CnnTimeout.ToString(), ";")
+        Else
+            theConnString += ";Connection Timeout=" + Globals.CnnTimeout.ToString()
+        End If
+
         Try
             If InStr(theConnString.ToLower, "provider=sqloledb") Or InStr(theConnString.ToLower, "driver=sql server") Then
-                ' remove provider=SQLOLEDB
+                ' remove provider=SQLOLEDB; (or whatever is in ConnStringSearch<>) for sql server as this is not allowed for ado.net (legacy adodb)
                 theConnString = Replace(theConnString, Globals.fetchSetting("ConnStringSearch" + Globals.env(), "provider=SQLOLEDB") + ";", "")
                 idbcnn = New SqlClient.SqlConnection(theConnString)
             Else
@@ -1799,8 +1854,9 @@ Public Module DBModifs
         ExcelDnaUtil.Application.StatusBar = False
     End Function
 
-    ''' <summary>in case there is a defined DBMapper underlying the DBListFetch/DBSetQuery target area then change the extent of that to the new area given in theRange</summary>
-    ''' <param name="theRange"></param>
+    ''' <summary>in case there is a defined DBMapper underlying the DBListFetch/DBSetQuery target area then change the extent of it (oldRange) to the new area given in theRange</summary>
+    ''' <param name="theRange">new extent after resfresh of DBListFetch/DBSetQuery function</param>
+    ''' <param name="oldRange">extent before resfresh of DBListFetch/DBSetQuery function</param>
     Public Sub resizeDBMapperRange(theRange As Excel.Range, oldRange As Excel.Range)
         ' only do this for the active workbook...
         If theRange.Parent.Parent Is ExcelDnaUtil.Application.Activeworkbook Then
@@ -1813,12 +1869,12 @@ Public Module DBModifs
                 Catch ex As Exception
                     Throw New Exception("Error when assigning name '" + dbMapperRangeName + "' to DBListFetch/DBSetQuery target range: " + ex.Message)
                 End Try
-                ' notify associated DBMapper object of new target range
+                ' pass the associated DBMapper the new target range
                 Try
                     Dim extendedMapper As DBMapper = Globals.DBModifDefColl("DBMapper").Item(dbMapperRangeName)
                     extendedMapper.setTargetRange(theRange)
                 Catch ex As Exception
-                    Throw New Exception("Error notifying the associated DBMapper object when extending '" + dbMapperRangeName + "' to DBListFetch/DBSetQuery target range: " + ex.Message)
+                    Throw New Exception("Error passing new Range to the associated DBMapper object when extending '" + dbMapperRangeName + "' to DBListFetch/DBSetQuery target range: " + ex.Message)
                 End Try
             End If
         End If
@@ -2091,7 +2147,7 @@ Public Module DBModifs
             Dim CustomXmlParts As Object = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
             If CustomXmlParts.Count = 1 Then
                 ' TODO: revert when migration to ADO.NET finished...
-                Try : DBModifs.altDBImpl = Convert.ToBoolean(CustomXmlParts(1).SelectSingleNode("//ns0:altDBImpl").Text) : Catch ex As Exception : End Try
+                Try : DBModifs.altDBImpl = Convert.ToBoolean(CustomXmlParts(1).SelectSingleNode("//ns0:altDBImpl").Text) : Catch ex As Exception : DBModifs.altDBImpl = CBool(fetchSetting("altDBImpl", "False")) : End Try
                 ' read DBModifier definitions from CustomXMLParts
                 For Each customXMLNodeDef As CustomXMLNode In CustomXmlParts(1).SelectSingleNode("/ns0:root").ChildNodes
                     Dim DBModiftype As String = Left(customXMLNodeDef.BaseName, 8)
@@ -2300,35 +2356,84 @@ EndOuterLoop:
 End Module
 
 
-''' <summary>Custom Command builder for SQLServer to avoid primary key problems with builtin ones</summary>
+Public Class CustomCommandBuilder
+
+    ''' <summary>Creates Insert command with support for Autoincrement (Identity) fields</summary>
+    ''' <returns>Command for inserting</returns>
+    Public Overridable Function InsertCommand() As Common.DbCommand
+        Throw New NotImplementedException()
+    End Function
+
+    ''' <summary>Creates Delete command</summary>
+    ''' <returns>Command for deleting</returns>
+    Public Overridable Function DeleteCommand() As Common.DbCommand
+        Throw New NotImplementedException()
+    End Function
+
+    ''' <summary>Creates Update command</summary>
+    ''' <returns>Command for updating</returns>
+    Public Overridable Function UpdateCommand() As Common.DbCommand
+        Throw New NotImplementedException()
+    End Function
+
+End Class
+
+''' <summary>Custom Command builder for SQLServer to avoid primary key problems with builtin ones
+''' derived (transposed into VB.NET) from https://www.cogin.com/articles/CustomCommandBuilder.php
+''' Copyright by Dejan Grujic 2004. http://www.cogin.com
+''' </summary>
 Public Class CustomSqlCommandBuilder
+    Inherits CustomCommandBuilder
+
     Private dataTable As DataTable
     Private connection As SqlClient.SqlConnection
+    Private allColumns As DataColumn()
 
-    Public Sub New(dataTable As DataTable, connection As SqlClient.SqlConnection)
+    Public Sub New(dataTable As DataTable, connection As SqlClient.SqlConnection, allColumns As DataColumn())
         Me.dataTable = dataTable
         Me.connection = connection
+        Me.allColumns = allColumns
     End Sub
 
-    Public Function InsertCommand() As SqlClient.SqlCommand
+    ''' <summary>Creates Insert command with support for Autoincrement (Identity) fields</summary>
+    ''' <returns>SqlCommand for inserting</returns>
+    Public Overrides Function InsertCommand() As Common.DbCommand
         Dim command As SqlClient.SqlCommand = GetTextCommand("")
         Dim intoString As StringBuilder = New StringBuilder()
         Dim valuesString As StringBuilder = New StringBuilder()
-        For Each column As DataColumn In dataTable.Columns
-            If (intoString.Length > 0) Then
-                intoString.Append(", ")
-                valuesString.Append(", ")
+        Dim autoincrementColumns As ArrayList = AutoincrementKeyColumns()
+        For Each column As DataColumn In allColumns
+            If Not autoincrementColumns.Contains(column) Then
+                If (intoString.Length > 0) Then
+                    intoString.Append(", ")
+                    valuesString.Append(", ")
+                End If
+                intoString.Append(column.ColumnName)
+                valuesString.Append("@").Append(column.ColumnName)
+                command.Parameters.Add(CreateParam(column))
             End If
-            intoString.Append(column.ColumnName)
-            valuesString.Append("@").Append(column.ColumnName)
-            command.Parameters.Add(CreateParam(column))
         Next
         Dim commandText As String = "INSERT INTO " + TableName() + "(" + intoString.ToString() + ") VALUES (" + valuesString.ToString() + "); "
+        If autoincrementColumns.Count > 0 Then
+            commandText += "SELECT SCOPE_IDENTITY() AS " + DirectCast(autoincrementColumns(0), DataColumn).ColumnName()
+        End If
         command.CommandText = commandText
         Return command
     End Function
 
-    Public Function DeleteCommand() As SqlClient.SqlCommand
+    Private Function AutoincrementKeyColumns() As ArrayList
+        AutoincrementKeyColumns = New ArrayList
+        For Each primaryKeyColumn As DataColumn In dataTable.PrimaryKey
+            If primaryKeyColumn.AutoIncrement Then
+                AutoincrementKeyColumns.Add(primaryKeyColumn)
+            End If
+        Next
+    End Function
+
+
+    ''' <summary>Creates Delete command</summary>
+    ''' <returns>SqlCommand for deleting</returns>
+    Public Overrides Function DeleteCommand() As Common.DbCommand
         Dim command As SqlClient.SqlCommand = GetTextCommand("")
         Dim whereString As StringBuilder = New StringBuilder()
         For Each column As DataColumn In dataTable.PrimaryKey
@@ -2343,13 +2448,15 @@ Public Class CustomSqlCommandBuilder
         Return command
     End Function
 
-    Public Function UpdateCommand() As SqlClient.SqlCommand
+    ''' <summary>Creates Update command</summary>
+    ''' <returns>SqlCommand for updating</returns>
+    Public Overrides Function UpdateCommand() As Common.DbCommand
         Dim command As SqlClient.SqlCommand = GetTextCommand("")
         Dim setString As StringBuilder = New StringBuilder()
         Dim whereString As StringBuilder = New StringBuilder()
 
         Dim primaryKeyColumns() As DataColumn = dataTable.PrimaryKey
-        For Each column As DataColumn In dataTable.Columns
+        For Each column As DataColumn In allColumns
             If (System.Array.IndexOf(primaryKeyColumns, column) <> -1) Then
                 ' primary key
                 If (whereString.Length > 0) Then
@@ -2401,35 +2508,61 @@ Public Class CustomSqlCommandBuilder
     End Function
 End Class
 
-''' <summary>Custom Command builder for ODBC to avoid primary key problems with builtin ones</summary>
+''' <summary>Custom Command builder for ODBC to avoid primary key problems with builtin ones
+''' derived (transposed into VB.NET) from https://www.cogin.com/articles/CustomCommandBuilder.php
+''' Copyright by Dejan Grujic 2004. http://www.cogin.com
+''' </summary>
 Public Class CustomOdbcCommandBuilder
+    Inherits CustomCommandBuilder
+
     Private dataTable As DataTable
     Private connection As Odbc.OdbcConnection
+    Private allColumns As DataColumn()
 
-    Public Sub New(dataTable As DataTable, connection As Odbc.OdbcConnection)
+    Public Sub New(dataTable As DataTable, connection As Odbc.OdbcConnection, allColumns As DataColumn())
         Me.dataTable = dataTable
         Me.connection = connection
+        Me.allColumns = allColumns
     End Sub
 
-    Public Function InsertCommand() As Odbc.OdbcCommand
+    ''' <summary>Creates Insert command with support for Autoincrement (Identity) fields</summary>
+    ''' <returns>OdbcCommand for inserting</returns>
+    Public Overrides Function InsertCommand() As Common.DbCommand
         Dim command As Odbc.OdbcCommand = GetTextCommand("")
         Dim intoString As StringBuilder = New StringBuilder()
         Dim valuesString As StringBuilder = New StringBuilder()
-        For Each column As DataColumn In dataTable.Columns
-            If (intoString.Length > 0) Then
-                intoString.Append(", ")
-                valuesString.Append(", ")
+        Dim autoincrementColumns As ArrayList = AutoincrementKeyColumns()
+        For Each column As DataColumn In allColumns
+            If Not autoincrementColumns.Contains(column) Then
+                If (intoString.Length > 0) Then
+                    intoString.Append(", ")
+                    valuesString.Append(", ")
+                End If
+                intoString.Append(column.ColumnName)
+                valuesString.Append("@").Append(column.ColumnName)
+                command.Parameters.Add(CreateParam(column))
             End If
-            intoString.Append(column.ColumnName)
-            valuesString.Append("@").Append(column.ColumnName)
-            command.Parameters.Add(CreateParam(column))
         Next
         Dim commandText As String = "INSERT INTO " + TableName() + "(" + intoString.ToString() + ") VALUES (" + valuesString.ToString() + "); "
+        If autoincrementColumns.Count > 0 Then
+            commandText += "SELECT SCOPE_IDENTITY() AS " + DirectCast(autoincrementColumns(0), DataColumn).ColumnName()
+        End If
         command.CommandText = commandText
         Return command
     End Function
 
-    Public Function DeleteCommand() As Odbc.OdbcCommand
+    Private Function AutoincrementKeyColumns() As ArrayList
+        AutoincrementKeyColumns = New ArrayList
+        For Each primaryKeyColumn As DataColumn In dataTable.PrimaryKey
+            If primaryKeyColumn.AutoIncrement Then
+                AutoincrementKeyColumns.Add(primaryKeyColumn)
+            End If
+        Next
+    End Function
+
+    ''' <summary>Creates Delete command</summary>
+    ''' <returns>OdbcCommand for deleting</returns>
+    Public Overrides Function DeleteCommand() As Common.DbCommand
         Dim command As Odbc.OdbcCommand = GetTextCommand("")
         Dim whereString As StringBuilder = New StringBuilder()
         For Each column As DataColumn In dataTable.PrimaryKey
@@ -2444,13 +2577,15 @@ Public Class CustomOdbcCommandBuilder
         Return command
     End Function
 
-    Public Function UpdateCommand() As Odbc.OdbcCommand
+    ''' <summary>Creates Update command</summary>
+    ''' <returns>OdbcCommand for updating</returns>
+    Public Overrides Function UpdateCommand() As Common.DbCommand
         Dim command As Odbc.OdbcCommand = GetTextCommand("")
         Dim setString As StringBuilder = New StringBuilder()
         Dim whereString As StringBuilder = New StringBuilder()
 
         Dim primaryKeyColumns() As DataColumn = dataTable.PrimaryKey
-        For Each column As DataColumn In dataTable.Columns
+        For Each column As DataColumn In allColumns
             If (System.Array.IndexOf(primaryKeyColumns, column) <> -1) Then
                 ' primary key
                 If (whereString.Length > 0) Then

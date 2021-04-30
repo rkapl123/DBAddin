@@ -660,16 +660,16 @@ Public Class DBSheetCreateForm
             Dim firstRow As Boolean = True
             DBSheetCols.DataSource = Nothing
             DBSheetCols.Rows.Clear()
-            Dim rstSchema As OdbcDataReader
+            Dim tableSchemaReader As OdbcDataReader
             Dim sqlCommand As OdbcCommand = New OdbcCommand() With {
                 .CommandText = "SELECT TOP 1 * FROM " + Table.Text,
                 .CommandType = CommandType.Text,
                 .Connection = dbshcnn
             }
             sqlCommand.Prepare()
-            rstSchema = sqlCommand.ExecuteReader(CommandBehavior.KeyInfo)
+            tableSchemaReader = sqlCommand.ExecuteReader(CommandBehavior.KeyInfo)
             Try
-                Dim schemaInfo As DataTable = rstSchema.GetSchemaTable()
+                Dim schemaInfo As DataTable = tableSchemaReader.GetSchemaTable()
                 Dim theDBSheetDefTable = New DBSheetDefTable
                 For Each schemaRow As DataRow In schemaInfo.Rows
                     Dim newRow As DBSheetDefRow = theDBSheetDefTable.GetNewRow()
@@ -690,7 +690,7 @@ Public Class DBSheetCreateForm
             Catch ex As Exception
                 Globals.UserMsg("Could not get schema information for fields of table: '" + Table.Text + "', error: " + ex.Message, "DBSheet Definition Error")
             End Try
-            rstSchema.Close()
+            tableSchemaReader.Close()
             FormDisabled = False
             ' after changing the column no more change to table allowed !!
             TableEditable(False)

@@ -1,17 +1,17 @@
-﻿<DBSheetConfig>
-<connID>MSSQLpubs</connID>
-<table>discounts</table>
-<query>SELECT T1.discounttype, T3.stor_name AS stor_id, T1.lowqty, T1.highqty, T1.discount
+<DBsheetConfig>
+<connID>pubs</connID>
+<table>pubs.dbo.discounts</table>
+<query>SELECT T1.discounttype, T3.stor_name stor_id, T1.lowqty, T1.highqty, T1.discount
 FROM pubs.dbo.discounts T1 LEFT JOIN 
 pubs.dbo.stores T3 ON T1.stor_id = T3.stor_id
 </query>
-<calcedcols>0</calcedcols>
+<whereClause></whereClause>
 <primcols>1</primcols>
 <columns>
-<field><name>*discounttype</name><primkey>Y</primkey><type>VarChar</type></field>
-<field><name>stor_id</name><ftable>pubs.dbo.stores</ftable><fkey>stor_id</fkey><flookup>stor_name</flookup><outer>Y</outer><lookup>SELECT stor_name,stor_id FROM pubs.dbo.stores ORDER BY stor_name</lookup><type>Char</type></field>
-<field><name>lowqty</name><type>SmallInt</type></field>
-<field><name>highqty</name><type>SmallInt</type></field>
-<field><name>*discount</name><type>Numeric</type></field>
+<field><name>*discounttype</name><primkey>True</primkey></field>
+<field><name>stor_id</name><ftable>pubs.dbo.stores</ftable><fkey>stor_id</fkey><flookup>stor_name</flookup><outer>True</outer><lookup>SELECT !T!.stor_name stor_id,!T!.stor_id FROM pubs.dbo.stores !T! ORDER BY stor_name</lookup></field>
+<field><name>lowqty</name></field>
+<field><name>highqty</name></field>
+<field><name>*discount</name></field>
 </columns>
-</DBSheetConfig>
+</DBsheetConfig>

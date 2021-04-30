@@ -383,13 +383,13 @@ Public Module Globals
         End Try
     End Function
 
-    ''' <summary>changes theString by replacing substring starting after keystr and ending with separator with changed, case insensitive !!</summary>
+    ''' <summary>changes theString to changedString by replacing substring starting AFTER keystr and ending with separator (so "(keystr)...;" will become "(keystr)(changedString);", case insensitive !!</summary>
     ''' <param name="theString"></param>
     ''' <param name="keystr"></param>
-    ''' <param name="changed"></param>
+    ''' <param name="changedString"></param>
     ''' <param name="separator"></param>
     ''' <returns>the changed string</returns>
-    Public Function Change(ByVal theString As String, ByVal keystr As String, ByVal changed As String, ByVal separator As String) As String
+    Public Function Change(ByVal theString As String, ByVal keystr As String, ByVal changedString As String, ByVal separator As String) As String
         Dim replaceBeg, replaceEnd As Integer
 
         replaceBeg = InStr(1, UCase$(theString), UCase$(keystr))
@@ -399,7 +399,7 @@ Public Module Globals
         End If
         replaceEnd = InStr(replaceBeg, UCase$(theString), UCase$(separator))
         If replaceEnd = 0 Then replaceEnd = Len(theString) + 1
-        Change = Left$(theString, replaceBeg - 1 + Len(keystr)) + changed + Right$(theString, Len(theString) - replaceEnd + 1)
+        Change = Left$(theString, replaceBeg - 1 + Len(keystr)) + changedString + Right$(theString, Len(theString) - replaceEnd + 1)
     End Function
 
     ''' <summary>fetches substring starting after keystr and ending with separator from theString, case insensitive !! if separator is "" then fetch to end of string</summary>
