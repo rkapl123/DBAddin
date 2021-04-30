@@ -83,8 +83,8 @@ Public NotInheritable Class AboutBox
         Globals.EventLevelSelected = EventLevels.SelectedItem
     End Sub
 
-    Private Sub FixLegacyFunctions_Click(sender As Object, e As EventArgs) Handles FixLegacyFunctions.Click
-        repairLegacyFunctions(True)
+    Private Sub CheckForUpdates_Click(sender As Object, e As EventArgs) Handles CheckForUpdates.Click
+        Globals.checkForUpdate(True)
     End Sub
 
     Private Sub DisableAddin_Click(sender As Object, e As EventArgs) Handles disableAddin.Click

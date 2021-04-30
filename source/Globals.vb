@@ -4,6 +4,7 @@ Imports Microsoft.Office.Interop
 Imports System.Collections.Generic
 Imports System.Configuration
 Imports System.Diagnostics
+Imports System.IO
 
 
 ''' <summary>Global variables and functions for DB Addin</summary>
@@ -724,4 +725,85 @@ Last:
             ExcelDnaUtil.Application.Calculation = calcMode
         End If
     End Sub
+
+    ''' <summary>checks for updates of DB-Addin, asks for download and downloads them</summary>
+    ''' <param name="displayResult">display result of check (true) or quietly exit (false)</param>
+    Public Sub checkForUpdate(displayResult As Boolean)
+        Const MajorVersion = "1.0.0."
+        Const fileDownloadFolder = "C:\temp\"
+        Const filename = "downloadedVersion.zip"
+        Const urlBase = "https://github.com/rkapl123/DBAddin/archive/refs/tags/"
+
+        ' check for next higher version
+        Dim curRevision As Integer = My.Application.Info.Version.Revision + 1
+        Dim urlFile As String = urlBase + MajorVersion + curRevision.ToString() + ".zip"
+
+        Net.ServicePointManager.SecurityProtocol = Net.SecurityProtocolType.Tls12
+        Net.ServicePointManager.ServerCertificateValidationCallback = AddressOf ValidationCallbackHandler
+        Dim response As Net.HttpWebResponse = Nothing
+
+        ' first check the zip file of the next version
+        Dim request As Net.HttpWebRequest = Net.WebRequest.Create(urlFile)
+        request.Method = "HEAD"
+        Try
+            response = request.GetResponse()
+        Catch ex As Exception
+            If displayResult Then Globals.UserMsg("Couldn't find a new version (" + MajorVersion + curRevision.ToString() + ") on github: " + ex.Message(), "DBAddin Update")
+            If response IsNot Nothing Then response.Close()
+            Exit Sub
+        End Try
+
+        ' continue and ask for download
+        response.Close()
+        Dim answer As MsgBoxResult = Globals.QuestionMsg("Found a new version (" + MajorVersion + curRevision.ToString() + ") on github, continue with download?", MsgBoxStyle.YesNo, "DBAddin Update")
+        If answer = MsgBoxResult.No Then Exit Sub
+
+        ' create the download folder
+        Try
+            IO.Directory.CreateDirectory(fileDownloadFolder)
+        Catch ex As Exception
+            Globals.UserMsg("Couldn't create file download folder (" + fileDownloadFolder + "): " + ex.Message())
+            Exit Sub
+        End Try
+
+        ' get the new version zip-file
+        Dim requestGet As Net.HttpWebRequest = Net.WebRequest.Create(urlFile)
+        requestGet.Method = "GET"
+        Dim responseFile As Net.HttpWebResponse = Nothing
+        Try
+            responseFile = requestGet.GetResponse()
+        Catch ex As Exception
+            Globals.UserMsg("Error when downloading new version: " + ex.Message())
+            Exit Sub
+        End Try
+        ' save the version as zip file
+        If responseFile IsNot Nothing Then
+            Dim receiveStream As Stream = responseFile.GetResponseStream()
+            Using downloadFile As IO.FileStream = File.Create(fileDownloadFolder + filename)
+                receiveStream.CopyTo(downloadFile)
+            End Using
+        End If
+        responseFile.Close()
+        Globals.UserMsg("Extracting new version, after Distribution folder has been opened, start deployAddin.cmd to install the new Version.", "DBAddin Update", MsgBoxStyle.OkOnly)
+        ' now extract the downloaded file and open the Distribution folder, first remove any existing folder...
+        Try
+            Directory.Delete(fileDownloadFolder + "DBAddin-" + MajorVersion + curRevision.ToString(), True)
+        Catch ex As Exception : End Try
+        Try
+            IO.Compression.ZipFile.ExtractToDirectory(fileDownloadFolder + filename, fileDownloadFolder)
+        Catch ex As Exception
+            Globals.UserMsg("Error when extracting new version: " + ex.Message())
+        End Try
+        Try
+            System.Diagnostics.Process.Start("explorer.exe", fileDownloadFolder + "DBAddin-" + MajorVersion + curRevision.ToString() + "\Distribution")
+        Catch ex As Exception
+            Globals.UserMsg("Error when opening Distribution folder of new version: " + ex.Message())
+        End Try
+    End Sub
+
+    Private Function ValidationCallbackHandler() As Boolean
+        Return True
+    End Function
+
+
 End Module

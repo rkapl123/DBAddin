@@ -48,6 +48,7 @@ Public Class MenuHandler
                 "<button id='showLog' label='Log' screentip='shows Database Addins Diagnostic Display' getImage='getLogsImage' onAction='clickShowLog'/>" +
                 "<button id='designmode' label='Buttons' onAction='showToggleDesignMode' getImage='getToggleDesignImage' getScreentip='getToggleDesignScreentip'/>" +
             "</buttonGroup>" +
+            "<button id='repairLegacy' label='repair legacy functions' imageMso='ControlWizards' onAction='clickRepairLegacyFunctions' screentip='click to fix legacy functions from old VB6 DBAddin'/>" +
         "</group>"
         ' DBModif Group: maximum three DBModif types possible (depending on existence in current workbook): 
         customUIXml +=
@@ -119,6 +120,12 @@ Public Class MenuHandler
     End Function
 
 #Disable Warning IDE0060 ' Hide not used Parameter warning as this is very often the case with the below callbacks from the ribbon
+
+    Public Sub clickRepairLegacyFunctions(control As CustomUI.IRibbonControl)
+        Globals.repairLegacyFunctions(True)
+    End Sub
+
+
 
     Public Function getInfoLabel(ByRef control As CustomUI.IRibbonControl)
         getInfoLabel = "DBModif Impl: " + IIf(DBModifs.altDBImpl, "ADO.NET", "ADODB")

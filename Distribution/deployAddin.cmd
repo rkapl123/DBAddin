@@ -1,5 +1,8 @@
 rem copy Addin and settings...
 @echo off
+set /p answer="Enter Y to stop Excel (if running) and continue deployment of DB-Addin:"
+if "%answer:~,1%" NEQ "Y" exit /b
+taskkill /IM "Excel.exe" /F
 if exist "C:\Program Files\Microsoft Office\root\" (
 	echo 64bit office
 	copy /Y DBaddin64.xll "%appdata%\Microsoft\AddIns\DBaddin.xll"

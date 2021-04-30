@@ -42,7 +42,7 @@ Partial Class AboutBox
         Me.TextBoxDescription = New System.Windows.Forms.TextBox()
         Me.OKButton = New System.Windows.Forms.Button()
         Me.EventLevels = New System.Windows.Forms.ComboBox()
-        Me.FixLegacyFunctions = New System.Windows.Forms.Button()
+        Me.CheckForUpdates = New System.Windows.Forms.Button()
         Me.disableAddin = New System.Windows.Forms.Button()
         Me.ToolTip1 = New System.Windows.Forms.ToolTip(Me.components)
         Me.TableLayoutPanel.SuspendLayout()
@@ -65,7 +65,7 @@ Partial Class AboutBox
         Me.TableLayoutPanel.Controls.Add(Me.TextBoxDescription, 1, 4)
         Me.TableLayoutPanel.Controls.Add(Me.OKButton, 4, 5)
         Me.TableLayoutPanel.Controls.Add(Me.EventLevels, 3, 5)
-        Me.TableLayoutPanel.Controls.Add(Me.FixLegacyFunctions, 1, 5)
+        Me.TableLayoutPanel.Controls.Add(Me.CheckForUpdates, 1, 5)
         Me.TableLayoutPanel.Controls.Add(Me.disableAddin, 2, 5)
         Me.TableLayoutPanel.Dock = System.Windows.Forms.DockStyle.Fill
         Me.TableLayoutPanel.Location = New System.Drawing.Point(9, 9)
@@ -77,7 +77,7 @@ Partial Class AboutBox
         Me.TableLayoutPanel.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 11.82563!))
         Me.TableLayoutPanel.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 52.69748!))
         Me.TableLayoutPanel.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 26.0!))
-        Me.TableLayoutPanel.Size = New System.Drawing.Size(499, 266)
+        Me.TableLayoutPanel.Size = New System.Drawing.Size(500, 251)
         Me.TableLayoutPanel.TabIndex = 0
         '
         'LogoPictureBox
@@ -87,7 +87,7 @@ Partial Class AboutBox
         Me.LogoPictureBox.Location = New System.Drawing.Point(3, 3)
         Me.LogoPictureBox.Name = "LogoPictureBox"
         Me.TableLayoutPanel.SetRowSpan(Me.LogoPictureBox, 6)
-        Me.LogoPictureBox.Size = New System.Drawing.Size(128, 260)
+        Me.LogoPictureBox.Size = New System.Drawing.Size(128, 245)
         Me.LogoPictureBox.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom
         Me.LogoPictureBox.TabIndex = 0
         Me.LogoPictureBox.TabStop = False
@@ -102,7 +102,7 @@ Partial Class AboutBox
         Me.LabelProductName.Margin = New System.Windows.Forms.Padding(6, 0, 3, 0)
         Me.LabelProductName.MaximumSize = New System.Drawing.Size(0, 17)
         Me.LabelProductName.Name = "LabelProductName"
-        Me.LabelProductName.Size = New System.Drawing.Size(356, 17)
+        Me.LabelProductName.Size = New System.Drawing.Size(357, 17)
         Me.LabelProductName.TabIndex = 0
         Me.LabelProductName.Text = "Product Name"
         Me.LabelProductName.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
@@ -112,11 +112,11 @@ Partial Class AboutBox
         '
         Me.TableLayoutPanel.SetColumnSpan(Me.LabelVersion, 4)
         Me.LabelVersion.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.LabelVersion.Location = New System.Drawing.Point(140, 28)
+        Me.LabelVersion.Location = New System.Drawing.Point(140, 26)
         Me.LabelVersion.Margin = New System.Windows.Forms.Padding(6, 0, 3, 0)
         Me.LabelVersion.MaximumSize = New System.Drawing.Size(0, 17)
         Me.LabelVersion.Name = "LabelVersion"
-        Me.LabelVersion.Size = New System.Drawing.Size(356, 17)
+        Me.LabelVersion.Size = New System.Drawing.Size(357, 17)
         Me.LabelVersion.TabIndex = 0
         Me.LabelVersion.Text = "Version"
         Me.LabelVersion.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
@@ -125,11 +125,11 @@ Partial Class AboutBox
         '
         Me.TableLayoutPanel.SetColumnSpan(Me.LabelCopyright, 4)
         Me.LabelCopyright.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.LabelCopyright.Location = New System.Drawing.Point(140, 56)
+        Me.LabelCopyright.Location = New System.Drawing.Point(140, 52)
         Me.LabelCopyright.Margin = New System.Windows.Forms.Padding(6, 0, 3, 0)
         Me.LabelCopyright.MaximumSize = New System.Drawing.Size(0, 17)
         Me.LabelCopyright.Name = "LabelCopyright"
-        Me.LabelCopyright.Size = New System.Drawing.Size(356, 17)
+        Me.LabelCopyright.Size = New System.Drawing.Size(357, 17)
         Me.LabelCopyright.TabIndex = 0
         Me.LabelCopyright.Text = "Copyright"
         Me.LabelCopyright.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
@@ -140,11 +140,11 @@ Partial Class AboutBox
         Me.LabelCompanyName.Dock = System.Windows.Forms.DockStyle.Fill
         Me.LabelCompanyName.Font = New System.Drawing.Font("Microsoft Sans Serif", 8.25!, System.Drawing.FontStyle.Underline)
         Me.LabelCompanyName.ForeColor = System.Drawing.SystemColors.HotTrack
-        Me.LabelCompanyName.Location = New System.Drawing.Point(140, 84)
+        Me.LabelCompanyName.Location = New System.Drawing.Point(140, 78)
         Me.LabelCompanyName.Margin = New System.Windows.Forms.Padding(6, 0, 3, 0)
         Me.LabelCompanyName.MaximumSize = New System.Drawing.Size(0, 17)
         Me.LabelCompanyName.Name = "LabelCompanyName"
-        Me.LabelCompanyName.Size = New System.Drawing.Size(356, 17)
+        Me.LabelCompanyName.Size = New System.Drawing.Size(357, 17)
         Me.LabelCompanyName.TabIndex = 0
         Me.LabelCompanyName.Text = "Company Name"
         Me.LabelCompanyName.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
@@ -154,12 +154,12 @@ Partial Class AboutBox
         '
         Me.TableLayoutPanel.SetColumnSpan(Me.TextBoxDescription, 4)
         Me.TextBoxDescription.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.TextBoxDescription.Location = New System.Drawing.Point(140, 115)
+        Me.TextBoxDescription.Location = New System.Drawing.Point(140, 107)
         Me.TextBoxDescription.Margin = New System.Windows.Forms.Padding(6, 3, 3, 3)
         Me.TextBoxDescription.Multiline = True
         Me.TextBoxDescription.Name = "TextBoxDescription"
         Me.TextBoxDescription.ReadOnly = True
-        Me.TextBoxDescription.Size = New System.Drawing.Size(356, 120)
+        Me.TextBoxDescription.Size = New System.Drawing.Size(357, 112)
         Me.TextBoxDescription.TabIndex = 0
         Me.TextBoxDescription.TabStop = False
         Me.TextBoxDescription.Text = resources.GetString("TextBoxDescription.Text")
@@ -168,9 +168,9 @@ Partial Class AboutBox
         '
         Me.OKButton.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.OKButton.DialogResult = System.Windows.Forms.DialogResult.OK
-        Me.OKButton.Location = New System.Drawing.Point(438, 242)
+        Me.OKButton.Location = New System.Drawing.Point(429, 225)
         Me.OKButton.Name = "OKButton"
-        Me.OKButton.Size = New System.Drawing.Size(58, 21)
+        Me.OKButton.Size = New System.Drawing.Size(68, 23)
         Me.OKButton.TabIndex = 4
         Me.OKButton.Text = "OK"
         '
@@ -178,26 +178,26 @@ Partial Class AboutBox
         '
         Me.EventLevels.FormattingEnabled = True
         Me.EventLevels.Items.AddRange(New Object() {"Error", "Warning", "Information", "Verbose", "All"})
-        Me.EventLevels.Location = New System.Drawing.Point(349, 241)
+        Me.EventLevels.Location = New System.Drawing.Point(349, 225)
         Me.EventLevels.Name = "EventLevels"
         Me.EventLevels.Size = New System.Drawing.Size(74, 21)
         Me.EventLevels.TabIndex = 3
         Me.ToolTip1.SetToolTip(Me.EventLevels, "Enter the maximumLog Level to be displayed from now on (existing log entries will" &
         " still be displayed)")
         '
-        'FixLegacyFunctions
+        'CheckForUpdates
         '
-        Me.FixLegacyFunctions.Location = New System.Drawing.Point(137, 241)
-        Me.FixLegacyFunctions.Name = "FixLegacyFunctions"
-        Me.FixLegacyFunctions.Size = New System.Drawing.Size(116, 21)
-        Me.FixLegacyFunctions.TabIndex = 1
-        Me.FixLegacyFunctions.Text = "Fix Legacy Functions"
-        Me.ToolTip1.SetToolTip(Me.FixLegacyFunctions, "fix legacy functions from old VB6 DBAddin")
-        Me.FixLegacyFunctions.UseVisualStyleBackColor = True
+        Me.CheckForUpdates.Location = New System.Drawing.Point(137, 225)
+        Me.CheckForUpdates.Name = "CheckForUpdates"
+        Me.CheckForUpdates.Size = New System.Drawing.Size(116, 21)
+        Me.CheckForUpdates.TabIndex = 1
+        Me.CheckForUpdates.Text = "Check for Updates"
+        Me.ToolTip1.SetToolTip(Me.CheckForUpdates, "check for updates of DB-Addin on github")
+        Me.CheckForUpdates.UseVisualStyleBackColor = True
         '
         'disableAddin
         '
-        Me.disableAddin.Location = New System.Drawing.Point(259, 241)
+        Me.disableAddin.Location = New System.Drawing.Point(259, 225)
         Me.disableAddin.Name = "disableAddin"
         Me.disableAddin.Size = New System.Drawing.Size(84, 21)
         Me.disableAddin.TabIndex = 2
@@ -211,7 +211,7 @@ Partial Class AboutBox
         Me.AcceptButton = Me.OKButton
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(517, 284)
+        Me.ClientSize = New System.Drawing.Size(518, 269)
         Me.Controls.Add(Me.TableLayoutPanel)
         Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
@@ -230,6 +230,6 @@ Partial Class AboutBox
     End Sub
     Friend WithEvents EventLevels As Windows.Forms.ComboBox
     Friend WithEvents ToolTip1 As Windows.Forms.ToolTip
-    Friend WithEvents FixLegacyFunctions As Windows.Forms.Button
+    Friend WithEvents CheckForUpdates As Windows.Forms.Button
     Friend WithEvents disableAddin As Windows.Forms.Button
 End Class

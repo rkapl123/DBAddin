@@ -67,6 +67,10 @@ Public Class AddInEvents
         ' after getting the default environment (should exist), set the Const Connection String again to avoid problems in generating DB ListObjects
         ConstConnString = fetchSetting("ConstConnString" + Globals.env(), "")
         ConfigStoreFolder = fetchSetting("ConfigStoreFolder" + Globals.env(), "")
+        ' last, check if any updates are available on github...
+        ExcelAsyncUtil.QueueAsMacro(Sub()
+                                        Globals.checkForUpdate(False)
+                                    End Sub)
     End Sub
 
     ''' <summary>AutoClose cleans up after finishing addin</summary>
