@@ -110,7 +110,7 @@ Public NotInheritable Class AboutBox
         Dim response As Net.HttpWebResponse = Nothing
         Dim urlFile As String = ""
 
-        ' check for highest version
+        ' check for current version to see whether connection is working
         Dim curRevision As Integer = My.Application.Info.Version.Revision
         ' try with highest possible Security protocol
         Net.ServicePointManager.SecurityProtocol = Net.SecurityProtocolType.Tls12
@@ -124,12 +124,17 @@ Public NotInheritable Class AboutBox
             testrequest.Method = "HEAD"
             response = testrequest.GetResponse()
         Catch ex As Exception
-            Me.TextBoxDescription.Text = My.Application.Info.Description + vbCrLf + vbCrLf + "Can't get the given URL for updates (current: " + urlFile + "): " + ex.Message
+            Me.TextBoxDescription.Text = My.Application.Info.Description + vbCrLf + vbCrLf + "Can't access the given URL (" + updatesUrlBase + ") for updates (current version: " + updatesMajorVersion + curRevision.ToString() + ".zip): " + ex.Message
+            Me.TextBoxDescription.BackColor = Drawing.Color.FromKnownColor(Drawing.KnownColor.Control)
+            Me.CheckForUpdates.Text = "no Update ..."
+            Me.CheckForUpdates.Enabled = False
+            Me.Refresh()
             Exit Sub
         End Try
+        response.Close()
 
+        ' check for zip file of next higher revision
         Do
-            ' check for zip file of next higher revision
             urlFile = updatesUrlBase + updatesMajorVersion + (curRevision + 1).ToString() + ".zip"
             Dim request As Net.HttpWebRequest
             Try
@@ -147,7 +152,7 @@ Public NotInheritable Class AboutBox
         ' get out if no newer version found
         If curRevision = My.Application.Info.Version.Revision Then
             Me.TextBoxDescription.Text = My.Application.Info.Description + vbCrLf + vbCrLf + "You have the latest version (" + updatesMajorVersion + curRevision.ToString() + ")."
-            Me.TextBoxDescription.ForeColor = Drawing.Color.Black
+            Me.TextBoxDescription.BackColor = Drawing.Color.FromKnownColor(Drawing.KnownColor.Control)
             Me.CheckForUpdates.Text = "no Update ..."
             Me.CheckForUpdates.Enabled = False
             Me.Refresh()

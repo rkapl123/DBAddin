@@ -39,9 +39,9 @@ This can be done by modifying DBAddin.xll.config or the referred DBaddinUser.con
 <appSettings>
     <add key="ConfigName3" value="MSSQL"/>
     <add key="ConstConnString3" value="provider=SQLOLEDB;Server=Lenovo-PC;Trusted_Connection=Yes;Database=pubs;Packet Size=32767"/>
-    <add key="ConfigStoreFolder3" value="C:\\dev\\DBAddin.NET\\source\\ConfigStore"/>
+    <add key="ConfigStoreFolder3" value="C:\dev\DBAddin.NET\source\ConfigStore"/>
     <add key="DBidentifierCCS3" value="Database="/>
-    <add key="DBSheetDefinitions3" value="C:\\dev\\DBAddin.NET\\definitions"/>
+    <add key="DBSheetDefinitions3" value="C:\dev\DBAddin.NET\definitions"/>
     <add key="dbGetAll3" value="sp_helpdb"/>
     <add key="dbGetAllFieldName3" value="name"/>
     <add key="ownerQualifier3" value=".dbo."/>
@@ -85,28 +85,38 @@ Other settings possible in DBAddin.xll.config (or DBAddinCentral.config):
     <add key="disableSettingsDisplay" value="addin"/>
     <add key="ConfigSelect" value="SELECT TOP 10 * FROM !Table!" />
     <add key="ConfigSelectWithCount" value="SELECT (SELECT Count(*) FROM !Table!) Anzahl, TOP 10 * FROM !Table!" />
+    <add key="ConfigSelect2" value="SELECT * FROM !Table!" />
     <add key="ConfigSelectPreference" value="WithCount" />
+    <add key="updatesMajorVersion", "1.0.0." />
+    <add key="updatesDownloadFolder", "C:\temp\" />
+    <add key="updatesUrlBase", "https://github.com/rkapl123/DBAddin/archive/refs/tags/" />
+    <add key="localUpdateFolder", "" />
+    <add key="localUpdateMessage", "New version available in local update folder, start deployAddin.cmd to install it:" />
 ```
 
 Explanation:
 *   `LocalHelp`: the path to local help files downloadable [here](doc.zip). To include it, extract the package into the respective folder and assign the file accordingly.
-*   `CmdTimeout`: the default timeout for a command to execute
-*   `CnnTimeout`: the default timeout for connecting
-*   `DefaultDBDateFormatting`: default formatting choice for DBDate
-*   `DefaultEnvironment`: default selected environment on startup
-*   `DontChangeEnvironment`: prevent changing the environment selector (Non-Production environments might confuse some people)
-*   `maxCellCount`: Cells being filled in Excel Workbook to issue a warning for refreshing DBFunctions (searching for them might take a long time...)
+*   `CmdTimeout`: the default timeout for a command to execute.
+*   `CnnTimeout`: the default timeout for connecting.
+*   `DefaultDBDateFormatting`: default formatting choice for DBDate.
+*   `DefaultEnvironment`: default selected environment on startup.
+*   `DontChangeEnvironment`: prevent changing the environment selector (Non-Production environments might confuse some people).
+*   `maxCellCount`: Cells being filled in Excel Workbook to issue a warning for refreshing DBFunctions (searching for them might take a long time).
 *   `maxCellCountIgnore`: Don't issue a warning, therefore ignore above setting.
-*   `DebugAddin`: activate Info messages to debug addin
-*   `DBMapperCUDFlagStyle`: Style for setting Excel data tables when having CUD Flags set on DBMappers
-*   `DBMapperStandardStyle`: Style for setting Excel data tables when not having CUD Flags set on DBMappers
+*   `DebugAddin`: activate Info messages to debug addin.
+*   `DBMapperCUDFlagStyle`: Style for setting Excel data tables when having CUD Flags set on DBMappers.
+*   `DBMapperStandardStyle`: Style for setting Excel data tables when not having CUD Flags set on DBMappers.
 *   `maxNumberMassChange`: Threshold of Number of changes in CUDFlag DBMappers to issue a warning.
 *   `connIDPrefixDBtype`: legacy DBSheet definitions have a Prefix in `connID` before the database that needs to be removed, this is the String to remove ...
-*   `DBSheetAutoname`: When inserting DBSheet Definitions, automatically name Worksheet to the table name, if this is set
-*   `disableSettingsDisplay`: put the settings that should not be available for viewing/editing to the user here (addin: DBAddin.xll.config, central: DBAddinCentral.config and user: DBaddinUser.config)
-*   `ConfigSelect`**N**: Use this template instead of standard config (currently `SELECT TOP 10000 * FROM <Table>`) when inserting cell configurations. The respective Table is being replaced into `!Table!`. Add **N** to make different choices, the preferred choice is given in next setting.
-*   `ConfigSelectPreference`: select the preferred choice if ConfigSelect here by setting **N** as value. If **N** is not found in the choices, the plain `ConfigSelect` is taken. If that is also not found, no template is used and the standard config is taken.
-
+*   `DBSheetAutoname`: When inserting DBSheet Definitions, automatically name Worksheet to the table name, if this is set.
+*   `disableSettingsDisplay`: put the settings that should not be available for viewing/editing to the user here (addin: DBAddin.xll.config, central: DBAddinCentral.config and user: DBaddinUser.config).
+*   `ConfigSelect`**Postfix**: Use this template instead of standard config (currently `SELECT TOP 10000 * FROM <Table>`) when inserting cell configurations. The respective Table is being replaced into `!Table!`. Add **N** to make different choices, the preferred choice is given in next setting.
+*   `ConfigSelectPreference`: select the preferred choice if ConfigSelect here by setting **Postfix** as value. If `ConfigSelect`**Postfix** is not found in the choices, the plain `ConfigSelect` is taken. If that is also not found, no template is used and the standard config is taken.
+*   `updatesMajorVersion`: Usually the versions are numbered 1.0.0.x, in case this is different, the Major Version can be overridden here.
+*   `updatesDownloadFolder`: You can specify a different download folder here instead of `C:\temp\`.
+*   `updatesUrlBase`: Here, the URL base for the update zip packages can be overridden.
+*   `localUpdateFolder`: For updating the DB-Addin Version, you can provide an alternative folder, where the deploy script and the files are maintained for other users.
+*   `localUpdateMessage`: For the alternative folder update, you can also provide an alternative message to display.
 
 To change the settings, there is also a dropdown called "settings", where you can modify the DBAddin.xll.config and the referred DBAddinCentral.config including XML validation. You can have multiple same named entries (e.g. `ConfigSelect`) in your settings files, always the last one is taken as the active setting.
 
@@ -126,7 +136,11 @@ Several connection strings for "DBFuncsTest.xls" are placed to the right of the 
 The Aboutbox can be reached by clicking the small dialogBox Launcher in the right bottom corner of the General Settings group of the DBAddin Ribbon.
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/AboutBox.PNG)  
 
-There is a possibility to set the future log events displayed (starting values are set in the config file). You can also fix legacy DBAddin functions, in case you decided to skip the possibility offered on opening a Workbook.
+You can get updates from here, in case there are new versions, this is shown with an orange background and a hint:
+
+![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/AboutBoxUpdateAvailable.PNG)  
+
+There is a possibility to set the future log events displayed (the starting value is set in the config file).
 
 To see the Log, there is a separate Button in the log group of the DBAddin ribbon that also indicates the existence of warning log entries with a red exclamation mark.
 
@@ -136,6 +150,8 @@ The DBListFetch's and DBRowFetch's target areas' extent is stored in hidden name
 Sometimes during copying and pasting DB Functions, these names can get mixed up, leading to strange results or non-functioning of the "jump" function. In these cases, there is a tool in the DB Addin tools group, which may be used to "purge" these hidden named ranges in case of any strange behaviour due to multiple name assignments to the same area.  This button is only usable if clicked while pressing the Shift button. If the purge button is clicked while pressing the Ctrl Button, the hidden names used for the DB functions are unhidden and the Name manager is displayed.
 
 The tool "Buttons" is used for switching designmode for DBModifier Buttons (identical to standard Excel button "Design Mode" in Ribbon "Developer tab", Group "Controls")
+
+You can also fix legacy DBAddin functions in case you decided to skip the possibility offered on opening a Workbook with the "repair legacy function" button.
 
 In the DBAddin settings Group, there is a dropdown "settings", where you can modify the DBAddin.xll.config and the referred DBAddinUser.config and DBAddinCentral.config including XML validation.
 
