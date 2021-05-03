@@ -87,11 +87,11 @@ Other settings possible in DBAddin.xll.config (or DBAddinCentral.config):
     <add key="ConfigSelectWithCount" value="SELECT (SELECT Count(*) FROM !Table!) Anzahl, TOP 10 * FROM !Table!" />
     <add key="ConfigSelect2" value="SELECT * FROM !Table!" />
     <add key="ConfigSelectPreference" value="WithCount" />
-    <add key="updatesMajorVersion", "1.0.0." />
-    <add key="updatesDownloadFolder", "C:\temp\" />
-    <add key="updatesUrlBase", "https://github.com/rkapl123/DBAddin/archive/refs/tags/" />
-    <add key="localUpdateFolder", "" />
-    <add key="localUpdateMessage", "New version available in local update folder, start deployAddin.cmd to install it:" />
+    <add key="updatesMajorVersion" value="1.0.0." />
+    <add key="updatesDownloadFolder" value="C:\temp\" />
+    <add key="updatesUrlBase" value="https://github.com/rkapl123/DBAddin/archive/refs/tags/" />
+    <add key="localUpdateFolder" value="" />
+    <add key="localUpdateMessage" value="New version available in local update folder, start deployAddin.cmd to install it:" />
 ```
 
 Explanation:
@@ -110,7 +110,7 @@ Explanation:
 *   `connIDPrefixDBtype`: legacy DBSheet definitions have a Prefix in `connID` before the database that needs to be removed, this is the String to remove ...
 *   `DBSheetAutoname`: When inserting DBSheet Definitions, automatically name Worksheet to the table name, if this is set.
 *   `disableSettingsDisplay`: put the settings that should not be available for viewing/editing to the user here (addin: DBAddin.xll.config, central: DBAddinCentral.config and user: DBaddinUser.config).
-*   `ConfigSelect`**Postfix**: Use this template instead of standard config (currently `SELECT TOP 10000 * FROM <Table>`) when inserting cell configurations. The respective Table is being replaced into `!Table!`. Add **N** to make different choices, the preferred choice is given in next setting.
+*   `ConfigSelect`**Postfix**: Use this template instead of standard config (currently `SELECT TOP 10000 * FROM <Table>`) when inserting cell configurations. The respective Table is being replaced into `!Table!`. Add **Postfix** to make different choices, the preferred choice is given in next setting.
 *   `ConfigSelectPreference`: select the preferred choice if ConfigSelect here by setting **Postfix** as value. If `ConfigSelect`**Postfix** is not found in the choices, the plain `ConfigSelect` is taken. If that is also not found, no template is used and the standard config is taken.
 *   `updatesMajorVersion`: Usually the versions are numbered 1.0.0.x, in case this is different, the Major Version can be overridden here.
 *   `updatesDownloadFolder`: You can specify a different download folder here instead of `C:\temp\`.
