@@ -13,7 +13,7 @@ DBAddin.NET is the successor to the VB6 based Office Database Addin, see also th
 * Dependencies/Prerequisites
 	* .NET 4.7 or higher (usually distributed with Windows)
 	* Excel (minimum 2007 because of Ribbons)
-	* ADO 2.5 or higher (usually distributed with Windows)
+	* ADO 2.5 or higher (usually distributed with Windows, needed as long as ADODB is still used)
 
 If any of these are missing, please install them yourself before starting DBAddin.
 
@@ -83,7 +83,9 @@ Other settings possible in DBAddin.xll.config (or DBAddinCentral.config):
     <add key="connIDPrefixDBtype" value="MSSQL" />
     <add key="DBSheetAutoname" value="True" />
     <add key="disableSettingsDisplay" value="addin"/>
-    <add key="ConfigSelect" value="SELECT (SELECT Count(*) FROM !Table!) Anzahl, TOP 10 * FROM !Table!" />
+    <add key="ConfigSelect" value="SELECT TOP 10 * FROM !Table!" />
+    <add key="ConfigSelectWithCount" value="SELECT (SELECT Count(*) FROM !Table!) Anzahl, TOP 10 * FROM !Table!" />
+    <add key="ConfigSelectPreference" value="WithCount" />
 ```
 
 Explanation:
@@ -102,7 +104,9 @@ Explanation:
 *   `connIDPrefixDBtype`: legacy DBSheet definitions have a Prefix in `connID` before the database that needs to be removed, this is the String to remove ...
 *   `DBSheetAutoname`: When inserting DBSheet Definitions, automatically name Worksheet to the table name, if this is set
 *   `disableSettingsDisplay`: put the settings that should not be available for viewing/editing to the user here (addin: DBAddin.xll.config, central: DBAddinCentral.config and user: DBaddinUser.config)
-*   `ConfigSelect`: Use this template instead of standard config (currently `SELECT TOP 10000 * FROM <Table>`) when inserting cell configurations. The respective Table is being replaced into `!Table!`.
+*   `ConfigSelect`**N**: Use this template instead of standard config (currently `SELECT TOP 10000 * FROM <Table>`) when inserting cell configurations. The respective Table is being replaced into `!Table!`. Add **N** to make different choices, the preferred choice is given in next setting.
+*   `ConfigSelectPreference`: select the preferred choice if ConfigSelect here by setting **N** as value. If **N** is not found in the choices, the plain `ConfigSelect` is taken. If that is also not found, no template is used and the standard config is taken.
+
 
 To change the settings, there is also a dropdown called "settings", where you can modify the DBAddin.xll.config and the referred DBAddinCentral.config including XML validation. You can have multiple same named entries (e.g. `ConfigSelect`) in your settings files, always the last one is taken as the active setting.
 
@@ -141,6 +145,14 @@ A green check shows that custom property DBFskip is not set to true for this wor
 ### Building
 
 All packages necessary for building are contained, simply open DBaddin.sln and build the solution. The script deployForTest.cmd can be used to deploy the built xll and configs to %appdata%\Microsoft\AddIns
+
+### Roadmap
+
+Following topics are still to be done:
+
+* Completely getting rid of ADODB (this is a legacy from transforming the code of the old Addin)
+* Fixing the problems with shifting formula ranges in case of shifting mode 1 (cells) in DBListFetch
+* Utilizing optimistic concurrency for DBSheets (similar to the old Addin, but with ADO.NET support)
 
 ### docfx generated API documentation
 [DBFuncs API documentation](api/index.html).

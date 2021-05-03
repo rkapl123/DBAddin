@@ -36,7 +36,9 @@ Public Module ConfigFiles
                 ' ConfigArray: Configs are tab separated pairs of <RC location vbTab function formula> vbTab <...> vbTab...
                 Dim ConfigArray As String() = Split(ItemLine, vbTab)
                 ' if there is a ConfigSelect setting use it to replace the query with the template, replacing the contained table with the FROM <table>...
-                Dim ConfigSelect As String = fetchSetting("ConfigSelect", "")
+                ' also regard the possibility to have a preference for a specific ConfigSelect(1, 2, or any other postfix being available in settings)
+                Dim ConfigSelect As String = fetchSetting("ConfigSelect" + fetchSetting("ConfigSelectPreference", ""), "")
+                If ConfigSelect = "" Then ConfigSelect = fetchSetting("ConfigSelect", "") ' if nothing found under given ConfigSelectPreference, fall back to standard ConfigSelect
                 ' replace query in function formula in second part of pairs with ConfigSelect template. 
                 ' This works only for templates with actual query string as first argument (not having reference(s) to cell(s) with query string(s))
                 If ConfigSelect <> "" Then
@@ -63,20 +65,27 @@ Public Module ConfigFiles
     ''' <returns></returns>
     Private Function replaceConfigSelectInFormula(dbFunctionFormula As String, ConfigSelect As String) As String
         ' get the query from the config templates function formula (standard templates are created with DBListFetch)
-        Dim queryString As String = Globals.functionSplit(dbFunctionFormula, ",", """", "DBListFetch", "(", ")")(0)
-        ' fetch tablename from query string
-        Dim tableName As String = Mid$(queryString, InStr(queryString.ToUpper, "FROM ") + 5)
-        ' remove last quoting...
-        tableName = Left(tableName, Len(tableName) - 1)
-        ' now replace table template with actual table name
-        queryString = ConfigSelect.Replace("!Table!", tableName)
-        ' reconstruct the rest of the db function formula
-        Dim formulaParams As String = Mid$(dbFunctionFormula, Len("DBListFetch") + 3)
-        formulaParams = Left(formulaParams, Len(formulaParams) - 1)
-        Dim tempFormula As String = Globals.replaceDelimsWithSpecialSep(formulaParams, ",", """", "(", ")", vbTab)
-        Dim restFormula As String = Mid$(tempFormula, InStr(tempFormula, vbTab))
-        ' replace querystring in existing formula
-        replaceConfigSelectInFormula = "=DBListFetch(""" + queryString + """" + Replace(restFormula, vbTab, ",")
+        Dim queryString As String
+        Dim functionParts As String() = Globals.functionSplit(dbFunctionFormula, ",", """", "DBListFetch", "(", ")")
+        If functionParts IsNot Nothing Then
+            queryString = functionParts(0)
+            ' fetch tablename from query string
+            Dim tableName As String = Mid$(queryString, InStr(queryString.ToUpper, "FROM ") + 5)
+            ' remove last quoting...
+            tableName = Left(tableName, Len(tableName) - 1)
+            ' now replace table template with actual table name
+            queryString = ConfigSelect.Replace("!Table!", tableName)
+            ' reconstruct the rest of the db function formula
+            Dim formulaParams As String = Mid$(dbFunctionFormula, Len("DBListFetch") + 3)
+            formulaParams = Left(formulaParams, Len(formulaParams) - 1)
+            Dim tempFormula As String = Globals.replaceDelimsWithSpecialSep(formulaParams, ",", """", "(", ")", vbTab)
+            Dim restFormula As String = Mid$(tempFormula, InStr(tempFormula, vbTab))
+            ' replace querystring in existing formula
+            replaceConfigSelectInFormula = "=DBListFetch(""" + queryString + """" + Replace(restFormula, vbTab, ",") + ")"
+        Else
+            ' when problems occured, leave everything as is
+            replaceConfigSelectInFormula = dbFunctionFormula
+        End If
     End Function
 
     ''' <summary>replace query given in dbFunctionFormula inside targetFormula containing DB Function "theFunction"</summary>
@@ -86,15 +95,22 @@ Public Module ConfigFiles
     ''' <returns></returns>
     Private Function replaceQueryInFormula(dbFunctionFormula As String, theFunction As String, targetFormula As String) As String
         ' get the query from the config templates function formula (standard templates are created with DBListFetch)
-        Dim queryString As String = Globals.functionSplit(dbFunctionFormula, ",", """", "DBListFetch", "(", ")")(0)
-        ' get the parts of the targeted function formula
-        Dim formulaParams As String = Mid$(targetFormula, Len(theFunction) + 3)
-        formulaParams = Left(formulaParams, Len(formulaParams) - 1)
-        Dim tempFormula As String = Globals.replaceDelimsWithSpecialSep(formulaParams, ",", """", "(", ")", vbTab)
-        Dim restFormula As String = Mid$(tempFormula, InStr(tempFormula, vbTab))
-        ' for existing theFunction (DBSetQuery or DBRowFetch)...
-        ' replace querystring in existing formula and pass as result
-        replaceQueryInFormula = "=" + theFunction + "(" + queryString + Replace(restFormula, vbTab, ",")
+        Dim queryString As String
+        Dim functionParts As String() = Globals.functionSplit(dbFunctionFormula, ",", """", "DBListFetch", "(", ")")
+        If functionParts IsNot Nothing Then
+            queryString = functionParts(0)
+            ' get the parts of the targeted function formula
+            Dim formulaParams As String = Mid$(targetFormula, Len(theFunction) + 3)
+            formulaParams = Left(formulaParams, Len(formulaParams) - 1)
+            Dim tempFormula As String = Globals.replaceDelimsWithSpecialSep(formulaParams, ",", """", "(", ")", vbTab)
+            Dim restFormula As String = Mid$(tempFormula, InStr(tempFormula, vbTab))
+            ' for existing theFunction (DBSetQuery or DBRowFetch)...
+            ' replace querystring in existing formula and pass as result
+            replaceQueryInFormula = "=" + theFunction + "(" + queryString + Replace(restFormula, vbTab, ",") + ")"
+        Else
+            ' when problems occured, leave everything as is
+            replaceQueryInFormula = targetFormula
+        End If
     End Function
 
     ''' <summary>create a ListObject one cell to the right of TargetCell and insert a dummy cmd sql definition for the listobject table (to be an external source)</summary>

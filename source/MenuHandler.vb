@@ -31,7 +31,7 @@ Public Class MenuHandler
                 "<button id='props' label='Workbook Properties' onAction='showCProps' getImage='getCPropsImage' screentip='Change custom properties relevant for DB Addin:' getSupertip='getToggleCPropsScreentip' />" +
             "</buttonGroup>" +
             "<labelControl id='InfoLabel' getLabel='getInfoLabel'/>" +
-            "<dialogBoxLauncher><button id='dialog' label='About DBAddin' onAction='showAbout' screentip='Show Aboutbox with help, version information and project homepage'/></dialogBoxLauncher>" +
+            "<dialogBoxLauncher><button id='dialog' label='About DBAddin' onAction='showAbout' screentip='Show Aboutbox with help, version information, update check/download and project homepage'/></dialogBoxLauncher>" +
         "</group>"
         ' DBAddin Tools Group:
         customUIXml +=
@@ -124,8 +124,6 @@ Public Class MenuHandler
     Public Sub clickRepairLegacyFunctions(control As CustomUI.IRibbonControl)
         Globals.repairLegacyFunctions(True)
     End Sub
-
-
 
     Public Function getInfoLabel(ByRef control As CustomUI.IRibbonControl)
         getInfoLabel = "DBModif Impl: " + IIf(DBModifs.altDBImpl, "ADO.NET", "ADODB")

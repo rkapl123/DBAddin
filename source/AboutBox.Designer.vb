@@ -178,9 +178,9 @@ Partial Class AboutBox
         '
         Me.EventLevels.FormattingEnabled = True
         Me.EventLevels.Items.AddRange(New Object() {"Error", "Warning", "Information", "Verbose", "All"})
-        Me.EventLevels.Location = New System.Drawing.Point(349, 225)
+        Me.EventLevels.Location = New System.Drawing.Point(326, 225)
         Me.EventLevels.Name = "EventLevels"
-        Me.EventLevels.Size = New System.Drawing.Size(74, 21)
+        Me.EventLevels.Size = New System.Drawing.Size(97, 21)
         Me.EventLevels.TabIndex = 3
         Me.ToolTip1.SetToolTip(Me.EventLevels, "Enter the maximumLog Level to be displayed from now on (existing log entries will" &
         " still be displayed)")
@@ -189,15 +189,15 @@ Partial Class AboutBox
         '
         Me.CheckForUpdates.Location = New System.Drawing.Point(137, 225)
         Me.CheckForUpdates.Name = "CheckForUpdates"
-        Me.CheckForUpdates.Size = New System.Drawing.Size(116, 21)
+        Me.CheckForUpdates.Size = New System.Drawing.Size(93, 21)
         Me.CheckForUpdates.TabIndex = 1
-        Me.CheckForUpdates.Text = "Check for Updates"
-        Me.ToolTip1.SetToolTip(Me.CheckForUpdates, "check for updates of DB-Addin on github")
+        Me.CheckForUpdates.Text = "get Update"
+        Me.ToolTip1.SetToolTip(Me.CheckForUpdates, "get update of DB-Addin from github or local distribution folder")
         Me.CheckForUpdates.UseVisualStyleBackColor = True
         '
         'disableAddin
         '
-        Me.disableAddin.Location = New System.Drawing.Point(259, 225)
+        Me.disableAddin.Location = New System.Drawing.Point(236, 225)
         Me.disableAddin.Name = "disableAddin"
         Me.disableAddin.Size = New System.Drawing.Size(84, 21)
         Me.disableAddin.TabIndex = 2

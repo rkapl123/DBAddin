@@ -1,6 +1,6 @@
-﻿Imports System.Diagnostics
-Imports ExcelDna.Integration
-
+﻿Imports ExcelDna.Integration
+Imports System.Diagnostics
+Imports System.IO
 
 ''' <summary>About box: used to provide information about version/buildtime and links for local help and project homepage</summary>
 Public NotInheritable Class AboutBox
@@ -31,6 +31,7 @@ Public NotInheritable Class AboutBox
         dontChangeEventLevels = True
         Me.EventLevels.SelectedItem = Globals.EventLevelSelected
         dontChangeEventLevels = False
+        checkForUpdate(False)
     End Sub
 
     ''' <summary>Close Aboutbox</summary>
@@ -84,7 +85,7 @@ Public NotInheritable Class AboutBox
     End Sub
 
     Private Sub CheckForUpdates_Click(sender As Object, e As EventArgs) Handles CheckForUpdates.Click
-        Globals.checkForUpdate(True)
+        checkForUpdate(True)
     End Sub
 
     Private Sub DisableAddin_Click(sender As Object, e As EventArgs) Handles disableAddin.Click
@@ -96,4 +97,136 @@ Public NotInheritable Class AboutBox
         disableAddinAfterwards = True
         Me.Close()
     End Sub
+
+    ''' <summary>checks for updates of DB-Addin, asks for download and downloads them</summary>
+    ''' <param name="doUpdate">display result of check (true) or quietly exit (false)</param>
+    Public Sub checkForUpdate(doUpdate As Boolean)
+        Const updateFilenameZip = "downloadedVersion.zip"
+        Dim localUpdateFolder As String = Globals.fetchSetting("localUpdateFolder", "")
+        Dim localUpdateMessage As String = Globals.fetchSetting("localUpdateMessage", "New version available in local update folder, start deployAddin.cmd to install it:")
+        Dim updatesMajorVersion As String = Globals.fetchSetting("updatesMajorVersion", "1.0.0.")
+        Dim updatesDownloadFolder As String = Globals.fetchSetting("updatesDownloadFolder", "C:\temp\")
+        Dim updatesUrlBase As String = Globals.fetchSetting("updatesUrlBase", "https://github.com/rkapl123/DBAddin/archive/refs/tags/")
+        Dim response As Net.HttpWebResponse = Nothing
+        Dim urlFile As String = ""
+
+        ' check for highest version
+        Dim curRevision As Integer = My.Application.Info.Version.Revision
+        ' try with highest possible Security protocol
+        Net.ServicePointManager.SecurityProtocol = Net.SecurityProtocolType.Tls12
+        ' always accept url certificate as valid
+        Net.ServicePointManager.ServerCertificateValidationCallback = AddressOf ValidationCallbackHandler
+        Dim testrequest As Net.HttpWebRequest
+        Try
+            urlFile = updatesUrlBase + updatesMajorVersion + curRevision.ToString() + ".zip"
+            testrequest = Net.WebRequest.Create(urlFile)
+            response = Nothing
+            testrequest.Method = "HEAD"
+            response = testrequest.GetResponse()
+        Catch ex As Exception
+            Me.TextBoxDescription.Text = My.Application.Info.Description + vbCrLf + vbCrLf + "Can't get the given URL for updates (current: " + urlFile + "): " + ex.Message
+            Exit Sub
+        End Try
+
+        Do
+            ' check for zip file of next higher revision
+            urlFile = updatesUrlBase + updatesMajorVersion + (curRevision + 1).ToString() + ".zip"
+            Dim request As Net.HttpWebRequest
+            Try
+                request = Net.WebRequest.Create(urlFile)
+                response = Nothing
+                request.Method = "HEAD"
+                response = request.GetResponse()
+            Catch ex As Exception
+            End Try
+            If response IsNot Nothing Then
+                curRevision += 1
+                response.Close()
+            End If
+        Loop Until response Is Nothing
+        ' get out if no newer version found
+        If curRevision = My.Application.Info.Version.Revision Then
+            Me.TextBoxDescription.Text = My.Application.Info.Description + vbCrLf + vbCrLf + "You have the latest version (" + updatesMajorVersion + curRevision.ToString() + ")."
+            Me.TextBoxDescription.ForeColor = Drawing.Color.Black
+            Me.CheckForUpdates.Text = "no Update ..."
+            Me.CheckForUpdates.Enabled = False
+            Me.Refresh()
+            Exit Sub
+        Else
+            If localUpdateFolder <> "" Then
+                Me.TextBoxDescription.Text = My.Application.Info.Description + vbCrLf + vbCrLf + localUpdateMessage + vbCrLf + localUpdateFolder + vbCrLf + "Version: " + updatesMajorVersion + curRevision.ToString()
+            Else
+                Me.TextBoxDescription.Text = My.Application.Info.Description + vbCrLf + vbCrLf + "A new version (" + updatesMajorVersion + curRevision.ToString() + ") is available on github !"
+            End If
+            Me.TextBoxDescription.BackColor = Drawing.Color.DarkOrange
+            Me.CheckForUpdates.Text = "get Update ..."
+            Me.CheckForUpdates.Enabled = True
+            Me.Refresh()
+            If Not doUpdate Then Exit Sub
+        End If
+        ' if there is a maintained local update folder, open it and let user update from there...
+        If localUpdateFolder <> "" Then
+            Try
+                System.Diagnostics.Process.Start("explorer.exe", localUpdateFolder)
+            Catch ex As Exception
+                Globals.UserMsg("Error when opening local update folder: " + ex.Message())
+            End Try
+            Exit Sub
+        End If
+
+        ' continue and ask for download
+        urlFile = updatesUrlBase + updatesMajorVersion + curRevision.ToString() + ".zip"
+
+        ' create the download folder
+        Try
+            IO.Directory.CreateDirectory(updatesDownloadFolder)
+        Catch ex As Exception
+            Globals.UserMsg("Couldn't create file download folder (" + updatesDownloadFolder + "): " + ex.Message())
+            Exit Sub
+        End Try
+
+        Me.TextBoxDescription.Text = My.Application.Info.Description + vbCrLf + vbCrLf + "Downloading new version from " + urlFile
+        Me.Refresh()
+        ' get the new version zip-file
+        Dim requestGet As Net.HttpWebRequest = Net.WebRequest.Create(urlFile)
+        requestGet.Method = "GET"
+        Try
+            response = requestGet.GetResponse()
+        Catch ex As Exception
+            Globals.UserMsg("Error when downloading new version: " + ex.Message())
+            Exit Sub
+        End Try
+        ' save the version as zip file
+        If response IsNot Nothing Then
+            Dim receiveStream As Stream = response.GetResponseStream()
+            Using downloadFile As IO.FileStream = File.Create(updatesDownloadFolder + updateFilenameZip)
+                receiveStream.CopyTo(downloadFile)
+            End Using
+        End If
+        response.Close()
+        Me.TextBoxDescription.Text = My.Application.Info.Description + vbCrLf + vbCrLf + "Extracting " + urlFile + " to " + updatesDownloadFolder
+        Me.Refresh()
+        ' now extract the downloaded file and open the Distribution folder, first remove any existing folder...
+        Try
+            Directory.Delete(updatesDownloadFolder + "DBAddin-" + updatesMajorVersion + curRevision.ToString(), True)
+        Catch ex As Exception : End Try
+        Try
+            IO.Compression.ZipFile.ExtractToDirectory(updatesDownloadFolder + updateFilenameZip, updatesDownloadFolder)
+        Catch ex As Exception
+            Globals.UserMsg("Error when extracting new version: " + ex.Message())
+        End Try
+        Me.TextBoxDescription.Text = My.Application.Info.Description + vbCrLf + vbCrLf + "New version in " + updatesDownloadFolder + "DBAddin-" + updatesMajorVersion + curRevision.ToString() + "\Distribution, start deployAddin.cmd to install the new Version."
+        Me.Refresh()
+        Try
+            System.Diagnostics.Process.Start("explorer.exe", updatesDownloadFolder + "DBAddin-" + updatesMajorVersion + curRevision.ToString() + "\Distribution")
+        Catch ex As Exception
+            Globals.UserMsg("Error when opening Distribution folder of new version: " + ex.Message())
+        End Try
+    End Sub
+
+    Private Function ValidationCallbackHandler() As Boolean
+        Return True
+    End Function
+
+
 End Class
