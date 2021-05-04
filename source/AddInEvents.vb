@@ -57,6 +57,10 @@ Public Class AddInEvents
         Next
         ' initialize settings and get the default environment
         Globals.initSettings()
+        If Globals.environdefs.Length = 0 Then
+            Globals.UserMsg("Couldn't load any Environment, please check DB-Addin configurations !")
+            Exit Sub
+        End If
         ' Configs are 1 based, selectedEnvironment(index of environment dropdown) is 0 based. negative values not allowed!
         Dim selEnv As Integer = CInt(fetchSetting("DefaultEnvironment", "1")) - 1
         If selEnv > environdefs.Length - 1 OrElse selEnv < 0 Then

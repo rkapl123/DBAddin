@@ -15,7 +15,7 @@ Public Module Globals
     ''' <summary>reference object for the Addins ribbon</summary>
     Public theRibbon As CustomUI.IRibbonUI
     ''' <summary>environment definitions</summary>
-    Public environdefs As String() = {}
+    Public environdefs As String()
     ''' <summary>DBModif definition collections of DBmodif types (key of top level dictionary) with values beinig collections of DBModifierNames (key of contained dictionaries) and DBModifiers (value of contained dictionaries))</summary>
     Public DBModifDefColl As Dictionary(Of String, Dictionary(Of String, DBModif))
     ''' <summary>the selected event level in the About box</summary>
@@ -45,10 +45,17 @@ Public Module Globals
     ''' <param name="defaultValue">Value that is taken if Key was not found</param>
     ''' <returns>the setting value</returns>
     Public Function fetchSetting(Key As String, defaultValue As String) As String
-        Dim UserSettings As Collections.Specialized.NameValueCollection = ConfigurationManager.GetSection("UserSettings")
+        Dim UserSettings As Collections.Specialized.NameValueCollection = Nothing
+        Dim AddinAppSettings As Collections.Specialized.NameValueCollection = Nothing
+        Try : UserSettings = ConfigurationManager.GetSection("UserSettings") : Catch ex As Exception : End Try
+        Try : AddinAppSettings = ConfigurationManager.AppSettings : Catch ex As Exception : End Try
         ' user specific settings are in UserSettings section in separate file
         If UserSettings(Key) Is Nothing Then
-            fetchSetting = ConfigurationManager.AppSettings(Key)
+            If AddinAppSettings IsNot Nothing Then
+                fetchSetting = AddinAppSettings(Key)
+            Else
+                fetchSetting = Nothing
+            End If
         Else
             fetchSetting = UserSettings(Key)
         End If
@@ -150,10 +157,10 @@ Public Module Globals
         WriteToLog(LogMessage, If(msgboxIcon = MsgBoxStyle.Critical Or msgboxIcon = MsgBoxStyle.Exclamation, EventLogEntryType.Warning, EventLogEntryType.Information), caller) ' to avoid popup of trace log in nonInteractive mode...
         If Not nonInteractive Then
             MsgBox(LogMessage, msgboxIcon + MsgBoxStyle.OkOnly, errTitle)
-            theRibbon.ActivateTab("DBaddinTab")
+            ' avoid activation of ribbon in AutoOpen as this throws an exception (ribbon is not assigned until AutoOpen has finished)
+            If theRibbon IsNot Nothing Then theRibbon.ActivateTab("DBaddinTab")
         End If
     End Sub
-
 
     ''' <summary>ask User (default OKCancel) and log as warning if Critical Or Exclamation (logged errors would pop up the trace information window)</summary> 
     ''' <param name="theMessage">the question to be shown/logged</param>
@@ -172,7 +179,7 @@ Public Module Globals
             If questionType = MsgBoxStyle.RetryCancel Then Return MsgBoxResult.Cancel
         End If
         ' tab is not activated BEFORE Msgbox as Excel first has to get into the interaction thread outside this one..
-        theRibbon.ActivateTab("DBaddinTab")
+        If theRibbon IsNot Nothing Then theRibbon.ActivateTab("DBaddinTab")
         Return MsgBox(theMessage, msgboxIcon + questionType, questionTitle)
     End Function
 

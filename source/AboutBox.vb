@@ -4,7 +4,11 @@ Imports System.IO
 
 ''' <summary>About box: used to provide information about version/buildtime and links for local help and project homepage</summary>
 Public NotInheritable Class AboutBox
+    ''' <summary>flag for disabling addin after closing (set on DisableAddin_Click)</summary>
     Public disableAddinAfterwards As Boolean = False
+    ''' <summary>flag for quitting excel after closing (set on CheckForUpdates_Click)</summary>
+    Public quitExcelAfterwards As Boolean = False
+    ''' <summary>when setting EventLevels Listitem at load, prevent event from being fired with this</summary>
     Private dontChangeEventLevels As Boolean
 
     ''' <summary>set up Aboutbox</summary>
@@ -89,9 +93,14 @@ Public NotInheritable Class AboutBox
     End Sub
 
     Private Sub DisableAddin_Click(sender As Object, e As EventArgs) Handles disableAddin.Click
+        Try
+            ExcelDnaUtil.Application.AddIns("DBAddin.Functions").Installed = True
+        Catch ex As Exception
+            Globals.UserMsg("Legacy DB-Addin not available in Excel-Addins, can't reactivate it, so disabling this Add-in not possible !")
+            Exit Sub
+        End Try
         ' first reactivate legacy Addin
         My.Computer.Registry.SetValue("HKEY_CURRENT_USER\Software\Microsoft\Office\Excel\Addins\DBAddin.Connection", "LoadBehavior", 3)
-        ExcelDnaUtil.Application.AddIns("DBAddin.Functions").Installed = True
         Globals.UserMsg("Please restart Excel to make changes effective...", "Disable DBAddin and re-enable Legacy DBAddin", MsgBoxStyle.Exclamation)
         Try : ExcelDnaUtil.Application.AddIns("OebfaFuncs").Installed = False : Catch ex As Exception : End Try
         disableAddinAfterwards = True
@@ -103,7 +112,7 @@ Public NotInheritable Class AboutBox
     Public Sub checkForUpdate(doUpdate As Boolean)
         Const updateFilenameZip = "downloadedVersion.zip"
         Dim localUpdateFolder As String = Globals.fetchSetting("localUpdateFolder", "")
-        Dim localUpdateMessage As String = Globals.fetchSetting("localUpdateMessage", "New version available in local update folder, start deployAddin.cmd to install it:")
+        Dim localUpdateMessage As String = Globals.fetchSetting("localUpdateMessage", "A new version is available in the local update folder, after quitting Excel (is done next) start deployAddin.cmd to install it.")
         Dim updatesMajorVersion As String = Globals.fetchSetting("updatesMajorVersion", "1.0.0.")
         Dim updatesDownloadFolder As String = Globals.fetchSetting("updatesDownloadFolder", "C:\temp\")
         Dim updatesUrlBase As String = Globals.fetchSetting("updatesUrlBase", "https://github.com/rkapl123/DBAddin/archive/refs/tags/")
@@ -116,22 +125,6 @@ Public NotInheritable Class AboutBox
         Net.ServicePointManager.SecurityProtocol = Net.SecurityProtocolType.Tls12
         ' always accept url certificate as valid
         Net.ServicePointManager.ServerCertificateValidationCallback = AddressOf ValidationCallbackHandler
-        Dim testrequest As Net.HttpWebRequest
-        Try
-            urlFile = updatesUrlBase + updatesMajorVersion + curRevision.ToString() + ".zip"
-            testrequest = Net.WebRequest.Create(urlFile)
-            response = Nothing
-            testrequest.Method = "HEAD"
-            response = testrequest.GetResponse()
-        Catch ex As Exception
-            Me.TextBoxDescription.Text = My.Application.Info.Description + vbCrLf + vbCrLf + "Can't access the given URL (" + updatesUrlBase + ") for updates (current version: " + updatesMajorVersion + curRevision.ToString() + ".zip): " + ex.Message
-            Me.TextBoxDescription.BackColor = Drawing.Color.FromKnownColor(Drawing.KnownColor.Control)
-            Me.CheckForUpdates.Text = "no Update ..."
-            Me.CheckForUpdates.Enabled = False
-            Me.Refresh()
-            Exit Sub
-        End Try
-        response.Close()
 
         ' check for zip file of next higher revision
         Do
@@ -158,11 +151,7 @@ Public NotInheritable Class AboutBox
             Me.Refresh()
             Exit Sub
         Else
-            If localUpdateFolder <> "" Then
-                Me.TextBoxDescription.Text = My.Application.Info.Description + vbCrLf + vbCrLf + localUpdateMessage + vbCrLf + localUpdateFolder + vbCrLf + "Version: " + updatesMajorVersion + curRevision.ToString()
-            Else
-                Me.TextBoxDescription.Text = My.Application.Info.Description + vbCrLf + vbCrLf + "A new version (" + updatesMajorVersion + curRevision.ToString() + ") is available on github !"
-            End If
+            Me.TextBoxDescription.Text = My.Application.Info.Description + vbCrLf + vbCrLf + "A new version (" + updatesMajorVersion + curRevision.ToString() + ") is available " + IIf(localUpdateFolder <> "", "in " + localUpdateFolder, "on github")
             Me.TextBoxDescription.BackColor = Drawing.Color.DarkOrange
             Me.CheckForUpdates.Text = "get Update ..."
             Me.CheckForUpdates.Enabled = True
@@ -172,7 +161,11 @@ Public NotInheritable Class AboutBox
         ' if there is a maintained local update folder, open it and let user update from there...
         If localUpdateFolder <> "" Then
             Try
-                System.Diagnostics.Process.Start("explorer.exe", localUpdateFolder)
+                If Globals.QuestionMsg(localUpdateMessage, MsgBoxStyle.OkCancel) = MsgBoxResult.Ok Then
+                    System.Diagnostics.Process.Start("explorer.exe", localUpdateFolder)
+                    Me.quitExcelAfterwards = True
+                    Me.Close()
+                End If
             Catch ex As Exception
                 Globals.UserMsg("Error when opening local update folder: " + ex.Message())
             End Try

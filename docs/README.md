@@ -22,15 +22,16 @@ This copies DBAddin.xll, DBAddin.xll.config, DBaddinUser.config and DBAddinCentr
 
 ### Settings
 
-Settings are done in three config files:
+Settings can be configured in three config files, depending on your distribution requirements:
 
-* DBAddin.xll.config (expected in the same %appdata%\Microsoft\AddIns folder as the DBAddin.xll) in section appSettings. DBAddin.xll.config has a reference
-	* in the file attribute of the appSettings element to DBAddinCentral.config and
-	* in the configSource attribute of the UserSettings element to DBaddinUser.config
-* DBAddinCentral.config (this is a reference copy of the appSettings section, where the key/value pairs override the settings in DBAddin.xll.config)
-* DBaddinUser.config (this is a reference copy of the UserSettings section, where the key/value pairs override both the settings in DBAddin.xll.config and DBAddinCentral.config)
+* DBAddin.xll.config in section appSettings. DBAddin.xll.config has a reference
+  * to DBAddinCentral.config in the file attribute of the appSettings element and
+  * to DBaddinUser.config in the configSource attribute of the UserSettings element
+  DBAddin.xll.config is expected in the same folder as the DBAddin.xll (%appdata%\Microsoft\AddIns)
+* DBAddinCentral.config (this is a reference copy of the appSettings section, where the key/value pairs override the settings in DBAddin.xll.config). This is meant to be a centrally maintained settings configuration.
+* DBaddinUser.config (this is a reference copy of the UserSettings section, where the key/value pairs override both the settings in DBAddin.xll.config and DBAddinCentral.config). This is meant to be a user locally maintained settings configuration.
 
-In the DBAddin settings Group, there is a dropdown "settings", where you can modify these three settings inside Excel.
+In the DBAddin settings Group, there is a dropdown named "settings", where you can modify these three settings inside Excel.
 
 After installation you'd want to adapt the connection strings (ConstConnString**N**) that are globally applied if no function-specific connection string is given and environment **N** is selected.
 This can be done by modifying DBAddin.xll.config or the referred DBaddinUser.config or DBAddinCentral.config (in this example the settings apply to environment 3):
@@ -66,7 +67,10 @@ Explanation:
 *   `ConnStringSearch`**N**: part to be searched for replacement within the standard connection string in DBSetQuery
 *   `ConnStringReplace`**N**: replacement for above
 
+### Settings continued
+
 Other settings possible in DBAddin.xll.config (or DBAddinCentral.config):
+
 ```xml
     <add key="LocalHelp" value="C:\dev\DBAddin.NET\docs\doc\rkapl123.github.io\DBAddin\index.html"/>
     <add key="CmdTimeout" value="30" />
@@ -100,7 +104,7 @@ Explanation:
 *   `CnnTimeout`: the default timeout for connecting.
 *   `DefaultDBDateFormatting`: default formatting choice for DBDate.
 *   `DefaultEnvironment`: default selected environment on startup.
-*   `DontChangeEnvironment`: prevent changing the environment selector (Non-Production environments might confuse some people).
+*   `DontChangeEnvironment`: prevent changing the environment selector (Non-Production environments might confuse some people or lead to errors).
 *   `maxCellCount`: Cells being filled in Excel Workbook to issue a warning for refreshing DBFunctions (searching for them might take a long time).
 *   `maxCellCountIgnore`: Don't issue a warning, therefore ignore above setting.
 *   `DebugAddin`: activate Info messages to debug addin.
@@ -109,7 +113,7 @@ Explanation:
 *   `maxNumberMassChange`: Threshold of Number of changes in CUDFlag DBMappers to issue a warning.
 *   `connIDPrefixDBtype`: legacy DBSheet definitions have a Prefix in `connID` before the database that needs to be removed, this is the String to remove ...
 *   `DBSheetAutoname`: When inserting DBSheet Definitions, automatically name Worksheet to the table name, if this is set.
-*   `disableSettingsDisplay`: put the settings that should not be available for viewing/editing to the user here (addin: DBAddin.xll.config, central: DBAddinCentral.config and user: DBaddinUser.config).
+*   `disableSettingsDisplay`: enter a name here for settings that should not be available for viewing/editing to the user (`addin`: DBAddin.xll.config, `central`: DBAddinCentral.config, `user`: DBaddinUser.config).
 *   `ConfigSelect`**Postfix**: Use this template instead of standard config (currently `SELECT TOP 10000 * FROM <Table>`) when inserting cell configurations. The respective Table is being replaced into `!Table!`. Add **Postfix** to make different choices, the preferred choice is given in next setting.
 *   `ConfigSelectPreference`: select the preferred choice if ConfigSelect here by setting **Postfix** as value. If `ConfigSelect`**Postfix** is not found in the choices, the plain `ConfigSelect` is taken. If that is also not found, no template is used and the standard config is taken.
 *   `updatesMajorVersion`: Usually the versions are numbered 1.0.0.x, in case this is different, the Major Version can be overridden here.
@@ -118,7 +122,7 @@ Explanation:
 *   `localUpdateFolder`: For updating the DB-Addin Version, you can provide an alternative folder, where the deploy script and the files are maintained for other users.
 *   `localUpdateMessage`: For the alternative folder update, you can also provide an alternative message to display.
 
-To change the settings, there is also a dropdown called "settings", where you can modify the DBAddin.xll.config and the referred DBAddinCentral.config including XML validation. You can have multiple same named entries (e.g. `ConfigSelect`) in your settings files, always the last one is taken as the active setting.
+To change the settings, there use the dropdown "settings", where you can modify the DBAddin.xll.config and the referred DBAddinCentral.config including XML validation. If you have multiple same named entries in your settings files, the last one is taken as the active setting.
 
 ### Testing
 
@@ -133,7 +137,8 @@ Several connection strings for "DBFuncsTest.xls" are placed to the right of the 
 
 ### AboutBox, Logs, Purge hidden names and other tools
 
-The Aboutbox can be reached by clicking the small dialogBox Launcher in the right bottom corner of the General Settings group of the DBAddin Ribbon.
+The Aboutbox can be reached by clicking the small dialogBox Launcher in the right bottom corner of the General Settings group of the DBAddin Ribbon:
+
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/AboutBox.PNG)  
 
 You can get updates from here, in case there are new versions, this is shown with an orange background and a hint:
@@ -160,7 +165,7 @@ A green check shows that custom property DBFskip is not set to true for this wor
 
 ### Building
 
-All packages necessary for building are contained, simply open DBaddin.sln and build the solution. The script deployForTest.cmd can be used to deploy the built xll and configs to %appdata%\Microsoft\AddIns
+All packages necessary for building are contained, simply open DBaddin.sln and build the solution. The script `deployForTest.cmd` can be used to quickly deploy the built xll and configs to `%appdata%\Microsoft\AddIns` after choosing the solution configuration (Release or Debug).
 
 ### Roadmap
 

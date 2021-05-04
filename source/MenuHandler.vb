@@ -317,6 +317,8 @@ Public Class MenuHandler
     Public Sub showAbout(control As CustomUI.IRibbonControl)
         Dim myAbout As AboutBox = New AboutBox
         myAbout.ShowDialog()
+        ' if quitting was chosen, then quit excel here..
+        If myAbout.quitExcelAfterwards Then ExcelDnaUtil.Application.Quit()
         ' if disabling the addin was chosen, then suicide here..
         If myAbout.disableAddinAfterwards Then
             Try : ExcelDnaUtil.Application.AddIns("DBaddin").Installed = False : Catch ex As Exception : End Try

@@ -241,9 +241,9 @@ Additionally the connection timeout (CnnTimeout, which can't be given in the fun
 
 ### Cell Config Deployment
 
-To easen the distribution of complex DB functions (resp. queries), there is a config file mechanism in DBAddin: DB function configurations can be created in config files (extension XCL) and are displayed with a tree-dropdown menu below "DB Configs" that displays the file hierarchy beneath ConfigStoreFolder for easy retrieval of the configs.  
+To easen the distribution of complex DB functions (especially queries), there is a config file mechanism in DBAddin: DB function (actually any Excel formula) configurations can be created in config files having extension XCL and are displayed with a tree-dropdown menu below "DB Configs" that displays the file hierarchy beneath ConfigStoreFolder for easy retrieval of the configs.  
 
-The layout of this file is a pairwise, tab separated instruction where to fill (first element) formulas(starting with "=", being in R1C1 representation) resp. values (second element). Values are simple values to be inserted into Excel (numbers, strings, dates (should be interpretable by Excel !)), formulas are best copied from the output of ActiveCell.FormulaR1C1 !
+The layout of these files is a pairwise, tab separated instruction where to fill (first element) Excel formulas (starting with "=" and being in R1C1 representation) or values (second element). Values are simple literal values to be inserted into Excel (numbers, strings, dates (should be interpretable by Excel !)), formulas are best taken from the return of ActiveCell.FormulaR1C1 !
 
 #### Creating configs
 
@@ -274,13 +274,13 @@ You can decide for each subfolder whether it's contents should be hierarchically
 
 #### Inserting configs
 
-If the user finds/loads the relevant configuration, a warning is shown and then the configured cells are entered into the active workbook as defined in the config, relative to the current selection.  
+If the user retrieves the relevant configuration, a warning is shown and then the configured cells are entered into the active workbook as defined in the config, relative to the current selection.  
 
 Cells in other worksheets are also filled, these are also taking the reference relative to the current selection. If the worksheet doesn't exist it is created.  
 
-There are no checks (except for Excels sheet boundaries) as whether any cells are overwritten !  
+There are no checks (except for Excels sheet boundaries) especially whether any cells are overwritten !  
 
-If the setting `ConfigSelect` is found in the settings, then the given template (e.g. `SELECT (SELECT Count(*) FROM !Table!) RecordCount, TOP 10 * FROM !Table!` to display the count of records at the beginning of the query while fetching only 10 rows...) is used instead of the standard config (currently `SELECT TOP 10000 * FROM <Table>`) when inserting cell configurations. The respective Table is being replaced into `!Table!`.
+If the setting `ConfigSelect` (or any other ConfigSelect, see [Settings continued](https://rkapl123.github.io/DBAddin#settings-continued) is found in the settings, then the query template given there (e.g. `SELECT TOP 10 * FROM !Table!`) is used instead of the standard config (currently `SELECT TOP 10000 * FROM <Table>`) when inserting cell configurations. The respective Table is being replaced into `!Table!`.
 
 #### Refreshing the config tree
 
@@ -323,12 +323,12 @@ Explanation:
 
 *  All DB getting functions (DBListfetch, DBRowFetch, etc....)
 	*   A fundamental restriction for DB functions is that they should only exist alone in a cell (with no other DB functions). This is needed because linking the functions with their cell targets is done via a hidden name in the function cell (created on first invocation)  
-	*   Query composition: Composing Queries (as these sometimes tends to be quite long) can become challenging, especially when handling parameters coming from cells. There is a simple way to avoid lots of trouble by placing the parts of a query in different lines/cells and putting all these cells together as a range in the DB functions first argument (query).
-	*   When invoking an Excel Workbook from the commandline using CmdLogAddin (from a cmd script or the task scheduler) Excel may register (call the connect method of the Add-in) the Add-in later than invoking the calculation which leads to an uninitialized host application object and therefore a non-functional db functions (they all rely on the caller object of the Excel application to retrieve their calling cell's address). I'm still investigating into this.
+	*   Query composition: Composing Queries (as these sometimes tend to be quite long) can become challenging, especially when handling parameters coming from cells. There is a simple way to avoid lots of trouble by placing the parts of a query in different lines/cells and putting all these cells together as a range in the DB functions first argument (query).
+	*   When invoking an Excel Workbook from the commandline using CmdLogAddin (from a cmd script or the task scheduler), Excel may initialize the Add-in later than invoking the calculation of the DB function, which leads to an uninitialized host application object and therefore non-functional db functions (they all rely on the caller object of the Excel application to retrieve their calling cell's address). I'm still investigating into this.
 
 * DBListFetch:
 	*   formulaRange and extendArea = 1 or 2: Don't place content in cells directly below the formula Range as this will be deleted when doing recalculations. One cell below is OK.
-	*   In Worksheets with names like Cell references (Letter + number + blank + something else, eg. 'C701 Country') this leads to a fundamental error with the names used for the data target. Avoid using those sheet names in conjunction with DBListFetch, i.e. do not use a blank between the 'cell reference' and the rest (eg. 'C701Country' instead of 'C701 Country').
+	*   Worksheets with names like Cell references (Letter + number + blank + something else, eg. 'C701 Country') lead to a fundamental error with the names used for the data target. Avoid using those sheet names in conjunction with DBListFetch, i.e. do not use a blank between the 'cell reference' and the rest (eg. 'C701Country' instead of 'C701 Country').
 	*   GUID Columns are not displayed when working with the standard data fetching method used by DBListFetch (using an opened recordset for adding a - temporary - querytable). A workaround has been built that circumvents this problem by adding the querytable the way that excel does (using the connection string and query directly when adding the querytable). This however implicitly opens another connection, so is more resource intensive. For details see [Connection String Special Settings](#Connection_String_Special_Settings)
 
 * DBSetQuery
