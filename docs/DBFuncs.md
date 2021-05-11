@@ -35,7 +35,7 @@ It provides:
 
 #### DBListFetch
 
-<pre lang="vb.net">DBListFetch (Query, ConnectionString(optional), TargetRange,   
+<pre lang="vb">DBListFetch (Query, ConnectionString(optional), TargetRange,   
  FormulaRange(optional), ExtendDataArea(optional),   
  HeaderInfo(optional), AutoFit(optional),   
  AutoFormat(optional), ShowRowNum(optional))</pre>
@@ -88,21 +88,21 @@ This works around the issue with displaying GUID columns in SQL-Server.
 
 #### DBRowFetch
 
-<pre lang="vb.net">DBRowFetch (Query, ConnectionString(optional),   
+<pre lang="vb">DBRowFetch (Query, ConnectionString(optional),   
  headerInfo(optional/ contained in paramArray), TargetRange(paramArray))</pre>
 
 For the query and the connection string the same applies as mentioned for "DBListFetch".  
 The value targets are given in an open ended parameter array after the query, the connection string and an optional headerInfo parameter. These parameter arguments contain ranges (either single cells or larger ranges) that are filled sequentially in order of appearance with the result of the query.  
 For example:  
 
-<pre lang="vb.net">DBRowFetch("select job_desc, min_lvl, max_lvl, job_id from jobs " & "where job_id = 1",,A1,A8:A9,C8:D8)</pre>
+<pre lang="vb">DBRowFetch("select job_desc, min_lvl, max_lvl, job_id from jobs " & "where job_id = 1",,A1,A8:A9,C8:D8)</pre>
 
 would insert the first returned field (job_desc) of the given query into A1, then min_lvl, max_lvl into A8 and A9 and finally job_id into C8.  
 
 The optional headerInfo parameter (after the query and the connection string) defines, whether field headers should be filled into the target areas before data is being filled.  
 For example:  
 
-<pre lang="vb.net">DBRowFetch("select job_desc, min_lvl, max_lvl, job_id from jobs","",TRUE,B8:E8, B9:E20)</pre>
+<pre lang="vb">DBRowFetch("select job_desc, min_lvl, max_lvl, job_id from jobs","",TRUE,B8:E8, B9:E20)</pre>
 
 would insert the the headers (`job_desc`, `min_lvl`, `max_lvl`, `job_id`) of the given query into B8:E8, then the data into B9:E20, row by row.  
 
@@ -117,7 +117,7 @@ Beware that filling of data is much slower than with DBlistFetch, so use DBRowFe
 
 #### DBSetQuery
 
-<pre lang="vb.net">DBSetQuery (Query, ConnectionString(optional), TargetRange)</pre>
+<pre lang="vb">DBSetQuery (Query, ConnectionString(optional), TargetRange)</pre>
 
 Stores a query into an Object defined in TargetRange (an embedded MS Query/Listobject, Pivot table, etc.)
 
@@ -126,31 +126,31 @@ Stores a query into an Object defined in TargetRange (an embedded MS Query/Listo
 
 #### chainCells(Range)
 
-<pre lang="vb.net">chainCells(ParameterList)</pre>
+<pre lang="vb">chainCells(ParameterList)</pre>
 
 chainCells "chains" the values in the given range together by using "," as separator. It's use is mainly to facilitate the creation of the select field clause in the `Query` parameter, e.g.
 
-<pre lang="vb.net">DBRowFetch("select " & chainCells(E1:E4) & " from jobs where job_id = 1","",A1,A8:A9,C8:D8)</pre>
+<pre lang="vb">DBRowFetch("select " & chainCells(E1:E4) & " from jobs where job_id = 1","",A1,A8:A9,C8:D8)</pre>
 
 Where cells E1:E4 contain job_desc, min_lvl, max_lvl, job_id respectively.
 
 #### concatCells
 
-<pre lang="vb.net">concatCells(ParameterList)</pre>
+<pre lang="vb">concatCells(ParameterList)</pre>
 
 `concatCells` concatenates the values in the given range together. It's use is mainly to facilitate the building of very long and complex queries:
 
-<pre lang="vb.net">DBRowFetch(concatCells(E1:E4),"",A1,A8:A9,C8:D8)</pre>
+<pre lang="vb">DBRowFetch(concatCells(E1:E4),"",A1,A8:A9,C8:D8)</pre>
 
 Where cells E1:E4 contain the constituents of the query respectively.  
 
 #### concatCellsSep
 
-<pre lang="vb.net">concatCellsSep(separator, ParameterList)</pre>
+<pre lang="vb">concatCellsSep(separator, ParameterList)</pre>
 
 `concatCellsSep` does the same as concatCells, however inserting a separator between the concatenated values. It's use is the building of long and complex queries, too:
 
-<pre lang="vb.net">DBRowFetch(concatCellsSep(E1:E4),"",A1,A8:A9,C8:D8)</pre>
+<pre lang="vbnet">DBRowFetch(concatCellsSep(E1:E4),"",A1,A8:A9,C8:D8)</pre>
 
 Where cells E1:E4 contain the constituents of the query respectively.
 
@@ -160,27 +160,27 @@ Both `concatCells` and `concatCellsSep` have a "Text" sibling that essentially d
 
 #### DBinClause
 
-<pre lang="vb.net">DBinClause(ParameterList)</pre>
+<pre lang="vbnet">DBinClause(ParameterList)</pre>
 
 Creates an in clause from cell values, strings are created with quotation marks, dates are created with DBDate (see there for details, formatting is 0).
 
-<pre lang="vb.net">DBinClause("ABC", 1, DateRange)</pre>
+<pre lang="vbnet">DBinClause("ABC", 1, DateRange)</pre>
 
 Would return `”('ABC',1,'20070115')”`, if DateRange contained `15/01/2007` as a date value.  
 
 #### DBString
 
-<pre lang="vb.net">DBString(ParameterList)</pre>
+<pre lang="vb">DBString(ParameterList)</pre>
 
 This builds a Database compliant string (quoted) from the open ended parameter list given in the argument. This can also be used to easily build wildcards into the String, like
 
-<pre lang="vb.net">DBString("_",E1,"%")</pre>
+<pre lang="vb">DBString("_",E1,"%")</pre>
 
 When E1 contains "test", this results in '\_test%', thus matching in a like clause the strings 'stestString', 'atestAnotherString', etc.
 
 #### DBDate
 
-<pre lang="vb.net">DBDate(DateValue, formatting (optional))</pre>
+<pre lang="vb">DBDate(DateValue, formatting (optional))</pre>
 
 This builds from the date/datetime/time value given in the argument based on parameter `formatting` either
 
@@ -191,7 +191,7 @@ This builds from the date/datetime/time value given in the argument based on par
 
 An Example is give below:
 
-<pre lang="vb.net">DBDate(E1)</pre>
+<pre lang="vb">DBDate(E1)</pre>
 
 *   When E1 contains the excel native date 18/04/2005, this results in : `'20050418'` (ANSI: `date '2005-04-18'`, ODBC: `{d '2005-04-18'}`).
 *   When E1 contains the excel native date/time value 10/01/2004 08:05, this results in: `'20040110` `08:05:00``'` (ANSI: `timestamp '2004-01-10` `08:05:00``'`, ODBC: `{ts '2004-01-10` `08:05:00``'}`)
