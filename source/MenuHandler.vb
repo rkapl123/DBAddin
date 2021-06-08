@@ -2,6 +2,8 @@ Imports ExcelDna.Integration
 Imports System.Runtime.InteropServices
 Imports Microsoft.Office.Interop
 Imports System.Configuration
+Imports System.Collections.Specialized
+Imports System.Collections.Generic
 
 ''' <summary>handles all Menu related aspects (context menu for building/refreshing, "DBAddin"/"Load Config" tree menu for retrieving stored configuration files, etc.)</summary>
 <ComVisible(True)>
@@ -11,6 +13,7 @@ Public Class MenuHandler
     ''' <summary>callback after Excel loaded the Ribbon, used to initialize data for the Ribbon</summary>
     Public Sub ribbonLoaded(theRibbon As CustomUI.IRibbonUI)
         Globals.theRibbon = theRibbon
+        initAdhocSQLconfig()
     End Sub
 
     ''' <summary>creates the Ribbon (only at startup). any changes to the ribbon can only be done via dynamic menus</summary>
@@ -21,7 +24,7 @@ Public Class MenuHandler
         ' DBAddin Group: environment choice, DBConfics selection tree, purge names tool button and dialogBoxLauncher for AboutBox
         customUIXml +=
         "<group id='DBAddinGroup' label='DBAddin settings'>" +
-            "<dropDown id='envDropDown' label='Environment:' sizeString='1234567890123456' getEnabled='GetEnabledSelect' getSelectedItemIndex='GetSelectedEnvironment' getItemCount='GetItemCount' getItemID='GetItemID' getItemLabel='GetItemLabel' getSupertip='getSelectedTooltip' onAction='selectEnvironment'/>" +
+            "<dropDown id='envDropDown' label='Environment:' sizeString='1234567890123456' getEnabled='GetEnvEnabled' getSelectedItemIndex='GetSelectedEnvironment' getItemCount='GetEnvItemCount' getItemID='GetEnvItemID' getItemLabel='GetEnvItemLabel' getSupertip='GetEnvSelectedTooltip' onAction='selectEnvironment'/>" +
             "<buttonGroup id='buttonGroup1'>" +
                 "<menu id='configMenu' label='Settings'>" +
                     "<button id='user' label='User settings' onAction='showAddinConfig' imageMso='ControlProperties' screentip='Show/edit user settings for DB Addin' />" +
@@ -30,8 +33,8 @@ Public Class MenuHandler
                 "</menu>" +
                 "<button id='props' label='Workbook Properties' onAction='showCProps' getImage='getCPropsImage' screentip='Change custom properties relevant for DB Addin:' getSupertip='getToggleCPropsScreentip' />" +
             "</buttonGroup>" +
-            "<labelControl id='InfoLabel' getLabel='getInfoLabel'/>" +
-            "<dialogBoxLauncher><button id='dialog' label='About DBAddin' onAction='showAbout' screentip='Show Aboutbox with help, version information, update check/download and project homepage'/></dialogBoxLauncher>" +
+            "<comboBox id='DBAdhocSQL' showLabel='false' sizeString='123456789012345678901234567890123' getText='GetAdhocSQLText' getItemCount='GetAdhocSQLItemCount' getItemLabel='GetAdhocSQLItemLabel' onChange='showDBAdHocSQL' screentip='enter Ad-hoc SQL statements to execute'/>" +
+            "<dialogBoxLauncher><button id='dialog' label='About DBAddin' onAction='showAbout' screentip='Show Aboutbox with help, version information, update check/download and project homepage' getSupertip='getSuperTipInfo'/></dialogBoxLauncher>" +
         "</group>"
         ' DBAddin Tools Group:
         customUIXml +=
@@ -48,8 +51,8 @@ Public Class MenuHandler
                 "<button id='showLog' label='Log' screentip='shows Database Addins Diagnostic Display' getImage='getLogsImage' onAction='clickShowLog'/>" +
                 "<button id='designmode' label='Buttons' onAction='showToggleDesignMode' getImage='getToggleDesignImage' getScreentip='getToggleDesignScreentip'/>" +
             "</buttonGroup>" +
-            "<button id='repairLegacy' label='repair legacy functions' imageMso='ControlWizards' onAction='clickRepairLegacyFunctions' screentip='click to fix legacy functions from old VB6 DBAddin'/>" +
-        "</group>"
+            "<button id='repairLegacy' label='repair legacy functions' imageMso='ControlWizards' onAction='clickRepairLegacyFunctions' screentip='click to fix legacy functions from old VB6 DBAddin'/>"
+        customUIXml += "</group>"
         ' DBModif Group: maximum three DBModif types possible (depending on existence in current workbook): 
         customUIXml +=
         "<group id='DBModifGroup' label='Execute DBModifier'>"
@@ -119,14 +122,118 @@ Public Class MenuHandler
         Return customUIXml
     End Function
 
+    Private Sub initAdhocSQLconfig()
+        Dim customSettings As NameValueCollection = ConfigurationManager.GetSection("UserSettings")
+        AdHocSQLStrings = New List(Of String)
+        For Each key As String In customSettings.AllKeys
+            If Left(key, 11) = "AdhocSQLcmd" Then AdHocSQLStrings.Add(customSettings(key))
+        Next
+        selectedAdHocSQLString = 0
+    End Sub
+
 #Disable Warning IDE0060 ' Hide not used Parameter warning as this is very often the case with the below callbacks from the ribbon
+
+    Private AdHocSQLStrings As Collections.Generic.List(Of String)
+    Private selectedAdHocSQLString As Integer
+
+    ''' <summary>show Adhoc SQL Query editor</summary>
+    ''' <param name="control"></param>
+    Public Sub showDBAdHocSQL(control As CustomUI.IRibbonControl, strText As String)
+        Dim theAdHocSQLDlg As AdHocSQL = New AdHocSQL(strText)
+        If theAdHocSQLDlg.ShowDialog() = System.Windows.Forms.DialogResult.OK Then
+            'place SQL String into currently selected Cell/DBFunction
+            Dim queryString As String = theAdHocSQLDlg.SQLText.Text
+            Dim targetFormula As String = ExcelDnaUtil.Application.ActiveCell.Formula
+            Dim srchdFunc As String = ""
+            ' check whether there is any existing db function other than DBListFetch inside active cell
+            For Each srchdFunc In {"DBSETQUERY", "DBROWFETCH", "DBLISTFETCH"}
+                If Left(UCase(targetFormula), Len(srchdFunc) + 2) = "=" + srchdFunc + "(" Then
+                    ' for existing theFunction (DBSetQuery or DBRowFetch)...
+                    Exit For
+                Else
+                    srchdFunc = ""
+                End If
+            Next
+            If srchdFunc = "" Then
+                ' empty cell, just put query there
+                If targetFormula = "" Then
+                    ExcelDnaUtil.Application.ActiveCell = queryString
+                Else
+                    If Globals.QuestionMsg("Non-empty Cell with no DB function selected, should content be replaced?") = MsgBoxResult.Ok Then
+                        ExcelDnaUtil.Application.ActiveCell = queryString
+                    End If
+                End If
+            Else
+                If Globals.QuestionMsg("Cell with DB function selected, should query be replaced?") = MsgBoxResult.Ok Then
+                    ' db function, recreate with query inside
+                    ' get the parts of the targeted function formula
+                    Dim formulaParams As String = Mid$(targetFormula, Len(srchdFunc) + 3)
+                    ' replace querystring in existing formula 
+                    formulaParams = Left(formulaParams, Len(formulaParams) - 1)
+                    Dim tempFormula As String = Globals.replaceDelimsWithSpecialSep(formulaParams, ",", """", "(", ")", vbTab)
+                    Dim restFormula As String = Mid$(tempFormula, InStr(tempFormula, vbTab))
+                    ' ..and put into active cell
+                    ExcelDnaUtil.Application.ActiveCell.Formula = "=" + srchdFunc + "(""" + queryString + """" + Replace(restFormula, vbTab, ",") + ")"
+                End If
+            End If
+        End If
+        ' get module info for buildtime (FileDateTime of xll):
+        Dim sModule As String = ""
+        For Each tModule As Diagnostics.ProcessModule In Diagnostics.Process.GetCurrentProcess().Modules
+            sModule = tModule.FileName
+            If sModule.ToUpper.Contains("DBADDIN") Then
+                sModule = Replace(sModule, ".xll", "User.config")
+                Exit For
+            End If
+        Next
+
+        ' store new sql command into AdHocSQLStrings and settings
+        If Not AdHocSQLStrings.Contains(theAdHocSQLDlg.SQLText.Text) And Strings.Replace(theAdHocSQLDlg.SQLText.Text, " ", "") <> "" Then
+            AdHocSQLStrings.Add(theAdHocSQLDlg.SQLText.Text)
+            selectedAdHocSQLString = AdHocSQLStrings.Count - 1
+            Dim doc As New Xml.XmlDocument()
+            doc.Load(sModule)
+            Dim nodeRegion As Xml.XmlElement = doc.CreateElement("add")
+            nodeRegion.SetAttribute("key", "AdhocSQLcmd" + theAdHocSQLDlg.SQLText.Text)
+            nodeRegion.SetAttribute("value", theAdHocSQLDlg.SQLText.Text)
+            doc.SelectSingleNode("//UserSettings").AppendChild(nodeRegion)
+            doc.Save(sModule)
+        Else
+            selectedAdHocSQLString = AdHocSQLStrings.IndexOf(theAdHocSQLDlg.SQLText.Text)
+        End If
+        ' reflect changes in sql combobox
+        theRibbon.InvalidateControl("DBAdhocSQL")
+    End Sub
+
+    Public Function GetAdhocSQLText(control As CustomUI.IRibbonControl)
+        If AdHocSQLStrings.Count > 0 Then
+            Return AdHocSQLStrings(selectedAdHocSQLString)
+        Else
+            Return ""
+        End If
+    End Function
+
+    Public Function GetAdhocSQLItemCount(control As CustomUI.IRibbonControl) As Integer
+        Return AdHocSQLStrings.Count
+    End Function
+
+    Public Function GetAdhocSQLItemLabel(control As CustomUI.IRibbonControl, index As Integer) As String
+        If AdHocSQLStrings.Count > 0 Then
+            Return AdHocSQLStrings(index)
+        Else
+            Return ""
+        End If
+    End Function
 
     Public Sub clickRepairLegacyFunctions(control As CustomUI.IRibbonControl)
         Globals.repairLegacyFunctions(True)
     End Sub
 
-    Public Function getInfoLabel(ByRef control As CustomUI.IRibbonControl)
-        getInfoLabel = "DBModif Impl: " + IIf(DBModifs.altDBImpl, "ADO.NET", "ADODB")
+    ''' <summary>used for additional information</summary>
+    ''' <param name="control"></param>
+    ''' <returns></returns>
+    Public Function getSuperTipInfo(ByRef control As CustomUI.IRibbonControl)
+        getSuperTipInfo = "DBModif Implementation: " + IIf(DBModifs.altDBImpl, "ADO.NET", "ADODB")
     End Function
 
     ''' <summary>display warning button icon on Cprops change if DBFskip is set...</summary>
@@ -233,19 +340,19 @@ Public Class MenuHandler
 
     ''' <summary>for environment dropdown to get the total number of the entries</summary>
     ''' <returns></returns>
-    Public Function GetItemCount(control As CustomUI.IRibbonControl) As Integer
+    Public Function GetEnvItemCount(control As CustomUI.IRibbonControl) As Integer
         Return Globals.environdefs.Length
     End Function
 
     ''' <summary>for environment dropdown to get the label of the entries</summary>
     ''' <returns></returns>
-    Public Function GetItemLabel(control As CustomUI.IRibbonControl, index As Integer) As String
+    Public Function GetEnvItemLabel(control As CustomUI.IRibbonControl, index As Integer) As String
         Return Globals.environdefs(index)
     End Function
 
     ''' <summary>for environment dropdown to get the ID of the entries</summary>
     ''' <returns></returns>
-    Public Function GetItemID(control As CustomUI.IRibbonControl, index As Integer) As String
+    Public Function GetEnvItemID(control As CustomUI.IRibbonControl, index As Integer) As String
         Return Globals.environdefs(index)
     End Function
 
@@ -258,7 +365,7 @@ Public Class MenuHandler
     ''' <summary>tooltip for the environment select drop down</summary>
     ''' <param name="control"></param>
     ''' <returns>the tooltip</returns>
-    Public Function getSelectedTooltip(control As CustomUI.IRibbonControl) As String
+    Public Function GetEnvSelectedTooltip(control As CustomUI.IRibbonControl) As String
         If CBool(fetchSetting("DontChangeEnvironment", "False")) Then
             Return "DontChangeEnvironment is set, therefore changing the Environment is prevented !"
         Else
@@ -266,10 +373,10 @@ Public Class MenuHandler
         End If
     End Function
 
-    ''' <summary>whether to enable environment select drop down</summary>
+    ''' <summary>whether to enable environment selection drop down</summary>
     ''' <param name="control"></param>
     ''' <returns>true if enabled</returns>
-    Public Function GetEnabledSelect(control As CustomUI.IRibbonControl) As Integer
+    Public Function GetEnvEnabled(control As CustomUI.IRibbonControl) As Integer
         Return Not CBool(fetchSetting("DontChangeEnvironment", "False"))
     End Function
 
@@ -308,6 +415,7 @@ Public Class MenuHandler
         End If
         ' reflect changes in settings
         Globals.initSettings()
+        initAdhocSQLconfig()
         ' also display in ribbon
         Globals.theRibbon.Invalidate()
     End Sub
@@ -399,7 +507,7 @@ Public Class MenuHandler
     ''' <param name="control"></param>
     Public Sub DBModifClick(control As CustomUI.IRibbonControl)
         ' reset noninteractive messages (used for VBA invocations) and hadError for interactive invocations
-        nonInteractiveErrMsgs = "" : hadError = False
+        Globals.nonInteractiveErrMsgs = "" : DBModifs.hadError = False
         Dim nodeName As String = Right(control.Id, Len(control.Id) - 1)
         If Not ExcelDnaUtil.Application.CommandBars.GetEnabledMso("FileNewDefault") Then
             Globals.UserMsg("Cannot execute DB Modifier while cell editing active !", "DB Modifier execution", MsgBoxStyle.Exclamation)

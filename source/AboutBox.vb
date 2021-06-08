@@ -108,7 +108,7 @@ Public NotInheritable Class AboutBox
     End Sub
 
     ''' <summary>checks for updates of DB-Addin, asks for download and downloads them</summary>
-    ''' <param name="doUpdate">display result of check (true) or quietly exit (false)</param>
+    ''' <param name="doUpdate">only display result of check (false) or actually perform the update and download new version (true)</param>
     Public Sub checkForUpdate(doUpdate As Boolean)
         Const updateFilenameZip = "downloadedVersion.zip"
         Dim localUpdateFolder As String = Globals.fetchSetting("localUpdateFolder", "")
@@ -119,14 +119,19 @@ Public NotInheritable Class AboutBox
         Dim response As Net.HttpWebResponse = Nothing
         Dim urlFile As String = ""
 
-        ' check for current version to see whether connection is working
+        ' check for zip file of next higher revision
         Dim curRevision As Integer = My.Application.Info.Version.Revision
         ' try with highest possible Security protocol
-        Net.ServicePointManager.SecurityProtocol = Net.SecurityProtocolType.Tls12
+        Try
+            Net.ServicePointManager.SecurityProtocol = Net.SecurityProtocolType.Tls12 Or Net.SecurityProtocolType.SystemDefault
+        Catch ex As Exception
+            Globals.UserMsg("Error setting the SecurityProtocol: " + ex.Message())
+            Exit Sub
+        End Try
+
         ' always accept url certificate as valid
         Net.ServicePointManager.ServerCertificateValidationCallback = AddressOf ValidationCallbackHandler
 
-        ' check for zip file of next higher revision
         Do
             urlFile = updatesUrlBase + updatesMajorVersion + (curRevision + 1).ToString() + ".zip"
             Dim request As Net.HttpWebRequest
@@ -172,7 +177,7 @@ Public NotInheritable Class AboutBox
             Exit Sub
         End If
 
-        ' continue and ask for download
+        ' continue with download
         urlFile = updatesUrlBase + updatesMajorVersion + curRevision.ToString() + ".zip"
 
         ' create the download folder

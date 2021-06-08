@@ -11,22 +11,12 @@ Public Class DBSheetCreateForm
     Inherits System.Windows.Forms.Form
     ''' <summary>whether the form fields should react to changes (set if making changes within code)....</summary>
     Private FormDisabled As Boolean
-    ''' <summary>the connection string for dbsheet definitions, different from the normal one (extended rights for schema viewing required)</summary>
-    Private dbsheetConnString As String
-    ''' <summary>identifier needed to fetch database from connection string (eg Database=)</summary>
-    Private dbidentifier As String
-    ''' <summary>statement/procedure to get all databases in a DB instance</summary>
-    Private dbGetAllStr As String
-    ''' <summary>fieldname where databases are returned by dbGetAllStr</summary>
-    Private DBGetAllFieldName As String
-    ''' <summary>the DB connection for the dbsheet definition activities</summary>
-    Private dbshcnn As OdbcConnection
-    ''' <summary>identifier needed to put password into connection string (eg PWD=)</summary>
-    Private dbPwdSpec As String
     ''' <summary>placeholder used in lookup queries to identify the current field's lookup table</summary>
     Private tblPlaceHolder As String = "!T!"
     ''' <summary>character prepended before field name to specify non nullable fields</summary>
     Private specialNonNullableChar As String = "*"
+    ''' <summary>common connection settings factored in helper class</summary>
+    Private myDBConnHelper As DBSheetConnHelper
 
 #Region "Initialization of DBSheetDefs"
     ''' <summary>entry point of form, invoked by clicking "create/edit DBSheet definition"</summary>
@@ -34,23 +24,7 @@ Public Class DBSheetCreateForm
     ''' <param name="e"></param>
     Private Sub DBSheetCreateForm_Shown(sender As Object, e As EventArgs) Handles Me.Shown
         ' get settings for DBSheet definition editing
-        setConnectionString()
-        dbGetAllStr = fetchSetting("dbGetAll" + Globals.env(), "NONEXISTENT")
-        If dbGetAllStr = "NONEXISTENT" Then
-            Globals.UserMsg("No dbGetAllStr given for environment: " + Globals.env() + ", please correct and rerun.", "DBSheet Definition Error")
-            Exit Sub
-        End If
-        DBGetAllFieldName = fetchSetting("dbGetAllFieldName" + Globals.env(), "NONEXISTENT")
-        If DBGetAllFieldName = "NONEXISTENT" Then
-            Globals.UserMsg("No DBGetAllFieldName given for environment: " + Globals.env() + ", please correct and rerun.", "DBSheet Definition Error")
-            Exit Sub
-        End If
-        dbidentifier = fetchSetting("DBidentifierCCS" + Globals.env(), "NONEXISTENT")
-        If dbidentifier = "NONEXISTENT" Then
-            Globals.UserMsg("No DB identifier given for environment: " + Globals.env() + ", please correct and rerun.", "DBSheet Definition Error")
-            Exit Sub
-        End If
-        dbPwdSpec = fetchSetting("dbPwdSpec" + Globals.env(), "")
+        myDBConnHelper = New DBSheetConnHelper()
         tblPlaceHolder = fetchSetting("tblPlaceHolder" + Globals.env(), "!T!")
         specialNonNullableChar = fetchSetting("specialNonNullableChar" + Globals.env(), "*")
         Lenvironment.Text = "Environment: " + fetchSetting("ConfigName" + Globals.env(), "")
@@ -121,12 +95,12 @@ Public Class DBSheetCreateForm
         DBSheetColsEditable(False)
 
         ' if we have a Password to enter (dbPwdSpec contained in dbsheetConnString and no password entered yet), just display explanation text in title bar and let user enter password... 
-        If InStr(dbsheetConnString, dbPwdSpec) > 0 And dbPwdSpec <> "" And existingPwd = "" Then
+        If InStr(myDBConnHelper.dbsheetConnString, myDBConnHelper.dbPwdSpec) > 0 And myDBConnHelper.dbPwdSpec <> "" And existingPwd = "" Then
             resetDBSheetCreateForm()
         Else ' otherwise jump in immediately
             assignDBSheet.Enabled = False
             ' passwordless connection string, reset password and disable...
-            If InStr(dbsheetConnString, dbPwdSpec) = 0 Or dbPwdSpec = "" Then
+            If InStr(myDBConnHelper.dbsheetConnString, myDBConnHelper.dbPwdSpec) = 0 Or myDBConnHelper.dbPwdSpec = "" Then
                 Password.Enabled = False
                 existingPwd = ""
             Else ' set to stored existig password
@@ -137,29 +111,14 @@ Public Class DBSheetCreateForm
         End If
     End Sub
 
-    ''' <summary>set the dbSheet connection string, used in initialization and openConnection</summary>
-    Private Sub setConnectionString()
-        ' do we have a separate dbsheet connection string?
-        dbsheetConnString = fetchSetting("DBSheetConnString" + Globals.env(), "NONEXISTENT")
-        If dbsheetConnString = "NONEXISTENT" Then
-            ' no, try normal connection string but do provider/driver change
-            dbsheetConnString = Replace(fetchSetting("ConstConnString" + Globals.env(), "NONEXISTENT"), fetchSetting("ConnStringSearch" + Globals.env(), "provider=SQLOLEDB"), fetchSetting("ConnStringReplace" + Globals.env(), "driver=SQL SERVER"))
-            If dbsheetConnString = "NONEXISTENT" Then
-                ' actually this cannot happen....
-                Globals.UserMsg("No Connectionstring given for environment: " + Globals.env() + ", please correct and rerun.", "DBSheet Definition Error")
-                Exit Sub
-            End If
-        End If
-    End Sub
-
     Private Sub resetDBSheetCreateForm()
         Me.Text = "DB Sheet creation: Please enter required Password into Pwd to access schema information"
         TableEditable(False)
         saveEnabled(False)
         DBSheetColsEditable(False)
         assignDBSheet.Enabled = False
-        Try : dbshcnn.Close() : Catch ex As Exception : End Try
-        dbshcnn = Nothing
+        Try : myDBConnHelper.dbshcnn.Close() : Catch ex As Exception : End Try
+        myDBConnHelper.dbshcnn = Nothing
         ' if called by error in openConnection, reset existing password to allow for refreshing...
         existingPwd = ""
     End Sub
@@ -190,8 +149,8 @@ Public Class DBSheetCreateForm
     Private Sub setPasswordAndInit()
         existingPwd = Password.Text
         FormLocalPwd = Password.Text
-        Try : dbshcnn.Close() : Catch ex As Exception : End Try
-        dbshcnn = Nothing
+        Try : myDBConnHelper.dbshcnn.Close() : Catch ex As Exception : End Try
+        myDBConnHelper.dbshcnn = Nothing
         fillDatabasesAndSetDropDown()
     End Sub
 
@@ -205,7 +164,7 @@ Public Class DBSheetCreateForm
             Exit Sub
         End Try
         Me.Text = "DB Sheet creation: Select Database and Table to start building a DBSheet Definition"
-        Database.SelectedIndex = Database.Items.IndexOf(Globals.fetch(dbsheetConnString, dbidentifier, ";"))
+        Database.SelectedIndex = Database.Items.IndexOf(Globals.fetch(myDBConnHelper.dbsheetConnString, myDBConnHelper.dbidentifier, ";"))
         'initialization of everything else is triggered by above change and caught by Database_SelectedIndexChanged
     End Sub
 
@@ -214,24 +173,24 @@ Public Class DBSheetCreateForm
         Dim dbs As OdbcDataReader
 
         ' do not catch exception here, as it should be handled by fillDatabasesAndSetDropDown
-        openConnection()
+        myDBConnHelper.openConnection()
         FormDisabled = True
         Database.Items.Clear()
-        Dim sqlCommand As OdbcCommand = New OdbcCommand(dbGetAllStr, dbshcnn)
+        Dim sqlCommand As OdbcCommand = New OdbcCommand(myDBConnHelper.dbGetAllStr, myDBConnHelper.dbshcnn)
         Try
             dbs = sqlCommand.ExecuteReader()
         Catch ex As OdbcException
             FormDisabled = False
-            Throw New Exception("Could not retrieve schema information for databases in connection string: '" + dbsheetConnString + "',error: " + ex.Message)
+            Throw New Exception("Could not retrieve schema information for databases in connection string: '" + myDBConnHelper.dbsheetConnString + "',error: " + ex.Message)
         End Try
         If dbs.HasRows Then
             Try
                 While dbs.Read()
                     Dim addVal As String
-                    If Strings.Len(DBGetAllFieldName) = 0 Then
+                    If Strings.Len(myDBConnHelper.DBGetAllFieldName) = 0 Then
                         addVal = dbs(0)
                     Else
-                        addVal = dbs(DBGetAllFieldName)
+                        addVal = dbs(myDBConnHelper.DBGetAllFieldName)
                     End If
                     Database.Items.Add(addVal)
                 End While
@@ -243,7 +202,7 @@ Public Class DBSheetCreateForm
             End Try
         Else
             FormDisabled = False
-            Throw New Exception("Could not retrieve any databases with: " + dbGetAllStr + "!")
+            Throw New Exception("Could not retrieve any databases with: " + myDBConnHelper.dbGetAllStr + "!")
         End If
     End Sub
 
@@ -252,7 +211,7 @@ Public Class DBSheetCreateForm
     ''' <param name="e"></param>
     Private Sub Database_SelectedIndexChanged(sender As Object, e As EventArgs) Handles Database.SelectedIndexChanged
         ' add database information to signal a change in connection string to selected database !
-        Try : openConnection(Database.Text) : Catch ex As Exception : Globals.UserMsg(ex.Message) : resetDBSheetCreateForm() : Exit Sub : End Try
+        Try : myDBConnHelper.openConnection(Database.Text) : Catch ex As Exception : Globals.UserMsg(ex.Message) : resetDBSheetCreateForm() : Exit Sub : End Try
         Try
             fillTables()
             ' start with empty columns list
@@ -291,44 +250,7 @@ Public Class DBSheetCreateForm
         Me.Text = "DB Sheet creation: Select one or more columns (fields) adding possible foreign key lookup information in foreign tables, finally click create query to finish DBSheet definition"
     End Sub
 
-    ''' <summary>opens a database connection with active connstring</summary>
-    Sub openConnection(Optional databaseName As String = "")
-        ' connections are pooled by ADO depending on the connection string:
-        If dbshcnn Is Nothing Or databaseName <> "" Then
-            setConnectionString()
-            ' add password to connection string
-            If InStr(1, dbsheetConnString, dbPwdSpec) > 0 And dbPwdSpec <> "" Then
-                If Strings.Len(existingPwd) > 0 Then
-                    If InStr(1, dbsheetConnString, dbPwdSpec) > 0 Then
-                        dbsheetConnString = Globals.Change(dbsheetConnString, dbPwdSpec, existingPwd, ";")
-                    Else
-                        dbsheetConnString = dbsheetConnString + ";" + dbPwdSpec + existingPwd
-                    End If
-                Else
-                    Throw New Exception("Password is required by connection string: " + dbsheetConnString)
-                End If
-            End If
-            ' add database name to connection string, needed for schema retrieval!!!
-            If databaseName <> "" Then
-                If InStr(1, dbsheetConnString.ToUpper, dbidentifier.ToUpper) > 0 Then
-                    dbsheetConnString = Globals.Change(dbsheetConnString, dbidentifier, databaseName, ";")
-                Else
-                    dbsheetConnString = dbsheetConnString + ";" + dbidentifier + databaseName
-                End If
-            End If
-        End If
-        Try
-            dbshcnn = New OdbcConnection With {
-                .ConnectionString = dbsheetConnString,
-                .ConnectionTimeout = Globals.CnnTimeout
-            }
-            dbshcnn.Open()
-        Catch ex As Exception
-            dbsheetConnString = Replace(dbsheetConnString, dbPwdSpec + existingPwd, dbPwdSpec + "*******")
-            dbshcnn = Nothing
-            Throw New Exception("Error connecting to DB: " + ex.Message + ", connection string: " + dbsheetConnString)
-        End Try
-    End Sub
+
 #End Region
 
 #Region "DBSheetCols Gridview"
@@ -495,11 +417,11 @@ Public Class DBSheetCreateForm
 
     Private Sub DBSheetColsForDatabases_ItemClicked(sender As Object, e As ToolStripItemClickedEventArgs) Handles DBSheetColsForDatabases.ItemClicked
         ' connect to the selected foreign database...
-        Try : openConnection(e.ClickedItem.Text) : Catch ex As Exception : Globals.UserMsg(ex.Message) : Exit Sub : End Try
+        Try : myDBConnHelper.openConnection(e.ClickedItem.Text) : Catch ex As Exception : Globals.UserMsg(ex.Message) : Exit Sub : End Try
         ' ... and get the tables into the ftable cell (!), the rest of the column still has the foreign tables of the main database...
         DirectCast(DBSheetCols.Rows(selRowIndex).Cells("ftable"), DataGridViewComboBoxCell).DataSource = getforeignTables()
         ' revert back to main database
-        Try : openConnection(Database.Text) : Catch ex As Exception : Globals.UserMsg(ex.Message) : Exit Sub : End Try
+        Try : myDBConnHelper.openConnection(Database.Text) : Catch ex As Exception : Globals.UserMsg(ex.Message) : Exit Sub : End Try
     End Sub
 
     ''' <summary>move (shift) row up</summary>
@@ -664,7 +586,7 @@ Public Class DBSheetCreateForm
             Dim sqlCommand As OdbcCommand = New OdbcCommand() With {
                 .CommandText = "SELECT TOP 1 * FROM " + Table.Text,
                 .CommandType = CommandType.Text,
-                .Connection = dbshcnn
+                .Connection = myDBConnHelper.dbshcnn
             }
             sqlCommand.Prepare()
             tableSchemaReader = sqlCommand.ExecuteReader(CommandBehavior.KeyInfo)
@@ -727,7 +649,7 @@ Public Class DBSheetCreateForm
         TableDataTypes = New Dictionary(Of String, String)
         Dim rstSchema As OdbcDataReader
         Dim selectStmt As String = "SELECT TOP 1 * FROM " + Table.Text
-        Dim sqlCommand As OdbcCommand = New OdbcCommand(selectStmt, dbshcnn)
+        Dim sqlCommand As OdbcCommand = New OdbcCommand(selectStmt, myDBConnHelper.dbshcnn)
         rstSchema = sqlCommand.ExecuteReader()
         Try
             Dim schemaInfo As DataTable = rstSchema.GetSchemaTable()
@@ -752,7 +674,7 @@ Public Class DBSheetCreateForm
         getforeignTables = New List(Of String)({""})
         Dim rstSchema As OdbcDataReader
         Dim selectStmt As String = "SELECT TOP 1 * FROM " + foreignTable
-        Dim sqlCommand As OdbcCommand = New OdbcCommand(selectStmt, dbshcnn)
+        Dim sqlCommand As OdbcCommand = New OdbcCommand(selectStmt, myDBConnHelper.dbshcnn)
         rstSchema = sqlCommand.ExecuteReader()
         Try
             Dim schemaInfo As DataTable = rstSchema.GetSchemaTable()
@@ -780,7 +702,7 @@ Public Class DBSheetCreateForm
         Dim schemaTable As DataTable
         Dim tableTemp As String
         Try
-            schemaTable = dbshcnn.GetSchema("Tables")
+            schemaTable = myDBConnHelper.dbshcnn.GetSchema("Tables")
             If schemaTable.Rows.Count = 0 Then Throw New Exception("No Tables could be fetched from Schema")
         Catch ex As Exception
             Throw New Exception("Error getting schema information for tables in connection strings database ' " + Database.Text + "'." + ",error: " + ex.Message)
@@ -805,7 +727,7 @@ Public Class DBSheetCreateForm
         getforeignTables = New List(Of String)({""})
         Dim schemaTable As DataTable
         Try
-            schemaTable = dbshcnn.GetSchema("Tables")
+            schemaTable = myDBConnHelper.dbshcnn.GetSchema("Tables")
             If schemaTable.Rows.Count = 0 Then Throw New Exception("No Tables could be fetched from Schema")
         Catch ex As Exception
             Throw New Exception("Error getting schema information for tables in connection strings database ' " + Database.Text + "'." + ",error: " + ex.Message)
@@ -1022,7 +944,7 @@ Public Class DBSheetCreateForm
                 FormDisabled = True
                 ' get Database from (legacy) connID (legacy connID was prefixed with connIDPrefixDBtype)
                 Dim configDatabase As String = Replace(DBSheetConfig.getEntry("connID", DBSheetParams), fetchSetting("connIDPrefixDBtype", "MSSQL"), "")
-                Try : openConnection(configDatabase) : Catch ex As Exception : Globals.UserMsg(ex.Message) : Exit Sub : End Try
+                Try : myDBConnHelper.openConnection(configDatabase) : Catch ex As Exception : Globals.UserMsg(ex.Message) : Exit Sub : End Try
                 fillDatabases()
                 Database.SelectedIndex = Database.Items.IndexOf(configDatabase)
                 fillTables()
@@ -1188,7 +1110,7 @@ Public Class DBSheetCreateForm
     ''' <param name="choice">editable True, not editable False</param>
     Private Sub DBSheetColsEditable(choice As Boolean)
         ' block password change if DBSheetDef is editable or no password needed
-        If InStr(1, dbsheetConnString, dbPwdSpec) > 0 And dbPwdSpec <> "" Then
+        If InStr(1, myDBConnHelper.dbsheetConnString, myDBConnHelper.dbPwdSpec) > 0 And myDBConnHelper.dbPwdSpec <> "" Then
             Password.Enabled = Not choice
             LPwd.Enabled = Not choice
         Else

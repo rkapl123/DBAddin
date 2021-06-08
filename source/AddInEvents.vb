@@ -302,7 +302,7 @@ done:
     ''' <param name="cbName">name of command button, defines whether a DBModification is invoked (starts with DBMapper/DBAction/DBSeqnce)</param>
     Private Shared Sub cbClick(cbName As String)
         ' reset noninteractive messages (used for VBA invocations) and hadError for interactive invocations
-        nonInteractiveErrMsgs = "" : hadError = False
+        Globals.nonInteractiveErrMsgs = "" : DBModifs.hadError = False
         Dim DBModifType As String = Left(cbName, 8)
         If DBModifType <> "DBSeqnce" Then
             Dim targetRange As Excel.Range

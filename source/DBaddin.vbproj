@@ -113,6 +113,7 @@
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="AddInEvents.vb" />
+    <Compile Include="DBSheetConnHelper.vb" />
     <Compile Include="ConfigFiles.vb" />
     <Compile Include="DBSheetConfig.vb" />
     <Compile Include="DBSheetCreateForm.designer.vb">
@@ -125,6 +126,12 @@
       <DependentUpon>EditDBModifDef.vb</DependentUpon>
     </Compile>
     <Compile Include="EditDBModifDef.vb">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="AdHocSQL.Designer.vb">
+      <DependentUpon>AdHocSQL.vb</DependentUpon>
+    </Compile>
+    <Compile Include="AdHocSQL.vb">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Globals.vb" />
@@ -193,6 +200,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="EditDBModifDef.resx">
       <DependentUpon>EditDBModifDef.vb</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="AdHocSQL.resx">
+      <DependentUpon>AdHocSQL.vb</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="My Project\Resources.resx">
       <CustomToolNamespace>My.Resources</CustomToolNamespace>

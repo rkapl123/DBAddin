@@ -163,6 +163,25 @@ In the DBAddin settings Group, there is a dropdown "settings", where you can mod
 Right besides that dropdown, there is a shortcut to the Workbook properties (being the standard dialog Advanced Properties, accessible via File/Info) that allows you to change custom properties settings for DBAddin.
 A green check shows that custom property DBFskip is not set to true for this workbook, therefore refreshing DB functions on opening the Workbook.
 
+### Adhoc SQL Commands
+
+Another tool is the entry of quick (adhoc) SQL Commands in the combo box below the settings dropdown. Changing the combo box opens the AdHoc SQL Command dialog:
+
+![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/AdhocSQL.PNG)  
+
+Select Statements (beginning with `select`) are executed immediately, empty statements (using a space character in the combobox) don't execute anything, and everything else is regarded as a DML command and is only executed after confirmation:
+
+![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/AdhocSQL_DMG.PNG)  
+
+Results are shown below the SQL Command text entry.
+In case of an error the exception from the database command is displayed, for DML commands the records affected are shown:
+
+![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/AdhocSQL_DMG_Result.PNG)  
+
+You can modify the command in the AdHoc SQL Command dialog, by clicking `Execute` or pressing `Ctrl-Return` the command will be executed. To change the database context, use the dropdown `Database`. To leave the dialog without any further action, hit ESC or click `Close`. To transfer the SQL command into the current cell (replacing any query in a possible DB Function there), click `Transfer` or press `Shift-Return`.
+
+All issued commands are stored in the user settings and reloaded at start-up of the Add-In (Excel), if you want to get rid of them, open the User-Settings as described in [Settings](#settings) and remove all unwanted entries starting with `key="AdhocSQLcmd.."`
+
 ### Building
 
 All packages necessary for building are contained, simply open DBaddin.sln and build the solution. The script `deployForTest.cmd` can be used to quickly deploy the built xll and configs to `%appdata%\Microsoft\AddIns` after choosing the solution configuration (Release or Debug).

@@ -1018,7 +1018,15 @@ cleanup:
         ExcelDnaUtil.Application.StatusBar = "initialising the Data Adapter"
         Try
             If TypeName(idbcnn) = "SqlConnection" Then
+                ' decent behaviour for SQL Server
+                Using comm As SqlClient.SqlCommand = New SqlClient.SqlCommand("SET ARITHABORT ON", idbcnn)
+                    comm.ExecuteNonQuery()
+                End Using
                 da = New SqlClient.SqlDataAdapter(New SqlClient.SqlCommand("select * from " + tableName, idbcnn))
+                da.UpdateBatchSize = 20
+            ElseIf TypeName(idbcnn) = "OleDbConnection" Then
+                da = New OleDb.OleDbDataAdapter(New OleDb.OleDbCommand("select * from " + tableName, idbcnn))
+                da.UpdateBatchSize = 20
             Else
                 da = New Odbc.OdbcDataAdapter(New Odbc.OdbcCommand("select * from " + tableName, idbcnn))
             End If
@@ -1026,6 +1034,7 @@ cleanup:
         Catch ex As Exception
             Globals.UserMsg("Error in initializing Data Adapter for " + tableName + ": " + ex.Message, "DBMapper Error")
         End Try
+
         ExcelDnaUtil.Application.StatusBar = "retrieving the schema for " + tableName
         Try
             da.SelectCommand.Transaction = DBModifs.trans
@@ -1034,9 +1043,28 @@ cleanup:
             Globals.UserMsg("Error in retrieving Schema for " + tableName + ": " + ex.Message, "DBMapper Error")
         End Try
 
+        ' get the DataTypeName from the database if it exists, so we have a more accurate type information for the parameterized commands (select/insert/update/delete)
+        Dim schemaReader As Common.DbDataReader = Nothing
+        Dim schemaDataTypeCollection As Collection = New Collection
+        Try
+            schemaReader = da.SelectCommand.ExecuteReader()
+            For Each schemaRow As DataRow In schemaReader.GetSchemaTable().Rows
+                Try : schemaDataTypeCollection.Add(schemaRow("DataTypeName"), schemaRow("ColumnName")) : Catch ex As Exception : End Try
+            Next
+            ' cancel command to finish datareader (otherwise close takes very long until timeout)
+            da.SelectCommand.Cancel()
+            schemaReader.Close()
+        Catch ex As Exception
+            If Not IsNothing(schemaReader) Then
+                da.SelectCommand.Cancel()
+                schemaReader.Close()
+            End If
+        End Try
+
         ' first check if all column names (except ignored) of DBMapper Range exist in table and collect fieldnames
         Dim allColumnsStr(TargetRange.Columns.Count - 1) As String
-        Dim colNum As Long = 1
+        Dim colNum As Integer = 1
+        Dim fieldColNum As Integer = 0
         Do
             Dim fieldname As String = Trim(TargetRange.Cells(1, colNum).Value)
             ' only if not ignored...
@@ -1048,11 +1076,14 @@ cleanup:
                     Globals.UserMsg("Field '" + fieldname + "' does not exist in Table '" + tableName + "' and is not in ignoreColumns, Error in sheet " + TargetRange.Parent.Name, "DBMapper Error")
                     GoTo cleanup
                 Else
-                    allColumnsStr(colNum - 1) = fieldname
+                    allColumnsStr(fieldColNum) = fieldname
+                    fieldColNum += 1
                 End If
             End If
             colNum += 1
         Loop Until colNum > TargetRange.Columns.Count
+        ' keep only those that were filled...
+        ReDim Preserve allColumnsStr(fieldColNum - 1)
 
         ' before setting the commands for the adapter, we need to have the primary key information, or update/delete command builder will fail...
         Dim primKeyColumnsStr(primKeysCount - 1) As String
@@ -1085,11 +1116,17 @@ cleanup:
         ' replace the select command to avoid columns that are default filled but non-nullable (will produce errors if not assigned to new row)
         da.SelectCommand.CommandText = "SELECT " + String.Join(",", allColumnsStr) + " FROM " + tableName
         ' fill schema again to reflect the changed columns
-        da.FillSchema(ds, SchemaType.Source, tableName)
+        Try
+            da.FillSchema(ds, SchemaType.Source, tableName)
+        Catch ex As Exception
+            notifyUserOfDataError("Error in getting schema information for " + tableName + " (" + da.SelectCommand.CommandText + "): " + ex.Message, 1)
+            GoTo cleanup
+        End Try
+
         ' for avoidFill mode (no uploading of whole table) replace select with parameterized query (params are added below)
         If avoidFill Then da.SelectCommand.CommandText = "SELECT " + String.Join(",", allColumnsStr) + " FROM " + tableName + primKeyCompound
 
-        Dim allColumns(TargetRange.Columns.Count - 1) As DataColumn
+        Dim allColumns(UBound(allColumnsStr)) As DataColumn
         For i As Integer = 0 To UBound(allColumnsStr)
             allColumns(i) = ds.Tables(0).Columns(allColumnsStr(i))
         Next
@@ -1100,11 +1137,18 @@ cleanup:
             primKeyColumns(i) = ds.Tables(0).Columns(primKeyColumnsStr(i))
             ' for avoidFill mode (no uploading of whole table) set up params for parameterized query from primary keys
             If avoidFill Then
-                Dim param As Common.DbParameter = da.SelectCommand.CreateParameter()
+                Dim param As Common.DbParameter
+                If TypeName(idbcnn) = "SqlConnection" Then
+                    param = DirectCast(da.SelectCommand, SqlClient.SqlCommand).CreateParameter()
+                ElseIf TypeName(idbcnn) = "OleDbConnection" Then
+                    param = DirectCast(da.SelectCommand, OleDb.OleDbCommand).CreateParameter()
+                Else
+                    param = DirectCast(da.SelectCommand, Odbc.OdbcCommand).CreateParameter()
+                End If
                 With param
                     .ParameterName = "@" + primKeyColumnsStr(i)
                     .SourceColumn = primKeyColumnsStr(i)
-                    .DbType = TypeToDbType(ds.Tables(0).Columns.GetType())
+                    .DbType = TypeToDbType(ds.Tables(0).Columns(i).DataType(), primKeyColumnsStr(i), schemaDataTypeCollection)
                 End With
                 da.SelectCommand.Parameters.Add(param)
             End If
@@ -1115,13 +1159,19 @@ cleanup:
             notifyUserOfDataError("Error in setting primary keys for " + tableName + ": " + ex.Message, 1)
             GoTo cleanup
         End Try
+        ' for faster loading of data
+        ds.Tables(0).BeginLoadData()
         ' fill the dataset in normal mode (needed to find records in memory)
         If Not avoidFill Then
             ExcelDnaUtil.Application.StatusBar = "filling the table data into dataset"
             Try
                 da.Fill(ds.Tables(0))
             Catch ex As Exception
-                notifyUserOfDataError("Error in retrieving Data for " + tableName + ": " + ex.Message + vbCrLf + "Following primary keys are defined (check whether enough): " + String.Join(Of DataColumn)(", ", primKeyColumns), 1)
+                If InStr(LCase(ex.Message()), "timeout") > 0 Or TypeOf ex Is System.OutOfMemoryException Then
+                    notifyUserOfDataError("Timeout/OutOfMemoryException in retrieving Data for " + tableName + ": " + ex.Message + vbCrLf + vbCrLf + "You can usually resolve this problem by adding <avoidFill>True</avoidFill> to the DB Mappers definition!", 1)
+                Else
+                    notifyUserOfDataError("Error in retrieving Data for " + tableName + ": " + ex.Message + vbCrLf + "Following primary keys are defined (check whether enough): " + String.Join(Of DataColumn)(", ", primKeyColumns), 1)
+                End If
                 GoTo cleanup
             End Try
         End If
@@ -1129,9 +1179,11 @@ cleanup:
         Try
             Dim custCmdBuilder As CustomCommandBuilder
             If TypeName(idbcnn) = "SqlConnection" Then
-                custCmdBuilder = New CustomSqlCommandBuilder(ds.Tables(0), idbcnn, allColumns)
+                custCmdBuilder = New CustomSqlCommandBuilder(ds.Tables(0), idbcnn, allColumns, schemaDataTypeCollection)
+            ElseIf TypeName(idbcnn) = "OleDbConnection" Then
+                custCmdBuilder = New CustomOleDbCommandBuilder(ds.Tables(0), idbcnn, allColumns, schemaDataTypeCollection)
             Else
-                custCmdBuilder = New CustomOdbcCommandBuilder(ds.Tables(0), idbcnn, allColumns)
+                custCmdBuilder = New CustomOdbcCommandBuilder(ds.Tables(0), idbcnn, allColumns, schemaDataTypeCollection)
             End If
             da.UpdateCommand = custCmdBuilder.UpdateCommand()
             da.UpdateCommand.CommandTimeout = Globals.CmdTimeout
@@ -1144,10 +1196,12 @@ cleanup:
             GoTo cleanup
         End Try
         ExcelDnaUtil.Application.StatusBar = "Assigning transaction to CommandBuilders"
-        ' if DBModifs.trans is nothing -> immediate commit
         Try
+            da.UpdateCommand.UpdatedRowSource = UpdateRowSource.None
             da.UpdateCommand.Transaction = DBModifs.trans
+            da.DeleteCommand.UpdatedRowSource = UpdateRowSource.None
             da.DeleteCommand.Transaction = DBModifs.trans
+            da.InsertCommand.UpdatedRowSource = UpdateRowSource.None
             da.InsertCommand.Transaction = DBModifs.trans
         Catch ex As Exception
             notifyUserOfDataError("Error in setting Transaction for Insert/Update/Delete Commands for Data Adapter for " + tableName + ": " + ex.Message, 1)
@@ -1176,7 +1230,11 @@ cleanup:
                     If InStr(1, LCase(ignoreColumns) + ",", LCase(primKey) + ",") > 0 Then
                         If CUDFlags Then
                             primKey = Left(primKey, Len(primKey) - 2) ' correct the LU to real primary Key
-                            primKeyValue = TargetRange.ListObject.ListColumns(primKey).Range(rowNum, 1).Value ' get the value from there
+                            If Left(ds.Tables(0).Columns(primKey).DataType.Name, 4) = "Date" Then
+                                primKeyValue = TargetRange.ListObject.ListColumns(primKey).Range(rowNum, 1).Value
+                            Else
+                                primKeyValue = TargetRange.ListObject.ListColumns(primKey).Range(rowNum, 1).Value2
+                            End If
                         End If
                     End If
                     ' special treatment for date(time) fields, try to convert from double (OLE Automation standard: julian datetime values) if not properly formatted
@@ -1205,11 +1263,9 @@ cleanup:
                     End If
                     primKeyValueStr += IIf(primKeyValueStr <> "", ",", "") + primKeyValue.ToString()
                 Next
-                ds.Tables(0).PrimaryKey = primKeyColumns
                 ' if we avoid the full table fill at the beginning, select the single rows to be updated here...
                 If avoidFill Then
                     Try
-                        da.SelectCommand.Prepare()
                         da.Fill(ds.Tables(0))
                     Catch ex As Exception
                         If Not notifyUserOfDataError("Error in retrieving Data for " + tableName + ": " + ex.Message, rowNum) Then GoTo cleanup
@@ -1242,7 +1298,11 @@ cleanup:
                             ' if primKey is in ignoreColumns then the only reasonable reason is a lookup primary key in DBSheets (CUDFlags only), so try with "real" (resolved key) instead...
                             If InStr(1, LCase(ignoreColumns) + ",", LCase(primKey) + ",") > 0 AndAlso CUDFlags Then
                                 primKey = Left(primKey, Len(primKey) - 2) ' correct the LU to real primary Key
-                                primKeyValue = TargetRange.ListObject.ListColumns(primKey).Range(rowNum, 1).Value ' get the value from there
+                                If Left(ds.Tables(0).Columns(primKey).DataType.Name, 4) = "Date" Then
+                                    primKeyValue = TargetRange.ListObject.ListColumns(primKey).Range(rowNum, 1).Value
+                                Else
+                                    primKeyValue = TargetRange.ListObject.ListColumns(primKey).Range(rowNum, 1).Value2
+                                End If
                             End If
                             ' special treatment for date(time) fields, try to convert from double (OLE Automation standard: julian datetime values) if not properly formatted
                             If Left(ds.Tables(0).Columns(primKey).DataType.Name, 4) = "Date" Then
@@ -1270,6 +1330,11 @@ cleanup:
                         If InStr(1, LCase(ignoreColumns) + ",", LCase(fieldname) + ",") = 0 Then
                             Try
                                 Dim fieldval As Object = TargetRange.Cells(rowNum, colNum).Value
+                                If Left(ds.Tables(0).Columns(fieldname).DataType.Name, 4) = "Date" Then
+                                    fieldval = TargetRange.Cells(rowNum, colNum).Value
+                                Else
+                                    fieldval = TargetRange.Cells(rowNum, colNum).Value2
+                                End If
                                 If fieldval Is Nothing Then
                                     foundRow(fieldname) = DBNull.Value ' explicitly set DBNull Value, Nothing or null doesn't work here
                                 Else
@@ -1338,7 +1403,7 @@ nextRow:
         ' now update the changes in the DB
         ExcelDnaUtil.Application.StatusBar = Left("Doing modifications (inserts/updates/deletes) in Database for " + tableName, 255)
         Try
-            da.Update(ds, tableName)
+            da.Update(ds.Tables(0))
             changesDone = True
         Catch ex As Exception
             Dim exMessage As String = ex.Message
@@ -1353,6 +1418,8 @@ nextRow:
                 Dim storedProcCmd As IDbCommand
                 If TypeName(idbcnn) = "SqlConnection" Then
                     storedProcCmd = New SqlClient.SqlCommand(executeAdditionalProc, idbcnn, trans)
+                ElseIf TypeName(idbcnn) = "OleDbConnection" Then
+                    storedProcCmd = New OleDb.OleDbCommand(executeAdditionalProc, idbcnn, trans)
                 Else
                     storedProcCmd = New Odbc.OdbcCommand(executeAdditionalProc, idbcnn, trans)
                 End If
@@ -1524,6 +1591,8 @@ Public Class DBAction : Inherits DBModif
             Dim DmlCmd As IDbCommand
             If TypeName(idbcnn) = "SqlConnection" Then
                 DmlCmd = New SqlClient.SqlCommand(executeText, idbcnn, trans)
+            ElseIf TypeName(idbcnn) = "OleDbConnection" Then
+                DmlCmd = New OleDb.OleDbCommand(executeText, idbcnn, trans)
             Else
                 DmlCmd = New Odbc.OdbcCommand(executeText, idbcnn, trans)
             End If
@@ -1754,9 +1823,31 @@ Public Module DBModifs
     ''' <summary>cast .NET data type to ADO.NET DbType</summary>
     ''' <param name="t">given .NET data type</param>
     ''' <returns>ADO.NET DbType</returns>
-    Public Function TypeToDbType(t As Type) As DbType
+    Public Function TypeToDbType(t As Type, columnName As String, schemaDataTypeCollection As Collection) As DbType
+        ' use the provider specific type information if it exists
+        If schemaDataTypeCollection.Contains(columnName) Then
+            Select Case schemaDataTypeCollection(columnName)
+                Case "char" : TypeToDbType = DbType.AnsiStringFixedLength
+                Case "nchar" : TypeToDbType = DbType.StringFixedLength
+                Case "varchar" : TypeToDbType = DbType.AnsiString
+                Case "nvarchar" : TypeToDbType = DbType.String
+                Case "uniqueidentifier" : TypeToDbType = DbType.Guid
+                Case "binary" : TypeToDbType = DbType.Binary
+                Case "datetime2" : TypeToDbType = DbType.DateTime2
+                Case "time" : TypeToDbType = DbType.Time
+                Case Else
+                    Try
+                        TypeToDbType = DirectCast([Enum].Parse(GetType(DbType), t.Name), DbType)
+                    Catch ex As Exception
+                        TypeToDbType = DbType.Object
+                    End Try
+            End Select
+            Exit Function
+        End If
         Try
             TypeToDbType = DirectCast([Enum].Parse(GetType(DbType), t.Name), DbType)
+            ' for most string types AnsiString is better
+            If TypeToDbType = DbType.String Then TypeToDbType = DbType.AnsiString
         Catch ex As Exception
             TypeToDbType = DbType.Object
         End Try
@@ -1832,6 +1923,8 @@ Public Module DBModifs
                 ' remove provider=SQLOLEDB; (or whatever is in ConnStringSearch<>) for sql server as this is not allowed for ado.net (legacy adodb)
                 theConnString = Replace(theConnString, Globals.fetchSetting("ConnStringSearch" + Globals.env(), "provider=SQLOLEDB") + ";", "")
                 idbcnn = New SqlClient.SqlConnection(theConnString)
+            ElseIf InStr(theConnString.ToLower, "oledb") Then
+                idbcnn = New OleDb.OleDbConnection(theConnString)
             Else
                 idbcnn = New Odbc.OdbcConnection(theConnString)
             End If
@@ -2300,13 +2393,13 @@ EndOuterLoop:
     ''' <returns>empty string on success, error message otherwise</returns>
     <ExcelCommand(Name:="executeDBModif")>
     Public Function executeDBModif(DBModifName As String, Optional headLess As Boolean = False) As String
-        hadError = False : nonInteractive = headLess
-        nonInteractiveErrMsgs = "" ' reset noninteractive messages
+        hadError = False : Globals.nonInteractive = headLess
+        Globals.nonInteractiveErrMsgs = "" ' reset noninteractive messages
         Dim DBModiftype As String = Left(DBModifName, 8)
         If DBModiftype = "DBSeqnce" Or DBModiftype = "DBMapper" Or DBModiftype = "DBAction" Then
             If Not Globals.DBModifDefColl(DBModiftype).ContainsKey(DBModifName) Then
                 If Globals.DBModifDefColl(DBModiftype).Count = 0 Then
-                    nonInteractive = False
+                    Globals.nonInteractive = False
                     Return "No DBModifier contained in Workbook at all!"
                 End If
                 Dim DBModifavailable As String = ""
@@ -2315,21 +2408,21 @@ EndOuterLoop:
                         DBModifavailable += "," + DBMkey
                     Next
                 Next
-                nonInteractive = False
+                Globals.nonInteractive = False
                 Return "DB Modifier '" + DBModifName + "' not existing, available: " + DBModifavailable
             End If
             Globals.LogInfo("Doing DBModifier '" + DBModifName + "' ...")
             Try
                 Globals.DBModifDefColl(DBModiftype).Item(DBModifName).doDBModif()
             Catch ex As Exception
-                nonInteractive = False
+                Globals.nonInteractive = False
                 Return "DB Modifier '" + DBModifName + "' doDBModif had following error(s): " + ex.Message
             End Try
-            nonInteractive = False
-            If hadError Then Return nonInteractiveErrMsgs
+            Globals.nonInteractive = False
+            If hadError Then Return Globals.nonInteractiveErrMsgs
             Return "" ' no error, no message
         Else
-            nonInteractive = False
+            Globals.nonInteractive = False
             Return "No valid type (" + DBModiftype + ") in passed DB Modifier '" + DBModifName + "', DB Modifier name must start with 'DBSeqnce', 'DBMapper' Or 'DBAction' !"
         End If
     End Function
@@ -2388,11 +2481,13 @@ Public Class CustomSqlCommandBuilder
     Private dataTable As DataTable
     Private connection As SqlClient.SqlConnection
     Private allColumns As DataColumn()
+    Private schemaDataTypeCollection As Collection
 
-    Public Sub New(dataTable As DataTable, connection As SqlClient.SqlConnection, allColumns As DataColumn())
+    Public Sub New(dataTable As DataTable, connection As SqlClient.SqlConnection, allColumns As DataColumn(), schemaDataTypeCollection As Collection)
         Me.dataTable = dataTable
         Me.connection = connection
         Me.allColumns = allColumns
+        Me.schemaDataTypeCollection = schemaDataTypeCollection
     End Sub
 
     ''' <summary>Creates Insert command with support for Autoincrement (Identity) fields</summary>
@@ -2483,6 +2578,7 @@ Public Class CustomSqlCommandBuilder
         sqlParam.ParameterName = "@old" + columnName
         sqlParam.SourceColumn = columnName
         sqlParam.SourceVersion = DataRowVersion.Original
+        sqlParam.DbType = TypeToDbType(column.DataType(), columnName, schemaDataTypeCollection)
         Return sqlParam
     End Function
 
@@ -2491,6 +2587,7 @@ Public Class CustomSqlCommandBuilder
         Dim columnName As String = column.ColumnName
         sqlParam.ParameterName = "@" + columnName
         sqlParam.SourceColumn = columnName
+        sqlParam.DbType = TypeToDbType(column.DataType(), columnName, schemaDataTypeCollection)
         Return sqlParam
     End Function
 
@@ -2518,11 +2615,13 @@ Public Class CustomOdbcCommandBuilder
     Private dataTable As DataTable
     Private connection As Odbc.OdbcConnection
     Private allColumns As DataColumn()
+    Private schemaDataTypeCollection As Collection
 
-    Public Sub New(dataTable As DataTable, connection As Odbc.OdbcConnection, allColumns As DataColumn())
+    Public Sub New(dataTable As DataTable, connection As Odbc.OdbcConnection, allColumns As DataColumn(), schemaDataTypeCollection As Collection)
         Me.dataTable = dataTable
         Me.connection = connection
         Me.allColumns = allColumns
+        Me.schemaDataTypeCollection = schemaDataTypeCollection
     End Sub
 
     ''' <summary>Creates Insert command with support for Autoincrement (Identity) fields</summary>
@@ -2612,6 +2711,7 @@ Public Class CustomOdbcCommandBuilder
         sqlParam.ParameterName = "@old" + columnName
         sqlParam.SourceColumn = columnName
         sqlParam.SourceVersion = DataRowVersion.Original
+        sqlParam.DbType = TypeToDbType(column.DataType(), columnName, schemaDataTypeCollection)
         Return sqlParam
     End Function
 
@@ -2620,11 +2720,145 @@ Public Class CustomOdbcCommandBuilder
         Dim columnName As String = column.ColumnName
         sqlParam.ParameterName = "@" + columnName
         sqlParam.SourceColumn = columnName
+        sqlParam.DbType = TypeToDbType(column.DataType(), columnName, schemaDataTypeCollection)
         Return sqlParam
     End Function
 
     Private Function GetTextCommand(text As String) As Odbc.OdbcCommand
         Dim command As Odbc.OdbcCommand = New Odbc.OdbcCommand With {
+            .CommandType = CommandType.Text,
+            .CommandText = text,
+            .Connection = connection
+        }
+        Return command
+    End Function
+
+    Private Function TableName() As String
+        Return "[" + dataTable.TableName + "]"
+    End Function
+End Class
+
+''' <summary>Custom Command builder for OleDB to avoid primary key problems with builtin ones
+''' derived (transposed into VB.NET) from https://www.cogin.com/articles/CustomCommandBuilder.php
+''' Copyright by Dejan Grujic 2004. http://www.cogin.com
+''' </summary>
+Public Class CustomOleDbCommandBuilder
+    Inherits CustomCommandBuilder
+
+    Private dataTable As DataTable
+    Private connection As OleDb.OleDbConnection
+    Private allColumns As DataColumn()
+    Private schemaDataTypeCollection As Collection
+
+    Public Sub New(dataTable As DataTable, connection As OleDb.OleDbConnection, allColumns As DataColumn(), schemaDataTypeCollection As Collection)
+        Me.dataTable = dataTable
+        Me.connection = connection
+        Me.allColumns = allColumns
+        Me.schemaDataTypeCollection = schemaDataTypeCollection
+    End Sub
+
+    ''' <summary>Creates Insert command with support for Autoincrement (Identity) fields</summary>
+    ''' <returns>OleDbCommand for inserting</returns>
+    Public Overrides Function InsertCommand() As Common.DbCommand
+        Dim command As OleDb.OleDbCommand = GetTextCommand("")
+        Dim intoString As StringBuilder = New StringBuilder()
+        Dim valuesString As StringBuilder = New StringBuilder()
+        Dim autoincrementColumns As ArrayList = AutoincrementKeyColumns()
+        For Each column As DataColumn In allColumns
+            If Not autoincrementColumns.Contains(column) Then
+                If (intoString.Length > 0) Then
+                    intoString.Append(", ")
+                    valuesString.Append(", ")
+                End If
+                intoString.Append(column.ColumnName)
+                valuesString.Append("@").Append(column.ColumnName)
+                command.Parameters.Add(CreateParam(column))
+            End If
+        Next
+        Dim commandText As String = "INSERT INTO " + TableName() + "(" + intoString.ToString() + ") VALUES (" + valuesString.ToString() + "); "
+        If autoincrementColumns.Count > 0 Then
+            commandText += "SELECT SCOPE_IDENTITY() AS " + DirectCast(autoincrementColumns(0), DataColumn).ColumnName()
+        End If
+        command.CommandText = commandText
+        Return command
+    End Function
+
+    Private Function AutoincrementKeyColumns() As ArrayList
+        AutoincrementKeyColumns = New ArrayList
+        For Each primaryKeyColumn As DataColumn In dataTable.PrimaryKey
+            If primaryKeyColumn.AutoIncrement Then
+                AutoincrementKeyColumns.Add(primaryKeyColumn)
+            End If
+        Next
+    End Function
+
+    ''' <summary>Creates Delete command</summary>
+    ''' <returns>OleDbCommand for deleting</returns>
+    Public Overrides Function DeleteCommand() As Common.DbCommand
+        Dim command As OleDb.OleDbCommand = GetTextCommand("")
+        Dim whereString As StringBuilder = New StringBuilder()
+        For Each column As DataColumn In dataTable.PrimaryKey
+            If (whereString.Length > 0) Then
+                whereString.Append(" AND ")
+            End If
+            whereString.Append(column.ColumnName).Append(" = @").Append(column.ColumnName)
+            command.Parameters.Add(CreateParam(column))
+        Next
+        Dim commandText As String = "DELETE FROM " + TableName() + " WHERE " + whereString.ToString()
+        command.CommandText = commandText
+        Return command
+    End Function
+
+    ''' <summary>Creates Update command</summary>
+    ''' <returns>OleDbCommand for updating</returns>
+    Public Overrides Function UpdateCommand() As Common.DbCommand
+        Dim command As OleDb.OleDbCommand = GetTextCommand("")
+        Dim setString As StringBuilder = New StringBuilder()
+        Dim whereString As StringBuilder = New StringBuilder()
+
+        Dim primaryKeyColumns() As DataColumn = dataTable.PrimaryKey
+        For Each column As DataColumn In allColumns
+            If (System.Array.IndexOf(primaryKeyColumns, column) <> -1) Then
+                ' primary key
+                If (whereString.Length > 0) Then
+                    whereString.Append(" AND ")
+                End If
+                whereString.Append(column.ColumnName).Append("= @old").Append(column.ColumnName)
+            Else
+                If (setString.Length > 0) Then
+                    setString.Append(", ")
+                End If
+                setString.Append(column.ColumnName).Append(" = @").Append(column.ColumnName)
+            End If
+            command.Parameters.Add(CreateParam(column))
+            command.Parameters.Add(CreateOldParam(column))
+        Next
+        Dim commandText As String = "UPDATE " + TableName() + " SET " + setString.ToString() + " WHERE " + whereString.ToString()
+        command.CommandText = commandText
+        Return command
+    End Function
+
+    Private Function CreateOldParam(column As DataColumn) As OleDb.OleDbParameter
+        Dim sqlParam As OleDb.OleDbParameter = New OleDb.OleDbParameter()
+        Dim columnName As String = column.ColumnName
+        sqlParam.ParameterName = "@old" + columnName
+        sqlParam.SourceColumn = columnName
+        sqlParam.SourceVersion = DataRowVersion.Original
+        sqlParam.DbType = TypeToDbType(column.DataType(), columnName, schemaDataTypeCollection)
+        Return sqlParam
+    End Function
+
+    Private Function CreateParam(column As DataColumn) As OleDb.OleDbParameter
+        Dim sqlParam As OleDb.OleDbParameter = New OleDb.OleDbParameter()
+        Dim columnName As String = column.ColumnName
+        sqlParam.ParameterName = "@" + columnName
+        sqlParam.SourceColumn = columnName
+        sqlParam.DbType = TypeToDbType(column.DataType(), columnName, schemaDataTypeCollection)
+        Return sqlParam
+    End Function
+
+    Private Function GetTextCommand(text As String) As OleDb.OleDbCommand
+        Dim command As OleDb.OleDbCommand = New OleDb.OleDbCommand With {
             .CommandType = CommandType.Text,
             .CommandText = text,
             .Connection = connection

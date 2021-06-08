@@ -4,7 +4,6 @@ Imports ExcelDna.Integration
 Imports Microsoft.Office.Core
 Imports Microsoft.Office.Interop
 
-
 '''<summary>Helper module  for easier manipulation of DBSheet definition / Connection configuration data</summary> 
 Public Module DBSheetConfig
     ''' <summary>the current cell where the DBSheet Definition is inserted at</summary>
@@ -34,7 +33,6 @@ Public Module DBSheetConfig
     Public clipboardDataRow As DBSheetDefRow
     ''' <summary>if an existing DBSheet is overwritten, this is set to the existing DBModifier Name</summary>
     Public existingName As String
-
 
     ''' <summary>create lookups (with dblistfetch) and a dbsetquery that acts as a listobject for a CUD DB Mapper</summary>
     Public Sub createDBSheet(Optional dbsheetDefPath As String = "")
