@@ -122,12 +122,19 @@ Public Class MenuHandler
         Return customUIXml
     End Function
 
+    ''' <summary>initialise the AdhocSQL ribbon combobox entries</summary>
     Private Sub initAdhocSQLconfig()
-        Dim customSettings As NameValueCollection = ConfigurationManager.GetSection("UserSettings")
+        Dim customSettings As NameValueCollection = Nothing
+        Try : customSettings = ConfigurationManager.GetSection("UserSettings") : Catch ex As Exception
+            LogWarn("Error in getting Usersettings (DBAddinUser.config) for AdhocSQLconfig entries: " + ex.Message)
+        End Try
         AdHocSQLStrings = New List(Of String)
-        For Each key As String In customSettings.AllKeys
-            If Left(key, 11) = "AdhocSQLcmd" Then AdHocSQLStrings.Add(customSettings(key))
-        Next
+        ' getting Usersettings might fail (formatting, etc)...
+        If Not IsNothing(customSettings) Then
+            For Each key As String In customSettings.AllKeys
+                If Left(key, 11) = "AdhocSQLcmd" Then AdHocSQLStrings.Add(customSettings(key))
+            Next
+        End If
         selectedAdHocSQLString = 0
     End Sub
 
@@ -140,9 +147,10 @@ Public Class MenuHandler
     ''' <param name="control"></param>
     Public Sub showDBAdHocSQL(control As CustomUI.IRibbonControl, strText As String)
         Dim theAdHocSQLDlg As AdHocSQL = New AdHocSQL(strText)
+        Dim queryString As String = ""
         If theAdHocSQLDlg.ShowDialog() = System.Windows.Forms.DialogResult.OK Then
             'place SQL String into currently selected Cell/DBFunction
-            Dim queryString As String = theAdHocSQLDlg.SQLText.Text
+            queryString = Strings.Trim(theAdHocSQLDlg.SQLText.Text)
             Dim targetFormula As String = ExcelDnaUtil.Application.ActiveCell.Formula
             Dim srchdFunc As String = ""
             ' check whether there is any existing db function other than DBListFetch inside active cell
@@ -177,32 +185,34 @@ Public Class MenuHandler
                 End If
             End If
         End If
-        ' get module info for buildtime (FileDateTime of xll):
-        Dim sModule As String = ""
-        For Each tModule As Diagnostics.ProcessModule In Diagnostics.Process.GetCurrentProcess().Modules
-            sModule = tModule.FileName
-            If sModule.ToUpper.Contains("DBADDIN") Then
-                sModule = Replace(sModule, ".xll", "User.config")
-                Exit For
-            End If
-        Next
 
         ' store new sql command into AdHocSQLStrings and settings
-        If Not AdHocSQLStrings.Contains(theAdHocSQLDlg.SQLText.Text) And Strings.Replace(theAdHocSQLDlg.SQLText.Text, " ", "") <> "" Then
-            AdHocSQLStrings.Add(theAdHocSQLDlg.SQLText.Text)
+        If Not AdHocSQLStrings.Contains(queryString) And Strings.Replace(queryString, " ", "") <> "" Then
+            ' get module info for buildtime (FileDateTime of xll):
+            Dim sModule As String = ""
+            For Each tModule As Diagnostics.ProcessModule In Diagnostics.Process.GetCurrentProcess().Modules
+                sModule = tModule.FileName
+                If sModule.ToUpper.Contains("DBADDIN") Then
+                    sModule = Replace(sModule, ".xll", "User.config")
+                    Exit For
+                End If
+            Next
+            AdHocSQLStrings.Add(queryString)
             selectedAdHocSQLString = AdHocSQLStrings.Count - 1
             Dim doc As New Xml.XmlDocument()
             doc.Load(sModule)
             Dim nodeRegion As Xml.XmlElement = doc.CreateElement("add")
-            nodeRegion.SetAttribute("key", "AdhocSQLcmd" + theAdHocSQLDlg.SQLText.Text)
-            nodeRegion.SetAttribute("value", theAdHocSQLDlg.SQLText.Text)
+            nodeRegion.SetAttribute("key", "AdhocSQLcmd" + queryString)
+            nodeRegion.SetAttribute("value", queryString)
             doc.SelectSingleNode("//UserSettings").AppendChild(nodeRegion)
             doc.Save(sModule)
-        Else
-            selectedAdHocSQLString = AdHocSQLStrings.IndexOf(theAdHocSQLDlg.SQLText.Text)
+            ' reflect changes in sql combobox
+            theRibbon.InvalidateControl("DBAdhocSQL")
+        ElseIf Strings.Replace(theAdHocSQLDlg.SQLText.Text, " ", "") <> "" Then
+            selectedAdHocSQLString = AdHocSQLStrings.IndexOf(queryString)
+            ' reflect changes in sql combobox
+            theRibbon.InvalidateControl("DBAdhocSQL")
         End If
-        ' reflect changes in sql combobox
-        theRibbon.InvalidateControl("DBAdhocSQL")
     End Sub
 
     Public Function GetAdhocSQLText(control As CustomUI.IRibbonControl)

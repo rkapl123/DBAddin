@@ -165,7 +165,7 @@ Public Class EditDBModifDef
                 Exit Sub
             End Try
             Try
-                File.WriteAllText(settingsPath, Me.EditBox.Text, System.Text.Encoding.Default)
+                File.WriteAllText(settingsPath, Me.EditBox.Text, System.Text.Encoding.UTF8)
             Catch ex As Exception
                 Globals.UserMsg("Couldn't write " + Me.Tag + " settings into " + settingsPath + ": " + ex.Message, "Edit DB Addin Settings")
                 Exit Sub

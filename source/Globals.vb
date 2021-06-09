@@ -47,17 +47,19 @@ Public Module Globals
     Public Function fetchSetting(Key As String, defaultValue As String) As String
         Dim UserSettings As Collections.Specialized.NameValueCollection = Nothing
         Dim AddinAppSettings As Collections.Specialized.NameValueCollection = Nothing
-        Try : UserSettings = ConfigurationManager.GetSection("UserSettings") : Catch ex As Exception : End Try
-        Try : AddinAppSettings = ConfigurationManager.AppSettings : Catch ex As Exception : End Try
+        Try : UserSettings = ConfigurationManager.GetSection("UserSettings") : Catch ex As Exception : LogWarn("Error reading UserSettings: " + ex.Message) : End Try
+        Try : AddinAppSettings = ConfigurationManager.AppSettings : Catch ex As Exception : LogWarn("Error reading AppSettings: " + ex.Message) : End Try
         ' user specific settings are in UserSettings section in separate file
-        If UserSettings(Key) Is Nothing Then
-            If AddinAppSettings IsNot Nothing Then
+        If IsNothing(UserSettings) OrElse IsNothing(UserSettings(Key)) Then
+            If Not IsNothing(AddinAppSettings) Then
                 fetchSetting = AddinAppSettings(Key)
             Else
                 fetchSetting = Nothing
             End If
-        Else
+        ElseIf Not (IsNothing(UserSettings) OrElse IsNothing(UserSettings(Key))) Then
             fetchSetting = UserSettings(Key)
+        Else
+            fetchSetting = Nothing
         End If
         If fetchSetting Is Nothing Then fetchSetting = defaultValue
     End Function
