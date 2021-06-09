@@ -171,12 +171,12 @@ Another tool is the entry of quick (adhoc) SQL Commands in the combo box below t
 
 Select Statements (beginning with `select`) are executed immediately, empty statements (using a space character in the combobox) don't execute anything, and everything else is regarded as a DML command and is only executed after confirmation:
 
-![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/AdHocSQL_DMG.PNG)  
+![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/AdHocSQL_DML.PNG)  
 
 Results are shown below the SQL Command text entry.
 In case of an error the exception from the database command is displayed, for DML commands the records affected are shown:
 
-![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/AdHocSQL_DMG_Result.PNG)  
+![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/AdHocSQL_DML_Result.PNG)  
 
 You can modify the command in the AdHoc SQL Command dialog, by clicking `Execute` or pressing `Ctrl-Return` the command will be executed. To change the database context, use the dropdown `Database`. To leave the dialog without any further action, hit ESC or click `Close`. To transfer the SQL command into the current cell (replacing any query in a possible DB Function there), click `Transfer` or press `Shift-Return`.
 
