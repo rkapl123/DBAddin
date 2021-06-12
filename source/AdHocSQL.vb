@@ -3,6 +3,7 @@ Imports System.Data.Odbc
 Imports System.Data.SqlClient
 Imports System.Data.OleDb
 Imports System.Windows.Forms
+Imports System.ComponentModel
 
 Public Class AdHocSQL
     ''' <summary>common connection settings factored in helper class</summary>
@@ -20,6 +21,14 @@ Public Class AdHocSQL
         ' get settings for connection
         myDBConnHelper = New DBSheetConnHelper()
         fillDatabasesAndSetDropDown()
+    End Sub
+
+    ''' <summary>execution of ribbon entered command after dialog has been set up, otherwise GUI elements are not available</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub AdHocSQL_Shown(sender As Object, e As EventArgs) Handles Me.Shown
+        ' only if SQL command not empty and not consisting of spaces only...
+        If Strings.Replace(Me.SQLText.Text, " ", "") <> "" Then Execute_Click(Nothing, Nothing)
     End Sub
 
     ''' <summary>fill the Database dropdown and set dropdown to database set in connection string</summary>
@@ -82,12 +91,69 @@ Public Class AdHocSQL
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub Execute_Click(sender As Object, e As EventArgs) Handles Execute.Click
-        ' only select commands are executed immediately, others are asked for (with default button being cancel)
-        If InStr(SQLText.Text.ToLower(), "select") <> 1 Then
-            If QuestionMsg("Do you really want to execute the command ?",, "AdHoc SQL Command", MsgBoxStyle.Question + MsgBoxStyle.DefaultButton2) = vbCancel Then Exit Sub
+        If Not BackgroundWorker1.IsBusy Then
+            ' only select commands are executed immediately, others are asked for (with default button being cancel)
+            If InStr(Strings.LTrim(SQLText.Text.ToLower()), "select") <> 1 Then
+                If QuestionMsg("Do you really want to execute the command ?",, "AdHoc SQL Command", MsgBoxStyle.Question + MsgBoxStyle.DefaultButton2) = vbCancel Then Exit Sub
+            End If
+            elapsedTime = New DateTime(0)
+            Timer1.Interval = 1000
+            Timer1.Enabled = True
+            Timer1.Start()
+            BackgroundWorker1.RunWorkerAsync()
         End If
-        Dim result As IDataReader = Nothing
-        Dim SqlCmd As IDbCommand
+    End Sub
+
+    ''' <summary>close dialog here with OK result</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub Transfer_Click(sender As Object, e As EventArgs) Handles Transfer.Click
+        finishForm(DialogResult.OK)
+    End Sub
+
+    ''' <summary>close dialog with Cancel result</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub Close_Click(sender As Object, e As EventArgs) Handles CloseBtn.Click
+        finishForm(DialogResult.Cancel)
+    End Sub
+
+    ''' <summary>close dialog with Yes result</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub CloseAndAdd_Click(sender As Object, e As EventArgs) Handles CloseAndAdd.Click
+        finishForm(DialogResult.Yes)
+    End Sub
+
+    ''' <summary>common procedure to close the form, regarding (cancelling) a busy backgroundworker = sqlcmd)</summary>
+    Private Sub finishForm(theDialogResult As DialogResult)
+        If BackgroundWorker1.IsBusy Then
+            If Globals.QuestionMsg("Cancel the running SQL Command ?",, "AdHoc SQL Command") = MsgBoxResult.Cancel Then Exit Sub
+            SqlCmd.Cancel()
+            BackgroundWorker1.CancelAsync()
+        End If
+        Me.DialogResult = theDialogResult
+        Me.Hide()
+    End Sub
+
+    Private elapsedTime As DateTime
+
+    ''' <summary>show progress</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub Timer1_Tick(sender As Object, e As EventArgs) Handles Timer1.Tick
+        elapsedTime = elapsedTime.AddSeconds(1.0)
+        Me.RowsReturned.Text = "(" + elapsedTime.ToString("T") + ")"
+    End Sub
+
+    Private theResult As IDataReader = Nothing
+    Private nonRowResult As String = ""
+    Private SqlCmd As IDbCommand
+
+    ''' <summary>start sql command in the background (to show progress and have cancellation control)</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub BackgroundWorker1_DoWork(sender As Object, e As DoWorkEventArgs) Handles BackgroundWorker1.DoWork
         If TypeName(idbcnn) = "SqlConnection" Then
             SqlCmd = New SqlClient.SqlCommand(SQLText.Text, myDBConnHelper.dbshcnn)
         ElseIf TypeName(idbcnn) = "OleDbConnection" Then
@@ -95,25 +161,31 @@ Public Class AdHocSQL
         Else
             SqlCmd = New Odbc.OdbcCommand(SQLText.Text, myDBConnHelper.dbshcnn)
         End If
+        SqlCmd.CommandTimeout = Globals.CmdTimeout
         SqlCmd.CommandType = CommandType.Text
-        Dim nonRowResult As String = ""
         Try
-            result = SqlCmd.ExecuteReader()
+            theResult = SqlCmd.ExecuteReader()
         Catch ex As Exception
-            nonRowResult = ex.Message
-            result = Nothing
+            nonRowResult = ex.Message + " (" + elapsedTime.ToString("T") + ")"
+            theResult = Nothing
         End Try
+    End Sub
 
-        If Not IsNothing(result) Then
+    ''' <summary>sql command finished, show results</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub BackgroundWorker1_RunWorkerCompleted(sender As Object, e As RunWorkerCompletedEventArgs) Handles BackgroundWorker1.RunWorkerCompleted
+        If Not IsNothing(theResult) Then
             ' for row returning results (select/storedprocedures)
-            If result.FieldCount > 0 Then
+            If theResult.FieldCount > 0 Then
                 Dim dt = New DataTable()
                 Try
-                    dt.Load(result)
+                    dt.Load(theResult)
                 Catch ex As Exception
                     nonRowResult = ex.Message
                 End Try
                 If nonRowResult = "" Then
+                    Me.RowsReturned.Text = dt.Rows.Count.ToString() + " rows returned. (" + elapsedTime.ToString("T") + ")"
                     AdHocSQLQueryResult.Columns.Clear()
                     AdHocSQLQueryResult.AutoGenerateColumns = True
                     AdHocSQLQueryResult.DataSource = dt
@@ -121,9 +193,9 @@ Public Class AdHocSQL
                 End If
             Else
                 ' DML: insert/update/delete returns no rows, only records affected
-                nonRowResult = result.RecordsAffected.ToString() + " record(s) affected."
+                nonRowResult = theResult.RecordsAffected.ToString() + " record(s) affected. (" + elapsedTime.ToString("T") + ")"
             End If
-            result.Close()
+            theResult.Close()
         End If
         ' for non row returning results (DML/errors) return message
         If nonRowResult <> "" Then
@@ -132,33 +204,14 @@ Public Class AdHocSQL
             AdHocSQLQueryResult.Columns.Add("result", "command_result:")
             AdHocSQLQueryResult.Rows.Clear()
             AdHocSQLQueryResult.Rows.Add(nonRowResult)
+            Me.RowsReturned.Text = ""
         End If
         AdHocSQLQueryResult.AutoResizeColumns(DataGridViewAutoSizeColumnMode.DisplayedCells)
+        Timer1.Enabled = False
+        Timer1.Stop()
     End Sub
 
-    ''' <summary>only close dialog here, OK result is set to Transfer button in the designer</summary>
-    ''' <param name="sender"></param>
-    ''' <param name="e"></param>
-    Private Sub Transfer_Click(sender As Object, e As EventArgs) Handles Transfer.Click
-        Me.Hide()
-    End Sub
-
-    ''' <summary>execution of ribbon entered command after dialog has been set up, otherwise GUI elements are not available</summary>
-    ''' <param name="sender"></param>
-    ''' <param name="e"></param>
-    Private Sub AdHocSQL_Shown(sender As Object, e As EventArgs) Handles Me.Shown
-        ' only if SQL command not empty and not consisting of spaces only...
-        If Strings.Replace(Me.SQLText.Text, " ", "") <> "" Then Execute_Click(Nothing, Nothing)
-    End Sub
-
-    ''' <summary>only close dialog here, Cancel result is set to Transfer button in the designer</summary>
-    ''' <param name="sender"></param>
-    ''' <param name="e"></param>
-    Private Sub Close_Click(sender As Object, e As EventArgs) Handles CloseBtn.Click
-        Me.Hide()
-    End Sub
-
-    ''' <summary>keyboard shortcuts for executing (ctrl-return), Transfer (shift-return) and other things</summary>
+    ''' <summary>keyboard shortcuts for executing (ctrl-return), Transfer (shift-return) and maybe other things in the future (autocomplete)</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub SQLText_KeyDown(sender As Object, e As KeyEventArgs) Handles SQLText.KeyDown
@@ -170,5 +223,22 @@ Public Class AdHocSQL
             Me.DialogResult = DialogResult.OK
             Me.Hide()
         End If
+    End Sub
+
+    ''' <summary>when being on the database also allow Ctrl-Enter</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub Database_KeyDown(sender As Object, e As KeyEventArgs) Handles Database.KeyDown
+        If e.KeyCode = Keys.Return And e.Modifiers = Keys.Control Then
+            e.SuppressKeyPress = True
+            Execute_Click(Nothing, Nothing)
+        End If
+    End Sub
+
+    ''' <summary>needed together with KeyPreview=True on form to simulate ESC cancelling the form and catching this successfully (preventing closing when cancelling an ongoing sqlcommand)</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub AdHocSQL_KeyUp(sender As Object, e As KeyEventArgs) Handles Me.KeyUp
+        If e.KeyCode = Keys.Escape Then finishForm(DialogResult.Cancel)
     End Sub
 End Class

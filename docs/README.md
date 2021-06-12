@@ -173,12 +173,13 @@ Select Statements (beginning with `select`) are executed immediately, empty stat
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/AdHocSQL_DML.PNG)  
 
-Results are shown below the SQL Command text entry.
-In case of an error the exception from the database command is displayed, for DML commands the records affected are shown:
+Results are shown below the SQL Command text entry, for row returning commands, the rows returned are shown including the time it took to finish the command at the bottom of the dialog.
+In case of an error the exception from the database command is displayed, for DML commands the records affected are shown (again including the time it took to finish the command):
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/AdHocSQL_DML_Result.PNG)  
 
 You can modify the command in the AdHoc SQL Command dialog, by clicking `Execute` or pressing `Ctrl-Return` the command will be executed. To change the database context, use the dropdown `Database`. To leave the dialog without any further action, hit ESC or click `Close`. To transfer the SQL command into the current cell (replacing any query in a possible DB Function there), click `Transfer` or press `Shift-Return`.
+To close the dialog including adding it to the combobox, click `Add`. You can always interrupt long running commands by clicking `Close` (or hitting ESC), `Add` or `Transfer`. A question whether to cancel the interruption is provided then.
 
 All issued commands are stored in the user settings and reloaded at start-up of the Add-In (Excel), if you want to get rid of them, open the User-Settings as described in [Settings](#settings) and remove all unwanted entries starting with `key="AdhocSQLcmd.."`
 

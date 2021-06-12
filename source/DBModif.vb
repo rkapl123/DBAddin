@@ -1019,16 +1019,16 @@ cleanup:
         Try
             If TypeName(idbcnn) = "SqlConnection" Then
                 ' decent behaviour for SQL Server
-                Using comm As SqlClient.SqlCommand = New SqlClient.SqlCommand("SET ARITHABORT ON", idbcnn)
+                Using comm As SqlClient.SqlCommand = New SqlClient.SqlCommand("SET ARITHABORT ON", idbcnn, DBModifs.trans)
                     comm.ExecuteNonQuery()
                 End Using
-                da = New SqlClient.SqlDataAdapter(New SqlClient.SqlCommand("select * from " + tableName, idbcnn))
+                da = New SqlClient.SqlDataAdapter(New SqlClient.SqlCommand("select * from " + tableName, idbcnn, DBModifs.trans))
                 da.UpdateBatchSize = 20
             ElseIf TypeName(idbcnn) = "OleDbConnection" Then
-                da = New OleDb.OleDbDataAdapter(New OleDb.OleDbCommand("select * from " + tableName, idbcnn))
+                da = New OleDb.OleDbDataAdapter(New OleDb.OleDbCommand("select * from " + tableName, idbcnn, DBModifs.trans))
                 da.UpdateBatchSize = 20
             Else
-                da = New Odbc.OdbcDataAdapter(New Odbc.OdbcCommand("select * from " + tableName, idbcnn))
+                da = New Odbc.OdbcDataAdapter(New Odbc.OdbcCommand("select * from " + tableName, idbcnn, DBModifs.trans))
             End If
             da.SelectCommand.CommandTimeout = Globals.CmdTimeout
         Catch ex As Exception
@@ -1037,7 +1037,6 @@ cleanup:
 
         ExcelDnaUtil.Application.StatusBar = "retrieving the schema for " + tableName
         Try
-            da.SelectCommand.Transaction = DBModifs.trans
             da.FillSchema(dscheck, SchemaType.Source, tableName)
         Catch ex As Exception
             Globals.UserMsg("Error in retrieving Schema for " + tableName + ": " + ex.Message, "DBMapper Error")
@@ -1596,6 +1595,7 @@ Public Class DBAction : Inherits DBModif
             Else
                 DmlCmd = New Odbc.OdbcCommand(executeText, idbcnn, trans)
             End If
+            DmlCmd.CommandTimeout = Globals.CmdTimeout
             DmlCmd.CommandType = CommandType.Text
             result = DmlCmd.ExecuteNonQuery()
         Catch ex As Exception

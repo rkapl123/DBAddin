@@ -63,6 +63,14 @@ Public Class DBSheetConnHelper
                     dbsheetConnString = dbsheetConnString + ";" + dbidentifier + databaseName
                 End If
             End If
+            ' need to change/set the connection timeout in the connection string as the property is readonly then...
+            If InStr(dbsheetConnString, "Connection Timeout=") > 0 Then
+                dbsheetConnString = Globals.Change(dbsheetConnString, "Connection Timeout=", Globals.CnnTimeout.ToString(), ";")
+            ElseIf InStr(dbsheetConnString, "Connect Timeout=") > 0 Then
+                dbsheetConnString = Globals.Change(dbsheetConnString, "Connect Timeout=", Globals.CnnTimeout.ToString(), ";")
+            Else
+                dbsheetConnString += ";Connection Timeout=" + Globals.CnnTimeout.ToString()
+            End If
         End If
         Try
             dbshcnn = New OdbcConnection With {

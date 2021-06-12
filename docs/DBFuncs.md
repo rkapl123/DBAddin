@@ -161,8 +161,10 @@ Both `concatCells` and `concatCellsSep` have a "Text" sibling that essentially d
 #### DBinClause
 
 <pre lang="vbnet">DBinClause(ParameterList)</pre>
+<pre lang="vbnet">DBinClauseStr(ParameterList)</pre>
+<pre lang="vbnet">DBinClauseDate(ParameterList)</pre>
 
-Creates an in clause from cell values, strings are created with quotation marks, dates are created with DBDate (see there for details, formatting is 0).
+Creates an in clause from cell values, strings are created using `DBinClauseStr` with quotation marks, dates are created using `DBinClauseDate` using default date formatting (see DBDate for details).
 
 <pre lang="vbnet">DBinClause("ABC", 1, DateRange)</pre>
 

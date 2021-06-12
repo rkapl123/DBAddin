@@ -146,10 +146,12 @@ Public Class MenuHandler
     ''' <summary>show Adhoc SQL Query editor</summary>
     ''' <param name="control"></param>
     Public Sub showDBAdHocSQL(control As CustomUI.IRibbonControl, strText As String)
-        Dim theAdHocSQLDlg As AdHocSQL = New AdHocSQL(strText)
         Dim queryString As String = ""
-        If theAdHocSQLDlg.ShowDialog() = System.Windows.Forms.DialogResult.OK Then
-            'place SQL String into currently selected Cell/DBFunction
+
+        Dim theAdHocSQLDlg As AdHocSQL = New AdHocSQL(strText)
+        Dim dialogResult As Windows.Forms.DialogResult = theAdHocSQLDlg.ShowDialog()
+        If dialogResult = System.Windows.Forms.DialogResult.OK Then
+            ' "Transfer" was clicked: place SQL String into currently selected Cell/DBFunction and add to combobox
             queryString = Strings.Trim(theAdHocSQLDlg.SQLText.Text)
             Dim targetFormula As String = ExcelDnaUtil.Application.ActiveCell.Formula
             Dim srchdFunc As String = ""
@@ -184,11 +186,18 @@ Public Class MenuHandler
                     ExcelDnaUtil.Application.ActiveCell.Formula = "=" + srchdFunc + "(""" + queryString + """" + Replace(restFormula, vbTab, ",") + ")"
                 End If
             End If
+        ElseIf dialogResult = System.Windows.Forms.DialogResult.Yes Then
+            ' "Add" was clicked: only add SQL String to combobox
+            queryString = Strings.Trim(theAdHocSQLDlg.SQLText.Text)
         End If
 
-        ' store new sql command into AdHocSQLStrings and settings
+        ' "Add" or "Transfer": store new sql command into AdHocSQLStrings and settings
         If Not AdHocSQLStrings.Contains(queryString) And Strings.Replace(queryString, " ", "") <> "" Then
-            ' get module info for buildtime (FileDateTime of xll):
+            ' add to AdHocSQLStrings
+            AdHocSQLStrings.Add(queryString)
+            selectedAdHocSQLString = AdHocSQLStrings.Count - 1
+
+            ' get module info for path of xll (to get config there):
             Dim sModule As String = ""
             For Each tModule As Diagnostics.ProcessModule In Diagnostics.Process.GetCurrentProcess().Modules
                 sModule = tModule.FileName
@@ -197,8 +206,7 @@ Public Class MenuHandler
                     Exit For
                 End If
             Next
-            AdHocSQLStrings.Add(queryString)
-            selectedAdHocSQLString = AdHocSQLStrings.Count - 1
+            ' add to settings
             Dim doc As New Xml.XmlDocument()
             doc.Load(sModule)
             Dim nodeRegion As Xml.XmlElement = doc.CreateElement("add")
@@ -208,7 +216,7 @@ Public Class MenuHandler
             doc.Save(sModule)
             ' reflect changes in sql combobox
             theRibbon.InvalidateControl("DBAdhocSQL")
-        ElseIf Strings.Replace(theAdHocSQLDlg.SQLText.Text, " ", "") <> "" Then
+        ElseIf Strings.Replace(queryString, " ", "") <> "" Then
             selectedAdHocSQLString = AdHocSQLStrings.IndexOf(queryString)
             ' reflect changes in sql combobox
             theRibbon.InvalidateControl("DBAdhocSQL")
