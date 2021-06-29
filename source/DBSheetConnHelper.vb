@@ -72,16 +72,27 @@ Public Class DBSheetConnHelper
                 dbsheetConnString += ";Connection Timeout=" + Globals.CnnTimeout.ToString()
             End If
         End If
+        Dim correctConnString As String = ""
         Try
-            dbshcnn = New OdbcConnection With {
-                .ConnectionString = dbsheetConnString,
-                .ConnectionTimeout = Globals.CnnTimeout
-            }
+            If InStr(dbsheetConnString.ToLower, "provider=sqloledb") Or InStr(dbsheetConnString.ToLower, "driver=sql server") Then
+                ' ADO.NET doesn't like provider= and driver= 
+                If Globals.fetch(dbsheetConnString, "provider=", ";", True) <> "" Then
+                    correctConnString = Replace(dbsheetConnString, Globals.fetch(dbsheetConnString, "provider=", ";", True) + ";", "")
+                End If
+                If Globals.fetch(correctConnString, "driver=", ";", True) <> "" Then
+                    correctConnString = Replace(correctConnString, Globals.fetch(correctConnString, "driver=", ";", True) + ";", "")
+                End If
+                dbshcnn = New SqlConnection(correctConnString)
+            ElseIf InStr(dbsheetConnString.ToLower, "oledb") Then
+                dbshcnn = New OleDbConnection(dbsheetConnString)
+            Else
+                dbshcnn = New OdbcConnection(dbsheetConnString)
+            End If
             dbshcnn.Open()
         Catch ex As Exception
             dbsheetConnString = Replace(dbsheetConnString, dbPwdSpec + existingPwd, dbPwdSpec + "*******")
             dbshcnn = Nothing
-            Throw New Exception("Error connecting to DB: " + ex.Message + ", connection string: " + dbsheetConnString)
+            Throw New Exception("Error connecting to DB: " + ex.Message + ", connection string: " + dbsheetConnString + IIf(correctConnString <> "", " (corrected ConnString: " + correctConnString + ")", ""))
         End Try
     End Sub
 
@@ -90,8 +101,8 @@ Public Class DBSheetConnHelper
         ' do we have a separate dbsheet connection string?
         dbsheetConnString = fetchSetting("DBSheetConnString" + Globals.env(), "NONEXISTENT")
         If dbsheetConnString = "NONEXISTENT" Then
-            ' no, try normal connection string but do provider/driver change
-            dbsheetConnString = Replace(fetchSetting("ConstConnString" + Globals.env(), "NONEXISTENT"), fetchSetting("ConnStringSearch" + Globals.env(), "provider=SQLOLEDB"), fetchSetting("ConnStringReplace" + Globals.env(), "driver=SQL SERVER"))
+            ' no, try normal connection string 
+            dbsheetConnString = fetchSetting("ConstConnString" + Globals.env(), "NONEXISTENT")
             If dbsheetConnString = "NONEXISTENT" Then
                 ' actually this cannot happen....
                 Globals.UserMsg("No Connectionstring given for environment: " + Globals.env() + ", please correct and rerun.", "DBSheet Definition Error")

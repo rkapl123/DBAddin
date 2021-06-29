@@ -34,7 +34,7 @@ Public Class MenuHandler
                 "<button id='props' label='Workbook Properties' onAction='showCProps' getImage='getCPropsImage' screentip='Change custom properties relevant for DB Addin:' getSupertip='getToggleCPropsScreentip' />" +
             "</buttonGroup>" +
             "<comboBox id='DBAdhocSQL' showLabel='false' sizeString='123456789012345678901234567890123' getText='GetAdhocSQLText' getItemCount='GetAdhocSQLItemCount' getItemLabel='GetAdhocSQLItemLabel' onChange='showDBAdHocSQL' screentip='enter Ad-hoc SQL statements to execute'/>" +
-            "<dialogBoxLauncher><button id='dialog' label='About DBAddin' onAction='showAbout' screentip='Show Aboutbox with help, version information, update check/download and project homepage' getSupertip='getSuperTipInfo'/></dialogBoxLauncher>" +
+            "<dialogBoxLauncher><button id='AdHocSQL' label='AdHoc SQL Command' onAction='showDBAdHocSQLDBOX' screentip='Open AdHoc SQL Command Tool'/></dialogBoxLauncher>" +
         "</group>"
         ' DBAddin Tools Group:
         customUIXml +=
@@ -51,8 +51,9 @@ Public Class MenuHandler
                 "<button id='showLog' label='Log' screentip='shows Database Addins Diagnostic Display' getImage='getLogsImage' onAction='clickShowLog'/>" +
                 "<button id='designmode' label='Buttons' onAction='showToggleDesignMode' getImage='getToggleDesignImage' getScreentip='getToggleDesignScreentip'/>" +
             "</buttonGroup>" +
-            "<button id='repairLegacy' label='repair legacy functions' imageMso='ControlWizards' onAction='clickRepairLegacyFunctions' screentip='click to fix legacy functions from old VB6 DBAddin'/>"
-        customUIXml += "</group>"
+            "<button id='repairLegacy' label='repair legacy functions' imageMso='ControlWizards' onAction='clickRepairLegacyFunctions' screentip='click to fix legacy functions from old VB6 DBAddin'/>" +
+            "<dialogBoxLauncher><button id='dialog' label='About DBAddin' onAction='showAbout' screentip='Show Aboutbox with help, version information, update check/download and project homepage' getSupertip='getSuperTipInfo'/></dialogBoxLauncher>" +
+        "</group>"
         ' DBModif Group: maximum three DBModif types possible (depending on existence in current workbook): 
         customUIXml +=
         "<group id='DBModifGroup' label='Execute DBModifier'>"
@@ -61,63 +62,63 @@ Public Class MenuHandler
                                                 "size='large' getLabel='getDBModifTypeLabel' imageMso='ApplicationOptionsDialog' " +
                                                 "getScreentip='getDBModifScreentip' getContent='getDBModifMenuContent' getVisible='getDBModifMenuVisible'/>"
         Next
-        customUIXml += "<dialogBoxLauncher><button id='DBModifEdit' label='DBModif design' onAction='showDBModifEdit' screentip='Show/edit DBModif Definitions of current workbook'/></dialogBoxLauncher>"
-        customUIXml += "</group>"
-        customUIXml += "</tab></tabs></ribbon>"
+        customUIXml += "<dialogBoxLauncher><button id='DBModifEdit' label='DBModif design' onAction='showDBModifEdit' screentip='Show/edit DBModif Definitions of current workbook'/></dialogBoxLauncher>" +
+        "</group></tab></tabs></ribbon>"
         ' Context menus for refresh, jump and creation: in cell, row, column and ListRange (area of ListObjects)
-        customUIXml += "<contextMenus>" +
-        "<contextMenu idMso ='ContextMenuCell'>" +
-            "<button id='refreshDataC' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
-            "<button id='gotoDBFuncC' label='jump to DBFunc/target (Ctl-Sh-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
-             "<menu id='createMenu' label='Insert/Edit DBFunc/DBModif' insertBeforeMso='Cut'>" +
-                "<button id='DBMapperC' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
-                "<button id='DBActionC' tag='DBAction' label='DBAction' imageMso='TableIndexes' onAction='clickCreateButton'/>" +
-                "<button id='DBSequenceC' tag='DBSeqnce' label='DBSequence' imageMso='ShowOnNewButton' onAction='clickCreateButton'/>" +
-                "<menuSeparator id='separator' />" +
-                "<button id='DBListFetchC' tag='DBListFetch' label='DBListFetch' imageMso='GroupLists' onAction='clickCreateButton'/>" +
-                "<button id='DBRowFetchC' tag='DBRowFetch' label='DBRowFetch' imageMso='GroupRecords' onAction='clickCreateButton'/>" +
-                "<button id='DBSetQueryPivotC' tag='DBSetQueryPivot' label='DBSetQueryPivot' imageMso='AddContentType' onAction='clickCreateButton'/>" +
-                "<button id='DBSetQueryListObjectC' tag='DBSetQueryListObject' label='DBSetQueryListObject' imageMso='AddContentType' onAction='clickCreateButton'/>" +
-            "</menu>" +
-            "<menuSeparator id='MySeparatorC' insertBeforeMso='Cut'/>" +
-        "</contextMenu>" +
-        "<contextMenu idMso ='ContextMenuPivotTable'>" +
-            "<button id='refreshDataPT' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Copy'/>" +
-            "<button id='gotoDBFuncPT' label='jump to DBFunc/target (Ctl-Sh-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Copy'/>" +
-            "<menuSeparator id='MySeparatorPT' insertBeforeMso='Copy'/>" +
-        "</contextMenu>" +
-        "<contextMenu idMso ='ContextMenuCellLayout'>" +
-            "<button id='refreshDataCL' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
-            "<button id='gotoDBFuncCL' label='jump to DBFunc/target (Ctl-Sh-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
-            "<menu id='createMenuCL' label='Insert/Edit DBFunc/DBModif' insertBeforeMso='Cut'>" +
-                "<button id='DBMapperCL' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
-                "<button id='DBActionCL' tag='DBAction' label='DBAction' imageMso='TableIndexes' onAction='clickCreateButton'/>" +
-                "<button id='DBSequenceCL' tag='DBSeqnce' label='DBSequence' imageMso='ShowOnNewButton' onAction='clickCreateButton'/>" +
-                "<menuSeparator id='separatorCL' />" +
-                "<button id='DBListFetchCL' tag='DBListFetch' label='DBListFetch' imageMso='GroupLists' onAction='clickCreateButton'/>" +
-                "<button id='DBRowFetchCL' tag='DBRowFetch' label='DBRowFetch' imageMso='GroupRecords' onAction='clickCreateButton'/>" +
-                "<button id='DBSetQueryPivotCL' tag='DBSetQueryPivot' label='DBSetQueryPivot' imageMso='AddContentType' onAction='clickCreateButton'/>" +
-                "<button id='DBSetQueryListObjectCL' tag='DBSetQueryListObject' label='DBSetQueryListObject' imageMso='AddContentType' onAction='clickCreateButton'/>" +
-            "</menu>" +
-            "<menuSeparator id='MySeparatorCL' insertBeforeMso='Cut'/>" +
-        "</contextMenu>" +
-        "<contextMenu idMso='ContextMenuRow'>" +
-            "<button id='refreshDataR' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
-            "<menuSeparator id='MySeparatorR' insertBeforeMso='Cut'/>" +
-        "</contextMenu>" +
-        "<contextMenu idMso='ContextMenuColumn'>" +
-            "<button id='refreshDataZ' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
-            "<menuSeparator id='MySeparatorZ' insertBeforeMso='Cut'/>" +
-        "</contextMenu>" +
-        "<contextMenu idMso='ContextMenuListRange'>" +
-            "<button id='refreshDataL' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
-            "<button id='gotoDBFuncL' label='jump to DBFunc/target (Ctl-Sh-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
-            "<menu id='createMenuL' label='Insert/Edit DBFunc/DBModif' insertBeforeMso='Cut'>" +
-                "<button id='DBMapperL' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
-                "<button id='DBSequenceL' tag='DBSeqnce' label='DBSequence' imageMso='ShowOnNewButton' onAction='clickCreateButton'/>" +
-            "</menu>" +
-            "<menuSeparator id='MySeparatorL' insertBeforeMso='Cut'/>" +
-        "</contextMenu>" +
+        customUIXml +=
+        "<contextMenus>" +
+            "<contextMenu idMso ='ContextMenuCell'>" +
+                "<button id='refreshDataC' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
+                "<button id='gotoDBFuncC' label='jump to DBFunc/target (Ctl-Sh-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
+                 "<menu id='createMenu' label='Insert/Edit DBFunc/DBModif' insertBeforeMso='Cut'>" +
+                    "<button id='DBMapperC' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
+                    "<button id='DBActionC' tag='DBAction' label='DBAction' imageMso='TableIndexes' onAction='clickCreateButton'/>" +
+                    "<button id='DBSequenceC' tag='DBSeqnce' label='DBSequence' imageMso='ShowOnNewButton' onAction='clickCreateButton'/>" +
+                    "<menuSeparator id='separator' />" +
+                    "<button id='DBListFetchC' tag='DBListFetch' label='DBListFetch' imageMso='GroupLists' onAction='clickCreateButton'/>" +
+                    "<button id='DBRowFetchC' tag='DBRowFetch' label='DBRowFetch' imageMso='GroupRecords' onAction='clickCreateButton'/>" +
+                    "<button id='DBSetQueryPivotC' tag='DBSetQueryPivot' label='DBSetQueryPivot' imageMso='AddContentType' onAction='clickCreateButton'/>" +
+                    "<button id='DBSetQueryListObjectC' tag='DBSetQueryListObject' label='DBSetQueryListObject' imageMso='AddContentType' onAction='clickCreateButton'/>" +
+                "</menu>" +
+                "<menuSeparator id='MySeparatorC' insertBeforeMso='Cut'/>" +
+            "</contextMenu>" +
+            "<contextMenu idMso ='ContextMenuPivotTable'>" +
+                "<button id='refreshDataPT' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Copy'/>" +
+                "<button id='gotoDBFuncPT' label='jump to DBFunc/target (Ctl-Sh-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Copy'/>" +
+                "<menuSeparator id='MySeparatorPT' insertBeforeMso='Copy'/>" +
+            "</contextMenu>" +
+            "<contextMenu idMso ='ContextMenuCellLayout'>" +
+                "<button id='refreshDataCL' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
+                "<button id='gotoDBFuncCL' label='jump to DBFunc/target (Ctl-Sh-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
+                "<menu id='createMenuCL' label='Insert/Edit DBFunc/DBModif' insertBeforeMso='Cut'>" +
+                    "<button id='DBMapperCL' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
+                    "<button id='DBActionCL' tag='DBAction' label='DBAction' imageMso='TableIndexes' onAction='clickCreateButton'/>" +
+                    "<button id='DBSequenceCL' tag='DBSeqnce' label='DBSequence' imageMso='ShowOnNewButton' onAction='clickCreateButton'/>" +
+                    "<menuSeparator id='separatorCL' />" +
+                    "<button id='DBListFetchCL' tag='DBListFetch' label='DBListFetch' imageMso='GroupLists' onAction='clickCreateButton'/>" +
+                    "<button id='DBRowFetchCL' tag='DBRowFetch' label='DBRowFetch' imageMso='GroupRecords' onAction='clickCreateButton'/>" +
+                    "<button id='DBSetQueryPivotCL' tag='DBSetQueryPivot' label='DBSetQueryPivot' imageMso='AddContentType' onAction='clickCreateButton'/>" +
+                    "<button id='DBSetQueryListObjectCL' tag='DBSetQueryListObject' label='DBSetQueryListObject' imageMso='AddContentType' onAction='clickCreateButton'/>" +
+                "</menu>" +
+                "<menuSeparator id='MySeparatorCL' insertBeforeMso='Cut'/>" +
+            "</contextMenu>" +
+            "<contextMenu idMso='ContextMenuRow'>" +
+                "<button id='refreshDataR' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
+                "<menuSeparator id='MySeparatorR' insertBeforeMso='Cut'/>" +
+            "</contextMenu>" +
+            "<contextMenu idMso='ContextMenuColumn'>" +
+                "<button id='refreshDataZ' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
+                "<menuSeparator id='MySeparatorZ' insertBeforeMso='Cut'/>" +
+            "</contextMenu>" +
+            "<contextMenu idMso='ContextMenuListRange'>" +
+                "<button id='refreshDataL' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
+                "<button id='gotoDBFuncL' label='jump to DBFunc/target (Ctl-Sh-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
+                "<menu id='createMenuL' label='Insert/Edit DBFunc/DBModif' insertBeforeMso='Cut'>" +
+                    "<button id='DBMapperL' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
+                    "<button id='DBSequenceL' tag='DBSeqnce' label='DBSequence' imageMso='ShowOnNewButton' onAction='clickCreateButton'/>" +
+                "</menu>" +
+                "<menuSeparator id='MySeparatorL' insertBeforeMso='Cut'/>" +
+            "</contextMenu>" +
         "</contextMenus></customUI>"
         Return customUIXml
     End Function
@@ -143,6 +144,12 @@ Public Class MenuHandler
     Private AdHocSQLStrings As Collections.Generic.List(Of String)
     Private selectedAdHocSQLString As Integer
 
+    ''' <summary>dialogBoxLauncher of DBAddin settings group: activate about box</summary>
+    ''' <param name="control"></param>
+    Public Sub showDBAdHocSQLDBOX(control As CustomUI.IRibbonControl)
+        showDBAdHocSQL(Nothing, AdHocSQLStrings(selectedAdHocSQLString))
+    End Sub
+
     ''' <summary>show Adhoc SQL Query editor</summary>
     ''' <param name="control"></param>
     Public Sub showDBAdHocSQL(control As CustomUI.IRibbonControl, strText As String)
@@ -150,77 +157,89 @@ Public Class MenuHandler
 
         Dim theAdHocSQLDlg As AdHocSQL = New AdHocSQL(strText)
         Dim dialogResult As Windows.Forms.DialogResult = theAdHocSQLDlg.ShowDialog()
+        ' reflect potential change in environment...
+        theRibbon.InvalidateControl("envDropDown")
         If dialogResult = System.Windows.Forms.DialogResult.OK Then
             ' "Transfer" was clicked: place SQL String into currently selected Cell/DBFunction and add to combobox
             queryString = Strings.Trim(theAdHocSQLDlg.SQLText.Text)
-            Dim targetFormula As String = ExcelDnaUtil.Application.ActiveCell.Formula
-            Dim srchdFunc As String = ""
-            ' check whether there is any existing db function other than DBListFetch inside active cell
-            For Each srchdFunc In {"DBSETQUERY", "DBROWFETCH", "DBLISTFETCH"}
-                If Left(UCase(targetFormula), Len(srchdFunc) + 2) = "=" + srchdFunc + "(" Then
-                    ' for existing theFunction (DBSetQuery or DBRowFetch)...
-                    Exit For
-                Else
-                    srchdFunc = ""
-                End If
-            Next
-            If srchdFunc = "" Then
-                ' empty cell, just put query there
-                If targetFormula = "" Then
-                    ExcelDnaUtil.Application.ActiveCell = queryString
-                Else
-                    If Globals.QuestionMsg("Non-empty Cell with no DB function selected, should content be replaced?") = MsgBoxResult.Ok Then
+            If theAdHocSQLDlg.TransferType.Text = "Cell" Then
+                Dim targetFormula As String = ExcelDnaUtil.Application.ActiveCell.Formula
+                Dim srchdFunc As String = ""
+                ' check whether there is any existing db function other than DBListFetch inside active cell
+                For Each srchdFunc In {"DBSETQUERY", "DBROWFETCH", "DBLISTFETCH"}
+                    If Left(UCase(targetFormula), Len(srchdFunc) + 2) = "=" + srchdFunc + "(" Then
+                        ' for existing theFunction (DBSetQuery or DBRowFetch)...
+                        Exit For
+                    Else
+                        srchdFunc = ""
+                    End If
+                Next
+                If srchdFunc = "" Then
+                    ' empty cell, just put query there
+                    If targetFormula = "" Then
                         ExcelDnaUtil.Application.ActiveCell = queryString
+                    Else
+                        If Globals.QuestionMsg("Non-empty Cell with no DB function selected, should content be replaced?") = MsgBoxResult.Ok Then
+                            ExcelDnaUtil.Application.ActiveCell = queryString
+                        End If
+                    End If
+                Else
+                    If Globals.QuestionMsg("Cell with DB function selected, should query be replaced?") = MsgBoxResult.Ok Then
+                        ' db function, recreate with query inside
+                        ' get the parts of the targeted function formula
+                        Dim formulaParams As String = Mid$(targetFormula, Len(srchdFunc) + 3)
+                        ' replace querystring in existing formula 
+                        formulaParams = Left(formulaParams, Len(formulaParams) - 1)
+                        Dim tempFormula As String = Globals.replaceDelimsWithSpecialSep(formulaParams, ",", """", "(", ")", vbTab)
+                        Dim restFormula As String = Mid$(tempFormula, InStr(tempFormula, vbTab))
+                        ' ..and put into active cell
+                        ExcelDnaUtil.Application.ActiveCell.Formula = "=" + srchdFunc + "(""" + queryString + """" + Replace(restFormula, vbTab, ",") + ")"
                     End If
                 End If
-            Else
-                If Globals.QuestionMsg("Cell with DB function selected, should query be replaced?") = MsgBoxResult.Ok Then
-                    ' db function, recreate with query inside
-                    ' get the parts of the targeted function formula
-                    Dim formulaParams As String = Mid$(targetFormula, Len(srchdFunc) + 3)
-                    ' replace querystring in existing formula 
-                    formulaParams = Left(formulaParams, Len(formulaParams) - 1)
-                    Dim tempFormula As String = Globals.replaceDelimsWithSpecialSep(formulaParams, ",", """", "(", ")", vbTab)
-                    Dim restFormula As String = Mid$(tempFormula, InStr(tempFormula, vbTab))
-                    ' ..and put into active cell
-                    ExcelDnaUtil.Application.ActiveCell.Formula = "=" + srchdFunc + "(""" + queryString + """" + Replace(restFormula, vbTab, ",") + ")"
+            ElseIf theAdHocSQLDlg.TransferType.Text = "Pivot" Then
+                If ExcelDnaUtil.Application.ActiveCell.Formula <> "" Then
+                    If Globals.QuestionMsg("Non-empty Cell selected, should content be replaced?") = MsgBoxResult.Cancel Then Exit Sub
                 End If
+                ConfigFiles.createPivotTable(ExcelDnaUtil.Application.ActiveCell)
+                ConfigFiles.createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBSetQuery(""" + queryString + ""","""",R[1]C)"})
+            ElseIf theAdHocSQLDlg.TransferType.Text = "ListObject" Then
+                If ExcelDnaUtil.Application.ActiveCell.Formula <> "" Then
+                    If Globals.QuestionMsg("Non-empty Cell selected, should content be replaced?") = MsgBoxResult.Cancel Then Exit Sub
+                End If
+                ConfigFiles.createListObject(ExcelDnaUtil.Application.ActiveCell)
+                ConfigFiles.createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBSetQuery(""" + queryString + ""","""",RC[1])"})
+            ElseIf theAdHocSQLDlg.TransferType.Text = "RowFetch" Then
+                If ExcelDnaUtil.Application.ActiveCell.Formula <> "" Then
+                    If Globals.QuestionMsg("Non-empty Cell selected, should content be replaced?") = MsgBoxResult.Cancel Then Exit Sub
+                End If
+                ConfigFiles.createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBRowFetch(""" + queryString + ""","""",TRUE,R[1]C:R[1]C[10])"})
+            ElseIf theAdHocSQLDlg.TransferType.Text = "ListFetch" Then
+                If ExcelDnaUtil.Application.ActiveCell.Formula <> "" Then
+                    If Globals.QuestionMsg("Non-empty Cell selected, should content be replaced?") = MsgBoxResult.Cancel Then Exit Sub
+                End If
+                ConfigFiles.createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBListFetch(""" + queryString + ""","""",R[1]C,,,TRUE,TRUE,TRUE)"})
             End If
-        ElseIf dialogResult = System.Windows.Forms.DialogResult.Yes Then
-            ' "Add" was clicked: only add SQL String to combobox
+        ElseIf dialogResult = System.Windows.Forms.DialogResult.Cancel Then
+            ' "Close" was clicked: only add SQL String to combobox
             queryString = Strings.Trim(theAdHocSQLDlg.SQLText.Text)
         End If
 
         ' "Add" or "Transfer": store new sql command into AdHocSQLStrings and settings
         If Not AdHocSQLStrings.Contains(queryString) And Strings.Replace(queryString, " ", "") <> "" Then
-            ' add to AdHocSQLStrings
-            AdHocSQLStrings.Add(queryString)
-            selectedAdHocSQLString = AdHocSQLStrings.Count - 1
-
-            ' get module info for path of xll (to get config there):
-            Dim sModule As String = ""
-            For Each tModule As Diagnostics.ProcessModule In Diagnostics.Process.GetCurrentProcess().Modules
-                sModule = tModule.FileName
-                If sModule.ToUpper.Contains("DBADDIN") Then
-                    sModule = Replace(sModule, ".xll", "User.config")
-                    Exit For
-                End If
-            Next
-            ' add to settings
-            Dim doc As New Xml.XmlDocument()
-            doc.Load(sModule)
-            Dim nodeRegion As Xml.XmlElement = doc.CreateElement("add")
-            nodeRegion.SetAttribute("key", "AdhocSQLcmd" + queryString)
-            nodeRegion.SetAttribute("value", queryString)
-            doc.SelectSingleNode("//UserSettings").AppendChild(nodeRegion)
-            doc.Save(sModule)
-            ' reflect changes in sql combobox
-            theRibbon.InvalidateControl("DBAdhocSQL")
-        ElseIf Strings.Replace(queryString, " ", "") <> "" Then
-            selectedAdHocSQLString = AdHocSQLStrings.IndexOf(queryString)
-            ' reflect changes in sql combobox
-            theRibbon.InvalidateControl("DBAdhocSQL")
+            If Globals.QuestionMsg("Should the current command be added to the AdHocSQL dropdown?",, "AdHoc SQL Command") = MsgBoxResult.Ok Then
+                ' add to AdHocSQLStrings
+                AdHocSQLStrings.Add(queryString)
+                selectedAdHocSQLString = AdHocSQLStrings.Count - 1
+                ' change in or add to user settings
+                Globals.setUserSetting("AdhocSQLcmd" + queryString, queryString)
+            Else
+                selectedAdHocSQLString = AdHocSQLStrings.IndexOf(strText)
+            End If
+        Else ' just update selection index
+            selectedAdHocSQLString = AdHocSQLStrings.IndexOf(strText)
         End If
+        ' reflect changes in sql combobox
+        theRibbon.InvalidateControl("DBAdhocSQL")
     End Sub
 
     Public Function GetAdhocSQLText(control As CustomUI.IRibbonControl)

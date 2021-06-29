@@ -137,7 +137,7 @@ Several connection strings for "DBFuncsTest.xls" are placed to the right of the 
 
 ### AboutBox, Logs, Purge hidden names and other tools
 
-The Aboutbox can be reached by clicking the small dialogBox Launcher in the right bottom corner of the General Settings group of the DBAddin Ribbon:
+The Aboutbox can be reached by clicking the small dialogBox Launcher in the right bottom corner of the DB Addin Tools group of the DBAddin Ribbon:
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/AboutBox.PNG)  
 
@@ -165,7 +165,7 @@ A green check shows that custom property DBFskip is not set to true for this wor
 
 ### Adhoc SQL Commands
 
-Another tool is the entry of quick (adhoc) SQL Commands in the combo box below the settings dropdown. Changing the combo box opens the AdHoc SQL Command dialog:
+Another tool is the entry of quick (adhoc) SQL Commands in the combo box below the settings dropdown. Changing the combo box or clicking the dialogbox launcher below it, opens the AdHoc SQL Command dialog:
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/AdHocSQL.PNG)  
 
@@ -178,10 +178,22 @@ In case of an error the exception from the database command is displayed, for DM
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/AdHocSQL_DML_Result.PNG)  
 
-You can modify the command in the AdHoc SQL Command dialog, by clicking `Execute` or pressing `Ctrl-Return` the command will be executed. To change the database context, use the dropdown `Database`. To leave the dialog without any further action, hit ESC or click `Close`. To transfer the SQL command into the current cell (replacing any query in a possible DB Function there), click `Transfer` or press `Shift-Return`.
-To close the dialog including adding it to the combobox, click `Add`. You can always interrupt long running commands by clicking `Close` (or hitting ESC), `Add` or `Transfer`. A question whether to cancel the interruption is provided then.
+You can modify the command in the AdHoc SQL Command dialog. By clicking `Execute` or pressing `Ctrl-Return` the command will be executed. To change the database context, use the dropdown `DB:`. To change the environment (connection string), use the dropdown `Env:`. To leave the dialog, hit ESC or click `Close`, in case the SQL command has changed, you will be prompted whether to add the new command to the combobox:  
+
+![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/AdHocSQLConfirmAdding.PNG)  
+
+To transfer the SQL command into the current cell, click `Transfer` or press `Shift-Return`. Depending on the type selected in the dropdown besides the Transfer button this will either
+
+* for `Cell`: put the command into an empty cell, in case there is a DB Function there, replacing any query inside that function (this obviously only makes sense for select statements).
+* for `ListFetch`: create a `DBListFetch` function in the current cell and put the command into the functions query (this obviously only makes sense for select statements).
+* for `RowFetch`: create a `DBRowFetch` function in the current cell and put the command into the functions query (this obviously only makes sense for select statements).
+* for `ListObject`: create a `DBSetQuery` function (targeted to a new ListObject) in the current cell and put the command into the functions query (this obviously only makes sense for select statements).
+* for `Pivot`: create a `DBSetQuery` function (targeted to a new Pivot Table) in the current cell and put the command into the functions query (this obviously only makes sense for select statements).
+
+You can always interrupt long running commands by clicking `Close` (or hitting ESC) or `Transfer`. A question whether to cancel the interruption is provided then.
 
 All issued commands are stored in the user settings and reloaded at start-up of the Add-In (Excel), if you want to get rid of them, open the User-Settings as described in [Settings](#settings) and remove all unwanted entries starting with `key="AdhocSQLcmd.."`
+Also the chosen environment, database context and transfer type is stored in the user settings, being restored after closing the AdHoc SQL Command dialog or Excel.
 
 ### Building
 

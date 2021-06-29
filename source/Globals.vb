@@ -39,6 +39,8 @@ Public Module Globals
     Public CmdTimeout As Integer
     ''' <summary>default formatting style used in DBDate</summary>
     Public DefaultDBDateFormatting As Integer
+    ''' <summary></summary>
+    Private UserSettingsPath As String
 
     ''' <summary>encapsulates setting fetching (currently ConfigurationManager from DBAddin.xll.config)</summary>
     ''' <param name="Key">registry key to take value from</param>
@@ -63,6 +65,27 @@ Public Module Globals
         End If
         If fetchSetting Is Nothing Then fetchSetting = defaultValue
     End Function
+
+    ''' <summary>change or add a key/value pair in the user settings</summary>
+    ''' <param name="theKey">key to change (or add)</param>
+    ''' <param name="theValue">value for key</param>
+    Public Sub setUserSetting(theKey As String, theValue As String)
+        ' check if key exists
+        Dim doc As New Xml.XmlDocument()
+        doc.Load(UserSettingsPath)
+        Dim keyNode As Xml.XmlNode = doc.SelectSingleNode("/UserSettings/add[@key='" + System.Security.SecurityElement.Escape(theKey) + "']")
+        If IsNothing(keyNode) Then
+            ' if not, add to settings
+            Dim nodeRegion As Xml.XmlElement = doc.CreateElement("add")
+            nodeRegion.SetAttribute("key", theKey)
+            nodeRegion.SetAttribute("value", theValue)
+            doc.SelectSingleNode("//UserSettings").AppendChild(nodeRegion)
+        Else
+            keyNode.Attributes().GetNamedItem("value").InnerText = theValue
+        End If
+        doc.Save(UserSettingsPath)
+        ConfigurationManager.RefreshSection("UserSettings")
+    End Sub
 
     ''' <summary>environment for settings (+1 of selectedeEnvironment which is the index of the dropdown)</summary>
     ''' <returns></returns>
@@ -97,6 +120,14 @@ Public Module Globals
         Catch ex As Exception
             UserMsg("Error in initialization of Settings: " + ex.Message)
         End Try
+        ' get module info for path of xll (to get config there):
+        For Each tModule As Diagnostics.ProcessModule In Diagnostics.Process.GetCurrentProcess().Modules
+            UserSettingsPath = tModule.FileName
+            If UserSettingsPath.ToUpper.Contains("DBADDIN") Then
+                UserSettingsPath = Replace(UserSettingsPath, ".xll", "User.config")
+                Exit For
+            End If
+        Next
     End Sub
 
     ''' <summary>Logs Message of eEventType to System.Diagnostics.Trace</summary>
@@ -418,18 +449,19 @@ Public Module Globals
     End Function
 
     ''' <summary>fetches substring starting after keystr and ending with separator from theString, case insensitive !! if separator is "" then fetch to end of string</summary>
-    ''' <param name="theString"></param>
-    ''' <param name="keystr"></param>
-    ''' <param name="separator"></param>
+    ''' <param name="theString">string to be searched</param>
+    ''' <param name="keystr">string indicating the start of the substring combination</param>
+    ''' <param name="separator">string ending the whole substring, not included in returned string!</param>
+    ''' <param name="includeKeyStr">if includeKeyStr is set to true, include keystr in returned string</param>
     ''' <returns>the fetched substring</returns>
-    Public Function fetch(ByVal theString As String, ByVal keystr As String, ByVal separator As String) As String
+    Public Function fetch(ByVal theString As String, ByVal keystr As String, ByVal separator As String, Optional includeKeyStr As Boolean = False) As String
         Dim fetchBeg As Integer, fetchEnd As Integer
 
         fetchBeg = InStr(1, UCase$(theString), UCase$(keystr))
         If fetchBeg = 0 Then Return ""
         fetchEnd = InStr(fetchBeg + Len(keystr), UCase$(theString), UCase$(separator))
         If fetchEnd = 0 Or separator.Length = 0 Then fetchEnd = Len(theString) + 1
-        fetch = Mid$(theString, fetchBeg + Len(keystr), fetchEnd - (fetchBeg + Len(keystr)))
+        fetch = Mid$(theString, fetchBeg + IIf(includeKeyStr, 0, Len(keystr)), fetchEnd - (fetchBeg + IIf(includeKeyStr, 0, Len(keystr))))
     End Function
 
     ''' <summary>checks whether worksheet called theName exists</summary>
