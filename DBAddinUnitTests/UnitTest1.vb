@@ -62,6 +62,11 @@ Imports ExcelDna.Integration
         Assert.AreEqual(fetch("SELECT <selectpart> FROM Table", "SELECT ", ""), "<selectpart> FROM Table")
     End Sub
 
+    <TestMethod()> Public Sub TestfetchInclSep()
+        Assert.AreEqual(fetch("Key1=Value1;Key2=Value2;", "Key1=", ";"), "Value1")
+        Assert.AreEqual(fetch("Key1=Value1;Key2=Value2;", "Key1=", ";", True), "Key1=Value1")
+    End Sub
+
     <TestMethod()> Public Sub TestReplaceDelims()
         Assert.AreEqual(replaceDelimsWithSpecialSep("A1,""1,2,3"",B2", ",", """", "(", ")", vbTab), "A1" + vbTab + """1,2,3""" + vbTab + "B2")
         Assert.AreEqual(replaceDelimsWithSpecialSep("A1,(1,2,3),B2", ",", """", "(", ")", vbTab), "A1" + vbTab + "(1,2,3)" + vbTab + "B2")

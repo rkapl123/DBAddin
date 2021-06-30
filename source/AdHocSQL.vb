@@ -101,15 +101,15 @@ Public Class AdHocSQL
         fillDatabasesAndSetDropDown()
     End Sub
 
-    ''' <summary>database changed, initialize everything else (Tables, DBSheetCols definition) from scratch</summary>
+    ''' <summary>database changed</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub Database_SelectionChangeCommitted(sender As Object, e As EventArgs) Handles Database.SelectionChangeCommitted
         ' add database information in calling openConnection to signal a change in connection string to selected database !
-        Try : myDBConnHelper.openConnection(Me.Database.Text) : Catch ex As Exception : Globals.UserMsg(ex.Message) : Exit Sub : End Try
         Try
+            myDBConnHelper.openConnection(Me.Database.Text)
         Catch ex As System.Exception
-            Globals.UserMsg("Exception in Database_SelectedIndexChanged: " + ex.Message)
+            Globals.UserMsg("Exception in Database_SelectionChangeCommitted: " + ex.Message)
         End Try
     End Sub
 
@@ -144,6 +144,11 @@ Public Class AdHocSQL
     ''' <param name="e"></param>
     Private Sub BackgroundWorker1_DoWork(sender As Object, e As DoWorkEventArgs) Handles BackgroundWorker1.DoWork
         Dim theResult As IDataReader
+        Try
+            myDBConnHelper.openConnection(Me.Database.Text)
+        Catch ex As System.Exception
+            Globals.UserMsg("Exception in BackgroundWorker1_DoWork (opeining Database connection): " + ex.Message)
+        End Try
 
         ' set up command
         If TypeName(myDBConnHelper.dbshcnn) = "SqlConnection" Then
