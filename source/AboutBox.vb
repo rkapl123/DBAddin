@@ -110,6 +110,7 @@ Public NotInheritable Class AboutBox
     ''' <summary>checks for updates of DB-Addin, asks for download and downloads them</summary>
     ''' <param name="doUpdate">only display result of check (false) or actually perform the update and download new version (true)</param>
     Public Sub checkForUpdate(doUpdate As Boolean)
+        Const AddinName = "DBAddin-"
         Const updateFilenameZip = "downloadedVersion.zip"
         Dim localUpdateFolder As String = Globals.fetchSetting("localUpdateFolder", "")
         Dim localUpdateMessage As String = Globals.fetchSetting("localUpdateMessage", "A new version is available in the local update folder, after quitting Excel (is done next) start deployAddin.cmd to install it.")
@@ -211,17 +212,17 @@ Public NotInheritable Class AboutBox
         Me.Refresh()
         ' now extract the downloaded file and open the Distribution folder, first remove any existing folder...
         Try
-            Directory.Delete(updatesDownloadFolder + "DBAddin-" + updatesMajorVersion + curRevision.ToString(), True)
+            Directory.Delete(updatesDownloadFolder + AddinName + updatesMajorVersion + curRevision.ToString(), True)
         Catch ex As Exception : End Try
         Try
-            IO.Compression.ZipFile.ExtractToDirectory(updatesDownloadFolder + updateFilenameZip, updatesDownloadFolder)
+            Compression.ZipFile.ExtractToDirectory(updatesDownloadFolder + updateFilenameZip, updatesDownloadFolder)
         Catch ex As Exception
             Globals.UserMsg("Error when extracting new version: " + ex.Message())
         End Try
-        Me.TextBoxDescription.Text = My.Application.Info.Description + vbCrLf + vbCrLf + "New version in " + updatesDownloadFolder + "DBAddin-" + updatesMajorVersion + curRevision.ToString() + "\Distribution, start deployAddin.cmd to install the new Version."
+        Me.TextBoxDescription.Text = My.Application.Info.Description + vbCrLf + vbCrLf + "New version in " + updatesDownloadFolder + AddinName + updatesMajorVersion + curRevision.ToString() + "\Distribution, start deployAddin.cmd to install the new Version."
         Me.Refresh()
         Try
-            System.Diagnostics.Process.Start("explorer.exe", updatesDownloadFolder + "DBAddin-" + updatesMajorVersion + curRevision.ToString() + "\Distribution")
+            System.Diagnostics.Process.Start("explorer.exe", updatesDownloadFolder + AddinName + updatesMajorVersion + curRevision.ToString() + "\Distribution")
         Catch ex As Exception
             Globals.UserMsg("Error when opening Distribution folder of new version: " + ex.Message())
         End Try

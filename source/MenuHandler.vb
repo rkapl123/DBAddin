@@ -136,18 +136,18 @@ Public Class MenuHandler
                 If Left(key, 11) = "AdhocSQLcmd" Then AdHocSQLStrings.Add(customSettings(key))
             Next
         End If
-        selectedAdHocSQLString = 0
+        selectedAdHocSQLIndex = 0
     End Sub
 
 #Disable Warning IDE0060 ' Hide not used Parameter warning as this is very often the case with the below callbacks from the ribbon
 
     Private AdHocSQLStrings As Collections.Generic.List(Of String)
-    Private selectedAdHocSQLString As Integer
+    Private selectedAdHocSQLIndex As Integer
 
     ''' <summary>dialogBoxLauncher of DBAddin settings group: activate about box</summary>
     ''' <param name="control"></param>
     Public Sub showDBAdHocSQLDBOX(control As CustomUI.IRibbonControl)
-        showDBAdHocSQL(Nothing, AdHocSQLStrings(selectedAdHocSQLString))
+        showDBAdHocSQL(Nothing, AdHocSQLStrings(selectedAdHocSQLIndex))
     End Sub
 
     ''' <summary>show Adhoc SQL Query editor</summary>
@@ -155,13 +155,13 @@ Public Class MenuHandler
     Public Sub showDBAdHocSQL(control As CustomUI.IRibbonControl, strText As String)
         Dim queryString As String = ""
 
-        Dim theAdHocSQLDlg As AdHocSQL = New AdHocSQL(strText)
+        Dim theAdHocSQLDlg As AdHocSQL = New AdHocSQL(strText, AdHocSQLStrings.IndexOf(strText))
         Dim dialogResult As Windows.Forms.DialogResult = theAdHocSQLDlg.ShowDialog()
         ' reflect potential change in environment...
         theRibbon.InvalidateControl("envDropDown")
         If dialogResult = System.Windows.Forms.DialogResult.OK Then
             ' "Transfer" was clicked: place SQL String into currently selected Cell/DBFunction and add to combobox
-            queryString = Strings.Trim(theAdHocSQLDlg.SQLText.Text)
+            queryString = theAdHocSQLDlg.SQLText.Text
             If theAdHocSQLDlg.TransferType.Text = "Cell" Then
                 Dim targetFormula As String = ExcelDnaUtil.Application.ActiveCell.Formula
                 Dim srchdFunc As String = ""
@@ -229,22 +229,26 @@ Public Class MenuHandler
             If Globals.QuestionMsg("Should the current command be added to the AdHocSQL dropdown?",, "AdHoc SQL Command") = MsgBoxResult.Ok Then
                 ' add to AdHocSQLStrings
                 AdHocSQLStrings.Add(queryString)
-                selectedAdHocSQLString = AdHocSQLStrings.Count - 1
+                selectedAdHocSQLIndex = AdHocSQLStrings.Count - 1
                 ' change in or add to user settings
-                Globals.setUserSetting("AdhocSQLcmd" + queryString, queryString)
+                Globals.setUserSetting("AdhocSQLcmd" + selectedAdHocSQLIndex.ToString(), queryString)
             Else
-                selectedAdHocSQLString = AdHocSQLStrings.IndexOf(strText)
+                selectedAdHocSQLIndex = AdHocSQLStrings.IndexOf(strText)
             End If
         Else ' just update selection index
-            selectedAdHocSQLString = AdHocSQLStrings.IndexOf(strText)
+            selectedAdHocSQLIndex = AdHocSQLStrings.IndexOf(strText)
         End If
+        ' store the combobox values for later...
+        Globals.setUserSetting("AdHocSQLcmdEnv" + selectedAdHocSQLIndex.ToString(), theAdHocSQLDlg.EnvSwitch.SelectedIndex.ToString())
+        Globals.setUserSetting("AdHocSQLcmdDB" + selectedAdHocSQLIndex.ToString(), theAdHocSQLDlg.Database.Text)
+        Globals.setUserSetting("AdHocSQLTransferType", theAdHocSQLDlg.TransferType.Text)
         ' reflect changes in sql combobox
         theRibbon.InvalidateControl("DBAdhocSQL")
     End Sub
 
     Public Function GetAdhocSQLText(control As CustomUI.IRibbonControl)
         If AdHocSQLStrings.Count > 0 Then
-            Return AdHocSQLStrings(selectedAdHocSQLString)
+            Return AdHocSQLStrings(selectedAdHocSQLIndex)
         Else
             Return ""
         End If
@@ -270,7 +274,7 @@ Public Class MenuHandler
     ''' <param name="control"></param>
     ''' <returns></returns>
     Public Function getSuperTipInfo(ByRef control As CustomUI.IRibbonControl)
-        getSuperTipInfo = "DBModif Implementation: " + IIf(DBModifs.altDBImpl, "ADO.NET", "ADODB")
+        getSuperTipInfo = ""
     End Function
 
     ''' <summary>display warning button icon on Cprops change if DBFskip is set...</summary>

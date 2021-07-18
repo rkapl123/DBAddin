@@ -9,7 +9,7 @@ Public Class AdHocSQL
     ''' <summary>common connection settings factored in helper class</summary>
     Private myDBConnHelper As DBSheetConnHelper
 
-    Public Sub New(SQLString As String)
+    Public Sub New(SQLString As String, AdHocSQLStringsIndex As Integer)
         ' This call is required by the designer.
         InitializeComponent()
         Me.SQLText.Text = SQLString
@@ -26,9 +26,11 @@ Public Class AdHocSQL
         For Each env As String In Globals.environdefs
             Me.EnvSwitch.Items.Add(env)
         Next
-        Dim userSetEnv As String = fetchSetting("AdHocSQLEnvironment", "")
-        Me.EnvSwitch.SelectedIndex = If(userSetEnv = "", Globals.selectedEnvironment, Integer.Parse(userSetEnv))
         fillDatabasesAndSetDropDown()
+        Dim userSetEnv As String = fetchSetting("AdHocSQLcmdEnv" + AdHocSQLStringsIndex.ToString(), Globals.selectedEnvironment.ToString())
+        Dim userSetDB As String = fetchSetting("AdHocSQLcmdDB" + AdHocSQLStringsIndex.ToString(), "")
+        Me.EnvSwitch.SelectedIndex = Integer.Parse(userSetEnv)
+        Me.Database.SelectedIndex = If(userSetDB = "", 0, Me.Database.Items.IndexOf(userSetDB))
     End Sub
 
     ''' <summary>execution of ribbon entered command after dialog has been set up, otherwise GUI elements are not available</summary>
@@ -242,10 +244,8 @@ Public Class AdHocSQL
             SqlCmd.Cancel()
             BackgroundWorker1.CancelAsync()
         End If
-        ' store the combobox values for later...
-        setUserSetting("AdHocEnvironment", Me.EnvSwitch.SelectedIndex.ToString())
-        setUserSetting("AdHocSQLTransferType", Me.TransferType.Text)
-        setUserSetting("AdHocSQLDatabase" + Me.EnvSwitch.SelectedIndex.ToString(), Me.Database.Text)
+        ' get rid of leading and trailing blanks for dropdown and combobox presets
+        Me.SQLText.Text = Strings.Trim(Me.SQLText.Text)
         Me.DialogResult = theDialogResult
         Me.Hide()
     End Sub

@@ -26,10 +26,11 @@ Public Module Globals
     Public nonInteractive As Boolean = False
     ''' <summary>collect non interactive error messages here</summary>
     Public nonInteractiveErrMsgs As String
-    ''' <summary>set to true if warning was issued</summary>
+    ''' <summary>set to true if warning was issued, this flag indicates that the log button should get an exclamation sign</summary>
     Public WarningIssued As Boolean
 
     ' Global settings
+    ''' <summary>Debug the Addin: write trace messages</summary>
     Public DebugAddin As Boolean
     ''' <summary>Default ConnectionString, if no connection string is given by user....</summary>
     Public ConstConnString As String
@@ -39,7 +40,7 @@ Public Module Globals
     Public CmdTimeout As Integer
     ''' <summary>default formatting style used in DBDate</summary>
     Public DefaultDBDateFormatting As Integer
-    ''' <summary></summary>
+    ''' <summary>The path where the User specific settings (overrides) can be found</summary>
     Private UserSettingsPath As String
 
     ''' <summary>encapsulates setting fetching (currently ConfigurationManager from DBAddin.xll.config)</summary>
@@ -97,8 +98,6 @@ Public Module Globals
     Public Sub initSettings()
         Try
             DebugAddin = CBool(fetchSetting("DebugAddin", "False"))
-            ' TODO: remove when migration to ADO.NET finished...
-            DBModifs.altDBImpl = CBool(fetchSetting("altDBImpl", "False"))
             ConstConnString = fetchSetting("ConstConnString" + Globals.env(), "")
             CnnTimeout = CInt(fetchSetting("CnnTimeout", "15"))
             CmdTimeout = CInt(fetchSetting("CmdTimeout", "60"))

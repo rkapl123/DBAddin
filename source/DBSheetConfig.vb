@@ -76,26 +76,32 @@ Public Module DBSheetConfig
             ' get query
             Dim queryStr As String = getEntry("query", curConfig)
             If queryStr = "" Then
-                Globals.UserMsg("No query found in DBSheetConfig.", "DBSheet Creation Error")
+                Globals.UserMsg("No query found in DBSheetConfig !", "DBSheet Creation Error")
                 Exit Sub
             End If
-            Dim whereClause As String = getEntry("whereClause", curConfig)
+            If Globals.QuestionMsg("Should TOP 100 be put into query, in case of very large underlying tables this helps in creating the DBSheet (you can restrict the query later on) ?", MsgBoxStyle.YesNo) = MsgBoxResult.Yes Then
+                queryStr = "SELECT TOP 100 " + queryStr.Substring(7) ' skip "SELECT " in queryStr
+            End If
+            Dim whereClauseStart = queryStr.IndexOf("WHERE", StringComparison.OrdinalIgnoreCase)
             ' queryStr inserted below DBSetQuery
             addedCells = 1
             Dim changedWhereClause As String = ""
-            If whereClause <> "" Then
+            If whereClauseStart >= 0 Then
+                Dim whereClause As String = queryStr.Substring(whereClauseStart)
                 ' check for where clauses and modify for parameter setting in formula
-                changedWhereClause = "="
+                Dim lastCharParam As Boolean = (Strings.Right(whereClause, 1) = "?")
                 Dim whereParts As String() = Split(whereClause, "?")
                 For i = 0 To UBound(whereParts)
                     If whereParts(i) <> "" Then
                         ' each parameter adds a cell below DBSetQuery
                         addedCells += 1
                         ' create concatenation formula for parameter setting, each ? is replaced by a separate row reference below the where clause
-                        changedWhereClause += If(i = 0, """WHERE ", "&""") + whereParts(i) + """&R[" + (i + 1).ToString() + "]C"
+                        changedWhereClause += If(i = 0, "=""", "&""") + whereParts(i) + If(i < UBound(whereParts) Or lastCharParam, """&R[" + (i + 1).ToString() + "]C", """")
+                        ' before where Part: formula op (at begin) then concat operator ... afterwards correct R[refRow]C ref, at end only closing quote unless whereStr ended with "?"
                     End If
                 Next
-                queryStr = Replace(queryStr, "WHERE " + whereClause, "")
+                ' remove in queryStr as where clause sits in a separate cell now (enhancement of DBSetquery query param to this cell to be done later by user)
+                queryStr = Replace(queryStr, whereClause, "")
                 ' whereClause inserted below queryStr
                 addedCells += 1
             End If
@@ -222,7 +228,7 @@ Public Module DBSheetConfig
                     lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
                     Exit Sub
                 End Try
-                ' add an additional where clause as a concatenation string
+                ' add the additional where clause as a concatenation string
                 If changedWhereClause <> "" Then
                     Try
                         .Offset(2, 0).Value = changedWhereClause
@@ -241,7 +247,7 @@ Public Module DBSheetConfig
             Else
                 ConfigFiles.createFunctionsInCells(curCell, {"RC", "=DBSetQuery(R[1]C,"""",RC[1])"})
             End If
-            ' finish creation in async called function (need to have the results from the above calculations)
+            ' finish creation in async called function (need to have the results from the above createFunctionsInCells/invocations)
             ExcelAsyncUtil.QueueAsMacro(Sub()
                                             finishDBMapperCreation()
                                         End Sub)
