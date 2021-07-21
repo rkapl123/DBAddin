@@ -16,6 +16,7 @@ Public Module Functions
     ' Global objects/variables for DBFuncs
     ''' <summary>global collection of information transport containers between function and calc event procedure</summary>
     Public StatusCollection As Dictionary(Of String, ContainedStatusMsg)
+    'TODO: Replace ADODB with ADO.NETin DB Functions
     ''' <summary>connection object: always use the same, if possible (same ConnectionString)</summary>
     Public conn As ADODB.Connection
     ''' <summary>connection string can be changed for calls with different connection strings</summary>
