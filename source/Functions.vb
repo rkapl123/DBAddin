@@ -618,6 +618,7 @@ Public Module Functions
 
         On Error Resume Next
         Dim calcMode = ExcelDnaUtil.Application.Calculation
+        Dim scrnUpdate As Boolean = ExcelDnaUtil.Application.ScreenUpdating
         ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual
         ' this works around the data validation input bug and being called when COM Model is not ready
         ' when selecting a value from a list of a validated field or being invoked from a hyperlink (e.g. word), excel won't react to
@@ -1012,7 +1013,7 @@ Public Module Functions
             errMsg = "Error in autofitting: " + Err.Description + " in query: " + Query
             GoTo err_0
         End If
-        finishAction(calcMode, callID)
+        finishAction(calcMode, callID, scrnUpdate)
         Exit Sub
 
 err_2: ' errors where recordset was opened and QueryTables were already added, but temp names were not deleted
@@ -1025,20 +1026,21 @@ err_0: ' errors where recordset was not opened or is already closed
         If errMsg.Length = 0 Then errMsg = Err.Description + " in query: " + Query
         Globals.LogWarn(errMsg + ", caller: " + callID)
         StatusCollection(callID).statusMsg = errMsg
-        finishAction(calcMode, callID, "Error")
+        finishAction(calcMode, callID, scrnUpdate, "Error")
         caller.Formula += " " ' recalculate to trigger return of error messages to calling function
     End Sub
 
     ''' <summary>common sub to finish the action procedures, resetting anything (Cursor, calcmode, statusbar, screenupdating) that was set otherwise...</summary>
     ''' <param name="calcMode">reset calcmode to this</param>
     ''' <param name="callID">for logging purpose</param>
+    ''' <param name="scrnUpdate">reset ScreenUpdating to this</param>
     ''' <param name="additionalLogInfo">for logging purpose</param>
-    Private Sub finishAction(calcMode As Excel.XlCalculation, callID As String, Optional additionalLogInfo As String = "")
+    Private Sub finishAction(calcMode As Excel.XlCalculation, callID As String, scrnUpdate As Boolean, Optional additionalLogInfo As String = "")
         DBModifs.preventChangeWhileFetching = False
         ExcelDnaUtil.Application.Cursor = Excel.XlMousePointer.xlDefault  ' To return cursor to normal
         ExcelDnaUtil.Application.StatusBar = False
         Globals.LogInfo("callID: " + callID + If(additionalLogInfo <> "", ", additionalInfo: " + additionalLogInfo, ""))
-        ExcelDnaUtil.Application.ScreenUpdating = True ' coming from refresh, this might be off for dirtying "foreign" (being on a different sheet than the calling function) data targets 
+        ExcelDnaUtil.Application.ScreenUpdating = scrnUpdate ' coming from refresh, this might be off for dirtying "foreign" (being on a different sheet than the calling function) data targets 
         ExcelDnaUtil.Application.Calculation = calcMode
     End Sub
 
@@ -1139,6 +1141,7 @@ err_0: ' errors where recordset was not opened or is already closed
         targetSH = targetCells(0).Parent
         StatusCollection(callID).statusMsg = ""
         Dim calcMode = ExcelDnaUtil.Application.Calculation
+        Dim scrnUpdate As Boolean = ExcelDnaUtil.Application.ScreenUpdating
         ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual
         ' this works around the data validation input bug and being called when COM Model is not ready
         ' when selecting a value from a list of a validated field or being invoked from a hyperlink (e.g. word), excel won't react to
@@ -1276,7 +1279,7 @@ err_0: ' errors where recordset was not opened or is already closed
 
         tableRst.Close()
         If StatusCollection(callID).statusMsg.Length = 0 Then StatusCollection(callID).statusMsg = "Retrieved " + returnedRows.ToString() + " record" + If(returnedRows > 1, "s", "") + " from: " + Query
-        finishAction(calcMode, callID)
+        finishAction(calcMode, callID, scrnUpdate)
         Exit Sub
 
 err_1:
@@ -1284,7 +1287,7 @@ err_1:
         If tableRst.State <> 0 Then tableRst.Close()
         Globals.LogWarn(errMsg + ", caller: " + callID)
         StatusCollection(callID).statusMsg = errMsg
-        finishAction(calcMode, callID, "Error")
+        finishAction(calcMode, callID, scrnUpdate, "Error")
         caller.Formula += " " ' recalculate to trigger return of error messages to calling function
     End Sub
 

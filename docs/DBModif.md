@@ -91,6 +91,8 @@ The DBModifiers can be executed either
 
 ... or be done on saving the Workbook.  
 
+... or by issuing the VBA command `result = Application.Run("executeDBModif", <DBModifierName>, <headlessFlag>)`, where `<DBModifierName>` is the Name of the DB Modifier including the type (so `DBMapperemployee` or `DBActionpublishersDelete`) and `<headlessFlag>` is a boolean flag indicating whether any user-interaction (as controllable by the Addin) should be avoided, all errors are returned in the `result` of the call.
+
 You can edit the DBModifiers either by Ctrl-Shift clicking the Execute DBModifier Groups dropdown menus..  
 .. or by Ctrl-Shift clicking the created commandbuttons.  
 .. or by using the Insert/Edit DBFunc/DBModif context menu within a DBMapper or DBAction range.  

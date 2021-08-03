@@ -149,7 +149,7 @@ Public Class AdHocSQL
         Try
             myDBConnHelper.openConnection(Me.Database.Text)
         Catch ex As System.Exception
-            Globals.UserMsg("Exception in BackgroundWorker1_DoWork (opeining Database connection): " + ex.Message)
+            Globals.UserMsg("Exception in BackgroundWorker1_DoWork (opening Database connection): " + ex.Message)
         End Try
 
         ' set up command
@@ -167,7 +167,8 @@ Public Class AdHocSQL
         Try
             theResult = SqlCmd.ExecuteReader()
         Catch ex As Exception
-            nonRowResult = ex.Message + " (" + elapsedTime.ToString("T") + ")"
+            ' interruption of SqlCmd leads to exception which is misleading...
+            nonRowResult = If(Not BackgroundWorker1.CancellationPending, ex.Message + " (" + elapsedTime.ToString("T") + ")", "Execution was interrupted..")
             theResult = Nothing
         End Try
         ' get results (into data table)
@@ -178,7 +179,8 @@ Public Class AdHocSQL
                 Try
                     dt.Load(theResult)
                 Catch ex As Exception
-                    nonRowResult = ex.Message
+                    ' interruption of SqlCmd leads to exception which is misleading...
+                    nonRowResult = If(Not BackgroundWorker1.CancellationPending, ex.Message + " (" + elapsedTime.ToString("T") + ")", "Execution was interrupted..")
                 End Try
             Else
                 ' DML: insert/update/delete returns no rows, only records affected
@@ -219,6 +221,7 @@ Public Class AdHocSQL
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub Timer1_Tick(sender As Object, e As EventArgs) Handles Timer1.Tick
+        If BackgroundWorker1.CancellationPending Then Exit Sub
         elapsedTime = elapsedTime.AddSeconds(1.0)
         Me.RowsReturned.Text = "(" + elapsedTime.ToString("T") + ")"
     End Sub
@@ -243,6 +246,7 @@ Public Class AdHocSQL
             If Globals.QuestionMsg("Cancel the running SQL Command ?",, "AdHoc SQL Command") = MsgBoxResult.Cancel Then Exit Sub
             SqlCmd.Cancel()
             BackgroundWorker1.CancelAsync()
+            If Globals.QuestionMsg("Also close the Adhoc SQL Command Tool now ?",, "AdHoc SQL Command") = MsgBoxResult.Cancel Then Exit Sub
         End If
         ' get rid of leading and trailing blanks for dropdown and combobox presets
         Me.SQLText.Text = Strings.Trim(Me.SQLText.Text)
@@ -289,4 +293,5 @@ Public Class AdHocSQL
     Private Sub AdHocSQL_KeyUp(sender As Object, e As KeyEventArgs) Handles Me.KeyUp
         If e.KeyCode = Keys.Escape Then finishForm(DialogResult.Cancel)
     End Sub
+
 End Class

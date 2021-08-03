@@ -147,15 +147,17 @@ Public Class MenuHandler
     ''' <summary>dialogBoxLauncher of DBAddin settings group: activate about box</summary>
     ''' <param name="control"></param>
     Public Sub showDBAdHocSQLDBOX(control As CustomUI.IRibbonControl)
-        showDBAdHocSQL(Nothing, AdHocSQLStrings(selectedAdHocSQLIndex))
+        Dim selectedSQLText As String = ""
+        If AdHocSQLStrings.Count > 0 Then selectedSQLText = AdHocSQLStrings(selectedAdHocSQLIndex)
+        showDBAdHocSQL(Nothing, selectedSQLText)
     End Sub
 
     ''' <summary>show Adhoc SQL Query editor</summary>
     ''' <param name="control"></param>
-    Public Sub showDBAdHocSQL(control As CustomUI.IRibbonControl, strText As String)
+    Public Sub showDBAdHocSQL(control As CustomUI.IRibbonControl, selectedSQLText As String)
         Dim queryString As String = ""
 
-        Dim theAdHocSQLDlg As AdHocSQL = New AdHocSQL(strText, AdHocSQLStrings.IndexOf(strText))
+        Dim theAdHocSQLDlg As AdHocSQL = New AdHocSQL(selectedSQLText, AdHocSQLStrings.IndexOf(selectedSQLText))
         Dim dialogResult As Windows.Forms.DialogResult = theAdHocSQLDlg.ShowDialog()
         ' reflect potential change in environment...
         theRibbon.InvalidateControl("envDropDown")
@@ -233,14 +235,16 @@ Public Class MenuHandler
                 ' change in or add to user settings
                 Globals.setUserSetting("AdhocSQLcmd" + selectedAdHocSQLIndex.ToString(), queryString)
             Else
-                selectedAdHocSQLIndex = AdHocSQLStrings.IndexOf(strText)
+                selectedAdHocSQLIndex = AdHocSQLStrings.IndexOf(selectedSQLText)
             End If
         Else ' just update selection index
-            selectedAdHocSQLIndex = AdHocSQLStrings.IndexOf(strText)
+            selectedAdHocSQLIndex = AdHocSQLStrings.IndexOf(selectedSQLText)
         End If
-        ' store the combobox values for later...
-        Globals.setUserSetting("AdHocSQLcmdEnv" + selectedAdHocSQLIndex.ToString(), theAdHocSQLDlg.EnvSwitch.SelectedIndex.ToString())
-        Globals.setUserSetting("AdHocSQLcmdDB" + selectedAdHocSQLIndex.ToString(), theAdHocSQLDlg.Database.Text)
+        If Strings.Replace(queryString, " ", "") <> "" Then
+            ' store the combobox values for later...
+            Globals.setUserSetting("AdHocSQLcmdEnv" + selectedAdHocSQLIndex.ToString(), theAdHocSQLDlg.EnvSwitch.SelectedIndex.ToString())
+            Globals.setUserSetting("AdHocSQLcmdDB" + selectedAdHocSQLIndex.ToString(), theAdHocSQLDlg.Database.Text)
+        End If
         Globals.setUserSetting("AdHocSQLTransferType", theAdHocSQLDlg.TransferType.Text)
         ' reflect changes in sql combobox
         theRibbon.InvalidateControl("DBAdhocSQL")

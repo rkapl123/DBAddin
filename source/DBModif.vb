@@ -1597,6 +1597,7 @@ Public Module DBModifs
                 ' then add DBRefresh items for allowing refreshing DBFunctions (DBListFetch and DBSetQuery) during a Sequence
                 Dim searchCell As Excel.Range
                 For Each ws As Excel.Worksheet In ExcelDnaUtil.Application.ActiveWorkbook.Worksheets
+                    ExcelDnaUtil.Application.Statusbar = "Looking for DBFunctions in " + ws.Name + " for adding possibility to DB Sequence"
                     For Each theFunc As String In {"DBListFetch(", "DBSetQuery(", "DBRowFetch("}
                         searchCell = ws.Cells.Find(What:=theFunc, After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
                         Dim firstFoundAddress As String = ""
@@ -1612,6 +1613,7 @@ Public Module DBModifs
                     searchCell = Nothing
                     searchCell = ws.Cells.Find(What:="", After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
                 Next
+                ExcelDnaUtil.Application.Statusbar = False
                 ' at last add special items DBBeginTrans and DBCommitTrans for setting DB Transaction brackets
                 ds.Add("DBBegin:Begins DB Transaction")
                 ds.Add("DBCommitRollback:Commits or Rolls back DB Transaction")

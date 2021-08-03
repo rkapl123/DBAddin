@@ -182,6 +182,8 @@ done:
         Catch ex As Exception
             Globals.UserMsg("Error getting docproperties: " + Wb.Name + ex.Message)
         End Try
+        ' skip searching for functions (takes time in large sheets!) if not necessary
+        If DBFCContentColl.Count = 0 And DBFCAllColl.Count = 0 Then Exit Sub
 
         ' now clear content/all
         Dim searchCell As Excel.Range
@@ -193,6 +195,7 @@ done:
                     Globals.LogWarn("no worksheet in saving workbook...")
                     Exit For
                 End If
+                ExcelDnaUtil.Application.Statusbar = "Looking for DBFunctions in " + ws.Name + " for possible removal of Data in TargetRanges"
                 For Each theFunc As String In {"DBListFetch(", "DBRowFetch("}
                     searchCell = ws.Cells.Find(What:=theFunc, After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
                     If Not (searchCell Is Nothing) Then
@@ -233,6 +236,7 @@ done:
                     End If
                 Next
             Next
+            ExcelDnaUtil.Application.Statusbar = False
             ' always reset the cell find dialog....
             If ws IsNot Nothing Then
                 searchCell = ws.Cells.Find(What:="", After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
