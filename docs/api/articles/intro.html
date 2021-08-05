@@ -8,7 +8,7 @@
     <title>Overview </title>
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Overview ">
-    <meta name="generator" content="docfx 2.43.2.0">
+    <meta name="generator" content="docfx 2.58.0.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -77,14 +77,15 @@
 </ul>
 <h2 id="db-modifiers">DB Modifiers</h2>
 <ul>
-<li>DBModif.vb - DBModif Class: Abstraction of a DB Modification Object and descendant concrete classes DBMapper, DBAction or DBSeqnce; also contains global helper functions for DBModifiers</li>
+<li>DBModif.vb - DBModif Class: Abstraction of a DB Modification Object and descendant concrete classes DBMapper, DBAction or DBSeqnce; also contains global helper functions for DBModifiers and an abstract helper class CustomCommandBuilder for building Insert/Update/Delete Statements for DBMapper having concrete implementations in CustomSqlCommandBuilder, CustomOleDbCommandBuilder and CustomOdbcCommandBuilder.</li>
 <li>DBModifCreate.vb  - Dialog for creating DB Modifier configurations</li>
 <li>EditDBModifDef.vb  - Dialog used to display and edit the CustomXMLPart utilized for storing the DBModif definitions, reused to also show DBAddin settings</li>
 </ul>
 <h2 id="dbsheet-definition-creation-and-assignment">DBSheet definition creation and assignment</h2>
 <ul>
-<li>DBSheetConfig.vb  - Helper module  for easier manipulation of DBSheet definition / Connection configuration data</li>
+<li>DBSheetConfig.vb  - Helper module  for easier manipulation of DBSheet definition </li>
 <li>DBSheetCreateForm.vb  - Form for defining/creating DBSheet definitions</li>
+<li>DBSheetConnHelper.vb - connection helper class (Connection configuration data) used for DBSheetCreateForm.vb and AdHocSQL.vb</li>
 </ul>
 <h2 id="addin-global-code">Addin global code</h2>
 <ul>
@@ -92,6 +93,7 @@
 <li>MenuHandler.vb - handles all Menu related aspects (context menu for building/refreshing, &quot;DBAddin&quot;/&quot;Load Config&quot; tree menu for retrieving stored configuration files, etc.)</li>
 <li>AboutBox.vb - About box: used to provide information about version/buildtime and links for local help and project homepage</li>
 <li>AddInEvents.vb - AddIn Connection class, also handling Events from Excel (Open, Close, Activate)</li>
+<li>AdHocSQL.vb - Adhoc SQL Command Issueing</li>
 </ul>
 </article>
           </div>

@@ -4,7 +4,7 @@ Imports ExcelDna.Integration
 Imports Microsoft.Office.Core
 Imports Microsoft.Office.Interop
 
-'''<summary>Helper module  for easier manipulation of DBSheet definition / Connection configuration data</summary> 
+'''<summary>Helper module  for easier manipulation of DBSheet definition</summary> 
 Public Module DBSheetConfig
     ''' <summary>the current cell where the DBSheet Definition is inserted at</summary>
     Dim curCell As Excel.Range

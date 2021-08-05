@@ -394,14 +394,14 @@ Public Module Functions
         StatusCollection(callID).statusMsg = ""
         Try
             ' first, get the connection type from the underlying PivotCache or QueryTable (OLEDB or ODBC)
-            If Not thePivotTable Is Nothing Then
+            If thePivotTable IsNot Nothing Then
                 Try
                     connType = Left$(thePivotTable.PivotCache.Connection.ToString(), InStr(1, thePivotTable.PivotCache.Connection.ToString(), ";"))
                 Catch ex As Exception
                     Throw New Exception("couldn't get connection from Pivot Table, please create Pivot Table with external data source !")
                 End Try
             End If
-            If Not theListObject Is Nothing Then
+            If theListObject IsNot Nothing Then
                 Try
                     connType = Left$(theListObject.QueryTable.Connection.ToString(), InStr(1, theListObject.QueryTable.Connection.ToString(), ";"))
                 Catch ex As Exception
@@ -413,7 +413,7 @@ Public Module Functions
             If Left(ConnString, 6) <> "OLEDB;" And Left(ConnString, 5) <> "ODBC;" Then ConnString = connType + ConnString
 
             ' now set the connection string and the query and refresh it.
-            If Not thePivotTable Is Nothing Then
+            If thePivotTable IsNot Nothing Then
                 bgQuery = thePivotTable.PivotCache.BackgroundQuery
                 thePivotTable.PivotCache.Connection = ConnString
                 thePivotTable.PivotCache.CommandType = Excel.XlCmdType.xlCmdSql
@@ -426,7 +426,7 @@ Public Module Functions
                 thePivotTable.TableRange1.Name = targetExtent
                 thePivotTable.TableRange1.Parent.Parent.Names(targetExtent).Visible = False
             End If
-            If Not theListObject Is Nothing Then
+            If theListObject IsNot Nothing Then
                 bgQuery = theListObject.QueryTable.BackgroundQuery
                 ' check whether target range is actually a table Listobject reference, if so, replace with simple address as this doesn't produce a #REF! error on QueryTable.Refresh
                 ' this simple address is below being set to caller.Formula
@@ -647,7 +647,7 @@ Public Module Functions
         targetExtent = Replace(srcExtent, "DBFsource", "DBFtarget")
         targetExtentF = Replace(srcExtent, "DBFsource", "DBFtargetF")
 
-        If Not formulaRange Is Nothing Then
+        If formulaRange IsNot Nothing Then
             formulaSH = formulaRange.Parent
             ' only first row of formulaRange is important, rest will be autofilled down (actually this is needed to make the autoformat work)
             formulaRange = formulaRange.Rows(1)
@@ -676,7 +676,7 @@ Public Module Functions
         Err.Clear()
         ' if formulas are adjacent to data extend total range to formula range ! total range is used to extend DBMappers defined under the DB Function target...
         Dim additionalFormulaColumns As Integer = 0
-        If Not formulaRange Is Nothing Then
+        If formulaRange IsNot Nothing Then
             If targetSH Is formulaSH And formulaRange.Column = startCol + oldCols Then additionalFormulaColumns = formulaRange.Columns.Count
         End If
         Dim oldTotalTargetRange As Excel.Range = targetRange
@@ -788,7 +788,7 @@ Public Module Functions
                 NumFormat(i) = targetSH.Cells(startRow + rowDataStart - 1, startCol + i).NumberFormat
             Next
             ' now for the calculated data area
-            If Not formulaRange Is Nothing Then
+            If formulaRange IsNot Nothing Then
                 For i = 0 To formulaRange.Columns.Count - 1
                     ReDim Preserve NumFormatF(i)
                     NumFormatF(i) = formulaSH.Cells(startRow + rowDataStart - 1, formulaRange.Column + i).NumberFormat
@@ -800,7 +800,7 @@ Public Module Functions
         ' check if formulaRange and targetRange overlap !
         Dim possibleIntersection As Excel.Range = ExcelDnaUtil.Application.Intersect(formulaRange, targetSH.Range(targetRange.Cells(1, 1), targetRange.Cells(1, 1).Offset(arrayRows - 1, arrayCols - 1)))
         Err.Clear()
-        If Not possibleIntersection Is Nothing Then
+        If possibleIntersection IsNot Nothing Then
             warning += ", formulaRange and targetRange intersect (" + targetSH.Name + "!" + possibleIntersection.Address + "), formula copying disabled !!"
             formulaRange = Nothing
         End If
@@ -816,15 +816,15 @@ Public Module Functions
                 '1: add cells (not whole rows)
                 If extendArea = 1 Then
                     targetSH.Range(targetSH.Cells(startRow + oldRows + headingFirstRowPrevent, startCol), targetSH.Cells(startRow + arrayRows - 1, startCol + oldCols - 1)).Insert(Shift:=Excel.XlDirection.xlDown)
-                    If Not formulaRange Is Nothing Then
+                    If formulaRange IsNot Nothing Then
                         formulaSH.Range(formulaSH.Cells(startRow + oldFRows + headingOffset, formulaRange.Column), formulaSH.Cells(startRow + arrayRows - 1 - headingFirstRowPrevent, formulaRange.Column + oldFCols - 1)).Insert(Shift:=Excel.XlDirection.xlDown)
                     End If
                     '2: add whole rows
                 ElseIf extendArea = 2 Then
                     targetSH.Rows((startRow + oldRows + headingFirstRowPrevent).ToString() + ":" + (startRow + arrayRows - 1).ToString()).Insert(Shift:=Excel.XlDirection.xlDown)
-                    If Not formulaRange Is Nothing Then
+                    If formulaRange IsNot Nothing Then
                         ' take care not to insert twice (if we're having formulas in the same sheet)
-                        If Not targetSH Is formulaSH Then formulaSH.Rows((startRow + oldFRows + headingOffset).ToString() + ":" + (startRow + arrayRows - 1 - headingFirstRowPrevent).ToString()).Insert(Shift:=Excel.XlDirection.xlDown)
+                        If targetSH IsNot formulaSH Then formulaSH.Rows((startRow + oldFRows + headingOffset).ToString() + ":" + (startRow + arrayRows - 1 - headingFirstRowPrevent).ToString()).Insert(Shift:=Excel.XlDirection.xlDown)
                     End If
                 End If
                 'else 0: just overwrite -> no special action
@@ -836,13 +836,13 @@ Public Module Functions
                 '1: add cells (not whole rows)
                 If extendArea = 1 Then
                     targetSH.Range(targetSH.Cells(startRow + arrayRows + headingLastRowPrevent, startCol), targetSH.Cells(startRow + oldRows - 1, startCol + oldCols - 1)).Delete(Shift:=Excel.XlDirection.xlUp)
-                    If Not formulaRange Is Nothing Then formulaSH.Range(formulaSH.Cells(startRow + arrayRows + headingLastRowPrevent, formulaRange.Column), formulaSH.Cells(startRow + oldFRows - 1 + headingOffset, formulaRange.Column + oldFCols - 1)).Delete(Shift:=Excel.XlDirection.xlUp)
+                    If formulaRange IsNot Nothing Then formulaSH.Range(formulaSH.Cells(startRow + arrayRows + headingLastRowPrevent, formulaRange.Column), formulaSH.Cells(startRow + oldFRows - 1 + headingOffset, formulaRange.Column + oldFCols - 1)).Delete(Shift:=Excel.XlDirection.xlUp)
                     '2: add whole rows
                 ElseIf extendArea = 2 Then
                     targetSH.Rows((startRow + arrayRows + headingLastRowPrevent).ToString() + ":" + (startRow + oldRows - 1).ToString()).Delete(Shift:=Excel.XlDirection.xlUp)
-                    If Not formulaRange Is Nothing Then
+                    If formulaRange IsNot Nothing Then
                         ' take care not to delete twice (if we're having formulas in the same sheet)
-                        If Not targetSH Is formulaSH Then formulaSH.Rows((startRow + arrayRows + headingLastRowPrevent).ToString() + ":" + (startRow + oldFRows - 1 + headingOffset).ToString()).Delete(Shift:=Excel.XlDirection.xlUp)
+                        If targetSH IsNot formulaSH Then formulaSH.Rows((startRow + arrayRows + headingLastRowPrevent).ToString() + ":" + (startRow + oldFRows - 1 + headingOffset).ToString()).Delete(Shift:=Excel.XlDirection.xlUp)
                     End If
                 End If
                 '0: just overwrite -> no special action
@@ -897,7 +897,7 @@ Public Module Functions
         curSheet.Activate()
 
         '''' formulas recreation (removal and autofill new ones)
-        If Not formulaRange Is Nothing Then
+        If formulaRange IsNot Nothing Then
             formulaSH = formulaRange.Parent
             With formulaRange
                 If .Row < startRow + rowDataStart - 1 Then
@@ -984,7 +984,7 @@ Public Module Functions
                 newTargetRange.Columns(i + 1).NumberFormat = NumFormat(i)
             Next
             ' now for the calculated cells...
-            If Not formulaRange Is Nothing Then
+            If formulaRange IsNot Nothing Then
                 For i = 0 To UBound(NumFormatF)
                     formulaFilledRange.Columns(i + 1).NumberFormat = NumFormatF(i)
                 Next
@@ -1002,8 +1002,8 @@ Public Module Functions
             newTargetRange.Columns.AutoFit()
             newTargetRange.Rows.AutoFit()
 
-            If Not formulaRange Is Nothing And Not formulaFilledRange Is ExcelEmpty.Value Then
-                If Not formulaFilledRange Is Nothing Then
+            If formulaRange IsNot Nothing And formulaFilledRange IsNot ExcelEmpty.Value Then
+                If formulaFilledRange IsNot Nothing Then
                     formulaFilledRange.Columns.AutoFit()
                     formulaFilledRange.Rows.AutoFit()
                 End If

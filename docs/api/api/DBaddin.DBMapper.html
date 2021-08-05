@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Class DBMapper
    ">
-    <meta name="generator" content="docfx 2.43.2.0">
+    <meta name="generator" content="docfx 2.58.0.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -91,6 +91,12 @@
       <a class="xref" href="DBaddin.DBModif.html#DBaddin_DBModif_TargetRange">DBModif.TargetRange</a>
     </div>
     <div>
+      <a class="xref" href="DBaddin.DBModif.html#DBaddin_DBModif_paramTargetName">DBModif.paramTargetName</a>
+    </div>
+    <div>
+      <a class="xref" href="DBaddin.DBModif.html#DBaddin_DBModif_database">DBModif.database</a>
+    </div>
+    <div>
       <a class="xref" href="DBaddin.DBModif.html#DBaddin_DBModif_execOnSave">DBModif.execOnSave</a>
     </div>
     <div>
@@ -103,6 +109,9 @@
       <a class="xref" href="DBaddin.DBModif.html#DBaddin_DBModif_confirmText">DBModif.confirmText</a>
     </div>
     <div>
+      <a class="xref" href="DBaddin.DBModif.html#DBaddin_DBModif_confirmExecution_System_Boolean_">DBModif.confirmExecution(Boolean)</a>
+    </div>
+    <div>
       <a class="xref" href="DBaddin.DBModif.html#DBaddin_DBModif_getTargetRangeAddress">DBModif.getTargetRangeAddress()</a>
     </div>
     <div>
@@ -112,31 +121,16 @@
       <a class="xref" href="DBaddin.DBModif.html#DBaddin_DBModif_getEnv_System_Int32_">DBModif.getEnv(Int32)</a>
     </div>
     <div>
-      <a class="xref" href="DBaddin.DBModif.html#DBaddin_DBModif_DBModifSaveNeeded">DBModif.DBModifSaveNeeded()</a>
-    </div>
-    <div>
       <a class="xref" href="DBaddin.DBModif.html#DBaddin_DBModif_getName">DBModif.getName()</a>
     </div>
     <div>
       <a class="xref" href="DBaddin.DBModif.html#DBaddin_DBModif_getParamFromXML_Microsoft_Office_Core_CustomXMLNode_System_String_System_String_">DBModif.getParamFromXML(CustomXMLNode, String, String)</a>
     </div>
     <div>
-      <a class="xref" href="DBaddin.DBModif.html#DBaddin_DBModif_addHiddenFeatureDefs_Microsoft_Office_Core_CustomXMLNode_">DBModif.addHiddenFeatureDefs(CustomXMLNode)</a>
-    </div>
-    <div>
       <a class="xref" href="DBaddin.DBModif.html#DBaddin_DBModif_setTargetRange_Microsoft_Office_Interop_Excel_Range_">DBModif.setTargetRange(Range)</a>
     </div>
     <div>
-      <a class="xref" href="DBaddin.DBModif.html#DBaddin_DBModif_checkIsDateTime_ADODB_DataTypeEnum_">DBModif.checkIsDateTime(DataTypeEnum)</a>
-    </div>
-    <div>
-      <a class="xref" href="DBaddin.DBModif.html#DBaddin_DBModif_checkIsDate_ADODB_DataTypeEnum_">DBModif.checkIsDate(DataTypeEnum)</a>
-    </div>
-    <div>
-      <a class="xref" href="DBaddin.DBModif.html#DBaddin_DBModif_checkIsTime_ADODB_DataTypeEnum_">DBModif.checkIsTime(DataTypeEnum)</a>
-    </div>
-    <div>
-      <a class="xref" href="DBaddin.DBModif.html#DBaddin_DBModif_checkIsNumeric_ADODB_DataTypeEnum_">DBModif.checkIsNumeric(DataTypeEnum)</a>
+      <a class="xref" href="DBaddin.DBModif.html#DBaddin_DBModif_openDatabase_System_String_">DBModif.openDatabase(String)</a>
     </div>
     <div>
       <a class="xref" href="DBaddin.DBModif.html#DBaddin_DBModif_doDBRefresh_System_String_System_Collections_Generic_Dictionary_System_String_System_Boolean__System_Collections_Generic_Dictionary_System_String_System_Boolean__System_Boolean_">DBModif.doDBRefresh(String, Dictionary&lt;String, Boolean&gt;, Dictionary&lt;String, Boolean&gt;, Boolean)</a>
@@ -155,7 +149,7 @@
     <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_DBMapper__ctor_Microsoft_Office_Core_CustomXMLNode_Microsoft_Office_Interop_Excel_Range_.md&amp;value=---%0Auid%3A%20DBaddin.DBMapper.%23ctor(Microsoft.Office.Core.CustomXMLNode%2CMicrosoft.Office.Interop.Excel.Range)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L443">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L438">View Source</a>
   </span>
   <a id="DBaddin_DBMapper__ctor_" data-uid="DBaddin.DBMapper.#ctor*"></a>
   <h4 id="DBaddin_DBMapper__ctor_Microsoft_Office_Core_CustomXMLNode_Microsoft_Office_Interop_Excel_Range_" data-uid="DBaddin.DBMapper.#ctor(Microsoft.Office.Core.CustomXMLNode,Microsoft.Office.Interop.Excel.Range)">DBMapper(CustomXMLNode, Range)</h4>
@@ -190,7 +184,7 @@
     <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_DBMapper__ctor_System_String_System_String_Microsoft_Office_Interop_Excel_Range_.md&amp;value=---%0Auid%3A%20DBaddin.DBMapper.%23ctor(System.String%2CSystem.String%2CMicrosoft.Office.Interop.Excel.Range)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L399">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L394">View Source</a>
   </span>
   <a id="DBaddin_DBMapper__ctor_" data-uid="DBaddin.DBMapper.#ctor*"></a>
   <h4 id="DBaddin_DBMapper__ctor_System_String_System_String_Microsoft_Office_Interop_Excel_Range_" data-uid="DBaddin.DBMapper.#ctor(System.String,System.String,Microsoft.Office.Interop.Excel.Range)">DBMapper(String, String, Range)</h4>
@@ -231,7 +225,7 @@
     <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_DBMapper_CUDFlags.md&amp;value=---%0Auid%3A%20DBaddin.DBMapper.CUDFlags%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L385">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L380">View Source</a>
   </span>
   <h4 id="DBaddin_DBMapper_CUDFlags" data-uid="DBaddin.DBMapper.CUDFlags">CUDFlags</h4>
   <div class="markdown level1 summary"><p>respect C/U/D Flags (DBSheet functionality)</p>
@@ -258,19 +252,19 @@
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_DBMapper_doCUDMarks_Microsoft_Office_Interop_Excel_Range_System_Boolean_.md&amp;value=---%0Auid%3A%20DBaddin.DBMapper.doCUDMarks(Microsoft.Office.Interop.Excel.Range%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_DBMapper_addHiddenFeatureDefs_Microsoft_Office_Core_CustomXMLNode_.md&amp;value=---%0Auid%3A%20DBaddin.DBMapper.addHiddenFeatureDefs(Microsoft.Office.Core.CustomXMLNode)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L507">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L624">View Source</a>
   </span>
-  <a id="DBaddin_DBMapper_doCUDMarks_" data-uid="DBaddin.DBMapper.doCUDMarks*"></a>
-  <h4 id="DBaddin_DBMapper_doCUDMarks_Microsoft_Office_Interop_Excel_Range_System_Boolean_" data-uid="DBaddin.DBMapper.doCUDMarks(Microsoft.Office.Interop.Excel.Range,System.Boolean)">doCUDMarks(Range, Boolean)</h4>
-  <div class="markdown level1 summary"><p>inserts CUD (Create/Update/Delete) Marks at the right end of the DBMapper range</p>
+  <a id="DBaddin_DBMapper_addHiddenFeatureDefs_" data-uid="DBaddin.DBMapper.addHiddenFeatureDefs*"></a>
+  <h4 id="DBaddin_DBMapper_addHiddenFeatureDefs_Microsoft_Office_Core_CustomXMLNode_" data-uid="DBaddin.DBMapper.addHiddenFeatureDefs(Microsoft.Office.Core.CustomXMLNode)">addHiddenFeatureDefs(CustomXMLNode)</h4>
+  <div class="markdown level1 summary"><p>to re-add hidden features only available in XML</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void doCUDMarks(Range changedRange, bool deleteFlag = false)</code></pre>
+    <pre><code class="lang-csharp hljs">public override void addHiddenFeatureDefs(CustomXMLNode definitionXML)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -282,27 +276,57 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="parametername">changedRange</span></td>
-        <td><p>passed TargetRange by Change Event or delete button</p>
-</td>
-      </tr>
-      <tr>
-        <td><span class="parametername">deleteFlag</span></td>
-        <td><p>if delete button was pressed, this is true</p>
+        <td><span class="parametername">definitionXML</span></td>
+        <td><p>the definition node of the DB Modifier where the hidden features should be added</p>
 </td>
       </tr>
     </tbody>
   </table>
+  <h5 class="overrides">Overrides</h5>
+  <div><a class="xref" href="DBaddin.DBModif.html#DBaddin_DBModif_addHiddenFeatureDefs_Microsoft_Office_Core_CustomXMLNode_">DBModif.addHiddenFeatureDefs(CustomXMLNode)</a></div>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_DBMapper_DBModifSaveNeeded.md&amp;value=---%0Auid%3A%20DBaddin.DBMapper.DBModifSaveNeeded%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L487">View Source</a>
+  </span>
+  <a id="DBaddin_DBMapper_DBModifSaveNeeded_" data-uid="DBaddin.DBMapper.DBModifSaveNeeded*"></a>
+  <h4 id="DBaddin_DBMapper_DBModifSaveNeeded" data-uid="DBaddin.DBMapper.DBModifSaveNeeded">DBModifSaveNeeded()</h4>
+  <div class="markdown level1 summary"><p>checks whether DBModifier needs saving, either because execOnSave is set or in case of CUD DBMappers if any i/u/d Flages are present</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override bool DBModifSaveNeeded()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><p>true if save needed</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="overrides">Overrides</h5>
+  <div><a class="xref" href="DBaddin.DBModif.html#DBaddin_DBModif_DBModifSaveNeeded">DBModif.DBModifSaveNeeded()</a></div>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
     <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_DBMapper_doDBModif_System_Boolean_System_String_System_Boolean_.md&amp;value=---%0Auid%3A%20DBaddin.DBMapper.doDBModif(System.Boolean%2CSystem.String%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L632">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L633">View Source</a>
   </span>
   <a id="DBaddin_DBMapper_doDBModif_" data-uid="DBaddin.DBMapper.doDBModif*"></a>
   <h4 id="DBaddin_DBMapper_doDBModif_System_Boolean_System_String_System_Boolean_" data-uid="DBaddin.DBMapper.doDBModif(System.Boolean,System.String,System.Boolean)">doDBModif(Boolean, String, Boolean)</h4>
-  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 summary"><p>execute the modifications for the DB Mapper by storing the data modifications in the DBMapper range to the database</p>
+</div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
@@ -319,15 +343,18 @@
     <tbody>
       <tr>
         <td><span class="parametername">WbIsSaving</span></td>
-        <td></td>
+        <td><p>flag for being called during Workbook saving</p>
+</td>
       </tr>
       <tr>
         <td><span class="parametername">calledByDBSeq</span></td>
-        <td></td>
+        <td><p>the name of the DB Sequence that called the DBMapper</p>
+</td>
       </tr>
       <tr>
         <td><span class="parametername">TransactionOpen</span></td>
-        <td></td>
+        <td><p>flag whether a transaction is open during the DB Sequence</p>
+</td>
       </tr>
     </tbody>
   </table>
@@ -335,48 +362,10 @@
   <div><a class="xref" href="DBaddin.DBModif.html#DBaddin_DBModif_doDBModif_System_Boolean_System_String_System_Boolean_">DBModif.doDBModif(Boolean, String, Boolean)</a></div>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_DBMapper_doDBModif2_System_Boolean_System_String_System_Boolean_.md&amp;value=---%0Auid%3A%20DBaddin.DBMapper.doDBModif2(System.Boolean%2CSystem.String%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L930">View Source</a>
-  </span>
-  <a id="DBaddin_DBMapper_doDBModif2_" data-uid="DBaddin.DBMapper.doDBModif2*"></a>
-  <h4 id="DBaddin_DBMapper_doDBModif2_System_Boolean_System_String_System_Boolean_" data-uid="DBaddin.DBMapper.doDBModif2(System.Boolean,System.String,System.Boolean)">doDBModif2(Boolean, String, Boolean)</h4>
-  <div class="markdown level1 summary"></div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void doDBModif2(bool WbIsSaving = false, string calledByDBSeq = &quot;&quot;, bool TransactionOpen = false)</code></pre>
-  </div>
-  <h5 class="parameters">Parameters</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="parametername">WbIsSaving</span></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td><span class="parametername">calledByDBSeq</span></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td><span class="parametername">TransactionOpen</span></td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
     <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_DBMapper_extendDataRange.md&amp;value=---%0Auid%3A%20DBaddin.DBMapper.extendDataRange%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L561">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L568">View Source</a>
   </span>
   <a id="DBaddin_DBMapper_extendDataRange_" data-uid="DBaddin.DBMapper.extendDataRange*"></a>
   <h4 id="DBaddin_DBMapper_extendDataRange" data-uid="DBaddin.DBMapper.extendDataRange">extendDataRange()</h4>
@@ -392,7 +381,7 @@
     <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_DBMapper_hadChanges.md&amp;value=---%0Auid%3A%20DBaddin.DBMapper.hadChanges%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L490">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L499">View Source</a>
   </span>
   <a id="DBaddin_DBMapper_hadChanges_" data-uid="DBaddin.DBMapper.hadChanges*"></a>
   <h4 id="DBaddin_DBMapper_hadChanges" data-uid="DBaddin.DBMapper.hadChanges">hadChanges()</h4>
@@ -417,41 +406,47 @@
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_DBMapper_openDatabase.md&amp;value=---%0Auid%3A%20DBaddin.DBMapper.openDatabase%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_DBMapper_insertCUDMarks_Microsoft_Office_Interop_Excel_Range_System_Boolean_.md&amp;value=---%0Auid%3A%20DBaddin.DBMapper.insertCUDMarks(Microsoft.Office.Interop.Excel.Range%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L496">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L506">View Source</a>
   </span>
-  <a id="DBaddin_DBMapper_openDatabase_" data-uid="DBaddin.DBMapper.openDatabase*"></a>
-  <h4 id="DBaddin_DBMapper_openDatabase" data-uid="DBaddin.DBMapper.openDatabase">openDatabase()</h4>
-  <div class="markdown level1 summary"><p>simply open a database connection, required for DBBegin Transaction (from next step)</p>
+  <a id="DBaddin_DBMapper_insertCUDMarks_" data-uid="DBaddin.DBMapper.insertCUDMarks*"></a>
+  <h4 id="DBaddin_DBMapper_insertCUDMarks_Microsoft_Office_Interop_Excel_Range_System_Boolean_" data-uid="DBaddin.DBMapper.insertCUDMarks(Microsoft.Office.Interop.Excel.Range,System.Boolean)">insertCUDMarks(Range, Boolean)</h4>
+  <div class="markdown level1 summary"><p>inserts CUD (Create/Update/Delete) Marks at the right end of the DBMapper range</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public override bool openDatabase()</code></pre>
+    <pre><code class="lang-csharp hljs">public void insertCUDMarks(Range changedRange, bool deleteFlag = false)</code></pre>
   </div>
-  <h5 class="returns">Returns</h5>
+  <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
     <thead>
       <tr>
+        <th>Name</th>
         <th>Description</th>
       </tr>
     </thead>
     <tbody>
       <tr>
-        <td></td>
+        <td><span class="parametername">changedRange</span></td>
+        <td><p>passed TargetRange by Change Event or delete button</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="parametername">deleteFlag</span></td>
+        <td><p>if delete button was pressed, this is true</p>
+</td>
       </tr>
     </tbody>
   </table>
-  <h5 class="overrides">Overrides</h5>
-  <div><a class="xref" href="DBaddin.DBModif.html#DBaddin_DBModif_openDatabase">DBModif.openDatabase()</a></div>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
     <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_DBMapper_resetCUDFlags.md&amp;value=---%0Auid%3A%20DBaddin.DBMapper.resetCUDFlags%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L617">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L602">View Source</a>
   </span>
   <a id="DBaddin_DBMapper_resetCUDFlags_" data-uid="DBaddin.DBMapper.resetCUDFlags*"></a>
   <h4 id="DBaddin_DBMapper_resetCUDFlags" data-uid="DBaddin.DBMapper.resetCUDFlags">resetCUDFlags()</h4>
@@ -467,11 +462,12 @@
     <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_DBMapper_setDBModifCreateFields_DBaddin_DBModifCreate__.md&amp;value=---%0Auid%3A%20DBaddin.DBMapper.setDBModifCreateFields(DBaddin.DBModifCreate%40)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L1239">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L1131">View Source</a>
   </span>
   <a id="DBaddin_DBMapper_setDBModifCreateFields_" data-uid="DBaddin.DBMapper.setDBModifCreateFields*"></a>
   <h4 id="DBaddin_DBMapper_setDBModifCreateFields_DBaddin_DBModifCreate__" data-uid="DBaddin.DBMapper.setDBModifCreateFields(DBaddin.DBModifCreate@)">setDBModifCreateFields(ref DBModifCreate)</h4>
-  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 summary"><p>set the fields in the DB Modifier Create Dialog with attributes of object</p>
+</div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
@@ -505,7 +501,7 @@
                     <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_DBMapper.md&amp;value=---%0Auid%3A%20DBaddin.DBMapper%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
                   </li>
                   <li>
-                    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L368" class="contribution-link">View Source</a>
+                    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L367" class="contribution-link">View Source</a>
                   </li>
                 </ul>
               </div>

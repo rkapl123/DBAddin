@@ -367,25 +367,25 @@ End Class
 Public Class DBMapper : Inherits DBModif
 
     ''' <summary>Database Table, where Data is to be stored</summary>
-    Private tableName As String = ""
+    Private ReadOnly tableName As String = ""
     ''' <summary>count of primary keys in datatable, starting from the leftmost column</summary>
-    Private primKeysCount As Integer = 0
+    Private ReadOnly primKeysCount As Integer = 0
     ''' <summary>if set, then insert row into table if primary key is missing there. Default = False (only update)</summary>
-    Private insertIfMissing As Boolean = False
+    Private ReadOnly insertIfMissing As Boolean = False
     ''' <summary>additional stored procedure to be executed after saving</summary>
-    Private executeAdditionalProc As String = ""
+    Private ReadOnly executeAdditionalProc As String = ""
     ''' <summary>columns to be ignored (helper columns)</summary>
-    Private ignoreColumns As String = ""
+    Private ReadOnly ignoreColumns As String = ""
     ''' <summary>respect C/U/D Flags (DBSheet functionality)</summary>
     Public CUDFlags As Boolean = False
     ''' <summary>if set, don't notify error values in cells during update/insert</summary>
-    Private IgnoreDataErrors As Boolean = False
+    Private ReadOnly IgnoreDataErrors As Boolean = False
     ''' <summary>used to pass whether changes were done</summary>
     Private changesDone As Boolean = False
     '''<summary>first columnn is treated as an autoincrementing key column, needed to ignore empty values there (otherwise DBMappers stop here)</summary>
-    Private AutoIncFlag As Boolean = False
+    Private ReadOnly AutoIncFlag As Boolean = False
     ''' <summary>prevent filling of whole table during execution of DB Mappers, this is useful for very large tables that are incrementally filled and would take unnecessary long time to start the DB Mapper. If set to true then each record is searched independently by going to the database. If the records to be stored are not too many, then this is more efficient than loading a very large table.</summary>
-    Private avoidFill As Boolean = False
+    Private ReadOnly avoidFill As Boolean = False
 
     ''' <summary>legacy constructor for mapping existing DBMapper macro calls (copy in clipboard)</summary>
     ''' <param name="defkey"></param>
@@ -663,11 +663,13 @@ Public Class DBMapper : Inherits DBModif
                 Using comm As SqlClient.SqlCommand = New SqlClient.SqlCommand("SET ARITHABORT ON", idbcnn, DBModifs.trans)
                     comm.ExecuteNonQuery()
                 End Using
-                da = New SqlClient.SqlDataAdapter(New SqlClient.SqlCommand("select * from " + tableName, idbcnn, DBModifs.trans))
-                da.UpdateBatchSize = 20
+                da = New SqlClient.SqlDataAdapter(New SqlClient.SqlCommand("select * from " + tableName, idbcnn, DBModifs.trans)) With {
+                    .UpdateBatchSize = 20
+                }
             ElseIf TypeName(idbcnn) = "OleDbConnection" Then
-                da = New OleDb.OleDbDataAdapter(New OleDb.OleDbCommand("select * from " + tableName, idbcnn, DBModifs.trans))
-                da.UpdateBatchSize = 20
+                da = New OleDb.OleDbDataAdapter(New OleDb.OleDbCommand("select * from " + tableName, idbcnn, DBModifs.trans)) With {
+                    .UpdateBatchSize = 20
+                }
             Else
                 da = New Odbc.OdbcDataAdapter(New Odbc.OdbcCommand("select * from " + tableName, idbcnn, DBModifs.trans))
             End If
@@ -1231,7 +1233,7 @@ End Class
 Public Class DBSeqnce : Inherits DBModif
 
     ''' <summary>sequence of DB Mappers, DB Actions and DB Refreshes being executed in this sequence</summary>
-    Private sequenceParams() As String = {}
+    Private ReadOnly sequenceParams() As String = {}
 
     ''' <summary>normal constructor with definition xml</summary>
     ''' <param name="definitionXML"></param>
@@ -1972,10 +1974,10 @@ End Class
 Public Class CustomSqlCommandBuilder
     Inherits CustomCommandBuilder
 
-    Private dataTable As DataTable
-    Private connection As SqlClient.SqlConnection
-    Private allColumns As DataColumn()
-    Private schemaDataTypeCollection As Collection
+    Private ReadOnly dataTable As DataTable
+    Private ReadOnly connection As SqlClient.SqlConnection
+    Private ReadOnly allColumns As DataColumn()
+    Private ReadOnly schemaDataTypeCollection As Collection
 
     Public Sub New(dataTable As DataTable, connection As SqlClient.SqlConnection, allColumns As DataColumn(), schemaDataTypeCollection As Collection)
         Me.dataTable = dataTable
@@ -2106,10 +2108,10 @@ End Class
 Public Class CustomOdbcCommandBuilder
     Inherits CustomCommandBuilder
 
-    Private dataTable As DataTable
-    Private connection As Odbc.OdbcConnection
-    Private allColumns As DataColumn()
-    Private schemaDataTypeCollection As Collection
+    Private ReadOnly dataTable As DataTable
+    Private ReadOnly connection As Odbc.OdbcConnection
+    Private ReadOnly allColumns As DataColumn()
+    Private ReadOnly schemaDataTypeCollection As Collection
 
     Public Sub New(dataTable As DataTable, connection As Odbc.OdbcConnection, allColumns As DataColumn(), schemaDataTypeCollection As Collection)
         Me.dataTable = dataTable
@@ -2239,10 +2241,10 @@ End Class
 Public Class CustomOleDbCommandBuilder
     Inherits CustomCommandBuilder
 
-    Private dataTable As DataTable
-    Private connection As OleDb.OleDbConnection
-    Private allColumns As DataColumn()
-    Private schemaDataTypeCollection As Collection
+    Private ReadOnly dataTable As DataTable
+    Private ReadOnly connection As OleDb.OleDbConnection
+    Private ReadOnly allColumns As DataColumn()
+    Private ReadOnly schemaDataTypeCollection As Collection
 
     Public Sub New(dataTable As DataTable, connection As OleDb.OleDbConnection, allColumns As DataColumn(), schemaDataTypeCollection As Collection)
         Me.dataTable = dataTable
