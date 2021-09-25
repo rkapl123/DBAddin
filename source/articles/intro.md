@@ -15,11 +15,11 @@ DBAddin has three main areas and the Addin global code area, which are mapped to
 ## DBSheet definition creation and assignment
 * DBSheetConfig.vb  - Helper module  for easier manipulation of DBSheet definition 
 * DBSheetCreateForm.vb  - Form for defining/creating DBSheet definitions
-* DBSheetConnHelper.vb - connection helper class (Connection configuration data) used for DBSheetCreateForm.vb and AdHocSQL.vb
+* DBConnHelper.vb - connection helper class (Connection configuration data) used for DBSheetCreateForm.vb and AdHocSQL.vb
 
 ## Addin global code
 * Globals.vb - Global variables and functions for DB Addin
 * MenuHandler.vb - handles all Menu related aspects (context menu for building/refreshing, "DBAddin"/"Load Config" tree menu for retrieving stored configuration files, etc.)
 * AboutBox.vb - About box: used to provide information about version/buildtime and links for local help and project homepage
 * AddInEvents.vb - AddIn Connection class, also handling Events from Excel (Open, Close, Activate)
-* AdHocSQL.vb - Adhoc SQL Command Issueing
+* AdHocSQL.vb - Issuing adhoc SQL Commands from a dialog box

@@ -21,10 +21,10 @@
       "output": {
         ".html": {
           "relative_path": "articles/intro.html",
-          "hash": "qNm39f3jgx9tdPJmzPMY4IVQv0QMcwSoimFCpjlBm64="
+          "hash": "ib7l5jAZBPeyDyydF7hbra05W6o5aPmxcmZZT1eJoP4="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
@@ -96,7 +96,7 @@
           "hash": "Xbd9OoyBNNTL7HdQsUFdIWqUicEs3pr88GxGNOuCtsM="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -201,7 +201,7 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.DBConnHelper.html",
-          "hash": "Z0nRUP0hRk+gsIH6ohmlxjs0RPsT8QlxqK8IGyVciHQ="
+          "hash": "U5d+Z8ibELVqZff36ztuBP4pxqobdt3iy5G3HnaULFU="
         }
       },
       "is_incremental": true,
@@ -273,7 +273,7 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.DBSheetConfig.html",
-          "hash": "4cikDy5hBCUI8pIqksGy8Fo+/mc1javqMOYkv6R9tK8="
+          "hash": "D+96AlVfgebHRGD6saJhbuio5aqwIEt2XLOjp9IF5T4="
         }
       },
       "is_incremental": true,
@@ -285,7 +285,7 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.DBSheetCreateForm.html",
-          "hash": "g+yh5PZToUhx1U3+Qnba4SWXbRfdbRkWnnQZ35EDcdM="
+          "hash": "vb1DHZbzJxRhWSQ2RtQxft38nv4WQXTeQx4AnxpKteE="
         }
       },
       "is_incremental": true,
@@ -297,7 +297,7 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.DBSheetDefRow.html",
-          "hash": "vfdNkwp0ND+1Pb4m+H9u+61jxX1o/ubmTofAcc3rRuk="
+          "hash": "GcBxH72x3FN9xi5JuglRy4witHgSHlb/1vckopZCmLk="
         }
       },
       "is_incremental": true,
@@ -309,7 +309,7 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.DBSheetDefTable.html",
-          "hash": "xHlqhmTYxv6ZNl+gldsKnj7L3Uvy5l1xzkprkVSaYlk="
+          "hash": "xGc9+kX112eLM5qC8bJ7FwVylGa3KgHYLGPS0vS+qaE="
         }
       },
       "is_incremental": true,
@@ -396,7 +396,7 @@
           "hash": "iiUB9fGs5rPmPFeZRzQwbUXSK5DeJ7kiSkkh9AuQ6U0="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -437,13 +437,13 @@
           "can_incremental": true,
           "incrementalPhase": "build",
           "total_file_count": 3,
-          "skipped_file_count": 3
+          "skipped_file_count": 2
         },
         "ManagedReferenceDocumentProcessor": {
           "can_incremental": true,
           "incrementalPhase": "build",
           "total_file_count": 29,
-          "skipped_file_count": 28
+          "skipped_file_count": 29
         },
         "TocDocumentProcessor": {
           "can_incremental": false,

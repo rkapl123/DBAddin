@@ -584,6 +584,12 @@ references:
   isSpec: "True"
   fullName: DBaddin.DBConnHelper.DBConnHelper
   nameWithType: DBConnHelper.DBConnHelper
+- uid: DBaddin.DBConnHelper.DBenv
+  name: DBenv
+  href: api/DBaddin.DBConnHelper.html#DBaddin_DBConnHelper_DBenv
+  commentId: F:DBaddin.DBConnHelper.DBenv
+  fullName: DBaddin.DBConnHelper.DBenv
+  nameWithType: DBConnHelper.DBenv
 - uid: DBaddin.DBConnHelper.DBGetAllFieldName
   name: DBGetAllFieldName
   href: api/DBaddin.DBConnHelper.html#DBaddin_DBConnHelper_DBGetAllFieldName
