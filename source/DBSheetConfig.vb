@@ -55,7 +55,7 @@ Public Module DBSheetConfig
         If dbsheetDefPath = "" Then
             ' ask for DBsheet definitions stored in xml file
             openFileDialog1 = New OpenFileDialog With {
-                .InitialDirectory = Globals.fetchSetting("DBSheetDefinitions" + Globals.env, ""),
+                .InitialDirectory = Globals.fetchSetting("lastDBsheetAssignPath", Globals.fetchSetting("DBSheetDefinitions" + Globals.env, "")),
                 .Filter = "XML files (*.xml)|*.xml",
                 .RestoreDirectory = True
             }
@@ -64,6 +64,7 @@ Public Module DBSheetConfig
         End If
 
         If dbsheetDefPath <> "" Then
+            Globals.setUserSetting("lastDBsheetAssignPath", Strings.Left(dbsheetDefPath, InStrRev(dbsheetDefPath, "\") - 1))
             ' Get the DBSheet Definition file name and read into curConfig
             curConfig = File.ReadAllText(dbsheetDefPath, Text.Encoding.Default)
             tblPlaceHolder = Globals.fetchSetting("tblPlaceHolder" + env.ToString(), "!T!")
@@ -79,7 +80,7 @@ Public Module DBSheetConfig
                 Globals.UserMsg("No query found in DBSheetConfig !", "DBSheet Creation Error")
                 Exit Sub
             End If
-            If Globals.QuestionMsg("Should TOP 100 be put into query, in case of very large underlying tables this helps in creating the DBSheet (you can restrict the query later on) ?", MsgBoxStyle.YesNo) = MsgBoxResult.Yes Then
+            If Globals.QuestionMsg("Should TOP 100 be put into query, in case of very large underlying tables this helps in creating the DBSheet (you can restrict the query later on) ?", MsgBoxStyle.OkCancel) = MsgBoxResult.Ok Then
                 queryStr = "SELECT TOP 100 " + queryStr.Substring(7) ' skip "SELECT " in queryStr
             End If
             Dim whereClauseStart = queryStr.IndexOf("WHERE", StringComparison.OrdinalIgnoreCase)

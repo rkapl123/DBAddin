@@ -565,6 +565,87 @@ references:
   isSpec: "True"
   fullName: DBaddin.DBAction.setDBModifCreateFields
   nameWithType: DBAction.setDBModifCreateFields
+- uid: DBaddin.DBConnHelper
+  name: DBConnHelper
+  href: api/DBaddin.DBConnHelper.html
+  commentId: T:DBaddin.DBConnHelper
+  fullName: DBaddin.DBConnHelper
+  nameWithType: DBConnHelper
+- uid: DBaddin.DBConnHelper.#ctor(System.String)
+  name: DBConnHelper(String)
+  href: api/DBaddin.DBConnHelper.html#DBaddin_DBConnHelper__ctor_System_String_
+  commentId: M:DBaddin.DBConnHelper.#ctor(System.String)
+  fullName: DBaddin.DBConnHelper.DBConnHelper(System.String)
+  nameWithType: DBConnHelper.DBConnHelper(String)
+- uid: DBaddin.DBConnHelper.#ctor*
+  name: DBConnHelper
+  href: api/DBaddin.DBConnHelper.html#DBaddin_DBConnHelper__ctor_
+  commentId: Overload:DBaddin.DBConnHelper.#ctor
+  isSpec: "True"
+  fullName: DBaddin.DBConnHelper.DBConnHelper
+  nameWithType: DBConnHelper.DBConnHelper
+- uid: DBaddin.DBConnHelper.DBGetAllFieldName
+  name: DBGetAllFieldName
+  href: api/DBaddin.DBConnHelper.html#DBaddin_DBConnHelper_DBGetAllFieldName
+  commentId: F:DBaddin.DBConnHelper.DBGetAllFieldName
+  fullName: DBaddin.DBConnHelper.DBGetAllFieldName
+  nameWithType: DBConnHelper.DBGetAllFieldName
+- uid: DBaddin.DBConnHelper.dbGetAllStr
+  name: dbGetAllStr
+  href: api/DBaddin.DBConnHelper.html#DBaddin_DBConnHelper_dbGetAllStr
+  commentId: F:DBaddin.DBConnHelper.dbGetAllStr
+  fullName: DBaddin.DBConnHelper.dbGetAllStr
+  nameWithType: DBConnHelper.dbGetAllStr
+- uid: DBaddin.DBConnHelper.dbidentifier
+  name: dbidentifier
+  href: api/DBaddin.DBConnHelper.html#DBaddin_DBConnHelper_dbidentifier
+  commentId: F:DBaddin.DBConnHelper.dbidentifier
+  fullName: DBaddin.DBConnHelper.dbidentifier
+  nameWithType: DBConnHelper.dbidentifier
+- uid: DBaddin.DBConnHelper.dbPwdSpec
+  name: dbPwdSpec
+  href: api/DBaddin.DBConnHelper.html#DBaddin_DBConnHelper_dbPwdSpec
+  commentId: F:DBaddin.DBConnHelper.dbPwdSpec
+  fullName: DBaddin.DBConnHelper.dbPwdSpec
+  nameWithType: DBConnHelper.dbPwdSpec
+- uid: DBaddin.DBConnHelper.dbshcnn
+  name: dbshcnn
+  href: api/DBaddin.DBConnHelper.html#DBaddin_DBConnHelper_dbshcnn
+  commentId: F:DBaddin.DBConnHelper.dbshcnn
+  fullName: DBaddin.DBConnHelper.dbshcnn
+  nameWithType: DBConnHelper.dbshcnn
+- uid: DBaddin.DBConnHelper.dbsheetConnString
+  name: dbsheetConnString
+  href: api/DBaddin.DBConnHelper.html#DBaddin_DBConnHelper_dbsheetConnString
+  commentId: F:DBaddin.DBConnHelper.dbsheetConnString
+  fullName: DBaddin.DBConnHelper.dbsheetConnString
+  nameWithType: DBConnHelper.dbsheetConnString
+- uid: DBaddin.DBConnHelper.getCommand(System.String)
+  name: getCommand(String)
+  href: api/DBaddin.DBConnHelper.html#DBaddin_DBConnHelper_getCommand_System_String_
+  commentId: M:DBaddin.DBConnHelper.getCommand(System.String)
+  fullName: DBaddin.DBConnHelper.getCommand(System.String)
+  nameWithType: DBConnHelper.getCommand(String)
+- uid: DBaddin.DBConnHelper.getCommand*
+  name: getCommand
+  href: api/DBaddin.DBConnHelper.html#DBaddin_DBConnHelper_getCommand_
+  commentId: Overload:DBaddin.DBConnHelper.getCommand
+  isSpec: "True"
+  fullName: DBaddin.DBConnHelper.getCommand
+  nameWithType: DBConnHelper.getCommand
+- uid: DBaddin.DBConnHelper.openConnection(System.String,System.Boolean)
+  name: openConnection(String, Boolean)
+  href: api/DBaddin.DBConnHelper.html#DBaddin_DBConnHelper_openConnection_System_String_System_Boolean_
+  commentId: M:DBaddin.DBConnHelper.openConnection(System.String,System.Boolean)
+  fullName: DBaddin.DBConnHelper.openConnection(System.String, System.Boolean)
+  nameWithType: DBConnHelper.openConnection(String, Boolean)
+- uid: DBaddin.DBConnHelper.openConnection*
+  name: openConnection
+  href: api/DBaddin.DBConnHelper.html#DBaddin_DBConnHelper_openConnection_
+  commentId: Overload:DBaddin.DBConnHelper.openConnection
+  isSpec: "True"
+  fullName: DBaddin.DBConnHelper.openConnection
+  nameWithType: DBConnHelper.openConnection
 - uid: DBaddin.DBMapper
   name: DBMapper
   href: api/DBaddin.DBMapper.html
@@ -1289,74 +1370,6 @@ references:
   isSpec: "True"
   fullName: DBaddin.DBSheetConfig.setEntry
   nameWithType: DBSheetConfig.setEntry
-- uid: DBaddin.DBSheetConnHelper
-  name: DBSheetConnHelper
-  href: api/DBaddin.DBSheetConnHelper.html
-  commentId: T:DBaddin.DBSheetConnHelper
-  fullName: DBaddin.DBSheetConnHelper
-  nameWithType: DBSheetConnHelper
-- uid: DBaddin.DBSheetConnHelper.#ctor
-  name: DBSheetConnHelper()
-  href: api/DBaddin.DBSheetConnHelper.html#DBaddin_DBSheetConnHelper__ctor
-  commentId: M:DBaddin.DBSheetConnHelper.#ctor
-  fullName: DBaddin.DBSheetConnHelper.DBSheetConnHelper()
-  nameWithType: DBSheetConnHelper.DBSheetConnHelper()
-- uid: DBaddin.DBSheetConnHelper.#ctor*
-  name: DBSheetConnHelper
-  href: api/DBaddin.DBSheetConnHelper.html#DBaddin_DBSheetConnHelper__ctor_
-  commentId: Overload:DBaddin.DBSheetConnHelper.#ctor
-  isSpec: "True"
-  fullName: DBaddin.DBSheetConnHelper.DBSheetConnHelper
-  nameWithType: DBSheetConnHelper.DBSheetConnHelper
-- uid: DBaddin.DBSheetConnHelper.DBGetAllFieldName
-  name: DBGetAllFieldName
-  href: api/DBaddin.DBSheetConnHelper.html#DBaddin_DBSheetConnHelper_DBGetAllFieldName
-  commentId: F:DBaddin.DBSheetConnHelper.DBGetAllFieldName
-  fullName: DBaddin.DBSheetConnHelper.DBGetAllFieldName
-  nameWithType: DBSheetConnHelper.DBGetAllFieldName
-- uid: DBaddin.DBSheetConnHelper.dbGetAllStr
-  name: dbGetAllStr
-  href: api/DBaddin.DBSheetConnHelper.html#DBaddin_DBSheetConnHelper_dbGetAllStr
-  commentId: F:DBaddin.DBSheetConnHelper.dbGetAllStr
-  fullName: DBaddin.DBSheetConnHelper.dbGetAllStr
-  nameWithType: DBSheetConnHelper.dbGetAllStr
-- uid: DBaddin.DBSheetConnHelper.dbidentifier
-  name: dbidentifier
-  href: api/DBaddin.DBSheetConnHelper.html#DBaddin_DBSheetConnHelper_dbidentifier
-  commentId: F:DBaddin.DBSheetConnHelper.dbidentifier
-  fullName: DBaddin.DBSheetConnHelper.dbidentifier
-  nameWithType: DBSheetConnHelper.dbidentifier
-- uid: DBaddin.DBSheetConnHelper.dbPwdSpec
-  name: dbPwdSpec
-  href: api/DBaddin.DBSheetConnHelper.html#DBaddin_DBSheetConnHelper_dbPwdSpec
-  commentId: F:DBaddin.DBSheetConnHelper.dbPwdSpec
-  fullName: DBaddin.DBSheetConnHelper.dbPwdSpec
-  nameWithType: DBSheetConnHelper.dbPwdSpec
-- uid: DBaddin.DBSheetConnHelper.dbshcnn
-  name: dbshcnn
-  href: api/DBaddin.DBSheetConnHelper.html#DBaddin_DBSheetConnHelper_dbshcnn
-  commentId: F:DBaddin.DBSheetConnHelper.dbshcnn
-  fullName: DBaddin.DBSheetConnHelper.dbshcnn
-  nameWithType: DBSheetConnHelper.dbshcnn
-- uid: DBaddin.DBSheetConnHelper.dbsheetConnString
-  name: dbsheetConnString
-  href: api/DBaddin.DBSheetConnHelper.html#DBaddin_DBSheetConnHelper_dbsheetConnString
-  commentId: F:DBaddin.DBSheetConnHelper.dbsheetConnString
-  fullName: DBaddin.DBSheetConnHelper.dbsheetConnString
-  nameWithType: DBSheetConnHelper.dbsheetConnString
-- uid: DBaddin.DBSheetConnHelper.openConnection(System.String)
-  name: openConnection(String)
-  href: api/DBaddin.DBSheetConnHelper.html#DBaddin_DBSheetConnHelper_openConnection_System_String_
-  commentId: M:DBaddin.DBSheetConnHelper.openConnection(System.String)
-  fullName: DBaddin.DBSheetConnHelper.openConnection(System.String)
-  nameWithType: DBSheetConnHelper.openConnection(String)
-- uid: DBaddin.DBSheetConnHelper.openConnection*
-  name: openConnection
-  href: api/DBaddin.DBSheetConnHelper.html#DBaddin_DBSheetConnHelper_openConnection_
-  commentId: Overload:DBaddin.DBSheetConnHelper.openConnection
-  isSpec: "True"
-  fullName: DBaddin.DBSheetConnHelper.openConnection
-  nameWithType: DBSheetConnHelper.openConnection
 - uid: DBaddin.DBSheetCreateForm
   name: DBSheetCreateForm
   href: api/DBaddin.DBSheetCreateForm.html
@@ -2287,12 +2300,12 @@ references:
   commentId: F:DBaddin.Globals.DefaultDBDateFormatting
   fullName: DBaddin.Globals.DefaultDBDateFormatting
   nameWithType: Globals.DefaultDBDateFormatting
-- uid: DBaddin.Globals.env
-  name: env()
-  href: api/DBaddin.Globals.html#DBaddin_Globals_env
-  commentId: M:DBaddin.Globals.env
-  fullName: DBaddin.Globals.env()
-  nameWithType: Globals.env()
+- uid: DBaddin.Globals.env(System.Boolean)
+  name: env(Boolean)
+  href: api/DBaddin.Globals.html#DBaddin_Globals_env_System_Boolean_
+  commentId: M:DBaddin.Globals.env(System.Boolean)
+  fullName: DBaddin.Globals.env(System.Boolean)
+  nameWithType: Globals.env(Boolean)
 - uid: DBaddin.Globals.env*
   name: env
   href: api/DBaddin.Globals.html#DBaddin_Globals_env_

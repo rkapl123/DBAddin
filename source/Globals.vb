@@ -88,10 +88,10 @@ Public Module Globals
         ConfigurationManager.RefreshSection("UserSettings")
     End Sub
 
-    ''' <summary>environment for settings (+1 of selectedeEnvironment which is the index of the dropdown)</summary>
+    ''' <summary>environment for settings (+1 of selected Environment which is the index of the dropdown, if baseZero is set then simply the index)</summary>
     ''' <returns></returns>
-    Public Function env() As String
-        Return (Globals.selectedEnvironment + 1).ToString()
+    Public Function env(Optional baseZero As Boolean = False) As String
+        Return (Globals.selectedEnvironment + IIf(baseZero, 0, 1)).ToString()
     End Function
 
     ''' <summary>initializes global configuration variables</summary>
@@ -695,8 +695,8 @@ Last:
                 If Not (searchCell Is Nothing) Then foundLegacyWS.Add(ws)
             Next
             If foundLegacyWS.Count > 0 Then
-                Dim retval As MsgBoxResult = QuestionMsg("Found legacy DBAddin functions in active workbook, should they be replaced with current addin functions (save workbook afterwards to persist) ?", MsgBoxStyle.YesNo, "Legacy DBAddin functions")
-                If retval = vbYes Then
+                Dim retval As MsgBoxResult = QuestionMsg("Found legacy DBAddin functions in active workbook, should they be replaced with current addin functions (save workbook afterwards to persist) ?", MsgBoxStyle.OkCancel, "Legacy DBAddin functions")
+                If retval = MsgBoxResult.Ok Then
                     ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual ' avoid recalculations during replace action
                     ExcelDnaUtil.Application.DisplayAlerts = False ' avoid warnings for sheet where "DBAddin.Functions." is not found
                     ' remove "DBAddin.Functions." in each sheet...

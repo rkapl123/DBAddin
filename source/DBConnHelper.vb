@@ -4,7 +4,7 @@ Imports System.Data.SqlClient
 Imports System.Data.OleDb
 
 ''' <summary>Helper Class for DBSheetCreateForm and AdHocSQL</summary>
-Public Class DBSheetConnHelper
+Public Class DBConnHelper
     ''' <summary>the connection string for dbsheet definitions, different from the normal one (extended rights for schema viewing required)</summary>
     Public dbsheetConnString As String
     ''' <summary>identifier needed to fetch database from connection string (eg Database=)</summary>
@@ -17,29 +17,42 @@ Public Class DBSheetConnHelper
     Public dbshcnn As DbConnection
     ''' <summary>identifier needed to put password into connection string (eg PWD=)</summary>
     Public dbPwdSpec As String
+    ''' <summary>the environment of the DBConnHelper</summary>
+    Public DBenv As String
 
-    Public Sub New()
+    Public Sub New(passedEnv As String)
+        DBenv = passedEnv
         setConnectionString()
-        dbGetAllStr = fetchSetting("dbGetAll" + Globals.env(), "NONEXISTENT")
+        dbGetAllStr = fetchSetting("dbGetAll" + DBenv, "NONEXISTENT")
         If dbGetAllStr = "NONEXISTENT" Then
-            Globals.UserMsg("No dbGetAllStr given for environment: " + Globals.env() + ", please correct and rerun.", "DBSheet Definition Error")
+            Globals.UserMsg("No dbGetAllStr given for environment: " + DBenv + ", please correct and rerun.", "DBSheet Definition Error")
             Exit Sub
         End If
-        DBGetAllFieldName = fetchSetting("dbGetAllFieldName" + Globals.env(), "NONEXISTENT")
+        DBGetAllFieldName = fetchSetting("dbGetAllFieldName" + DBenv, "NONEXISTENT")
         If DBGetAllFieldName = "NONEXISTENT" Then
-            Globals.UserMsg("No DBGetAllFieldName given for environment: " + Globals.env() + ", please correct and rerun.", "DBSheet Definition Error")
+            Globals.UserMsg("No DBGetAllFieldName given for environment: " + DBenv + ", please correct and rerun.", "DBSheet Definition Error")
             Exit Sub
         End If
-        dbidentifier = fetchSetting("DBidentifierCCS" + Globals.env(), "NONEXISTENT")
+        dbidentifier = fetchSetting("DBidentifierCCS" + DBenv, "NONEXISTENT")
         If dbidentifier = "NONEXISTENT" Then
-            Globals.UserMsg("No DB identifier given for environment: " + Globals.env() + ", please correct and rerun.", "DBSheet Definition Error")
+            Globals.UserMsg("No DB identifier given for environment: " + DBenv + ", please correct and rerun.", "DBSheet Definition Error")
             Exit Sub
         End If
-        dbPwdSpec = fetchSetting("dbPwdSpec" + Globals.env(), "")
+        dbPwdSpec = fetchSetting("dbPwdSpec" + DBenv, "")
     End Sub
 
+    Public Function getCommand(commandText As String) As System.Data.Common.DbCommand
+        If TypeName(dbshcnn) = "SqlConnection" Then
+            getCommand = New SqlCommand(commandText, dbshcnn)
+        ElseIf TypeName(dbshcnn) = "OleDbConnection" Then
+            getCommand = New OleDbCommand(commandText, dbshcnn)
+        Else
+            getCommand = New OdbcCommand(commandText, dbshcnn)
+        End If
+    End Function
+
     ''' <summary>opens a database connection with active connstring</summary>
-    Public Sub openConnection(Optional databaseName As String = "")
+    Public Sub openConnection(Optional databaseName As String = "", Optional usedForDBSheetCreate As Boolean = False)
         ' connections are pooled by ADO depending on the connection string:
         If dbshcnn Is Nothing Or databaseName <> "" Then
             setConnectionString()
@@ -74,7 +87,7 @@ Public Class DBSheetConnHelper
         End If
         Dim correctConnString As String = ""
         Try
-            If InStr(dbsheetConnString.ToLower, "provider=sqloledb") Or InStr(dbsheetConnString.ToLower, "driver=sql server") Then
+            If Not usedForDBSheetCreate And (InStr(dbsheetConnString.ToLower, "provider=sqloledb") Or InStr(dbsheetConnString.ToLower, "driver=sql server")) Then
                 ' ADO.NET doesn't like provider= and driver= 
                 If Globals.fetch(dbsheetConnString, "provider=", ";", True) <> "" Then
                     correctConnString = Replace(dbsheetConnString, Globals.fetch(dbsheetConnString, "provider=", ";", True) + ";", "")
@@ -83,9 +96,12 @@ Public Class DBSheetConnHelper
                     correctConnString = Replace(correctConnString, Globals.fetch(correctConnString, "driver=", ";", True) + ";", "")
                 End If
                 dbshcnn = New SqlConnection(correctConnString)
-            ElseIf InStr(dbsheetConnString.ToLower, "oledb") Then
+            ElseIf Not usedForDBSheetCreate And InStr(dbsheetConnString.ToLower, "oledb") Then
                 dbshcnn = New OleDbConnection(dbsheetConnString)
             Else
+                ' for DBSheetCreate dialog always use ODBC as performance is not important there but rather vendor compatibility...
+                ' change to ODBC driver setting
+                dbsheetConnString = Replace(dbsheetConnString, fetchSetting("ConnStringSearch" + Globals.env(), "provider=SQLOLEDB"), fetchSetting("ConnStringReplace" + Globals.env(), "driver=SQL SERVER"))
                 dbshcnn = New OdbcConnection(dbsheetConnString)
             End If
             dbshcnn.Open()
@@ -99,13 +115,13 @@ Public Class DBSheetConnHelper
     ''' <summary>set the dbSheet connection string, used in initialization and openConnection</summary>
     Private Sub setConnectionString()
         ' do we have a separate dbsheet connection string?
-        dbsheetConnString = fetchSetting("DBSheetConnString" + Globals.env(), "NONEXISTENT")
+        dbsheetConnString = fetchSetting("DBSheetConnString" + DBenv, "NONEXISTENT")
         If dbsheetConnString = "NONEXISTENT" Then
             ' no, try normal connection string 
-            dbsheetConnString = fetchSetting("ConstConnString" + Globals.env(), "NONEXISTENT")
+            dbsheetConnString = fetchSetting("ConstConnString" + DBenv, "NONEXISTENT")
             If dbsheetConnString = "NONEXISTENT" Then
                 ' actually this cannot happen....
-                Globals.UserMsg("No Connectionstring given for environment: " + Globals.env() + ", please correct and rerun.", "DBSheet Definition Error")
+                Globals.UserMsg("No Connectionstring given for environment: " + DBenv + ", please correct and rerun.", "DBSheet Definition Error")
                 Exit Sub
             End If
         End If

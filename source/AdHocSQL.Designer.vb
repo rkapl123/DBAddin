@@ -24,7 +24,6 @@ Partial Class AdHocSQL
     Private Sub InitializeComponent()
         Me.components = New System.ComponentModel.Container()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(AdHocSQL))
-        Me.SQLText = New System.Windows.Forms.TextBox()
         Me.AdHocSQLQueryResult = New System.Windows.Forms.DataGridView()
         Me.Execute = New System.Windows.Forms.Button()
         Me.LDatabase = New System.Windows.Forms.Label()
@@ -32,26 +31,20 @@ Partial Class AdHocSQL
         Me.Transfer = New System.Windows.Forms.Button()
         Me.ToolTip1 = New System.Windows.Forms.ToolTip(Me.components)
         Me.CloseBtn = New System.Windows.Forms.Button()
+        Me.EnvSwitch = New System.Windows.Forms.ComboBox()
         Me.RowsReturned = New System.Windows.Forms.Label()
         Me.Timer1 = New System.Windows.Forms.Timer(Me.components)
         Me.BackgroundWorker1 = New System.ComponentModel.BackgroundWorker()
         Me.TransferType = New System.Windows.Forms.ComboBox()
-        Me.EnvSwitch = New System.Windows.Forms.ComboBox()
         Me.LEnv1 = New System.Windows.Forms.Label()
+        Me.SplitContainer1 = New System.Windows.Forms.SplitContainer()
+        Me.SQLText = New System.Windows.Forms.RichTextBox()
         CType(Me.AdHocSQLQueryResult, System.ComponentModel.ISupportInitialize).BeginInit()
+        CType(Me.SplitContainer1, System.ComponentModel.ISupportInitialize).BeginInit()
+        Me.SplitContainer1.Panel1.SuspendLayout()
+        Me.SplitContainer1.Panel2.SuspendLayout()
+        Me.SplitContainer1.SuspendLayout()
         Me.SuspendLayout()
-        '
-        'SQLText
-        '
-        Me.SQLText.Anchor = CType(((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Left) _
-            Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.SQLText.Location = New System.Drawing.Point(12, 12)
-        Me.SQLText.Multiline = True
-        Me.SQLText.Name = "SQLText"
-        Me.SQLText.ScrollBars = System.Windows.Forms.ScrollBars.Vertical
-        Me.SQLText.Size = New System.Drawing.Size(776, 115)
-        Me.SQLText.TabIndex = 0
-        Me.ToolTip1.SetToolTip(Me.SQLText, "Enter SQL Code here and click Execute (or press Ctrl-Return) to execute it")
         '
         'AdHocSQLQueryResult
         '
@@ -62,11 +55,11 @@ Partial Class AdHocSQL
             Or System.Windows.Forms.AnchorStyles.Left) _
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.AdHocSQLQueryResult.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize
-        Me.AdHocSQLQueryResult.Location = New System.Drawing.Point(13, 133)
+        Me.AdHocSQLQueryResult.Location = New System.Drawing.Point(3, 3)
         Me.AdHocSQLQueryResult.Name = "AdHocSQLQueryResult"
         Me.AdHocSQLQueryResult.ReadOnly = True
         Me.AdHocSQLQueryResult.ShowEditingIcon = False
-        Me.AdHocSQLQueryResult.Size = New System.Drawing.Size(775, 305)
+        Me.AdHocSQLQueryResult.Size = New System.Drawing.Size(770, 314)
         Me.AdHocSQLQueryResult.TabIndex = 1
         Me.ToolTip1.SetToolTip(Me.AdHocSQLQueryResult, "Results of executed SQL Commands")
         '
@@ -113,7 +106,7 @@ Partial Class AdHocSQL
         'Transfer
         '
         Me.Transfer.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.Transfer.Location = New System.Drawing.Point(522, 449)
+        Me.Transfer.Location = New System.Drawing.Point(512, 449)
         Me.Transfer.Name = "Transfer"
         Me.Transfer.Size = New System.Drawing.Size(61, 23)
         Me.Transfer.TabIndex = 4
@@ -129,8 +122,19 @@ Partial Class AdHocSQL
         Me.CloseBtn.Size = New System.Drawing.Size(62, 23)
         Me.CloseBtn.TabIndex = 7
         Me.CloseBtn.Text = "Close"
-        Me.ToolTip1.SetToolTip(Me.CloseBtn, "click to finish Ad Hoc SQL Editor")
+        Me.ToolTip1.SetToolTip(Me.CloseBtn, "click (or press ESC) to finish Ad Hoc SQL Editor")
         Me.CloseBtn.UseVisualStyleBackColor = True
+        '
+        'EnvSwitch
+        '
+        Me.EnvSwitch.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
+        Me.EnvSwitch.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
+        Me.EnvSwitch.FormattingEnabled = True
+        Me.EnvSwitch.Location = New System.Drawing.Point(42, 450)
+        Me.EnvSwitch.Name = "EnvSwitch"
+        Me.EnvSwitch.Size = New System.Drawing.Size(87, 21)
+        Me.EnvSwitch.TabIndex = 2
+        Me.ToolTip1.SetToolTip(Me.EnvSwitch, "select currently active environment (connection string) for SQL Command")
         '
         'RowsReturned
         '
@@ -154,21 +158,10 @@ Partial Class AdHocSQL
         Me.TransferType.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.TransferType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
         Me.TransferType.FormattingEnabled = True
-        Me.TransferType.Location = New System.Drawing.Point(590, 450)
+        Me.TransferType.Location = New System.Drawing.Point(579, 450)
         Me.TransferType.Name = "TransferType"
-        Me.TransferType.Size = New System.Drawing.Size(63, 21)
+        Me.TransferType.Size = New System.Drawing.Size(74, 21)
         Me.TransferType.TabIndex = 5
-        '
-        'EnvSwitch
-        '
-        Me.EnvSwitch.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
-        Me.EnvSwitch.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
-        Me.EnvSwitch.FormattingEnabled = True
-        Me.EnvSwitch.Location = New System.Drawing.Point(42, 450)
-        Me.EnvSwitch.Name = "EnvSwitch"
-        Me.EnvSwitch.Size = New System.Drawing.Size(87, 21)
-        Me.EnvSwitch.TabIndex = 2
-        Me.ToolTip1.SetToolTip(Me.EnvSwitch, "select currently active environment (connection string) for SQL Command")
         '
         'LEnv1
         '
@@ -184,6 +177,37 @@ Partial Class AdHocSQL
         Me.LEnv1.TabIndex = 102
         Me.LEnv1.Text = "Env:"
         '
+        'SplitContainer1
+        '
+        Me.SplitContainer1.Anchor = CType((((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
+            Or System.Windows.Forms.AnchorStyles.Left) _
+            Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
+        Me.SplitContainer1.Location = New System.Drawing.Point(12, 12)
+        Me.SplitContainer1.Name = "SplitContainer1"
+        Me.SplitContainer1.Orientation = System.Windows.Forms.Orientation.Horizontal
+        '
+        'SplitContainer1.Panel1
+        '
+        Me.SplitContainer1.Panel1.Controls.Add(Me.SQLText)
+        '
+        'SplitContainer1.Panel2
+        '
+        Me.SplitContainer1.Panel2.Controls.Add(Me.AdHocSQLQueryResult)
+        Me.SplitContainer1.Size = New System.Drawing.Size(776, 430)
+        Me.SplitContainer1.SplitterDistance = 106
+        Me.SplitContainer1.TabIndex = 105
+        '
+        'SQLText
+        '
+        Me.SQLText.Anchor = CType((((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
+            Or System.Windows.Forms.AnchorStyles.Left) _
+            Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
+        Me.SQLText.Location = New System.Drawing.Point(3, 3)
+        Me.SQLText.Name = "SQLText"
+        Me.SQLText.Size = New System.Drawing.Size(770, 100)
+        Me.SQLText.TabIndex = 1
+        Me.SQLText.Text = ""
+        '
         'AdHocSQL
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
@@ -198,20 +222,21 @@ Partial Class AdHocSQL
         Me.Controls.Add(Me.LDatabase)
         Me.Controls.Add(Me.Database)
         Me.Controls.Add(Me.Execute)
-        Me.Controls.Add(Me.AdHocSQLQueryResult)
-        Me.Controls.Add(Me.SQLText)
+        Me.Controls.Add(Me.SplitContainer1)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.KeyPreview = True
         Me.MinimumSize = New System.Drawing.Size(815, 523)
         Me.Name = "AdHocSQL"
         Me.Text = "Ad Hoc SQL Editor"
         CType(Me.AdHocSQLQueryResult, System.ComponentModel.ISupportInitialize).EndInit()
+        Me.SplitContainer1.Panel1.ResumeLayout(False)
+        Me.SplitContainer1.Panel2.ResumeLayout(False)
+        CType(Me.SplitContainer1, System.ComponentModel.ISupportInitialize).EndInit()
+        Me.SplitContainer1.ResumeLayout(False)
         Me.ResumeLayout(False)
         Me.PerformLayout()
 
     End Sub
-
-    Friend WithEvents SQLText As Windows.Forms.TextBox
     Friend WithEvents AdHocSQLQueryResult As Windows.Forms.DataGridView
     Friend WithEvents Execute As Windows.Forms.Button
     Public WithEvents LDatabase As Windows.Forms.Label
@@ -225,4 +250,6 @@ Partial Class AdHocSQL
     Friend WithEvents TransferType As Windows.Forms.ComboBox
     Friend WithEvents EnvSwitch As Windows.Forms.ComboBox
     Public WithEvents LEnv1 As Windows.Forms.Label
+    Friend WithEvents SplitContainer1 As Windows.Forms.SplitContainer
+    Friend WithEvents SQLText As Windows.Forms.RichTextBox
 End Class

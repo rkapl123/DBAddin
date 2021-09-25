@@ -1,21 +1,22 @@
 ﻿Imports System.Data
-Imports System.Data.Odbc
-Imports System.Data.SqlClient
-Imports System.Data.OleDb
 Imports System.Windows.Forms
 Imports System.ComponentModel
 
 Public Class AdHocSQL
     ''' <summary>common connection settings factored in helper class</summary>
-    Private myDBConnHelper As DBSheetConnHelper
+    Private myDBConnHelper As DBConnHelper
+    ''' <summary>stored environment to reset after change</summary>
+    Private storedUserSetEnv As String = ""
+    ''' <summary>stored database to reset after change</summary>
+    Private userSetDB As String = ""
 
+    ''' <summary>create new AdHocSQL dialog</summary>
+    ''' <param name="SQLString"></param>
+    ''' <param name="AdHocSQLStringsIndex"></param>
     Public Sub New(SQLString As String, AdHocSQLStringsIndex As Integer)
         ' This call is required by the designer.
         InitializeComponent()
         Me.SQLText.Text = SQLString
-        ' get settings for connection
-        myDBConnHelper = New DBSheetConnHelper()
-
         Me.TransferType.Items.Clear()
         For Each TransType As String In {"Cell", "ListFetch", "RowFetch", "ListObject", "Pivot"}
             Me.TransferType.Items.Add(TransType)
@@ -26,11 +27,21 @@ Public Class AdHocSQL
         For Each env As String In Globals.environdefs
             Me.EnvSwitch.Items.Add(env)
         Next
+        Dim userSetEnv As String = fetchSetting("AdHocSQLcmdEnv" + AdHocSQLStringsIndex.ToString(), Globals.env(baseZero:=True))
+        ' get settings for connection
+        myDBConnHelper = New DBConnHelper((Integer.Parse(userSetEnv) + 1).ToString())
+        ' issue warning if current selected environment not same as that stored for command (prod/test !)
+        If userSetEnv <> Globals.env(baseZero:=True) Then
+            If Globals.QuestionMsg("Current selected environment different from the environment stored for AdHocSQLcmd, change to this environment?",, "AdHoc SQL Command", MsgBoxStyle.Question + MsgBoxStyle.DefaultButton2) = MsgBoxResult.Ok Then
+                storedUserSetEnv = userSetEnv
+                userSetEnv = Globals.env(baseZero:=True)
+                myDBConnHelper = New DBConnHelper(Globals.env())
+            End If
+        End If
+        userSetDB = fetchSetting("AdHocSQLcmdDB" + AdHocSQLStringsIndex.ToString(), Globals.fetch(myDBConnHelper.dbsheetConnString, myDBConnHelper.dbidentifier, ";"))
         fillDatabasesAndSetDropDown()
-        Dim userSetEnv As String = fetchSetting("AdHocSQLcmdEnv" + AdHocSQLStringsIndex.ToString(), Globals.selectedEnvironment.ToString())
-        Dim userSetDB As String = fetchSetting("AdHocSQLcmdDB" + AdHocSQLStringsIndex.ToString(), "")
         Me.EnvSwitch.SelectedIndex = Integer.Parse(userSetEnv)
-        Me.Database.SelectedIndex = If(userSetDB = "", 0, Me.Database.Items.IndexOf(userSetDB))
+        Me.Database.SelectedIndex = Me.Database.Items.IndexOf(userSetDB)
     End Sub
 
     ''' <summary>execution of ribbon entered command after dialog has been set up, otherwise GUI elements are not available</summary>
@@ -41,7 +52,7 @@ Public Class AdHocSQL
         If Strings.Replace(Me.SQLText.Text, " ", "") <> "" Then executeSQL()
     End Sub
 
-    ''' <summary>fill the Database dropdown and set dropdown to database set in connection string</summary>
+    ''' <summary>fill the Database dropdown</summary>
     Private Sub fillDatabasesAndSetDropDown()
         Try
             fillDatabases()
@@ -49,7 +60,6 @@ Public Class AdHocSQL
             Globals.UserMsg(ex.Message)
             Exit Sub
         End Try
-        Me.Database.SelectedIndex = Me.Database.Items.IndexOf(fetchSetting("AdHocSQLDatabase" + Me.EnvSwitch.SelectedIndex.ToString(), Globals.fetch(myDBConnHelper.dbsheetConnString, myDBConnHelper.dbidentifier, ";")))
     End Sub
 
     ''' <summary>fills all possible databases of current connection using db proprietary code in dbGetAllStr, data coming from field DBGetAllFieldName</summary>
@@ -59,14 +69,7 @@ Public Class AdHocSQL
         Me.Database.Items.Clear()
         ' do not catch exception here, as it should be handled by fillDatabasesAndSetDropDown
         myDBConnHelper.openConnection()
-        Dim sqlCommand As IDbCommand
-        If TypeName(myDBConnHelper.dbshcnn) = "SqlConnection" Then
-            sqlCommand = New SqlCommand(myDBConnHelper.dbGetAllStr, myDBConnHelper.dbshcnn)
-        ElseIf TypeName(myDBConnHelper.dbshcnn) = "OleDbConnection" Then
-            sqlCommand = New OleDbCommand(myDBConnHelper.dbGetAllStr, myDBConnHelper.dbshcnn)
-        Else
-            sqlCommand = New OdbcCommand(myDBConnHelper.dbGetAllStr, myDBConnHelper.dbshcnn)
-        End If
+        Dim sqlCommand As IDbCommand = myDBConnHelper.getCommand(myDBConnHelper.dbGetAllStr)
         Try
             dbs = sqlCommand.ExecuteReader()
         Catch ex As Exception
@@ -96,11 +99,16 @@ Public Class AdHocSQL
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub Environment_SelectionChangeCommitted(sender As Object, e As EventArgs) Handles EnvSwitch.SelectionChangeCommitted
-        Globals.selectedEnvironment = Me.EnvSwitch.SelectedIndex
-        Globals.ConstConnString = fetchSetting("ConstConnString" + Globals.env(), "")
-        ' reset connection and refill database dropdown
+        ' reset connection, recreate DB Connection helper and refill database dropdown
         myDBConnHelper.dbshcnn = Nothing
+        myDBConnHelper = New DBConnHelper((Me.EnvSwitch.SelectedIndex + 1).ToString())
+        Dim PrevSelDB As String = Me.Database.Text
         fillDatabasesAndSetDropDown()
+        ' reset previously set database
+        If Me.Database.Items.IndexOf(PrevSelDB) = -1 Then
+            Globals.UserMsg("Previously selected database '" + PrevSelDB + "' doesn't exist in this environment !", "AdHoc SQL Command")
+        End If
+        Me.Database.SelectedIndex = Me.Database.Items.IndexOf(PrevSelDB)
     End Sub
 
     ''' <summary>database changed</summary>
@@ -126,7 +134,11 @@ Public Class AdHocSQL
         If Not BackgroundWorker1.IsBusy Then
             ' only select commands are executed immediately, others are asked for (with default button being cancel)
             If InStr(Strings.LTrim(SQLText.Text.ToLower()), "select") <> 1 Then
-                If QuestionMsg("Do you really want to execute the command ?",, "AdHoc SQL Command", MsgBoxStyle.Question + MsgBoxStyle.DefaultButton2) = vbCancel Then Exit Sub
+                If LCase(fetchSetting("DMLStatementsAllowed", "False")) <> "true" Then
+                    Globals.UserMsg("Non Select Statements (DML) are forbidden (DMLStatementsAllowed needs to be True) !", "AdHoc SQL Command")
+                    Exit Sub
+                End If
+                If Globals.QuestionMsg("Do you really want to execute the command ?",, "AdHoc SQL Command", MsgBoxStyle.Question + MsgBoxStyle.DefaultButton2) = vbCancel Then Exit Sub
             End If
             elapsedTime = New DateTime(0)
             Timer1.Interval = 1000
@@ -153,13 +165,7 @@ Public Class AdHocSQL
         End Try
 
         ' set up command
-        If TypeName(myDBConnHelper.dbshcnn) = "SqlConnection" Then
-            SqlCmd = New SqlCommand(SQLText.Text, myDBConnHelper.dbshcnn)
-        ElseIf TypeName(myDBConnHelper.dbshcnn) = "OleDbConnection" Then
-            SqlCmd = New OleDbCommand(SQLText.Text, myDBConnHelper.dbshcnn)
-        Else
-            SqlCmd = New OdbcCommand(SQLText.Text, myDBConnHelper.dbshcnn)
-        End If
+        SqlCmd = myDBConnHelper.getCommand(SQLText.Text)
         SqlCmd.CommandTimeout = Globals.CmdTimeout
         SqlCmd.CommandType = CommandType.Text
         ' execute command on DB Server
@@ -250,6 +256,11 @@ Public Class AdHocSQL
         End If
         ' get rid of leading and trailing blanks for dropdown and combobox presets
         Me.SQLText.Text = Strings.Trim(Me.SQLText.Text)
+        ' if the user environment was changed to the currently selected (global) one, reset it here to the passed one...
+        If storedUserSetEnv <> "" Then
+            Me.EnvSwitch.SelectedIndex = Integer.Parse(storedUserSetEnv)
+            Me.Database.SelectedIndex = Me.Database.Items.IndexOf(userSetDB)
+        End If
         Me.DialogResult = theDialogResult
         Me.Hide()
     End Sub

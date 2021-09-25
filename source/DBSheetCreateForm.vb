@@ -16,7 +16,7 @@ Public Class DBSheetCreateForm
     ''' <summary>character prepended before field name to specify non nullable fields</summary>
     Private specialNonNullableChar As String = "*"
     ''' <summary>common connection settings factored in helper class</summary>
-    Private myDBConnHelper As DBSheetConnHelper
+    Private myDBConnHelper As DBConnHelper
 
 #Region "Initialization of DBSheetDefs"
     ''' <summary>entry point of form, invoked by clicking "create/edit DBSheet definition"</summary>
@@ -24,7 +24,7 @@ Public Class DBSheetCreateForm
     ''' <param name="e"></param>
     Private Sub DBSheetCreateForm_Shown(sender As Object, e As EventArgs) Handles Me.Shown
         ' get settings for DBSheet definition editing
-        myDBConnHelper = New DBSheetConnHelper()
+        myDBConnHelper = New DBConnHelper(Globals.env())
         tblPlaceHolder = fetchSetting("tblPlaceHolder" + Globals.env(), "!T!")
         specialNonNullableChar = fetchSetting("specialNonNullableChar" + Globals.env(), "*")
         Lenvironment.Text = "Environment: " + fetchSetting("ConfigName" + Globals.env(), "")
@@ -173,7 +173,7 @@ Public Class DBSheetCreateForm
         Dim dbs As OdbcDataReader
 
         ' do not catch exception here, as it should be handled by fillDatabasesAndSetDropDown
-        myDBConnHelper.openConnection()
+        myDBConnHelper.openConnection(usedForDBSheetCreate:=True)
         FormDisabled = True
         Database.Items.Clear()
         Dim sqlCommand As OdbcCommand = New OdbcCommand(myDBConnHelper.dbGetAllStr, myDBConnHelper.dbshcnn)
@@ -211,7 +211,7 @@ Public Class DBSheetCreateForm
     ''' <param name="e"></param>
     Private Sub Database_SelectedIndexChanged(sender As Object, e As EventArgs) Handles Database.SelectedIndexChanged
         ' add database information to signal a change in connection string to selected database !
-        Try : myDBConnHelper.openConnection(Database.Text) : Catch ex As Exception : Globals.UserMsg(ex.Message) : resetDBSheetCreateForm() : Exit Sub : End Try
+        Try : myDBConnHelper.openConnection(Database.Text, usedForDBSheetCreate:=True) : Catch ex As Exception : Globals.UserMsg(ex.Message) : resetDBSheetCreateForm() : Exit Sub : End Try
         Try
             fillTables()
             ' start with empty columns list
@@ -417,11 +417,11 @@ Public Class DBSheetCreateForm
 
     Private Sub DBSheetColsForDatabases_ItemClicked(sender As Object, e As ToolStripItemClickedEventArgs) Handles DBSheetColsForDatabases.ItemClicked
         ' connect to the selected foreign database...
-        Try : myDBConnHelper.openConnection(e.ClickedItem.Text) : Catch ex As Exception : Globals.UserMsg(ex.Message) : Exit Sub : End Try
+        Try : myDBConnHelper.openConnection(e.ClickedItem.Text, usedForDBSheetCreate:=True) : Catch ex As Exception : Globals.UserMsg(ex.Message) : Exit Sub : End Try
         ' ... and get the tables into the ftable cell (!), the rest of the column still has the foreign tables of the main database...
         DirectCast(DBSheetCols.Rows(selRowIndex).Cells("ftable"), DataGridViewComboBoxCell).DataSource = getforeignTables()
         ' revert back to main database
-        Try : myDBConnHelper.openConnection(Database.Text) : Catch ex As Exception : Globals.UserMsg(ex.Message) : Exit Sub : End Try
+        Try : myDBConnHelper.openConnection(Database.Text, usedForDBSheetCreate:=True) : Catch ex As Exception : Globals.UserMsg(ex.Message) : Exit Sub : End Try
     End Sub
 
     ''' <summary>move (shift) row up</summary>
@@ -925,13 +925,13 @@ Public Class DBSheetCreateForm
         DBSheetConfig.createDBSheet(currentFilepath)
     End Sub
 
-    ''' <summary>loads the DBSHeet definitions from a file (xml format)</summary>
+    ''' <summary>loads the DBSheet definitions from a file (xml format)</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub loadDefs_Click(ByVal sender As Object, ByVal e As EventArgs) Handles loadDefs.Click
         Try
             Dim openFileDialog1 = New OpenFileDialog With {
-                .InitialDirectory = fetchSetting("DBSheetDefinitions" + Globals.env, ""),
+                .InitialDirectory = Globals.fetchSetting("lastDBsheetCreatePath", Globals.fetchSetting("DBSheetDefinitions" + myDBConnHelper.DBenv, "")),
                 .Filter = "XML files (*.xml)|*.xml",
                 .RestoreDirectory = True
             }
@@ -939,12 +939,13 @@ Public Class DBSheetCreateForm
             If result = Windows.Forms.DialogResult.OK Then
                 ' remember path for possible storing in DBSheetParams
                 currentFilepath = openFileDialog1.FileName
+                If currentFilepath <> "" Then Globals.setUserSetting("lastDBsheetCreatePath", Strings.Left(currentFilepath, InStrRev(currentFilepath, "\") - 1))
                 Dim DBSheetParams As String = File.ReadAllText(currentFilepath, System.Text.Encoding.Default)
                 ' fetch params into form from sheet or file
                 FormDisabled = True
                 ' get Database from (legacy) connID (legacy connID was prefixed with connIDPrefixDBtype)
                 Dim configDatabase As String = Replace(DBSheetConfig.getEntry("connID", DBSheetParams), fetchSetting("connIDPrefixDBtype", "MSSQL"), "")
-                Try : myDBConnHelper.openConnection(configDatabase) : Catch ex As Exception : Globals.UserMsg(ex.Message) : Exit Sub : End Try
+                Try : myDBConnHelper.openConnection(configDatabase, usedForDBSheetCreate:=True) : Catch ex As Exception : Globals.UserMsg(ex.Message) : Exit Sub : End Try
                 fillDatabases()
                 Database.SelectedIndex = Database.Items.IndexOf(configDatabase)
                 fillTables()
@@ -1031,7 +1032,7 @@ Public Class DBSheetCreateForm
                 Dim saveFileDialog1 As SaveFileDialog = New SaveFileDialog With {
                     .Title = "Save DBSheet Definition",
                     .FileName = tableName + ".xml",
-                    .InitialDirectory = fetchSetting("DBSheetDefinitions" + Globals.env, ""),
+                    .InitialDirectory = fetchSetting("DBSheetDefinitions" + myDBConnHelper.DBenv, ""),
                     .Filter = "XML files (*.xml)|*.xml",
                     .RestoreDirectory = True
                 }

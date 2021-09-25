@@ -67,7 +67,7 @@ Explanation:
 *   `ConnStringSearch`**N**: part to be searched for replacement within the standard connection string in DBSetQuery
 *   `ConnStringReplace`**N**: replacement for above
 
-### Settings continued
+### Other Settings
 
 Other settings possible in DBAddin.xll.config (or DBAddinCentral.config):
 
@@ -96,6 +96,7 @@ Other settings possible in DBAddin.xll.config (or DBAddinCentral.config):
     <add key="updatesUrlBase" value="https://github.com/rkapl123/DBAddin/archive/refs/tags/" />
     <add key="localUpdateFolder" value="" />
     <add key="localUpdateMessage" value="New version available in local update folder, start deployAddin.cmd to install it:" />
+    <add key="DMLStatementsAllowed" value="True" />
 ```
 
 Explanation:
@@ -121,23 +122,13 @@ Explanation:
 *   `updatesUrlBase`: Here, the URL base for the update zip packages can be overridden.
 *   `localUpdateFolder`: For updating the DB-Addin Version, you can provide an alternative folder, where the deploy script and the files are maintained for other users.
 *   `localUpdateMessage`: For the alternative folder update, you can also provide an alternative message to display.
+*   `DMLStatementsAllowed`: Allows DML Statements in the Adhoc SQL Query Tool.
 
 To change the settings, there use the dropdown "settings", where you can modify the DBAddin.xll.config and the referred DBAddinCentral.config including XML validation. If you have multiple same named entries in your settings files, the last one is taken as the active setting.
 
-### Testing
+### About Box, Settings, Log and fix legacy functions
 
-Testing for MS SQL Server and other databases (MySQL, Oracle, PostgreSQL, DB2, Sybase and Access) can be done using the Testing Workbook "DBFuncsTest.xls".
-To use that Testing Workbook you'll need the pubs database, where I have scripts available for Oracle, Sybase, DB2, PostgreSQL and MySql [here](PUBS_database_scripts.zip) (the MS-SQLserver version can be downloaded [here](https://www.microsoft.com/en-us/download/details.aspx?id=23654)). I've also added a pubs.mdb Access database in the test folder.
-
-When starting the Testworkbook, after waiting for the – probable – connection error, you have to change the connection string(s) to suit your needs (see below for explanations).
-
-![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBFunctionsTest.PNG)
-
-Several connection strings for "DBFuncsTest.xls" are placed to the right of the black line, the actual connection is then selected by choosing the appropriate shortname (dropdown) in the yellow input field. After the connection has been changed don't forget to refresh the queries/DBforms by right clicking and selecting "refresh data".
-
-### AboutBox, Logs, Purge hidden names and other tools
-
-The Aboutbox can be reached by clicking the small dialogBox Launcher in the right bottom corner of the DB Addin Tools group of the DBAddin Ribbon:
+The About Box can be reached by clicking the small dialogBox Launcher in the right bottom corner of the DB Addin settings group of the DBAddin Ribbon:
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/AboutBox.PNG)  
 
@@ -147,24 +138,31 @@ You can get updates from here, in case there are new versions, this is shown wit
 
 There is a possibility to set the future log events displayed (the starting value is set in the config file).
 
-To see the Log, there is a separate Button in the log group of the DBAddin ribbon that also indicates the existence of warning log entries with a red exclamation mark.
+#### Log
+To see the Log, there is a separate Button in the settings group of the DBAddin ribbon that also indicates the existence of warning log entries with a red exclamation mark.
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/ConfigMenu.PNG)  
 
-The DBListFetch's and DBRowFetch's target areas' extent is stored in hidden named ranges assigned both to the calling function cell (DBFsource(Key)) and the target (DBFtarget(Key)). These hidden names are used to keep track of the previous content to prevent overwriting, clearing old values, etc.
-Sometimes during copying and pasting DB Functions, these names can get mixed up, leading to strange results or non-functioning of the "jump" function. In these cases, there is a tool in the DB Addin tools group, which may be used to "purge" these hidden named ranges in case of any strange behaviour due to multiple name assignments to the same area.  This button is only usable if clicked while pressing the Shift button. If the purge button is clicked while pressing the Ctrl Button, the hidden names used for the DB functions are unhidden and the Name manager is displayed.
+You can also fix legacy DBAddin functions in case you decided to skip the possibility offered on opening a Workbook with the "fix legacy function" button.
 
-The tool "Buttons" is used for switching designmode for DBModifier Buttons (identical to standard Excel button "Design Mode" in Ribbon "Developer tab", Group "Controls")
-
-You can also fix legacy DBAddin functions in case you decided to skip the possibility offered on opening a Workbook with the "repair legacy function" button.
-
+#### Settings
 In the DBAddin settings Group, there is a dropdown "settings", where you can modify the DBAddin.xll.config and the referred DBAddinUser.config and DBAddinCentral.config including XML validation.
 
+#### Custom properties
 Right besides that dropdown, there is a shortcut to the Workbook properties (being the standard dialog Advanced Properties, accessible via File/Info) that allows you to change custom properties settings for DBAddin.
 A green check shows that custom property DBFskip is not set to true for this workbook, therefore refreshing DB functions on opening the Workbook.
 
-### Adhoc SQL Commands
+### Tools
+Besides the hierarchical menu "DBConfigs" (see [DBFuncs Userdoc](DBFuncs.md)) and the DBSheet Configuration (see [DBSheets](DBSheets.md)) there are other tools in the DB Addin Tools group:
 
+#### Purge
+The DBListFetch's and DBRowFetch's target areas' extent is stored in hidden named ranges assigned both to the calling function cell (DBFsource(Key)) and the target (DBFtarget(Key)). These hidden names are used to keep track of the previous content to prevent overwriting, clearing old values, etc.
+Sometimes during copying and pasting DB Functions, these names can get mixed up, leading to strange results or non-functioning of the "jump" function. In these cases, there is a tool in the DB Addin tools group, which may be used to "purge" these hidden named ranges in case of any strange behaviour due to multiple name assignments to the same area.  This button is only usable if clicked while pressing the Shift button. If the purge button is clicked while pressing the Ctrl Button, the hidden names used for the DB functions are unhidden and the Name manager is displayed.
+
+#### Buttons
+The button "Buttons" is used for switching designmode for DBModifier Buttons (identical to standard Excel button "Design Mode" in Ribbon "Developer tab", Group "Controls")
+
+#### AdHocSQL Tool
 Another tool is the entry of quick (adhoc) SQL Commands in the combo box below the settings dropdown. Changing the combo box or clicking the dialogbox launcher below it, opens the AdHoc SQL Command dialog:
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/AdHocSQL.PNG)  
@@ -172,6 +170,10 @@ Another tool is the entry of quick (adhoc) SQL Commands in the combo box below t
 Select Statements (beginning with `select`) are executed immediately, empty statements (using a space character in the combobox) don't execute anything, and everything else is regarded as a DML command and is only executed after confirmation:
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/AdHocSQL_DML.PNG)  
+
+For safety reasons, the DML commands an blocked until an additional setting `<add key="DMLStatementsAllowed" value="True" />` is being set. This is indicated by an error message:
+
+![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/AdHocSQL_DML_forbidden.PNG)  
 
 Results are shown below the SQL Command text entry, for row returning commands, the rows returned are shown including the time it took to finish the command at the bottom of the dialog.
 In case of an error the exception from the database command is displayed, for DML commands the records affected are shown (again including the time it took to finish the command):
@@ -192,12 +194,27 @@ To transfer the SQL command into the current cell, click `Transfer` or press `Sh
 
 You can always interrupt long running commands by clicking `Close` (or hitting ESC) or `Transfer`. A question whether to cancel the interruption is provided then.
 
-All issued commands are stored in the user settings and reloaded at start-up of the Add-In (Excel), if you want to get rid of them, open the User-Settings as described in [Settings](#settings) and remove all unwanted entries starting with `key="AdhocSQLcmd.."`
-Also the chosen environment, database context and transfer type is stored in the user settings, being restored after closing the AdHoc SQL Command dialog or Excel.
+Issued commands are stored in the dropdown and persisted in the user settings after prompting the user, being reloaded at start-up of the Add-In (Excel).
+If you want to remove them, open the User-Settings as described in [Settings](#settings) and remove all unwanted entries starting with `key="AdhocSQLcmd.."`
+Also the chosen environment and the database context is stored along with each command (subsequent changes to the environment and database are stored without prompting), the transfer type is stored apart from that.
+
+If the general DB-Addin environment is different from the stored environment of the command, a warning/question is displayed that allows to reset the environment to the general environment. 
+If this is done, any changes to the environment and the database are not stored after closing the AdHocSQL Tool.
 
 ### Building
 
 All packages necessary for building are contained, simply open DBaddin.sln and build the solution. The script `deployForTest.cmd` can be used to quickly deploy the built xll and configs to `%appdata%\Microsoft\AddIns` after choosing the solution configuration (Release or Debug).
+
+### Testing
+
+Testing for MS SQL Server and other databases (MySQL, Oracle, PostgreSQL, DB2, Sybase and Access) can be done using the Testing Workbook "DBFuncsTest.xls".
+To use that Testing Workbook you'll need the pubs database, where I have scripts available for Oracle, Sybase, DB2, PostgreSQL and MySql [here](PUBS_database_scripts.zip) (the MS-SQLserver version can be downloaded [here](https://www.microsoft.com/en-us/download/details.aspx?id=23654)). I've also added a pubs.mdb Access database in the test folder.
+
+When starting the Testworkbook, after waiting for the – probable – connection error, you have to change the connection string(s) to suit your needs (see below for explanations).
+
+![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBFunctionsTest.PNG)
+
+Several connection strings for "DBFuncsTest.xls" are placed to the right of the black line, the actual connection is then selected by choosing the appropriate shortname (dropdown) in the yellow input field. After the connection has been changed don't forget to refresh the queries/DBforms by right clicking and selecting "refresh data".
 
 ### Roadmap
 

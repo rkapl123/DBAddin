@@ -25,7 +25,7 @@ Public Class MenuHandler
         customUIXml +=
         "<group id='DBAddinGroup' label='DBAddin settings'>" +
             "<dropDown id='envDropDown' label='Environment:' sizeString='1234567890123456' getEnabled='GetEnvEnabled' getSelectedItemIndex='GetSelectedEnvironment' getItemCount='GetEnvItemCount' getItemID='GetEnvItemID' getItemLabel='GetEnvItemLabel' getSupertip='GetEnvSelectedTooltip' onAction='selectEnvironment'/>" +
-            "<buttonGroup id='buttonGroup1'>" +
+            "<buttonGroup id='buttonGroup0'>" +
                 "<menu id='configMenu' label='Settings'>" +
                     "<button id='user' label='User settings' onAction='showAddinConfig' imageMso='ControlProperties' screentip='Show/edit user settings for DB Addin' />" +
                     "<button id='central' label='Central settings' onAction='showAddinConfig' imageMso='TablePropertiesDialog' screentip='Show/edit central settings for DB Addin' />" +
@@ -33,8 +33,11 @@ Public Class MenuHandler
                 "</menu>" +
                 "<button id='props' label='Workbook Properties' onAction='showCProps' getImage='getCPropsImage' screentip='Change custom properties relevant for DB Addin:' getSupertip='getToggleCPropsScreentip' />" +
             "</buttonGroup>" +
-            "<comboBox id='DBAdhocSQL' showLabel='false' sizeString='123456789012345678901234567890123' getText='GetAdhocSQLText' getItemCount='GetAdhocSQLItemCount' getItemLabel='GetAdhocSQLItemLabel' onChange='showDBAdHocSQL' screentip='enter Ad-hoc SQL statements to execute'/>" +
-            "<dialogBoxLauncher><button id='AdHocSQL' label='AdHoc SQL Command' onAction='showDBAdHocSQLDBOX' screentip='Open AdHoc SQL Command Tool'/></dialogBoxLauncher>" +
+            "<buttonGroup id='buttonGroup1'>" +
+                "<button id='repairLegacy' label='fix legacy functions' imageMso='ControlWizards' onAction='clickRepairLegacyFunctions' screentip='click to fix legacy functions from old VB6 DBAddin'/>" +
+                "<button id='showLog' label='Log' screentip='shows Database Addins Diagnostic Display' getImage='getLogsImage' onAction='clickShowLog'/>" +
+            "</buttonGroup>" +
+            "<dialogBoxLauncher><button id='dialog' label='About DBAddin' onAction='showAbout' screentip='Show Aboutbox with help, version information, update check/download and project homepage' getSupertip='getSuperTipInfo'/></dialogBoxLauncher>" +
         "</group>"
         ' DBAddin Tools Group:
         customUIXml +=
@@ -48,11 +51,10 @@ Public Class MenuHandler
             "</buttonGroup>" +
             "<buttonGroup id='buttonGroup3'>" +
                 "<button id='purgetool' label='Purge' screentip='purges underlying DBtarget/DBsource Names or unhides hidden names' imageMso='BorderErase' onAction='clickpurgetoolbutton' supertip='hold: Ctrl to unhide all DB names and show Name Manager, Shift to purge hidden names'/>" +
-                "<button id='showLog' label='Log' screentip='shows Database Addins Diagnostic Display' getImage='getLogsImage' onAction='clickShowLog'/>" +
                 "<button id='designmode' label='Buttons' onAction='showToggleDesignMode' getImage='getToggleDesignImage' getScreentip='getToggleDesignScreentip'/>" +
             "</buttonGroup>" +
-            "<button id='repairLegacy' label='repair legacy functions' imageMso='ControlWizards' onAction='clickRepairLegacyFunctions' screentip='click to fix legacy functions from old VB6 DBAddin'/>" +
-            "<dialogBoxLauncher><button id='dialog' label='About DBAddin' onAction='showAbout' screentip='Show Aboutbox with help, version information, update check/download and project homepage' getSupertip='getSuperTipInfo'/></dialogBoxLauncher>" +
+            "<comboBox id='DBAdhocSQL' showLabel='false' sizeString='123456789012345678901234567' getText='GetAdhocSQLText' getItemCount='GetAdhocSQLItemCount' getItemLabel='GetAdhocSQLItemLabel' onChange='showDBAdHocSQL' screentip='enter Ad-hoc SQL statements to execute'/>" +
+            "<dialogBoxLauncher><button id='AdHocSQL' label='AdHoc SQL Command' onAction='showDBAdHocSQLDBOX' screentip='Open AdHoc SQL Command Tool'/></dialogBoxLauncher>" +
         "</group>"
         ' DBModif Group: maximum three DBModif types possible (depending on existence in current workbook): 
         customUIXml +=
@@ -235,12 +237,12 @@ Public Class MenuHandler
                 ' change in or add to user settings
                 Globals.setUserSetting("AdhocSQLcmd" + selectedAdHocSQLIndex.ToString(), queryString)
             Else
-                selectedAdHocSQLIndex = AdHocSQLStrings.IndexOf(selectedSQLText)
+                queryString = ""
             End If
         Else ' just update selection index
             selectedAdHocSQLIndex = AdHocSQLStrings.IndexOf(selectedSQLText)
         End If
-        If Strings.Replace(queryString, " ", "") <> "" Then
+        If Strings.Replace(queryString, " ", "") <> "" And selectedAdHocSQLIndex >= 0 Then
             ' store the combobox values for later...
             Globals.setUserSetting("AdHocSQLcmdEnv" + selectedAdHocSQLIndex.ToString(), theAdHocSQLDlg.EnvSwitch.SelectedIndex.ToString())
             Globals.setUserSetting("AdHocSQLcmdDB" + selectedAdHocSQLIndex.ToString(), theAdHocSQLDlg.Database.Text)
@@ -326,7 +328,11 @@ Public Class MenuHandler
     ''' <param name="control"></param>
     Public Sub showCProps(control As CustomUI.IRibbonControl)
         If ExcelDnaUtil.Application.ActiveWorkbook IsNot Nothing Then
-            ExcelDnaUtil.Application.Dialogs(Excel.XlBuiltInDialog.xlDialogProperties).Show
+            Try
+                ExcelDnaUtil.Application.Dialogs(Excel.XlBuiltInDialog.xlDialogProperties).Show
+            Catch ex As Exception
+                Globals.UserMsg("The properties dialog can't be displayed, maybe you are in the formula/cell editor?", "Properties dialog display")
+            End Try
             ' to check whether DBFskip has changed:
             Globals.theRibbon.InvalidateControl(control.Id)
         End If
@@ -433,8 +439,8 @@ Public Class MenuHandler
         ' provide a chance to reconnect when switching environment...
         conn = Nothing
         If ExcelDnaUtil.Application.ActiveWorkbook IsNot Nothing Then
-            Dim retval As MsgBoxResult = QuestionMsg("ConstConnString:" + Globals.ConstConnString + vbCrLf + "ConfigStoreFolder:" + ConfigFiles.ConfigStoreFolder + vbCrLf + vbCrLf + "Refresh DBFunctions in active workbook to see effects?", MsgBoxStyle.YesNo, "Changed environment to: " + fetchSetting("ConfigName" + Globals.env(), ""))
-            If retval = vbYes Then Globals.refreshDBFunctions(ExcelDnaUtil.Application.ActiveWorkbook)
+            Dim retval As MsgBoxResult = QuestionMsg("ConstConnString:" + Globals.ConstConnString + vbCrLf + "ConfigStoreFolder:" + ConfigFiles.ConfigStoreFolder + vbCrLf + vbCrLf + "Refresh DBFunctions in active workbook to see effects?", MsgBoxStyle.OkCancel, "Changed environment to: " + fetchSetting("ConfigName" + Globals.env(), ""))
+            If retval = MsgBoxResult.Ok Then Globals.refreshDBFunctions(ExcelDnaUtil.Application.ActiveWorkbook)
         Else
             Globals.UserMsg("ConstConnString:" + Globals.ConstConnString + vbCrLf + "ConfigStoreFolder:" + ConfigFiles.ConfigStoreFolder, "Changed environment to: " + fetchSetting("ConfigName" + Globals.env(), ""), MsgBoxStyle.Information)
         End If

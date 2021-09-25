@@ -77,7 +77,7 @@ In case of successfully connecting to the database server, the dropdown "databas
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBSheetsDefSelectDatabase.PNG)
 
-"Load DBSheet def from File" is used to directly load a stored definition into the tool.
+"Load DBSheet def from File" is used to directly load a stored definition into the tool (Legacy definitions from the old DBAddin can be loaded as well, the Database is retrieved from the entry `connID`, this might be prefixed (e.g. by MSSQL) which can be removed by entering this prefix into the setting `connIDPrefixDBtype`).
 
 After having selected a database, select the main table for which a DBsheet should be created in the dropdown "Table", which fills the available fields of the table into the dropdowns of column "name". Once a field has been chosen, the password/database/table entry becomes unavailable. Only clearing ALL fields from the DBSheets definition will allow a change to the password/database/table entry again.
 
@@ -191,20 +191,21 @@ Following Settings in DBAddin.xll.config or the referred DBAddinCentral.config a
     <add key="dbGetAllFieldName3" value="name"/>
     <add key="ownerQualifier3" value=".dbo."/>
     <add key="dbPwdSpec3" value="PWD="/>
+    <add key="connIDPrefixDBtype" value="MSSQL"/>
 ```
 
 
 Explanation:
-*   `ConfigName`**N**: freely definable name for your environment (e.g. Production or your database instance)
-*   `ConstConnString`**N**: the standard connection string used to connect to the database
-*   `ConnStringSearch`**N**: part to be searched for replacement within the standard connection string for the final DBSheet definition connection string
-*   `ConnStringReplace`**N**: replacement for above
-*   `DBSheetConnString`**N**: if existing, this connection string is used to connect to the database for the DBSheet definitions instead (without further replacements)
-*   `DBidentifierCCS`**N**: used to identify the database within DBSheetConnString
-*   `DBSheetDefinitions`**N**: path to the stored DBSheetdefinitions (default directory of assign DBsheet definitions and load/save DBSheet Defintions)
+*   `ConfigName`**N**: freely definable name for your environment (e.g. Production or your database instance).
+*   `ConstConnString`**N**: the standard connection string used to connect to the database.
+*   `ConnStringSearch`**N**: part to be searched for replacement within the standard connection string for the final DBSheet definition connection string.
+*   `ConnStringReplace`**N**: replacement for above.
+*   `DBSheetConnString`**N**: if existing, this connection string is used to connect to the database for the DBSheet definitions instead (without further replacements).
+*   `DBidentifierCCS`**N**: used to identify the database within DBSheetConnString.
+*   `DBSheetDefinitions`**N**: path to the stored DBSheetdefinitions (default directory of assign DBsheet definitions and load/save DBSheet Defintions).
 *   `dbGetAll`**N**: command for retrieving all databases/schemas from the database can be entered (for (MS) SQL server this is "`sp_helpdb`" for Oracle its "`select username from sys.all_users`".
 *   `dbGetAllFieldName`**N**: If the result of above command has more than one column (like in sqlserver), you have to give the fieldname where the databases can be retrieved from.
-*   `ownerQualifier`**N**: default owner qualifier for table when loading DBSheet definitions, if table name is not fully qualified (legacy DBSheet definitions)
-*   `dbPwdSpec`**N**: Password entry specifier within DBSheetConnString, has to exist and be contained in the connection string if User (e.g. UID) is set in connection string...
+*   `ownerQualifier`**N**: default owner qualifier for table when loading DBSheet definitions, if table name is not fully qualified (legacy DBSheet definitions).
+*   `connIDPrefixDBtype`: Legacy definitions from the old DBAddin can be loaded as well, the Database is retrieved from the entry `connID`, this might be prefixed (e.g. by MSSQL), which can be removed by this setting.
 
 The entries DBisUserscheme and dbneedPwd are for Oracle databases where DBAddin has to switch to the scheme and therefore needs a password (Oracle has not been tested with the new DBAddin).
