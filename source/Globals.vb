@@ -658,65 +658,55 @@ Last:
     ''' <summary>"repairs" legacy functions from old VB6-COM Addin by removing "DBAddin.Functions." before function name</summary>
     ''' <param name="showResponse">in case this is called interactively, provide a response in case of no legacy functions there</param>
     Public Sub repairLegacyFunctions(Optional showResponse As Boolean = False)
-        Dim searchCell As Excel.Range
-        Dim foundLegacyWS As Collection = New Collection
+        Dim foundLegacyFunc As Boolean = False
         Dim xlcalcmode As Long = ExcelDnaUtil.Application.Calculation
         Dim actWB As Excel.Workbook = ExcelDnaUtil.Application.ActiveWorkbook
         If actWB Is Nothing Then
+            ' only log warning, no user message !
             LogWarn("no active workbook available !")
             Exit Sub
         End If
-        If getCustPropertyBool("DBFNoLegacyCheck", actWB) Then Exit Sub
         DBModifs.preventChangeWhileFetching = True ' WorksheetFunction.CountIf trigger Change event with target in argument 1, so make sure this doesn't change anything)
         Try
-            ' count nonempty cells in workbook...
+            ' count nonempty cells in workbook for time estimate...
             Dim cellcount As Long = 0
             For Each ws In actWB.Worksheets
                 cellcount += ExcelDnaUtil.Application.WorksheetFunction.CountIf(ws.Range("1:" + ws.Rows.Count.ToString()), "<>")
             Next
-            ' warn if above threshold
-            If cellcount > CLng(fetchSetting("maxCellCount", "300000")) Then
-                Dim retval As MsgBoxResult = QuestionMsg("This large workbook (" + cellcount.ToString() + " filled cells >" + fetchSetting("maxCellCount", "300000") + ") might take long to search for legacy functions, continue ?" + vbCrLf + "Cancel to disable legacy function checking for this workbook ...", MsgBoxStyle.YesNoCancel, "Legacy DBAddin functions")
-                If retval <> vbYes Then
-                    If retval = vbCancel Then
-                        Try
-                            actWB.CustomDocumentProperties.Add(Name:="DBFNoLegacyCheck", LinkToContent:=False, Type:=MsoDocProperties.msoPropertyTypeBoolean, Value:=True)
-                        Catch ex As Exception
-                            LogWarn("Error when adding NoLegacyCheck in workbook:" + ex.Message)
-                        End Try
-                    End If
-                    Exit Sub
+            ' if interactive, enforce replace...
+            If showResponse Then foundLegacyFunc = True
+            Dim timeEstInSec As Double = cellcount / 3500000
+            For Each DBname As Excel.Name In ExcelDnaUtil.Application.ActiveWorkbook.Names
+                If DBname.Name Like "*DBFsource*" Then
+                    ' some names might have lost their reference to the cell, so catch this here...
+                    Try : foundLegacyFunc = DBname.RefersToRange.Formula.ToString().Contains("DBAddin.Functions") : Catch ex As Exception : End Try
                 End If
-            End If
-            For Each ws In actWB.Worksheets
-                ' check whether legacy functions exist somewhere ...
-                ExcelDnaUtil.Application.StatusBar = "checking for legacy DB functions in active workbook (ESC to stop)"
-                searchCell = ws.Cells.Find(What:="DBAddin.Functions.", After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
-                If Not (searchCell Is Nothing) Then foundLegacyWS.Add(ws)
+                If foundLegacyFunc Then Exit For
             Next
-            If foundLegacyWS.Count > 0 Then
-                Dim retval As MsgBoxResult = QuestionMsg("Found legacy DBAddin functions in active workbook, should they be replaced with current addin functions (save workbook afterwards to persist) ?", MsgBoxStyle.OkCancel, "Legacy DBAddin functions")
+            Dim replacedFunctions As Boolean = False
+            If foundLegacyFunc Then
+                Dim retval As MsgBoxResult = QuestionMsg(fetchSetting("legacyFunctionMsg", IIf(showResponse, "Fix legacy DBAddin functions", "Found legacy DBAddin functions") + " in active workbook, should they be replaced with current addin functions (Save workbook afterwards to persist)? Estimated time for replace: ") + timeEstInSec.ToString("0.0") + " sec.", MsgBoxStyle.OkCancel, "Legacy DBAddin functions")
                 If retval = MsgBoxResult.Ok Then
                     ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual ' avoid recalculations during replace action
                     ExcelDnaUtil.Application.DisplayAlerts = False ' avoid warnings for sheet where "DBAddin.Functions." is not found
                     ' remove "DBAddin.Functions." in each sheet...
-                    For Each ws In foundLegacyWS
-                        ExcelDnaUtil.Application.StatusBar = "Replacing legacy DB functions in active workbook (ESC to stop)"
-                        ws.Cells.Replace(What:="DBAddin.Functions.", Replacement:="", LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, MatchCase:=False, SearchFormat:=False, ReplaceFormat:=False)
+                    For Each ws In actWB.Worksheets
+                        ExcelDnaUtil.Application.StatusBar = "Replacing legacy DB functions in active workbook, sheet '" + ws.Name + "'."
+                        If ws.Cells.Replace(What:="DBAddin.Functions.", Replacement:="", LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, MatchCase:=False, SearchFormat:=False, ReplaceFormat:=False) Then
+                            If Not replacedFunctions Then replacedFunctions = True
+                        End If
                     Next
+                    ExcelDnaUtil.Application.Calculation = xlcalcmode
+                    ' reset the cell find dialog....
+                    ExcelDnaUtil.Application.ActiveSheet.Cells.Find(What:="", After:=ExcelDnaUtil.Application.ActiveSheet.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
+                    ExcelDnaUtil.Application.DisplayAlerts = True
+                    ExcelDnaUtil.Application.StatusBar = False
                 End If
-            ElseIf showResponse Then
-                UserMsg("No legacy DBAddin functions found in active workbook.", "Legacy DBAddin functions", MsgBoxStyle.Exclamation)
+                If showResponse And Not replacedFunctions Then UserMsg("No legacy DBAddin functions found in active workbook", "Legacy DBAddin functions", MsgBoxStyle.Exclamation)
             End If
-            ' reset the cell find dialog....
-            ExcelDnaUtil.Application.ActiveSheet.Cells.Find(What:="", After:=ExcelDnaUtil.Application.ActiveSheet.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
         Catch ex As Exception
             UserMsg("Exception occured: " + ex.Message, "Legacy DBAddin functions")
         End Try
-        ExcelDnaUtil.Application.DisplayAlerts = True
-        ' only set this back if it was changed to manual as otherwise it would change the (else unchanged) workbook, forcing a confirmation for saving...
-        If ExcelDnaUtil.Application.Calculation <> xlcalcmode Then ExcelDnaUtil.Application.Calculation = xlcalcmode
-        ExcelDnaUtil.Application.StatusBar = False
         DBModifs.preventChangeWhileFetching = False
     End Sub
 
@@ -729,7 +719,11 @@ Last:
             For Each DBname As Excel.Name In ExcelDnaUtil.Application.ActiveWorkbook.Names
                 If DBname.Name Like "*DBFtarget*" Or DBname.Name Like "*DBFsource*" Then DBname.Visible = True
             Next
-            ExcelDnaUtil.Application.Dialogs(Excel.XlBuiltInDialog.xlDialogNameManager).Show()
+            Try
+                ExcelDnaUtil.Application.Dialogs(Excel.XlBuiltInDialog.xlDialogNameManager).Show()
+            Catch ex As Exception
+                Globals.UserMsg("The name manager dialog can't be displayed, maybe you are in the formula/cell editor?", "Name manager dialog display")
+            End Try
             ' with Shift remove hidden names
         ElseIf My.Computer.Keyboard.ShiftKeyDown Then
             Dim resultingPurges As String = ""

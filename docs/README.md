@@ -97,6 +97,7 @@ Other settings possible in DBAddin.xll.config (or DBAddinCentral.config):
     <add key="localUpdateFolder" value="" />
     <add key="localUpdateMessage" value="New version available in local update folder, start deployAddin.cmd to install it:" />
     <add key="DMLStatementsAllowed" value="True" />
+    <add key="legacyFunctionMsg" value="True" />
 ```
 
 Explanation:
@@ -123,6 +124,7 @@ Explanation:
 *   `localUpdateFolder`: For updating the DB-Addin Version, you can provide an alternative folder, where the deploy script and the files are maintained for other users.
 *   `localUpdateMessage`: For the alternative folder update, you can also provide an alternative message to display.
 *   `DMLStatementsAllowed`: Allows DML Statements in the Adhoc SQL Query Tool.
+*   `legacyFunctionMsg`: Alternative Message for replacing legacy functions (different language).
 
 To change the settings, there use the dropdown "settings", where you can modify the DBAddin.xll.config and the referred DBAddinCentral.config including XML validation. If you have multiple same named entries in your settings files, the last one is taken as the active setting.
 
