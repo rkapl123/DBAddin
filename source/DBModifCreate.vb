@@ -17,31 +17,36 @@ Public Class DBModifCreate
     ''' <param name="e"></param>
     Private Sub OK_Button_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles OK_Button.Click
         Dim NameValidationResult As String = ""
-        ' Check for valid range name, prepend "_" so we don't remove the existing name (need it later...)
+        ' Check for valid range name
         If Me.DBModifName.Text <> "" Then
-            ' Add doesn't work directly with ExcelDnaUtil.Application.ActiveWorkbook.Names (late binding), so create an object here...
-            Dim NamesList As Excel.Names = ExcelDnaUtil.Application.ActiveWorkbook.Names
-            Try
-                NamesList.Add(Name:="_" + Me.Tag + Me.DBModifName.Text, RefersTo:=ExcelDnaUtil.Application.ActiveCell)
-            Catch ex As Exception
-                NameValidationResult = ex.Message
-            End Try
-            Try : NamesList.Item("_" + Me.Tag + Me.DBModifName.Text).Delete() : Catch ex As Exception : End Try
+            Dim checkName As String = Me.Tag + Me.DBModifName.Text
+            If checkName.Length() > 255 Then
+                NameValidationResult = "more than 255 characters long (including " + Me.Tag + ") !"
+            ElseIf IsNumeric(Strings.Left(checkName, 1)) Then
+                NameValidationResult = "starts with a number !"
+            Else
+                For i As Integer = 0 To checkName.Length - 1
+                    If Not Char.IsLetterOrDigit(checkName.Chars(i)) And checkName.Chars(i) <> "_" Then
+                        NameValidationResult = "contains non-alphanumeric character: " + checkName.Chars(i).ToString() + " !"
+                        Exit For
+                    End If
+                Next
+            End If
         End If
         Dim primKeys As Integer = 0
-        ' check for requirements: 
+        ' besides valid range name, also check for requirements: 
         ' mandatory fields filled (visible Tablename, Primary keys And Database), NameValidation above OK, no Double invocation for execOnSave in DB Sequences And sequence parts and only one primary key for AutoInc Flag
-        ' Beware: All If/ElseIf branches have to contain an ErrorMsg because the dialog stays open in this case. Only the Else branch closes the dialog.
-        If Me.Tablename.Text = "" And Me.Tablename.Visible Then
-            Globals.UserMsg("Field Tablename is required, please fill in!", "DBModification Validation")
+        ' Beware: All If/ElseIf branches have to contain an validation error message, because the dialog stays open in this case. Only the Else branch closes the dialog.
+        If NameValidationResult <> "" Then
+            Globals.UserMsg("Invalid DBModifier name '" + Me.DBModifName.Text + "', Error: " + NameValidationResult, "DBModification Validation Error")
+        ElseIf Me.Tablename.Text = "" And Me.Tablename.Visible Then
+            Globals.UserMsg("Field Tablename is required, please fill in!", "DBModification Validation Error")
         ElseIf Me.PrimaryKeys.Visible AndAlso Not Integer.TryParse(Me.PrimaryKeys.Text, primKeys) Then
-            Globals.UserMsg("Field Primary Keys is required and has to be an integer number, please fill in accordingly!", "DBModification Validation")
+            Globals.UserMsg("Field Primary Keys is required and has to be an integer number, please fill in accordingly!", "DBModification Validation  Error")
         ElseIf Me.Database.Text = "" And Me.Database.Visible Then
-            Globals.UserMsg("Field Database is required, please fill in!", "DBModification Validation")
-        ElseIf NameValidationResult <> "" Then
-            Globals.UserMsg("Invalid " + Me.NameLabel.Text + ", Error: " + NameValidationResult, "DBModification Validation")
+            Globals.UserMsg("Field Database is required, please fill in!", "DBModification Validation Error")
         ElseIf Me.Tag = "DBMapper" AndAlso Me.AutoIncFlag.Checked AndAlso primKeys > 1 Then
-            Globals.UserMsg("Only one primary key is allowed when Auto Incrementing is enabled!", "DBModification Validation")
+            Globals.UserMsg("Only one primary key is allowed when Auto Incrementing is enabled!", "DBModification Validation Error")
         Else
             ' check for double invocation because of execOnSave both being set on current DB Modifier ...
             If Me.execOnSave.Checked And Globals.DBModifDefColl.ContainsKey("DBSeqnce") Then
@@ -77,6 +82,20 @@ Public Class DBModifCreate
                     Next
                     If Not Me.execOnSave.Checked Then Exit Sub
                 End If
+            End If
+            If Me.Tag = "DBSeqnce" Then
+                Dim TransactionOpened As Boolean = False
+                For i As Integer = 0 To Me.DBSeqenceDataGrid.Rows().Count - 2
+                    Dim definition() As String = Split(Me.DBSeqenceDataGrid.Rows(i).Cells(0).Value, ":")
+                    If (definition(0) = "DBBegin") Then
+                        TransactionOpened = True
+                    ElseIf (definition(0) = "DBCommitRollback") Then
+                        TransactionOpened = False
+                    End If
+                    If (TransactionOpened And Strings.Left(definition(0), 7) = "Refresh") Then
+                        Globals.UserMsg("You placed a " + definition(0) + " inside of a transaction, currently this might lead to deadlocks as DB functions use a different connection method (ADODB) than DB Modifiers (ADO.NET)." + vbCrLf + "If the DB function done in the refresh doesn't query any data being modified inside the transaction, you may ignore this warning.", "DBModification Validation", MsgBoxStyle.Exclamation)
+                    End If
+                Next
             End If
             Me.DialogResult = DialogResult.OK
             Me.Close()

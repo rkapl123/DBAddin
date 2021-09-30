@@ -718,9 +718,17 @@ Public Class DBMapper : Inherits DBModif
                     Globals.UserMsg("Field '" + fieldname + "' does not exist in Table '" + tableName + "' and is not in ignoreColumns, Error in sheet " + TargetRange.Parent.Name, "DBMapper Error")
                     GoTo cleanup
                 Else
-                    allColumnsStr(fieldColNum) = fieldname
-                    fieldColNum += 1
+                    ' only add if field was not already added by the LU correction below!
+                    If Not allColumnsStr.Contains(fieldname) Then
+                        allColumnsStr(fieldColNum) = fieldname
+                        fieldColNum += 1
+                    End If
                 End If
+            Else
+                ' if ignored and the column is a lookup then add the column without LU to preserve the order of columns !!!
+                fieldname = Left(fieldname, Len(fieldname) - 2) ' correct the LU to real fieldname
+                allColumnsStr(fieldColNum) = fieldname
+                fieldColNum += 1
             End If
             colNum += 1
         Loop Until colNum > TargetRange.Columns.Count
@@ -777,6 +785,7 @@ Public Class DBMapper : Inherits DBModif
         Dim primKeyColumns(primKeysCount - 1) As DataColumn
         For i As Integer = 0 To UBound(primKeyColumnsStr)
             primKeyColumns(i) = ds.Tables(0).Columns(primKeyColumnsStr(i))
+
             ' for avoidFill mode (no uploading of whole table) set up params for parameterized query from primary keys
             If avoidFill Then
                 Dim param As Common.DbParameter
@@ -1470,6 +1479,8 @@ Public Module DBModifs
     End Sub
 
     ''' <summary>creates a DBModif at the current active cell or edits an existing one defined in targetDefName (after being called in defined range or from ribbon + Ctrl + Shift)</summary>
+    ''' <param name="createdDBModifType"></param>
+    ''' <param name="targetDefName"></param>
     Public Sub createDBModif(createdDBModifType As String, Optional targetDefName As String = "")
         ' clipboard helper for legacy definitions:
         ' if saveRangeToDB<Single> macro calls were copied into clipboard, 1st parameter (datarange) removed (empty), connid moved to 2nd place as database name (remove MSSQL)
@@ -1651,6 +1662,7 @@ Public Module DBModifs
                 Exit Sub
             End If
 
+            Dim NamesList As Excel.Names = ExcelDnaUtil.Application.ActiveWorkbook.Names
             ' only for DBMapper or DBAction: change or add target range name
             If createdDBModifType <> "DBSeqnce" Then
                 Dim targetRange As Excel.Range
@@ -1660,15 +1672,21 @@ Public Module DBModifs
                     targetRange = existingDBModif.getTargetRange()
                 End If
 
-                Dim NamesList As Excel.Names = ExcelDnaUtil.Application.ActiveWorkbook.Names
                 If existingDefName = "" Then
+                    Dim checkExists As Excel.Name = Nothing
+                    Try : checkExists = NamesList.Item(createdDBModifType + .DBModifName.Text) : Catch ex As Exception : End Try
+                    If Not IsNothing(checkExists) Then
+                        Globals.UserMsg("DBModifier range name '" + createdDBModifType + .DBModifName.Text + "' already exists!", "DBModifier Creation Error")
+                        Exit Sub
+                    End If
                     Try
                         NamesList.Add(Name:=createdDBModifType + .DBModifName.Text, RefersTo:=targetRange)
                     Catch ex As Exception
-                        Globals.UserMsg("Error when assigning name '" + createdDBModifType + .DBModifName.Text + "' to active cell: " + ex.Message, "DBModifier Creation Error")
+                        Globals.UserMsg("Error when assigning range name '" + createdDBModifType + .DBModifName.Text + "' to active cell: " + ex.Message, "DBModifier Creation Error")
                         Exit Sub
                     End Try
                 Else
+                    ' rename named range...
                     NamesList.Item(existingDefName).Name = createdDBModifType + .DBModifName.Text
                 End If
             End If
@@ -1680,9 +1698,20 @@ Public Module DBModifs
                 CustomXmlParts = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
             End If
 
+            ' warning shown, if a new created definition already exists with the same name!
+            If existingDefName = "" And Not IsNothing(CustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:" + createdDBModifType + "[@Name='" + .DBModifName.Text + "']")) Then
+                If Globals.QuestionMsg("There is already a " + createdDBModifType + " definition named '" + .DBModifName.Text + "' in the DBModif Definitions of the current workbook, this will cause error messages ! Discard entered definition?",, "DBModifier Creation Error") = MsgBoxResult.Ok Then
+                    NamesList.Item(createdDBModifType + .DBModifName.Text).Delete()
+                    Exit Sub
+                End If
+            End If
+
             ' remove old node in case of renaming DBModifier
             ' Elements have names of DBModif types, attribute Name is given name (<DBMapper Name=existingDefName>)
-            If Not IsNothing(CustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:" + createdDBModifType + "[@Name='" + Replace(existingDefName, createdDBModifType, "") + "']")) Then CustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:" + createdDBModifType + "[@Name='" + Replace(existingDefName, createdDBModifType, "") + "']").Delete
+            If Not IsNothing(CustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:" + createdDBModifType + "[@Name='" + Replace(existingDefName, createdDBModifType, "") + "']")) Then
+                CustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:" + createdDBModifType + "[@Name='" + Replace(existingDefName, createdDBModifType, "") + "']").Delete
+            End If
+
             ' NamespaceURI:="DBModifDef" is required to avoid adding a xmlns attribute to each element.
             CustomXmlParts(1).SelectSingleNode("/ns0:root").AppendChildNode(createdDBModifType, NamespaceURI:="DBModifDef")
             ' new appended elements are last, get it to append further child elements
@@ -1726,6 +1755,7 @@ Public Module DBModifs
             If createdDBModifType = "DBMapper" Then
                 DirectCast(Globals.DBModifDefColl("DBMapper").Item(createdDBModifType + .DBModifName.Text), DBMapper).extendDataRange()
             End If
+
         End With
     End Sub
 
