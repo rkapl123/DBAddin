@@ -33,7 +33,8 @@ Public NotInheritable Class AboutBox
         Me.LabelCompanyName.Text = "Information: " + My.Application.Info.CompanyName
         Me.TextBoxDescription.Text = My.Application.Info.Description
         dontChangeEventLevels = True
-        Me.EventLevels.SelectedItem = Globals.EventLevelSelected
+        Dim theEventTypeFilter As EventTypeFilter = Globals.theLogDisplaySource.Listeners(0).Filter
+        Me.EventLevels.SelectedItem = theEventTypeFilter.EventType.ToString()
         dontChangeEventLevels = False
         checkForUpdate(False)
     End Sub
@@ -70,22 +71,21 @@ Public NotInheritable Class AboutBox
     ''' <param name="e"></param>
     Private Sub EventLevels_SelectedValueChanged(sender As Object, e As EventArgs) Handles EventLevels.SelectedValueChanged
         If dontChangeEventLevels Then Exit Sub
+        Dim theEventTypeFilter As EventTypeFilter = New EventTypeFilter(SourceLevels.Off)
         Select Case EventLevels.SelectedItem
             Case "Information"
-                Globals.theLogListener.Filter = New EventTypeFilter(SourceLevels.Information)
+                theEventTypeFilter = New EventTypeFilter(SourceLevels.Information)
             Case "Warning"
-                Globals.theLogListener.Filter = New EventTypeFilter(SourceLevels.Warning)
+                theEventTypeFilter = New EventTypeFilter(SourceLevels.Warning)
             Case "Error"
-                Globals.theLogListener.Filter = New EventTypeFilter(SourceLevels.Error)
+                theEventTypeFilter = New EventTypeFilter(SourceLevels.Error)
             Case "Verbose"
-                Globals.theLogListener.Filter = New EventTypeFilter(SourceLevels.Verbose)
+                theEventTypeFilter = New EventTypeFilter(SourceLevels.Verbose)
             Case "All"
-                Globals.theLogListener.Filter = New EventTypeFilter(SourceLevels.All)
+                theEventTypeFilter = New EventTypeFilter(SourceLevels.All)
         End Select
-        Trace.Refresh()
-        ' by refreshing the Trace with a different filter, the LogListener gets lost sometimes...
-        If Not Trace.Listeners.Contains(Globals.theLogListener) Then Trace.Listeners.Add(Globals.theLogListener)
-        Globals.EventLevelSelected = EventLevels.SelectedItem
+        Globals.theLogDisplaySource.Listeners(0).Filter = theEventTypeFilter
+        Globals.theLogFileSource.Listeners("FileLogger").Filter = theEventTypeFilter
     End Sub
 
     Private Sub CheckForUpdates_Click(sender As Object, e As EventArgs) Handles CheckForUpdates.Click
@@ -113,7 +113,7 @@ Public NotInheritable Class AboutBox
         Const AddinName = "DBAddin-"
         Const updateFilenameZip = "downloadedVersion.zip"
         Dim localUpdateFolder As String = Globals.fetchSetting("localUpdateFolder", "")
-        Dim localUpdateMessage As String = Globals.fetchSetting("localUpdateMessage", "A new version is available in the local update folder, after quitting Excel (is done next) start deployAddin.cmd to install it.")
+        Dim localUpdateMessage As String = Globals.fetchSetting("localUpdateMessage", "A new version is available in the local update folder, quit Excel and open explorer to start deployAddin.cmd ?")
         Dim updatesMajorVersion As String = Globals.fetchSetting("updatesMajorVersion", "1.0.0.")
         Dim updatesDownloadFolder As String = Globals.fetchSetting("updatesDownloadFolder", "C:\temp\")
         Dim updatesUrlBase As String = Globals.fetchSetting("updatesUrlBase", "https://github.com/rkapl123/DBAddin/archive/refs/tags/")

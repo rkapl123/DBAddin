@@ -177,7 +177,7 @@ Partial Class AboutBox
         'EventLevels
         '
         Me.EventLevels.FormattingEnabled = True
-        Me.EventLevels.Items.AddRange(New Object() {"Error", "Warning", "Information", "Verbose", "All"})
+        Me.EventLevels.Items.AddRange(New Object() {"Off", "Critical", "Error", "Warning", "Information", "Verbose", "All"})
         Me.EventLevels.Location = New System.Drawing.Point(326, 225)
         Me.EventLevels.Name = "EventLevels"
         Me.EventLevels.Size = New System.Drawing.Size(97, 21)

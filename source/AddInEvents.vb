@@ -26,6 +26,16 @@ Public Class AddInEvents
     Shared WithEvents cb4 As Forms.CommandButton
     ''' <summary>CommandButton that can be inserted on a worksheet (name property being the same as the respective target range (for DBMapper/DBAction) or DBSeqnce Name)</summary>
     Shared WithEvents cb5 As Forms.CommandButton
+    ''' <summary>CommandButton that can be inserted on a worksheet (name property being the same as the respective target range (for DBMapper/DBAction) or DBSeqnce Name)</summary>
+    Shared WithEvents cb6 As Forms.CommandButton
+    ''' <summary>CommandButton that can be inserted on a worksheet (name property being the same as the respective target range (for DBMapper/DBAction) or DBSeqnce Name)</summary>
+    Shared WithEvents cb7 As Forms.CommandButton
+    ''' <summary>CommandButton that can be inserted on a worksheet (name property being the same as the respective target range (for DBMapper/DBAction) or DBSeqnce Name)</summary>
+    Shared WithEvents cb8 As Forms.CommandButton
+    ''' <summary>CommandButton that can be inserted on a worksheet (name property being the same as the respective target range (for DBMapper/DBAction) or DBSeqnce Name)</summary>
+    Shared WithEvents cb9 As Forms.CommandButton
+    ''' <summary>CommandButton that can be inserted on a worksheet (name property being the same as the respective target range (for DBMapper/DBAction) or DBSeqnce Name)</summary>
+    Shared WithEvents cb0 As Forms.CommandButton
 
     ''' <summary>connect to Excel when opening Addin</summary>
     Public Sub AutoOpen() Implements IExcelAddIn.AutoOpen
@@ -38,23 +48,21 @@ Public Class AddInEvents
                 Globals.UserMsg("Attention: legacy DBAddin (DBAddin.Functions) still active, this might lead to unexpected results!")
             End If
         Catch ex As Exception : End Try
-        ' for finding out what happened...
-        Trace.Listeners.Add(New ExcelDna.Logging.LogDisplayTraceListener())
+        ' for finding out what happened attach internal trace to ExcelDNA LogDisplay
+        Globals.theLogDisplaySource = New TraceSource("ExcelDna.Integration")
+        ' and also define a LogSource for DBAddin itself for writing text log messages
+        Globals.theLogFileSource = New TraceSource("DBAddin")
+
         ' IntelliSense needed for DB- and supporting functions
         ExcelDna.IntelliSense.IntelliSenseServer.Install()
+
         ' Ribbon and context menu setup
         Globals.theMenuHandler = New MenuHandler
         Globals.LogInfo("initialize configuration settings")
         Functions.queryCache = New Dictionary(Of String, String)
         Functions.StatusCollection = New Dictionary(Of String, ContainedStatusMsg)
         Globals.DBModifDefColl = New Dictionary(Of String, Dictionary(Of String, DBModif))
-        ' get the ExcelDna LogDisplayTraceListener for filtering log messages by level in about box
-        For Each srchdListener As Object In Trace.Listeners
-            If srchdListener.ToString() = "ExcelDna.Logging.LogDisplayTraceListener" Then
-                Globals.theLogListener = srchdListener
-                Exit For
-            End If
-        Next
+
         ' initialize settings and get the default environment
         Globals.initSettings()
         If Globals.environdefs.Length = 0 Then
@@ -275,13 +283,16 @@ done:
     Private Sub Application_WorkbookActivate(Wb As Excel.Workbook) Handles Application.WorkbookActivate
         ' avoid when being activated by DBFuncsAction
         If Not DBModifs.preventChangeWhileFetching Then
-            ' in case AutoOpen hasn't been triggered (e.g. when started via IE)...
+            ' in case AutoOpen hasn't been triggered (e.g. when Excel was started via Internet Explorer)...
             If Globals.DBModifDefColl Is Nothing Then
                 Globals.DBModifDefColl = New Dictionary(Of String, Dictionary(Of String, DBModif))
             End If
+            Globals.LogInfo("getting DBModif Definitions on Workbook Activate")
             DBModifs.getDBModifDefinitions()
             ' unfortunately, Excel doesn't fire SheetActivate when opening workbooks, so do that here...
+            Globals.LogInfo("assign commandbutton click handlers on Workbook Activate")
             assignHandler(Wb.ActiveSheet)
+            Globals.LogInfo("finished actions on Workbook Activate")
         End If
     End Sub
 
@@ -300,6 +311,21 @@ done:
     End Sub
     Private Shared Sub cb5_Click() Handles cb5.Click
         cbClick(cb5.Name)
+    End Sub
+    Private Shared Sub cb6_Click() Handles cb6.Click
+        cbClick(cb6.Name)
+    End Sub
+    Private Shared Sub cb7_Click() Handles cb7.Click
+        cbClick(cb7.Name)
+    End Sub
+    Private Shared Sub cb8_Click() Handles cb8.Click
+        cbClick(cb8.Name)
+    End Sub
+    Private Shared Sub cb9_Click() Handles cb9.Click
+        cbClick(cb9.Name)
+    End Sub
+    Private Shared Sub cb0_Click() Handles cb0.Click
+        cbClick(cb0.Name)
     End Sub
 
     ''' <summary>common click handler for all commandbuttons</summary>
@@ -332,16 +358,18 @@ done:
         End If
     End Sub
 
-    ''' <summary>assign click handlers to commandbuttons in passed sheet Sh, maximum 5 buttons are supported</summary>
-    ''' <param name="Sh"></param>
+    ''' <summary>assign click handlers to commandbuttons in passed sheet Sh, maximum 10 buttons are supported</summary>
+    ''' <param name="Sh">sheet where commandbuttons are located</param>
     Public Shared Function assignHandler(Sh As Object) As Boolean
-        cb1 = Nothing : cb2 = Nothing : cb3 = Nothing : cb4 = Nothing : cb5 = Nothing
+        cb1 = Nothing : cb2 = Nothing : cb3 = Nothing : cb4 = Nothing : cb5 = Nothing : cb6 = Nothing : cb7 = Nothing : cb8 = Nothing : cb9 = Nothing : cb0 = Nothing
         assignHandler = True
+        Dim collShpNames As String = ""
         For Each shp As Excel.Shape In Sh.Shapes
             ' Associate clickhandler with all click events of the CommandButtons.
             Dim ctrlName As String
             Try : ctrlName = Sh.OLEObjects(shp.Name).Object.Name : Catch ex As Exception : ctrlName = "" : End Try
             If Left(ctrlName, 8) = "DBMapper" Or Left(ctrlName, 8) = "DBAction" Or Left(ctrlName, 8) = "DBSeqnce" Then
+                collShpNames += IIf(collShpNames <> "", ",", "") + shp.Name
                 If cb1 Is Nothing Then
                     cb1 = Sh.OLEObjects(shp.Name).Object
                 ElseIf cb2 Is Nothing Then
@@ -352,8 +380,18 @@ done:
                     cb4 = Sh.OLEObjects(shp.Name).Object
                 ElseIf cb5 Is Nothing Then
                     cb5 = Sh.OLEObjects(shp.Name).Object
+                ElseIf cb6 Is Nothing Then
+                    cb6 = Sh.OLEObjects(shp.Name).Object
+                ElseIf cb7 Is Nothing Then
+                    cb7 = Sh.OLEObjects(shp.Name).Object
+                ElseIf cb8 Is Nothing Then
+                    cb8 = Sh.OLEObjects(shp.Name).Object
+                ElseIf cb9 Is Nothing Then
+                    cb9 = Sh.OLEObjects(shp.Name).Object
+                ElseIf cb0 Is Nothing Then
+                    cb0 = Sh.OLEObjects(shp.Name).Object
                 Else
-                    Globals.UserMsg("only max. of five DBModifier Buttons allowed on a Worksheet, currently using " + cb1.Name + "," + cb2.Name + "," + cb3.Name + "," + cb4.Name + " and " + cb5.Name + " !")
+                    Globals.UserMsg("Only max. of 10 DBModifier Buttons are allowed on a Worksheet, currently in use: " + collShpNames + " !")
                     assignHandler = False
                     Exit For
                 End If
@@ -366,9 +404,8 @@ done:
     Private Sub Application_SheetActivate(Sh As Object) Handles Application.SheetActivate
         ' avoid when being activated by DBFuncsAction 
         If Not DBModifs.preventChangeWhileFetching Then
-            'DBModifs.getDBModifDefinitions()
             ' only when needed assign button handler for this sheet ...
-            If Globals.DBModifDefColl.Count > 0 Then assignHandler(Sh)
+            If Not IsNothing(Globals.DBModifDefColl) AndAlso Globals.DBModifDefColl.Count > 0 Then assignHandler(Sh)
         End If
     End Sub
 
@@ -376,7 +413,7 @@ done:
     ''' <param name="Wb"></param>
     ''' <param name="Cancel"></param>
     Private Sub Application_WorkbookBeforeClose(Wb As Workbook, ByRef Cancel As Boolean) Handles Application.WorkbookBeforeClose
-        If Globals.DBModifDefColl.Count > 0 Then
+        If Not IsNothing(Globals.DBModifDefColl) AndAlso Globals.DBModifDefColl.Count > 0 Then
             Globals.DBModifDefColl.Clear()
             Globals.theRibbon.Invalidate()
         End If
@@ -386,7 +423,7 @@ done:
     ''' <param name="Sh"></param>
     ''' <param name="Target"></param>
     Private Sub Application_SheetChange(Sh As Object, Target As Range) Handles Application.SheetChange
-        ' avoid entering into check or doCUDMarks if not table, whole row/column modified, no DBMapper and prevention while fetching (on refresh) being set
+        ' avoid entering into insert/update check resp. doCUDMarks if not listobject (data table), whole row/column modified, no DBMapper present and prevention while fetching (on refresh) being set
         If Not IsNothing(Target.ListObject) AndAlso Not Target.Columns.Count = Sh.Columns.Count AndAlso Not Target.Rows.Count = Sh.Rows.Count AndAlso Globals.DBModifDefColl.ContainsKey("DBMapper") AndAlso Not DBModifs.preventChangeWhileFetching Then
             Dim targetName As String = DBModifs.getDBModifNameFromRange(Target)
             If Left(targetName, 8) = "DBMapper" Then
@@ -404,8 +441,8 @@ done:
     ''' <param name="Target"></param>
     ''' <param name="Cancel"></param>
     Private Sub Application_SheetBeforeRightClick(Sh As Object, Target As Range, ByRef Cancel As Boolean) Handles Application.SheetBeforeRightClick
-        ' check if we are in a DBMapper, if not then leave...
-        If Globals.DBModifDefColl.ContainsKey("DBMapper") Then
+        ' check if we are in a CUD DBMapper, if not then leave...
+        If Not IsNothing(Target.ListObject) AndAlso Not IsNothing(Globals.DBModifDefColl) AndAlso Globals.DBModifDefColl.ContainsKey("DBMapper") Then
             Dim targetName As String = getDBModifNameFromRange(Target)
             If Left(targetName, 8) <> "DBMapper" Then Exit Sub
         Else

@@ -1783,15 +1783,15 @@ Public Module DBModifs
                         If DBModiftype = "DBMapper" Or DBModiftype = "DBAction" Then
                             For Each rangename As Excel.Name In ExcelDnaUtil.Application.ActiveWorkbook.Names
                                 Dim rangenameName As String = Replace(rangename.Name, rangename.Parent.Name + "!", "")
-                                If rangenameName = nodeName And InStr(rangename.RefersTo, "#REF!") > 0 Then
-                                    Globals.UserMsg(DBModiftype + " definitions range [" + rangename.Parent.Name + "]" + rangename.Name + " contains #REF!", "DBModifier Definitions Error")
-                                    Exit For
-                                ElseIf rangenameName = nodeName Then
-                                    ' might fail...
+                                If rangenameName = nodeName Then
+                                    If InStr(rangename.RefersTo, "#REF!") > 0 Then
+                                        Globals.UserMsg(DBModiftype + " definitions range " + rangename.Name + " contains #REF!", "DBModifier Definitions Error")
+                                        Exit For
+                                    End If
+                                    ' might fail if target name relates to an invalid (offset) formula ...
                                     Try
                                         targetRange = rangename.RefersToRange
                                     Catch ex As Exception
-                                        ' if target name relates to an invalid (offset) formula, referstorange fails  ...
                                         If InStr(rangename.RefersTo, "OFFSET(") > 0 Then
                                             Globals.UserMsg("Offset formula that '" + nodeName + "' refers to, did not return a valid range." + vbCrLf + "Please check the offset formula to return a valid range !", "DBModifier Definitions Error")
                                             ExcelDnaUtil.Application.Dialogs(Excel.XlBuiltInDialog.xlDialogNameManager).Show()

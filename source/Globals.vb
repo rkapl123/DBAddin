@@ -18,16 +18,17 @@ Public Module Globals
     Public environdefs As String()
     ''' <summary>DBModif definition collections of DBmodif types (key of top level dictionary) with values beinig collections of DBModifierNames (key of contained dictionaries) and DBModifiers (value of contained dictionaries))</summary>
     Public DBModifDefColl As Dictionary(Of String, Dictionary(Of String, DBModif))
-    ''' <summary>the selected event level in the About box</summary>
-    Public EventLevelSelected As String
-    ''' <summary>the log listener</summary>
-    Public theLogListener As TraceListener
+
     ''' <summary>for DBMapper invocations by execDBModif, this is set to true, avoiding MsgBox</summary>
     Public nonInteractive As Boolean = False
     ''' <summary>collect non interactive error messages here</summary>
     Public nonInteractiveErrMsgs As String
     ''' <summary>set to true if warning was issued, this flag indicates that the log button should get an exclamation sign</summary>
     Public WarningIssued As Boolean
+    ''' <summary>the Textfile log source</summary>
+    Public theLogFileSource As TraceSource
+    ''' <summary>the LogDisplay (Diagnostic Display) log source</summary>
+    Public theLogDisplaySource As TraceSource
 
     ' Global settings
     ''' <summary>Debug the Addin: write trace messages</summary>
@@ -133,22 +134,29 @@ Public Module Globals
     ''' <param name="Message">Message to be logged</param>
     ''' <param name="eEventType">event type: info, warning, error</param>
     ''' <param name="caller">reflection based caller information: module.method</param>
-    Private Sub WriteToLog(Message As String, eEventType As EventLogEntryType, caller As String)
+    Private Sub WriteToLog(Message As String, eEventType As TraceEventType, caller As String)
         ' collect errors and warnings for returning messages in executeDBModif
-        If eEventType = EventLogEntryType.Error Or eEventType = EventLogEntryType.Warning Then nonInteractiveErrMsgs += caller + ":" + Message + vbCrLf
+        If eEventType = TraceEventType.Error Or eEventType = TraceEventType.Warning Then nonInteractiveErrMsgs += caller + ":" + Message + vbCrLf
+
+        Dim timestamp As Int32 = DateAndTime.Now().Month * 100000000 + DateAndTime.Now().Day * 1000000 + DateAndTime.Now().Hour * 10000 + DateAndTime.Now().Minute * 100 + DateAndTime.Now().Second
         If nonInteractive Then
-            Trace.TraceInformation("Noninteractive: {0}: {1}", caller, Message)
+            theLogDisplaySource.TraceEvent(TraceEventType.Information, timestamp, "Noninteractive: {0}: {1}", caller, Message)
+            theLogFileSource.TraceEvent(TraceEventType.Information, timestamp, "Noninteractive: {0}: {1}", caller, Message)
         Else
             Select Case eEventType
-                Case EventLogEntryType.Information
-                    Trace.TraceInformation("{0}: {1}", caller, Message)
-                Case EventLogEntryType.Warning
-                    Trace.TraceWarning("{0}: {1}", caller, Message)
+                Case TraceEventType.Information
+                    theLogDisplaySource.TraceEvent(TraceEventType.Information, timestamp, "{0}: {1}", caller, Message)
+                    theLogFileSource.TraceEvent(TraceEventType.Information, timestamp, "{0}: {1}", caller, Message)
+                Case TraceEventType.Warning
+                    theLogDisplaySource.TraceEvent(TraceEventType.Warning, timestamp, "{0}: {1}", caller, Message)
+                    theLogFileSource.TraceEvent(TraceEventType.Warning, timestamp, "{0}: {1}", caller, Message)
                     WarningIssued = True
                     ' at Addin Start ribbon has not been loaded so avoid call to it here..
                     If theRibbon IsNot Nothing Then theRibbon.InvalidateControl("showLog")
-                Case EventLogEntryType.Error
-                    Trace.TraceError("{0}: {1}", caller, Message)
+                Case TraceEventType.Error
+                    theLogDisplaySource.TraceEvent(TraceEventType.Error, timestamp, "{0}: {1}", caller, Message)
+                    theLogFileSource.TraceEvent(TraceEventType.Error, timestamp, "{0}: {1}", caller, Message)
+                    If theRibbon IsNot Nothing Then theRibbon.InvalidateControl("showLog")
             End Select
         End If
     End Sub
@@ -158,7 +166,7 @@ Public Module Globals
     Public Sub LogError(LogMessage As String)
         Dim theMethod As Object = (New System.Diagnostics.StackTrace).GetFrame(1).GetMethod
         Dim caller As String = theMethod.ReflectedType.FullName + "." + theMethod.Name
-        WriteToLog(LogMessage, EventLogEntryType.Error, caller)
+        WriteToLog(LogMessage, TraceEventType.Error, caller)
     End Sub
 
     ''' <summary>Logs warning messages</summary>
@@ -166,7 +174,7 @@ Public Module Globals
     Public Sub LogWarn(LogMessage As String)
         Dim theMethod As Object = (New System.Diagnostics.StackTrace).GetFrame(1).GetMethod
         Dim caller As String = theMethod.ReflectedType.FullName + "." + theMethod.Name
-        WriteToLog(LogMessage, EventLogEntryType.Warning, caller)
+        WriteToLog(LogMessage, TraceEventType.Warning, caller)
     End Sub
 
     ''' <summary>Logs informational messages</summary>
@@ -175,7 +183,7 @@ Public Module Globals
         If DebugAddin Then
             Dim theMethod As Object = (New System.Diagnostics.StackTrace).GetFrame(1).GetMethod
             Dim caller As String = theMethod.ReflectedType.FullName + "." + theMethod.Name
-            WriteToLog(LogMessage, EventLogEntryType.Information, caller)
+            WriteToLog(LogMessage, TraceEventType.Information, caller)
         End If
     End Sub
 
@@ -186,7 +194,7 @@ Public Module Globals
     Public Sub UserMsg(LogMessage As String, Optional errTitle As String = "DBAddin Error", Optional msgboxIcon As MsgBoxStyle = MsgBoxStyle.Critical)
         Dim theMethod As Object = (New System.Diagnostics.StackTrace).GetFrame(1).GetMethod
         Dim caller As String = theMethod.ReflectedType.FullName + "." + theMethod.Name
-        WriteToLog(LogMessage, If(msgboxIcon = MsgBoxStyle.Critical Or msgboxIcon = MsgBoxStyle.Exclamation, EventLogEntryType.Warning, EventLogEntryType.Information), caller) ' to avoid popup of trace log in nonInteractive mode...
+        WriteToLog(LogMessage, If(msgboxIcon = MsgBoxStyle.Critical Or msgboxIcon = MsgBoxStyle.Exclamation, TraceEventType.Warning, TraceEventType.Information), caller) ' to avoid popup of trace log in nonInteractive mode...
         If Not nonInteractive Then
             MsgBox(LogMessage, msgboxIcon + MsgBoxStyle.OkOnly, errTitle)
             ' avoid activation of ribbon in AutoOpen as this throws an exception (ribbon is not assigned until AutoOpen has finished)
@@ -203,7 +211,7 @@ Public Module Globals
     Public Function QuestionMsg(theMessage As String, Optional questionType As MsgBoxStyle = MsgBoxStyle.OkCancel, Optional questionTitle As String = "DBAddin Question", Optional msgboxIcon As MsgBoxStyle = MsgBoxStyle.Question) As MsgBoxResult
         Dim theMethod As Object = (New System.Diagnostics.StackTrace).GetFrame(1).GetMethod
         Dim caller As String = theMethod.ReflectedType.FullName + "." + theMethod.Name
-        WriteToLog(theMessage, If(msgboxIcon = MsgBoxStyle.Critical Or msgboxIcon = MsgBoxStyle.Exclamation, EventLogEntryType.Warning, EventLogEntryType.Information), caller) ' to avoid popup of trace log
+        WriteToLog(theMessage, If(msgboxIcon = MsgBoxStyle.Critical Or msgboxIcon = MsgBoxStyle.Exclamation, TraceEventType.Warning, TraceEventType.Information), caller) ' to avoid popup of trace log
         If nonInteractive Then
             If questionType = MsgBoxStyle.OkCancel Then Return MsgBoxResult.Cancel
             If questionType = MsgBoxStyle.YesNo Then Return MsgBoxResult.No
@@ -713,7 +721,7 @@ Last:
     ''' <summary>maintenance procedure to purge names used for dbfunctions from workbook, or unhide DB names</summary>
     Public Sub purgeNames()
         ' with Ctrl unhide all DB names and show Name Manager...
-        If My.Computer.Keyboard.CtrlKeyDown Then
+        If My.Computer.Keyboard.CtrlKeyDown And Not My.Computer.Keyboard.ShiftKeyDown Then
             Dim retval As MsgBoxResult = QuestionMsg("Unhiding all hidden DB function names, continue (refreshing will hide them again)?", MsgBoxStyle.OkCancel, "Unhide names")
             If retval = vbCancel Then Exit Sub
             For Each DBname As Excel.Name In ExcelDnaUtil.Application.ActiveWorkbook.Names
@@ -725,7 +733,7 @@ Last:
                 Globals.UserMsg("The name manager dialog can't be displayed, maybe you are in the formula/cell editor?", "Name manager dialog display")
             End Try
             ' with Shift remove hidden names
-        ElseIf My.Computer.Keyboard.ShiftKeyDown Then
+        ElseIf My.Computer.Keyboard.ShiftKeyDown And Not My.Computer.Keyboard.CtrlKeyDown Then
             Dim resultingPurges As String = ""
             Dim retval As MsgBoxResult = QuestionMsg("Purging hidden names, should ExternalData names (from Queries) also be purged?", MsgBoxStyle.YesNoCancel, "Purge names")
             If retval = vbCancel Then Exit Sub
@@ -747,14 +755,64 @@ Last:
                     End If
                 Next
                 If resultingPurges = "" Then
-                    UserMsg("nothing purged...", "purge Names", MsgBoxStyle.Exclamation)
+                    UserMsg("nothing purged...", "purge Names", MsgBoxStyle.Information)
                 Else
-                    UserMsg("removed " + resultingPurges, "purge Names", MsgBoxStyle.Exclamation)
+                    UserMsg("removed " + resultingPurges, "purge Names", MsgBoxStyle.Information)
                 End If
             Catch ex As Exception
                 UserMsg("Exception: " + ex.Message, "purge Names")
             End Try
             ExcelDnaUtil.Application.Calculation = calcMode
+        ElseIf My.Computer.Keyboard.ShiftKeyDown And My.Computer.Keyboard.CtrlKeyDown Then
+            ExcelDnaUtil.Application.Dialogs(Excel.XlBuiltInDialog.xlDialogNameManager).Show()
+        Else
+            Dim NamesList As Excel.Names = ExcelDnaUtil.Application.ActiveWorkbook.Names
+            Dim collectedErrors As String = ""
+            For Each DBname As Excel.Name In NamesList
+                Dim checkExists As Excel.Name = Nothing
+                If DBname.Name Like "*DBFtarget*" Then
+                    Dim replaceName = "DBFtarget"
+                    If DBname.Name Like "*DBFtargetF*" Then replaceName = "DBFtargetF"
+                    Try : checkExists = NamesList.Item(Replace(DBname.Name, replaceName, "DBFsource")) : Catch ex As Exception : End Try
+                    If IsNothing(checkExists) Then
+                        collectedErrors += DBname.Name + "' doesn't have a corresponding DBFsource name" + vbCrLf
+                    End If
+                    If InStr(DBname.RefersTo, "#REF!") > 0 Then
+                        collectedErrors += DBname.Name + "' contains #REF!" + vbCrLf
+                    End If
+                    Dim checkRange As Excel.Range
+                    ' might fail if target name relates to an invalid (offset) formula ...
+                    Try
+                        checkRange = DBname.RefersToRange
+                    Catch ex As Exception
+                        If InStr(DBname.RefersTo, "OFFSET(") > 0 Then
+                            collectedErrors += "Offset formula that '" + DBname.Name + "' refers to, did not return a valid range" + vbCrLf
+                        Else
+                            collectedErrors += DBname.Name + "' RefersToRange resulted in Exception " + ex.Message + vbCrLf
+                        End If
+                    End Try
+                    If DBname.Visible Then
+                        collectedErrors += DBname.Name + "' is visible" + vbCrLf
+                    End If
+                End If
+                If DBname.Name Like "*DBFsource*" Then
+                    Try : checkExists = NamesList.Item(Replace(DBname.Name, "DBFsource", "DBFtarget")) : Catch ex As Exception : End Try
+                    If IsNothing(checkExists) Then
+                        collectedErrors += DBname.Name + "' doesn't have a corresponding DBFtarget name" + vbCrLf
+                    End If
+                    If InStr(DBname.RefersTo, "#REF!") > 0 Then
+                        collectedErrors += DBname.Name + "' contains #REF!" + vbCrLf
+                    End If
+                    If DBname.Visible Then
+                        collectedErrors += DBname.Name + "' is visible" + vbCrLf
+                    End If
+                End If
+            Next
+            If collectedErrors = "" Then
+                Globals.UserMsg("No Problems detected.", "DBfunction check Error", MsgBoxStyle.Information)
+            Else
+                Globals.UserMsg(collectedErrors, "DBfunction check Error")
+            End If
         End If
     End Sub
 
