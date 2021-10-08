@@ -338,16 +338,45 @@ Public Class MenuHandler
         End If
     End Sub
 
+    Private WithEvents ctMenuStrip As Windows.Forms.ContextMenuStrip
+
     ''' <summary>show DBModif definitions edit box</summary>
     ''' <param name="control"></param>
     Sub showDBModifEdit(control As CustomUI.IRibbonControl)
         ' only show dialog if there is a workbook and it has the relevant custom XML part.
-        If ExcelDnaUtil.Application.ActiveWorkbook IsNot Nothing AndAlso ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef").Count > 0 Then
-            Dim theEditDBModifDefDlg As EditDBModifDef = New EditDBModifDef()
-            If theEditDBModifDefDlg.ShowDialog() = System.Windows.Forms.DialogResult.OK Then DBModifs.getDBModifDefinitions()
-        Else
-            Globals.UserMsg("No DBModifier definitions existing in current workbook", "DBModifier definitions", MsgBoxStyle.Exclamation)
+        If ExcelDnaUtil.Application.ActiveWorkbook IsNot Nothing AndAlso
+            ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef").Count > 0 Then
+            Dim CustomXmlParts As Object = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
+            ' check if any DBModifier exist below root node, only if at least one is defined, open dialog
+            If CustomXmlParts(1).SelectNodes("/ns0:root/*").Count > 0 Then
+                Dim theEditDBModifDefDlg As EditDBModifDef = New EditDBModifDef()
+                If theEditDBModifDefDlg.ShowDialog() = System.Windows.Forms.DialogResult.OK Then DBModifs.getDBModifDefinitions()
+                Exit Sub
+            End If
         End If
+        ' no existing DB modifier definitions found, offer to create new ones...
+        ctMenuStrip = New Windows.Forms.ContextMenuStrip()
+        Dim ptLowerLeft As Drawing.Point = System.Windows.Forms.Cursor.Position
+        ctMenuStrip.Items().Add("No DBModifier definitions exist in current workbook, do you want to add")
+        ctMenuStrip.Items().Add("a DBMapper", convertFromMso("TableSave"), AddressOf ctMenuStrip_Click)
+        ctMenuStrip.Items().Add("a DBAction", convertFromMso("TableIndexes"), AddressOf ctMenuStrip_Click)
+        ctMenuStrip.Items().Add("a DBSequence", convertFromMso("ShowOnNewButton"), AddressOf ctMenuStrip_Click)
+        ctMenuStrip.Show(ptLowerLeft)
+    End Sub
+
+    Private Function convertFromMso(idMso As String) As System.Drawing.Image
+        Try
+            Dim p As stdole.IPictureDisp = ExcelDnaUtil.Application.CommandBars.GetImageMso(idMso, 16, 16)
+            Dim hPal As IntPtr = p.hPal
+            convertFromMso = System.Drawing.Image.FromHbitmap(p.Handle, hPal)
+        Catch ex As Exception
+            ' in case above image fetching doesn't work then no image is displayed (the image parameter is still required for ContextMenuStrip.Items.Add !)
+            convertFromMso = Nothing
+        End Try
+    End Function
+
+    Private Sub ctMenuStrip_Click(sender As Object, e As EventArgs)
+        createDBModif(Replace(Replace(sender.ToString(), "a ", ""), "DBSequence", "DBSeqnce"))
     End Sub
 
     ''' <summary>toggle designmode button</summary>

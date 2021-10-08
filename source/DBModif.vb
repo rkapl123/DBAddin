@@ -51,13 +51,15 @@ Public MustInherit Class DBModif
         If (WbIsSaving And execOnSave) Or (Not WbIsSaving And askBeforeExecute) Then
             Dim executeTitle As String = "Execute " + TypeName(Me) + IIf(WbIsSaving, " on save", "")
             ' special confirm text or standard text?
-            Dim executeMessage As String = IIf(confirmText <> "", confirmText, "Really execute " + dbmodifName + "?")
+            Dim executeMessage As String = IIf(confirmText <> "", confirmText, "Really execute " + IIf(Strings.LCase(dbmodifName) = Strings.LCase(TypeName(Me)), "Unnamed " + TypeName(Me), dbmodifName) + "?")
             ' for confirmation on Workbook saving provide cancel possibility as shortcut.
             Dim setQuestionType As MsgBoxStyle = IIf(WbIsSaving, MsgBoxStyle.YesNoCancel, MsgBoxStyle.YesNo)
             ' only ask if set to ask...
             If askBeforeExecute Then Return QuestionMsg(theMessage:=executeMessage, questionType:=setQuestionType, questionTitle:=executeTitle)
+            Return MsgBoxResult.Yes
+        Else
+            Return MsgBoxResult.No
         End If
-        Return MsgBoxResult.No
     End Function
 
     ''' <summary>public accessor function</summary>
@@ -724,7 +726,7 @@ Public Class DBMapper : Inherits DBModif
                         fieldColNum += 1
                     End If
                 End If
-            Else
+            ElseIf Strings.Right(fieldname.ToUpper(), 2) = "LU" And dscheck.Tables(0).Columns.Contains(Left(fieldname, Len(fieldname) - 2)) Then
                 ' if ignored and the column is a lookup then add the column without LU to preserve the order of columns !!!
                 fieldname = Left(fieldname, Len(fieldname) - 2) ' correct the LU to real fieldname
                 allColumnsStr(fieldColNum) = fieldname
@@ -1976,6 +1978,13 @@ End Module
 
 
 Public Class CustomCommandBuilder
+    Protected ReadOnly dataTable As DataTable
+    Protected ReadOnly allColumns As DataColumn()
+
+    Public Sub New(dataTable As DataTable, allColumns As DataColumn())
+        Me.dataTable = dataTable
+        Me.allColumns = allColumns
+    End Sub
 
     ''' <summary>Creates Insert command with support for Autoincrement (Identity) fields</summary>
     ''' <returns>Command for inserting</returns>
@@ -1995,6 +2004,11 @@ Public Class CustomCommandBuilder
         Throw New NotImplementedException()
     End Function
 
+    Protected Function TableName() As String
+        ' each identifier needs to be quoted by itself
+        Return "[" + String.Join("].[", Strings.Split(dataTable.TableName, ".")) + "]"
+    End Function
+
 End Class
 
 ''' <summary>Custom Command builder for SQLServer to avoid primary key problems with builtin ones
@@ -2004,15 +2018,12 @@ End Class
 Public Class CustomSqlCommandBuilder
     Inherits CustomCommandBuilder
 
-    Private ReadOnly dataTable As DataTable
     Private ReadOnly connection As SqlClient.SqlConnection
-    Private ReadOnly allColumns As DataColumn()
     Private ReadOnly schemaDataTypeCollection As Collection
 
     Public Sub New(dataTable As DataTable, connection As SqlClient.SqlConnection, allColumns As DataColumn(), schemaDataTypeCollection As Collection)
-        Me.dataTable = dataTable
+        MyBase.New(dataTable, allColumns)
         Me.connection = connection
-        Me.allColumns = allColumns
         Me.schemaDataTypeCollection = schemaDataTypeCollection
     End Sub
 
@@ -2050,7 +2061,6 @@ Public Class CustomSqlCommandBuilder
             End If
         Next
     End Function
-
 
     ''' <summary>Creates Delete command</summary>
     ''' <returns>SqlCommand for deleting</returns>
@@ -2126,9 +2136,6 @@ Public Class CustomSqlCommandBuilder
         Return command
     End Function
 
-    Private Function TableName() As String
-        Return "[" + dataTable.TableName + "]"
-    End Function
 End Class
 
 ''' <summary>Custom Command builder for ODBC to avoid primary key problems with builtin ones
@@ -2138,15 +2145,12 @@ End Class
 Public Class CustomOdbcCommandBuilder
     Inherits CustomCommandBuilder
 
-    Private ReadOnly dataTable As DataTable
     Private ReadOnly connection As Odbc.OdbcConnection
-    Private ReadOnly allColumns As DataColumn()
     Private ReadOnly schemaDataTypeCollection As Collection
 
     Public Sub New(dataTable As DataTable, connection As Odbc.OdbcConnection, allColumns As DataColumn(), schemaDataTypeCollection As Collection)
-        Me.dataTable = dataTable
+        MyBase.New(dataTable, allColumns)
         Me.connection = connection
-        Me.allColumns = allColumns
         Me.schemaDataTypeCollection = schemaDataTypeCollection
     End Sub
 
@@ -2258,10 +2262,6 @@ Public Class CustomOdbcCommandBuilder
         }
         Return command
     End Function
-
-    Private Function TableName() As String
-        Return "[" + dataTable.TableName + "]"
-    End Function
 End Class
 
 ''' <summary>Custom Command builder for OleDB to avoid primary key problems with builtin ones
@@ -2271,15 +2271,12 @@ End Class
 Public Class CustomOleDbCommandBuilder
     Inherits CustomCommandBuilder
 
-    Private ReadOnly dataTable As DataTable
     Private ReadOnly connection As OleDb.OleDbConnection
-    Private ReadOnly allColumns As DataColumn()
     Private ReadOnly schemaDataTypeCollection As Collection
 
     Public Sub New(dataTable As DataTable, connection As OleDb.OleDbConnection, allColumns As DataColumn(), schemaDataTypeCollection As Collection)
-        Me.dataTable = dataTable
+        MyBase.New(dataTable, allColumns)
         Me.connection = connection
-        Me.allColumns = allColumns
         Me.schemaDataTypeCollection = schemaDataTypeCollection
     End Sub
 
@@ -2392,7 +2389,4 @@ Public Class CustomOleDbCommandBuilder
         Return command
     End Function
 
-    Private Function TableName() As String
-        Return "[" + dataTable.TableName + "]"
-    End Function
 End Class

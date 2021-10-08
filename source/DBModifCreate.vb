@@ -211,15 +211,27 @@ Public Class DBModifCreate
     ''' <param name="e"></param>
     Private Sub CreateCB_Click(sender As Object, e As EventArgs) Handles CreateCB.Click
         ' create a commandbutton for the current DBmodification?
-        Dim cbshp As Excel.OLEObject = ExcelDnaUtil.Application.ActiveSheet.OLEObjects.Add(ClassType:="Forms.CommandButton.1", Link:=False, DisplayAsIcon:=False, Left:=600, Top:=70, Width:=120, Height:=24)
-        Dim cb As Forms.CommandButton = cbshp.Object
+        Dim cbshp As Excel.OLEObject = Nothing
+        Dim cb As Forms.CommandButton = Nothing
+        Try
+            cbshp = ExcelDnaUtil.Application.ActiveSheet.OLEObjects.Add(ClassType:="Forms.CommandButton.1", Link:=False, DisplayAsIcon:=False, Left:=600, Top:=70, Width:=120, Height:=24)
+            cb = cbshp.Object
+        Catch ex As Exception
+            Globals.UserMsg("Can't create command button: " + ex.Message, "CommandButton create Error")
+            cbshp.Delete()
+            Exit Sub
+        End Try
         Dim cbName As String = Me.Tag + Me.DBModifName.Text
         Try
             cb.Name = cbName
             cb.Caption = IIf(Me.DBModifName.Text = "", "Unnamed " + Me.Tag, Me.Tag + Me.DBModifName.Text)
         Catch ex As Exception
             cbshp.Delete()
-            Globals.UserMsg("Couldn't name CommandButton '" + cbName + "': " + ex.Message, "CommandButton create Error")
+            If ex.Message.Contains("HRESULT: 0x8002802C (TYPE_E_AMBIGUOUSNAME)") Then
+                Globals.UserMsg("Can't name the new command button '" + cbName + "' as there already exists a button with that name", "CommandButton create Error")
+            Else
+                Globals.UserMsg("Can't name command button '" + cbName + "': " + ex.Message, "CommandButton create Error")
+            End If
             Exit Sub
         End Try
         If Len(cbName) > 31 Then

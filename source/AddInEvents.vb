@@ -409,14 +409,23 @@ done:
         End If
     End Sub
 
-    ''' <summary>Clean up after closing workbook</summary>
+    Private WbIsClosing As Boolean = False
+
+    ''' <summary>Clean up after closing workbook, only set flag here, actual cleanup is only done if workbook is really closed (in WB_Deactivate event)</summary>
     ''' <param name="Wb"></param>
     ''' <param name="Cancel"></param>
     Private Sub Application_WorkbookBeforeClose(Wb As Workbook, ByRef Cancel As Boolean) Handles Application.WorkbookBeforeClose
-        If Not IsNothing(Globals.DBModifDefColl) AndAlso Globals.DBModifDefColl.Count > 0 Then
+        WbIsClosing = True
+    End Sub
+
+    ''' <summary>Actually clean up after closing workbook</summary>
+    ''' <param name="Wb"></param>
+    Private Sub Application_WorkbookDeactivate(Wb As Workbook) Handles Application.WorkbookDeactivate
+        If WbIsClosing AndAlso Not IsNothing(Globals.DBModifDefColl) AndAlso Globals.DBModifDefColl.Count > 0 Then
             Globals.DBModifDefColl.Clear()
             Globals.theRibbon.Invalidate()
         End If
+        WbIsClosing = False
     End Sub
 
     ''' <summary>Event Procedure needed for CUD DBMappers to capture changes/insertions and set U/D Flag</summary>
@@ -489,4 +498,5 @@ done:
     Private Sub mInsertButton_Click(Ctrl As Microsoft.Office.Core.CommandBarButton, ByRef CancelDefault As Boolean) Handles mInsertButton.Click
         DBModifs.insertRow()
     End Sub
+
 End Class
