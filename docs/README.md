@@ -98,6 +98,7 @@ Other settings possible in DBAddin.xll.config (or DBAddinCentral.config):
     <add key="localUpdateMessage" value="New version available in local update folder, start deployAddin.cmd to install it:" />
     <add key="DMLStatementsAllowed" value="True" />
     <add key="legacyFunctionMsg" value="True" />
+    <add key="ExcelVersionForPivot" value="7" />
 ```
 
 Explanation:
@@ -125,6 +126,7 @@ Explanation:
 *   `localUpdateMessage`: For the alternative folder update, you can also provide an alternative message to display.
 *   `DMLStatementsAllowed`: Allows DML Statements in the Adhoc SQL Query Tool.
 *   `legacyFunctionMsg`: Alternative Message for replacing legacy functions (different language).
+*   `ExcelVersionForPivot`: The default Version when creating DBSetQuery enabled pivot tables (see [DBFuncs Userdoc](DBFuncs.md), 0=2000, 1=2002, 2=2003, 3=2007, 4=2010, 5=2013, 6=2016, 7=2019).
 
 To change the settings, there use the dropdown "settings", where you can modify the DBAddin.xll.config and the referred DBAddinCentral.config including XML validation. If you have multiple same named entries in your settings files, the last one is taken as the active setting.
 

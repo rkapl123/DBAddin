@@ -377,11 +377,16 @@ Public Module Functions
             srcExtent = "DBFsource" + Replace(Guid.NewGuid().ToString(), "-", "")
             Try
                 caller.Name = srcExtent
-                caller.Parent.Parent.Names(srcExtent).Visible = False
             Catch ex As Exception
                 Throw New Exception("Error in setting srcExtent name: " + ex.Message + " in query: " + Query)
             End Try
         End If
+        Try
+            caller.Parent.Parent.Names(srcExtent).Visible = False
+        Catch ex As Exception
+            Throw New Exception("Error in setting srcExtent name invisible: " + ex.Message + " in query: " + Query)
+        End Try
+
 
         ' try to get either a pivot table object or a list object from the target cell. What we have, is checked later...
         Try : thePivotTable = TargetCell.PivotTable : Catch ex As Exception : End Try

@@ -156,21 +156,23 @@ Public Module ConfigFiles
         Dim altConnString = Globals.fetchSetting("AltConnString" + Globals.env(), "")
         ' for standard connection strings only OLEDB drivers seem to work with pivot tables...
         If altConnString = "" Then altConnString = "OLEDB;" + Globals.ConstConnString
+        Dim ExcelVersionForPivot As Excel.XlPivotTableVersionList = CInt(fetchSetting("ExcelVersionForPivot", "7"))
         Try
-            pivotcache = TargetCell.Parent.Parent.PivotCaches().Add(Excel.XlPivotTableSourceType.xlExternal)
+            pivotcache = ExcelDnaUtil.Application.ActiveWorkbook.PivotCaches.Create(SourceType:=Excel.XlPivotTableSourceType.xlExternal, Version:=ExcelVersionForPivot)
+            ' don't use TargetCell.Parent.Parent.PivotCaches().Add(Excel.XlPivotTableSourceType.xlExternal) as we can't set the Version there...
             pivotcache.Connection = altConnString
             pivotcache.MaintainConnection = False
             pivotcache.CommandText = "select CURRENT_TIMESTAMP" ' this should be sufficient for most databases
             pivotcache.CommandType = Excel.XlCmdType.xlCmdSql
         Catch ex As Exception
-            Globals.UserMsg("Exception creating pivot cache:" + ex.Message, "Create Pivot Table")
+            Globals.UserMsg("Exception creating pivot cache: " + ex.Message + " (if the reason was a too high Excel Version for the Pivot table, change this with setting ExcelVersionForPivot)", "Create Pivot Table")
         End Try
 
         Try
             pivotTables = TargetCell.Parent.PivotTables()
-            pivotTables.Add(pivotcache, TargetCell.Offset(1, 0))
+            pivotTables.Add(PivotCache:=pivotcache, TableDestination:=TargetCell.Offset(1, 0), DefaultVersion:=ExcelVersionForPivot)
         Catch ex As Exception
-            Globals.UserMsg("Exception adding pivot table:" + ex.Message, "Create Pivot Table")
+            Globals.UserMsg("Exception adding pivot table: " + ex.Message, "Create Pivot Table")
             Exit Sub
         End Try
     End Sub

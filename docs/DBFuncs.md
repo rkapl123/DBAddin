@@ -302,8 +302,10 @@ Below the results for a DB Function created in Cell A1:
 *   DBSetQueryPivot:   `=DBSetQuery("";"";A2)`
 *   DBSetQueryListObject:   `=DBSetQuery("";"";B1)`
 
-DBSetQuery also creates the target Object (a Pivot Table or a ListObject) below resp. to the right of the DB Function, so it is easier to start with. In case you want to insert DB Configurations (see [Cell Config Deployment](#Cell-Config-Deployment)), just place the selection on the inserted DB function cell and select your config, the stored query will replace the empty query in the created DB function.
-
+DBSetQuery also creates the target Object (a Pivot Table or a ListObject) below respectively to the right of the DB Function, so it is easier to start with. 
+In case you want to insert DB Configurations (see [Cell Config Deployment](#Cell-Config-Deployment)), just place the selection on the inserted DB function cell and select your config, the stored query will replace the empty query in the created DB function.
+For pivot tables the excel version of the created pivot table can be set with the user setting `ExcelVersionForPivot` (the numbers corresponding to the versions are: 0=2000, 1=2002, 2=2003, 3=2007, 4=2010, 5=2013, 6=2016, 7=2019=default if not set).
+This is important to either provide backward compatibility with other users excels versions or to use the latest features.
 #### Settings
 
 Following Settings in DBAddin.xll.config or the referred DBAddinCentral.config affect the behaviour of DB functions:
