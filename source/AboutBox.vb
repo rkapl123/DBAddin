@@ -60,7 +60,7 @@ Public NotInheritable Class AboutBox
     ''' <param name="e"></param>
     Private Sub LabelProductName_Click(sender As Object, e As EventArgs) Handles LabelProductName.Click
         Try
-            Process.Start(fetchSetting("LocalHelp", ""))
+            Process.Start(Globals.fetchSetting("LocalHelp", ""))
         Catch ex As Exception
             Globals.LogWarn(ex.Message)
         End Try
@@ -132,9 +132,11 @@ Public NotInheritable Class AboutBox
 
         ' always accept url certificate as valid
         Net.ServicePointManager.ServerCertificateValidationCallback = AddressOf ValidationCallbackHandler
-
+        Dim foundARevision As Boolean = False
+        Dim revisionNotFoundTries As Integer = 0
+        Dim triedRevision As Integer = curRevision
         Do
-            urlFile = updatesUrlBase + updatesMajorVersion + (curRevision + 1).ToString() + ".zip"
+            urlFile = updatesUrlBase + updatesMajorVersion + triedRevision.ToString() + ".zip"
             Dim request As Net.HttpWebRequest
             Try
                 request = Net.WebRequest.Create(urlFile)
@@ -143,21 +145,35 @@ Public NotInheritable Class AboutBox
                 response = request.GetResponse()
             Catch ex As Exception
             End Try
-            If response IsNot Nothing Then
-                curRevision += 1
+            ' if nothing is found this can mean: there is no higher revision available or the available revision is still higher than the tried one...
+            If response Is Nothing Then
+                revisionNotFoundTries += 1
+            Else
+                curRevision = triedRevision
+                foundARevision = True
                 response.Close()
             End If
-        Loop Until response Is Nothing
+            triedRevision += 1
+        Loop Until revisionNotFoundTries = CInt(Globals.fetchSetting("maxTriesForRevisionFind", "10"))
         ' get out if no newer version found
         If curRevision = My.Application.Info.Version.Revision Then
-            Me.TextBoxDescription.Text = My.Application.Info.Description + vbCrLf + vbCrLf + "You have the latest version (" + updatesMajorVersion + curRevision.ToString() + ")."
-            Me.TextBoxDescription.BackColor = Drawing.Color.FromKnownColor(Drawing.KnownColor.Control)
+            If foundARevision Then
+                Me.TextBoxDescription.Text = My.Application.Info.Description + vbCrLf + vbCrLf + "You have the latest version (" + updatesMajorVersion + curRevision.ToString() + ")."
+                Me.TextBoxDescription.BackColor = Drawing.Color.FromKnownColor(Drawing.KnownColor.Control)
+            Else
+                Me.TextBoxDescription.Text = My.Application.Info.Description + vbCrLf + vbCrLf + "Version " + updatesMajorVersion + curRevision.ToString() +
+                    " was not found on Github, it is probably more than 10 releases behind, reopen the Aboutbox to retry with maxTriesForRevisionFind (currently " +
+                    Globals.fetchSetting("maxTriesForRevisionFind", "10") + ") increased by 10. Finally remove this setting as it takes more time to open the Aboutbox."
+                Globals.setUserSetting("maxTriesForRevisionFind", (CInt(Globals.fetchSetting("maxTriesForRevisionFind", "10")) + 10).ToString())
+                Me.TextBoxDescription.BackColor = Drawing.Color.Violet
+            End If
             Me.CheckForUpdates.Text = "no Update ..."
             Me.CheckForUpdates.Enabled = False
             Me.Refresh()
             Exit Sub
         Else
-            Me.TextBoxDescription.Text = My.Application.Info.Description + vbCrLf + vbCrLf + "A new version (" + updatesMajorVersion + curRevision.ToString() + ") is available " + IIf(localUpdateFolder <> "", "in " + localUpdateFolder, "on github")
+            Me.TextBoxDescription.Text = My.Application.Info.Description + vbCrLf + vbCrLf + "A new version (" + updatesMajorVersion + curRevision.ToString() + ") is available " +
+                IIf(localUpdateFolder <> "", "in " + localUpdateFolder, "on Github")
             Me.TextBoxDescription.BackColor = Drawing.Color.DarkOrange
             Me.CheckForUpdates.Text = "get Update ..."
             Me.CheckForUpdates.Enabled = True

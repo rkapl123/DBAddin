@@ -70,15 +70,15 @@ Public Class AddInEvents
             Exit Sub
         End If
         ' Configs are 1 based, selectedEnvironment(index of environment dropdown) is 0 based. negative values not allowed!
-        Dim selEnv As Integer = CInt(fetchSetting("DefaultEnvironment", "1")) - 1
+        Dim selEnv As Integer = CInt(Globals.fetchSetting("DefaultEnvironment", "1")) - 1
         If selEnv > environdefs.Length - 1 OrElse selEnv < 0 Then
             Globals.UserMsg("Default Environment " + (selEnv + 1).ToString() + " not existing, setting to first environment !")
             selEnv = 0
         End If
         Globals.selectedEnvironment = selEnv
         ' after getting the default environment (should exist), set the Const Connection String again to avoid problems in generating DB ListObjects
-        ConstConnString = fetchSetting("ConstConnString" + Globals.env(), "")
-        ConfigStoreFolder = fetchSetting("ConfigStoreFolder" + Globals.env(), "")
+        ConstConnString = Globals.fetchSetting("ConstConnString" + Globals.env(), "")
+        ConfigStoreFolder = Globals.fetchSetting("ConfigStoreFolder" + Globals.env(), "")
     End Sub
 
     ''' <summary>AutoClose cleans up after finishing addin</summary>

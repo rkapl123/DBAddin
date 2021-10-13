@@ -37,8 +37,8 @@ Public Module ConfigFiles
                 Dim ConfigArray As String() = Split(ItemLine, vbTab)
                 ' if there is a ConfigSelect setting use it to replace the query with the template, replacing the contained table with the FROM <table>...
                 ' also regard the possibility to have a preference for a specific ConfigSelect(1, 2, or any other postfix being available in settings)
-                Dim ConfigSelect As String = fetchSetting("ConfigSelect" + fetchSetting("ConfigSelectPreference", ""), "")
-                If ConfigSelect = "" Then ConfigSelect = fetchSetting("ConfigSelect", "") ' if nothing found under given ConfigSelectPreference, fall back to standard ConfigSelect
+                Dim ConfigSelect As String = Globals.fetchSetting("ConfigSelect" + Globals.fetchSetting("ConfigSelectPreference", ""), "")
+                If ConfigSelect = "" Then ConfigSelect = Globals.fetchSetting("ConfigSelect", "") ' if nothing found under given ConfigSelectPreference, fall back to standard ConfigSelect
                 ' replace query in function formula in second part of pairs with ConfigSelect template. 
                 ' This works only for templates with actual query string as first argument (not having reference(s) to cell(s) with query string(s))
                 If ConfigSelect <> "" Then
@@ -118,9 +118,9 @@ Public Module ConfigFiles
     Public Function createListObject(TargetCell As Excel.Range) As Object
         Dim createdQueryTable As Object
         ' if an alternate connection string is given for Listobject, use this one...
-        Dim altConnString = fetchSetting("AltConnString" + Globals.env(), "")
+        Dim altConnString = Globals.fetchSetting("AltConnString" + Globals.env(), "")
         ' To get the connection string work also for SQLOLEDB provider for SQL Server, change to ODBC driver setting (this can be generally used to fix connection string problems with ListObjects)
-        If altConnString = "" Then altConnString = "OLEDB;" + Replace(Globals.ConstConnString, fetchSetting("ConnStringSearch" + Globals.env(), "provider=SQLOLEDB"), fetchSetting("ConnStringReplace" + Globals.env(), "driver=SQL SERVER"))
+        If altConnString = "" Then altConnString = "OLEDB;" + Replace(Globals.ConstConnString, Globals.fetchSetting("ConnStringSearch" + Globals.env(), "provider=SQLOLEDB"), Globals.fetchSetting("ConnStringReplace" + Globals.env(), "driver=SQL SERVER"))
         Try
             createdQueryTable = TargetCell.Parent.ListObjects.Add(SourceType:=Excel.XlListObjectSourceType.xlSrcQuery, Source:=altConnString, Destination:=TargetCell.Offset(0, 1)).QueryTable
             With createdQueryTable
@@ -153,7 +153,7 @@ Public Module ConfigFiles
         Dim pivotcache As Excel.PivotCache = Nothing
         Dim pivotTables As Excel.PivotTables
         ' if an alternate connection string is given for Listobject, use this one...
-        Dim altConnString = fetchSetting("AltConnString" + Globals.env(), "")
+        Dim altConnString = Globals.fetchSetting("AltConnString" + Globals.env(), "")
         ' for standard connection strings only OLEDB drivers seem to work with pivot tables...
         If altConnString = "" Then altConnString = "OLEDB;" + Globals.ConstConnString
         Try
@@ -357,9 +357,9 @@ Public Module ConfigFiles
                     End If
                 Next
                 If spclFolder <> "" And MenuFolderDepth < maxMenuDepth Then
-                    Dim firstCharLevel As Boolean = CBool(fetchSetting(spclFolder + "FirstLetterLevel", "False"))
-                    Dim specialConfigStoreSeparator As String = fetchSetting(spclFolder + "Separator", "")
-                    specialFolderMaxDepth = CInt(fetchSetting(spclFolder + "MaxDepth", 4))
+                    Dim firstCharLevel As Boolean = CBool(Globals.fetchSetting(spclFolder + "FirstLetterLevel", "False"))
+                    Dim specialConfigStoreSeparator As String = Globals.fetchSetting(spclFolder + "Separator", "")
+                    specialFolderMaxDepth = CInt(Globals.fetchSetting(spclFolder + "MaxDepth", "4"))
                     Dim nameParts As String
                     For i As Long = 0 To UBound(fileList)
                         ' is current entry contained in next entry then revert order to allow for containment in next entry's hierarchy..

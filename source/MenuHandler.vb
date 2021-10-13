@@ -84,11 +84,6 @@ Public Class MenuHandler
                 "</menu>" +
                 "<menuSeparator id='MySeparatorC' insertBeforeMso='Cut'/>" +
             "</contextMenu>" +
-            "<contextMenu idMso ='ContextMenuPivotTable'>" +
-                "<button id='refreshDataPT' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Copy'/>" +
-                "<button id='gotoDBFuncPT' label='jump to DBFunc/target (Ctl-Sh-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Copy'/>" +
-                "<menuSeparator id='MySeparatorPT' insertBeforeMso='Copy'/>" +
-            "</contextMenu>" +
             "<contextMenu idMso ='ContextMenuCellLayout'>" +
                 "<button id='refreshDataCL' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
                 "<button id='gotoDBFuncCL' label='jump to DBFunc/target (Ctl-Sh-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
@@ -104,13 +99,26 @@ Public Class MenuHandler
                 "</menu>" +
                 "<menuSeparator id='MySeparatorCL' insertBeforeMso='Cut'/>" +
             "</contextMenu>" +
+            "<contextMenu idMso ='ContextMenuPivotTable'>" +
+                "<button id='refreshDataPT' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Copy'/>" +
+                "<button id='gotoDBFuncPT' label='jump to DBFunc/target (Ctl-Sh-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Copy'/>" +
+                "<menuSeparator id='MySeparatorPT' insertBeforeMso='Copy'/>" +
+            "</contextMenu>" +
             "<contextMenu idMso='ContextMenuRow'>" +
                 "<button id='refreshDataR' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
                 "<menuSeparator id='MySeparatorR' insertBeforeMso='Cut'/>" +
             "</contextMenu>" +
+            "<contextMenu idMso='ContextMenuRowLayout'>" +
+                "<button id='refreshDataRL' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
+                "<menuSeparator id='MySeparatorRL' insertBeforeMso='Cut'/>" +
+            "</contextMenu>" +
             "<contextMenu idMso='ContextMenuColumn'>" +
                 "<button id='refreshDataZ' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
                 "<menuSeparator id='MySeparatorZ' insertBeforeMso='Cut'/>" +
+            "</contextMenu>" +
+            "<contextMenu idMso='ContextMenuColumnLayout'>" +
+                "<button id='refreshDataZL' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
+                "<menuSeparator id='MySeparatorZL' insertBeforeMso='Cut'/>" +
             "</contextMenu>" +
             "<contextMenu idMso='ContextMenuListRange'>" +
                 "<button id='refreshDataL' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
@@ -120,6 +128,15 @@ Public Class MenuHandler
                     "<button id='DBSequenceL' tag='DBSeqnce' label='DBSequence' imageMso='ShowOnNewButton' onAction='clickCreateButton'/>" +
                 "</menu>" +
                 "<menuSeparator id='MySeparatorL' insertBeforeMso='Cut'/>" +
+            "</contextMenu>" +
+            "<contextMenu idMso='ContextMenuListRangeLayout'>" +
+                "<button id='refreshDataLL' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
+                "<button id='gotoDBFuncLL' label='jump to DBFunc/target (Ctl-Sh-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
+                "<menu id='createMenuLL' label='Insert/Edit DBFunc/DBModif' insertBeforeMso='Cut'>" +
+                    "<button id='DBMapperLL' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
+                    "<button id='DBSequenceLL' tag='DBSeqnce' label='DBSequence' imageMso='ShowOnNewButton' onAction='clickCreateButton'/>" +
+                "</menu>" +
+                "<menuSeparator id='MySeparatorLL' insertBeforeMso='Cut'/>" +
             "</contextMenu>" +
         "</contextMenus></customUI>"
         Return customUIXml
@@ -448,7 +465,7 @@ Public Class MenuHandler
     ''' <param name="control"></param>
     ''' <returns>the tooltip</returns>
     Public Function GetEnvSelectedTooltip(control As CustomUI.IRibbonControl) As String
-        If CBool(fetchSetting("DontChangeEnvironment", "False")) Then
+        If CBool(Globals.fetchSetting("DontChangeEnvironment", "False")) Then
             Return "DontChangeEnvironment is set, therefore changing the Environment is prevented !"
         Else
             Return "configured for Database Access in Addin config %appdata%\Microsoft\Addins\DBaddin.xll.config (or referenced central/user setting)"
@@ -459,7 +476,7 @@ Public Class MenuHandler
     ''' <param name="control"></param>
     ''' <returns>true if enabled</returns>
     Public Function GetEnvEnabled(control As CustomUI.IRibbonControl) As Integer
-        Return Not CBool(fetchSetting("DontChangeEnvironment", "False"))
+        Return Not CBool(Globals.fetchSetting("DontChangeEnvironment", "False"))
     End Function
 
     ''' <summary>Choose environment (configured in registry with ConstConnString(N), ConfigStoreFolder(N))</summary>
@@ -470,10 +487,10 @@ Public Class MenuHandler
         ' provide a chance to reconnect when switching environment...
         conn = Nothing
         If ExcelDnaUtil.Application.ActiveWorkbook IsNot Nothing Then
-            Dim retval As MsgBoxResult = QuestionMsg("ConstConnString:" + Globals.ConstConnString + vbCrLf + "ConfigStoreFolder:" + ConfigFiles.ConfigStoreFolder + vbCrLf + vbCrLf + "Refresh DBFunctions in active workbook to see effects?", MsgBoxStyle.OkCancel, "Changed environment to: " + fetchSetting("ConfigName" + Globals.env(), ""))
+            Dim retval As MsgBoxResult = QuestionMsg("ConstConnString:" + Globals.ConstConnString + vbCrLf + "ConfigStoreFolder:" + ConfigFiles.ConfigStoreFolder + vbCrLf + vbCrLf + "Refresh DBFunctions in active workbook to see effects?", MsgBoxStyle.OkCancel, "Changed environment to: " + Globals.fetchSetting("ConfigName" + Globals.env(), ""))
             If retval = MsgBoxResult.Ok Then Globals.refreshDBFunctions(ExcelDnaUtil.Application.ActiveWorkbook)
         Else
-            Globals.UserMsg("ConstConnString:" + Globals.ConstConnString + vbCrLf + "ConfigStoreFolder:" + ConfigFiles.ConfigStoreFolder, "Changed environment to: " + fetchSetting("ConfigName" + Globals.env(), ""), MsgBoxStyle.Information)
+            Globals.UserMsg("ConstConnString:" + Globals.ConstConnString + vbCrLf + "ConfigStoreFolder:" + ConfigFiles.ConfigStoreFolder, "Changed environment to: " + Globals.fetchSetting("ConfigName" + Globals.env(), ""), MsgBoxStyle.Information)
         End If
     End Sub
 
@@ -481,7 +498,7 @@ Public Class MenuHandler
     ''' <param name="control"></param>
     Public Sub showAddinConfig(control As CustomUI.IRibbonControl)
         ' if settings (addin, user, central) should not be displayed according to setting then exit...
-        If InStr(fetchSetting("disableSettingsDisplay", ""), control.Id) > 0 Then
+        If InStr(Globals.fetchSetting("disableSettingsDisplay", ""), control.Id) > 0 Then
             Globals.UserMsg("Display of " + control.Id + " settings disabled !", "DBAddin Settings disabled", MsgBoxStyle.Information)
             Exit Sub
         End If

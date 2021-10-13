@@ -25,9 +25,9 @@ Public Class DBSheetCreateForm
     Private Sub DBSheetCreateForm_Shown(sender As Object, e As EventArgs) Handles Me.Shown
         ' get settings for DBSheet definition editing
         myDBConnHelper = New DBConnHelper(Globals.env())
-        tblPlaceHolder = fetchSetting("tblPlaceHolder" + Globals.env(), "!T!")
-        specialNonNullableChar = fetchSetting("specialNonNullableChar" + Globals.env(), "*")
-        Lenvironment.Text = "Environment: " + fetchSetting("ConfigName" + Globals.env(), "")
+        tblPlaceHolder = Globals.fetchSetting("tblPlaceHolder" + Globals.env(), "!T!")
+        specialNonNullableChar = Globals.fetchSetting("specialNonNullableChar" + Globals.env(), "*")
+        Lenvironment.Text = "Environment: " + Globals.fetchSetting("ConfigName" + Globals.env(), "")
 
         ' set up columns for DBSheetCols gridview
         Dim nameCB As DataGridViewComboBoxColumn = New DataGridViewComboBoxColumn With {
@@ -164,7 +164,7 @@ Public Class DBSheetCreateForm
             Exit Sub
         End Try
         Me.Text = "DB Sheet creation: Select Database and Table to start building a DBSheet Definition"
-        Database.SelectedIndex = Database.Items.IndexOf(Globals.fetch(myDBConnHelper.dbsheetConnString, myDBConnHelper.dbidentifier, ";"))
+        Database.SelectedIndex = Database.Items.IndexOf(Globals.fetchSubstr(myDBConnHelper.dbsheetConnString, myDBConnHelper.dbidentifier, ";"))
         'initialization of everything else is triggered by above change and caught by Database_SelectedIndexChanged
     End Sub
 
@@ -780,9 +780,9 @@ Public Class DBSheetCreateForm
                     End If
                     Dim theTable As String = "T" + tableCounter.ToString()
                     ' either we go for the whole part after the last join
-                    Dim completeJoin As String = Globals.fetch(lookupStr, "JOIN ", "")
+                    Dim completeJoin As String = Globals.fetchSubstr(lookupStr, "JOIN ", "")
                     ' or we have a simple WHERE and just "AND" it to the created join
-                    Dim addRestrict As String = quotedReplace(Globals.fetch(lookupStr, "WHERE ", ""), "T" + tableCounter.ToString())
+                    Dim addRestrict As String = quotedReplace(Globals.fetchSubstr(lookupStr, "WHERE ", ""), "T" + tableCounter.ToString())
 
                     ' remove any ORDER BY clause from additional restrict...
                     Dim restrPos As Integer = addRestrict.ToUpper().LastIndexOf(" ORDER") + 1
@@ -810,7 +810,7 @@ Public Class DBSheetCreateForm
                         fromStr += " LEFT JOIN " + vbCrLf + completeJoin
                     End If
 
-                    selectPart = Globals.fetch(lookupStr, "SELECT ", " FROM ").Trim()
+                    selectPart = Globals.fetchSubstr(lookupStr, "SELECT ", " FROM ").Trim()
                     ' remove second field in lookup query's select clause
                     restrPos = selectPart.LastIndexOf(",") + 1
                     selectPart = selectPart.Substring(0, Math.Min(restrPos - 1, selectPart.Length))
@@ -944,14 +944,14 @@ Public Class DBSheetCreateForm
                 ' fetch params into form from sheet or file
                 FormDisabled = True
                 ' get Database from (legacy) connID (legacy connID was prefixed with connIDPrefixDBtype)
-                Dim configDatabase As String = Replace(DBSheetConfig.getEntry("connID", DBSheetParams), fetchSetting("connIDPrefixDBtype", "MSSQL"), "")
+                Dim configDatabase As String = Replace(DBSheetConfig.getEntry("connID", DBSheetParams), Globals.fetchSetting("connIDPrefixDBtype", "MSSQL"), "")
                 Try : myDBConnHelper.openConnection(configDatabase, usedForDBSheetCreate:=True) : Catch ex As Exception : Globals.UserMsg(ex.Message) : Exit Sub : End Try
                 fillDatabases()
                 Database.SelectedIndex = Database.Items.IndexOf(configDatabase)
                 fillTables()
                 DirectCast(DBSheetCols.Columns("ftable"), DataGridViewComboBoxColumn).DataSource = getforeignTables()
                 FormDisabled = True
-                Dim theTable As String = If(InStr(DBSheetConfig.getEntry("table", DBSheetParams), Database.Text + ".") > 0, DBSheetConfig.getEntry("table", DBSheetParams), Database.Text + fetchSetting("ownerQualifier" + env.ToString(), "") + DBSheetConfig.getEntry("table", DBSheetParams))
+                Dim theTable As String = If(InStr(DBSheetConfig.getEntry("table", DBSheetParams), Database.Text + ".") > 0, DBSheetConfig.getEntry("table", DBSheetParams), Database.Text + Globals.fetchSetting("ownerQualifier" + env.ToString(), "") + DBSheetConfig.getEntry("table", DBSheetParams))
                 Table.SelectedIndex = Table.Items.IndexOf(theTable)
                 If Table.SelectedIndex = -1 Then
                     Globals.UserMsg("couldn't find table " + theTable + " defined in definitions file in database " + Database.Text + "!", "DBSheet Definition Error")
@@ -1032,7 +1032,7 @@ Public Class DBSheetCreateForm
                 Dim saveFileDialog1 As SaveFileDialog = New SaveFileDialog With {
                     .Title = "Save DBSheet Definition",
                     .FileName = tableName + ".xml",
-                    .InitialDirectory = fetchSetting("DBSheetDefinitions" + myDBConnHelper.DBenv, ""),
+                    .InitialDirectory = Globals.fetchSetting("DBSheetDefinitions" + myDBConnHelper.DBenv, ""),
                     .Filter = "XML files (*.xml)|*.xml",
                     .RestoreDirectory = True
                 }

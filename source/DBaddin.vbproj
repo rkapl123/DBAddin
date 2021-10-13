@@ -218,12 +218,8 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy /Y $(TargetDir)DBaddin-AddIn-packed.xll "%25appdata%25\Microsoft\AddIns\DBaddin.xll"
-
-copy /Y $(TargetDir)DBaddin.pdb "%25appdata%25\Microsoft\AddIns"
-
-copy /Y $(TargetDir)DBaddin.dll.config "%25appdata%25\Microsoft\AddIns\DBaddin.xll.config"
-</PostBuildEvent>
+    <PostBuildEvent>
+    </PostBuildEvent>
   </PropertyGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

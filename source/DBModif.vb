@@ -171,7 +171,7 @@ Public MustInherit Class DBModif
     End Function
 
     ''' <summary>refresh a DB Function (currently only DBListFetch and DBSetQuery) by invoking its respective DB*Action procedure
-    ''' It is necessary to prepare the inputs to this DB*Action procedure as the UDF cannot be invoked from here</summary>
+    ''' additionally prepare the inputs to the DB*Action procedure as a UDF cannot be invoked from VB code</summary>
     ''' <param name="srcExtent">the unique hidden name of the DB Function cell (DBFsource(GUID))</param>
     ''' <param name="executedDBMappers">in a DB Sequence, this parameter notifies of DBMappers that were executed before to allow avoidance of refreshing changes</param>
     ''' <param name="modifiedDBMappers">in a DB Sequence, this parameter notifies of a DBMapper that had changes, necessary to avoid deadlocks</param>
@@ -466,10 +466,10 @@ Public Class DBMapper : Inherits DBModif
             If TargetRange.ListObject IsNot Nothing Then
                 ' special grey table style for CUDFlags DBMapper
                 If CUDFlags Then
-                    TargetRange.ListObject.TableStyle = fetchSetting("DBMapperCUDFlagStyle", "TableStyleLight11")
+                    TargetRange.ListObject.TableStyle = Globals.fetchSetting("DBMapperCUDFlagStyle", "TableStyleLight11")
                     ' otherwise blue
                 Else
-                    TargetRange.ListObject.TableStyle = fetchSetting("DBMapperStandardStyle", "TableStyleLight9")
+                    TargetRange.ListObject.TableStyle = Globals.fetchSetting("DBMapperStandardStyle", "TableStyleLight9")
                 End If
             End If
             ' allow CUDFlags only on DBMappers with underlying Listobjects that were created with a query
@@ -519,8 +519,8 @@ Public Class DBMapper : Inherits DBModif
             If retval = vbCancel Then Exit Sub
         End If
         Dim changedRangeRows As Integer = changedRange.Rows.Count
-        If changedRangeRows > CInt(fetchSetting("maxRowCountCUD", "10000")) Then
-            If Not QuestionMsg(theMessage:="A large range was changed (" + changedRange.Rows.Count.ToString() + " > maxRowCountCUD:" + fetchSetting("maxRowCountCUD", "10000") + "), this will probably lead to CUD flag setting taking very long. Continue?", questionTitle:="Set CUD Flags for DB Mapper") Then Exit Sub
+        If changedRangeRows > CInt(Globals.fetchSetting("maxRowCountCUD", "10000")) Then
+            If Not QuestionMsg(theMessage:="A large range was changed (" + changedRange.Rows.Count.ToString() + " > maxRowCountCUD:" + Globals.fetchSetting("maxRowCountCUD", "10000") + "), this will probably lead to CUD flag setting taking very long. Continue?", questionTitle:="Set CUD Flags for DB Mapper") Then Exit Sub
         End If
         If changedRange.Parent.ProtectContents Then
             Globals.UserMsg("Worksheet " + changedRange.Parent.Name + " is content protected, can't set CUD Flags !")
@@ -641,7 +641,7 @@ Public Class DBMapper : Inherits DBModif
         extendDataRange()
         ' check for mass changes and warn if necessary
         If CUDFlags Then
-            Dim maxMassChanges As Integer = CInt(fetchSetting("maxNumberMassChange", "30"))
+            Dim maxMassChanges As Integer = CInt(Globals.fetchSetting("maxNumberMassChange", "30"))
             Dim curWs As Excel.Worksheet = TargetRange.Parent ' this is necessary because using TargetRange directly deletes the content of the CUD area !!
             Dim changesToBeDone As Integer = ExcelDnaUtil.Application.WorksheetFunction.CountIf(curWs.Range(TargetRange.Columns(TargetRange.Columns.Count + 1).Address), "<>")
             If changesToBeDone > maxMassChanges Then
@@ -1409,7 +1409,7 @@ Public Module DBModifs
             Globals.UserMsg("No Connectionstring given for environment: " + env.ToString() + ", please correct and rerun.", "Open Connection Error")
             Exit Function
         End If
-        Dim dbidentifier As String = fetchSetting("DBidentifierCCS" + env.ToString(), "")
+        Dim dbidentifier As String = Globals.fetchSetting("DBidentifierCCS" + env.ToString(), "")
         If dbidentifier = "" Then
             Globals.UserMsg("No DB identifier given for environment: " + env.ToString() + ", please correct and rerun.", "Open Connection Error")
             Exit Function
@@ -1501,7 +1501,7 @@ Public Module DBModifs
             If InStr(cpbdtext.ToLower(), "saverangetodb") > 0 Then
                 Dim firstBracket As Integer = InStr(cpbdtext, "(")
                 Dim firstComma As Integer = InStr(cpbdtext, ",")
-                Dim connDefStart As Integer = InStrRev(cpbdtext, """" + fetchSetting("connIDPrefixDBtype", "MSSQL"))
+                Dim connDefStart As Integer = InStrRev(cpbdtext, """" + Globals.fetchSetting("connIDPrefixDBtype", "MSSQL"))
                 Dim commaBeforeConnDef As Integer = InStrRev(cpbdtext, ",", connDefStart)
                 ' after conndef, all parameters are optional, so in case there is no comma afterwards, set this to end of whole definition string
                 Dim commaAfterConnDef As Integer = IIf(InStr(connDefStart, cpbdtext, ",") > 0, InStr(connDefStart, cpbdtext, ","), Len(cpbdtext))
@@ -1762,7 +1762,7 @@ Public Module DBModifs
     End Sub
 
     ''' <summary>gets defined names for DBModifier (DBMapper/DBAction/DBSeqnce) invocation in the current workbook and updates Ribbon with it</summary>
-    Public Sub getDBModifDefinitions()
+    Public Sub getDBModifDefinitions(Optional onlyCheck As Boolean = False)
         ' load DBModifier definitions (objects) into Global collection DBModifDefColl
         Globals.LogInfo("reading DBModifier Definitions for Workbook: " + ExcelDnaUtil.Application.ActiveWorkbook.Name)
         Try
@@ -1843,7 +1843,7 @@ Public Module DBModifs
                                 ' add definition to existing DBModiftype "menu"
                                 defColl = DBModifDefColl(DBModiftype)
                                 If defColl.ContainsKey(nodeName) Then
-                                    Globals.UserMsg("DBModifier " + nodeName + " added twice, this indicates legacy definitions that were modified!" + vbCrLf + "To fix, convert all other definitions in the same way and then remove the legacy definitions by editing the raw DB Modif definitions.", "get DBModif Definitions")
+                                    Globals.UserMsg("DBModifier " + nodeName + " added twice, this indicates legacy definitions that were modified!" + vbCrLf + "To fix, convert all other definitions in the same way and then remove the legacy definitions by editing the raw DB Modif definitions.", IIf(onlyCheck, "check", "get") + " DBModif Definitions")
                                 Else
                                     defColl.Add(nodeName, newDBModif)
                                 End If
@@ -1853,11 +1853,11 @@ Public Module DBModifs
 EndOuterLoop:
                 Next
             ElseIf CustomXmlParts.Count > 1 Then
-                Globals.UserMsg("Multiple CustomXmlParts for DBModifDef existing!", "get DBModif Definitions")
+                Globals.UserMsg("Multiple CustomXmlParts for DBModifDef existing!", IIf(onlyCheck, "check", "get") + " DBModif Definitions")
             End If
             Globals.theRibbon.Invalidate()
         Catch ex As Exception
-            Globals.UserMsg("Exception:  " + ex.Message, "get DBModif Definitions")
+            Globals.UserMsg("Exception in getting DB Modifier Definitions: " + ex.Message, "DBModifier Definitions Error")
         End Try
     End Sub
 

@@ -21,13 +21,13 @@ Public Class AdHocSQL
         For Each TransType As String In {"Cell", "ListFetch", "RowFetch", "ListObject", "Pivot"}
             Me.TransferType.Items.Add(TransType)
         Next
-        Me.TransferType.SelectedIndex = Me.TransferType.Items.IndexOf(fetchSetting("AdHocSQLTransferType", "Cell"))
+        Me.TransferType.SelectedIndex = Me.TransferType.Items.IndexOf(Globals.fetchSetting("AdHocSQLTransferType", "Cell"))
 
         Me.EnvSwitch.Items.Clear()
         For Each env As String In Globals.environdefs
             Me.EnvSwitch.Items.Add(env)
         Next
-        Dim userSetEnv As String = fetchSetting("AdHocSQLcmdEnv" + AdHocSQLStringsIndex.ToString(), Globals.env(baseZero:=True))
+        Dim userSetEnv As String = Globals.fetchSetting("AdHocSQLcmdEnv" + AdHocSQLStringsIndex.ToString(), Globals.env(baseZero:=True))
         ' get settings for connection
         myDBConnHelper = New DBConnHelper((Integer.Parse(userSetEnv) + 1).ToString())
         ' issue warning if current selected environment not same as that stored for command (prod/test !)
@@ -38,7 +38,7 @@ Public Class AdHocSQL
                 myDBConnHelper = New DBConnHelper(Globals.env())
             End If
         End If
-        userSetDB = fetchSetting("AdHocSQLcmdDB" + AdHocSQLStringsIndex.ToString(), Globals.fetch(myDBConnHelper.dbsheetConnString, myDBConnHelper.dbidentifier, ";"))
+        userSetDB = Globals.fetchSetting("AdHocSQLcmdDB" + AdHocSQLStringsIndex.ToString(), Globals.fetchSubstr(myDBConnHelper.dbsheetConnString, myDBConnHelper.dbidentifier, ";"))
         fillDatabasesAndSetDropDown()
         Me.EnvSwitch.SelectedIndex = Integer.Parse(userSetEnv)
         Me.Database.SelectedIndex = Me.Database.Items.IndexOf(userSetDB)
@@ -134,7 +134,7 @@ Public Class AdHocSQL
         If Not BackgroundWorker1.IsBusy Then
             ' only select commands are executed immediately, others are asked for (with default button being cancel)
             If InStr(Strings.LTrim(SQLText.Text.ToLower()), "select") <> 1 Then
-                If LCase(fetchSetting("DMLStatementsAllowed", "False")) <> "true" Then
+                If LCase(Globals.fetchSetting("DMLStatementsAllowed", "False")) <> "true" Then
                     Globals.UserMsg("Non Select Statements (DML) are forbidden (DMLStatementsAllowed needs to be True) !", "AdHoc SQL Command")
                     Exit Sub
                 End If

@@ -65,6 +65,18 @@ Public Module Globals
         Else
             fetchSetting = Nothing
         End If
+        ' rough type check based on default value
+        If defaultValue <> "" And fetchSetting <> "" Then
+            Dim checkDefaultInt As Integer = 0
+            Dim checkDefaultBool As Boolean = False
+            If Integer.TryParse(defaultValue, checkDefaultInt) AndAlso Not Integer.TryParse(fetchSetting, checkDefaultInt) Then
+                Globals.UserMsg("couldn't parse the setting " + Key + " as an Integer: " + fetchSetting + ", using default value: " + defaultValue)
+                fetchSetting = Nothing
+            ElseIf Boolean.TryParse(defaultValue, checkDefaultBool) AndAlso Not Boolean.TryParse(fetchSetting, checkDefaultBool) Then
+                Globals.UserMsg("couldn't parse the setting " + Key + " as a Boolean: " + fetchSetting + ", using default value: " + defaultValue)
+                fetchSetting = Nothing
+            End If
+        End If
         If fetchSetting Is Nothing Then fetchSetting = defaultValue
     End Function
 
@@ -461,14 +473,14 @@ Public Module Globals
     ''' <param name="separator">string ending the whole substring, not included in returned string!</param>
     ''' <param name="includeKeyStr">if includeKeyStr is set to true, include keystr in returned string</param>
     ''' <returns>the fetched substring</returns>
-    Public Function fetch(ByVal theString As String, ByVal keystr As String, ByVal separator As String, Optional includeKeyStr As Boolean = False) As String
+    Public Function fetchSubstr(ByVal theString As String, ByVal keystr As String, ByVal separator As String, Optional includeKeyStr As Boolean = False) As String
         Dim fetchBeg As Integer, fetchEnd As Integer
 
         fetchBeg = InStr(1, UCase$(theString), UCase$(keystr))
         If fetchBeg = 0 Then Return ""
         fetchEnd = InStr(fetchBeg + Len(keystr), UCase$(theString), UCase$(separator))
         If fetchEnd = 0 Or separator.Length = 0 Then fetchEnd = Len(theString) + 1
-        fetch = Mid$(theString, fetchBeg + IIf(includeKeyStr, 0, Len(keystr)), fetchEnd - (fetchBeg + IIf(includeKeyStr, 0, Len(keystr))))
+        fetchSubstr = Mid$(theString, fetchBeg + IIf(includeKeyStr, 0, Len(keystr)), fetchEnd - (fetchBeg + IIf(includeKeyStr, 0, Len(keystr))))
     End Function
 
     ''' <summary>checks whether worksheet called theName exists</summary>
@@ -568,7 +580,7 @@ Last:
             For Each ws In Wb.Worksheets
                 cellcount += ExcelDnaUtil.Application.WorksheetFunction.CountIf(ws.Range("1:" + ws.Rows.Count.ToString()), "<>")
             Next
-            If cellcount > CLng(fetchSetting("maxCellCount", "300000")) And Not CBool(fetchSetting("maxCellCountIgnore", "False")) Then
+            If cellcount > CInt(fetchSetting("maxCellCount", "300000")) And Not CBool(fetchSetting("maxCellCountIgnore", "False")) Then
                 Dim retval As MsgBoxResult = QuestionMsg("This large workbook (" + cellcount.ToString() + " filled cells >" + fetchSetting("maxCellCount", "300000") + ") might take long to search for DB functions to refresh, continue ?" + vbCrLf + "Click Cancel to add DBFskip to this Workbook, avoiding this search in the future (no DB Data will be refreshed then !)...", vbYesNoCancel, "Refresh DB functions")
                 If retval <> vbYes Then
                     If retval = vbCancel Then
@@ -813,6 +825,8 @@ Last:
             Else
                 Globals.UserMsg(collectedErrors, "DBfunction check Error")
             End If
+            ' last check any possible DB Modifier Definitions for validity
+            DBModifs.getDBModifDefinitions(True)
         End If
     End Sub
 

@@ -57,14 +57,14 @@ Imports ExcelDna.Integration
         Assert.AreEqual(Change("database=not found not changed;user=not changed;password=not changed;", "Something=", "changed", ";"), "database=not found not changed;user=not changed;password=not changed;")
     End Sub
 
-    <TestMethod()> Public Sub Testfetch()
-        Assert.AreEqual(fetch("SELECT <selectpart> FROM Table", "SELECT ", " FROM "), "<selectpart>")
-        Assert.AreEqual(fetch("SELECT <selectpart> FROM Table", "SELECT ", ""), "<selectpart> FROM Table")
+    <TestMethod()> Public Sub TestfetchSubstr()
+        Assert.AreEqual(fetchSubstr("SELECT <selectpart> FROM Table", "SELECT ", " FROM "), "<selectpart>")
+        Assert.AreEqual(fetchSubstr("SELECT <selectpart> FROM Table", "SELECT ", ""), "<selectpart> FROM Table")
     End Sub
 
-    <TestMethod()> Public Sub TestfetchInclSep()
-        Assert.AreEqual(fetch("Key1=Value1;Key2=Value2;", "Key1=", ";"), "Value1")
-        Assert.AreEqual(fetch("Key1=Value1;Key2=Value2;", "Key1=", ";", True), "Key1=Value1")
+    <TestMethod()> Public Sub TestfetchSubstrInclSep()
+        Assert.AreEqual(fetchSubstr("Key1=Value1;Key2=Value2;", "Key1=", ";"), "Value1")
+        Assert.AreEqual(fetchSubstr("Key1=Value1;Key2=Value2;", "Key1=", ";", True), "Key1=Value1")
     End Sub
 
     <TestMethod()> Public Sub TestReplaceDelims()

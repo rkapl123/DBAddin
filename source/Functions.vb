@@ -1333,7 +1333,7 @@ err_1:
     Public Function DBAddinEnvironment() As String
         ExcelDnaUtil.Application.Volatile()
         Try
-            DBAddinEnvironment = fetchSetting("ConfigName" + Globals.env(), "")
+            DBAddinEnvironment = Globals.fetchSetting("ConfigName" + Globals.env(), "")
             If ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual Then DBAddinEnvironment = "calc Mode is manual, please press F9 to get current DBAddin environment !"
         Catch ex As Exception
             DBAddinEnvironment = "Error happened: " + ex.Message
@@ -1347,7 +1347,7 @@ err_1:
     Public Function DBAddinServerSetting() As String
         ExcelDnaUtil.Application.Volatile()
         Try
-            Dim theConnString As String = fetchSetting("ConstConnString" + Globals.env(), "")
+            Dim theConnString As String = Globals.fetchSetting("ConstConnString" + Globals.env(), "")
             Dim keywordstart As Integer = InStr(1, UCase(theConnString), "SERVER=") + Len("SERVER=")
             DBAddinServerSetting = Mid$(theConnString, keywordstart, InStr(keywordstart, theConnString, ";") - keywordstart)
             If ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual Then DBAddinServerSetting = "calc Mode is manual, please press F9 to get current DBAddin server setting !"
@@ -1459,30 +1459,30 @@ err_1:
         ' in case ConnString is a number (set environment, retrieve ConnString from Setting ConstConnString<Number>
         If TypeName(ConnString) = "Double" Then
             Dim env As String = ConnString.ToString()
-            EnvPrefix = "Env:" + fetchSetting("ConfigName" + env, "")
-            ConnString = fetchSetting("ConstConnString" + env, "")
+            EnvPrefix = "Env:" + Globals.fetchSetting("ConfigName" + env, "")
+            ConnString = Globals.fetchSetting("ConstConnString" + env, "")
             If getConnStrForDBSet Then
                 ' if an alternate connection string is given, use this one...
-                Dim altConnString = fetchSetting("AltConnString" + env, "")
+                Dim altConnString = Globals.fetchSetting("AltConnString" + env, "")
                 If altConnString <> "" Then
                     ConnString = altConnString
                 Else
                     ' To get the connection string work also for SQLOLEDB provider for SQL Server, change to ODBC driver setting (this can be generally used to fix connection string problems with ListObjects)
-                    ConnString = Replace(ConnString, fetchSetting("ConnStringSearch" + env, "provider=SQLOLEDB"), fetchSetting("ConnStringReplace" + env, "driver=SQL SERVER"))
+                    ConnString = Replace(ConnString, Globals.fetchSetting("ConnStringSearch" + env, "provider=SQLOLEDB"), Globals.fetchSetting("ConnStringReplace" + env, "driver=SQL SERVER"))
                 End If
             End If
         ElseIf TypeName(ConnString) = "String" Then
             If ConnString.ToString() = "" Then ' no ConnString or environment number set: get connection string of currently selected evironment
-                EnvPrefix = "Env:" + fetchSetting("ConfigName" + Globals.env(), "")
-                ConnString = fetchSetting("ConstConnString" + Globals.env(), "")
+                EnvPrefix = "Env:" + Globals.fetchSetting("ConfigName" + Globals.env(), "")
+                ConnString = Globals.fetchSetting("ConstConnString" + Globals.env(), "")
                 If getConnStrForDBSet Then
                     ' if an alternate connection string is given, use this one...
-                    Dim altConnString = fetchSetting("AltConnString" + Globals.env(), "")
+                    Dim altConnString = Globals.fetchSetting("AltConnString" + Globals.env(), "")
                     If altConnString <> "" Then
                         ConnString = altConnString
                     Else
                         ' To get the connection string work also for SQLOLEDB provider for SQL Server, change to ODBC driver setting (this can be generally used to fix connection string problems with ListObjects)
-                        ConnString = Replace(ConnString, fetchSetting("ConnStringSearch" + Globals.env(), "provider=SQLOLEDB"), fetchSetting("ConnStringReplace" + Globals.env(), "driver=SQL SERVER"))
+                        ConnString = Replace(ConnString, Globals.fetchSetting("ConnStringSearch" + Globals.env(), "provider=SQLOLEDB"), Globals.fetchSetting("ConnStringReplace" + Globals.env(), "driver=SQL SERVER"))
                     End If
                 End If
             Else
