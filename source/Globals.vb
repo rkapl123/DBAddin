@@ -563,6 +563,20 @@ Last:
         End Try
     End Function
 
+    ''' <summary>converts a Mso Menu ID to a Drawing Image</summary>
+    ''' <param name="idMso">the Mso Menu ID to be converted</param>
+    ''' <returns>a System.Drawing.Image to be used by </returns>
+    Public Function convertFromMso(idMso As String) As System.Drawing.Image
+        Try
+            Dim p As stdole.IPictureDisp = ExcelDnaUtil.Application.CommandBars.GetImageMso(idMso, 16, 16)
+            Dim hPal As IntPtr = p.hPal
+            convertFromMso = System.Drawing.Image.FromHbitmap(p.Handle, hPal)
+        Catch ex As Exception
+            ' in case above image fetching doesn't work then no image is displayed (the image parameter is still required for ContextMenuStrip.Items.Add !)
+            convertFromMso = Nothing
+        End Try
+    End Function
+
     ''' <summary>recalc fully the DB functions, if we have DBFuncs in the workbook somewhere</summary>
     ''' <param name="Wb">workbook to refresh DB Functions in</param>
     ''' <param name="ignoreCalcMode">when calling refreshDBFunctions time delayed (when saving a workbook and DBFC* is set), need to trigger calculation regardless of calculation mode being manual, otherwise data is not refreshed</param>

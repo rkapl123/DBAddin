@@ -155,6 +155,36 @@ Public Module Functions
         End Try
     End Function
 
+    ''' <summary>Create a powerquery compliant string from cell values, potentially concatenating with other parts for easy inclusion of wildcards (%,_)</summary>
+    ''' <param name="StringPart">array of strings/wildcards or ranges containing strings/wildcards</param>
+    ''' <returns>powerquery compliant string</returns>
+    <ExcelFunction(Description:="Create a powerquery compliant string from cell values, potentially concatenating with other parts for easy inclusion of wildcards (%,_)")>
+    Public Function PQString(<ExcelArgument(Description:="array of strings/wildcards or ranges containing strings/wildcards")> ParamArray StringPart() As Object) As String
+        Dim myRef, myCell
+        Try
+            Dim retval As String = ""
+            For Each myRef In StringPart
+                If TypeName(myRef) = "Object(,)" Then
+                    For Each myCell In myRef
+                        If TypeName(myCell) = "ExcelEmpty" Then
+                            ' do nothing here
+                        Else
+                            retval += myCell.ToString()
+                        End If
+                    Next
+                ElseIf TypeName(myRef) = "ExcelEmpty" Or TypeName(myRef) = "ExcelMissing" Then
+                    ' do nothing here
+                Else
+                    retval += myRef.ToString()
+                End If
+            Next
+            PQString = """" + retval + """"
+        Catch ex As Exception
+            Globals.LogWarn(ex.Message)
+            PQString = "Error (" + ex.Message + ") in PQString"
+        End Try
+    End Function
+
     ''' <summary>Create an in clause from cell values, strings are created with quotation marks,
     '''             dates are created with DBDate</summary>
     ''' <param name="inClausePart">array of values or ranges containing values</param>
@@ -336,6 +366,7 @@ Public Module Functions
     ''' <param name="targetRange"></param>
     ''' <param name="ConnString"></param>
     ''' <param name="caller"></param>
+    ''' <param name="targetRangeName"></param>
     Sub DBSetQueryAction(callID As String, Query As String, targetRange As Object, ConnString As String, caller As Excel.Range, targetRangeName As String)
         Dim TargetCell As Excel.Range
         Dim targetSH As Excel.Worksheet
@@ -448,19 +479,22 @@ Public Module Functions
                 theListObject.QueryTable.CommandType = Excel.XlCmdType.xlCmdSql
                 theListObject.QueryTable.CommandText = Query
                 theListObject.QueryTable.BackgroundQuery = False
-                Dim theRefreshStyle = theListObject.QueryTable.RefreshStyle
+                Dim theRefreshStyle As Excel.XlCellInsertionMode = theListObject.QueryTable.RefreshStyle
+                Dim thePreserveColumnInfo As Boolean = theListObject.QueryTable.PreserveColumnInfo
                 Try
                     theListObject.QueryTable.Refresh()
                 Catch ex As Exception
                     Globals.LogWarn("QueryTable Refresh error: " + ex.Message + " in query: " + Query + ", caller: " + callID + ", retrying with RefreshStyle = xlInsertEntireRows")
                     ' this fixes two errors with query tables where the table size was changed: 8000A03EC and out of memory error
                     theListObject.QueryTable.RefreshStyle = Excel.XlCellInsertionMode.xlInsertEntireRows
+                    theListObject.QueryTable.PreserveColumnInfo = False
                     Try
                         theListObject.QueryTable.Refresh()
                     Catch ex1 As Exception
                         Throw New Exception("Error in query table refresh: " + ex1.Message)
                     Finally
                         theListObject.QueryTable.RefreshStyle = theRefreshStyle
+                        theListObject.QueryTable.PreserveColumnInfo = thePreserveColumnInfo
                     End Try
                 End Try
                 StatusCollection(callID).statusMsg = "Set " + connType + " ListObject to (bgQuery= " + bgQuery.ToString() + ", " + If(theListObject.QueryTable.FetchedRowOverflow, "Too many rows fetched to display !", "") + "): " + Query
@@ -491,8 +525,77 @@ Public Module Functions
         End If
         DBModifs.preventChangeWhileFetching = False
         ExcelDnaUtil.Application.Calculation = calcMode
-        caller.Formula += " " ' trigger recalculation to return below error message to calling function
+        caller.Formula += " " ' trigger recalculation to return error message to calling function
     End Sub
+
+    ''' <summary>Stores a powerquery into an query named queryName</summary>
+    ''' <param name="Query">powerquery for getting data</param>
+    ''' <param name="queryName"></param>
+    ''' <returns>Status Message</returns>
+    <ExcelFunction(Description:="Stores a query into an Object (embedded Listobject or Pivot table) defined in targetRange")>
+    Public Function DBSetPowerQuery(<ExcelArgument(Description:="query for getting data")> Query As Object,
+                               <ExcelArgument(Description:="Name of Powerquery where query should be set")> queryName As Object) As String
+        Dim callID As String = ""
+        Dim caller As Excel.Range
+        Dim EnvPrefix As String = ""
+        If ExcelDnaUtil.IsInFunctionWizard() Then Return "invoked from function wizard..."
+        Try
+            caller = ToRange(XlCall.Excel(XlCall.xlfCaller))
+            ' calcContainers are identified by wbname + Sheetname + function caller cell Address
+            callID = "[" + caller.Parent.Parent.Name + "]" + caller.Parent.Name + "!" + caller.Address
+            Globals.LogInfo("entering function, callID: " + callID)
+            ' check query, also converts query to string (if it is a range)
+            ' error message or cached status message is returned from checkParamsAndCache, if query OK and result was not already calculated (cached) then empty string
+            DBSetPowerQuery = checkParamsAndCache(Query, callID, "")
+            If DBSetPowerQuery.Length > 0 Then Exit Function
+
+            ' first call: actually perform query
+            If Not StatusCollection.ContainsKey(callID) Then
+                Dim statusCont As ContainedStatusMsg = New ContainedStatusMsg
+                StatusCollection.Add(callID, statusCont)
+                StatusCollection(callID).statusMsg = "" ' need this to prevent object not set errors in checkCache
+                ExcelAsyncUtil.QueueAsMacro(Sub()
+                                                DBSetPowerQueryAction(callID, Query, caller, queryName)
+                                            End Sub)
+            End If
+
+        Catch ex As Exception
+            Globals.LogWarn(ex.Message + ", callID: " + callID)
+            DBSetPowerQuery = "Error (" + ex.Message + ") in DBSetPowerQuery, callID: " + callID
+        End Try
+        Globals.LogInfo("leaving function, callID: " + callID)
+    End Function
+
+    Public avoidRequeryDuringEdit As Boolean = False
+    Public queryBackupColl As Dictionary(Of String, String) = New Dictionary(Of String, String)
+
+    ''' <summary>set Query parameters (query text and connection string) of Query List or pivot table (incl. chart)</summary>
+    ''' <param name="callID">the key for the statusMsg container</param>
+    ''' <param name="Query"></param>
+    ''' <param name="caller"></param>
+    ''' <param name="queryName"></param>
+    Sub DBSetPowerQueryAction(callID As String, Query As String, caller As Excel.Range, queryName As String)
+        Dim targetWB As Excel.Workbook = caller.Parent.Parent
+        If avoidRequeryDuringEdit Then Exit Sub
+
+        Dim calcMode = ExcelDnaUtil.Application.Calculation
+        Try
+            queryBackupColl(queryName) = targetWB.Queries(queryName).Formula
+            ' set the query
+            targetWB.Queries(queryName).Formula = Query
+            ' refresh all connections where the query is used
+            For Each wbConn As Excel.WorkbookConnection In targetWB.Connections
+                If InStr(LCase(wbConn.OLEDBConnection.Connection), "location=" + LCase(queryName)) > 0 Then wbConn.Refresh()
+            Next
+            StatusCollection(callID).statusMsg = "set and refreshed " + queryName
+        Catch ex As Exception
+            Globals.LogWarn(ex.Message + " in query: " + Query + ", caller: " + callID)
+            StatusCollection(callID).statusMsg = ex.Message + " in query: " + Query
+        End Try
+        ExcelDnaUtil.Application.Calculation = calcMode
+        caller.Formula += " " ' trigger recalculation to return error message to calling function
+    End Sub
+
 
     ''' <summary>
     ''' Fetches a list of data defined by query into TargetRange.
@@ -1412,9 +1515,10 @@ err_1:
                             checkParamsAndCache = "query contains: #" + Replace(myCell.ToString(), "ExcelError", "") + "!"
                         End If
                     ElseIf IsNumeric(myCell) Then
-                        retval += Convert.ToString(myCell, System.Globalization.CultureInfo.InvariantCulture) + " "
+                        ' ConnString = "" means a query from DBSetPowerQuery, here preserve the cr lf !
+                        retval += Convert.ToString(myCell, System.Globalization.CultureInfo.InvariantCulture) + IIf(ConnString = "", vbCrLf, " ")
                     Else
-                        retval += myCell.ToString() + " "
+                        retval += myCell.ToString() + IIf(ConnString = "", vbCrLf, " ")
                     End If
                     Query = retval
                 Next
@@ -1448,7 +1552,7 @@ err_1:
         Else
             ' return Status Containers Message as last result
             If StatusCollection.ContainsKey(callID) Then
-                If Not IsNothing(StatusCollection(callID).statusMsg) Then checkParamsAndCache = "(last result:)" + StatusCollection(callID).statusMsg
+                If Not IsNothing(StatusCollection(callID).statusMsg) Then checkParamsAndCache = If(ConnString = "", "DBSetPowerQuery: ", "(last result:)") + StatusCollection(callID).statusMsg
             End If
         End If
     End Function

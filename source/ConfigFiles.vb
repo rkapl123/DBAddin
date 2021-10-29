@@ -41,13 +41,14 @@ Public Module ConfigFiles
                 If ConfigSelect = "" Then ConfigSelect = Globals.fetchSetting("ConfigSelect", "") ' if nothing found under given ConfigSelectPreference, fall back to standard ConfigSelect
                 ' replace query in function formula in second part of pairs with ConfigSelect template. 
                 ' This works only for templates with actual query string as first argument (not having reference(s) to cell(s) with query string(s))
-                If ConfigSelect <> "" Then
-                    For i As Integer = 0 To UBound(ConfigArray) Step 2
-                        ConfigArray(i + 1) = replaceConfigSelectInFormula(ConfigArray(i + 1), ConfigSelect)
-                    Next
+                ' also only works for single pair config templates
+                If ConfigSelect <> "" And ConfigArray.Count() = 2 Then
+                    If Left(UCase(ExcelDnaUtil.Application.ActiveCell.Formula), Len(srchdFunc) + 2) = "=DBLISTFETCH(" Then
+                        ConfigArray(1) = replaceConfigSelectInFormula(ConfigArray(1), ConfigSelect)
+                    End If
                 End If
-                ' for existing dbfunction replace querystring in existing formula of active cell, only works for single pair config templates (or the first pair)
-                If srchdFunc <> "" Then
+                ' for existing dbfunction replace querystring in existing formula of active cell, only works for single pair config templates
+                If srchdFunc <> "" And ConfigArray.Count() = 2 Then
                     ExcelDnaUtil.Application.ActiveCell.Formula = replaceQueryInFormula(ConfigArray(1), srchdFunc, ExcelDnaUtil.Application.ActiveCell.Formula.ToString())
                 Else ' for other cells simply insert the ConfigArray
                     createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, ConfigArray)
@@ -176,6 +177,7 @@ Public Module ConfigFiles
             Exit Sub
         End Try
     End Sub
+
 
     ''' <summary>creates functions in target cells (relative to referenceCell) as defined in ItemLineDef</summary>
     ''' <param name="originCell">original reference Cell</param>

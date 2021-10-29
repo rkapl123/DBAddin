@@ -81,6 +81,7 @@ Public Class MenuHandler
                     "<button id='DBRowFetchC' tag='DBRowFetch' label='DBRowFetch' imageMso='GroupRecords' onAction='clickCreateButton'/>" +
                     "<button id='DBSetQueryPivotC' tag='DBSetQueryPivot' label='DBSetQueryPivot' imageMso='AddContentType' onAction='clickCreateButton'/>" +
                     "<button id='DBSetQueryListObjectC' tag='DBSetQueryListObject' label='DBSetQueryListObject' imageMso='AddContentType' onAction='clickCreateButton'/>" +
+                    "<button id='DBSetPowerQueryC' tag='DBSetPowerQuery' label='DBSetPowerQuery' imageMso='AddContentType' onAction='clickCreateButton'/>" +
                 "</menu>" +
                 "<menuSeparator id='MySeparatorC' insertBeforeMso='Cut'/>" +
             "</contextMenu>" +
@@ -96,6 +97,7 @@ Public Class MenuHandler
                     "<button id='DBRowFetchCL' tag='DBRowFetch' label='DBRowFetch' imageMso='GroupRecords' onAction='clickCreateButton'/>" +
                     "<button id='DBSetQueryPivotCL' tag='DBSetQueryPivot' label='DBSetQueryPivot' imageMso='AddContentType' onAction='clickCreateButton'/>" +
                     "<button id='DBSetQueryListObjectCL' tag='DBSetQueryListObject' label='DBSetQueryListObject' imageMso='AddContentType' onAction='clickCreateButton'/>" +
+                    "<button id='DBSetPowerQueryCL' tag='DBSetPowerQuery' label='DBSetPowerQuery' imageMso='AddContentType' onAction='clickCreateButton'/>" +
                 "</menu>" +
                 "<menuSeparator id='MySeparatorCL' insertBeforeMso='Cut'/>" +
             "</contextMenu>" +
@@ -380,17 +382,6 @@ Public Class MenuHandler
         ctMenuStrip.Items().Add("a DBSequence", convertFromMso("ShowOnNewButton"), AddressOf ctMenuStrip_Click)
         ctMenuStrip.Show(ptLowerLeft)
     End Sub
-
-    Private Function convertFromMso(idMso As String) As System.Drawing.Image
-        Try
-            Dim p As stdole.IPictureDisp = ExcelDnaUtil.Application.CommandBars.GetImageMso(idMso, 16, 16)
-            Dim hPal As IntPtr = p.hPal
-            convertFromMso = System.Drawing.Image.FromHbitmap(p.Handle, hPal)
-        Catch ex As Exception
-            ' in case above image fetching doesn't work then no image is displayed (the image parameter is still required for ContextMenuStrip.Items.Add !)
-            convertFromMso = Nothing
-        End Try
-    End Function
 
     Private Sub ctMenuStrip_Click(sender As Object, e As EventArgs)
         createDBModif(Replace(Replace(sender.ToString(), "a ", ""), "DBSequence", "DBSeqnce"))
@@ -694,7 +685,51 @@ Public Class MenuHandler
             Else                                         ' create new definition
                 DBModifs.createDBModif(control.Tag)
             End If
+        ElseIf control.Tag = "DBSetPowerQuery" Then
+            Dim wbQueries As Object = Nothing
+            Try : wbQueries = ExcelDnaUtil.Application.ActiveWorkbook.Queries
+            Catch ex As Exception
+                Globals.LogWarn("Error getting power queries: " + ex.Message)
+                Exit Sub
+            End Try
+            If IsNothing(wbQueries) Or wbQueries.Count = 0 Then
+                Globals.LogWarn("No power queries available...")
+                Exit Sub
+            End If
+            ctMenuStrip2 = New Windows.Forms.ContextMenuStrip()
+            Dim ptLowerLeft As Drawing.Point = System.Windows.Forms.Cursor.Position
+            ctMenuStrip2.Items().Add("Select a power query below to be referenced by DBSetPowerQuery (hold Ctrl to restore the last query)").Enabled = False
+            For Each qry As Object In wbQueries
+                ctMenuStrip2.Items().Add(qry.Name, convertFromMso("TableExcelSpreadsheetInsert"), AddressOf ctMenuStrip2_Click)
+            Next
+            ctMenuStrip2.Show(ptLowerLeft)
         End If
+    End Sub
+
+    Private WithEvents ctMenuStrip2 As Windows.Forms.ContextMenuStrip
+    Dim curCell As Excel.Range
+    Dim i As Integer
+    Private Sub ctMenuStrip2_Click(sender As Object, e As EventArgs)
+        ' restore previously stored query with Ctrl..
+        If My.Computer.Keyboard.CtrlKeyDown Then
+            ExcelDnaUtil.Application.ActiveWorkbook.Queries(sender.ToString()).Formula = Functions.queryBackupColl(sender.ToString())
+            Globals.UserMsg("Last power query restored for " + sender.ToString())
+            Exit Sub
+        End If
+        Dim theFormulaStr As String() = ExcelDnaUtil.Application.ActiveWorkbook.Queries(sender.ToString()).Formula.ToString().Split(vbCrLf)
+        i = 1
+        curCell = ExcelDnaUtil.Application.ActiveCell
+        Functions.avoidRequeryDuringEdit = True
+        For Each formulaPart As String In theFormulaStr
+            If curCell.Offset(i, 0).Value <> "" Then
+                curCell.Offset(i, 0).Select()
+                If Globals.QuestionMsg("Cell not empty (would be overwritten), continue?") <> MsgBoxResult.Ok Then Exit Sub
+            End If
+            curCell.Offset(i, 0).Value = formulaPart.Replace(vbLf, "")
+            i += 1
+        Next
+        ConfigFiles.createFunctionsInCells(curCell, {"RC", "=DBSetPowerQuery(R[1]C:R[" + (i - 1).ToString() + "]C,""" + sender.ToString() + """)"})
+        Functions.avoidRequeryDuringEdit = False
     End Sub
 
     ''' <summary>clicked Assign DBSheet: create DB Mapper with CUD Flags</summary>
