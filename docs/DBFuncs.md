@@ -121,6 +121,12 @@ Beware that filling of data is much slower than with DBlistFetch, so use DBRowFe
 
 Stores a query into an Object defined in TargetRange (an embedded MS Query/Listobject, Pivot table, etc.)
 
+#### DBSetPowerQuery
+
+<pre lang="vb">DBSetPowerQuery (Query, TargetedPowerqueryObject)</pre>
+
+Stores a query into a Powerquery Object defined using the new power query editor. You have to create this power query first, to bring the created powerquery into the spreadsheet, use the [Creation of DB Functions](#create-db-functions) available in the cell context menu.
+As Powerqueries use double quotes for quoting, special variations of DBString and DBDate are available to create those parameters in Powerqueries.
 
 ### Additional Helper Functions
 
@@ -174,11 +180,21 @@ Would return `”('ABC',1,'20070115')”`, if DateRange contained `15/01/2007` a
 
 <pre lang="vb">DBString(ParameterList)</pre>
 
-This builds a Database compliant string (quoted) from the open ended parameter list given in the argument. This can also be used to easily build wildcards into the String, like
+This builds a Database compliant string (quoted using single quotes) from the open ended parameter list given in the argument. This can also be used to easily build wildcards into the String, like
 
 <pre lang="vb">DBString("_",E1,"%")</pre>
 
 When E1 contains "test", this results in '\_test%', thus matching in a like clause the strings 'stestString', 'atestAnotherString', etc.
+
+#### PQString
+
+<pre lang="vb">PQString(ParameterList)</pre>
+
+This builds a Powerquery compliant string (quoted using double quotes) from the open ended parameter list given in the argument.
+
+<pre lang="vb">PQString("a ",E1)</pre>
+
+When E1 contains "test", this results in 'a test'.
 
 #### DBDate
 
@@ -204,6 +220,13 @@ Of course you can also change the default setting for formatting by changing the
 ```xml
     <add key="DefaultDBDateFormatting" value="0"/>
 ```
+
+#### PQDate
+
+<pre lang="vb">PQDate(DateValue, forceDateTime (optional))</pre>
+
+This builds a powerquery function from the date/datetime/time value given in the argument. Depending on the value (fractional, integer or smaller than 1), this can be `#datetime(year, month, day, hour, min, sec)`, `#date(year, month, day)` or `#time(hour, min, sec)`
+The return of `#datetime(year, month, day, hour, min, sec)` can be enforced by setting `forceDateTime` to true.
 
 ### Modifications of DBFunc Behaviour
 
@@ -291,21 +314,27 @@ To save time when starting up DBAddin/Excel, refreshing the config tree is only 
 
 ### Create DB Functions
 
-You can create the three DB Functions by using the cell context menu:  
+You can create the four DB Functions by using the cell context menu:  
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/ContextMenu.PNG)  
 
 The DB functions are created with an empty query string and full feature settings (e.g. Headers displayed, autosize and autoformat switched on) and target cells directly below the current active cell (except DBSetQuery for ListObjects, the ListObjects are placed to the right).
+A notable exception here is `DBSetPowerQuery` that doesn't refer to any normal excel object but rather an existing powerquery.
 
 Below the results for a DB Function created in Cell A1:
 *   DBListFetch:  `=DBListFetch("";"";A2;;;WAHR;WAHR;WAHR)`
 *   DBRowFetch:   `=DBRowFetch("";"";WAHR;A2:K2)`
 *   DBSetQueryPivot:   `=DBSetQuery("";"";A2)`
 *   DBSetQueryListObject:   `=DBSetQuery("";"";B1)`
+*   DBSetPowerQuery:   `=DBSetPowerQuery(B1;"name of power query")`
 
 DBSetQuery also creates the target Object (a Pivot Table or a ListObject) below respectively to the right of the DB Function, so it is easier to start with. 
 In case you want to insert DB Configurations (see [Cell Config Deployment](#Cell-Config-Deployment)), just place the selection on the inserted DB function cell and select your config, the stored query will replace the empty query in the created DB function.
 For pivot tables the excel version of the created pivot table can be set with the user setting `ExcelVersionForPivot` (the numbers corresponding to the versions are: 0=2000, 1=2002, 2=2003, 3=2007, 4=2010, 5=2013, 6=2016, 7=2019=default if not set).
 This is important to either provide backward compatibility with other users excels versions or to use the latest features.
+
+When creating `DBSetPowerQuery`, the invocation provides a dropdown list of available powerqueries that are added to the sheet below the `DBSetPowerQuery` function as the Query argument and can be modified (parameterized) further.
+In case the modifications resulted in a parsing error, you can enter the powerquery editor of that query to determine the reason of the problem. In case the Powerquery has become corrupted by the modification, you can restore the previously set powerquery by holding Ctrl when selecting the powerquery in the provided dropdown list.
+
 #### Settings
 
 Following Settings in DBAddin.xll.config or the referred DBAddinCentral.config affect the behaviour of DB functions:

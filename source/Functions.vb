@@ -185,6 +185,52 @@ Public Module Functions
         End Try
     End Function
 
+    ''' <summary>Creates a powerquery compliant #date function from excel datetype value</summary>
+    ''' <param name="DatePart">date/time/datetime single parameter or range reference</param>
+    ''' <returns>the powerquey #date function</returns>
+    <ExcelFunction(Description:="Create powerquery compliant #date, #time or #datetime function from excel datetype value")>
+    Public Function PQDate(<ExcelArgument(Description:="date/time/datetime")> ByVal DatePart As Object,
+                           <ExcelArgument(Description:="enforce dateteime for date only values (without fractional part)")> Optional forceDateTime As Boolean = False) As String
+        PQDate = ""
+        Try
+            If TypeName(DatePart) = "Object(,)" Then
+                For Each myCell In DatePart
+                    If TypeName(myCell) = "ExcelEmpty" Then
+                        ' do nothing here
+                    Else
+                        PQDate = formatPQDate(myCell, forceDateTime) + ","
+                    End If
+                Next
+                ' cut last comma
+                If PQDate.Length > 0 Then PQDate = Left(PQDate, Len(PQDate) - 1)
+            Else
+                ' direct value in DBDate..
+                If TypeName(DatePart) = "ExcelEmpty" Or TypeName(DatePart) = "ExcelMissing" Then
+                    ' do nothing here
+                Else
+                    PQDate = formatPQDate(DatePart, forceDateTime)
+                End If
+            End If
+        Catch ex As Exception
+            Globals.LogWarn(ex.Message)
+            PQDate = "Error (" + ex.Message + ") in function PQDate"
+        End Try
+    End Function
+
+    ''' <summary>takes an OADate and formats it as a powerquery compliant #date, #time or #datetime function</summary>
+    ''' <param name="datVal">OADate (double) date parameter</param>
+    ''' <returns>powerquery function</returns>
+    Private Function formatPQDate(datVal As Double, forceDateTime As Boolean) As String
+        formatPQDate = ""
+        If Int(datVal) = datVal And Not forceDateTime Then
+            formatPQDate += "#date(" + Date.FromOADate(datVal).Year.ToString() + "," + Date.FromOADate(datVal).Month.ToString() + "," + Date.FromOADate(datVal).Day.ToString() + ")"
+        ElseIf CInt(datVal) > 1 Or forceDateTime Then
+            formatPQDate += "#datetime(" + Date.FromOADate(datVal).Year.ToString() + "," + Date.FromOADate(datVal).Month.ToString() + "," + Date.FromOADate(datVal).Day.ToString() + "," + Date.FromOADate(datVal).Hour.ToString() + "," + Date.FromOADate(datVal).Minute.ToString() + "," + Date.FromOADate(datVal).Second.ToString() + ")"
+        Else
+            formatPQDate += "#time(" + Date.FromOADate(datVal).Hour.ToString() + "," + Date.FromOADate(datVal).Minute.ToString() + "," + Date.FromOADate(datVal).Second.ToString() + ")"
+        End If
+    End Function
+
     ''' <summary>Create an in clause from cell values, strings are created with quotation marks,
     '''             dates are created with DBDate</summary>
     ''' <param name="inClausePart">array of values or ranges containing values</param>
