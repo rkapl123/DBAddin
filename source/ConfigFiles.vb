@@ -186,7 +186,13 @@ Public Module ConfigFiles
         Dim cellToBeStoredAddress As String, cellToBeStoredContent As String
         ' disabling calculation is necessary to avoid object errors
         Dim calcMode As Long = ExcelDnaUtil.Application.Calculation
-        ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual
+        Try
+            ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual
+        Catch ex As Exception
+            Globals.UserMsg("The Calculation mode can't be set, maybe you are in the formula/cell editor?", "Create Function In Cell")
+            Exit Sub
+        End Try
+
         Dim i As Long
 
         ' for each defined cell address and content pair

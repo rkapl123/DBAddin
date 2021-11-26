@@ -184,74 +184,64 @@ done:
                 If docproperty.Type = MsoDocProperties.msoPropertyTypeBoolean Then
                     If Left$(docproperty.Name, 5) = "DBFCC" And docproperty.Value Then DBFCContentColl.Add(True, Mid(docproperty.Name, 6))
                     If Left$(docproperty.Name, 5) = "DBFCA" And docproperty.Value Then DBFCAllColl.Add(True, Mid(docproperty.Name, 6))
-                    If docproperty.Name = "DBFskip" Then doRefreshDBFuncsAfterSave = Not docproperty.Value
+                    If docproperty.Name = "DBFskip" AndAlso docproperty.Value Then doRefreshDBFuncsAfterSave = False
                 End If
             Next
         Catch ex As Exception
             Globals.UserMsg("Error getting docproperties: " + Wb.Name + ex.Message)
         End Try
         ' skip searching for functions (takes time in large sheets!) if not necessary
-        If DBFCContentColl.Count = 0 And DBFCAllColl.Count = 0 Then Exit Sub
+        If Not doRefreshDBFuncsAfterSave Or (DBFCContentColl.Count = 0 And DBFCAllColl.Count = 0) Then Exit Sub
 
         ' now clear content/all
-        Dim searchCell As Excel.Range
         dontCalcWhileClearing = True
         Try
-            Dim ws As Excel.Worksheet = Nothing
-            For Each ws In Wb.Worksheets
-                If ws Is Nothing Then
-                    Globals.LogWarn("no worksheet in saving workbook...")
-                    Exit For
+            ' walk through all DB functions (having hidden names DBFsource*) cells there to find DB Functions and change their formula, adding " " to trigger recalculation
+            For Each DBname As Excel.Name In ExcelDnaUtil.Application.ActiveWorkbook.Names
+                Dim DBFuncCell As Excel.Range = Nothing
+                If DBname.Name Like "*DBFsource*" Then
+                    ' some names might have lost their reference to the cell, so catch this here...
+                    Try : DBFuncCell = DBname.RefersToRange : Catch ex As Exception : End Try
                 End If
-                ExcelDnaUtil.Application.Statusbar = "Looking for DBFunctions in " + ws.Name + " for possible removal of Data in TargetRanges"
-                For Each theFunc As String In {"DBListFetch(", "DBRowFetch("}
-                    searchCell = ws.Cells.Find(What:=theFunc, After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
-                    If Not (searchCell Is Nothing) Then
-                        Dim firstAddress As String = searchCell.Address
-                        Do
-                            ' get DB function target names from source names
-                            Dim targetName As String = getUnderlyingDBNameFromRange(searchCell)
-                            ' in case of commented cells and purged db underlying names, getDBunderlyingNameFromRange doesn't return a name ...
-                            If InStr(UCase(targetName), "DBFSOURCE") > 0 Then
-                                targetName = Replace(targetName, "DBFsource", "DBFtarget", 1, , vbTextCompare)
-                                ' check which DB functions should be content cleared (CC) or all cleared (CA)
-                                Dim DBFCC As Boolean = False : Dim DBFCA As Boolean = False
-                                DBFCC = DBFCContentColl.Contains("*")
-                                DBFCC = DBFCContentColl.Contains(searchCell.Parent.Name + "!" + Replace(searchCell.Address, "$", "")) Or DBFCC
-                                DBFCA = DBFCAllColl.Contains("*")
-                                DBFCA = DBFCAllColl.Contains(searchCell.Parent.Name + "!" + Replace(searchCell.Address, "$", "")) Or DBFCA
-                                Dim theTargetRange As Excel.Range
-                                Try : theTargetRange = ExcelDnaUtil.Application.Range(targetName)
-                                Catch ex As Exception
-                                    Globals.LogWarn("Error in finding target range of DB Function " + theFunc + "in " + firstAddress + "), refreshing all DB functions should solve this.")
-                                    searchCell = Nothing
-                                    searchCell = ws.Cells.Find(What:="", After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
-                                    dontCalcWhileClearing = False
-                                    Exit Sub
-                                End Try
-                                If DBFCC Then
-                                    theTargetRange.Parent.Range(theTargetRange.Parent.Cells(theTargetRange.Row, theTargetRange.Column), theTargetRange.Parent.Cells(theTargetRange.Row + theTargetRange.Rows.Count - 1, theTargetRange.Column + theTargetRange.Columns.Count - 1)).ClearContents
-                                    Globals.LogInfo("Contents of selected DB Functions targets cleared")
-                                End If
-                                If DBFCA Then
-                                    theTargetRange.Parent.Range(theTargetRange.Parent.Cells(theTargetRange.Row + 2, theTargetRange.Column), theTargetRange.Parent.Cells(theTargetRange.Row + theTargetRange.Rows.Count - 1, theTargetRange.Column + theTargetRange.Columns.Count - 1)).Clear
-                                    theTargetRange.Parent.Range(theTargetRange.Parent.Cells(theTargetRange.Row, theTargetRange.Column), theTargetRange.Parent.Cells(theTargetRange.Row + 2, theTargetRange.Column + theTargetRange.Columns.Count - 1)).ClearContents
-                                    Globals.LogInfo("All cleared from selected DB Functions targets")
-                                End If
+                If Not IsNothing(DBFuncCell) Then
+                    Try
+                        ' get DB function target names from source names
+                        Dim targetName As String = getUnderlyingDBNameFromRange(DBFuncCell)
+                        ' in case of commented cells and purged db underlying names, getDBunderlyingNameFromRange doesn't return a name ...
+                        If InStr(UCase(targetName), "DBFSOURCE") > 0 Then
+                            targetName = Replace(targetName, "DBFsource", "DBFtarget", 1, , vbTextCompare)
+                            ' check which DB functions should be content cleared (CC) or all cleared (CA)
+                            Dim DBFCC As Boolean = False : Dim DBFCA As Boolean = False
+                            DBFCC = DBFCContentColl.Contains("*")
+                            DBFCC = DBFCContentColl.Contains(DBFuncCell.Parent.Name + "!" + Replace(DBFuncCell.Address, "$", "")) Or DBFCC
+                            DBFCA = DBFCAllColl.Contains("*")
+                            DBFCA = DBFCAllColl.Contains(DBFuncCell.Parent.Name + "!" + Replace(DBFuncCell.Address, "$", "")) Or DBFCA
+                            Dim theTargetRange As Excel.Range
+                            Try : theTargetRange = ExcelDnaUtil.Application.Range(targetName)
+                            Catch ex As Exception
+                                Globals.LogWarn("Error in finding target range of DB Function in " + DBFuncCell.Address + "), refreshing all DB functions should solve this.")
+                                dontCalcWhileClearing = False
+                                Exit Sub
+                            End Try
+                            If DBFCC Then
+                                theTargetRange.Parent.Range(theTargetRange.Parent.Cells(theTargetRange.Row, theTargetRange.Column), theTargetRange.Parent.Cells(theTargetRange.Row + theTargetRange.Rows.Count - 1, theTargetRange.Column + theTargetRange.Columns.Count - 1)).ClearContents
+                                Globals.LogInfo("Contents of selected DB Functions targets cleared")
                             End If
-                            searchCell = ws.Cells.FindNext(searchCell)
-                        Loop While searchCell IsNot Nothing AndAlso searchCell.Address <> firstAddress
-                    End If
-                Next
+                            If DBFCA Then
+                                theTargetRange.Parent.Range(theTargetRange.Parent.Cells(theTargetRange.Row + 2, theTargetRange.Column), theTargetRange.Parent.Cells(theTargetRange.Row + theTargetRange.Rows.Count - 1, theTargetRange.Column + theTargetRange.Columns.Count - 1)).Clear
+                                theTargetRange.Parent.Range(theTargetRange.Parent.Cells(theTargetRange.Row, theTargetRange.Column), theTargetRange.Parent.Cells(theTargetRange.Row + 2, theTargetRange.Column + theTargetRange.Columns.Count - 1)).ClearContents
+                                Globals.LogInfo("All cleared from selected DB Functions targets")
+                            End If
+                        End If
+                    Catch ex As Exception
+                        LogWarn("Exception when clearing target range of db function in Cell (" + DBFuncCell.Address + "): " + ex.Message)
+                    End Try
+                End If
             Next
             ExcelDnaUtil.Application.Statusbar = False
-            ' always reset the cell find dialog....
-            If ws IsNot Nothing Then
-                searchCell = ws.Cells.Find(What:="", After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
-            End If
 
             ' refresh content area of dbfunctions after save event, requires execution out of context of Application_WorkbookSave
-            If doRefreshDBFuncsAfterSave And (DBFCContentColl.Count > 0 Or DBFCAllColl.Count > 0) Then
+            If DBFCContentColl.Count > 0 Or DBFCAllColl.Count > 0 Then
                 ExcelAsyncUtil.QueueAsMacro(Sub()
                                                 Globals.refreshDBFuncLater()
                                             End Sub)
@@ -261,7 +251,6 @@ done:
         End Try
         dontCalcWhileClearing = False
     End Sub
-
 
     ''' <summary>reset query cache, refresh DB functions and repair legacy functions if existing</summary>
     ''' <param name="Wb"></param>

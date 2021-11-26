@@ -581,8 +581,6 @@ Last:
     ''' <param name="Wb">workbook to refresh DB Functions in</param>
     ''' <param name="ignoreCalcMode">when calling refreshDBFunctions time delayed (when saving a workbook and DBFC* is set), need to trigger calculation regardless of calculation mode being manual, otherwise data is not refreshed</param>
     Public Sub refreshDBFunctions(Wb As Excel.Workbook, Optional ignoreCalcMode As Boolean = False)
-        Dim searchCells As Excel.Range
-        Dim ws As Excel.Worksheet
         ' hidden workbooks produce an error when searching for cells, this is captured by 
         If TypeName(ExcelDnaUtil.Application.Calculation) = "Error" Then
             UserMsg("ExcelDnaUtil.Application.Calculation = Error, " + Wb.Path + "\" + Wb.Name + " (hidden workbooks produce calculation errors...)")
@@ -590,58 +588,35 @@ Last:
         End If
         DBModifs.preventChangeWhileFetching = True
         Try
-            Dim cellcount As Long = 0
-            For Each ws In Wb.Worksheets
-                cellcount += ExcelDnaUtil.Application.WorksheetFunction.CountIf(ws.Range("1:" + ws.Rows.Count.ToString()), "<>")
-            Next
-            If cellcount > CInt(fetchSetting("maxCellCount", "300000")) And Not CBool(fetchSetting("maxCellCountIgnore", "False")) Then
-                Dim retval As MsgBoxResult = QuestionMsg("This large workbook (" + cellcount.ToString() + " filled cells >" + fetchSetting("maxCellCount", "300000") + ") might take long to search for DB functions to refresh, continue ?" + vbCrLf + "Click Cancel to add DBFskip to this Workbook, avoiding this search in the future (no DB Data will be refreshed then !)...", vbYesNoCancel, "Refresh DB functions")
-                If retval <> vbYes Then
-                    If retval = vbCancel Then
-                        Try
-                            Wb.CustomDocumentProperties.Add(Name:="DBFskip", LinkToContent:=False, Type:=MsoDocProperties.msoPropertyTypeBoolean, Value:=True)
-                        Catch ex As Exception
-                            LogWarn("Error when adding DBFskip to Workbook:" + ex.Message)
-                        End Try
-                    End If
-                    Exit Sub
+            ' walk through all DB functions (having hidden names DBFsource*) cells there to find DB Functions and change their formula, adding " " to trigger recalculation
+            For Each DBname As Excel.Name In ExcelDnaUtil.Application.ActiveWorkbook.Names
+                Dim DBFuncCell As Excel.Range = Nothing
+                If DBname.Name Like "*DBFsource*" Then
+                    ' some names might have lost their reference to the cell, so catch this here...
+                    Try : DBFuncCell = DBname.RefersToRange : Catch ex As Exception : End Try
                 End If
-            End If
-            ' walk through all worksheets and all cells there to find DB Functions and change their formula, adding " " to trigger recalculation
-            For Each ws In Wb.Worksheets
-                Dim theFunc As String
-                For Each theFunc In {"DBListFetch(", "DBRowFetch(", "DBSetQuery("}
-                    searchCells = ws.Cells.Find(What:=theFunc, After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
-                    Dim firstFoundAddress As String = ""
-                    If searchCells IsNot Nothing Then firstFoundAddress = searchCells.Address
-                    While searchCells IsNot Nothing
-                        If ws.ProtectContents Then
-                            UserMsg("Worksheet " + ws.Name + " is content protected, can't refresh DB Functions !")
-                            Continue For
-                        End If
-                        Dim callID As String = "" : Dim underlyingName As String = ""
-                        Try
-                            ' get the callID of the underlying name of the target (key of the queryCache and StatusCollection)
-                            callID = "[" + searchCells.Parent.Parent.Name + "]" + searchCells.Parent.Name + "!" + searchCells.Address
-                            ' remove query cache to force refetching
-                            queryCache.Remove(callID)
-                            ' trigger recalculation by changing formula of DB Function
-                            searchCells.Formula += " "
-                        Catch ex As Exception
-                            LogWarn("Exception when setting Formula or getting callID (" + callID + ") of DB Function " + theFunc + ") in searchCells (" + searchCells.Address + "): " + ex.Message)
-                        End Try
-                        searchCells = ws.Cells.FindNext(searchCells)
-                        If searchCells.Address = firstFoundAddress Then Exit While
-                    End While
-                Next
-                ' reset the cell find dialog....
-                searchCells = Nothing
-                searchCells = ws.Cells.Find(What:="", After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
+                If Not IsNothing(DBFuncCell) Then
+                    If DBFuncCell.Parent.ProtectContents Then
+                        UserMsg("Worksheet " + DBFuncCell.Parent.Name + " is content protected, can't refresh DB Functions !")
+                        Continue For
+                    End If
+                    Dim callID As String = "" : Dim underlyingName As String = ""
+                    Try
+                        ' get the callID of the underlying name of the target (key of the queryCache and StatusCollection)
+                        callID = "[" + DBFuncCell.Parent.Parent.Name + "]" + DBFuncCell.Parent.Name + "!" + DBFuncCell.Address
+                        ' remove query cache to force refetching
+                        queryCache.Remove(callID)
+                        ' trigger recalculation by changing formula of DB Function
+                        DBFuncCell.Formula += " "
+                    Catch ex As Exception
+                        LogWarn("Exception when setting Formula or getting callID (" + callID + ") of in Cell (" + DBFuncCell.Address + "): " + ex.Message)
+                    End Try
+                End If
             Next
             If ignoreCalcMode Then
-                LogInfo("ignoreCalcMode = True, ExcelDnaUtil.Application.CalculateFull called " + Wb.Path + "\" + Wb.Name)
-                ExcelDnaUtil.Application.CalculateFull()
-            End If
+                    LogInfo("ignoreCalcMode = True, ExcelDnaUtil.Application.CalculateFull called " + Wb.Path + "\" + Wb.Name)
+                    ExcelDnaUtil.Application.CalculateFull()
+                End If
         Catch ex As Exception
             UserMsg("Exception: " + ex.Message + ", " + Wb.Path + "\" + Wb.Name, "refresh DBFunctions")
         End Try
@@ -717,26 +692,33 @@ Last:
                 End If
                 If foundLegacyFunc Then Exit For
             Next
-            Dim replacedFunctions As Boolean = False
+            Dim retval As MsgBoxResult
             If foundLegacyFunc Then
-                Dim retval As MsgBoxResult = QuestionMsg(fetchSetting("legacyFunctionMsg", IIf(showResponse, "Fix legacy DBAddin functions", "Found legacy DBAddin functions") + " in active workbook, should they be replaced with current addin functions (Save workbook afterwards to persist)? Estimated time for replace: ") + timeEstInSec.ToString("0.0") + " sec.", MsgBoxStyle.OkCancel, "Legacy DBAddin functions")
-                If retval = MsgBoxResult.Ok Then
-                    ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual ' avoid recalculations during replace action
-                    ExcelDnaUtil.Application.DisplayAlerts = False ' avoid warnings for sheet where "DBAddin.Functions." is not found
-                    ' remove "DBAddin.Functions." in each sheet...
-                    For Each ws In actWB.Worksheets
-                        ExcelDnaUtil.Application.StatusBar = "Replacing legacy DB functions in active workbook, sheet '" + ws.Name + "'."
-                        If ws.Cells.Replace(What:="DBAddin.Functions.", Replacement:="", LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, MatchCase:=False, SearchFormat:=False, ReplaceFormat:=False) Then
-                            If Not replacedFunctions Then replacedFunctions = True
-                        End If
-                    Next
-                    ExcelDnaUtil.Application.Calculation = xlcalcmode
-                    ' reset the cell find dialog....
-                    ExcelDnaUtil.Application.ActiveSheet.Cells.Find(What:="", After:=ExcelDnaUtil.Application.ActiveSheet.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
-                    ExcelDnaUtil.Application.DisplayAlerts = True
-                    ExcelDnaUtil.Application.StatusBar = False
+                retval = QuestionMsg(fetchSetting("legacyFunctionMsg", IIf(showResponse, "Fix legacy DBAddin functions", "Found legacy DBAddin functions") + " in active workbook, should they be replaced with current addin functions (Save workbook afterwards to persist)? Estimated time for replace: ") + timeEstInSec.ToString("0.0") + " sec.", MsgBoxStyle.OkCancel, "Legacy DBAddin functions")
+            ElseIf showResponse Then
+                retval = QuestionMsg("No DBListfetch/DBRowfetch/DBSetQuery found in active workbook, still try to fix legacy DBAddin functions (Save workbook afterwards to persist)? Estimated time for replace: " + timeEstInSec.ToString("0.0") + " sec.", MsgBoxStyle.OkCancel, "Legacy DBAddin functions")
+            Else
+                Exit Sub
+            End If
+            If retval = MsgBoxResult.Ok Then
+                Dim replaceSheets As String = ""
+                ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual ' avoid recalculations during replace action
+                ExcelDnaUtil.Application.DisplayAlerts = False ' avoid warnings for sheet where "DBAddin.Functions." is not found
+                ' remove "DBAddin.Functions." in each sheet...
+                For Each ws In actWB.Worksheets
+                    ExcelDnaUtil.Application.StatusBar = "Replacing legacy DB functions in active workbook, sheet '" + ws.Name + "'."
+                    If ws.Cells.Replace(What:="DBAddin.Functions.", Replacement:="", LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, MatchCase:=False, SearchFormat:=False, ReplaceFormat:=False) Then
+                        replaceSheets += ws.Name + ","
+                    End If
+                Next
+                ExcelDnaUtil.Application.Calculation = xlcalcmode
+                ' reset the cell find dialog....
+                ExcelDnaUtil.Application.ActiveSheet.Cells.Find(What:="", After:=ExcelDnaUtil.Application.ActiveSheet.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
+                ExcelDnaUtil.Application.DisplayAlerts = True
+                ExcelDnaUtil.Application.StatusBar = False
+                If showResponse And replaceSheets.Length > 0 Then
+                    UserMsg("Replaced legacy functions in active workbook from sheets: " + Left(replaceSheets, replaceSheets.Length - 1), "Legacy DBAddin functions")
                 End If
-                If showResponse And Not replacedFunctions Then UserMsg("No legacy DBAddin functions found in active workbook", "Legacy DBAddin functions", MsgBoxStyle.Exclamation)
             End If
         Catch ex As Exception
             UserMsg("Exception occured: " + ex.Message, "Legacy DBAddin functions")

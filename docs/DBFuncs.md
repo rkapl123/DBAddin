@@ -7,7 +7,7 @@ There are three ways to query data with DBAddin:
 2.  A record-oriented way using `DBRowFetch`:  
     Here the values are entered into several ranges given in the Parameter list `TargetArray`. Each of these ranges is filled in order of appearance with the results of the query.
 3.  Setting the Query of a ListObject (new since Excel 2007) or a PivotTable to a defined query using `DBSetQuery`:  
-    This requires an existing object (e.g. a ListObject created from a DB query/connection or a pivot table) and sets the target's queryobject to the desired one.
+    This requires an existing object (e.g. a ListObject created from a DB query/connection or a pivot table) and sets the target's query-object to the desired one.
 
 All these functions insert the queried data outside their calling cell context, which means that the target ranges can be put anywhere in the workbook (even outside of the workbook).
 
@@ -18,7 +18,7 @@ Additionally, some helper functions are available:
 *   `concatCellsText` above Function using the Text property of the cells, therefore getting the displayed values.
 *   `concatCellsSep` concatenating cells with given separator.
 *   `concatCellsSepText` above Function using the Text property of the cells, therefore getting the displayed values.
-*   `DBString`, building a quoted string from an open ended parameter list given in the argument. This can also be used to easily build wildcards into the String.
+*   `DBString`, building a quoted string from an open ended parameter list given in the argument. This can also be used to easily build wild-cards into the String.
 *   `DBinClause`, building an SQL "in" clause from an open ended parameter list given in the argument.
 *   `DBDate`, building a quoted Date string (standard format YYYYMMDD, but other formats can be chosen) from the date value given in the argument.
 
@@ -68,9 +68,9 @@ The next parameter "`ExtendDataArea`" defines how DBListFetch should behave when
 
 The parameter headerInfo defines whether Field Headers should be displayed (`TRUE`) in the returned list or not (`FALSE` = Default).
 
-The parameter AutoFit defines whether Rows and Columns should be autofitted to the data content (`TRUE`) or not (`FALSE` = Default). There is an issue with multiple autofitted target ranges below each other, here the autofitting is not predictable (due to the unpredictable nature of the calculation order), resulting in not fitted columns sometimes.
+The parameter AutoFit defines whether Rows and Columns should be auto-fitted to the data content (`TRUE`) or not (`FALSE` = Default). There is an issue with multiple auto-fitted target ranges below each other, here the auto-fitted is not predictable (due to the unpredictable nature of the calculation order), resulting in not fitted columns sometimes.
 
-The parameter `AutoFormat` defines whether the first data row's format information should be autofilled down to be reflected in all rows (`TRUE`) or not (`FALSE` = Default).
+The parameter `AutoFormat` defines whether the first data row's format information should be auto-filled down to be reflected in all rows (`TRUE`) or not (`FALSE` = Default).
 
 The parameter ShowRowNums defines whether Row numbers should be displayed in the first column (`TRUE`) or not (`FALSE` = Default).
 
@@ -125,8 +125,8 @@ Stores a query into an Object defined in TargetRange (an embedded MS Query/Listo
 
 <pre lang="vb">DBSetPowerQuery (Query, TargetedPowerqueryObject)</pre>
 
-Stores a query into a Powerquery Object defined using the new power query editor. You have to create this power query first, to bring the created powerquery into the spreadsheet, use the [Creation of DB Functions](#create-db-functions) available in the cell context menu.
-As Powerqueries use double quotes for quoting, special variations of DBString and DBDate are available to create those parameters in Powerqueries.
+Stores a query into a Power-query Object defined using the new power query editor. You have to create this power query first, to bring the created Power-query into the spreadsheet, use the [Creation of DB Functions](#create-db-functions) available in the cell context menu.
+As Power-queries use double quotes for quoting, special variations of DBString and DBDate are available to create those parameters in Power-queries.
 
 ### Additional Helper Functions
 
@@ -180,7 +180,7 @@ Would return `”('ABC',1,'20070115')”`, if DateRange contained `15/01/2007` a
 
 <pre lang="vb">DBString(ParameterList)</pre>
 
-This builds a Database compliant string (quoted using single quotes) from the open ended parameter list given in the argument. This can also be used to easily build wildcards into the String, like
+This builds a Database compliant string (quoted using single quotes) from the open ended parameter list given in the argument. This can also be used to easily build wild-cards into the String, like
 
 <pre lang="vb">DBString("_",E1,"%")</pre>
 
@@ -225,7 +225,7 @@ Of course you can also change the default setting for formatting by changing the
 
 <pre lang="vb">PQDate(DateValue, forceDateTime (optional))</pre>
 
-This builds a powerquery function from the date/datetime/time value given in the argument. Depending on the value (fractional, integer or smaller than 1), this can be `#datetime(year, month, day, hour, min, sec)`, `#date(year, month, day)` or `#time(hour, min, sec)`
+This builds a power-query function from the date/datetime/time value given in the argument. Depending on the value (fractional, integer or smaller than 1), this can be `#datetime(year, month, day, hour, min, sec)`, `#date(year, month, day)` or `#time(hour, min, sec)`
 The return of `#datetime(year, month, day, hour, min, sec)` can be enforced by setting `forceDateTime` to true.
 
 ### Modifications of DBFunc Behaviour
@@ -245,13 +245,13 @@ To disable refreshing of DBFunctions when opening the workbook create a boolean 
 
 #### Prevent Storing of retrieved Data in the Workbook
 
-To prevent storing of the contents of a DBListFetch or DBRowFetch when saving the workbook create a boolean custom property "DBFCC(DBFunctionSheet!DBFunctionAddress)" set to "Yes" (set to "No" to reenable storing). This clears the data area of the respective DB function before storing and refreshes it afterwards (Note: If the custom property "DBFSkip" is set to "Yes", then this refreshing is skipped like when opening the Workbook)  
+To prevent storing of the contents of a DBListFetch or DBRowFetch when saving the workbook create a boolean custom property "DBFCC(DBFunctionSheet!DBFunctionAddress)" set to "Yes" (set to "No" to re-enable storing). This clears the data area of the respective DB function before storing and refreshes it afterwards (Note: If the custom property "DBFSkip" is set to "Yes", then this refreshing is skipped like when opening the Workbook)  
 
 Example: The boolean custom property "DBFCCTable1!A1" would clear the contents of the data area for the DBFunction entered in Table1, cell "A1".  
 
 To prevent storing of the contents for all DBFunctions create a boolean Custom Property "DBFCC*" set to "Yes".  
 
-Excel however doesn't fill only contents when filling the data area, there's also formatting being filled along, which takes notable amounts of space (and saving time) in a workbook. So to really have a small/quick saving workbook, create a boolean custom property "DBFCA(DBFunctionSheet!DBFunctionAddress)" set to "Yes" (set to "No" to reenable storing). This clears everything in the the data area of the res  
+Excel however doesn't fill only contents when filling the data area, there's also formatting being filled along, which takes notable amounts of space (and saving time) in a workbook. So to really have a small/quick saving workbook, create a boolean custom property "DBFCA(DBFunctionSheet!DBFunctionAddress)" set to "Yes" (set to "No" to re-enable storing). This clears everything in the the data area of the res  
 
 Example: The boolean custom property "DBFCATable1!A1" would clear everything from the data area for the DBFunction entered in Table1, cell "A1".  
 
@@ -266,11 +266,11 @@ Additionally the connection timeout (CnnTimeout, which can't be given in the fun
 
 ### Cell Config Deployment
 
-To easen the distribution of complex DB functions (especially queries), there is a config file mechanism in DBAddin: DB function (actually any Excel formula) configurations can be created in config files having extension XCL and are displayed with a tree-dropdown menu below "DB Configs" that displays the file hierarchy beneath ConfigStoreFolder for easy retrieval of the configs.  
+To easen the distribution of complex DB functions (especially queries), there is a config file mechanism in DBAddin: DB function (actually any Excel formula) configurations can be created in config files having extension XCL and are displayed with a tree-drop-down menu below "DB Configs" that displays the file hierarchy beneath ConfigStoreFolder for easy retrieval of the configurations.  
 
 The layout of these files is a pairwise, tab separated instruction where to fill (first element) Excel formulas (starting with "=" and being in R1C1 representation) or values (second element). Values are simple literal values to be inserted into Excel (numbers, strings, dates (should be interpretable by Excel !)), formulas are best taken from the return of ActiveCell.FormulaR1C1 !
 
-#### Creating configs
+#### Creating configurations
 
 There is a helping script ("createTableViewConfigs.vbs") to create a DBListFetch with a "select TOP 10000 * from ..." for all tables and views in a given database (In order for that script to work, the ADO driver has to support the "OpenSchema" method of the connection object). The working of that script is quite simple: It takes the name of the folder it is located in, derives from that the database name by excluding the first character and opens the schema information of that database to retrieve all view and table names from that. These names are used to build the config files (XCL).  
 
@@ -289,15 +289,15 @@ There is one setting key and three setting key groups to configure this further 
     <add key="_NorthwindFirstLetterLevel" value="True"/>
 ```
 
-If you add the (sub) foldername to "specialConfigStoreFolders" (colon separated list) then this subfolder is regarded as needing special grouping of object names. The separator ("\_" or similar) can be given in  "(pathName)Separator", where (pathName) denotes the path name used above in "specialConfigStoreFolders". If this is not given then CamelCase is assumed to be the separating criterion.  
+If you add the (sub) folder name to "specialConfigStoreFolders" (colon separated list) then this sub-folder is regarded as needing special grouping of object names. The separator ("\_" or similar) can be given in  "(pathName)Separator", where (pathName) denotes the path name used above in "specialConfigStoreFolders". If this is not given then CamelCase is assumed to be the separating criterion.  
 
 The maximum depth of the sub menus can be stated in "(pathName)MaxDepth", which denotes the depth of hierarchies below the uppermost in the (pathName) folder (default value is 10000, so practically infinite depth).  
 
 You can add another hierarchy layer by setting "(pathName)FirstLetterLevel" to "True", which adds the first letter as the top level hierarchy.  
 
-You can decide for each subfolder whether it's contents should be hierarchically organized by entering the relative path from ConfigStoreFolder for each subfolder in "specialConfigStoreFolders", or you can decide for all subfolders of that folder by just entering the topmost folder in "specialConfigStoreFolders".
+You can decide for each sub-folder whether it's contents should be hierarchically organized by entering the relative path from ConfigStoreFolder for each sub-folder in "specialConfigStoreFolders", or you can decide for all sub-folders of that folder by just entering the topmost folder in "specialConfigStoreFolders".
 
-#### Inserting configs
+#### Inserting configurations
 
 If the user retrieves the relevant configuration, a warning is shown and then the configured cells are entered into the active workbook as defined in the config, relative to the current selection.  
 
@@ -317,8 +317,8 @@ To save time when starting up DBAddin/Excel, refreshing the config tree is only 
 You can create the four DB Functions by using the cell context menu:  
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/ContextMenu.PNG)  
 
-The DB functions are created with an empty query string and full feature settings (e.g. Headers displayed, autosize and autoformat switched on) and target cells directly below the current active cell (except DBSetQuery for ListObjects, the ListObjects are placed to the right).
-A notable exception here is `DBSetPowerQuery` that doesn't refer to any normal excel object but rather an existing powerquery.
+The DB functions are created with an empty query string and full feature settings (e.g. Headers displayed, auto-size and auto-format switched on) and target cells directly below the current active cell (except DBSetQuery for ListObjects, the ListObjects are placed to the right).
+A notable exception here is `DBSetPowerQuery` that doesn't refer to any normal excel object but rather an existing power-query.
 
 Below the results for a DB Function created in Cell A1:
 *   DBListFetch:  `=DBListFetch("";"";A2;;;WAHR;WAHR;WAHR)`
@@ -332,12 +332,12 @@ In case you want to insert DB Configurations (see [Cell Config Deployment](#Cell
 For pivot tables the excel version of the created pivot table can be set with the user setting `ExcelVersionForPivot` (the numbers corresponding to the versions are: 0=2000, 1=2002, 2=2003, 3=2007, 4=2010, 5=2013, 6=2016, 7=2019=default if not set).
 This is important to either provide backward compatibility with other users excels versions or to use the latest features.
 
-When creating `DBSetPowerQuery`, the invocation provides a dropdown list of available powerqueries that are added to the sheet below the `DBSetPowerQuery` function as the Query argument and can be modified (parameterized) further.
-In case the modifications resulted in a parsing error, you can enter the powerquery editor of that query to determine the reason of the problem. In case the Powerquery has become corrupted by the modification, you can restore the previously set powerquery by holding Ctrl when selecting the powerquery in the provided dropdown list.
+When creating `DBSetPowerQuery`, the invocation provides a drop-down list of available power-queries that are added to the sheet below the `DBSetPowerQuery` function as the Query argument and can be modified (parameterized) further.
+In case the modifications resulted in a parsing error, you can enter the power-query editor of that query to determine the reason of the problem. In case the Power-query has become corrupted by the modification, you can restore the previously set power-query by holding Ctrl when selecting the power-query in the provided drop-down list.
 
 #### Settings
 
-Following Settings in DBAddin.xll.config or the referred DBAddinCentral.config affect the behaviour of DB functions:
+Following Settings in DBAddin.xll.config or the referred DBAddinCentral.config affect the behavior of DB functions:
 ```xml
     <add key="CnnTimeout" value="15" />
     <add key="DefaultEnvironment" value="3" />
@@ -357,12 +357,12 @@ Explanation:
 *  All DB getting functions (DBListfetch, DBRowFetch, etc....)
 	*   A fundamental restriction for DB functions is that they should only exist alone in a cell (with no other DB functions). This is needed because linking the functions with their cell targets is done via a hidden name in the function cell (created on first invocation)  
 	*   Query composition: Composing Queries (as these sometimes tend to be quite long) can become challenging, especially when handling parameters coming from cells. There is a simple way to avoid lots of trouble by placing the parts of a query in different lines/cells and putting all these cells together as a range in the DB functions first argument (query).
-	*   When invoking an Excel Workbook from the commandline using CmdLogAddin (from a cmd script or the task scheduler), Excel may initialize the Add-in later than invoking the calculation of the DB function, which leads to an uninitialized host application object and therefore non-functional db functions (they all rely on the caller object of the Excel application to retrieve their calling cell's address). I'm still investigating into this.
+	*   When invoking an Excel Workbook from the command-line using CmdLogAddin (from a cmd script or the task scheduler), Excel may initialize the Add-in later than invoking the calculation of the DB function, which leads to an uninitialized host application object and therefore non-functional db functions (they all rely on the caller object of the Excel application to retrieve their calling cell's address). I'm still investigating into this.
 
 * DBListFetch:
 	*   formulaRange and extendArea = 1 or 2: Don't place content in cells directly below the formula Range as this will be deleted when doing recalculations. One cell below is OK.
 	*   Worksheets with names like Cell references (Letter + number + blank + something else, eg. 'C701 Country') lead to a fundamental error with the names used for the data target. Avoid using those sheet names in conjunction with DBListFetch, i.e. do not use a blank between the 'cell reference' and the rest (eg. 'C701Country' instead of 'C701 Country').
-	*   GUID Columns are not displayed when working with the standard data fetching method used by DBListFetch (using an opened recordset for adding a - temporary - querytable). A workaround has been built that circumvents this problem by adding the querytable the way that excel does (using the connection string and query directly when adding the querytable). This however implicitly opens another connection, so is more resource intensive. For details see [Connection String Special Settings](#Connection_String_Special_Settings)
+	*   GUID Columns are not displayed when working with the standard data fetching method used by DBListFetch (using an opened record-set for adding a - temporary - query table). A workaround has been built that circumvents this problem by adding the query-table the way that excel does (using the connection string and query directly when adding the query-table). This however implicitly opens another connection, so is more resource intensive. For details see [Connection String Special Settings](#Connection_String_Special_Settings)
 
 * DBSetQuery
 	* in DBSetQuery the underlying ListObject sometimes doesn't work with the SQLOLEDB provider, so there is a mechanism to change the provider part to something that works better. You can define a searched part of the connection string and its replacement in the settings of the environment (here environment 3):
