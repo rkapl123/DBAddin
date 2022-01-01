@@ -464,8 +464,7 @@ Public Module Functions
             Throw New Exception("Error in setting srcExtent name invisible: " + ex.Message + " in query: " + Query)
         End Try
 
-
-        ' try to get either a pivot table object or a list object from the target cell. What we have, is checked later...
+        ' try to get either a pivot table object or a list object from the target cell. What we have is checked later...
         Try : thePivotTable = TargetCell.PivotTable : Catch ex As Exception : End Try
         Try : theListObject = TargetCell.ListObject : Catch ex As Exception : End Try
 
@@ -537,7 +536,7 @@ Public Module Functions
                     Try
                         theListObject.QueryTable.Refresh()
                     Catch ex1 As Exception
-                        Throw New Exception("Error in query table refresh: " + ex1.Message)
+                        Throw New Exception("Error in query table refresh after retrying with RefreshStyle=InsertEntireRows and PreserveColumnInfo=False: " + ex1.Message)
                     Finally
                         theListObject.QueryTable.RefreshStyle = theRefreshStyle
                         theListObject.QueryTable.PreserveColumnInfo = thePreserveColumnInfo
@@ -562,11 +561,11 @@ Public Module Functions
             End If
         Catch ex As Exception
             Globals.LogWarn(ex.Message + " in query: " + Query + ", caller: " + callID)
-            StatusCollection(callID).statusMsg = ex.Message + " in query: " + Query
+            If StatusCollection.ContainsKey(callID) Then StatusCollection(callID).statusMsg = ex.Message + " in query: " + Query
         End Try
 
         ' neither PivotTable or ListObject could be found in TargetCell
-        If StatusCollection(callID).statusMsg = "" Then
+        If StatusCollection.ContainsKey(callID) AndAlso StatusCollection(callID).statusMsg = "" Then
             StatusCollection(callID).statusMsg = "No PivotTable or ListObject with external data connection could be found in TargetRange " + TargetCell.Address
         End If
         DBModifs.preventChangeWhileFetching = False
@@ -636,7 +635,7 @@ Public Module Functions
             StatusCollection(callID).statusMsg = "set and refreshed " + queryName
         Catch ex As Exception
             Globals.LogWarn(ex.Message + " in query: " + Query + ", caller: " + callID)
-            StatusCollection(callID).statusMsg = ex.Message + " in query: " + Query
+            If StatusCollection.ContainsKey(callID) Then StatusCollection(callID).statusMsg = ex.Message + " in query: " + Query
         End Try
         ExcelDnaUtil.Application.Calculation = calcMode
         caller.Formula += " " ' trigger recalculation to return error message to calling function
@@ -1176,10 +1175,9 @@ err_2: ' errors where recordset was opened and QueryTables were already added, b
 err_1: ' errors where recordset was opened
         If tableRst.State <> 0 Then tableRst.Close()
 err_0: ' errors where recordset was not opened or is already closed
-        'targetRange.Cells(1, 1).Value = IIf(targetRange.Cells(1, 1).Value = "", " ", "")
         If errMsg.Length = 0 Then errMsg = Err.Description + " in query: " + Query
         Globals.LogWarn(errMsg + ", caller: " + callID)
-        StatusCollection(callID).statusMsg = errMsg
+        If StatusCollection.ContainsKey(callID) Then StatusCollection(callID).statusMsg = errMsg
         finishAction(calcMode, callID, scrnUpdate, "Error")
         caller.Formula += " " ' recalculate to trigger return of error messages to calling function
     End Sub
@@ -1440,7 +1438,7 @@ err_1:
         If errMsg.Length = 0 Then errMsg = Err.Description + " in query: " + Query
         If tableRst.State <> 0 Then tableRst.Close()
         Globals.LogWarn(errMsg + ", caller: " + callID)
-        StatusCollection(callID).statusMsg = errMsg
+        If StatusCollection.ContainsKey(callID) Then StatusCollection(callID).statusMsg = errMsg
         finishAction(calcMode, callID, scrnUpdate, "Error")
         caller.Formula += " " ' recalculate to trigger return of error messages to calling function
     End Sub
@@ -1611,6 +1609,7 @@ err_1:
         If Left(TypeName(ConnString), 10) = "ExcelError" Then Exit Sub
         If TypeName(ConnString) = "ExcelReference" Then ConnString = ConnString.Value
         If TypeName(ConnString) = "ExcelMissing" Then ConnString = ""
+        If TypeName(ConnString) = "ExcelEmpty" Then ConnString = ""
         ' in case ConnString is a number (set environment, retrieve ConnString from Setting ConstConnString<Number>
         If TypeName(ConnString) = "Double" Then
             Dim env As String = ConnString.ToString()

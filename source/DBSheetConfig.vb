@@ -25,14 +25,15 @@ Public Module DBSheetConfig
     ''' add one for where clause, then one for each parameter)
     ''' </summary>
     Dim addedCells As Integer
-    Dim tblPlaceHolder As String
-    Dim specialNonNullableChar As String
+    ''' <summary>these three need to be global, so that finishDBMapperCreation also knows about them</summary>
+    Dim whereClauseStart, tblPlaceHolder, specialNonNullableChar As String
     ''' <summary>for DBSheetCreateForm, store the password once so we don't have to enter it again...</summary>
     Public existingPwd As String
     ''' <summary>public clipboard row for DBSheet definition rows (foreign lookup info)</summary>
     Public clipboardDataRow As DBSheetDefRow
     ''' <summary>if an existing DBSheet is overwritten, this is set to the existing DBModifier Name</summary>
     Public existingName As String
+
 
     ''' <summary>create lookups (with dblistfetch) and a dbsetquery that acts as a listobject for a CUD DB Mapper</summary>
     Public Sub createDBSheet(Optional dbsheetDefPath As String = "")
@@ -83,7 +84,7 @@ Public Module DBSheetConfig
             If Globals.QuestionMsg("Should TOP 100 be put into query, in case of very large underlying tables this helps in creating the DBSheet (you can restrict the query later on) ?", MsgBoxStyle.OkCancel) = MsgBoxResult.Ok Then
                 queryStr = "SELECT TOP 100 " + queryStr.Substring(7) ' skip "SELECT " in queryStr
             End If
-            Dim whereClauseStart = queryStr.IndexOf("WHERE", StringComparison.OrdinalIgnoreCase)
+            whereClauseStart = queryStr.IndexOf("WHERE", StringComparison.OrdinalIgnoreCase)
             ' queryStr inserted below DBSetQuery
             addedCells = 1
             Dim changedWhereClause As String = ""
@@ -459,6 +460,9 @@ Public Module DBSheetConfig
         ' switch back to DBAddin tab for easier handling...
         Globals.theRibbon.ActivateTab("DBaddinTab")
         curCell.Select()
+        If whereClauseStart >= 0 Then
+            Globals.UserMsg("Attention: A where clause was defined for this DBSheet, you need to extend the DBSetQuery function's Query argument in cell " + curCell.Address + "!", "DBSheet Creation")
+        End If
     End Sub
 
     ''' <summary>fetches value in entryMarkup within XMLString, search starts optionally at position startSearch (default 1)</summary>

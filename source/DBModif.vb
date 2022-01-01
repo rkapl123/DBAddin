@@ -66,10 +66,14 @@ Public MustInherit Class DBModif
     ''' <returns>the targetRangeAddress nicely formatted</returns>
     Public Function getTargetRangeAddress() As String
         getTargetRangeAddress = ""
+        Dim actWbNames As Excel.Names = Nothing
+        Try : actWbNames = ExcelDnaUtil.Application.ActiveWorkbook.Names : Catch ex As Exception
+            LogWarn("Exception when trying to get the active workbook names: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
+        End Try
         If TypeName(Me) <> "DBSeqnce" Then
             Dim addRefersToFormula As String = ""
-            If InStr(1, ExcelDnaUtil.Application.ActiveWorkbook.Names.Item(dbmodifName).RefersTo, "=OFFSET(") > 0 Then
-                addRefersToFormula = " (" + ExcelDnaUtil.Application.ActiveWorkbook.Names.Item(dbmodifName).RefersTo
+            If InStr(1, actWbNames.Item(dbmodifName).RefersTo, "=OFFSET(") > 0 Then
+                addRefersToFormula = " (" + actWbNames.Item(dbmodifName).RefersTo
             End If
             getTargetRangeAddress = TargetRange.Parent.Name + "!" + TargetRange.Address + addRefersToFormula
         End If
@@ -568,21 +572,24 @@ Public Class DBMapper : Inherits DBModif
 
     ''' <summary>extend DataRange to "whole" DBMApper area (first row (header/field names) to the right and first column (first primary key) down)</summary>
     Public Sub extendDataRange()
-        Dim NamesList As Excel.Names = ExcelDnaUtil.Application.ActiveWorkbook.Names
+        Dim actWbNames As Excel.Names = Nothing
+        Try : actWbNames = ExcelDnaUtil.Application.ActiveWorkbook.Names : Catch ex As Exception
+            LogWarn("Exception when trying to get the active workbook names: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
+        End Try
         ' only extend like this if no CUD Flags or AutoIncFlag present (may have non existing first (primary) columns -> auto identity columns !)
         If Not (CUDFlags Or AutoIncFlag) Then
             If TargetRange.Cells(2, 1).Value Is Nothing Then Exit Sub ' only extend if there are multiple rows...
-            preventChangeWhileFetching = True
             Dim rowCount As Integer = TargetRange.Cells(1, 1).End(Excel.XlDirection.xlDown).Row - TargetRange.Cells(1, 1).Row + 1
             ' unfortunately the above method to find the column extent doesn't work with hidden columns, so count the filled cells directly...
             Dim colCount As Integer = 1
             While Not (TargetRange.Cells(1, colCount + 1).Value Is Nothing OrElse TargetRange.Cells(1, colCount + 1).Value.ToString() = "")
                 colCount += 1
             End While
+            preventChangeWhileFetching = True
             Try
                 ' only if the referral is to a real range (not an offset formula !)
-                If InStr(1, NamesList.Item(paramTargetName).RefersTo, "=OFFSET(") = 0 Then
-                    NamesList.Item(paramTargetName).RefersTo = NamesList.Item(paramTargetName).RefersToRange.Resize(rowCount, colCount)
+                If InStr(1, actWbNames.Item(paramTargetName).RefersTo, "=OFFSET(") = 0 Then
+                    actWbNames.Item(paramTargetName).RefersTo = actWbNames.Item(paramTargetName).RefersToRange.Resize(rowCount, colCount)
                     ' this has lead to a strange replacing of the rightdownmost cell's formula by the cell's value
                     'NamesList.Add(Name:=paramTargetName, RefersTo:=TargetRange.Parent.Range(TargetRange.Cells(1, 1), TargetRange.Cells(rowEnd, colEnd)))
                 End If
@@ -1458,12 +1465,16 @@ Public Module DBModifs
     ''' <param name="theRange">new extent after resfresh of DBListFetch/DBSetQuery function</param>
     ''' <param name="oldRange">extent before resfresh of DBListFetch/DBSetQuery function</param>
     Public Sub resizeDBMapperRange(theRange As Excel.Range, oldRange As Excel.Range)
+        Dim actWbNames As Excel.Names = Nothing
+        Try : actWbNames = ExcelDnaUtil.Application.ActiveWorkbook.Names : Catch ex As Exception
+            LogWarn("Exception when trying to get the active workbook: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
+        End Try
         ' only do this for the active workbook...
-        If theRange.Parent.Parent Is ExcelDnaUtil.Application.Activeworkbook Then
+        If theRange.Parent.Parent Is ExcelDnaUtil.Application.ActiveWorkbook Then
             ' getDBModifNameFromRange gets any DBModifName (starting with DBMapper/DBAction...) intersecting theRange, so we can reassign it to the changed range with this...
             Dim dbMapperRangeName As String = getDBModifNameFromRange(theRange)
             ' only allow resizing of dbMapperRange if it was EXACTLY matching the FORMER target range of the DB Function
-            If Left(dbMapperRangeName, 8) = "DBMapper" AndAlso oldRange.Address = ExcelDnaUtil.Application.Activeworkbook.Names(dbMapperRangeName).RefersToRange.Address Then
+            If Left(dbMapperRangeName, 8) = "DBMapper" AndAlso oldRange.Address = actWbNames.Item(dbMapperRangeName).RefersToRange.Address Then
                 ' (re)assign db mapper range name to the passed (changed) DBListFetch/DBSetQuery function target range
                 Try : theRange.Name = dbMapperRangeName
                 Catch ex As Exception
@@ -1493,6 +1504,11 @@ Public Module DBModifs
         '
         ' for saveRangeToDB(DataRange, tableNamesStr, primKeysStr, primKeyColumnsStr, startDataColumn, connid, ParamArray optionalArray())
         ' remove primKeyColumnsStr and startDataColumn before copying to clipboard...
+        Dim actWbNames As Excel.Names = Nothing
+        Try : actWbNames = ExcelDnaUtil.Application.ActiveWorkbook.Names : Catch ex As Exception
+            Globals.UserMsg("Exception when trying to get the active workbook names for creating DB Modifier: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
+        End Try
+        If IsNothing(ExcelDnaUtil.Application.ActiveWorkbook) Then Exit Sub
         Dim existingDBModif As DBModif = Nothing
         Dim existingDefName As String = targetDefName
         Dim createdDBMapperFromClipboard As Boolean = False
@@ -1516,9 +1532,7 @@ Public Module DBModifs
                     Globals.UserMsg("Error when building new definition from clipboard: " + ex.Message, "DBMapper Legacy Creation Error") : Exit Sub
                 End Try
                 ' assign new name to active cell
-                ' Add doesn't work directly with ExcelDnaUtil.Application.ActiveWorkbook.Names (late binding), so create an object here...
-                Dim NamesList As Excel.Names = ExcelDnaUtil.Application.ActiveWorkbook.Names
-                Try : NamesList.Add(Name:=DB_DefName, RefersTo:=ExcelDnaUtil.Application.ActiveCell)
+                Try : actWbNames.Add(Name:=DB_DefName, RefersTo:=ExcelDnaUtil.Application.ActiveCell)
                 Catch ex As Exception
                     Globals.UserMsg("Error when assigning name '" + DB_DefName + "' to active cell: " + ex.Message, "DBMapper Legacy Creation Error")
                     Exit Sub
@@ -1542,7 +1556,7 @@ Public Module DBModifs
                     existingDefRange = ExcelDnaUtil.Application.Range(existingDefName)
                 Catch ex As Exception
                     ' if target name relates to an invalid (offset) formula, getting a range fails  ...
-                    If InStr(ExcelDnaUtil.Application.ActiveWorkbook.Names.Item(existingDefName).RefersTo, "OFFSET(") > 0 Then
+                    If InStr(actWbNames.Item(existingDefName).RefersTo, "OFFSET(") > 0 Then
                         Globals.UserMsg("Offset formula that '" + existingDefName + "' refers to, did not return a valid range." + vbCrLf + "Please check the offset formula to return a valid range !", "DBModifier Definitions Error")
                         ExcelDnaUtil.Application.Dialogs(Excel.XlBuiltInDialog.xlDialogNameManager).Show()
                         Exit Sub
@@ -1659,12 +1673,11 @@ Public Module DBModifs
             If theDBModifCreateDlg.ShowDialog() = DialogResult.Cancel Then
                 ' remove targetRange Name created in clipboard helper
                 If createdDBMapperFromClipboard Then
-                    Try : ExcelDnaUtil.Application.ActiveWorkbook.Names(existingDefName).Delete : Catch ex As Exception : End Try
+                    Try : actWbNames.Item(existingDefName).Delete() : Catch ex As Exception : End Try
                 End If
                 Exit Sub
             End If
 
-            Dim NamesList As Excel.Names = ExcelDnaUtil.Application.ActiveWorkbook.Names
             ' only for DBMapper or DBAction: change or add target range name
             If createdDBModifType <> "DBSeqnce" Then
                 Dim targetRange As Excel.Range
@@ -1676,20 +1689,20 @@ Public Module DBModifs
 
                 If existingDefName = "" Then
                     Dim checkExists As Excel.Name = Nothing
-                    Try : checkExists = NamesList.Item(createdDBModifType + .DBModifName.Text) : Catch ex As Exception : End Try
+                    Try : checkExists = actWbNames.Item(createdDBModifType + .DBModifName.Text) : Catch ex As Exception : End Try
                     If Not IsNothing(checkExists) Then
                         Globals.UserMsg("DBModifier range name '" + createdDBModifType + .DBModifName.Text + "' already exists!", "DBModifier Creation Error")
                         Exit Sub
                     End If
                     Try
-                        NamesList.Add(Name:=createdDBModifType + .DBModifName.Text, RefersTo:=targetRange)
+                        actWbNames.Add(Name:=createdDBModifType + .DBModifName.Text, RefersTo:=targetRange)
                     Catch ex As Exception
                         Globals.UserMsg("Error when assigning range name '" + createdDBModifType + .DBModifName.Text + "' to active cell: " + ex.Message, "DBModifier Creation Error")
                         Exit Sub
                     End Try
                 Else
                     ' rename named range...
-                    NamesList.Item(existingDefName).Name = createdDBModifType + .DBModifName.Text
+                    actWbNames.Item(existingDefName).Name = createdDBModifType + .DBModifName.Text
                 End If
             End If
 
@@ -1703,7 +1716,7 @@ Public Module DBModifs
             ' warning shown, if a new created definition already exists with the same name!
             If existingDefName = "" And Not IsNothing(CustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:" + createdDBModifType + "[@Name='" + .DBModifName.Text + "']")) Then
                 If Globals.QuestionMsg("There is already a " + createdDBModifType + " definition named '" + .DBModifName.Text + "' in the DBModif Definitions of the current workbook, this will cause error messages ! Discard entered definition?",, "DBModifier Creation Error") = MsgBoxResult.Ok Then
-                    NamesList.Item(createdDBModifType + .DBModifName.Text).Delete()
+                    actWbNames.Item(createdDBModifType + .DBModifName.Text).Delete()
                     Exit Sub
                 End If
             End If
@@ -1763,6 +1776,11 @@ Public Module DBModifs
 
     ''' <summary>gets defined names for DBModifier (DBMapper/DBAction/DBSeqnce) invocation in the current workbook and updates Ribbon with it</summary>
     Public Sub getDBModifDefinitions(Optional onlyCheck As Boolean = False)
+        Dim actWbNames As Excel.Names = Nothing
+        Try : actWbNames = ExcelDnaUtil.Application.ActiveWorkbook.Names : Catch ex As Exception
+            Globals.UserMsg("Exception when trying to get the active workbook names for getting DBModifier definitions: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
+        End Try
+        If IsNothing(ExcelDnaUtil.Application.ActiveWorkbook) Then Exit Sub
         ' load DBModifier definitions (objects) into Global collection DBModifDefColl
         Globals.LogInfo("reading DBModifier Definitions for Workbook: " + ExcelDnaUtil.Application.ActiveWorkbook.Name)
         Try
@@ -1783,7 +1801,7 @@ Public Module DBModifs
                         Dim targetRange As Excel.Range = Nothing
                         ' for DBMappers and DBActions the data of the DBModification is stored in Ranges, so check for those and get the Range
                         If DBModiftype = "DBMapper" Or DBModiftype = "DBAction" Then
-                            For Each rangename As Excel.Name In ExcelDnaUtil.Application.ActiveWorkbook.Names
+                            For Each rangename As Excel.Name In actWbNames
                                 Dim rangenameName As String = Replace(rangename.Name, rangename.Parent.Name + "!", "")
                                 If rangenameName = nodeName Then
                                     If InStr(rangename.RefersTo, "#REF!") > 0 Then
@@ -1807,7 +1825,7 @@ Public Module DBModifs
                                 Dim answer As MsgBoxResult = Globals.QuestionMsg("Required target range named '" + nodeName + "' cannot be found for this " + DBModiftype + " definition." + vbCrLf + "Should the target range name and definition be removed (If you still need the " + DBModiftype + ", (re)create the target range with this name again)?", , "DBModifier Definitions Error", MsgBoxStyle.Critical)
                                 If answer = MsgBoxResult.Ok Then
                                     ' remove name, in case it still exists
-                                    Try : ExcelDnaUtil.Application.ActiveWorkbook.Names(nodeName).Delete() : Catch ex As Exception : End Try
+                                    Try : actWbNames.Item(nodeName).Delete() : Catch ex As Exception : End Try
                                     ' remove node
                                     If Not IsNothing(CustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:" + DBModiftype + "[@Name='" + Replace(nodeName, DBModiftype, "") + "']")) Then
                                         Try : CustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:" + DBModiftype + "[@Name='" + Replace(nodeName, DBModiftype, "") + "']").Delete : Catch ex As Exception
@@ -1867,12 +1885,18 @@ EndOuterLoop:
     Public Function getDBModifNameFromRange(theRange As Excel.Range) As String
         Dim nm As Excel.Name
         Dim rng, testRng As Excel.Range
+        Dim theWbNames As Excel.Names
 
         getDBModifNameFromRange = ""
         If theRange Is Nothing Then Exit Function
+        Try : theWbNames = theRange.Parent.Parent.Names : Catch ex As Exception
+            Globals.UserMsg("Exception getting theRange's parent workbook names: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references), can't repair legacy functions.")
+            Exit Function
+        End Try
+
         Try
             ' try all names in workbook
-            For Each nm In theRange.Parent.Parent.Names
+            For Each nm In theWbNames
                 rng = Nothing
                 ' test whether range referring to that name (if it is a real range)...
                 Try : rng = nm.RefersToRange : Catch ex As Exception : End Try

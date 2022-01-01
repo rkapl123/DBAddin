@@ -21,7 +21,7 @@ In the following sections, the major capabilities of DBSheets are presented, fol
 ### Background
 
 Prerequisites for understanding this documentation and using DBSheets is a basic proficiency with SQL and database design.
-Good books on this topic are "The Practical SQL Handbook: Using Structured Query Language (3rd Edition)" and its successor "The Practical SQL Handbook: Using SQL Variants (4th Edition)", available free online courses are:  
+Good books on this topic are "The Practical SQL Handbook: Using Structured Query Language (3rd Edition)" and its successor "The Practical SQL Handbook: Using SQL Variants (4th Edition)", available free on-line courses are:  
 
 *   [http://www.sql-und-xml.de/sql-tutorial/](http://www.sql-und-xml.de/sql-tutorial/) (German)
 *   [http://www.w3schools.com/sql/default.asp](http://www.w3schools.com/sql/default.asp) (English)
@@ -43,9 +43,9 @@ Additionally, if there are lookups, there is also a hidden sheet containing the 
 
 The header row and the primary key column(s), which are located leftmost, should not be modified, except for new rows where there is no primary key yet.
 
-Non-nullable columns have a darker pattern than nullable columns, this is however only effected once at creation/assigning the DBSheet. If column definitions change, you have to reflect this in the DBSheet Definition and recreate the DBSheet again (see [Finishing DBSheet definition creation](#Finishing-DBSheet-definition-creation)).
+Non null-able columns have a darker pattern than null-able columns, this is however only effected once at creation/assigning the DBSheet. If column definitions change, you have to reflect this in the DBSheet Definition and recreate the DBSheet again (see [Finishing DBSheet definition creation](#Finishing-DBSheet-definition-creation)).
 
-Lookup columns are restricted with excel's cell validation, including a dropdown of allowed values.
+Lookup columns are restricted with excel's cell validation, including a drop-down of allowed values.
 
 Data is changed simply by editing existing data in cells, this marks the row(s) to be changed at the rightmost end of the data table as (c)reated, (u)pdated or (i)nserted.
 
@@ -73,13 +73,13 @@ You start either entering a password for the connection string (if needed) or im
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBSheetsDefBlank.PNG)
 
-In case of successfully connecting to the database server, the dropdown "database" becomes available and you can proceed to selecting a database and afterwards a table.
+In case of successfully connecting to the database server, the drop-down "database" becomes available and you can proceed to selecting a database and afterwards a table.
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBSheetsDefSelectDatabase.PNG)
 
 "Load DBSheet def from File" is used to directly load a stored definition into the tool (Legacy definitions from the old DBAddin can be loaded as well, the Database is retrieved from the entry `connID`, this might be prefixed (e.g. by MSSQL) which can be removed by entering this prefix into the setting `connIDPrefixDBtype`).
 
-After having selected a database, select the main table for which a DBsheet should be created in the dropdown "Table", which fills the available fields of the table into the dropdowns of column "name". Once a field has been chosen, the password/database/table entry becomes unavailable. Only clearing ALL fields from the DBSheets definition will allow a change to the password/database/table entry again.
+After having selected a database, select the main table for which a DBsheet should be created in the drop-down "Table", which fills the available fields of the table into the drop-downs of column "name". Once a field has been chosen, the password/database/table entry becomes unavailable. Only clearing ALL fields from the DBSheets definition will allow a change to the password/database/table entry again.
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBSheetsDefSelectTableColumn.PNG)
 
@@ -88,9 +88,9 @@ A quick way to add all available columns is to click "add all Fields" (or pressi
 
 #### Common editing tasks
 
-If the field is required to be filled (non-nullable) then an special character (here: an asterisk) is put in front of it (shown also in the list of fields for choosing), the special character is removed however when generating/customizing queries and lookup queries). The first field is automatically set to be a primary key field, any subsequent fields that should serve as primary key can be marked as such by ticking the "primkey" column. Primary columns must always come first in a DBSheet, so any primary key column after a "non-primary key" column is prevented by DBsheet Creation.
+If the field is required to be filled (non null-able) then an special character (here: an asterisk) is put in front of it (shown also in the list of fields for choosing), the special character is removed however when generating/customizing queries and lookup queries). The first field is automatically set to be a primary key field, any subsequent fields that should serve as primary key can be marked as such by ticking the "primkey" column. Primary columns must always come first in a DBSheet, so any primary key column after a "non-primary key" column is prevented by DBsheet Creation.
 
-You can always edit the fields already stored in the DBSheet-Column list by selecting a line and changing the values in the dropdowns.
+You can always edit the fields already stored in the DBSheet-Column list by selecting a line and changing the values in the drop-downs.
 
 You can change the order of fields by selecting a row and using the context menu up/down buttons:
 
@@ -114,7 +114,7 @@ To finish foreign table lookup, select the Foreign Table Lookup Column in the fl
 
 After selecting the flookup column, the tool asks if the lookup statement, which is used to query the database for the key/lookup value pairs, should be created.
 
-If a the lookup table is located in a different database than the main database selected in the Database dropdown, you can choose the foreign database using the context menu on the ftable column.
+If a the lookup table is located in a different database than the main database selected in the Database drop-down, you can choose the foreign database using the context menu on the ftable column.
 This will change the choices of the selected ftable cell to the tables available in the chosen foreign database, the other ftable cell's choices remain to the originally chosen database.
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBSheetsDefForLookupTableChoice.PNG)
@@ -155,15 +155,17 @@ A DBSheet is created in four steps:
 
 1.  First, all necessary columns are defined and supporting lookups are either generated or entered/edited directly.
 2.  Then the main query for retrieving the data to be edited is generated with "create DBSheet query". It can also be further customized, if needed.  
-    However bear in mind that every change in the columns requires either an overwriting of the customizations and subsequent redoing them (cleaner) or constantly keeping the two synchronized. For customizing the data restriction part (Where Parameter Clause), a separate text input field can be used that allows the query to be regenerated without any intervening. Simply enter the restriction part (the Where clause without the "Where") and create the Query again.
-3.  Then the DBSheet Definition is stored with "save DBsheet def", which allows you to choose a filename (if it hasn't been already saved). The file choice dialog can always be accessed by clicking "save DBSheet def As...". With this, the information currently contained in the DBSheet columns, the DBsheet query and other information is stored in a DBSheet definition file (extension: xml)
-4.  Finally, the DBSheet definition is assigned to an Excel Worksheet with the button "assign DBSheet" or the dropdown menu-item "assign DBsheet definition", creating a CUD enabled DBMapper with the active/chosen DBSheet definition in the currently active Excel Worksheet at the selected cell. Assignment also works on an already existing DBSheet DBMapper (or it's associated DBSetQuery function cell), the DB Mapper is replaced then by the new definition.
+    However bear in mind that every change in the columns requires either an overwriting of the customizations and subsequent redoing them (cleaner) or constantly keeping the two synchronized. For customizing the data restriction part (Where Parameter Clause), a separate text input field can be used that allows the query to be regenerated without any intervening. Simply enter the restriction part (the Where clause without the "Where") and create the Query again. This additional Where clause is also used in the assignment step (4) to create restriction cells for parameters (specified with `?` in the Where clause).
+3.  Then the DBSheet Definition is stored with "save DBsheet def", which allows you to choose a filename (if it hasn't been already saved). The file choice dialog can always be accessed by clicking "save DBSheet def As...". With this, the information currently contained in the DBSheet columns, the DBsheet query and the Where Parameter Clause is stored in a DBSheet definition file (extension: xml)
+4.  Finally, the DBSheet definition is assigned to an Excel Worksheet with the button "assign DBSheet" or the drop-down menu-item "assign DBsheet definition" in the DBAddin Ribbon, creating a CUD enabled DBMapper with the active/chosen DBSheet definition in the currently active Excel Worksheet at the selected cell. Assignment also works on an already existing DBSheet DBMapper (or it's associated DBSetQuery function cell), the DB Mapper is replaced then by the new definition.
+
+Beware that additional where clauses need manual intervention to a) extend the `DBSetQuery` function's query argument (range) and b) fill the added restriction cells with meaningful values.
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBSheetsDefinitionButton.PNG)
 
 You can always test the main table query by clicking on "test DBSheet Query" next to the query definition. This opens an excel sheet with the results of the main table query being inserted. This Testsheet can be closed again either by simply closing it, or quicker by clicking on the same button again (that now changed its caption to "remove Testsheet").
 
-After saving, the definition file is displayed as a clickable link right besides the "reset DBSheet definition" button and can be viewed or edited (the application that opens the file is choosable after clicking)
+After saving, the definition file is displayed as a click-able link right besides the "reset DBSheet definition" button and can be viewed or edited (the application that opens the file is choosable after clicking)
 
 #### Relaxing foreign key existence on non strictly relational integrity tables
 
@@ -202,8 +204,8 @@ Explanation:
 *   `ConnStringReplace`**N**: replacement for above.
 *   `DBSheetConnString`**N**: if existing, this connection string is used to connect to the database for the DBSheet definitions instead (without further replacements).
 *   `DBidentifierCCS`**N**: used to identify the database within DBSheetConnString.
-*   `DBSheetDefinitions`**N**: path to the stored DBSheetdefinitions (default directory of assign DBsheet definitions and load/save DBSheet Defintions).
-*   `dbGetAll`**N**: command for retrieving all databases/schemas from the database can be entered (for (MS) SQL server this is "`sp_helpdb`" for Oracle its "`select username from sys.all_users`".
+*   `DBSheetDefinitions`**N**: path to the stored DBSheetdefinitions (default directory of assign DBsheet definitions and load/save DBSheet Definitions).
+*   `dbGetAll`**N**: command for retrieving all databases/schemas from the database can be entered (for (MS) SQL server this is "`sp_helpdb`" for Oracle its "`select user-name from sys.all_users`".
 *   `dbGetAllFieldName`**N**: If the result of above command has more than one column (like in sqlserver), you have to give the fieldname where the databases can be retrieved from.
 *   `ownerQualifier`**N**: default owner qualifier for table when loading DBSheet definitions, if table name is not fully qualified (legacy DBSheet definitions).
 *   `connIDPrefixDBtype`: Legacy definitions from the old DBAddin can be loaded as well, the Database is retrieved from the entry `connID`, this might be prefixed (e.g. by MSSQL), which can be removed by this setting.
