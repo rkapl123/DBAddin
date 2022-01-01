@@ -246,23 +246,27 @@ Public Module Globals
             UserMsg("Can't refresh data while lookup dropdown is open !!")
             Exit Sub
         End Try
+        Dim actWb As Excel.Workbook = Nothing
+        Try : actWb = ExcelDnaUtil.Application.ActiveWorkbook : Catch ex As Exception
+            UserMsg("Exception when trying to get the active workbook for refreshing data: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
+        End Try
         ' also reset the database connection in case of errors (might be nothing or not open...)
         Try : conn.Close() : Catch ex As Exception : End Try
         conn = Nothing
         dontTryConnection = False
         Try
             ' look for old query caches and status collections (returned error messages) in active workbook and reset them to get new data
-            resetCachesForWorkbook(ExcelDnaUtil.Application.ActiveWorkbook.Name)
+            resetCachesForWorkbook(actWb.Name)
             Dim underlyingName As String = getUnderlyingDBNameFromRange(ExcelDnaUtil.Application.ActiveCell)
             ' now for DBListfetch/DBRowfetch resetting, first outside of all db function areas...
             If underlyingName = "" Then
-                refreshDBFunctions(ExcelDnaUtil.Application.ActiveWorkbook)
+                refreshDBFunctions(actWb)
                 ' general refresh: also refresh all embedded queries and pivot tables..
                 Try
                     Dim ws As Excel.Worksheet
                     Dim qrytbl As Excel.QueryTable
                     Dim pivottbl As Excel.PivotTable
-                    For Each ws In ExcelDnaUtil.Application.ActiveWorkbook.Worksheets
+                    For Each ws In actWb.Worksheets
                         If ws.ProtectContents And (ws.QueryTables.Count > 0 Or ws.PivotTables.Count > 0) Then
                             UserMsg("Worksheet " + ws.Name + " is content protected, can't refresh QueryTables/PivotTables !")
                             Continue For
@@ -581,15 +585,22 @@ Last:
     ''' <param name="Wb">workbook to refresh DB Functions in</param>
     ''' <param name="ignoreCalcMode">when calling refreshDBFunctions time delayed (when saving a workbook and DBFC* is set), need to trigger calculation regardless of calculation mode being manual, otherwise data is not refreshed</param>
     Public Sub refreshDBFunctions(Wb As Excel.Workbook, Optional ignoreCalcMode As Boolean = False)
+        Dim WbNames As Excel.Names
+        Try : WbNames = Wb.Names
+        Catch ex As Exception
+            LogWarn("Exception when trying to get Workbook names: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
+            Exit Sub
+        End Try
+
         ' hidden workbooks produce an error when searching for cells, this is captured by 
         If TypeName(ExcelDnaUtil.Application.Calculation) = "Error" Then
-            UserMsg("ExcelDnaUtil.Application.Calculation = Error, " + Wb.Path + "\" + Wb.Name + " (hidden workbooks produce calculation errors...)")
+            LogWarn("ExcelDnaUtil.Application.Calculation = Error, " + Wb.Path + "\" + Wb.Name + " (hidden workbooks produce calculation errors...)")
             Exit Sub
         End If
         DBModifs.preventChangeWhileFetching = True
         Try
             ' walk through all DB functions (having hidden names DBFsource*) cells there to find DB Functions and change their formula, adding " " to trigger recalculation
-            For Each DBname As Excel.Name In ExcelDnaUtil.Application.ActiveWorkbook.Names
+            For Each DBname As Excel.Name In WbNames
                 Dim DBFuncCell As Excel.Range = Nothing
                 If DBname.Name Like "*DBFsource*" Then
                     ' some names might have lost their reference to the cell, so catch this here...
@@ -601,6 +612,9 @@ Last:
                         Continue For
                     End If
                     Dim callID As String = "" : Dim underlyingName As String = ""
+                    If Not (DBFuncCell.Formula.ToString().ToUpper.Contains("DBLISTFETCH") Or DBFuncCell.Formula.ToString().ToUpper.Contains("DBROWFETCH") Or DBFuncCell.Formula.ToString().ToUpper.Contains("DBSETQUERY")) Then
+                        LogWarn("Found former DB Function in Cell " + DBFuncCell.Parent.Name + "!" + DBFuncCell.Address + " that doesn't contain a DB Function anymore.")
+                    End If
                     Try
                         ' get the callID of the underlying name of the target (key of the queryCache and StatusCollection)
                         callID = "[" + DBFuncCell.Parent.Parent.Name + "]" + DBFuncCell.Parent.Name + "!" + DBFuncCell.Address
@@ -609,14 +623,14 @@ Last:
                         ' trigger recalculation by changing formula of DB Function
                         DBFuncCell.Formula += " "
                     Catch ex As Exception
-                        LogWarn("Exception when setting Formula or getting callID (" + callID + ") of in Cell (" + DBFuncCell.Address + "): " + ex.Message)
+                        LogWarn("Exception when setting Formula or getting callID (" + callID + ") of DB Function in Cell (" + DBFuncCell.Parent.Name + "!" + DBFuncCell.Address + "): " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
                     End Try
                 End If
             Next
             If ignoreCalcMode Then
-                    LogInfo("ignoreCalcMode = True, ExcelDnaUtil.Application.CalculateFull called " + Wb.Path + "\" + Wb.Name)
-                    ExcelDnaUtil.Application.CalculateFull()
-                End If
+                LogInfo("ignoreCalcMode = True, ExcelDnaUtil.Application.CalculateFull called " + Wb.Path + "\" + Wb.Name)
+                ExcelDnaUtil.Application.CalculateFull()
+            End If
         Catch ex As Exception
             UserMsg("Exception: " + ex.Message + ", " + Wb.Path + "\" + Wb.Name, "refresh DBFunctions")
         End Try
@@ -626,12 +640,16 @@ Last:
     ''' <summary>"OnTime" event function to "escape" current (main) thread: event procedure to refetch DB functions results after triggering a recalculation inside Application.WorkbookBeforeSave</summary>
     Public Sub refreshDBFuncLater()
         Dim previouslySaved As Boolean
+        Dim actWb As Excel.Workbook = Nothing
+        Try : actWb = ExcelDnaUtil.Application.ActiveWorkbook : Catch ex As Exception
+            LogWarn("Exception when trying to get the active workbook for refreshing DBfunc later: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
+        End Try
         Try
-            If ExcelDnaUtil.Application.ActiveWorkbook IsNot Nothing Then
-                previouslySaved = ExcelDnaUtil.Application.ActiveWorkbook.Saved
+            If actWb IsNot Nothing Then
+                previouslySaved = actWb.Saved
                 LogInfo("clearing DBfunction targets: refreshDBFunctions after clearing")
-                refreshDBFunctions(ExcelDnaUtil.Application.ActiveWorkbook, True)
-                ExcelDnaUtil.Application.ActiveWorkbook.Saved = previouslySaved
+                refreshDBFunctions(actWb, True)
+                actWb.Saved = previouslySaved
             End If
         Catch ex As Exception
             UserMsg("Exception: " + ex.Message, "refresh DBFunc later")
@@ -666,16 +684,21 @@ Last:
 
     ''' <summary>"repairs" legacy functions from old VB6-COM Addin by removing "DBAddin.Functions." before function name</summary>
     ''' <param name="showResponse">in case this is called interactively, provide a response in case of no legacy functions there</param>
-    Public Sub repairLegacyFunctions(Optional showResponse As Boolean = False)
+    Public Sub repairLegacyFunctions(actWB As Excel.Workbook, Optional showResponse As Boolean = False)
         Dim foundLegacyFunc As Boolean = False
         Dim xlcalcmode As Long = ExcelDnaUtil.Application.Calculation
-        Dim actWB As Excel.Workbook = ExcelDnaUtil.Application.ActiveWorkbook
+        Dim WbNames As Excel.Names
+        Try : WbNames = actWB.Names
+        Catch ex As Exception
+            LogWarn("Exception when trying to get Workbook names: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
+            Exit Sub
+        End Try
         If actWB Is Nothing Then
             ' only log warning, no user message !
             LogWarn("no active workbook available !")
             Exit Sub
         End If
-        DBModifs.preventChangeWhileFetching = True ' WorksheetFunction.CountIf trigger Change event with target in argument 1, so make sure this doesn't change anything)
+        DBModifs.preventChangeWhileFetching = True ' WorksheetFunction.CountIf triggers Change event with target in argument 1, so make sure this doesn't trigger anything inside DBAddin)
         Try
             ' count nonempty cells in workbook for time estimate...
             Dim cellcount As Long = 0
@@ -685,7 +708,7 @@ Last:
             ' if interactive, enforce replace...
             If showResponse Then foundLegacyFunc = True
             Dim timeEstInSec As Double = cellcount / 3500000
-            For Each DBname As Excel.Name In ExcelDnaUtil.Application.ActiveWorkbook.Names
+            For Each DBname As Excel.Name In WbNames
                 If DBname.Name Like "*DBFsource*" Then
                     ' some names might have lost their reference to the cell, so catch this here...
                     Try : foundLegacyFunc = DBname.RefersToRange.Formula.ToString().Contains("DBAddin.Functions") : Catch ex As Exception : End Try
@@ -696,9 +719,7 @@ Last:
             If foundLegacyFunc Then
                 retval = QuestionMsg(fetchSetting("legacyFunctionMsg", IIf(showResponse, "Fix legacy DBAddin functions", "Found legacy DBAddin functions") + " in active workbook, should they be replaced with current addin functions (Save workbook afterwards to persist)? Estimated time for replace: ") + timeEstInSec.ToString("0.0") + " sec.", MsgBoxStyle.OkCancel, "Legacy DBAddin functions")
             ElseIf showResponse Then
-                retval = QuestionMsg("No DBListfetch/DBRowfetch/DBSetQuery found in active workbook, still try to fix legacy DBAddin functions (Save workbook afterwards to persist)? Estimated time for replace: " + timeEstInSec.ToString("0.0") + " sec.", MsgBoxStyle.OkCancel, "Legacy DBAddin functions")
-            Else
-                Exit Sub
+                retval = QuestionMsg("No DBListfetch/DBRowfetch/DBSetQuery found in active workbook (via hidden names), still try to fix legacy DBAddin functions (Save workbook afterwards to persist)? Estimated time for replace: " + timeEstInSec.ToString("0.0") + " sec.", MsgBoxStyle.OkCancel, "Legacy DBAddin functions")
             End If
             If retval = MsgBoxResult.Ok Then
                 Dim replaceSheets As String = ""
@@ -728,11 +749,16 @@ Last:
 
     ''' <summary>maintenance procedure to purge names used for dbfunctions from workbook, or unhide DB names</summary>
     Public Sub purgeNames()
+        Dim actWbNames As Excel.Names = Nothing
+        Try : actWbNames = ExcelDnaUtil.Application.ActiveWorkbook.Names : Catch ex As Exception
+            Globals.UserMsg("Exception when trying to get the active workbook's names for purging names: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
+        End Try
+        If IsNothing(actWbNames) Then Exit Sub
         ' with Ctrl unhide all DB names and show Name Manager...
         If My.Computer.Keyboard.CtrlKeyDown And Not My.Computer.Keyboard.ShiftKeyDown Then
             Dim retval As MsgBoxResult = QuestionMsg("Unhiding all hidden DB function names, continue (refreshing will hide them again)?", MsgBoxStyle.OkCancel, "Unhide names")
             If retval = vbCancel Then Exit Sub
-            For Each DBname As Excel.Name In ExcelDnaUtil.Application.ActiveWorkbook.Names
+            For Each DBname As Excel.Name In actWbNames
                 If DBname.Name Like "*DBFtarget*" Or DBname.Name Like "*DBFsource*" Then DBname.Visible = True
             Next
             Try
@@ -748,7 +774,7 @@ Last:
             Dim calcMode = ExcelDnaUtil.Application.Calculation
             ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual
             Try
-                For Each DBname As Excel.Name In ExcelDnaUtil.Application.ActiveWorkbook.Names
+                For Each DBname As Excel.Name In actWbNames
                     If Not DBname.Visible Then ' only hidden names...
                         If (DBname.Name Like "*ExterneDaten*" Or DBname.Name Like "*ExternalData*") And retval = vbYes Then
                             resultingPurges += DBname.Name + ", "
@@ -774,7 +800,7 @@ Last:
         ElseIf My.Computer.Keyboard.ShiftKeyDown And My.Computer.Keyboard.CtrlKeyDown Then
             ExcelDnaUtil.Application.Dialogs(Excel.XlBuiltInDialog.xlDialogNameManager).Show()
         Else
-            Dim NamesList As Excel.Names = ExcelDnaUtil.Application.ActiveWorkbook.Names
+            Dim NamesList As Excel.Names = actWbNames
             Dim collectedErrors As String = ""
             For Each DBname As Excel.Name In NamesList
                 Dim checkExists As Excel.Name = Nothing

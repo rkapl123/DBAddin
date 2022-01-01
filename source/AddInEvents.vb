@@ -258,12 +258,11 @@ done:
         If Not Wb.IsAddin Then
             ' in case of reopening workbooks with dbfunctions, look for old query caches and status collections (returned error messages) and reset them to get new data
             Globals.resetCachesForWorkbook(Wb.Name)
-
+            Globals.repairLegacyFunctions(Wb)
             ' when opening, force recalculation of DB functions in workbook.
             ' this is required as there is no recalculation if no dependencies have changed (usually when opening workbooks)
             ' however the most important dependency for DB functions is the database data....
             If Not Globals.getCustPropertyBool("DBFskip", Wb) Then Globals.refreshDBFunctions(Wb)
-            Globals.repairLegacyFunctions()
         End If
     End Sub
 
@@ -388,7 +387,7 @@ done:
         Next
     End Function
 
-    ''' <summary>assign commandbuttons new and refresh DBAddins DBModification Menu with each change of sheets</summary>
+    ''' <summary>assign commandbuttons anew with each change of sheets</summary>
     ''' <param name="Sh"></param>
     Private Sub Application_SheetActivate(Sh As Object) Handles Application.SheetActivate
         ' avoid when being activated by DBFuncsAction 

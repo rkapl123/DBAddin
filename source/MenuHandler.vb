@@ -292,7 +292,14 @@ Public Class MenuHandler
     End Function
 
     Public Sub clickRepairLegacyFunctions(control As CustomUI.IRibbonControl)
-        Globals.repairLegacyFunctions(True)
+        Dim Wb As Excel.Workbook
+        Try
+            Wb = ExcelDnaUtil.Application.ActiveWorkbook
+        Catch ex As Exception
+            Globals.UserMsg("Exception getting the active workbook: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references), can't repair legacy functions.")
+            Exit Sub
+        End Try
+        Globals.repairLegacyFunctions(Wb, True)
     End Sub
 
     ''' <summary>used for additional information</summary>
@@ -306,7 +313,11 @@ Public Class MenuHandler
     ''' <param name="control"></param>
     ''' <returns></returns>
     Public Function getCPropsImage(control As CustomUI.IRibbonControl) As String
-        If Globals.getCustPropertyBool("DBFskip", ExcelDnaUtil.Application.ActiveWorkbook) Then
+        Dim actWb As Excel.Workbook = Nothing
+        Try : actWb = ExcelDnaUtil.Application.ActiveWorkbook : Catch ex As Exception
+            LogWarn("Exception when trying to get the active workbook: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
+        End Try
+        If Globals.getCustPropertyBool("DBFskip", actWb) Then
             Return "DeclineTask"
         Else
             Return "AcceptTask"
@@ -329,10 +340,14 @@ Public Class MenuHandler
     ''' <returns>screentip and the state of designmode</returns>
     Public Function getToggleCPropsScreentip(control As CustomUI.IRibbonControl) As String
         getToggleCPropsScreentip = ""
-        If ExcelDnaUtil.Application.ActiveWorkbook IsNot Nothing Then
+        Dim actWb As Excel.Workbook = Nothing
+        Try : actWb = ExcelDnaUtil.Application.ActiveWorkbook : Catch ex As Exception
+            getToggleCPropsScreentip = "Exception when trying to get the active workbook: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)"
+        End Try
+        If actWb IsNot Nothing Then
             Try
                 Dim docproperty As Microsoft.Office.Core.DocumentProperty
-                For Each docproperty In ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties
+                For Each docproperty In actWb.CustomDocumentProperties
                     If Left$(docproperty.Name, 5) = "DBFC" Or docproperty.Name = "DBFskip" Or docproperty.Name = "doDBMOnSave" Or docproperty.Name = "DBFNoLegacyCheck" Then
                         getToggleCPropsScreentip += docproperty.Name + ":" + docproperty.Value.ToString() + vbCrLf
                     End If
@@ -346,7 +361,11 @@ Public Class MenuHandler
     ''' <summary>click on change props: show builtin properties dialog</summary>
     ''' <param name="control"></param>
     Public Sub showCProps(control As CustomUI.IRibbonControl)
-        If ExcelDnaUtil.Application.ActiveWorkbook IsNot Nothing Then
+        Dim actWb As Excel.Workbook = Nothing
+        Try : actWb = ExcelDnaUtil.Application.ActiveWorkbook : Catch ex As Exception
+            Globals.UserMsg("Exception when trying to get the active workbook for showing custom properties: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
+        End Try
+        If actWb IsNot Nothing Then
             Try
                 ExcelDnaUtil.Application.Dialogs(Excel.XlBuiltInDialog.xlDialogProperties).Show
             Catch ex As Exception
@@ -362,10 +381,15 @@ Public Class MenuHandler
     ''' <summary>show DBModif definitions edit box</summary>
     ''' <param name="control"></param>
     Sub showDBModifEdit(control As CustomUI.IRibbonControl)
+        Dim actWb As Excel.Workbook = Nothing
+        Try : actWb = ExcelDnaUtil.Application.ActiveWorkbook : Catch ex As Exception
+            Globals.UserMsg("Exception when trying to get the active workbook for show DBModif Editor: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
+            Exit Sub
+        End Try
         ' only show dialog if there is a workbook and it has the relevant custom XML part.
-        If ExcelDnaUtil.Application.ActiveWorkbook IsNot Nothing AndAlso
-            ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef").Count > 0 Then
-            Dim CustomXmlParts As Object = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
+        If actWb IsNot Nothing AndAlso
+            actWb.CustomXMLParts.SelectByNamespace("DBModifDef").Count > 0 Then
+            Dim CustomXmlParts As Object = actWb.CustomXMLParts.SelectByNamespace("DBModifDef")
             ' check if any DBModifier exist below root node, only if at least one is defined, open dialog
             If CustomXmlParts(1).SelectNodes("/ns0:root/*").Count > 0 Then
                 Dim theEditDBModifDefDlg As EditDBModifDef = New EditDBModifDef()
@@ -477,9 +501,13 @@ Public Class MenuHandler
         Globals.initSettings()
         ' provide a chance to reconnect when switching environment...
         conn = Nothing
-        If ExcelDnaUtil.Application.ActiveWorkbook IsNot Nothing Then
+        Dim actWb As Excel.Workbook = Nothing
+        Try : actWb = ExcelDnaUtil.Application.ActiveWorkbook : Catch ex As Exception
+            Globals.UserMsg("Exception when trying to get the active workbook for selecting environment: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
+        End Try
+        If actWb IsNot Nothing Then
             Dim retval As MsgBoxResult = QuestionMsg("ConstConnString:" + Globals.ConstConnString + vbCrLf + "ConfigStoreFolder:" + ConfigFiles.ConfigStoreFolder + vbCrLf + vbCrLf + "Refresh DBFunctions in active workbook to see effects?", MsgBoxStyle.OkCancel, "Changed environment to: " + Globals.fetchSetting("ConfigName" + Globals.env(), ""))
-            If retval = MsgBoxResult.Ok Then Globals.refreshDBFunctions(ExcelDnaUtil.Application.ActiveWorkbook)
+            If retval = MsgBoxResult.Ok Then Globals.refreshDBFunctions(actWb)
         Else
             Globals.UserMsg("ConstConnString:" + Globals.ConstConnString + vbCrLf + "ConfigStoreFolder:" + ConfigFiles.ConfigStoreFolder, "Changed environment to: " + Globals.fetchSetting("ConfigName" + Globals.env(), ""), MsgBoxStyle.Information)
         End If
@@ -596,6 +624,10 @@ Public Class MenuHandler
     ''' <summary>DBModif button activated, do DB Mapper/DB Action/DB Sequence or define existing (CtrlKey pressed)...</summary>
     ''' <param name="control"></param>
     Public Sub DBModifClick(control As CustomUI.IRibbonControl)
+        Dim actWb As Excel.Workbook = Nothing
+        Try : actWb = ExcelDnaUtil.Application.ActiveWorkbook : Catch ex As Exception
+            Globals.UserMsg("Exception when trying to get the active workbook for DB Modifier activation: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
+        End Try
         ' reset noninteractive messages (used for VBA invocations) and hadError for interactive invocations
         Globals.nonInteractiveErrMsgs = "" : DBModifs.hadError = False
         Dim nodeName As String = Right(control.Id, Len(control.Id) - 1)
@@ -608,7 +640,7 @@ Public Class MenuHandler
                 createDBModif(control.Tag, targetDefName:=nodeName)
             Else
                 ' DB sequence actions (the sequence to be done) are stored directly in DBMapperDefColl, so different invocation here
-                If Not (ExcelDnaUtil.Application.ActiveWorkbook.ReadOnlyRecommended And ExcelDnaUtil.Application.ActiveWorkbook.ReadOnly) Then
+                If Not (actWb.ReadOnlyRecommended And actWb.ReadOnly) Then
                     Globals.DBModifDefColl(control.Tag).Item(nodeName).doDBModif()
                 Else
                     Globals.UserMsg("ReadOnlyRecommended is set on active workbook (being readonly), therefore all DB Modifiers are disabled !", "DB Modifier execution", MsgBoxStyle.Exclamation)
@@ -634,9 +666,7 @@ Public Class MenuHandler
     ''' <summary>purge name tool button, purge names used for dbfunctions from workbook</summary>
     ''' <param name="control"></param>
     Public Sub clickpurgetoolbutton(control As CustomUI.IRibbonControl)
-        If ExcelDnaUtil.Application.ActiveWorkbook IsNot Nothing Then
-            Globals.purgeNames()
-        End If
+        Globals.purgeNames()
     End Sub
 
     ''' <summary>show the trace log</summary>
@@ -689,7 +719,7 @@ Public Class MenuHandler
             Dim wbQueries As Object = Nothing
             Try : wbQueries = ExcelDnaUtil.Application.ActiveWorkbook.Queries
             Catch ex As Exception
-                Globals.LogWarn("Error getting power queries: " + ex.Message)
+                Globals.LogWarn("Error getting power queries: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
                 Exit Sub
             End Try
             If IsNothing(wbQueries) Or wbQueries.Count = 0 Then
@@ -710,13 +740,17 @@ Public Class MenuHandler
     Dim curCell As Excel.Range
     Dim i As Integer
     Private Sub ctMenuStrip2_Click(sender As Object, e As EventArgs)
+        Dim actWb As Excel.Workbook = Nothing
+        Try : actWb = ExcelDnaUtil.Application.ActiveWorkbook : Catch ex As Exception
+            LogWarn("Exception when trying to get the active workbook: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
+        End Try
         ' restore previously stored query with Ctrl..
         If My.Computer.Keyboard.CtrlKeyDown Then
-            ExcelDnaUtil.Application.ActiveWorkbook.Queries(sender.ToString()).Formula = Functions.queryBackupColl(sender.ToString())
+            actWb.Queries(sender.ToString()).Formula = Functions.queryBackupColl(sender.ToString())
             Globals.UserMsg("Last power query restored for " + sender.ToString())
             Exit Sub
         End If
-        Dim theFormulaStr As String() = ExcelDnaUtil.Application.ActiveWorkbook.Queries(sender.ToString()).Formula.ToString().Split(vbCrLf)
+        Dim theFormulaStr As String() = actWb.Queries(sender.ToString()).Formula.ToString().Split(vbCrLf)
         i = 1
         curCell = ExcelDnaUtil.Application.ActiveCell
         Functions.avoidRequeryDuringEdit = True
@@ -735,7 +769,11 @@ Public Class MenuHandler
     ''' <summary>clicked Assign DBSheet: create DB Mapper with CUD Flags</summary>
     ''' <param name="control"></param>
     Public Sub clickAssignDBSheet(control As CustomUI.IRibbonControl)
-        If ExcelDnaUtil.Application.ActiveWorkbook IsNot Nothing Then
+        Dim actWb As Excel.Workbook = Nothing
+        Try : actWb = ExcelDnaUtil.Application.ActiveWorkbook : Catch ex As Exception
+            LogWarn("Exception when trying to get the active workbook: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
+        End Try
+        If actWb IsNot Nothing Then
             DBSheetConfig.createDBSheet()
         Else
             Globals.UserMsg("Cannot assign DBSheet DB Mapper as there is no Workbook active !", "DB Sheet Assignment", MsgBoxStyle.Exclamation)

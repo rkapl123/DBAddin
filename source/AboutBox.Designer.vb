@@ -45,6 +45,7 @@ Partial Class AboutBox
         Me.CheckForUpdates = New System.Windows.Forms.Button()
         Me.disableAddin = New System.Windows.Forms.Button()
         Me.ToolTip1 = New System.Windows.Forms.ToolTip(Me.components)
+        Me.BackgroundWorker1 = New System.ComponentModel.BackgroundWorker()
         Me.TableLayoutPanel.SuspendLayout()
         CType(Me.LogoPictureBox, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
@@ -206,6 +207,9 @@ Partial Class AboutBox
         "l to reactivate the old VB6 Addin")
         Me.disableAddin.UseVisualStyleBackColor = True
         '
+        'BackgroundWorker1
+        '
+        '
         'AboutBox
         '
         Me.AcceptButton = Me.OKButton
@@ -232,4 +236,5 @@ Partial Class AboutBox
     Friend WithEvents ToolTip1 As Windows.Forms.ToolTip
     Friend WithEvents CheckForUpdates As Windows.Forms.Button
     Friend WithEvents disableAddin As Windows.Forms.Button
+    Friend WithEvents BackgroundWorker1 As ComponentModel.BackgroundWorker
 End Class

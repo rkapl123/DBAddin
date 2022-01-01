@@ -1,4 +1,5 @@
 ﻿Imports ExcelDna.Integration
+Imports System.ComponentModel
 Imports System.Diagnostics
 Imports System.IO
 
@@ -36,92 +37,28 @@ Public NotInheritable Class AboutBox
         Dim theEventTypeFilter As EventTypeFilter = Globals.theLogDisplaySource.Listeners(0).Filter
         Me.EventLevels.SelectedItem = theEventTypeFilter.EventType.ToString()
         dontChangeEventLevels = False
-        checkForUpdate(False)
+        BackgroundWorker1.RunWorkerAsync()
     End Sub
 
-    ''' <summary>Close Aboutbox</summary>
-    Private Sub OKButton_Click(ByVal sender As Object, ByVal e As EventArgs) Handles OKButton.Click
-        Me.Close()
-    End Sub
-
-    ''' <summary>Click on Project homepage: activate hyperlink in browser</summary>
-    ''' <param name="sender"></param>
-    ''' <param name="e"></param>
-    Private Sub LabelCompanyName_Click(sender As Object, e As EventArgs) Handles LabelCompanyName.Click
-        Try
-            Process.Start(My.Application.Info.CompanyName)
-        Catch ex As Exception
-            Globals.LogWarn(ex.Message)
-        End Try
-    End Sub
-
-    ''' <summary>Click on Local help: activate hyperlink in browser</summary>
-    ''' <param name="sender"></param>
-    ''' <param name="e"></param>
-    Private Sub LabelProductName_Click(sender As Object, e As EventArgs) Handles LabelProductName.Click
-        Try
-            Process.Start(Globals.fetchSetting("LocalHelp", ""))
-        Catch ex As Exception
-            Globals.LogWarn(ex.Message)
-        End Try
-    End Sub
-
-    ''' <summary>select event levels: filter events by selected level (from now on)</summary>
-    ''' <param name="sender"></param>
-    ''' <param name="e"></param>
-    Private Sub EventLevels_SelectedValueChanged(sender As Object, e As EventArgs) Handles EventLevels.SelectedValueChanged
-        If dontChangeEventLevels Then Exit Sub
-        Dim theEventTypeFilter As EventTypeFilter = New EventTypeFilter(SourceLevels.Off)
-        Select Case EventLevels.SelectedItem
-            Case "Information"
-                theEventTypeFilter = New EventTypeFilter(SourceLevels.Information)
-            Case "Warning"
-                theEventTypeFilter = New EventTypeFilter(SourceLevels.Warning)
-            Case "Error"
-                theEventTypeFilter = New EventTypeFilter(SourceLevels.Error)
-            Case "Verbose"
-                theEventTypeFilter = New EventTypeFilter(SourceLevels.Verbose)
-            Case "All"
-                theEventTypeFilter = New EventTypeFilter(SourceLevels.All)
-        End Select
-        Globals.theLogDisplaySource.Listeners(0).Filter = theEventTypeFilter
-        Globals.theLogFileSource.Listeners("FileLogger").Filter = theEventTypeFilter
-    End Sub
-
-    Private Sub CheckForUpdates_Click(sender As Object, e As EventArgs) Handles CheckForUpdates.Click
-        checkForUpdate(True)
-    End Sub
-
-    Private Sub DisableAddin_Click(sender As Object, e As EventArgs) Handles disableAddin.Click
-        Try
-            ExcelDnaUtil.Application.AddIns("DBAddin.Functions").Installed = True
-        Catch ex As Exception
-            Globals.UserMsg("Legacy DB-Addin not available in Excel-Addins, can't reactivate it, so disabling this Add-in not possible !")
-            Exit Sub
-        End Try
-        ' first reactivate legacy Addin
-        My.Computer.Registry.SetValue("HKEY_CURRENT_USER\Software\Microsoft\Office\Excel\Addins\DBAddin.Connection", "LoadBehavior", 3)
-        Globals.UserMsg("Please restart Excel to make changes effective...", "Disable DBAddin and re-enable Legacy DBAddin", MsgBoxStyle.Exclamation)
-        Try : ExcelDnaUtil.Application.AddIns("OebfaFuncs").Installed = False : Catch ex As Exception : End Try
-        disableAddinAfterwards = True
-        Me.Close()
-    End Sub
+    ''' <summary>only display result of check (false) or actually perform the update and download new version (true)</summary>
+    Dim doUpdate As Boolean = False
+    Const AddinName = "DBAddin-"
+    Const updateFilenameZip = "downloadedVersion.zip"
+    Dim localUpdateFolder As String = Globals.fetchSetting("localUpdateFolder", "")
+    Dim localUpdateMessage As String = Globals.fetchSetting("localUpdateMessage", "A new version is available in the local update folder, quit Excel and open explorer to start deployAddin.cmd ?")
+    Dim updatesMajorVersion As String = Globals.fetchSetting("updatesMajorVersion", "1.0.0.")
+    Dim updatesDownloadFolder As String = Globals.fetchSetting("updatesDownloadFolder", "C:\temp\")
+    Dim updatesUrlBase As String = Globals.fetchSetting("updatesUrlBase", "https://github.com/rkapl123/DBAddin/archive/refs/tags/")
+    Dim response As Net.HttpWebResponse = Nothing
+    Dim urlFile As String = ""
+    ' check for zip file of next higher revision
+    Dim curRevision As Integer
+    Dim foundARevision As Boolean = False
 
     ''' <summary>checks for updates of DB-Addin, asks for download and downloads them</summary>
-    ''' <param name="doUpdate">only display result of check (false) or actually perform the update and download new version (true)</param>
-    Public Sub checkForUpdate(doUpdate As Boolean)
-        Const AddinName = "DBAddin-"
-        Const updateFilenameZip = "downloadedVersion.zip"
-        Dim localUpdateFolder As String = Globals.fetchSetting("localUpdateFolder", "")
-        Dim localUpdateMessage As String = Globals.fetchSetting("localUpdateMessage", "A new version is available in the local update folder, quit Excel and open explorer to start deployAddin.cmd ?")
-        Dim updatesMajorVersion As String = Globals.fetchSetting("updatesMajorVersion", "1.0.0.")
-        Dim updatesDownloadFolder As String = Globals.fetchSetting("updatesDownloadFolder", "C:\temp\")
-        Dim updatesUrlBase As String = Globals.fetchSetting("updatesUrlBase", "https://github.com/rkapl123/DBAddin/archive/refs/tags/")
-        Dim response As Net.HttpWebResponse = Nothing
-        Dim urlFile As String = ""
-
-        ' check for zip file of next higher revision
-        Dim curRevision As Integer = My.Application.Info.Version.Revision
+    Private Sub BackgroundWorker1_DoWork(sender As Object, e As DoWorkEventArgs) Handles BackgroundWorker1.DoWork
+        If doUpdate Then Exit Sub
+        curRevision = My.Application.Info.Version.Revision
         ' try with highest possible Security protocol
         Try
             Net.ServicePointManager.SecurityProtocol = Net.SecurityProtocolType.Tls12 Or Net.SecurityProtocolType.SystemDefault
@@ -132,7 +69,6 @@ Public NotInheritable Class AboutBox
 
         ' always accept url certificate as valid
         Net.ServicePointManager.ServerCertificateValidationCallback = AddressOf ValidationCallbackHandler
-        Dim foundARevision As Boolean = False
         Dim revisionNotFoundTries As Integer = 0
         Dim triedRevision As Integer = curRevision
         Do
@@ -155,6 +91,9 @@ Public NotInheritable Class AboutBox
             End If
             triedRevision += 1
         Loop Until revisionNotFoundTries = CInt(Globals.fetchSetting("maxTriesForRevisionFind", "10"))
+    End Sub
+
+    Private Sub BackgroundWorker1_RunWorkerCompleted(sender As Object, e As RunWorkerCompletedEventArgs) Handles BackgroundWorker1.RunWorkerCompleted
         ' get out if no newer version found
         If curRevision = My.Application.Info.Version.Revision Then
             If foundARevision Then
@@ -163,7 +102,7 @@ Public NotInheritable Class AboutBox
             Else
                 Me.TextBoxDescription.Text = My.Application.Info.Description + vbCrLf + vbCrLf + "Version " + updatesMajorVersion + curRevision.ToString() +
                     " was not found on Github, it is probably more than 10 releases behind, reopen the Aboutbox to retry with maxTriesForRevisionFind (currently " +
-                    Globals.fetchSetting("maxTriesForRevisionFind", "10") + ") increased by 10. Finally remove this setting as it takes more time to open the Aboutbox."
+                    Globals.fetchSetting("maxTriesForRevisionFind", "10") + ") increased by 10."
                 Globals.setUserSetting("maxTriesForRevisionFind", (CInt(Globals.fetchSetting("maxTriesForRevisionFind", "10")) + 10).ToString())
                 Me.TextBoxDescription.BackColor = Drawing.Color.Violet
             End If
@@ -172,6 +111,7 @@ Public NotInheritable Class AboutBox
             Me.Refresh()
             Exit Sub
         Else
+            Globals.setUserSetting("maxTriesForRevisionFind", "10")
             Me.TextBoxDescription.Text = My.Application.Info.Description + vbCrLf + vbCrLf + "A new version (" + updatesMajorVersion + curRevision.ToString() + ") is available " +
                 IIf(localUpdateFolder <> "", "in " + localUpdateFolder, "on Github")
             Me.TextBoxDescription.BackColor = Drawing.Color.DarkOrange
@@ -242,6 +182,83 @@ Public NotInheritable Class AboutBox
         Catch ex As Exception
             Globals.UserMsg("Error when opening Distribution folder of new version: " + ex.Message())
         End Try
+    End Sub
+
+    ''' <summary>Close Aboutbox</summary>
+    Private Sub OKButton_Click(ByVal sender As Object, ByVal e As EventArgs) Handles OKButton.Click
+        Me.Close()
+    End Sub
+
+    ''' <summary>Click on Project homepage: activate hyperlink in browser</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub LabelCompanyName_Click(sender As Object, e As EventArgs) Handles LabelCompanyName.Click
+        Try
+            Process.Start(My.Application.Info.CompanyName)
+        Catch ex As Exception
+            Globals.LogWarn(ex.Message)
+        End Try
+    End Sub
+
+    ''' <summary>Click on Local help: activate hyperlink in browser</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub LabelProductName_Click(sender As Object, e As EventArgs) Handles LabelProductName.Click
+        Try
+            Process.Start(Globals.fetchSetting("LocalHelp", ""))
+        Catch ex As Exception
+            Globals.LogWarn(ex.Message)
+        End Try
+    End Sub
+
+    ''' <summary>select event levels: filter events by selected level (from now on)</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub EventLevels_SelectedValueChanged(sender As Object, e As EventArgs) Handles EventLevels.SelectedValueChanged
+        If dontChangeEventLevels Then Exit Sub
+        Dim theEventTypeFilter As EventTypeFilter = New EventTypeFilter(SourceLevels.Off)
+        Select Case EventLevels.SelectedItem
+            Case "Information"
+                theEventTypeFilter = New EventTypeFilter(SourceLevels.Information)
+            Case "Warning"
+                theEventTypeFilter = New EventTypeFilter(SourceLevels.Warning)
+            Case "Error"
+                theEventTypeFilter = New EventTypeFilter(SourceLevels.Error)
+            Case "Verbose"
+                theEventTypeFilter = New EventTypeFilter(SourceLevels.Verbose)
+            Case "All"
+                theEventTypeFilter = New EventTypeFilter(SourceLevels.All)
+        End Select
+        Globals.theLogDisplaySource.Listeners(0).Filter = theEventTypeFilter
+        Globals.theLogFileSource.Listeners("FileLogger").Filter = theEventTypeFilter
+    End Sub
+
+    Private Sub CheckForUpdates_Click(sender As Object, e As EventArgs) Handles CheckForUpdates.Click
+        If Not BackgroundWorker1.IsBusy Then
+            doUpdate = True
+            BackgroundWorker1.RunWorkerAsync()
+        End If
+    End Sub
+
+    Private Sub DisableAddin_Click(sender As Object, e As EventArgs) Handles disableAddin.Click
+        Try
+            ExcelDnaUtil.Application.AddIns("DBAddin.Functions").Installed = True
+        Catch ex As Exception
+            Globals.UserMsg("Legacy DB-Addin not available in Excel-Addins, can't reactivate it, so disabling this Add-in not possible !")
+            Exit Sub
+        End Try
+        ' first reactivate legacy Addin
+        My.Computer.Registry.SetValue("HKEY_CURRENT_USER\Software\Microsoft\Office\Excel\Addins\DBAddin.Connection", "LoadBehavior", 3)
+        Globals.UserMsg("Please restart Excel to make changes effective...", "Disable DBAddin and re-enable Legacy DBAddin", MsgBoxStyle.Exclamation)
+        Try : ExcelDnaUtil.Application.AddIns("OebfaFuncs").Installed = False : Catch ex As Exception : End Try
+        disableAddinAfterwards = True
+        Me.Close()
+    End Sub
+
+    ''' <summary>checks for updates of DB-Addin, asks for download and downloads them</summary>
+    ''' <param name="doUpdate">only display result of check (false) or actually perform the update and download new version (true)</param>
+    Public Sub checkForUpdate(doUpdate As Boolean)
+
     End Sub
 
     Private Function ValidationCallbackHandler() As Boolean
