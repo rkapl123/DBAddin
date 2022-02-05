@@ -13,7 +13,7 @@ DBAddin.NET is the successor to the VB6 based Office Database Addin, see also th
 * Dependencies/Prerequisites
 	* .NET 4.7 or higher (usually distributed with Windows)
 	* Excel (minimum 2007 because of Ribbons)
-	* ADO 2.5 or higher (usually distributed with Windows, needed as long as ADODB is still used)
+	* ADO 2.5 or higher (usually distributed with Windows, needed as long as ADODB is still used for DB Functions)
 
 If any of these are missing, please install them yourself before starting DBAddin.
 
@@ -24,10 +24,10 @@ This copies DBAddin.xll, DBAddin.xll.config, DBaddinUser.config and DBAddinCentr
 
 Settings can be configured in three config files, depending on your distribution requirements:
 
-* DBAddin.xll.config in section appSettings. DBAddin.xll.config has a reference
-  * to DBAddinCentral.config in the file attribute of the appSettings element and
-  * to DBaddinUser.config in the configSource attribute of the UserSettings element
-  DBAddin.xll.config is expected in the same folder as the DBAddin.xll (%appdata%\Microsoft\AddIns)
+* DBAddin.xll.config in section appSettings. DBAddin.xll.config can have a reference
+  * to a DBAddinCentral.config (filename is free to define) in the file attribute of the appSettings element and
+  * to DBaddinUser.config (filename is free to define) in the configSource attribute of the UserSettings element
+  * DBAddin.xll.config is expected in the same folder as the DBAddin.xll (%appdata%\Microsoft\AddIns)
 * DBAddinCentral.config (this is a reference copy of the appSettings section, where the key/value pairs override the settings in DBAddin.xll.config). This is meant to be a centrally maintained settings configuration.
 * DBaddinUser.config (this is a reference copy of the UserSettings section, where the key/value pairs override both the settings in DBAddin.xll.config and DBAddinCentral.config). This is meant to be a user locally maintained settings configuration.
 
@@ -69,7 +69,7 @@ Explanation:
 
 ### Other Settings
 
-Other settings possible in DBAddin.xll.config (or DBAddinCentral.config):
+Other settings possible in DBAddin.xll.config (or DBAddinCentral.config/DBaddinUser.config):
 
 ```xml
     <add key="CmdTimeout" value="30" />
@@ -198,7 +198,7 @@ Issued commands are stored in the drop-down and persisted in the user settings a
 If you want to remove them, open the User-Settings as described in [Settings](#settings) and remove all unwanted entries starting with `key="AdhocSQLcmd.."`
 Also the chosen environment and the database context is stored along with each command (subsequent changes to the environment and database are stored without prompting), the transfer type is stored apart from that.
 
-If the general DB-Addin environment is different from the stored environment of the command, a warning/question is displayed that allows to reset the environment to the general environment. 
+If the general DB-Addin environment is different from the stored environment of the command, a warning/question is displayed that allows to reset the environment to the general environment.
 If this is done, any changes to the environment and the database are not stored after closing the AdHocSQL Tool.
 
 ### Building

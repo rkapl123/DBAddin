@@ -180,7 +180,7 @@ The lookup resolution function checks for the existence in the lookup key/value 
 
 #### Settings
 
-Following Settings in DBAddin.xll.config or the referred DBAddinCentral.config affect behavior of DBSheet definitions:
+Following Settings in DBAddin.xll.config or the referred DBAddinCentral.config or DBaddinUser.config affect the behavior of DBSheet definitions:
 ```xml
     <add key="ConfigName3" value="MSSQL"/>
     <add key="ConstConnString3" value="provider=SQLOLEDB;Server=Lenovo-PC;Trusted_Connection=Yes;Database=pubs;Packet Size=32767"/>

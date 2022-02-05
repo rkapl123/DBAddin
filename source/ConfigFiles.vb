@@ -84,7 +84,7 @@ Public Module ConfigFiles
             ' replace querystring in existing formula
             replaceConfigSelectInFormula = "=DBListFetch(""" + queryString + """" + Replace(restFormula, vbTab, ",") + ")"
         Else
-            ' when problems occured, leave everything as is
+            ' when problems occurred, leave everything as is
             replaceConfigSelectInFormula = dbFunctionFormula
         End If
     End Function

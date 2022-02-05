@@ -28,7 +28,8 @@ An additional cell context menu is available:
 
 It provides:
 *   A "jump" feature that allows to move the focus from the DB function's cell to the data area and from the data area back to the DB function's cell (useful in complex workbooks with lots of remote (not on same-sheet) target ranges)
-*   Refreshing the currently selected DB function or it's data area. If no DB function or a corresponding data area is selected, then all DB Functions are refreshed.
+*   Refreshing the currently selected DB function or it's data area. If no DB function or a corresponding data area is selected, then all DB Functions are refreshed. Additionally, all builtin query tables, pivot tables, list objects and links to external workbooks are refreshed here as well. Any of these additional refreshes can be avoided by setting `AvoidUpdate<type>_Refresh` to `True`, where `type` is either `QueryTables`, `PivotTables`, `ListObjects`, or `Links`.
+
 *   [Creation of DB Functions](#create-db-functions)  
 
 ### Using the Functions
@@ -182,7 +183,7 @@ Would return `”('ABC',1,'20070115')”`, if DateRange contained `15/01/2007` a
 
 This builds a Database compliant string (quoted using single quotes) from the open ended parameter list given in the argument. This can also be used to easily build wild-cards into the String, like
 
-<pre lang="vb">DBString("_",E1,"%")</pre>
+<pre lang="vb">DBString("\_",E1,"%")</pre>
 
 When E1 contains "test", this results in '\_test%', thus matching in a like clause the strings 'stestString', 'atestAnotherString', etc.
 
@@ -327,7 +328,7 @@ Below the results for a DB Function created in Cell A1:
 *   DBSetQueryListObject:   `=DBSetQuery("";"";B1)`
 *   DBSetPowerQuery:   `=DBSetPowerQuery(B1;"name of power query")`
 
-DBSetQuery also creates the target Object (a Pivot Table or a ListObject) below respectively to the right of the DB Function, so it is easier to start with. 
+DBSetQuery also creates the target Object (a Pivot Table or a ListObject) below respectively to the right of the DB Function, so it is easier to start with.
 In case you want to insert DB Configurations (see [Cell Config Deployment](#Cell-Config-Deployment)), just place the selection on the inserted DB function cell and select your config, the stored query will replace the empty query in the created DB function.
 For pivot tables the excel version of the created pivot table can be set with the user setting `ExcelVersionForPivot` (the numbers corresponding to the versions are: 0=2000, 1=2002, 2=2003, 3=2007, 4=2010, 5=2013, 6=2016, 7=2019=default if not set).
 This is important to either provide backward compatibility with other users excels versions or to use the latest features.
@@ -337,12 +338,16 @@ In case the modifications resulted in a parsing error, you can enter the power-q
 
 #### Settings
 
-Following Settings in DBAddin.xll.config or the referred DBAddinCentral.config affect the behavior of DB functions:
+Following Settings in DBAddin.xll.config or the referred DBAddinCentral.config or DBaddinUser.config affect the behavior of DB functions:
 ```xml
     <add key="CnnTimeout" value="15" />
     <add key="DefaultEnvironment" value="3" />
     <add key="DontChangeEnvironment" value="False" />
     <add key="DebugAddin" value="False" />
+    <add key="AvoidUpdateQueryTables_Refresh" value="False" />
+    <add key="AvoidUpdatePivotTables_Refresh" value="False" />
+    <add key="AvoidUpdateListObjects_Refresh" value="False" />
+    <add key="AvoidUpdateLinks_Refresh" value="False" />
 ```
 
 Explanation:
@@ -351,6 +356,10 @@ Explanation:
 *   `DefaultEnvironment`: default selected environment on startup
 *   `DontChangeEnvironment`: prevent changing the environment selector (Non-Production environments might confuse some people)
 *   `DebugAddin`: activate Info messages to debug addin
+*   `AvoidUpdateQueryTables_Refresh`: avoid refreshing query tables during refresh all
+*   `AvoidUpdatePivotTables_Refresh`: avoid refreshing pivot tables during refresh all
+*   `AvoidUpdateListObjects_Refresh`: avoid refreshing list objects during refresh all
+*   `AvoidUpdateLinks_Refresh`: avoid refreshing links to external workbooks during refresh all
 
 ### Known Issues / Limitations
 

@@ -247,8 +247,14 @@ Public Module Globals
             Exit Sub
         End Try
         Dim actWb As Excel.Workbook = Nothing
-        Try : actWb = ExcelDnaUtil.Application.ActiveWorkbook : Catch ex As Exception
-            UserMsg("Exception when trying to get the active workbook for refreshing data: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
+        Try : actWb = ExcelDnaUtil.Application.ActiveWorkbook : Catch ex As Exception : End Try
+        If IsNothing(actWb) Then
+            UserMsg("Couldn't get active workbook for refreshing data, this might be due to the active workbook being hidden, Errors in VBA Macros or missing references")
+            Exit Sub
+        End If
+        Try : Dim actWbName As String = actWb.Name : Catch ex As Exception
+            UserMsg("Couldn't get active workbook name for refreshing data, this might be due to Errors in VBA Macros or missing references")
+            Exit Sub
         End Try
         ' also reset the database connection in case of errors (might be nothing or not open...)
         Try : conn.Close() : Catch ex As Exception : End Try
@@ -258,29 +264,37 @@ Public Module Globals
             ' look for old query caches and status collections (returned error messages) in active workbook and reset them to get new data
             resetCachesForWorkbook(actWb.Name)
             Dim underlyingName As String = getUnderlyingDBNameFromRange(ExcelDnaUtil.Application.ActiveCell)
-            ' now for DBListfetch/DBRowfetch resetting, first outside of all db function areas...
+            ' now for DBListfetch/DBRowfetch resetting, either called outside of all db function areas...
             If underlyingName = "" Then
                 refreshDBFunctions(actWb)
-                ' general refresh: also refresh all embedded queries and pivot tables..
+                ' general refresh: also refresh all embedded queries, pivot tables and list objects..
                 Try
                     Dim ws As Excel.Worksheet
-                    Dim qrytbl As Excel.QueryTable
-                    Dim pivottbl As Excel.PivotTable
                     For Each ws In actWb.Worksheets
                         If ws.ProtectContents And (ws.QueryTables.Count > 0 Or ws.PivotTables.Count > 0) Then
                             UserMsg("Worksheet " + ws.Name + " is content protected, can't refresh QueryTables/PivotTables !")
                             Continue For
                         End If
-                        For Each qrytbl In ws.QueryTables
-                            qrytbl.Refresh()
-                        Next
-                        For Each pivottbl In ws.PivotTables
-                            pivottbl.PivotCache.Refresh()
-                        Next
+                        If Not CBool(fetchSetting("AvoidUpdateQueryTables_Refresh", "False")) Then
+                            For Each qrytbl As Excel.QueryTable In ws.QueryTables
+                                qrytbl.Refresh()
+                            Next
+                        End If
+                        If Not CBool(fetchSetting("AvoidUpdatePivotTables_Refresh", "False")) Then
+                            For Each pivottbl As Excel.PivotTable In ws.PivotTables
+                                pivottbl.PivotCache.Refresh()
+                            Next
+                        End If
+                        If Not CBool(fetchSetting("AvoidUpdateListObjects_Refresh", "False")) Then
+                            For Each listobj As Excel.ListObject In ws.ListObjects
+                                listobj.QueryTable.Refresh()
+                            Next
+                        End If
                     Next
+                    If Not CBool(fetchSetting("AvoidUpdateLinks_Refresh", "False")) Then actWb.UpdateLink(Name:=actWb.LinkSources, Type:=Excel.XlLink.xlExcelLinks)
                 Catch ex As Exception
                 End Try
-            Else ' then inside a db function area (target or source = function cell)
+            Else ' or called inside a db function area (target or source = function cell)
                 If Left$(underlyingName, 10) = "DBFtargetF" Then
                     underlyingName = Replace(underlyingName, "DBFtargetF", "DBFsource", 1, , vbTextCompare)
                     If ExcelDnaUtil.Application.Range(underlyingName).Parent.ProtectContents Then

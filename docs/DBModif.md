@@ -106,7 +106,7 @@ Following Settings of DBModifiers can only be edited in the Edit DBModifier Defi
 
 ## Settings
 
-Following Settings in DBAddin.xll.config or the referred DBAddinCentral.config affect behaviour of DBModifiers:
+Following Settings in DBAddin.xll.config or the referred DBAddinCentral.config or DBaddinUser.config affect the behaviour of DBModifiers:
 ```xml
     <add key="CmdTimeout" value="30" />
     <add key="CnnTimeout" value="15" />

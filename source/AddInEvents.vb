@@ -112,7 +112,7 @@ Public Class AddInEvents
             ' ...ask for saving, if this is necessary for any DBmodifier...
             If TotalDBModifCount > 1 Then
                 ' multiple DBmodifiers, ask how to proceed
-                Dim answer As MsgBoxResult = QuestionMsg(theMessage:="do all DB Modifications defined in Workbook (Yes=All with exec on Save, No=Ask everytime. Cancel=Don't do any DB Modifications) ?", questionType:=MsgBoxStyle.YesNoCancel, questionTitle:="Do DB Modifiers on Save")
+                Dim answer As MsgBoxResult = QuestionMsg(theMessage:="do all DB Modifications defined in Workbook (Yes=All with exec on Save, No=Ask every time. Cancel=Don't do any DB Modifications) ?", questionType:=MsgBoxStyle.YesNoCancel, questionTitle:="Do DB Modifiers on Save")
                 If answer = MsgBoxResult.Yes Then doDBMOnSave = True
                 If answer = MsgBoxResult.Cancel Then doDBMOnSave = False
                 If answer = MsgBoxResult.No Then
@@ -125,7 +125,7 @@ Public Class AddInEvents
                     For Each dbmapdefkey As String In Globals.DBModifDefColl(DBmodifType).Keys
                         If Globals.DBModifDefColl(DBmodifType).Item(dbmapdefkey).execOnSave Then
                             If nonInteractive Then
-                                ' always save in noninteractive (headless/automation) mode
+                                ' always save in non interactive (headless/automation) mode
                                 doDBMOnSave = True
                             Else
                                 doDBMOnSave = IIf(Globals.DBModifDefColl(DBmodifType).Item(dbmapdefkey).confirmExecution(WbIsSaving:=True) = MsgBoxResult.Yes, True, False)
@@ -177,7 +177,7 @@ done:
         Dim DBFCContentColl As Collection = New Collection
         Dim DBFCAllColl As Collection = New Collection
         Dim doRefreshDBFuncsAfterSave As Boolean = True
-        ' first insert docproperty information into collections for easier handling
+        ' first insert doc property information into collections for easier handling
         Try
             Dim docproperty As DocumentProperty
             For Each docproperty In Wb.CustomDocumentProperties
@@ -188,7 +188,7 @@ done:
                 End If
             Next
         Catch ex As Exception
-            Globals.UserMsg("Error getting docproperties: " + Wb.Name + ex.Message)
+            Globals.UserMsg("Error getting doc properties: " + Wb.Name + ex.Message)
         End Try
         ' skip searching for functions (takes time in large sheets!) if not necessary
         If Not doRefreshDBFuncsAfterSave Or (DBFCContentColl.Count = 0 And DBFCAllColl.Count = 0) Then Exit Sub
@@ -240,7 +240,7 @@ done:
             Next
             ExcelDnaUtil.Application.Statusbar = False
 
-            ' refresh content area of dbfunctions after save event, requires execution out of context of Application_WorkbookSave
+            ' refresh content area of db functions after save event, requires execution out of context of Application_WorkbookSave
             If DBFCContentColl.Count > 0 Or DBFCAllColl.Count > 0 Then
                 ExcelAsyncUtil.QueueAsMacro(Sub()
                                                 Globals.refreshDBFuncLater()
@@ -256,7 +256,7 @@ done:
     ''' <param name="Wb"></param>
     Private Sub Application_WorkbookOpen(Wb As Excel.Workbook) Handles Application.WorkbookOpen
         If Not Wb.IsAddin Then
-            ' in case of reopening workbooks with dbfunctions, look for old query caches and status collections (returned error messages) and reset them to get new data
+            ' in case of reopening workbooks with db functions, look for old query caches and status collections (returned error messages) and reset them to get new data
             Globals.resetCachesForWorkbook(Wb.Name)
             Globals.repairLegacyFunctions(Wb)
             ' when opening, force recalculation of DB functions in workbook.
@@ -278,13 +278,13 @@ done:
             Globals.LogInfo("getting DBModif Definitions on Workbook Activate")
             DBModifs.getDBModifDefinitions()
             ' unfortunately, Excel doesn't fire SheetActivate when opening workbooks, so do that here...
-            Globals.LogInfo("assign commandbutton click handlers on Workbook Activate")
+            Globals.LogInfo("assign command button click handlers on Workbook Activate")
             assignHandler(Wb.ActiveSheet)
             Globals.LogInfo("finished actions on Workbook Activate")
         End If
     End Sub
 
-    ''' <summary>specific click handlers for the five definable commandbuttons</summary>
+    ''' <summary>specific click handlers for the five definable command buttons</summary>
     Private Shared Sub cb1_Click() Handles cb1.Click
         cbClick(cb1.Name)
     End Sub
@@ -316,10 +316,10 @@ done:
         cbClick(cb0.Name)
     End Sub
 
-    ''' <summary>common click handler for all commandbuttons</summary>
+    ''' <summary>common click handler for all command buttons</summary>
     ''' <param name="cbName">name of command button, defines whether a DBModification is invoked (starts with DBMapper/DBAction/DBSeqnce)</param>
     Private Shared Sub cbClick(cbName As String)
-        ' reset noninteractive messages (used for VBA invocations) and hadError for interactive invocations
+        ' reset non interactive messages (used for VBA invocations) and hadError for interactive invocations
         Globals.nonInteractiveErrMsgs = "" : DBModifs.hadError = False
         Dim DBModifType As String = Left(cbName, 8)
         If DBModifType <> "DBSeqnce" Then
@@ -346,8 +346,8 @@ done:
         End If
     End Sub
 
-    ''' <summary>assign click handlers to commandbuttons in passed sheet Sh, maximum 10 buttons are supported</summary>
-    ''' <param name="Sh">sheet where commandbuttons are located</param>
+    ''' <summary>assign click handlers to command buttons in passed sheet Sh, maximum 10 buttons are supported</summary>
+    ''' <param name="Sh">sheet where command buttons are located</param>
     Public Shared Function assignHandler(Sh As Object) As Boolean
         cb1 = Nothing : cb2 = Nothing : cb3 = Nothing : cb4 = Nothing : cb5 = Nothing : cb6 = Nothing : cb7 = Nothing : cb8 = Nothing : cb9 = Nothing : cb0 = Nothing
         assignHandler = True
@@ -387,7 +387,7 @@ done:
         Next
     End Function
 
-    ''' <summary>assign commandbuttons anew with each change of sheets</summary>
+    ''' <summary>assign command buttons anew with each change of sheets</summary>
     ''' <param name="Sh"></param>
     Private Sub Application_SheetActivate(Sh As Object) Handles Application.SheetActivate
         ' avoid when being activated by DBFuncsAction 
