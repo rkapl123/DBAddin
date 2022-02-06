@@ -28,7 +28,7 @@ An additional cell context menu is available:
 
 It provides:
 *   A "jump" feature that allows to move the focus from the DB function's cell to the data area and from the data area back to the DB function's cell (useful in complex workbooks with lots of remote (not on same-sheet) target ranges)
-*   Refreshing the currently selected DB function or it's data area. If no DB function or a corresponding data area is selected, then all DB Functions are refreshed. Additionally, all builtin query tables, pivot tables, list objects and links to external workbooks are refreshed here as well. Any of these additional refreshes can be avoided by setting `AvoidUpdate<type>_Refresh` to `True`, where `type` is either `QueryTables`, `PivotTables`, `ListObjects`, or `Links`.
+*   Refreshing the currently selected DB function or it's data area. If no DB function or a corresponding data area is selected, then all DB Functions are refreshed. Additionally, all built-in query tables, pivot tables, list objects and links to external workbooks are refreshed here as well. Any of these additional refreshes can be avoided by setting `AvoidUpdate<type>_Refresh` to `True`, where `type` is either `QueryTables`, `PivotTables`, `ListObjects`, or `Links`.
 
 *   [Creation of DB Functions](#create-db-functions)  
 
@@ -61,7 +61,7 @@ with formulas usually referring to cell-values fetched within the data area. All
 
 In case TargetRange is a named range and the FormulaRange is adjacent, the TargetRange is automatically extended to cover the FormulaRange as well. This is especially useful when using the compound TargetRange as a lookup reference (Vlookup).
 
-The next parameter "`ExtendDataArea`" defines how DBListFetch should behave when the queried data extends or shortens:
+The next parameter `ExtendDataArea` defines how DBListFetch should behave when the queried data extends or shortens:
 
 *   0: DBListFetch just overwrites any existing data below the current `TargetRange`.
 *   1: inserts cells of just the width of the `TargetRange` below the current TargetRange, thus preserving any existing data. However any data right to the target range is not shifted down along the inserted data. Beware in combination with a `FormulaRange` that the cells below the `FormulaRange` are not shifted along in the current version !!
@@ -92,7 +92,7 @@ This works around the issue with displaying GUID columns in SQL-Server.
 <pre lang="vb">DBRowFetch (Query, ConnectionString(optional),   
  headerInfo(optional/ contained in paramArray), TargetRange(paramArray))</pre>
 
-For the query and the connection string the same applies as mentioned for "DBListFetch".  
+For the query and the connection string the same applies as mentioned for DBListFetch.  
 The value targets are given in an open ended parameter array after the query, the connection string and an optional headerInfo parameter. These parameter arguments contain ranges (either single cells or larger ranges) that are filled sequentially in order of appearance with the result of the query.  
 For example:  
 
@@ -120,7 +120,7 @@ Beware that filling of data is much slower than with DBlistFetch, so use DBRowFe
 
 <pre lang="vb">DBSetQuery (Query, ConnectionString(optional), TargetRange)</pre>
 
-Stores a query into an Object defined in TargetRange (an embedded MS Query/Listobject, Pivot table, etc.)
+Stores a query into an Object defined in TargetRange (an embedded MS Query/List object, Pivot table, etc.)
 
 #### DBSetPowerQuery
 
@@ -161,9 +161,9 @@ Where cells E1:E4 contain the constituents of the query respectively.
 
 Where cells E1:E4 contain the constituents of the query respectively.
 
-All three concatenation functions (chainCells, concatCells and concatCellsSep) work with matrix conditionals, i.e. matrix functions of the form: `{=chainCells(IF(C2:C65535="Value";A2:A65535;""))}` that only chain/concat values from column A if the respective cell in column C contains "Value".
+All three concatenation functions (chainCells, concatCells and concatCellsSep) work with matrix conditionals, i.e. matrix functions of the form: `{=chainCells(IF(C2:C65535="Value";A2:A65535;""))}` that only chain/concatenate values from column A if the respective cell in column C contains "Value".
 
-Both `concatCells` and `concatCellsSep` have a "Text" sibling that essentially does the same, except that it concats the displayed Values, not the true Values. So if you want to concatenate what you see, then `concatCellsText` and `concatCellsSepText` are the functions you need.
+Both `concatCells` and `concatCellsSep` have a "Text" sibling that essentially does the same, except that it concatenates the displayed Values, not the true Values. So if you want to concatenate what you see, then `concatCellsText` and `concatCellsSepText` are the functions you need.
 
 #### DBinClause
 
@@ -175,7 +175,7 @@ Creates an in clause from cell values, strings are created using `DBinClauseStr`
 
 <pre lang="vbnet">DBinClause("ABC", 1, DateRange)</pre>
 
-Would return `”('ABC',1,'20070115')”`, if DateRange contained `15/01/2007` as a date value.  
+Would return `('ABC',1,'20070115')`, if DateRange contained `15/01/2007` as a date value.  
 
 #### DBString
 
@@ -183,7 +183,7 @@ Would return `”('ABC',1,'20070115')”`, if DateRange contained `15/01/2007` a
 
 This builds a Database compliant string (quoted using single quotes) from the open ended parameter list given in the argument. This can also be used to easily build wild-cards into the String, like
 
-<pre lang="vb">DBString("\_",E1,"%")</pre>
+<pre lang="vb">DBString("_",E1,"%")</pre>
 
 When E1 contains "test", this results in '\_test%', thus matching in a like clause the strings 'stestString', 'atestAnotherString', etc.
 
@@ -195,7 +195,7 @@ This builds a Powerquery compliant string (quoted using double quotes) from the 
 
 <pre lang="vb">PQString("a ",E1)</pre>
 
-When E1 contains "test", this results in 'a test'.
+When E1 contains "test", this results in "a test".
 
 #### DBDate
 
@@ -229,7 +229,7 @@ Of course you can also change the default setting for formatting by changing the
 This builds a power-query function from the date/datetime/time value given in the argument. Depending on the value (fractional, integer or smaller than 1), this can be `#datetime(year, month, day, hour, min, sec)`, `#date(year, month, day)` or `#time(hour, min, sec)`
 The return of `#datetime(year, month, day, hour, min, sec)` can be enforced by setting `forceDateTime` to true.
 
-### Modifications of DBFunc Behaviour
+### Modifications of DBFunc Behavior
 
 There are some options to modify  
 
@@ -238,7 +238,7 @@ There are some options to modify
 
 of DB functions data area within a Workbook.  
 
-You can set these options in Excel's Custom Properties (Menu File/Properties, Tab "Customize"):  
+You can set these options in Excels Custom Properties (Menu File/Properties, Tab "Customize"):  
 
 #### Skipping Data Refresh when opening Workbook
 
@@ -267,7 +267,7 @@ Additionally the connection timeout (CnnTimeout, which can't be given in the fun
 
 ### Cell Config Deployment
 
-To easen the distribution of complex DB functions (especially queries), there is a config file mechanism in DBAddin: DB function (actually any Excel formula) configurations can be created in config files having extension XCL and are displayed with a tree-drop-down menu below "DB Configs" that displays the file hierarchy beneath ConfigStoreFolder for easy retrieval of the configurations.  
+To ease the distribution of complex DB functions (especially queries), there is a config file mechanism in DBAddin: DB function (actually any Excel formula) configurations can be created in config files having extension XCL and are displayed with a tree-drop-down menu below "DB Configs" that displays the file hierarchy beneath ConfigStoreFolder for easy retrieval of the configurations.  
 
 The layout of these files is a pairwise, tab separated instruction where to fill (first element) Excel formulas (starting with "=" and being in R1C1 representation) or values (second element). Values are simple literal values to be inserted into Excel (numbers, strings, dates (should be interpretable by Excel !)), formulas are best taken from the return of ActiveCell.FormulaR1C1 !
 
