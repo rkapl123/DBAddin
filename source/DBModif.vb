@@ -21,7 +21,7 @@ Public MustInherit Class DBModif
     Protected database As String
     '''<summary>should DBMap be saved / DBAction be done on Excel Saving? (default no)</summary>
     Public execOnSave As Boolean = False
-    ''' <summary>ask for confirmation before executtion of DBModif</summary>
+    ''' <summary>ask for confirmation before execution of DBModif</summary>
     Protected askBeforeExecute As Boolean = True
     ''' <summary>environment specific for the DBModif object, if left empty then set to default environment (either 0 or currently selected environment)</summary>
     Protected env As String = ""
@@ -220,7 +220,7 @@ Public MustInherit Class DBModif
         ' allow for avoidance of overwriting users changes with CUDFlags after a data error occurred
         If hadError Then
             If executedDBMappers.ContainsKey(DBMapperUnderlying) Then
-                Dim retval = QuestionMsg(theMessage:="Error(s) occured during sequence, really refresh Targetrange? This could lead to loss of entries.", questionTitle:="Refresh of DB Functions in DB Sequence")
+                Dim retval = QuestionMsg(theMessage:="Error(s) occurred during sequence, really refresh Targetrange? This could lead to loss of entries.", questionTitle:="Refresh of DB Functions in DB Sequence")
                 If retval = vbCancel Then Exit Function
             End If
         End If
@@ -388,7 +388,7 @@ Public Class DBMapper : Inherits DBModif
     Private ReadOnly IgnoreDataErrors As Boolean = False
     ''' <summary>used to pass whether changes were done</summary>
     Private changesDone As Boolean = False
-    '''<summary>first columnn is treated as an autoincrementing key column, needed to ignore empty values there (otherwise DBMappers stop here)</summary>
+    '''<summary>first column is treated as an autoincrementing key column, needed to ignore empty values there (otherwise DBMappers stop here)</summary>
     Private ReadOnly AutoIncFlag As Boolean = False
     ''' <summary>prevent filling of whole table during execution of DB Mappers, this is useful for very large tables that are incrementally filled and would take unnecessary long time to start the DB Mapper. If set to true then each record is searched independently by going to the database. If the records to be stored are not too many, then this is more efficient than loading a very large table.</summary>
     Private ReadOnly avoidFill As Boolean = False
@@ -488,7 +488,7 @@ Public Class DBMapper : Inherits DBModif
         End Try
     End Sub
 
-    ''' <summary>checks whether DBModifier needs saving, either because execOnSave is set or in case of CUD DBMappers if any i/u/d Flages are present</summary>
+    ''' <summary>checks whether DBModifier needs saving, either because execOnSave is set or in case of CUD DBMappers if any i/u/d Flags are present</summary>
     ''' <returns>true if save needed</returns>
     Public Overrides Function DBModifSaveNeeded() As Boolean
         If CUDFlags Then

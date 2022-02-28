@@ -756,7 +756,7 @@ Last:
                 End If
             End If
         Catch ex As Exception
-            UserMsg("Exception occured: " + ex.Message, "Legacy DBAddin functions")
+            UserMsg("Exception occurred: " + ex.Message, "Legacy DBAddin functions")
         End Try
         DBModifs.preventChangeWhileFetching = False
     End Sub

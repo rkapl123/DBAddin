@@ -109,7 +109,7 @@ Public Module ConfigFiles
             ' replace querystring in existing formula and pass as result
             replaceQueryInFormula = "=" + theFunction + "(" + queryString + Replace(restFormula, vbTab, ",") + ")"
         Else
-            ' when problems occured, leave everything as is
+            ' when problems occurred, leave everything as is
             replaceQueryInFormula = targetFormula
         End If
     End Function

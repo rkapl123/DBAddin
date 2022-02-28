@@ -52,13 +52,13 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="ExcelDna.Integration, Version=1.1.0.0, Culture=neutral, PublicKeyToken=f225e9659857edbe, processorArchitecture=MSIL">
-      <HintPath>..\source\packages\ExcelDna.Integration.1.1.0\lib\ExcelDna.Integration.dll</HintPath>
+      <HintPath>..\source\packages\ExcelDna.Integration.1.5.1\lib\net452\ExcelDna.Integration.dll</HintPath>
     </Reference>
-    <Reference Include="ExcelDna.IntelliSense, Version=1.4.2.0, Culture=neutral, PublicKeyToken=f225e9659857edbe, processorArchitecture=MSIL">
-      <HintPath>..\source\packages\ExcelDna.IntelliSense.1.4.2\lib\net40\ExcelDna.IntelliSense.dll</HintPath>
+    <Reference Include="ExcelDna.IntelliSense, Version=1.5.1.0, Culture=neutral, PublicKeyToken=f225e9659857edbe, processorArchitecture=MSIL">
+      <HintPath>..\source\packages\ExcelDna.IntelliSense.1.5.1\lib\net452\ExcelDna.IntelliSense.dll</HintPath>
     </Reference>
     <Reference Include="ExcelDna.Registration, Version=1.1.0.0, Culture=neutral, PublicKeyToken=f225e9659857edbe, processorArchitecture=MSIL">
-      <HintPath>..\source\packages\ExcelDna.Registration.1.1.0\lib\net40\ExcelDna.Registration.dll</HintPath>
+      <HintPath>..\source\packages\ExcelDna.Registration.1.5.1\lib\net452\ExcelDna.Registration.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />

@@ -6,14 +6,14 @@ Imports System.IO
 Imports System.Diagnostics
 Imports System.Configuration
 
-''' <summary>Dialog used to display and edit the CustomXMLPart utilized for storing the DBModif definitions, and the the three parts of DBAddin settings (Addin level, user and central)</summary>
+''' <summary>Dialog used to display and edit the CustomXMLPart utilized for storing the DBModif definitions, and the three parts of DBAddin settings (Addin level, user and central)</summary>
 Public Class EditDBModifDef
     ''' <summary>the edited CustomXmlParts for the DBModif definitions</summary>
     Private CustomXmlParts As Object
     ''' <summary>the settings path for user or central setting (for resaving after modification)</summary>
     Private settingsPath As String = ""
 
-    ''' <summary>put the costom xml definition in the edit box for display/editing</summary>
+    ''' <summary>put the custom xml definition in the edit box for display/editing</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub EditDBModifDef_Shown(sender As Object, e As EventArgs) Handles Me.Shown
@@ -96,7 +96,7 @@ Public Class EditDBModifDef
         End If
     End Sub
 
-    ''' <summary>store the displayed/edited textbox content back into the custom xml definition, indluding validation feedback</summary>
+    ''' <summary>store the displayed/edited textbox content back into the custom xml definition, including validation feedback</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub OKBtn_Click(sender As Object, e As EventArgs) Handles OKBtn.Click

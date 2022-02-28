@@ -1626,7 +1626,7 @@ err_1:
                 End If
             End If
         ElseIf TypeName(ConnString) = "String" Then
-            If ConnString.ToString() = "" Then ' no ConnString or environment number set: get connection string of currently selected evironment
+            If ConnString.ToString() = "" Then ' no ConnString or environment number set: get connection string of currently selected environment
                 EnvPrefix = "Env:" + Globals.fetchSetting("ConfigName" + Globals.env(), "")
                 ConnString = Globals.fetchSetting("ConstConnString" + Globals.env(), "")
                 If getConnStrForDBSet Then
