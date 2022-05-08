@@ -509,63 +509,83 @@ Public Class DBMapper : Inherits DBModif
     ''' <summary>inserts CUD (Create/Update/Delete) Marks at the right end of the DBMapper range</summary>
     ''' <param name="changedRange">passed TargetRange by Change Event or delete button</param>
     ''' <param name="deleteFlag">if delete button was pressed, this is true</param>
-    Public Sub insertCUDMarks(changedRange As Excel.Range, Optional deleteFlag As Boolean = False)
+    Public Sub insertCUDMarks(changedRange As Excel.Range, Optional deleteFlag As Boolean = False, Optional insertFlag As Boolean = False)
         If Not CUDFlags Then Exit Sub
+        Dim changedRangeRows As Integer = changedRange.Rows.Count
+        Dim changedRangeColumns As Integer = changedRange.Columns.Count
+        Dim targetRangeRows As Integer = TargetRange.Rows.Count
+        Dim targetRangeColumns As Integer = TargetRange.Columns.Count
         ' sanity check for single cell DB Mappers..
-        If TargetRange.Columns.Count = 1 And TargetRange.Rows.Count = 1 Then
-            Dim retval As MsgBoxResult = QuestionMsg(theMessage:="DB Mapper Range with CUD Flags is only one cell, really set CUD Flags ?", questionTitle:="Set CUD Flags for DB Mapper")
+        If targetRangeColumns = 1 And targetRangeRows = 1 Then
+            Dim retval As MsgBoxResult = Globals.QuestionMsg("DB Mapper Range with CUD Flags is only one cell, really set CUD Flags ?",, "Set CUD Flags for DB Mapper")
             If retval = vbCancel Then Exit Sub
         End If
         ' sanity check for whole range change (this happens when the table is autofilled down by dragging while being INSIDE the table)..
         ' in this case excel extends the change to the whole table and additionally the dragged area...
-        If TargetRange.Columns.Count = changedRange.Columns.Count And TargetRange.Rows.Count <= changedRange.Rows.Count Then
-            Dim retval As MsgBoxResult = QuestionMsg(theMessage:="Change affects whole DB Mapper Range, this might lead to erroneous behaviour, really set CUD Flags ?", questionTitle:="Set CUD Flags for DB Mapper")
+        If targetRangeColumns = changedRangeColumns And targetRangeRows <= changedRangeRows Then
+            Dim retval As MsgBoxResult = Globals.QuestionMsg("Change affects whole DB Mapper Range, this might lead to erroneous behaviour, really set CUD Flags ?",, "Set CUD Flags for DB Mapper")
             If retval = vbCancel Then Exit Sub
         End If
-        Dim changedRangeRows As Integer = changedRange.Rows.Count
         If changedRangeRows > CInt(Globals.fetchSetting("maxRowCountCUD", "10000")) Then
-            If Not QuestionMsg(theMessage:="A large range was changed (" + changedRange.Rows.Count.ToString() + " > maxRowCountCUD:" + Globals.fetchSetting("maxRowCountCUD", "10000") + "), this will probably lead to CUD flag setting taking very long. Continue?", questionTitle:="Set CUD Flags for DB Mapper") Then Exit Sub
+            If Not QuestionMsg("A large range was changed (" + changedRangeRows.ToString() + " > maxRowCountCUD:" + Globals.fetchSetting("maxRowCountCUD", "10000") + "), this will probably lead to CUD flag setting taking very long. Continue?",, "Set CUD Flags for DB Mapper") Then Exit Sub
         End If
         If changedRange.Parent.ProtectContents Then
-            Globals.UserMsg("Worksheet " + changedRange.Parent.Name + " is content protected, can't set CUD Flags !")
+            Globals.UserMsg("Worksheet " + changedRange.Parent.Name + " is content protected, can't set CUD Flags !", "Set CUD Flags for DB Mapper")
             Exit Sub
         End If
+        preventChangeWhileFetching = True
         ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = False ' to prevent automatic creation of new column
         ' DBMapper ranges relative to start of TargetRange and respecting a header row, so CUDMarkRow = changedRange.Row - TargetRange.Row + 1 ...
-        If deleteFlag Then
-            For Each changedRow As Excel.Range In changedRange.Rows
-                Dim CUDMarkRow As Integer = changedRow.Row - TargetRange.Row + 1
-                TargetRange.Cells(CUDMarkRow, TargetRange.Columns.Count + 1).Value = "d"
-                TargetRange.Rows(CUDMarkRow).Font.Strikethrough = True
-            Next
-        Else
-            Dim countRow As Integer = 1
-            For Each changedRow As Excel.Range In changedRange.Rows
-                Dim CUDMarkRow As Integer = changedRow.Row - TargetRange.Row + 1
-                ' change only if not already set or
-                If TargetRange.Cells(CUDMarkRow, TargetRange.Columns.Count + 1).Value Is Nothing Then
-                    Dim RowContainsData As Boolean = False
-                    For Each containedCell As Excel.Range In TargetRange.Rows(CUDMarkRow).Cells
-                        ' check without newly inserted/updated cells (copy paste) 
-                        Dim possibleIntersection As Excel.Range = ExcelDnaUtil.Application.Intersect(containedCell, changedRange)
-                        ' check if whole row is empty (except for the changedRange), formulas do not count as filled (automatically filled for lookups or other things)..
-                        If containedCell.Value IsNot Nothing AndAlso possibleIntersection Is Nothing AndAlso Left(containedCell.Formula, 1) <> "=" Then
-                            RowContainsData = True
-                            Exit For
-                        End If
-                    Next
-                    ' if Row Contains Data (not every cell empty except currently modified (changedRange), this is for adding rows below data range) then "u"pdate
-                    If RowContainsData Then
-                        TargetRange.Cells(CUDMarkRow, TargetRange.Columns.Count + 1).Value = "u"
-                        TargetRange.Rows(CUDMarkRow).Font.Italic = True
-                    Else ' else "i"nsert
-                        TargetRange.Cells(CUDMarkRow, TargetRange.Columns.Count + 1).Value = "i"
+        Try
+            If deleteFlag Then
+                For Each changedRow As Excel.Range In changedRange.Rows
+                    Dim CUDMarkRow As Integer = changedRow.Row - TargetRange.Row + 1
+                    TargetRange.Cells(CUDMarkRow, targetRangeColumns + 1).Value = "d"
+                    TargetRange.Rows(CUDMarkRow).Font.Strikethrough = True
+                Next
+            Else
+                Dim countRow As Integer = 1
+                ' inside a listobject Ctrl & + and Ctrl & - add and remove a whole listobject range row
+                If changedRangeColumns = targetRangeColumns And changedRangeRows = 1 Then
+                    ' if all cells (especially first) are empty (=inserting a row with Ctrl & +) add insert flag
+                    If changedRange.Cells(1, 1).Value = "" Then
+                        insertFlag = True
+                        ' additionally shift the CUD Markers down
+                        TargetRange.Cells(changedRange.Row - TargetRange.Row + 1, TargetRange.Columns.Count + 1).Insert(Shift:=Excel.XlInsertShiftDirection.xlShiftDown)
+                    Else
+                        ' probably deleted with Ctrl & -, warn user...
+                        Globals.UserMsg("Whole row modified, maybe you deleted a row with Ctrl & -. The row is not deleted in the database (use Ctrl-Shift-D), you can continue or refresh the DB-Sheet with Ctrl-Shift-R.", "Set CUD Flags for DB Mapper", MsgBoxStyle.Exclamation)
                     End If
-                    ExcelDnaUtil.Application.Statusbar = "Create/Update/Delete mark for row " + countRow.ToString() + "/" + changedRange.Rows.Count.ToString()
-                    countRow += 1
                 End If
-            Next
-        End If
+                For Each changedRow As Excel.Range In changedRange.Rows
+                    Dim CUDMarkRow As Integer = changedRow.Row - TargetRange.Row + 1
+                    ' repair automatic copying down of patterns (non null columns) from header row in Listobjects done by Excel
+                    If CUDMarkRow = 2 Then
+                        With TargetRange.Rows(2).Interior
+                            .Pattern = Excel.XlPattern.xlPatternNone
+                            .TintAndShade = 0
+                            .PatternTintAndShade = 0
+                        End With
+                    End If
+                    ' check if row was added at the bottom add insert flag
+                    If CUDMarkRow > TargetRange.Cells(targetRangeRows, targetRangeColumns).Row Then insertFlag = True
+                    ' change only if not already set or explicitly required by insertFlag (after Row insertion, first an update flag will be written by the change event which is overwritten by an explicit call to insertCUDMarks
+                    If TargetRange.Cells(CUDMarkRow, targetRangeColumns + 1).Value Is Nothing Or insertFlag Then
+                        If Not insertFlag Then
+                            TargetRange.Cells(CUDMarkRow, targetRangeColumns + 1).Value = "u"
+                            TargetRange.Rows(CUDMarkRow).Font.Italic = True
+                        Else ' else "i"nsert
+                            TargetRange.Cells(CUDMarkRow, targetRangeColumns + 1).Value = "i"
+                        End If
+                        ExcelDnaUtil.Application.Statusbar = "Create/Update/Delete mark for row " + countRow.ToString() + "/" + changedRangeRows.ToString()
+                        countRow += 1
+                    End If
+                Next
+            End If
+        Catch ex As Exception
+            LogWarn("Exception in insertCUDMarks: " + ex.Message)
+        End Try
+        preventChangeWhileFetching = False
         ExcelDnaUtil.Application.Statusbar = False
         ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = True
     End Sub
@@ -590,8 +610,6 @@ Public Class DBMapper : Inherits DBModif
                 ' only if the referral is to a real range (not an offset formula !)
                 If InStr(1, actWbNames.Item(paramTargetName).RefersTo, "=OFFSET(") = 0 Then
                     actWbNames.Item(paramTargetName).RefersTo = actWbNames.Item(paramTargetName).RefersToRange.Resize(rowCount, colCount)
-                    ' this has lead to a strange replacing of the rightdownmost cell's formula by the cell's value
-                    'NamesList.Add(Name:=paramTargetName, RefersTo:=TargetRange.Parent.Range(TargetRange.Cells(1, 1), TargetRange.Cells(rowEnd, colEnd)))
                 End If
             Catch ex As Exception
                 Throw New Exception("Error when resizing name '" + paramTargetName + "' to DBMapper while extending DataRange: " + ex.Message)
@@ -616,7 +634,7 @@ Public Class DBMapper : Inherits DBModif
                 Exit Sub
             End If
             ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = False ' to prevent automatic creation of new column
-            TargetRange.Columns(TargetRange.Columns.Count + 1).ClearContents
+            TargetRange.ListObject.DataBodyRange.Columns(TargetRange.Columns.Count + 1).ClearContents
             ' remove updated rows cell style
             TargetRange.Font.Italic = False
             ' remove deleted rows cell style
@@ -649,7 +667,7 @@ Public Class DBMapper : Inherits DBModif
         ' check for mass changes and warn if necessary
         If CUDFlags Then
             Dim maxMassChanges As Integer = CInt(Globals.fetchSetting("maxNumberMassChange", "30"))
-            Dim curWs As Excel.Worksheet = TargetRange.Parent ' this is necessary because using TargetRange directly deletes the content of the CUD area !!
+            Dim curWs As Excel.Worksheet = TargetRange.Parent ' this is necessary because using TargetRange directly in CountIf deletes the content of the CUD area !!
             Dim changesToBeDone As Integer = ExcelDnaUtil.Application.WorksheetFunction.CountIf(curWs.Range(TargetRange.Columns(TargetRange.Columns.Count + 1).Address), "<>")
             If changesToBeDone > maxMassChanges Then
                 Dim retval As MsgBoxResult = QuestionMsg(theMessage:="Modifying more rows (" + changesToBeDone.ToString() + ") than defined warning limit (" + maxMassChanges.ToString() + "), continue?", questionTitle:="Execute DB Mapper")
@@ -1682,7 +1700,7 @@ Public Module DBModifs
             If createdDBModifType <> "DBSeqnce" Then
                 Dim targetRange As Excel.Range
                 If existingDBModif Is Nothing Then
-                    targetRange = ExcelDnaUtil.Application.ActiveCell
+                    targetRange = ExcelDnaUtil.Application.Selection
                 Else
                     targetRange = existingDBModif.getTargetRange()
                 End If
@@ -1983,7 +2001,7 @@ EndOuterLoop:
     <ExcelCommand(Name:="deleteRow", ShortCut:="^D")>
     Public Sub deleteRow()
         Dim targetName As String = getDBModifNameFromRange(ExcelDnaUtil.Application.Selection)
-        If Left(targetName, 8) = "DBMapper" Then DirectCast(Globals.DBModifDefColl("DBMapper").Item(targetName), DBMapper).insertCUDMarks(ExcelDnaUtil.Application.Selection, True)
+        If Left(targetName, 8) = "DBMapper" Then DirectCast(Globals.DBModifDefColl("DBMapper").Item(targetName), DBMapper).insertCUDMarks(ExcelDnaUtil.Application.Selection, deleteFlag:=True)
     End Sub
 
     ''' <summary>inserts a row in a DBMapper, used as a ExcelCommand to have a keyboard shortcut</summary>
@@ -1995,6 +2013,7 @@ EndOuterLoop:
             Dim insertTarget As Excel.Range = DirectCast(Globals.DBModifDefColl("DBMapper").Item(targetName), DBMapper).getTargetRange
             ' calculate insert row from selection and top row of insert target
             Dim insertRow As Integer = ExcelDnaUtil.Application.Selection.Row - insertTarget.Row
+            ' just add a row to the ListObject, the rest (shifting down existing CUD Marks and adding "i") is being taken care of the Application_SheetChange event procedure and the insertCUDMarks method
             insertTarget.ListObject.ListRows.Add(insertRow)
         End If
     End Sub

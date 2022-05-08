@@ -81,7 +81,7 @@ Public Module DBSheetConfig
                 Globals.UserMsg("No query found in DBSheetConfig !", "DBSheet Creation Error")
                 Exit Sub
             End If
-            If Globals.QuestionMsg("Should TOP 100 be put into query, in case of very large underlying tables this helps in creating the DBSheet (you can restrict the query later on) ?", MsgBoxStyle.OkCancel) = MsgBoxResult.Ok Then
+            If Globals.QuestionMsg("Should TOP 100 be put into query, in case of very large underlying tables this helps in creating the DBSheet (you can restrict the query later on) ?", MsgBoxStyle.YesNo) = MsgBoxResult.Yes Then
                 queryStr = "SELECT TOP 100 " + queryStr.Substring(7) ' skip "SELECT " in queryStr
             End If
             whereClauseStart = queryStr.IndexOf("WHERE", StringComparison.OrdinalIgnoreCase)
@@ -224,7 +224,7 @@ Public Module DBSheetConfig
                 ' add the query as text
                 Try
                     .Offset(1, 0).Value = queryStr
-                    .Offset(1, 0).WrapText = False
+                    .Offset(1, 0).WrapText = False ' avoid row height increasing
                 Catch ex As Exception
                     Globals.UserMsg("Error in adding query (" + queryStr + "): " + ex.Message, "DBSheet Creation Error")
                     lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
@@ -454,6 +454,8 @@ Public Module DBSheetConfig
                 End With
             End If
         Next
+        ' avoid spill over from definition cells (query, where clause, etc.) into DBSheet area in case a row is inserted
+        createdListObject.ListColumns.Item(1).Range.Offset(0, -1).HorizontalAlignment = Excel.XlHAlign.xlHAlignRight
 
         ' extend Datarange for new DBMappers immediately after definition...
         DirectCast(Globals.DBModifDefColl("DBMapper").Item("DBMapper" + tableName), DBMapper).extendDataRange()

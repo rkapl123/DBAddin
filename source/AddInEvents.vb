@@ -420,11 +420,11 @@ done:
     ''' <param name="Sh"></param>
     ''' <param name="Target"></param>
     Private Sub Application_SheetChange(Sh As Object, Target As Range) Handles Application.SheetChange
-        ' avoid entering into insert/update check resp. doCUDMarks if not listobject (data table), whole row/column modified, no DBMapper present and prevention while fetching (on refresh) being set
-        If Not IsNothing(Target.ListObject) AndAlso Not Target.Columns.Count = Sh.Columns.Count AndAlso Not Target.Rows.Count = Sh.Rows.Count AndAlso Globals.DBModifDefColl.ContainsKey("DBMapper") AndAlso Not DBModifs.preventChangeWhileFetching Then
+        ' avoid entering into insert/update check resp. doCUDMarks if not listobject (data table), whole column modified, no DBMapper present and prevention while fetching (on refresh) being set
+        If Not IsNothing(Target.ListObject) AndAlso Not Target.Rows.Count = Sh.Rows.Count AndAlso Globals.DBModifDefColl.ContainsKey("DBMapper") AndAlso Not DBModifs.preventChangeWhileFetching Then
             Dim targetName As String = DBModifs.getDBModifNameFromRange(Target)
             If Left(targetName, 8) = "DBMapper" Then
-                DirectCast(Globals.DBModifDefColl("DBMapper").Item(targetName), DBMapper).insertCUDMarks(Target)
+                DirectCast(Globals.DBModifDefColl("DBMapper").Item(targetName), DBMapper).insertCUDMarks(Target, insertFlag:=(Target.Columns.Count = Sh.Columns.Count)) 'if whole row was inserted add insert flag
             End If
         End If
     End Sub

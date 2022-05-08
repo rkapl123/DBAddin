@@ -168,6 +168,7 @@ Public Module Globals
                 Case TraceEventType.Error
                     theLogDisplaySource.TraceEvent(TraceEventType.Error, timestamp, "{0}: {1}", caller, Message)
                     theLogFileSource.TraceEvent(TraceEventType.Error, timestamp, "{0}: {1}", caller, Message)
+                    WarningIssued = True
                     If theRibbon IsNot Nothing Then theRibbon.InvalidateControl("showLog")
             End Select
         End If
@@ -176,16 +177,18 @@ Public Module Globals
     ''' <summary>Logs error messages</summary>
     ''' <param name="LogMessage">the message to be logged</param>
     Public Sub LogError(LogMessage As String)
+        Dim caller As String
         Dim theMethod As Object = (New System.Diagnostics.StackTrace).GetFrame(1).GetMethod
-        Dim caller As String = theMethod.ReflectedType.FullName + "." + theMethod.Name
+        Try : caller = theMethod.ReflectedType.FullName + "." + theMethod.Name : Catch ex As Exception : caller = theMethod.Name : End Try
         WriteToLog(LogMessage, TraceEventType.Error, caller)
     End Sub
 
     ''' <summary>Logs warning messages</summary>
     ''' <param name="LogMessage">the message to be logged</param>
     Public Sub LogWarn(LogMessage As String)
+        Dim caller As String
         Dim theMethod As Object = (New System.Diagnostics.StackTrace).GetFrame(1).GetMethod
-        Dim caller As String = theMethod.ReflectedType.FullName + "." + theMethod.Name
+        Try : caller = theMethod.ReflectedType.FullName + "." + theMethod.Name : Catch ex As Exception : caller = theMethod.Name : End Try
         WriteToLog(LogMessage, TraceEventType.Warning, caller)
     End Sub
 
@@ -193,8 +196,9 @@ Public Module Globals
     ''' <param name="LogMessage">the message to be logged</param>
     Public Sub LogInfo(LogMessage As String)
         If DebugAddin Then
+            Dim caller As String
             Dim theMethod As Object = (New System.Diagnostics.StackTrace).GetFrame(1).GetMethod
-            Dim caller As String = theMethod.ReflectedType.FullName + "." + theMethod.Name
+            Try : caller = theMethod.ReflectedType.FullName + "." + theMethod.Name : Catch ex As Exception : caller = theMethod.Name : End Try
             WriteToLog(LogMessage, TraceEventType.Information, caller)
         End If
     End Sub
@@ -204,8 +208,9 @@ Public Module Globals
     ''' <param name="errTitle">optionally pass a title for the msgbox instead of default DBAddin Error</param>
     ''' <param name="msgboxIcon">optionally pass a different Msgbox icon (style) instead of default MsgBoxStyle.Critical</param>
     Public Sub UserMsg(LogMessage As String, Optional errTitle As String = "DBAddin Error", Optional msgboxIcon As MsgBoxStyle = MsgBoxStyle.Critical)
+        Dim caller As String
         Dim theMethod As Object = (New System.Diagnostics.StackTrace).GetFrame(1).GetMethod
-        Dim caller As String = theMethod.ReflectedType.FullName + "." + theMethod.Name
+        Try : caller = theMethod.ReflectedType.FullName + "." + theMethod.Name : Catch ex As Exception : caller = theMethod.Name : End Try
         WriteToLog(LogMessage, If(msgboxIcon = MsgBoxStyle.Critical Or msgboxIcon = MsgBoxStyle.Exclamation, TraceEventType.Warning, TraceEventType.Information), caller) ' to avoid popup of trace log in nonInteractive mode...
         If Not nonInteractive Then
             MsgBox(LogMessage, msgboxIcon + MsgBoxStyle.OkOnly, errTitle)
@@ -221,8 +226,9 @@ Public Module Globals
     ''' <param name="msgboxIcon">optionally pass a different Msgbox icon (style) instead of default MsgBoxStyle.Question</param>
     ''' <returns>choice as MsgBoxResult (Yes, No, OK, Cancel...)</returns>
     Public Function QuestionMsg(theMessage As String, Optional questionType As MsgBoxStyle = MsgBoxStyle.OkCancel, Optional questionTitle As String = "DBAddin Question", Optional msgboxIcon As MsgBoxStyle = MsgBoxStyle.Question) As MsgBoxResult
+        Dim caller As String
         Dim theMethod As Object = (New System.Diagnostics.StackTrace).GetFrame(1).GetMethod
-        Dim caller As String = theMethod.ReflectedType.FullName + "." + theMethod.Name
+        Try : caller = theMethod.ReflectedType.FullName + "." + theMethod.Name : Catch ex As Exception : caller = theMethod.Name : End Try
         WriteToLog(theMessage, If(msgboxIcon = MsgBoxStyle.Critical Or msgboxIcon = MsgBoxStyle.Exclamation, TraceEventType.Warning, TraceEventType.Information), caller) ' to avoid popup of trace log
         If nonInteractive Then
             If questionType = MsgBoxStyle.OkCancel Then Return MsgBoxResult.Cancel
@@ -239,23 +245,27 @@ Public Module Globals
     <ExcelCommand(Name:="refreshData", ShortCut:="^R")>
     Public Sub refreshData()
         initSettings()
-        ' enable events in case there were some problems in procedure with EnableEvents = false
+        ' enable events in case there were some problems in procedure with EnableEvents = false, this fails if a cell dropdown is open.
         Try
             ExcelDnaUtil.Application.EnableEvents = True
         Catch ex As Exception
-            UserMsg("Can't refresh data while lookup dropdown is open !!")
+            UserMsg("Can't refresh data while lookup dropdown is open !!", "DB-Addin Refresh")
             Exit Sub
         End Try
         Dim actWb As Excel.Workbook = Nothing
         Try : actWb = ExcelDnaUtil.Application.ActiveWorkbook : Catch ex As Exception : End Try
         If IsNothing(actWb) Then
-            UserMsg("Couldn't get active workbook for refreshing data, this might be due to the active workbook being hidden, Errors in VBA Macros or missing references")
+            UserMsg("Couldn't get active workbook for refreshing data, this might be due to the active workbook being hidden, Errors in VBA Macros or missing references", "DB-Addin Refresh")
             Exit Sub
         End If
         Try : Dim actWbName As String = actWb.Name : Catch ex As Exception
-            UserMsg("Couldn't get active workbook name for refreshing data, this might be due to Errors in VBA Macros or missing references")
+            UserMsg("Couldn't get active workbook name for refreshing data, this might be due to Errors in VBA Macros or missing references", "DB-Addin Refresh")
             Exit Sub
         End Try
+        If ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual Then
+            UserMsg("Calculation is set to manual, this prevents DB Functions from being recalculated. Please set calculation to automatic and retry", "DB-Addin Refresh")
+            Exit Sub
+        End If
         ' also reset the database connection in case of errors (might be nothing or not open...)
         Try : conn.Close() : Catch ex As Exception : End Try
         conn = Nothing
@@ -272,22 +282,25 @@ Public Module Globals
                     Dim ws As Excel.Worksheet
                     For Each ws In actWb.Worksheets
                         If ws.ProtectContents And (ws.QueryTables.Count > 0 Or ws.PivotTables.Count > 0) Then
-                            UserMsg("Worksheet " + ws.Name + " is content protected, can't refresh QueryTables/PivotTables !")
+                            UserMsg("Worksheet " + ws.Name + " is content protected, can't refresh QueryTables/PivotTables !", "DB-Addin Refresh")
                             Continue For
                         End If
                         If Not CBool(fetchSetting("AvoidUpdateQueryTables_Refresh", "False")) Then
                             For Each qrytbl As Excel.QueryTable In ws.QueryTables
+                                ' no need to avoid double refreshing as query tables are always deleted after inserting data in DBListFetchAction
                                 qrytbl.Refresh()
                             Next
                         End If
                         If Not CBool(fetchSetting("AvoidUpdatePivotTables_Refresh", "False")) Then
                             For Each pivottbl As Excel.PivotTable In ws.PivotTables
-                                pivottbl.PivotCache.Refresh()
+                                ' avoid double refreshing of dbsetquery list objects
+                                If getUnderlyingDBNameFromRange(pivottbl.TableRange1) = "" Then pivottbl.PivotCache.Refresh()
                             Next
                         End If
                         If Not CBool(fetchSetting("AvoidUpdateListObjects_Refresh", "False")) Then
                             For Each listobj As Excel.ListObject In ws.ListObjects
-                                listobj.QueryTable.Refresh()
+                                ' avoid double refreshing of dbsetquery list objects
+                                If getUnderlyingDBNameFromRange(listobj.Range) = "" Then listobj.QueryTable.Refresh()
                             Next
                         End If
                     Next
@@ -298,7 +311,7 @@ Public Module Globals
                 If Left$(underlyingName, 10) = "DBFtargetF" Then
                     underlyingName = Replace(underlyingName, "DBFtargetF", "DBFsource", 1, , vbTextCompare)
                     If ExcelDnaUtil.Application.Range(underlyingName).Parent.ProtectContents Then
-                        UserMsg("Worksheet " + ExcelDnaUtil.Application.Range(underlyingName).Parent.Name + " is content protected, can't refresh DB Function !")
+                        UserMsg("Worksheet " + ExcelDnaUtil.Application.Range(underlyingName).Parent.Name + " is content protected, can't refresh DB Function !", "DB-Addin Refresh")
                         Exit Sub
                     End If
                     ExcelDnaUtil.Application.Range(underlyingName).Formula += " "
@@ -306,23 +319,23 @@ Public Module Globals
                 ElseIf Left$(underlyingName, 9) = "DBFtarget" Then
                     underlyingName = Replace(underlyingName, "DBFtarget", "DBFsource", 1, , vbTextCompare)
                     If ExcelDnaUtil.Application.Range(underlyingName).Parent.ProtectContents Then
-                        UserMsg("Worksheet " + ExcelDnaUtil.Application.Range(underlyingName).Parent.Name + " is content protected, can't refresh DB Function !")
+                        UserMsg("Worksheet " + ExcelDnaUtil.Application.Range(underlyingName).Parent.Name + " is content protected, can't refresh DB Function !", "DB-Addin Refresh")
                         Exit Sub
                     End If
                     ExcelDnaUtil.Application.Range(underlyingName).Formula += " "
                     ' we're being called on a source (invoking function) cell
                 ElseIf Left$(underlyingName, 9) = "DBFsource" Then
                     If ExcelDnaUtil.Application.Range(underlyingName).Parent.ProtectContents Then
-                        UserMsg("Worksheet " + ExcelDnaUtil.Application.Range(underlyingName).Parent.Name + " is content protected, can't refresh DB Function !")
+                        UserMsg("Worksheet " + ExcelDnaUtil.Application.Range(underlyingName).Parent.Name + " is content protected, can't refresh DB Function !", "DB-Addin Refresh")
                         Exit Sub
                     End If
                     ExcelDnaUtil.Application.Range(underlyingName).Formula += " "
                 Else
-                    UserMsg("Error in refreshData, underlyingName does not begin with DBFtarget, DBFtargetF or DBFsource: " + underlyingName)
+                    UserMsg("Error in refreshData, underlyingName does not begin with DBFtarget, DBFtargetF or DBFsource: " + underlyingName, "DB-Addin Refresh")
                 End If
             End If
         Catch ex As Exception
-            UserMsg("Exception: " + ex.Message, "refresh Data")
+            UserMsg("Exception: " + ex.Message, "refresh Data", "DB-Addin Refresh")
         End Try
     End Sub
 
@@ -330,7 +343,7 @@ Public Module Globals
     <ExcelCommand(Name:="jumpButton", ShortCut:="^J")>
     Public Sub jumpButton()
         If checkMultipleDBRangeNames(ExcelDnaUtil.Application.ActiveCell) Then
-            UserMsg("Multiple hidden DB Function names in selected cell (making 'jump' ambigous/impossible), please use purge names tool!")
+            UserMsg("Multiple hidden DB Function names in selected cell (making 'jump' ambigous/impossible), please use purge names tool!", "DB-Addin Jump")
             Exit Sub
         End If
         Dim underlyingName As String = getUnderlyingDBNameFromRange(ExcelDnaUtil.Application.ActiveCell)
@@ -346,7 +359,7 @@ Public Module Globals
             ExcelDnaUtil.Application.Range(underlyingName).Parent.Select()
             ExcelDnaUtil.Application.Range(underlyingName).Select()
         Catch ex As Exception
-            UserMsg("Can't jump to target/source, corresponding workbook open? " + ex.Message, "jump Button")
+            UserMsg("Can't jump to target/source, corresponding workbook open? " + ex.Message, "DB-Addin Jump")
         End Try
     End Sub
 
@@ -641,8 +654,8 @@ Last:
                     End Try
                 End If
             Next
-            If ignoreCalcMode Then
-                LogInfo("ignoreCalcMode = True, ExcelDnaUtil.Application.CalculateFull called " + Wb.Path + "\" + Wb.Name)
+            If ignoreCalcMode And ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual Then
+                LogInfo("ignoreCalcMode = True and Application.Calculation = xlCalculationManual, Application.CalculateFull called " + Wb.Path + "\" + Wb.Name)
                 ExcelDnaUtil.Application.CalculateFull()
             End If
         Catch ex As Exception
