@@ -509,12 +509,15 @@ Public Class DBMapper : Inherits DBModif
     ''' <summary>inserts CUD (Create/Update/Delete) Marks at the right end of the DBMapper range</summary>
     ''' <param name="changedRange">passed TargetRange by Change Event or delete button</param>
     ''' <param name="deleteFlag">if delete button was pressed, this is true</param>
-    Public Sub insertCUDMarks(changedRange As Excel.Range, Optional deleteFlag As Boolean = False, Optional insertFlag As Boolean = False)
+    Public Sub insertCUDMarks(changedRange As Excel.Range, Optional deleteFlag As Boolean = False)
+        Dim insertFlag As Boolean
+
         If Not CUDFlags Then Exit Sub
         Dim changedRangeRows As Integer = changedRange.Rows.Count
         Dim changedRangeColumns As Integer = changedRange.Columns.Count
         Dim targetRangeRows As Integer = TargetRange.Rows.Count
         Dim targetRangeColumns As Integer = TargetRange.Columns.Count
+        Dim sheetColumns As Integer = changedRange.Parent.Columns.Count
         ' sanity check for single cell DB Mappers..
         If targetRangeColumns = 1 And targetRangeRows = 1 Then
             Dim retval As MsgBoxResult = Globals.QuestionMsg("DB Mapper Range with CUD Flags is only one cell, really set CUD Flags ?",, "Set CUD Flags for DB Mapper")
@@ -546,12 +549,15 @@ Public Class DBMapper : Inherits DBModif
             Else
                 Dim countRow As Integer = 1
                 ' inside a listobject Ctrl & + and Ctrl & - add and remove a whole listobject range row
-                If changedRangeColumns = targetRangeColumns And changedRangeRows = 1 Then
+                If (changedRangeColumns = targetRangeColumns Or changedRangeColumns = sheetColumns) And changedRangeRows = 1 Then
+                    Dim CUDMarkRow As Integer = changedRange.Row - TargetRange.Row + 1
                     ' if all cells (especially first) are empty (=inserting a row with Ctrl & +) add insert flag
-                    If changedRange.Cells(1, 1).Value = "" Then
+                    If IsNothing(TargetRange.Cells(CUDMarkRow, 1).Value) Then
                         insertFlag = True
-                        ' additionally shift the CUD Markers down
-                        TargetRange.Cells(changedRange.Row - TargetRange.Row + 1, TargetRange.Columns.Count + 1).Insert(Shift:=Excel.XlInsertShiftDirection.xlShiftDown)
+                        ' additionally shift the CUD Markers down, except a whole sheet row was inserted (which did the shift already)
+                        If Not changedRangeColumns = sheetColumns Then
+                            TargetRange.Cells(CUDMarkRow, TargetRange.Columns.Count + 1).Insert(Shift:=Excel.XlInsertShiftDirection.xlShiftDown)
+                        End If
                     Else
                         ' probably deleted with Ctrl & -, warn user...
                         Globals.UserMsg("Whole row modified, maybe you deleted a row with Ctrl & -. The row is not deleted in the database (use Ctrl-Shift-D), you can continue or refresh the DB-Sheet with Ctrl-Shift-R.", "Set CUD Flags for DB Mapper", MsgBoxStyle.Exclamation)
