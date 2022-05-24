@@ -543,6 +543,7 @@ Public Class DBMapper : Inherits DBModif
             If deleteFlag Then
                 For Each changedRow As Excel.Range In changedRange.Rows
                     Dim CUDMarkRow As Integer = changedRow.Row - TargetRange.Row + 1
+                    If Not TargetRange.Cells(CUDMarkRow, targetRangeColumns + 1).Value Is Nothing Then Continue For
                     TargetRange.Cells(CUDMarkRow, targetRangeColumns + 1).Value = "d"
                     TargetRange.Rows(CUDMarkRow).Font.Strikethrough = True
                 Next
@@ -565,6 +566,8 @@ Public Class DBMapper : Inherits DBModif
                 End If
                 For Each changedRow As Excel.Range In changedRange.Rows
                     Dim CUDMarkRow As Integer = changedRow.Row - TargetRange.Row + 1
+                    ' change only if not already set. Do this here as it is faster then...
+                    If Not TargetRange.Cells(CUDMarkRow, targetRangeColumns + 1).Value Is Nothing Then Continue For
                     ' repair automatic copying down of patterns (non null columns) from header row in Listobjects done by Excel
                     If CUDMarkRow = 2 Then
                         With TargetRange.Rows(2).Interior
@@ -575,17 +578,15 @@ Public Class DBMapper : Inherits DBModif
                     End If
                     ' check if row was added at the bottom add insert flag
                     If CUDMarkRow > TargetRange.Cells(targetRangeRows, targetRangeColumns).Row Then insertFlag = True
-                    ' change only if not already set or explicitly required by insertFlag (after Row insertion, first an update flag will be written by the change event which is overwritten by an explicit call to insertCUDMarks
-                    If TargetRange.Cells(CUDMarkRow, targetRangeColumns + 1).Value Is Nothing Or insertFlag Then
-                        If Not insertFlag Then
-                            TargetRange.Cells(CUDMarkRow, targetRangeColumns + 1).Value = "u"
-                            TargetRange.Rows(CUDMarkRow).Font.Italic = True
-                        Else ' else "i"nsert
-                            TargetRange.Cells(CUDMarkRow, targetRangeColumns + 1).Value = "i"
-                        End If
-                        ExcelDnaUtil.Application.Statusbar = "Create/Update/Delete mark for row " + countRow.ToString() + "/" + changedRangeRows.ToString()
-                        countRow += 1
+                    ' insert only if explicitly required by insertFlag (after Row insertion, first an update flag will be written by the change event which is overwritten by an explicit call to insertCUDMarks)
+                    If Not insertFlag Then
+                        TargetRange.Cells(CUDMarkRow, targetRangeColumns + 1).Value = "u"
+                        TargetRange.Rows(CUDMarkRow).Font.Italic = True
+                    Else
+                        TargetRange.Cells(CUDMarkRow, targetRangeColumns + 1).Value = "i"
                     End If
+                    ExcelDnaUtil.Application.Statusbar = "Create/Update/Delete mark for row " + countRow.ToString() + "/" + changedRangeRows.ToString()
+                    countRow += 1
                 Next
             End If
         Catch ex As Exception
@@ -1486,8 +1487,8 @@ Public Module DBModifs
     End Function
 
     ''' <summary>in case there is a defined DBMapper underlying the DBListFetch/DBSetQuery target area then change the extent of it (oldRange) to the new area given in theRange</summary>
-    ''' <param name="theRange">new extent after resfresh of DBListFetch/DBSetQuery function</param>
-    ''' <param name="oldRange">extent before resfresh of DBListFetch/DBSetQuery function</param>
+    ''' <param name="theRange">new extent after refresh of DBListFetch/DBSetQuery function</param>
+    ''' <param name="oldRange">extent before refresh of DBListFetch/DBSetQuery function</param>
     Public Sub resizeDBMapperRange(theRange As Excel.Range, oldRange As Excel.Range)
         Dim actWbNames As Excel.Names = Nothing
         Try : actWbNames = ExcelDnaUtil.Application.ActiveWorkbook.Names : Catch ex As Exception

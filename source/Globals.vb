@@ -16,7 +16,7 @@ Public Module Globals
     Public theRibbon As CustomUI.IRibbonUI
     ''' <summary>environment definitions</summary>
     Public environdefs As String()
-    ''' <summary>DBModif definition collections of DBmodif types (key of top level dictionary) with values beinig collections of DBModifierNames (key of contained dictionaries) and DBModifiers (value of contained dictionaries))</summary>
+    ''' <summary>DBModif definition collections of DBmodif types (key of top level dictionary) with values being collections of DBModifierNames (key of contained dictionaries) and DBModifiers (value of contained dictionaries))</summary>
     Public DBModifDefColl As Dictionary(Of String, Dictionary(Of String, DBModif))
 
     ''' <summary>for DBMapper invocations by execDBModif, this is set to true, avoiding MsgBox</summary>
@@ -152,8 +152,8 @@ Public Module Globals
 
         Dim timestamp As Int32 = DateAndTime.Now().Month * 100000000 + DateAndTime.Now().Day * 1000000 + DateAndTime.Now().Hour * 10000 + DateAndTime.Now().Minute * 100 + DateAndTime.Now().Second
         If nonInteractive Then
-            theLogDisplaySource.TraceEvent(TraceEventType.Information, timestamp, "Noninteractive: {0}: {1}", caller, Message)
-            theLogFileSource.TraceEvent(TraceEventType.Information, timestamp, "Noninteractive: {0}: {1}", caller, Message)
+            theLogDisplaySource.TraceEvent(TraceEventType.Information, timestamp, "Non-interactive: {0}: {1}", caller, Message)
+            theLogFileSource.TraceEvent(TraceEventType.Information, timestamp, "Non-interactive: {0}: {1}", caller, Message)
         Else
             Select Case eEventType
                 Case TraceEventType.Information
@@ -203,7 +203,7 @@ Public Module Globals
         End If
     End Sub
 
-    ''' <summary>show message to User (default Errormessage) and log as warning if Critical Or Exclamation (logged errors would pop up the trace information window)</summary> 
+    ''' <summary>show message to User (default Error message) and log as warning if Critical Or Exclamation (logged errors would pop up the trace information window)</summary> 
     ''' <param name="LogMessage">the message to be shown/logged</param>
     ''' <param name="errTitle">optionally pass a title for the msgbox instead of default DBAddin Error</param>
     ''' <param name="msgboxIcon">optionally pass a different Msgbox icon (style) instead of default MsgBoxStyle.Critical</param>
@@ -343,7 +343,7 @@ Public Module Globals
     <ExcelCommand(Name:="jumpButton", ShortCut:="^J")>
     Public Sub jumpButton()
         If checkMultipleDBRangeNames(ExcelDnaUtil.Application.ActiveCell) Then
-            UserMsg("Multiple hidden DB Function names in selected cell (making 'jump' ambigous/impossible), please use purge names tool!", "DB-Addin Jump")
+            UserMsg("Multiple hidden DB Function names in selected cell (making 'jump' ambiguous/impossible), please use purge names tool!", "DB-Addin Jump")
             Exit Sub
         End If
         Dim underlyingName As String = getUnderlyingDBNameFromRange(ExcelDnaUtil.Application.ActiveCell)
@@ -397,7 +397,7 @@ Public Module Globals
     End Function
 
     ''' <summary>returns the minimal bracket balancing string contained in theString, opening bracket defined in openBracket, closing bracket defined in closeBracket
-    ''' disregarding quoted areas inside optionally given quote charachter/string</summary>
+    ''' disregarding quoted areas inside optionally given quote character/string</summary>
     ''' <param name="theString"></param>
     ''' <param name="openBracket"></param>
     ''' <param name="closeBracket"></param>
@@ -608,7 +608,7 @@ Last:
         End Try
     End Function
 
-    ''' <summary>recalc fully the DB functions, if we have DBFuncs in the workbook somewhere</summary>
+    ''' <summary>recalculate fully the DB functions, if we have DBFuncs in the workbook somewhere</summary>
     ''' <param name="Wb">workbook to refresh DB Functions in</param>
     ''' <param name="ignoreCalcMode">when calling refreshDBFunctions time delayed (when saving a workbook and DBFC* is set), need to trigger calculation regardless of calculation mode being manual, otherwise data is not refreshed</param>
     Public Sub refreshDBFunctions(Wb As Excel.Workbook, Optional ignoreCalcMode As Boolean = False)
@@ -643,9 +643,29 @@ Last:
                         LogWarn("Found former DB Function in Cell " + DBFuncCell.Parent.Name + "!" + DBFuncCell.Address + " that doesn't contain a DB Function anymore.")
                     End If
                     Try
+                        ' repair DBSheet auto-filling lookup functionality, in case it was lost due to accidental editing of these cells.
+                        underlyingName = Replace(DBname.Name, "DBFsource", "DBFtarget", 1, , vbTextCompare)
+                        Dim DBTargetListObject As Excel.ListObject = Nothing
+                        Try : DBTargetListObject = ExcelDnaUtil.Application.Range(underlyingName).ListObject : Catch ex As Exception : End Try
+                        If Not IsNothing(DBTargetListObject) Then
+                            ' walk through all columns
+                            For Each listcol As Excel.ListColumn In DBTargetListObject.ListColumns
+                                Dim colFormula As String = ""
+                                ' check for formula and store it
+                                colFormula = listcol.DataBodyRange.Cells(1, 1).Formula
+                                If Left(colFormula, 1) = "=" Then
+                                    DBModifs.preventChangeWhileFetching = True
+                                    ' delete whole column
+                                    listcol.DataBodyRange.Clear()
+                                    ' re-insert the formula, this repairs the auto-filling functionality
+                                    listcol.DataBodyRange.Cells(1, 1).Formula = colFormula
+                                    DBModifs.preventChangeWhileFetching = False
+                                End If
+                            Next
+                        End If
                         ' get the callID of the underlying name of the target (key of the queryCache and StatusCollection)
                         callID = "[" + DBFuncCell.Parent.Parent.Name + "]" + DBFuncCell.Parent.Name + "!" + DBFuncCell.Address
-                        ' remove query cache to force refetching
+                        ' remove query cache to force re-fetching
                         queryCache.Remove(callID)
                         ' trigger recalculation by changing formula of DB Function
                         DBFuncCell.Formula += " "
@@ -664,7 +684,7 @@ Last:
         DBModifs.preventChangeWhileFetching = False
     End Sub
 
-    ''' <summary>"OnTime" event function to "escape" current (main) thread: event procedure to refetch DB functions results after triggering a recalculation inside Application.WorkbookBeforeSave</summary>
+    ''' <summary>"OnTime" event function to "escape" current (main) thread: event procedure to re-fetch DB functions results after triggering a recalculation inside Application.WorkbookBeforeSave</summary>
     Public Sub refreshDBFuncLater()
         Dim previouslySaved As Boolean
         Dim actWb As Excel.Workbook = Nothing

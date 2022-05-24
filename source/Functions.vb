@@ -28,19 +28,19 @@ Public Module Functions
     ''' <summary>avoid entering dblistfetch/dbrowfetch functions during clearing of listfetch areas (before saving)</summary>
     Public dontCalcWhileClearing As Boolean
 
-    ''' <summary>Create database compliant date, time or datetime string from excel datetype value</summary>
+    ''' <summary>Create database compliant date, time or datetime string from excel date type value</summary>
     ''' <param name="DatePart">date/time/datetime single parameter or range reference</param>
     ''' <param name="formatting">formatting instruction for Date format, see remarks</param>
     ''' <returns>the DB compliant formatted date/time/datetime</returns>
     ''' <remarks>
-    ''' formatting = 0: A simple datestring (format 'YYYYMMDD'), datetime values are converted to 'YYYYMMDD HH:MM:SS' and time values are converted to 'HH:MM:SS'.
-    ''' formatting = 1: An ANSI compliant Date string (format date 'YYYY-MM-DD'), datetime values are converted to timestamp 'YYYY-MM-DD HH:MM:SS' and time values are converted to time time 'HH:MM:SS'.
+    ''' formatting = 0: A simple date string (format 'YYYYMMDD'), datetime values are converted to 'YYYYMMDD HH:MM:SS' and time values are converted to 'HH:MM:SS'.
+    ''' formatting = 1: An ANSI compliant Date string (format date 'YYYY-MM-DD'), datetime values are converted to time stamp 'YYYY-MM-DD HH:MM:SS' and time values are converted to time time 'HH:MM:SS'.
     ''' formatting = 2: An ODBC compliant Date string (format {d 'YYYY-MM-DD'}), datetime values are converted to {ts 'YYYY-MM-DD HH:MM:SS'} and time values are converted to {t 'HH:MM:SS'}.
     ''' formatting = 3: An Access/JetDB compliant Date string (format #YYYY-MM-DD#), datetime values are converted to #YYYY-MM-DD HH:MM:SS# and time values are converted to #HH:MM:SS#.
     ''' add 10 to formatting to include fractions of a second (1000) 
     ''' formatting >13 or empty (99=default value): take the formatting option from setting DefaultDBDateFormatting (0 if not given)
     ''' </remarks>
-    <ExcelFunction(Description:="Create database compliant date, time or datetime string from excel datetype value")>
+    <ExcelFunction(Description:="Create database compliant date, time or datetime string from excel date type value")>
     Public Function DBDate(<ExcelArgument(Description:="date/time/datetime")> ByVal DatePart As Object,
                            <ExcelArgument(Description:="formatting option, 0:'YYYYMMDD', 1: DATE 'YYYY-MM-DD'), 2:{d 'YYYY-MM-DD'},3:Access/JetDB #DD/MM/YYYY#, add 10 to formatting to include fractions of a second (1000)")> Optional formatting As Integer = 99) As String
         DBDate = ""
@@ -185,10 +185,10 @@ Public Module Functions
         End Try
     End Function
 
-    ''' <summary>Creates a powerquery compliant #date function from excel datetype value</summary>
+    ''' <summary>Creates a powerquery compliant #date function from excel date type value</summary>
     ''' <param name="DatePart">date/time/datetime single parameter or range reference</param>
-    ''' <returns>the powerquey #date function</returns>
-    <ExcelFunction(Description:="Create powerquery compliant #date, #time or #datetime function from excel datetype value")>
+    ''' <returns>the powerquery #date function</returns>
+    <ExcelFunction(Description:="Create powerquery compliant #date, #time or #datetime function from excel date type value")>
     Public Function PQDate(<ExcelArgument(Description:="date/time/datetime")> ByVal DatePart As Object,
                            <ExcelArgument(Description:="enforce dateteime for date only values (without fractional part)")> Optional forceDateTime As Boolean = False) As String
         PQDate = ""
@@ -264,33 +264,33 @@ Public Module Functions
         DBinClauseDate = If(Left(concatResult, 5) = "Error", concatResult, If(concatResult = "", "in (NULL)", "in (" + concatResult + ")"))
     End Function
 
-    ''' <summary>concatenates values contained in thetarget together (using .value attribute for cells)</summary>
+    ''' <summary>concatenates values contained in concatPart together (using .value attribute for cells)</summary>
     ''' <param name="concatPart">all cells/values which should be concatenated</param>
     ''' <returns>concatenated String</returns>
-    <ExcelFunction(Description:="concatenates values contained in thetarget together (using .value attribute for cells)")>
+    <ExcelFunction(Description:="concatenates values contained in concatPart together (using .value attribute for cells)")>
     Public Function concatCells(<ExcelArgument(AllowReference:=True, Description:="all cells/values which should be concatenated")> ParamArray concatPart As Object()) As String
         concatCells = DoConcatCellsSep("", False, False, False, concatPart)
     End Function
 
-    ''' <summary>concatenates values contained in thetarget (using .value for cells) using a separator</summary>
+    ''' <summary>concatenates values contained in concatPart (using .value for cells) using a separator</summary>
     ''' <param name="separator">the separator</param>
     ''' <param name="concatPart">all cells/values which should be concatenated</param>
     ''' <returns>concatenated String</returns>
-    <ExcelFunction(Description:="concatenates values contained in thetarget (using .value for cells) using a separator")>
+    <ExcelFunction(Description:="concatenates values contained in concatPart (using .value for cells) using a separator")>
     Public Function concatCellsSep(<ExcelArgument(AllowReference:=True, Description:="the separator")> separator As String,
                                    <ExcelArgument(AllowReference:=True, Description:="all cells/values which should be concatenated")> ParamArray concatPart As Object()) As String
         concatCellsSep = DoConcatCellsSep(separator, False, False, False, concatPart)
     End Function
 
-    ''' <summary>chains values contained in thetarget together with commas, mainly used for creating select header</summary>
+    ''' <summary>chains values contained in chainPart together with commas, mainly used for creating select header</summary>
     ''' <param name="chainPart">range where values should be chained</param>
     ''' <returns>chained String</returns>
-    <ExcelFunction(Description:="chains values contained in thetarget together with commas, mainly used for creating select header")>
+    <ExcelFunction(Description:="chains values contained in chainPart together with commas, mainly used for creating select header")>
     Public Function chainCells(<ExcelArgument(AllowReference:=True, Description:="range where values should be chained")> ParamArray chainPart As Object()) As String
         chainCells = DoConcatCellsSep(",", False, False, False, chainPart)
     End Function
 
-    ''' <summary>private function that actually concatenates values contained in Object array myRange together (either using .text or .value for cells in myrange) using a separator</summary>
+    ''' <summary>private function that actually concatenates values contained in Object array concatParts together (either using .text or .value for cells in concatParts) using a separator</summary>
     ''' <param name="separator">the separator-string that is filled between values</param>
     ''' <param name="DBcompliant">should a potential string or date part be formatted database compliant (surrounded by quotes)?</param>
     ''' <param name="OnlyString">set when only DB compliant Strings should be produced during concatenation</param>

@@ -168,9 +168,7 @@ Public Class MenuHandler
     ''' <summary>dialogBoxLauncher of DBAddin settings group: activate about box</summary>
     ''' <param name="control"></param>
     Public Sub showDBAdHocSQLDBOX(control As CustomUI.IRibbonControl)
-        Dim selectedSQLText As String = ""
-        If AdHocSQLStrings.Count > 0 Then selectedSQLText = AdHocSQLStrings(selectedAdHocSQLIndex)
-        showDBAdHocSQL(Nothing, selectedSQLText)
+        showDBAdHocSQL(Nothing, "")
     End Sub
 
     ''' <summary>show Adhoc SQL Query editor</summary>
