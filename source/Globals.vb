@@ -652,7 +652,7 @@ Last:
                             For Each listcol As Excel.ListColumn In DBTargetListObject.ListColumns
                                 Dim colFormula As String = ""
                                 ' check for formula and store it
-                                colFormula = listcol.DataBodyRange.Cells(1, 1).Formula
+                                Try : colFormula = listcol.DataBodyRange.Cells(1, 1).Formula : Catch ex As Exception : End Try
                                 If Left(colFormula, 1) = "=" Then
                                     DBModifs.preventChangeWhileFetching = True
                                     ' delete whole column

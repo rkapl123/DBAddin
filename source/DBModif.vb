@@ -641,7 +641,9 @@ Public Class DBMapper : Inherits DBModif
                 Exit Sub
             End If
             ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = False ' to prevent automatic creation of new column
-            TargetRange.ListObject.DataBodyRange.Columns(TargetRange.Columns.Count + 1).ClearContents
+            If Not IsNothing(TargetRange.ListObject) AndAlso Not IsNothing(TargetRange.ListObject.DataBodyRange) Then
+                TargetRange.ListObject.DataBodyRange.Columns(TargetRange.Columns.Count + 1).ClearContents
+            End If
             ' remove updated rows cell style
             TargetRange.Font.Italic = False
             ' remove deleted rows cell style
