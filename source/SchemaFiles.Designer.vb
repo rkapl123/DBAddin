@@ -135,5 +135,31 @@ Namespace My.Resources
                 Return ResourceManager.GetString("DotNetConfig20", resourceCulture)
             End Get
         End Property
+        
+        '''<summary>
+        '''  Looks up a localized string similar to AdHocSQLTransferType
+        '''AdHocSQLcmdDB + AdHocSQLStringsIndex.ToString()
+        '''AdHocSQLcmdEnv + AdHocSQLStringsIndex.ToString()
+        '''AltConnString + Globals.env()
+        '''AltConnString + env
+        '''AvoidUpdateLinks_Refresh
+        '''AvoidUpdateListObjects_Refresh
+        '''AvoidUpdatePivotTables_Refresh
+        '''AvoidUpdateQueryTables_Refresh
+        '''CmdTimeout
+        '''CnnTimeout
+        '''ConfigName + Globals.env()
+        '''ConfigName + env
+        '''ConfigName + i.ToString()
+        '''ConfigSelect
+        '''ConfigSelect + Globals.fetchSetting(ConfigSelectPreference)
+        '''ConfigSelectPreference
+        '''ConfigStoreFolder + G [rest of string was truncated]&quot;;.
+        '''</summary>
+        Public Shared ReadOnly Property Settings() As String
+            Get
+                Return ResourceManager.GetString("Settings", resourceCulture)
+            End Get
+        End Property
     End Class
 End Namespace

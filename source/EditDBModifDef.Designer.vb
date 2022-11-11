@@ -31,12 +31,14 @@ Partial Class EditDBModifDef
         Me.doDBMOnSave = New System.Windows.Forms.CheckBox()
         Me.DBFskip = New System.Windows.Forms.CheckBox()
         Me.ToolTip1 = New System.Windows.Forms.ToolTip(Me.components)
+        Me.availSettingsLB = New System.Windows.Forms.ComboBox()
+        Me.availSettLbl = New System.Windows.Forms.Label()
         Me.SuspendLayout()
         '
         'OKBtn
         '
         Me.OKBtn.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.OKBtn.Location = New System.Drawing.Point(538, 396)
+        Me.OKBtn.Location = New System.Drawing.Point(536, 381)
         Me.OKBtn.Name = "OKBtn"
         Me.OKBtn.Size = New System.Drawing.Size(55, 23)
         Me.OKBtn.TabIndex = 4
@@ -48,7 +50,7 @@ Partial Class EditDBModifDef
         '
         Me.CancelBtn.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.CancelBtn.DialogResult = System.Windows.Forms.DialogResult.Cancel
-        Me.CancelBtn.Location = New System.Drawing.Point(599, 396)
+        Me.CancelBtn.Location = New System.Drawing.Point(597, 381)
         Me.CancelBtn.Name = "CancelBtn"
         Me.CancelBtn.Size = New System.Drawing.Size(55, 23)
         Me.CancelBtn.TabIndex = 0
@@ -60,7 +62,7 @@ Partial Class EditDBModifDef
         '
         Me.PosIndex.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
         Me.PosIndex.AutoSize = True
-        Me.PosIndex.Location = New System.Drawing.Point(13, 396)
+        Me.PosIndex.Location = New System.Drawing.Point(12, 381)
         Me.PosIndex.Name = "PosIndex"
         Me.PosIndex.Size = New System.Drawing.Size(0, 13)
         Me.PosIndex.TabIndex = 3
@@ -72,7 +74,7 @@ Partial Class EditDBModifDef
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.EditBox.Location = New System.Drawing.Point(12, 12)
         Me.EditBox.Name = "EditBox"
-        Me.EditBox.Size = New System.Drawing.Size(642, 378)
+        Me.EditBox.Size = New System.Drawing.Size(640, 363)
         Me.EditBox.TabIndex = 1
         Me.EditBox.Text = ""
         Me.ToolTip1.SetToolTip(Me.EditBox, "Edit the DB Modifier Definition CustomXML here.")
@@ -81,7 +83,7 @@ Partial Class EditDBModifDef
         '
         Me.doDBMOnSave.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.doDBMOnSave.AutoSize = True
-        Me.doDBMOnSave.Location = New System.Drawing.Point(393, 400)
+        Me.doDBMOnSave.Location = New System.Drawing.Point(382, 385)
         Me.doDBMOnSave.Name = "doDBMOnSave"
         Me.doDBMOnSave.Size = New System.Drawing.Size(139, 17)
         Me.doDBMOnSave.TabIndex = 3
@@ -94,7 +96,7 @@ Partial Class EditDBModifDef
         '
         Me.DBFskip.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.DBFskip.AutoSize = True
-        Me.DBFskip.Location = New System.Drawing.Point(230, 400)
+        Me.DBFskip.Location = New System.Drawing.Point(219, 385)
         Me.DBFskip.Name = "DBFskip"
         Me.DBFskip.Size = New System.Drawing.Size(157, 17)
         Me.DBFskip.TabIndex = 2
@@ -103,21 +105,43 @@ Partial Class EditDBModifDef
         "fresh DB functions on Workbook opening.")
         Me.DBFskip.UseVisualStyleBackColor = True
         '
+        'availSettingsLB
+        '
+        Me.availSettingsLB.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
+        Me.availSettingsLB.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
+        Me.availSettingsLB.FormattingEnabled = True
+        Me.availSettingsLB.Location = New System.Drawing.Point(107, 408)
+        Me.availSettingsLB.Name = "availSettingsLB"
+        Me.availSettingsLB.Size = New System.Drawing.Size(362, 21)
+        Me.availSettingsLB.TabIndex = 6
+        '
+        'availSettLbl
+        '
+        Me.availSettLbl.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
+        Me.availSettLbl.AutoSize = True
+        Me.availSettLbl.Location = New System.Drawing.Point(5, 411)
+        Me.availSettLbl.Name = "availSettLbl"
+        Me.availSettLbl.Size = New System.Drawing.Size(96, 13)
+        Me.availSettLbl.TabIndex = 7
+        Me.availSettLbl.Text = "available Setttings:"
+        '
         'EditDBModifDef
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.CancelButton = Me.CancelBtn
-        Me.ClientSize = New System.Drawing.Size(674, 454)
+        Me.ClientSize = New System.Drawing.Size(664, 441)
         Me.ControlBox = False
+        Me.Controls.Add(Me.availSettLbl)
         Me.Controls.Add(Me.DBFskip)
         Me.Controls.Add(Me.doDBMOnSave)
         Me.Controls.Add(Me.EditBox)
         Me.Controls.Add(Me.PosIndex)
         Me.Controls.Add(Me.CancelBtn)
         Me.Controls.Add(Me.OKBtn)
+        Me.Controls.Add(Me.availSettingsLB)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
-        Me.MinimumSize = New System.Drawing.Size(690, 493)
+        Me.MinimumSize = New System.Drawing.Size(680, 480)
         Me.Name = "EditDBModifDef"
         Me.Text = "Edit DBModifier Definitions (CustomXML)"
         Me.ResumeLayout(False)
@@ -131,4 +155,6 @@ Partial Class EditDBModifDef
     Friend WithEvents doDBMOnSave As Windows.Forms.CheckBox
     Friend WithEvents DBFskip As Windows.Forms.CheckBox
     Friend WithEvents ToolTip1 As Windows.Forms.ToolTip
+    Friend WithEvents availSettingsLB As Windows.Forms.ComboBox
+    Friend WithEvents availSettLbl As Windows.Forms.Label
 End Class

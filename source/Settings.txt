@@ -1,0 +1,63 @@
+AdHocSQLTransferType
+AdHocSQLcmdDB + AdHocSQLStringsIndex.ToString()
+AdHocSQLcmdEnv + AdHocSQLStringsIndex.ToString()
+AltConnString + Globals.env()
+AltConnString + env
+AvoidUpdateLinks_Refresh
+AvoidUpdateListObjects_Refresh
+AvoidUpdatePivotTables_Refresh
+AvoidUpdateQueryTables_Refresh
+CmdTimeout
+CnnTimeout
+ConfigName + Globals.env()
+ConfigName + env
+ConfigName + i.ToString()
+ConfigSelect
+ConfigSelect + Globals.fetchSetting(ConfigSelectPreference)
+ConfigSelectPreference
+ConfigStoreFolder + Globals.env()
+ConnStringReplace + Globals.env()
+ConnStringReplace + env
+ConnStringSearch + Globals.env()
+ConnStringSearch + env
+ConstConnString + DBenv
+ConstConnString + Globals.env()
+ConstConnString + env
+ConstConnString + env.ToString()
+DBMapperCUDFlagStyle
+DBMapperStandardStyle
+DBSheetConnString + DBenv
+DBSheetDefinitions + Globals.env
+DBSheetDefinitions + myDBConnHelper.DBenv
+DBidentifierCCS + DBenv
+DBidentifierCCS + env.ToString()
+DBsheetAutoName
+DMLStatementsAllowed
+DebugAddin
+DefaultDBDateFormatting
+DefaultEnvironment
+DontChangeEnvironment
+ExcelVersionForPivot
+LocalHelp
+connIDPrefixDBtype
+dbGetAll + DBenv
+dbGetAllFieldName + DBenv
+dbPwdSpec + DBenv
+disableSettingsDisplay
+lastDBsheetAssignPath
+lastDBsheetCreatePath
+legacyFunctionMsg
+localUpdateFolder
+localUpdateMessage
+maxNumberMassChange
+maxRowCountCUD
+maxTriesForRevisionFind
+ownerQualifier + env.ToString()
+repairLegacyFunctionsAutoOpen
+specialConfigStoreFolders
+specialNonNullableChar + Globals.env()
+specialNonNullableChar + env.ToString
+tblPlaceHolder + Globals.env()
+tblPlaceHolder + env.ToString()
+updatesDownloadFolder
+updatesMajorVersion

@@ -735,6 +735,10 @@ Last:
         Dim foundLegacyFunc As Boolean = False
         Dim xlcalcmode As Long = ExcelDnaUtil.Application.Calculation
         Dim WbNames As Excel.Names
+
+        ' skip repair on auto open if explicitly set
+        If Not CBool(fetchSetting("repairLegacyFunctionsAutoOpen", "True")) AndAlso Not showResponse Then Exit Sub
+
         Try : WbNames = actWB.Names
         Catch ex As Exception
             LogWarn("Exception when trying to get Workbook names: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")

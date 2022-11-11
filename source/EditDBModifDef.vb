@@ -45,6 +45,10 @@ Public Class EditDBModifDef
                 Me.doDBMOnSave.CheckState = CheckState.Indeterminate
             End Try
         Else
+            Dim availableSettings As String() = Split(My.Resources.SchemaFiles.Settings, vbCrLf)
+            For Each settingLine As String In availableSettings
+                Me.availSettingsLB.Items.Add(settingLine)
+            Next
             ' show DBAddin settings (user/central/addin level): set the appropriate config xml into EditBox (depending on Me.Tag)
             ' get DBAddin user settings and display them
             ' find path of xll:
@@ -197,4 +201,17 @@ Public Class EditDBModifDef
     Private Sub EditBox_SelectionChanged(sender As Object, e As EventArgs) Handles EditBox.SelectionChanged
         Me.PosIndex.Text = "Line: " + (Me.EditBox.GetLineFromCharIndex(Me.EditBox.SelectionStart) + 1).ToString() + ", Column: " + (Me.EditBox.SelectionStart - Me.EditBox.GetFirstCharIndexOfCurrentLine + 1).ToString()
     End Sub
+
+    ''' <summary>adds the selected setting to the settings (at the end)</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub availSettingsLB_SelectedIndexChanged(sender As Object, e As EventArgs) Handles availSettingsLB.SelectedIndexChanged
+        Me.EditBox.Text = Me.EditBox.Text + vbCrLf + Me.EditBox.Lines(Me.EditBox.Lines.Length - 1)
+        Dim lines() As String = Me.EditBox.Lines
+        lines(Me.EditBox.Lines.Length - 2) = "<add key=""" + availSettingsLB.Text + """ value=""""/>"
+        Me.EditBox.Lines = lines
+        Me.EditBox.SelectionStart = Me.EditBox.Text.Length
+        Me.EditBox.ScrollToCaret()
+    End Sub
+
 End Class

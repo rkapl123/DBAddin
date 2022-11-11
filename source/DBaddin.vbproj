@@ -167,6 +167,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <SubType>Designer</SubType>
     </Content>
+    <None Include="Settings.txt" />
   </ItemGroup>
   <ItemGroup>
     <None Include="api\index.md" />

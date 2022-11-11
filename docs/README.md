@@ -94,6 +94,7 @@ Other settings possible in DBAddin.xll.config (or DBAddinCentral.config/DBaddinU
     <add key="localUpdateFolder" value="" />
     <add key="localUpdateMessage" value="New version available in local update folder, start deployAddin.cmd to install it:" />
     <add key="maxNumberMassChange" value="10" />
+    <add key="repairLegacyFunctionsAutoOpen" value="True" />
     <add key="updatesDownloadFolder" value="C:\temp\" />
     <add key="updatesMajorVersion" value="1.0.0." />
     <add key="updatesUrlBase" value="https://github.com/rkapl123/DBAddin/archive/refs/tags/" />
@@ -120,6 +121,7 @@ Explanation:
 *   `localUpdateFolder`: For updating the DB-Addin Version, you can provide an alternative folder, where the deploy script and the files are maintained for other users.
 *   `localUpdateMessage`: For the alternative folder update, you can also provide an alternative message to display.
 *   `maxNumberMassChange`: Threshold of Number of changes in CUDFlag DBMappers to issue a warning.
+*   `repairLegacyFunctionsAutoOpen`: Set this to False if legacy DB Addin functions should not be checked/repaired on auto open of workbooks.
 *   `updatesDownloadFolder`: You can specify a different download folder here instead of `C:\temp\`.
 *   `updatesMajorVersion`: Usually the versions are numbered 1.0.0.x, in case this is different, the Major Version can be overridden here.
 *   `updatesUrlBase`: Here, the URL base for the update zip packages can be overridden.
