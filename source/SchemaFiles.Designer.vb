@@ -138,9 +138,8 @@ Namespace My.Resources
         
         '''<summary>
         '''  Looks up a localized string similar to AdHocSQLTransferType
-        '''AdHocSQLcmdDB + AdHocSQLStringsIndex.ToString()
-        '''AdHocSQLcmdEnv + AdHocSQLStringsIndex.ToString()
-        '''AltConnString + Globals.env()
+        '''AdHocSQLcmdDB + AdHocSQLStringsIndex
+        '''AdHocSQLcmdEnv + AdHocSQLStringsIndex
         '''AltConnString + env
         '''AvoidUpdateLinks_Refresh
         '''AvoidUpdateListObjects_Refresh
@@ -148,13 +147,17 @@ Namespace My.Resources
         '''AvoidUpdateQueryTables_Refresh
         '''CmdTimeout
         '''CnnTimeout
-        '''ConfigName + Globals.env()
         '''ConfigName + env
-        '''ConfigName + i.ToString()
         '''ConfigSelect
-        '''ConfigSelect + Globals.fetchSetting(ConfigSelectPreference)
+        '''ConfigSelect + ConfigSelectPreference
         '''ConfigSelectPreference
-        '''ConfigStoreFolder + G [rest of string was truncated]&quot;;.
+        '''ConfigStoreFolder + env
+        '''ConnStringReplace + env
+        '''ConnStringSearch + env
+        '''ConstConnString + env
+        '''DBMapperCUDFlagStyle
+        '''DBMapperStandardStyle
+        '''DBSheetCo [rest of string was truncated]&quot;;.
         '''</summary>
         Public Shared ReadOnly Property Settings() As String
             Get

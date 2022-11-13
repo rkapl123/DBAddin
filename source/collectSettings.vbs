@@ -13,10 +13,16 @@ For Each inFile In fso.GetFolder(".").Files
 	For Each myMatch in myMatches 
 		For Each mySubMatch in myMatch.SubMatches
 			setting = Replace(mySubMatch, """", "")
+			setting = Replace(setting, "Globals.", "")
+			setting = Replace(setting, "()", "")
+			setting = Replace(setting, ".ToString", "")
+			setting = Replace(setting, "DBenv", "env")
+			setting = Replace(setting, "myDBConnHelper.", "")
+			setting = Replace(setting, "ConfigName + i", "ConfigName + env")
 			if not obj_datadict.exists(setting) then
-				if setting = "ConfigSelect + Globals.fetchSetting(ConfigSelectPreference" then
-					obj_datadict.add "ConfigSelect + Globals.fetchSetting(ConfigSelectPreference)", "ConfigSelect + Globals.fetchSetting(ConfigSelectPreference)"
-					setting = Replace(setting, "ConfigSelect + Globals.fetchSetting(", "")
+				if setting = "ConfigSelect + fetchSetting(ConfigSelectPreference" then
+					obj_datadict.add "ConfigSelect + ConfigSelectPreference", "ConfigSelect + ConfigSelectPreference"
+					setting = Replace(setting, "ConfigSelect + fetchSetting(", "")
 				end if
 				obj_datadict.add setting, setting
 			end if

@@ -41,7 +41,7 @@ Partial Class EditDBModifDef
         Me.OKBtn.Location = New System.Drawing.Point(536, 381)
         Me.OKBtn.Name = "OKBtn"
         Me.OKBtn.Size = New System.Drawing.Size(55, 23)
-        Me.OKBtn.TabIndex = 4
+        Me.OKBtn.TabIndex = 5
         Me.OKBtn.Text = "OK"
         Me.ToolTip1.SetToolTip(Me.OKBtn, "apply changes done in this dialog")
         Me.OKBtn.UseVisualStyleBackColor = True
@@ -112,8 +112,9 @@ Partial Class EditDBModifDef
         Me.availSettingsLB.FormattingEnabled = True
         Me.availSettingsLB.Location = New System.Drawing.Point(107, 408)
         Me.availSettingsLB.Name = "availSettingsLB"
-        Me.availSettingsLB.Size = New System.Drawing.Size(362, 21)
-        Me.availSettingsLB.TabIndex = 6
+        Me.availSettingsLB.Size = New System.Drawing.Size(323, 21)
+        Me.availSettingsLB.TabIndex = 5
+        Me.ToolTip1.SetToolTip(Me.availSettingsLB, "Select available Setting to insert into above configuration file")
         '
         'availSettLbl
         '
@@ -122,7 +123,7 @@ Partial Class EditDBModifDef
         Me.availSettLbl.Location = New System.Drawing.Point(5, 411)
         Me.availSettLbl.Name = "availSettLbl"
         Me.availSettLbl.Size = New System.Drawing.Size(96, 13)
-        Me.availSettLbl.TabIndex = 7
+        Me.availSettLbl.TabIndex = 0
         Me.availSettLbl.Text = "available Setttings:"
         '
         'EditDBModifDef
@@ -130,7 +131,7 @@ Partial Class EditDBModifDef
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.CancelButton = Me.CancelBtn
-        Me.ClientSize = New System.Drawing.Size(664, 441)
+        Me.ClientSize = New System.Drawing.Size(664, 464)
         Me.ControlBox = False
         Me.Controls.Add(Me.availSettLbl)
         Me.Controls.Add(Me.DBFskip)

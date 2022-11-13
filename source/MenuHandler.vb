@@ -180,7 +180,7 @@ Public Class MenuHandler
         Dim dialogResult As Windows.Forms.DialogResult = theAdHocSQLDlg.ShowDialog()
         ' reflect potential change in environment...
         theRibbon.InvalidateControl("envDropDown")
-        If dialogResult = System.Windows.Forms.DialogResult.OK Then
+        If dialogResult = System.Windows.Forms.DialogResult.OK Then 'OK is set when "transfer" is clicked
             ' "Transfer" was clicked: place SQL String into currently selected Cell/DBFunction and add to combobox
             queryString = theAdHocSQLDlg.SQLText.Text
             If theAdHocSQLDlg.TransferType.Text = "Cell" Then
@@ -240,10 +240,11 @@ Public Class MenuHandler
                 End If
                 ConfigFiles.createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBListFetch(""" + queryString + ""","""",R[1]C,,,TRUE,TRUE,TRUE)"})
             End If
-        ElseIf dialogResult = System.Windows.Forms.DialogResult.Cancel Then
+        ElseIf dialogResult = System.Windows.Forms.DialogResult.Cancel Then 'Cancel is set when "close" is clicked
             ' "Close" was clicked: only add SQL String to combobox
             queryString = Strings.Trim(theAdHocSQLDlg.SQLText.Text)
         End If
+        If selectedSQLText = "" Then selectedSQLText = queryString ' if adhoc SQL dialog was opened with mini button (fresh SQL) then set selectedSQLText here at least to the queryText to get the right index
 
         ' "Add" or "Transfer": store new sql command into AdHocSQLStrings and settings
         If Not AdHocSQLStrings.Contains(queryString) And Strings.Replace(queryString, " ", "") <> "" Then
@@ -270,7 +271,7 @@ Public Class MenuHandler
     End Sub
 
     Public Function GetAdhocSQLText(control As CustomUI.IRibbonControl)
-        If AdHocSQLStrings.Count > 0 Then
+        If AdHocSQLStrings.Count > 0 And selectedAdHocSQLIndex >= 0 Then
             Return AdHocSQLStrings(selectedAdHocSQLIndex)
         Else
             Return ""
