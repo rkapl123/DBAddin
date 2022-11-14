@@ -45,9 +45,9 @@ Public Class EditDBModifDef
                 Me.doDBMOnSave.CheckState = CheckState.Indeterminate
             End Try
         Else
-            Dim availableSettings As String() = Split(My.Resources.SchemaFiles.Settings, vbCrLf)
+            Dim availableSettings As String() = Split(My.Resources.SchemaFiles.Settings, vbLf) ' avoid dependency on vbCrLf being in the VS settings of Edit/Advanced/set End of Line Sequence
             For Each settingLine As String In availableSettings
-                Me.availSettingsLB.Items.Add(settingLine)
+                Me.availSettingsLB.Items.Add(settingLine.Replace(vbCr, "")) ' remove vbCr, if compiled with End of Line Sequence vbCrLf
             Next
             ' show DBAddin settings (user/central/addin level): set the appropriate config xml into EditBox (depending on Me.Tag)
             ' get DBAddin user settings and display them

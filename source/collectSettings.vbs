@@ -45,20 +45,12 @@ Function SortDictToArray(ByVal dict)
    arrKeys = dict.keys
    For i=0 To UBound(arrKeys)-1
         For j=i+1 To UBound(arrKeys)
-			'wscript.echo "before:" & printDict(arrKeys)
             If(arrKeys(i) >= arrKeys(j)) Then
                 temp = arrKeys(i)
                 arrKeys(i) = arrKeys(j)
                 arrKeys(j) = temp
-				'wscript.echo "after:" & printDict(arrKeys)
             End If
         Next
     Next
     SortDictToArray = arrKeys
-End Function
-
-Function printDict(ByVal arrKeys)
-	For i=0 to Ubound(arrKeys)-1
-		printDict = printDict & arrKeys(i) & chr(13)
-	Next
 End Function
