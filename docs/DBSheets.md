@@ -47,7 +47,7 @@ Non null-able columns have a darker pattern than null-able columns, this is howe
 
 Lookup columns are restricted with excel's cell validation, including a drop-down of allowed values.
 
-Data is changed simply by editing existing data in cells, this marks the row(s) to be changed at the rightmost end of the data table as (c)reated, (u)pdated or (i)nserted.
+Data is changed simply by editing existing data in cells, this marks the row(s) to be changed at the rightmost end of the data table as (i)nserted, (u)pdated or (d)eleted.
 
 Inserting is done by entering data into empty rows, either allowing the database to introduce a new primary key by leaving the primary column empty (only possible for singular primary keys) or by setting the primary key yourself. This marks the row(s) to be inserted.
 
@@ -177,6 +177,7 @@ The lookup resolution function checks for the existence in the lookup key/value 
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBSheetsNotExistingLookup.PNG)
 
+A word of warning on lookups in operational DBSheets: As it is possible to modify the properties of the List-Table object and the "Preserve column sort/filter/layout" setting is essential for the automatic filling of formulas, it should be taken into account when deselecting this setting that lookups won't be derived anymore for new rows. DB-Addin will re-add this setting for DBSheets with lookups on refresh however.
 
 #### Settings
 
