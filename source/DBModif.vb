@@ -518,6 +518,7 @@ Public Class DBMapper : Inherits DBModif
         Dim targetRangeRows As Integer = TargetRange.Rows.Count
         Dim targetRangeColumns As Integer = TargetRange.Columns.Count
         Dim sheetColumns As Integer = changedRange.Parent.Columns.Count
+
         ' sanity check for single cell DB Mappers..
         If targetRangeColumns = 1 And targetRangeRows = 1 Then
             Dim retval As MsgBoxResult = Globals.QuestionMsg("DB Mapper Range with CUD Flags is only one cell, really set CUD Flags ?",, "Set CUD Flags for DB Mapper")
@@ -541,6 +542,7 @@ Public Class DBMapper : Inherits DBModif
             Globals.UserMsg("Worksheet " + changedRange.Parent.Name + " is content protected, can't set CUD Flags !", "Set CUD Flags for DB Mapper")
             Exit Sub
         End If
+
         preventChangeWhileFetching = True
         ' DBMapper ranges relative to start of TargetRange and respecting a header row, so CUDMarkRow = changedRange.Row - TargetRange.Row + 1 ...
         Try
@@ -581,9 +583,7 @@ Public Class DBMapper : Inherits DBModif
                     Else
                         ' probably deleted with Ctrl & -, warn user...
                         Globals.UserMsg("Whole row modified, maybe you deleted a row with Ctrl & -. The row is not deleted in the database (use Ctrl-Shift-D), you can continue editing/saving or refresh the DB-Sheet with Ctrl-Shift-R (recommended).", "Set CUD Flags for DB Mapper", MsgBoxStyle.Exclamation)
-                        preventChangeWhileFetching = False
-                        ExcelDnaUtil.Application.Statusbar = False
-                        Exit Sub
+                        GoTo exitSub
                     End If
                 End If
 
@@ -618,6 +618,7 @@ Public Class DBMapper : Inherits DBModif
         Catch ex As Exception
             LogWarn("Exception in insertCUDMarks: " + ex.Message)
         End Try
+exitSub:
         preventChangeWhileFetching = False
         ExcelDnaUtil.Application.Statusbar = False
     End Sub

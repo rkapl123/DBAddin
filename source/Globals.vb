@@ -646,8 +646,10 @@ Last:
                         ' repair DBSheet auto-filling lookup functionality, in case it was lost due to accidental editing of these cells.
                         underlyingName = Replace(DBname.Name, "DBFsource", "DBFtarget", 1, , vbTextCompare)
                         Dim DBTargetListObject As Excel.ListObject = Nothing
+                        Dim DBSheetName As String = ""
                         Try : DBTargetListObject = ExcelDnaUtil.Application.Range(underlyingName).ListObject : Catch ex As Exception : End Try
-                        If Not IsNothing(DBTargetListObject) Then
+                        Try : DBSheetName = Left(DBModifs.getDBModifNameFromRange(DBTargetListObject.Range), 8) : Catch ex As Exception : End Try
+                        If Not IsNothing(DBTargetListObject) AndAlso DBSheetName = "DBMapper" Then
                             ' walk through all columns
                             For Each listcol As Excel.ListColumn In DBTargetListObject.ListColumns
                                 Dim colFormula As String = ""
@@ -658,7 +660,8 @@ Last:
                                     ' delete whole column
                                     listcol.DataBodyRange.Clear()
                                     ' re-insert the formula, this repairs the auto-filling functionality
-                                    listcol.DataBodyRange.Cells(1, 1).Formula = colFormula
+                                    listcol.DataBodyRange.Formula = colFormula
+                                    DBTargetListObject.QueryTable.PreserveColumnInfo = True ' if there is a lookup formula, always set this as it is required to fill it in automatically
                                     DBModifs.preventChangeWhileFetching = False
                                 End If
                             Next
