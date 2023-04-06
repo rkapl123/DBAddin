@@ -172,7 +172,7 @@ Public Class DBModifCreate
     Private Sub DBSeqenceDataGrid_CellMouseDown(sender As Object, e As DataGridViewCellMouseEventArgs) Handles DBSeqenceDataGrid.CellMouseDown
         selRowIndex = e.RowIndex
         selColIndex = e.ColumnIndex
-        If e.Button = Windows.Forms.MouseButtons.Right Then
+        If e.Button = System.Windows.Forms.MouseButtons.Right Then
             DBSeqenceDataGrid.ContextMenuStrip = MoveMenu
         End If
     End Sub

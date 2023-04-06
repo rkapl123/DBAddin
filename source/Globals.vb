@@ -304,7 +304,16 @@ Public Module Globals
                             Next
                         End If
                     Next
-                    If Not CBool(fetchSetting("AvoidUpdateLinks_Refresh", "False")) Then actWb.UpdateLink(Name:=actWb.LinkSources, Type:=Excel.XlLink.xlExcelLinks)
+                    If Not CBool(fetchSetting("AvoidUpdateLinks_Refresh", "False")) Then
+                        For Each linksrc As String In actWb.LinkSources(Excel.XlLink.xlExcelLinks)
+                            ' first check file existence to not run into excel opening a file dialog for missing files....
+                            If System.IO.File.Exists(linksrc) Then
+                                actWb.UpdateLink(Name:=linksrc, Type:=Excel.XlLink.xlExcelLinks)
+                            Else
+                                LogWarn("File " + linksrc + " doesn't exist, couldn't update excel links to it!")
+                            End If
+                        Next
+                    End If
                 Catch ex As Exception
                 End Try
             Else ' or called inside a db function area (target or source = function cell)
