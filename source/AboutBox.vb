@@ -216,7 +216,7 @@ Public NotInheritable Class AboutBox
     ''' <param name="e"></param>
     Private Sub EventLevels_SelectedValueChanged(sender As Object, e As EventArgs) Handles EventLevels.SelectedValueChanged
         If dontChangeEventLevels Then Exit Sub
-        Dim theEventTypeFilter As EventTypeFilter = New EventTypeFilter(SourceLevels.Off)
+        Dim theEventTypeFilter As New EventTypeFilter(SourceLevels.Off)
         Select Case EventLevels.SelectedItem
             Case "Information"
                 theEventTypeFilter = New EventTypeFilter(SourceLevels.Information)
@@ -255,15 +255,8 @@ Public NotInheritable Class AboutBox
         Me.Close()
     End Sub
 
-    ''' <summary>checks for updates of DB-Addin, asks for download and downloads them</summary>
-    ''' <param name="doUpdate">only display result of check (false) or actually perform the update and download new version (true)</param>
-    Public Sub checkForUpdate(doUpdate As Boolean)
-
-    End Sub
-
     Private Function ValidationCallbackHandler() As Boolean
         Return True
     End Function
-
 
 End Class

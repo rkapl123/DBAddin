@@ -176,7 +176,7 @@ Public Class MenuHandler
     Public Sub showDBAdHocSQL(control As CustomUI.IRibbonControl, selectedSQLText As String)
         Dim queryString As String = ""
 
-        Dim theAdHocSQLDlg As AdHocSQL = New AdHocSQL(selectedSQLText, AdHocSQLStrings.IndexOf(selectedSQLText))
+        Dim theAdHocSQLDlg As New AdHocSQL(selectedSQLText, AdHocSQLStrings.IndexOf(selectedSQLText))
         Dim dialogResult As Windows.Forms.DialogResult = theAdHocSQLDlg.ShowDialog()
         ' reflect potential change in environment...
         theRibbon.InvalidateControl("envDropDown")
@@ -391,7 +391,7 @@ Public Class MenuHandler
             Dim CustomXmlParts As Object = actWb.CustomXMLParts.SelectByNamespace("DBModifDef")
             ' check if any DBModifier exist below root node, only if at least one is defined, open dialog
             If CustomXmlParts(1).SelectNodes("/ns0:root/*").Count > 0 Then
-                Dim theEditDBModifDefDlg As EditDBModifDef = New EditDBModifDef()
+                Dim theEditDBModifDefDlg As New EditDBModifDef()
                 theEditDBModifDefDlg.availSettingsLB.Hide()
                 theEditDBModifDefDlg.availSettLbl.Hide()
                 If theEditDBModifDefDlg.ShowDialog() = System.Windows.Forms.DialogResult.OK Then DBModifs.getDBModifDefinitions()
@@ -522,7 +522,7 @@ Public Class MenuHandler
             Globals.UserMsg("Display of " + control.Id + " settings disabled !", "DBAddin Settings disabled", MsgBoxStyle.Information)
             Exit Sub
         End If
-        Dim theEditDBModifDefDlg As EditDBModifDef = New EditDBModifDef()
+        Dim theEditDBModifDefDlg As New EditDBModifDef()
         theEditDBModifDefDlg.DBFskip.Hide()
         theEditDBModifDefDlg.doDBMOnSave.Hide()
         theEditDBModifDefDlg.Tag = control.Id
@@ -542,7 +542,7 @@ Public Class MenuHandler
     ''' <summary>dialogBoxLauncher of DBAddin settings group: activate about box</summary>
     ''' <param name="control"></param>
     Public Sub showAbout(control As CustomUI.IRibbonControl)
-        Dim myAbout As AboutBox = New AboutBox
+        Dim myAbout As New AboutBox
         myAbout.ShowDialog()
         ' if quitting was chosen, then quit excel here..
         If myAbout.quitExcelAfterwards Then ExcelDnaUtil.Application.Quit()
@@ -682,7 +682,7 @@ Public Class MenuHandler
     ''' <summary>ribbon menu button for DBSheet creation start</summary>
     ''' <param name="control"></param>
     Public Sub clickCreateDBSheet(control As CustomUI.IRibbonControl)
-        Dim theDBSheetCreateForm As DBSheetCreateForm = New DBSheetCreateForm
+        Dim theDBSheetCreateForm As New DBSheetCreateForm
         theDBSheetCreateForm.Show()
     End Sub
 

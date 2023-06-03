@@ -206,9 +206,27 @@ Public Class EditDBModifDef
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub availSettingsLB_SelectedIndexChanged(sender As Object, e As EventArgs) Handles availSettingsLB.SelectedIndexChanged
+        Dim curLineBegin = 0
+        Dim settingKey As String = availSettingsLB.Text
+        settingKey = settingKey.Replace(" + env", Globals.env())
+        Me.EditBox.SelectAll()
+        Me.EditBox.SelectionBackColor = Me.EditBox.BackColor
+        For Each editBoxLine In Me.EditBox.Lines
+            If InStr(editBoxLine, "<add key=""" + settingKey + """") > 0 Then
+                Me.EditBox.SelectionStart = curLineBegin
+                Me.EditBox.SelectionLength = editBoxLine.Length + 1
+                Me.EditBox.SelectionBackColor = Drawing.Color.Yellow
+                Me.EditBox.ScrollToCaret()
+                Globals.UserMsg("Setting " + settingKey + " already exists in " + Me.Tag + " settings", "Edit DB Addin Settings")
+                Exit Sub
+            End If
+            curLineBegin += editBoxLine.Length + 1
+        Next
+        ' duplicate "</UserSettings>" at the end ...
         Me.EditBox.Text = Me.EditBox.Text + vbCrLf + Me.EditBox.Lines(Me.EditBox.Lines.Length - 1)
+        ' ... and replace the penultimate line with the new setting
         Dim lines() As String = Me.EditBox.Lines
-        lines(Me.EditBox.Lines.Length - 2) = "<add key=""" + availSettingsLB.Text + """ value=""""/>"
+        lines(Me.EditBox.Lines.Length - 2) = "    <add key=""" + settingKey + """ value=""""/>"
         Me.EditBox.Lines = lines
         Me.EditBox.SelectionStart = Me.EditBox.Text.Length
         Me.EditBox.ScrollToCaret()

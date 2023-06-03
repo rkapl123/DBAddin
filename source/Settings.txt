@@ -16,33 +16,36 @@ ConfigStoreFolder + env
 ConnStringReplace + env
 ConnStringSearch + env
 ConstConnString + env
-DBMapperCUDFlagStyle
-DBMapperStandardStyle
-DBSheetConnString + env
-DBSheetDefinitions + env
-DBidentifierCCS + env
-DBsheetAutoName
-DMLStatementsAllowed
-DebugAddin
-DefaultDBDateFormatting
-DefaultEnvironment
-DontChangeEnvironment
-ExcelVersionForPivot
-LocalHelp
 connIDPrefixDBtype
 dbGetAll + env
 dbGetAllFieldName + env
+DBidentifierCCS + env
+DBMapperCUDFlagStyle
+DBMapperStandardStyle
 dbPwdSpec + env
+DBSheetAutoName
+DBSheetConnString + env
+DBSheetDefinitions + env
+DebugAddin
+DefaultDBDateFormatting
+DefaultEnvironment
 disableSettingsDisplay
+DMLStatementsAllowed
+DontChangeEnvironment
+ExcelVersionForPivot
+LocalHelp
 lastDBsheetAssignPath
 lastDBsheetCreatePath
 legacyFunctionMsg
 localUpdateFolder
 localUpdateMessage
+maxCellCount
+maxCellCountIgnore
 maxNumberMassChange
 maxRowCountCUD
 maxTriesForRevisionFind
 ownerQualifier + env
+pivotTableCmdTextToSet + env
 repairLegacyFunctionsAutoOpen
 specialConfigStoreFolders
 specialNonNullableChar + env

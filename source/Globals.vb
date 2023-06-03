@@ -523,19 +523,20 @@ Public Module Globals
         fetchSubstr = Mid$(theString, fetchBeg + IIf(includeKeyStr, 0, Len(keystr)), fetchEnd - (fetchBeg + IIf(includeKeyStr, 0, Len(keystr))))
     End Function
 
-    ''' <summary>checks whether worksheet called theName exists</summary>
+    ''' <summary>checks whether worksheet called theName exists in workbook theWb</summary>
     ''' <param name="theName"></param>
+    ''' <param name="theWb"></param>
     ''' <returns>True if sheet exists</returns>
-    Public Function existsSheet(ByRef theName As String) As Boolean
+    Public Function existsSheet(ByRef theName As String, theWb As Excel.Workbook) As Boolean
         existsSheet = True
         Try
-            Dim dummy As String = ExcelDnaUtil.Application.Worksheets(theName).name
+            Dim dummy As String = theWb.Worksheets(theName).name
         Catch ex As Exception
             existsSheet = False
         End Try
     End Function
 
-    ''' <summary>helper function for check whether name exists in workbook</summary>
+    ''' <summary>helper function for check whether name exists in active workbook</summary>
     ''' <param name="CheckForName">name to be checked</param>
     ''' <returns>true if name exists</returns>
     Public Function existsName(CheckForName As String) As Boolean
@@ -543,6 +544,34 @@ Public Module Globals
         On Error GoTo Last
         If Len(ExcelDnaUtil.Application.ActiveWorkbook.Names(CheckForName).Name) <> 0 Then existsName = True
 Last:
+    End Function
+
+    ''' <summary>checks whether theName exists as a name in Workbook theWb</summary>
+    ''' <param name="theName"></param>
+    ''' <param name="theWb"></param>
+    ''' <returns>true if it exists</returns>
+    Public Function existsNameInWb(ByRef theName As String, theWb As Excel.Workbook) As Boolean
+        existsNameInWb = False
+        For Each aName As Excel.Name In theWb.Names()
+            If aName.Name = theName Then
+                existsNameInWb = True
+                Exit Function
+            End If
+        Next
+    End Function
+
+    ''' <summary>checks whether theName exists as a name in Worksheet theWs</summary>
+    ''' <param name="theName"></param>
+    ''' <param name="theWs"></param>
+    ''' <returns>true if it exists</returns>
+    Public Function existsNameInSheet(ByRef theName As String, theWs As Excel.Worksheet) As Boolean
+        existsNameInSheet = False
+        For Each aName As Excel.Name In theWs.Names()
+            If aName.Name = theWs.Name + "!" + theName Then
+                existsNameInSheet = True
+                Exit Function
+            End If
+        Next
     End Function
 
     ''' <summary>gets underlying DBtarget/DBsource Name from theRange</summary>
@@ -602,6 +631,50 @@ Last:
             UserMsg("Exception: " + ex.Message, "check Multiple DBRange Names")
         End Try
     End Function
+
+
+    ''' <summary>create a final connection string from passed String or number (environment), as well as a EnvPrefix for showing the environment (or set ConnString)</summary>
+    ''' <param name="ConnString">passed connection string or environment number, resolved (=returned) to actual connection string</param>
+    ''' <param name="EnvPrefix">prefix for showing environment (ConnString set if no environment)</param>
+    Public Sub resolveConnstring(ByRef ConnString As Object, ByRef EnvPrefix As String, getConnStrForDBSet As Boolean)
+        If Left(TypeName(ConnString), 10) = "ExcelError" Then Exit Sub
+        If TypeName(ConnString) = "ExcelReference" Then ConnString = ConnString.Value
+        If TypeName(ConnString) = "ExcelMissing" Then ConnString = ""
+        If TypeName(ConnString) = "ExcelEmpty" Then ConnString = ""
+        ' in case ConnString is a number (set environment, retrieve ConnString from Setting ConstConnString<Number>
+        If TypeName(ConnString) = "Double" Then
+            Dim env As String = ConnString.ToString()
+            EnvPrefix = "Env:" + Globals.fetchSetting("ConfigName" + env, "")
+            ConnString = Globals.fetchSetting("ConstConnString" + env, "")
+            If getConnStrForDBSet Then
+                ' if an alternate connection string is given, use this one...
+                Dim altConnString = Globals.fetchSetting("AltConnString" + env, "")
+                If altConnString <> "" Then
+                    ConnString = altConnString
+                Else
+                    ' To get the connection string work also for SQLOLEDB provider for SQL Server, change to ODBC driver setting (this can be generally used to fix connection string problems with ListObjects)
+                    ConnString = Replace(ConnString, Globals.fetchSetting("ConnStringSearch" + env, "provider=SQLOLEDB"), Globals.fetchSetting("ConnStringReplace" + env, "driver=SQL SERVER"))
+                End If
+            End If
+        ElseIf TypeName(ConnString) = "String" Then
+            If ConnString.ToString() = "" Then ' no ConnString or environment number set: get connection string of currently selected environment
+                EnvPrefix = "Env:" + Globals.fetchSetting("ConfigName" + Globals.env(), "")
+                ConnString = Globals.fetchSetting("ConstConnString" + Globals.env(), "")
+                If getConnStrForDBSet Then
+                    ' if an alternate connection string is given, use this one...
+                    Dim altConnString = Globals.fetchSetting("AltConnString" + Globals.env(), "")
+                    If altConnString <> "" Then
+                        ConnString = altConnString
+                    Else
+                        ' To get the connection string work also for SQLOLEDB provider for SQL Server, change to ODBC driver setting (this can be generally used to fix connection string problems with ListObjects)
+                        ConnString = Replace(ConnString, Globals.fetchSetting("ConnStringSearch" + Globals.env(), "provider=SQLOLEDB"), Globals.fetchSetting("ConnStringReplace" + Globals.env(), "driver=SQL SERVER"))
+                    End If
+                End If
+            Else
+                EnvPrefix = "ConnString set"
+            End If
+        End If
+    End Sub
 
     ''' <summary>converts a Mso Menu ID to a Drawing Image</summary>
     ''' <param name="idMso">the Mso Menu ID to be converted</param>
@@ -719,11 +792,11 @@ Last:
     ''' <param name="WBname"></param>
     Public Sub resetCachesForWorkbook(WBname As String)
         ' reset query cache for current workbook, so we really get new data !
-        Dim tempColl1 As Dictionary(Of String, String) = New Dictionary(Of String, String)(queryCache) ' clone dictionary to be able to remove items...
+        Dim tempColl1 As New Dictionary(Of String, String)(queryCache) ' clone dictionary to be able to remove items...
         For Each resetkey As String In tempColl1.Keys
             If InStr(resetkey, "[" + WBname + "]") > 0 Then queryCache.Remove(resetkey)
         Next
-        Dim tempColl2 As Dictionary(Of String, ContainedStatusMsg) = New Dictionary(Of String, ContainedStatusMsg)(StatusCollection)
+        Dim tempColl2 As New Dictionary(Of String, ContainedStatusMsg)(StatusCollection)
         For Each resetkey As String In tempColl2.Keys
             If InStr(resetkey, "[" + WBname + "]") > 0 Then StatusCollection.Remove(resetkey)
         Next
@@ -741,6 +814,23 @@ Last:
         End Try
     End Function
 
+    ''' <summary>converts a passed object (reference, value) to a boolean</summary>
+    ''' <param name="value">object to be converted</param>
+    ''' <returns>boolean result</returns>
+    Public Function convertToBool(value As Object) As Boolean
+        Dim tempBool As Boolean
+        If TypeName(value) = "String" Then
+            Dim success As Boolean = Boolean.TryParse(value, tempBool)
+            If Not success Then tempBool = False
+        ElseIf TypeName(value) = "Boolean" Then
+            tempBool = value
+        Else
+            tempBool = False
+        End If
+        Return tempBool
+    End Function
+
+    '''''''''''''''''''''''''''''''''''''''''''''''''' Supporting Tools ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
     ''' <summary>"repairs" legacy functions from old VB6-COM Addin by removing "DBAddin.Functions." before function name</summary>
     ''' <param name="showResponse">in case this is called interactively, provide a response in case of no legacy functions there</param>
     Public Sub repairLegacyFunctions(actWB As Excel.Workbook, Optional showResponse As Boolean = False)

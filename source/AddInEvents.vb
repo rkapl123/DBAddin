@@ -174,8 +174,8 @@ Public Class AddInEvents
         End If
 done:
         ' clear DB Functions content and refresh afterwards..
-        Dim DBFCContentColl As Collection = New Collection
-        Dim DBFCAllColl As Collection = New Collection
+        Dim DBFCContentColl As New Collection
+        Dim DBFCAllColl As New Collection
         Dim doRefreshDBFuncsAfterSave As Boolean = True
         ' first insert doc property information into collections for easier handling
         Try

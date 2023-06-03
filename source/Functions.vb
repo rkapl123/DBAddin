@@ -391,7 +391,7 @@ Public Module Functions
 
             ' first call: actually perform query
             If Not StatusCollection.ContainsKey(callID) Then
-                Dim statusCont As ContainedStatusMsg = New ContainedStatusMsg
+                Dim statusCont As New ContainedStatusMsg
                 StatusCollection.Add(callID, statusCont)
                 StatusCollection(callID).statusMsg = "" ' need this to prevent object not set errors in checkCache
                 ExcelAsyncUtil.QueueAsMacro(Sub()
@@ -596,7 +596,7 @@ Public Module Functions
 
             ' first call: actually perform query
             If Not StatusCollection.ContainsKey(callID) Then
-                Dim statusCont As ContainedStatusMsg = New ContainedStatusMsg
+                Dim statusCont As New ContainedStatusMsg
                 StatusCollection.Add(callID, statusCont)
                 StatusCollection(callID).statusMsg = "" ' need this to prevent object not set errors in checkCache
                 ExcelAsyncUtil.QueueAsMacro(Sub()
@@ -612,7 +612,7 @@ Public Module Functions
     End Function
 
     Public avoidRequeryDuringEdit As Boolean = False
-    Public queryBackupColl As Dictionary(Of String, String) = New Dictionary(Of String, String)
+    Public queryBackupColl As New Dictionary(Of String, String)
 
     ''' <summary>set Query parameters (query text and connection string) of Query List or pivot table (incl. chart)</summary>
     ''' <param name="callID">the key for the statusMsg container</param>
@@ -704,12 +704,12 @@ Public Module Functions
             Dim functionArgs = Globals.functionSplit(caller.Formula, ",", """", "DBListFetch", "(", ")")
             Dim targetRangeName As String : targetRangeName = functionArgs(2)
             ' check if fetched argument targetRangeName is really a name or just a plain range address
-            If Not existsNameInWb(targetRangeName, caller.Parent.Parent) And Not existsNameInSheet(targetRangeName, caller.Parent) Then targetRangeName = ""
+            If Not Globals.existsNameInWb(targetRangeName, caller.Parent.Parent) And Not Globals.existsNameInSheet(targetRangeName, caller.Parent) Then targetRangeName = ""
             ' get formula range name ...
             Dim formulaRangeName As String
             If UBound(functionArgs) > 2 Then
                 formulaRangeName = functionArgs(3)
-                If Not existsNameInWb(formulaRangeName, caller.Parent.Parent) And Not existsNameInSheet(formulaRangeName, caller.Parent) Then formulaRangeName = ""
+                If Not Globals.existsNameInWb(formulaRangeName, caller.Parent.Parent) And Not Globals.existsNameInSheet(formulaRangeName, caller.Parent) Then formulaRangeName = ""
             Else
                 formulaRangeName = ""
             End If
@@ -717,11 +717,17 @@ Public Module Functions
 
             ' first call: Status Container not set, actually perform query
             If Not StatusCollection.ContainsKey(callID) Then
-                Dim statusCont As ContainedStatusMsg = New ContainedStatusMsg
+                Dim statusCont As New ContainedStatusMsg
                 StatusCollection.Add(callID, statusCont)
-                ExcelAsyncUtil.QueueAsMacro(Sub()
-                                                DBListFetchAction(callID, CStr(Query), caller, ToRange(targetRange), CStr(ConnString), ToRange(formulaRange), extendDataArea, HeaderInfo, AutoFit, autoformat, ShowRowNums, targetRangeName, formulaRangeName)
-                                            End Sub)
+                If Globals.fetchSetting("useAltDBListFetch", "false") = "true" Then
+                    ExcelAsyncUtil.QueueAsMacro(Sub()
+                                                    DBListFetchActionAlt(callID, CStr(Query), caller, ToRange(targetRange), CStr(ConnString), ToRange(formulaRange), extendDataArea, HeaderInfo, AutoFit, autoformat, ShowRowNums, targetRangeName, formulaRangeName)
+                                                End Sub)
+                Else
+                    ExcelAsyncUtil.QueueAsMacro(Sub()
+                                                    DBListFetchAction(callID, CStr(Query), caller, ToRange(targetRange), CStr(ConnString), ToRange(formulaRange), extendDataArea, HeaderInfo, AutoFit, autoformat, ShowRowNums, targetRangeName, formulaRangeName)
+                                                End Sub)
+                End If
             End If
         Catch ex As Exception
             Globals.LogWarn(ex.Message + ", callID : " + callID)
@@ -730,18 +736,267 @@ Public Module Functions
         Globals.LogInfo("leaving function, callID: " + callID)
     End Function
 
-    Function convertToBool(value As Object) As Boolean
-        Dim tempBool As Boolean
-        If TypeName(value) = "String" Then
-            Dim success As Boolean = Boolean.TryParse(value, tempBool)
-            If Not success Then tempBool = False
-        ElseIf TypeName(value) = "Boolean" Then
-            tempBool = value
-        Else
-            tempBool = False
+    ''' <summary>Actually do the work for DBListFetch: Query list of data delimited by maxRows and maxCols, write it into targetCells
+    '''             additionally copy formulas contained in formulaRange and extend list depending on extendArea</summary>
+    ''' <param name="callID"></param>
+    ''' <param name="Query"></param>
+    ''' <param name="caller"></param>
+    ''' <param name="targetRange"></param>
+    ''' <param name="ConnString"></param>
+    ''' <param name="formulaRange"></param>
+    ''' <param name="extendArea"></param>
+    ''' <param name="HeaderInfo"></param>
+    ''' <param name="AutoFit"></param>
+    ''' <param name="autoformat"></param>
+    ''' <param name="ShowRowNumbers"></param>
+    ''' <param name="targetRangeName"></param>
+    ''' <param name="formulaRangeName"></param>
+    Public Sub DBListFetchActionAlt(callID As String, Query As String, caller As Excel.Range, targetRange As Excel.Range, ConnString As String, formulaRange As Object, extendArea As Integer, HeaderInfo As Boolean, AutoFit As Boolean, autoformat As Boolean, ShowRowNumbers As Boolean, targetRangeName As String, formulaRangeName As String)
+        Dim formulaFilledRange As Excel.Range = Nothing
+        Dim targetSH As Excel.Worksheet, formulaSH As Excel.Worksheet = Nothing
+        Dim NumFormat() As String = Nothing, NumFormatF() As String = Nothing
+        Dim headingOffset, rowDataStart, startRow, startCol, arrayCols, arrayRows, copyDown As Integer
+        Dim oldRows, oldCols, oldFRows, oldFCols, retrievedRows, targetColumns, formulaStart As Integer
+        Dim warning As String, errMsg As String
+
+        Globals.LogInfo("Entering DBListFetchAction: callID " + callID)
+
+        On Error Resume Next
+        Dim calcMode = ExcelDnaUtil.Application.Calculation
+        Dim scrnUpdate As Boolean = ExcelDnaUtil.Application.ScreenUpdating
+        ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual
+        ' this works around the data validation input bug and being called when COM Model is not ready
+        ' when selecting a value from a list of a validated field or being invoked from a hyperlink (e.g. word), excel won't react to
+        ' Application.Calculation changes, so just leave here...
+        If ExcelDnaUtil.Application.Calculation <> Excel.XlCalculation.xlCalculationManual Then
+            errMsg = "Error in setting Application.Calculation to Manual: " + Err.Description + " in query: " + Query
+            GoTo err_0
         End If
-        Return tempBool
-    End Function
+        ExcelDnaUtil.Application.Cursor = Excel.XlMousePointer.xlWait  ' show the hourglass
+        targetSH = targetRange.Parent
+        warning = ""
+
+        Dim srcExtent As String, targetExtent As String, targetExtentF As String
+        srcExtent = caller.Name.Name
+        If Err.Number <> 0 Or InStr(1, srcExtent, "DBFsource") = 0 Then
+            Err.Clear()
+            srcExtent = "DBFsource" + Replace(Guid.NewGuid().ToString(), "-", "")
+            caller.Name = srcExtent
+            If Err.Number <> 0 Then
+                errMsg = "Error in setting srcExtent name: " + Err.Description + " in query: " + Query
+                GoTo err_0
+            End If
+        End If
+        caller.Parent.Parent.Names(srcExtent).Visible = False
+        targetExtent = Replace(srcExtent, "DBFsource", "DBFtarget")
+        targetExtentF = Replace(srcExtent, "DBFsource", "DBFtargetF")
+
+        If formulaRange IsNot Nothing Then
+            formulaSH = formulaRange.Parent
+            ' only first row of formulaRange is important, rest will be autofilled down (actually this is needed to make the autoformat work)
+            formulaRange = formulaRange.Rows(1)
+        End If
+        Err.Clear()
+
+        startRow = targetRange.Cells(1, 1).Row : startCol = targetRange.Cells(1, 1).Column
+        If Err.Number <> 0 Then
+            errMsg = "Error in setting startRow/startCol: " + Err.Description + " in query: " + Query
+            GoTo err_0
+        End If
+
+        DBModifs.preventChangeWhileFetching = True
+        ' to prevent flickering...
+        ExcelDnaUtil.Application.ScreenUpdating = False
+        ' if formulas are adjacent to data extend total range to formula range ! total range is used to extend DBMappers defined under the DB Function target...
+        Dim additionalFormulaColumns As Integer = 0
+        If formulaRange IsNot Nothing Then
+            If targetSH Is formulaSH And formulaRange.Column = startCol + oldCols Then additionalFormulaColumns = formulaRange.Columns.Count
+        End If
+        Dim oldTotalTargetRange As Excel.Range = targetRange
+        If additionalFormulaColumns > 0 Then
+            oldTotalTargetRange = targetSH.Range(targetSH.Cells(startRow, startCol), targetSH.Cells(startRow + oldRows - 1, startCol + oldCols + additionalFormulaColumns))
+        End If
+
+        If Not IsNothing(formulaSH) Then
+            On Error Resume Next
+            oldFRows = formulaSH.Parent.Names(targetExtentF).RefersToRange.Rows.Count
+            oldFCols = formulaSH.Parent.Names(targetExtentF).RefersToRange.Columns.Count
+            If Err.Number = 0 And oldFRows > 2 Then
+                Err.Clear()
+                ' clear old formulas
+                formulaSH.Range(formulaSH.Cells(formulaRange.Row + 1, formulaRange.Column), formulaSH.Cells(formulaRange.Row + oldFRows - 1, formulaRange.Column + oldFCols - 1)).ClearContents()
+
+                If Err.Number <> 0 Then
+                    errMsg = "Error in clearing old data for formulaSH: (" + Err.Description + ") in query: " + Query
+                    GoTo err_0
+                End If
+            End If
+            Err.Clear()
+        End If
+
+        Dim ODBCconnString As String = ""
+        If InStr(1, UCase$(ConnString), ";ODBC;") > 0 Then
+            ODBCconnString = Mid$(ConnString, InStr(1, UCase$(ConnString), ";ODBC;") + 1)
+            ConnString = Left$(ConnString, InStr(1, UCase$(ConnString), ";ODBC;") - 1)
+        End If
+
+        ' check if formulaRange and targetRange overlap !
+        Dim possibleIntersection As Excel.Range = ExcelDnaUtil.Application.Intersect(formulaRange, targetSH.Range(targetRange.Cells(1, 1), targetRange.Cells(1, 1).Offset(arrayRows - 1, arrayCols - 1)))
+        Err.Clear()
+        If possibleIntersection IsNot Nothing Then
+            warning += ", formulaRange and targetRange intersect (" + targetSH.Name + "!" + possibleIntersection.Address + "), formula copying disabled !!"
+            formulaRange = Nothing
+        End If
+
+        Dim curSheet As Excel.Worksheet = ExcelDnaUtil.Application.ActiveSheet
+        targetSH.Activate()
+        Dim resultingQueryRange As Excel.Range
+        ' now fill in the data from the query
+        If ODBCconnString.Length > 0 Then
+            With targetSH.QueryTables.Add(Connection:=ODBCconnString, Destination:=targetRange)
+                .CommandText = Query
+                .FieldNames = HeaderInfo
+                .RowNumbers = ShowRowNumbers
+                .PreserveFormatting = True
+                .AdjustColumnWidth = False
+                .FillAdjacentFormulas = False
+                .BackgroundQuery = True
+                .RefreshStyle = Excel.XlCellInsertionMode.xlOverwriteCells
+                .RefreshPeriod = 0
+                .PreserveColumnInfo = True
+                .Refresh()
+                resultingQueryRange = .ResultRange
+            End With
+        Else
+            With targetSH.QueryTables.Add(Connection:=ConnString, Destination:=targetRange)
+                .FieldNames = HeaderInfo
+                .RowNumbers = ShowRowNumbers
+                .PreserveFormatting = True
+                .AdjustColumnWidth = False
+                .FillAdjacentFormulas = False
+                .BackgroundQuery = True
+                .RefreshStyle = Excel.XlCellInsertionMode.xlOverwriteCells   ' this is required to prevent "right" shifting of cells at the beginning !
+                .RefreshPeriod = 0
+                .PreserveColumnInfo = True
+                .Refresh()
+                resultingQueryRange = .ResultRange
+            End With
+        End If
+        If Err.Number <> 0 Then
+            errMsg = "Error in adding QueryTable: " + Err.Description + " in query: " + Query
+            GoTo err_0
+        End If
+
+        arrayRows = resultingQueryRange.Rows.Count
+        targetColumns = resultingQueryRange.Columns.Count
+        '''' formulas recreation (removal and autofill new ones)
+        If formulaRange IsNot Nothing Then
+            formulaSH = formulaRange.Parent
+            With formulaRange
+                If .Row < startRow + rowDataStart - 1 Then
+                    warning += "Error: formulaRange start above data-area, no formulas filled down !"
+                Else
+                    ' retrieve bottom of formula range
+                    ' check for excels boundaries !!
+                    If .Cells.Row + arrayRows > .EntireColumn.Rows.Count + 1 Then
+                        warning += ", formulas would exceed max row of excel: start row:" + formulaStart.ToString() + " + row count:" + arrayRows.ToString() + " > max row+1:" + (.EntireColumn.Rows.Count + 1).ToString()
+                        copyDown = .EntireColumn.Rows.Count
+                    Else
+                        'the normal end of our autofilled rows = formula start + list size,
+                        'reduced by offset of formula start and startRow if formulas start below data area top
+                        copyDown = .Cells.Row + arrayRows - 1 - IIf(.Cells.Row > startRow, .Cells.Row - startRow, 0)
+                    End If
+                    ' sanity check not to fill upwards !
+                    If copyDown > .Cells.Row Then .Cells.AutoFill(Destination:=formulaSH.Range(.Cells, formulaSH.Cells(copyDown, .Column + .Columns.Count - 1)))
+                    formulaFilledRange = formulaSH.Range(formulaSH.Cells(.Row, .Column), formulaSH.Cells(copyDown, .Column + .Columns.Count - 1))
+
+                    ' reassign internal name to changed formula area
+                    ' delete the name to have a "clean" name area (otherwise visible = false setting wont work for dataTargetRange)
+                    formulaFilledRange.Parent.Parent.Names(targetExtentF).Delete
+                    Err.Clear() ' might not exist, so ignore errors here...
+                    formulaFilledRange.Name = targetExtentF
+                    formulaFilledRange.Name.Visible = False
+                    ' reassign visible defined name to changed formula area only if defined...
+                    If formulaRangeName.Length > 0 Then
+                        formulaFilledRange.Name = formulaRangeName    ' NOT USING formulaFilledRange.Name.Visible = True, or hidden range will also be visible...
+                    End If
+                    If Err.Number <> 0 Then
+                        errMsg = "Error in (re)assigning formula range name: " + Err.Description + " in query: " + Query
+                        GoTo err_0
+                    End If
+                End If
+            End With
+        End If
+        If Err.Number <> 0 Then
+            errMsg = "Error in filling formulas: " + Err.Description + " in query: " + Query
+            GoTo err_0
+        End If
+
+        ' reassign name to changed data area
+        ' set the new hidden targetExtent name...
+        Dim newTargetRange As Excel.Range = targetSH.Range(targetSH.Cells(startRow, startCol), targetSH.Cells(startRow + arrayRows - 1, startCol + targetColumns))
+        Err.Clear() ' might not exist, so ignore errors here...
+
+        ' delete the name to have a "clean" name area (otherwise visible = false setting wont work for dataTargetRange)
+        newTargetRange.Name = targetExtent
+        newTargetRange.Parent.Parent.Names(targetExtent).Visible = False
+        Dim totalTargetRange As Excel.Range = newTargetRange
+        If additionalFormulaColumns > 0 Then
+            totalTargetRange = targetSH.Range(targetSH.Cells(startRow, startCol), targetSH.Cells(startRow + arrayRows - 1, startCol + targetColumns + additionalFormulaColumns))
+        End If
+        ' (re)assign visible name for the total area, if given
+        If targetRangeName.Length > 0 Then
+            totalTargetRange.Name = targetRangeName
+        End If
+
+        If Err.Number <> 0 Then
+            errMsg = "Error in (re)assigning data target name: " + Err.Description + " (maybe known issue with 'cell like' sheetnames, e.g. 'C701 country' ?) in query: " + Query
+            GoTo err_0
+        End If
+
+        ' if refreshed range is a DBMapper and it is in the current workbook, resize it
+        DBModifs.resizeDBMapperRange(totalTargetRange, oldTotalTargetRange)
+
+        '''' any warnings, errors ?
+        If warning.Length > 0 Then
+            If InStr(1, warning, "Error:") = 0 And InStr(1, warning, "No Data") = 0 Then
+                If Left$(warning, 1) = "," Then
+                    warning = Right$(warning, Len(warning) - 2)
+                End If
+                StatusCollection(callID).statusMsg = "Retrieved " + retrievedRows.ToString() + " record" + If(retrievedRows > 1, "s", "") + ", Warning: " + warning
+            Else
+                StatusCollection(callID).statusMsg = warning
+            End If
+        Else
+            StatusCollection(callID).statusMsg = "Retrieved " + retrievedRows.ToString() + " record" + If(retrievedRows > 1, "s", "") + " from: " + Query
+        End If
+
+        'auto fit columns AFTER autoformat so we don't have problems with applied formats visibility ...
+        If AutoFit Then
+            newTargetRange.Columns.AutoFit()
+            newTargetRange.Rows.AutoFit()
+
+            If formulaRange IsNot Nothing And formulaFilledRange IsNot ExcelEmpty.Value Then
+                If formulaFilledRange IsNot Nothing Then
+                    formulaFilledRange.Columns.AutoFit()
+                    formulaFilledRange.Rows.AutoFit()
+                End If
+            End If
+        End If
+        If Err.Number <> 0 Then
+            errMsg = "Error in autofitting: " + Err.Description + " in query: " + Query
+            GoTo err_0
+        End If
+        finishAction(calcMode, callID, scrnUpdate)
+        Exit Sub
+
+err_0:  If errMsg.Length = 0 Then errMsg = Err.Description + " in query: " + Query
+        Globals.LogWarn(errMsg + ", caller: " + callID)
+        If StatusCollection.ContainsKey(callID) Then StatusCollection(callID).statusMsg = errMsg
+        finishAction(calcMode, callID, scrnUpdate, "Error")
+        caller.Formula += " " ' recalculate to trigger return of error messages to calling function
+    End Sub
+
 
     ''' <summary>Actually do the work for DBListFetch: Query list of data delimited by maxRows and maxCols, write it into targetCells
     '''             additionally copy formulas contained in formulaRange and extend list depending on extendArea</summary>
@@ -1258,7 +1513,7 @@ err_0: ' errors where recordset was not opened or is already closed
 
             ' first call: actually perform query
             If Not StatusCollection.ContainsKey(callID) Then
-                Dim statusCont As ContainedStatusMsg = New ContainedStatusMsg
+                Dim statusCont As New ContainedStatusMsg
                 StatusCollection.Add(callID, statusCont)
                 StatusCollection(callID).statusMsg = "" ' need this to prevent object not set errors in checkCache
                 ExcelAsyncUtil.QueueAsMacro(Sub()
@@ -1601,78 +1856,6 @@ err_1:
         End If
     End Function
 
-
-    ''' <summary>create a final connection string from passed String or number (environment), as well as a EnvPrefix for showing the environment (or set ConnString)</summary>
-    ''' <param name="ConnString">passed connection string or environment number, resolved (=returned) to actual connection string</param>
-    ''' <param name="EnvPrefix">prefix for showing environment (ConnString set if no environment)</param>
-    Public Sub resolveConnstring(ByRef ConnString As Object, ByRef EnvPrefix As String, getConnStrForDBSet As Boolean)
-        If Left(TypeName(ConnString), 10) = "ExcelError" Then Exit Sub
-        If TypeName(ConnString) = "ExcelReference" Then ConnString = ConnString.Value
-        If TypeName(ConnString) = "ExcelMissing" Then ConnString = ""
-        If TypeName(ConnString) = "ExcelEmpty" Then ConnString = ""
-        ' in case ConnString is a number (set environment, retrieve ConnString from Setting ConstConnString<Number>
-        If TypeName(ConnString) = "Double" Then
-            Dim env As String = ConnString.ToString()
-            EnvPrefix = "Env:" + Globals.fetchSetting("ConfigName" + env, "")
-            ConnString = Globals.fetchSetting("ConstConnString" + env, "")
-            If getConnStrForDBSet Then
-                ' if an alternate connection string is given, use this one...
-                Dim altConnString = Globals.fetchSetting("AltConnString" + env, "")
-                If altConnString <> "" Then
-                    ConnString = altConnString
-                Else
-                    ' To get the connection string work also for SQLOLEDB provider for SQL Server, change to ODBC driver setting (this can be generally used to fix connection string problems with ListObjects)
-                    ConnString = Replace(ConnString, Globals.fetchSetting("ConnStringSearch" + env, "provider=SQLOLEDB"), Globals.fetchSetting("ConnStringReplace" + env, "driver=SQL SERVER"))
-                End If
-            End If
-        ElseIf TypeName(ConnString) = "String" Then
-            If ConnString.ToString() = "" Then ' no ConnString or environment number set: get connection string of currently selected environment
-                EnvPrefix = "Env:" + Globals.fetchSetting("ConfigName" + Globals.env(), "")
-                ConnString = Globals.fetchSetting("ConstConnString" + Globals.env(), "")
-                If getConnStrForDBSet Then
-                    ' if an alternate connection string is given, use this one...
-                    Dim altConnString = Globals.fetchSetting("AltConnString" + Globals.env(), "")
-                    If altConnString <> "" Then
-                        ConnString = altConnString
-                    Else
-                        ' To get the connection string work also for SQLOLEDB provider for SQL Server, change to ODBC driver setting (this can be generally used to fix connection string problems with ListObjects)
-                        ConnString = Replace(ConnString, Globals.fetchSetting("ConnStringSearch" + Globals.env(), "provider=SQLOLEDB"), Globals.fetchSetting("ConnStringReplace" + Globals.env(), "driver=SQL SERVER"))
-                    End If
-                End If
-            Else
-                EnvPrefix = "ConnString set"
-            End If
-        End If
-    End Sub
-
-    ''' <summary>checks whether theName exists as a name in Workbook theWb</summary>
-    ''' <param name="theName"></param>
-    ''' <param name="theWb"></param>
-    ''' <returns>true if it exists</returns>
-    Public Function existsNameInWb(ByRef theName As String, theWb As Excel.Workbook) As Boolean
-        existsNameInWb = False
-        For Each aName As Excel.Name In theWb.Names()
-            If aName.Name = theName Then
-                existsNameInWb = True
-                Exit Function
-            End If
-        Next
-    End Function
-
-    ''' <summary>checks whether theName exists as a name in Worksheet theWs</summary>
-    ''' <param name="theName"></param>
-    ''' <param name="theWs"></param>
-    ''' <returns>true if it exists</returns>
-    Public Function existsNameInSheet(ByRef theName As String, theWs As Excel.Worksheet) As Boolean
-        existsNameInSheet = False
-        For Each aName As Excel.Name In theWs.Names()
-            If aName.Name = theWs.Name + "!" + theName Then
-                existsNameInSheet = True
-                Exit Function
-            End If
-        Next
-    End Function
-
     ''' <summary>converts ExcelDna (C API) reference to excel (COM Based) Range</summary>
     ''' <param name="reference">reference to be converted</param>
     ''' <returns>range for passed reference</returns>
@@ -1686,4 +1869,5 @@ err_1:
         Dim ws As Excel.Worksheet = ExcelDnaUtil.Application.Workbooks(wbname).Worksheets(item)
         Return ws.Range(ws.Cells(reference.RowFirst + 1, reference.ColumnFirst + 1), ws.Cells(reference.RowLast + 1, reference.ColumnLast + 1))
     End Function
+
 End Module

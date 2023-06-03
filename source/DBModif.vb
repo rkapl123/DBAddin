@@ -250,11 +250,11 @@ Public MustInherit Class DBModif
                 End If
                 Dim targetRangeName As String : targetRangeName = functionArgs(2)
                 ' check if fetched argument targetRangeName is really a name or just a plain range address
-                If Not existsNameInWb(targetRangeName, caller.Parent.Parent) And Not existsNameInSheet(targetRangeName, caller.Parent) Then targetRangeName = ""
+                If Not Globals.existsNameInWb(targetRangeName, caller.Parent.Parent) And Not Globals.existsNameInSheet(targetRangeName, caller.Parent) Then targetRangeName = ""
                 Dim formulaRangeName As String
                 If UBound(functionArgs) > 2 Then
                     formulaRangeName = functionArgs(3)
-                    If Not existsNameInWb(formulaRangeName, caller.Parent.Parent) And Not existsNameInSheet(formulaRangeName, caller.Parent) Then formulaRangeName = ""
+                    If Not Globals.existsNameInWb(formulaRangeName, caller.Parent.Parent) And Not Globals.existsNameInSheet(formulaRangeName, caller.Parent) Then formulaRangeName = ""
                 Else
                     formulaRangeName = ""
                 End If
@@ -364,7 +364,7 @@ Public MustInherit Class DBModif
         If Integer.TryParse(ConnString, testInt) Then
             ConnString = Convert.ToDouble(testInt)
         End If
-        Functions.resolveConnstring(ConnString, EnvPrefix, getConnStrForDBSet)
+        Globals.resolveConnstring(ConnString, EnvPrefix, getConnStrForDBSet)
         getConnString = CStr(ConnString)
     End Function
 End Class
@@ -550,7 +550,7 @@ Public Class DBMapper : Inherits DBModif
                 ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = False ' to prevent automatic creation of new column
                 For Each changedRow As Excel.Range In changedRange.Rows
                     Dim CUDMarkRow As Integer = changedRow.Row - TargetRange.Row + 1
-                    If Not TargetRange.Cells(CUDMarkRow, targetRangeColumns + 1).Value Is Nothing Then Continue For
+                    If TargetRange.Cells(CUDMarkRow, targetRangeColumns + 1).Value IsNot Nothing Then Continue For
                     TargetRange.Cells(CUDMarkRow, targetRangeColumns + 1).Value = "d"
                     TargetRange.Rows(CUDMarkRow).Font.Strikethrough = True
                 Next
@@ -591,7 +591,7 @@ Public Class DBMapper : Inherits DBModif
                 For Each changedRow As Excel.Range In changedRange.Rows
                     Dim CUDMarkRow As Integer = changedRow.Row - TargetRange.Row + 1
                     ' change only if not already set. Do this here as it is faster then...
-                    If Not TargetRange.Cells(CUDMarkRow, targetRangeColumns + 1).Value Is Nothing Then Continue For
+                    If TargetRange.Cells(CUDMarkRow, targetRangeColumns + 1).Value IsNot Nothing Then Continue For
                     ' repair automatic copying down of patterns (non null columns) from header row in Listobjects done by Excel
                     If CUDMarkRow = 2 Then
                         With TargetRange.Rows(2).Interior
@@ -717,12 +717,12 @@ exitSub:
 
         ' set up data adapter and data set for checking DBMapper columns
         Dim da As Common.DbDataAdapter = Nothing
-        Dim dscheck As DataSet = New DataSet()
+        Dim dscheck As New DataSet()
         ExcelDnaUtil.Application.StatusBar = "initialising the Data Adapter"
         Try
             If TypeName(idbcnn) = "SqlConnection" Then
                 ' decent behaviour for SQL Server
-                Using comm As SqlClient.SqlCommand = New SqlClient.SqlCommand("SET ARITHABORT ON", idbcnn, DBModifs.trans)
+                Using comm As New SqlClient.SqlCommand("SET ARITHABORT ON", idbcnn, DBModifs.trans)
                     comm.ExecuteNonQuery()
                 End Using
                 da = New SqlClient.SqlDataAdapter(New SqlClient.SqlCommand("select * from " + tableName, idbcnn, DBModifs.trans)) With {
@@ -749,7 +749,7 @@ exitSub:
 
         ' get the DataTypeName from the database if it exists, so we have a more accurate type information for the parameterized commands (select/insert/update/delete)
         Dim schemaReader As Common.DbDataReader = Nothing
-        Dim schemaDataTypeCollection As Collection = New Collection
+        Dim schemaDataTypeCollection As New Collection
         Try
             schemaReader = da.SelectCommand.ExecuteReader()
             For Each schemaRow As DataRow In schemaReader.GetSchemaTable().Rows
@@ -824,7 +824,7 @@ exitSub:
         Next
 
         ' the actual dataset
-        Dim ds As DataSet = New DataSet()
+        Dim ds As New DataSet()
         ' replace the select command to avoid columns that are default filled but non-nullable (will produce errors if not assigned to new row)
         da.SelectCommand.CommandText = "SELECT " + String.Join(",", allColumnsStr) + " FROM " + tableName
         ' fill schema again to reflect the changed columns
@@ -1340,8 +1340,8 @@ Public Class DBSeqnce : Inherits DBModif
 
         ' reset the db connection in any case to allow for new connections at DBBegin
         idbcnn = Nothing
-        Dim executedDBMappers As Dictionary(Of String, Boolean) = New Dictionary(Of String, Boolean)
-        Dim modifiedDBMappers As Dictionary(Of String, Boolean) = New Dictionary(Of String, Boolean)
+        Dim executedDBMappers As New Dictionary(Of String, Boolean)
+        Dim modifiedDBMappers As New Dictionary(Of String, Boolean)
         For i As Integer = 0 To UBound(sequenceParams)
             Dim definition() As String = Split(sequenceParams(i), ":")
             Dim DBModiftype As String = definition(0)
@@ -1620,7 +1620,7 @@ Public Module DBModifs
         End If
 
         ' prepare DBModifier Create Dialog
-        Dim theDBModifCreateDlg As DBModifCreate = New DBModifCreate()
+        Dim theDBModifCreateDlg As New DBModifCreate()
         With theDBModifCreateDlg
             ' store DBModification type in tag for validation purposes...
             .Tag = createdDBModifType
@@ -1659,12 +1659,12 @@ Public Module DBModifs
                 .execOnSave.Anchor = AnchorStyles.Bottom Or AnchorStyles.Left
                 .AskForExecute.Anchor = AnchorStyles.Bottom Or AnchorStyles.Left
                 ' fill Datagridview for DBSequence
-                Dim cb As DataGridViewComboBoxColumn = New DataGridViewComboBoxColumn With {
+                Dim cb As New DataGridViewComboBoxColumn With {
                     .HeaderText = "Sequence Step",
                     .ReadOnly = False
                 }
                 cb.ValueType() = GetType(String)
-                Dim ds As List(Of String) = New List(Of String)
+                Dim ds As New List(Of String)
 
                 ' first add the DBMapper and DBAction definitions available in the Workbook
                 For Each DBModiftype As String In DBModifDefColl.Keys
@@ -2109,8 +2109,8 @@ Public Class CustomSqlCommandBuilder
     ''' <returns>SqlCommand for inserting</returns>
     Public Overrides Function InsertCommand() As Common.DbCommand
         Dim command As SqlClient.SqlCommand = GetTextCommand("")
-        Dim intoString As StringBuilder = New StringBuilder()
-        Dim valuesString As StringBuilder = New StringBuilder()
+        Dim intoString As New StringBuilder()
+        Dim valuesString As New StringBuilder()
         Dim autoincrementColumns As ArrayList = AutoincrementKeyColumns()
         For Each column As DataColumn In allColumns
             If Not autoincrementColumns.Contains(column) Then
@@ -2144,7 +2144,7 @@ Public Class CustomSqlCommandBuilder
     ''' <returns>SqlCommand for deleting</returns>
     Public Overrides Function DeleteCommand() As Common.DbCommand
         Dim command As SqlClient.SqlCommand = GetTextCommand("")
-        Dim whereString As StringBuilder = New StringBuilder()
+        Dim whereString As New StringBuilder()
         For Each column As DataColumn In dataTable.PrimaryKey
             If (whereString.Length > 0) Then
                 whereString.Append(" AND ")
@@ -2161,8 +2161,8 @@ Public Class CustomSqlCommandBuilder
     ''' <returns>SqlCommand for updating</returns>
     Public Overrides Function UpdateCommand() As Common.DbCommand
         Dim command As SqlClient.SqlCommand = GetTextCommand("")
-        Dim setString As StringBuilder = New StringBuilder()
-        Dim whereString As StringBuilder = New StringBuilder()
+        Dim setString As New StringBuilder()
+        Dim whereString As New StringBuilder()
 
         Dim primaryKeyColumns() As DataColumn = dataTable.PrimaryKey
         For Each column As DataColumn In allColumns
@@ -2187,7 +2187,7 @@ Public Class CustomSqlCommandBuilder
     End Function
 
     Private Function CreateOldParam(column As DataColumn) As SqlClient.SqlParameter
-        Dim sqlParam As SqlClient.SqlParameter = New SqlClient.SqlParameter()
+        Dim sqlParam As New SqlClient.SqlParameter()
         Dim columnName As String = column.ColumnName
         sqlParam.ParameterName = "@old" + columnName
         sqlParam.SourceColumn = columnName
@@ -2197,7 +2197,7 @@ Public Class CustomSqlCommandBuilder
     End Function
 
     Private Function CreateParam(column As DataColumn) As SqlClient.SqlParameter
-        Dim sqlParam As SqlClient.SqlParameter = New SqlClient.SqlParameter()
+        Dim sqlParam As New SqlClient.SqlParameter()
         Dim columnName As String = column.ColumnName
         sqlParam.ParameterName = "@" + columnName
         sqlParam.SourceColumn = columnName
@@ -2206,7 +2206,7 @@ Public Class CustomSqlCommandBuilder
     End Function
 
     Private Function GetTextCommand(text As String) As SqlClient.SqlCommand
-        Dim command As SqlClient.SqlCommand = New SqlClient.SqlCommand With {
+        Dim command As New SqlClient.SqlCommand With {
             .CommandType = CommandType.Text,
             .CommandText = text,
             .Connection = connection
@@ -2236,8 +2236,8 @@ Public Class CustomOdbcCommandBuilder
     ''' <returns>OdbcCommand for inserting</returns>
     Public Overrides Function InsertCommand() As Common.DbCommand
         Dim command As Odbc.OdbcCommand = GetTextCommand("")
-        Dim intoString As StringBuilder = New StringBuilder()
-        Dim valuesString As StringBuilder = New StringBuilder()
+        Dim intoString As New StringBuilder()
+        Dim valuesString As New StringBuilder()
         Dim autoincrementColumns As ArrayList = AutoincrementKeyColumns()
         For Each column As DataColumn In allColumns
             If Not autoincrementColumns.Contains(column) Then
@@ -2271,7 +2271,7 @@ Public Class CustomOdbcCommandBuilder
     ''' <returns>OdbcCommand for deleting</returns>
     Public Overrides Function DeleteCommand() As Common.DbCommand
         Dim command As Odbc.OdbcCommand = GetTextCommand("")
-        Dim whereString As StringBuilder = New StringBuilder()
+        Dim whereString As New StringBuilder()
         For Each column As DataColumn In dataTable.PrimaryKey
             If (whereString.Length > 0) Then
                 whereString.Append(" AND ")
@@ -2288,8 +2288,8 @@ Public Class CustomOdbcCommandBuilder
     ''' <returns>OdbcCommand for updating</returns>
     Public Overrides Function UpdateCommand() As Common.DbCommand
         Dim command As Odbc.OdbcCommand = GetTextCommand("")
-        Dim setString As StringBuilder = New StringBuilder()
-        Dim whereString As StringBuilder = New StringBuilder()
+        Dim setString As New StringBuilder()
+        Dim whereString As New StringBuilder()
 
         Dim primaryKeyColumns() As DataColumn = dataTable.PrimaryKey
         For Each column As DataColumn In allColumns
@@ -2314,7 +2314,7 @@ Public Class CustomOdbcCommandBuilder
     End Function
 
     Private Function CreateOldParam(column As DataColumn) As Odbc.OdbcParameter
-        Dim sqlParam As Odbc.OdbcParameter = New Odbc.OdbcParameter()
+        Dim sqlParam As New Odbc.OdbcParameter()
         Dim columnName As String = column.ColumnName
         sqlParam.ParameterName = "@old" + columnName
         sqlParam.SourceColumn = columnName
@@ -2324,7 +2324,7 @@ Public Class CustomOdbcCommandBuilder
     End Function
 
     Private Function CreateParam(column As DataColumn) As Odbc.OdbcParameter
-        Dim sqlParam As Odbc.OdbcParameter = New Odbc.OdbcParameter()
+        Dim sqlParam As New Odbc.OdbcParameter()
         Dim columnName As String = column.ColumnName
         sqlParam.ParameterName = "@" + columnName
         sqlParam.SourceColumn = columnName
@@ -2333,7 +2333,7 @@ Public Class CustomOdbcCommandBuilder
     End Function
 
     Private Function GetTextCommand(text As String) As Odbc.OdbcCommand
-        Dim command As Odbc.OdbcCommand = New Odbc.OdbcCommand With {
+        Dim command As New Odbc.OdbcCommand With {
             .CommandType = CommandType.Text,
             .CommandText = text,
             .Connection = connection
@@ -2362,8 +2362,8 @@ Public Class CustomOleDbCommandBuilder
     ''' <returns>OleDbCommand for inserting</returns>
     Public Overrides Function InsertCommand() As Common.DbCommand
         Dim command As OleDb.OleDbCommand = GetTextCommand("")
-        Dim intoString As StringBuilder = New StringBuilder()
-        Dim valuesString As StringBuilder = New StringBuilder()
+        Dim intoString As New StringBuilder()
+        Dim valuesString As New StringBuilder()
         Dim autoincrementColumns As ArrayList = AutoincrementKeyColumns()
         For Each column As DataColumn In allColumns
             If Not autoincrementColumns.Contains(column) Then
@@ -2397,7 +2397,7 @@ Public Class CustomOleDbCommandBuilder
     ''' <returns>OleDbCommand for deleting</returns>
     Public Overrides Function DeleteCommand() As Common.DbCommand
         Dim command As OleDb.OleDbCommand = GetTextCommand("")
-        Dim whereString As StringBuilder = New StringBuilder()
+        Dim whereString As New StringBuilder()
         For Each column As DataColumn In dataTable.PrimaryKey
             If (whereString.Length > 0) Then
                 whereString.Append(" AND ")
@@ -2414,8 +2414,8 @@ Public Class CustomOleDbCommandBuilder
     ''' <returns>OleDbCommand for updating</returns>
     Public Overrides Function UpdateCommand() As Common.DbCommand
         Dim command As OleDb.OleDbCommand = GetTextCommand("")
-        Dim setString As StringBuilder = New StringBuilder()
-        Dim whereString As StringBuilder = New StringBuilder()
+        Dim setString As New StringBuilder()
+        Dim whereString As New StringBuilder()
 
         Dim primaryKeyColumns() As DataColumn = dataTable.PrimaryKey
         For Each column As DataColumn In allColumns
@@ -2440,7 +2440,7 @@ Public Class CustomOleDbCommandBuilder
     End Function
 
     Private Function CreateOldParam(column As DataColumn) As OleDb.OleDbParameter
-        Dim sqlParam As OleDb.OleDbParameter = New OleDb.OleDbParameter()
+        Dim sqlParam As New OleDb.OleDbParameter()
         Dim columnName As String = column.ColumnName
         sqlParam.ParameterName = "@old" + columnName
         sqlParam.SourceColumn = columnName
@@ -2450,7 +2450,7 @@ Public Class CustomOleDbCommandBuilder
     End Function
 
     Private Function CreateParam(column As DataColumn) As OleDb.OleDbParameter
-        Dim sqlParam As OleDb.OleDbParameter = New OleDb.OleDbParameter()
+        Dim sqlParam As New OleDb.OleDbParameter()
         Dim columnName As String = column.ColumnName
         sqlParam.ParameterName = "@" + columnName
         sqlParam.SourceColumn = columnName
@@ -2459,7 +2459,7 @@ Public Class CustomOleDbCommandBuilder
     End Function
 
     Private Function GetTextCommand(text As String) As OleDb.OleDbCommand
-        Dim command As OleDb.OleDbCommand = New OleDb.OleDbCommand With {
+        Dim command As New OleDb.OleDbCommand With {
             .CommandType = CommandType.Text,
             .CommandText = text,
             .Connection = connection

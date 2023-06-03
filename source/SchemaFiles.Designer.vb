@@ -155,9 +155,9 @@ Namespace My.Resources
         '''ConnStringReplace + env
         '''ConnStringSearch + env
         '''ConstConnString + env
-        '''DBMapperCUDFlagStyle
-        '''DBMapperStandardStyle
-        '''DBSheetCo [rest of string was truncated]&quot;;.
+        '''connIDPrefixDBtype
+        '''dbGetAll + env
+        '''dbGetAllFieldName  [rest of string was truncated]&quot;;.
         '''</summary>
         Public Shared ReadOnly Property Settings() As String
             Get

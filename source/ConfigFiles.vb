@@ -157,16 +157,26 @@ Public Module ConfigFiles
         Dim altConnString = Globals.fetchSetting("AltConnString" + Globals.env(), "")
         ' for standard connection strings only OLEDB drivers seem to work with pivot tables...
         If altConnString = "" Then altConnString = "OLEDB;" + Globals.ConstConnString
-        Dim ExcelVersionForPivot As Excel.XlPivotTableVersionList = CInt(fetchSetting("ExcelVersionForPivot", "7"))
+        Dim ExcelVersionForPivot As Excel.XlPivotTableVersionList = CInt(fetchSetting("ExcelVersionForPivot", "8"))
         Try
-            pivotcache = ExcelDnaUtil.Application.ActiveWorkbook.PivotCaches.Create(SourceType:=Excel.XlPivotTableSourceType.xlExternal, Version:=ExcelVersionForPivot)
             ' don't use TargetCell.Parent.Parent.PivotCaches().Add(Excel.XlPivotTableSourceType.xlExternal) as we can't set the Version there...
+            pivotcache = ExcelDnaUtil.Application.ActiveWorkbook.PivotCaches.Create(SourceType:=Excel.XlPivotTableSourceType.xlExternal, Version:=ExcelVersionForPivot)
+        Catch ex As Exception
+            Globals.UserMsg("Exception creating pivot cache: " + ex.Message + ", if the reason was 'wrong parameter', change setting ExcelVersionForPivot to a lower/correct value (see help)", "Create Pivot Table")
+        End Try
+        Try
             pivotcache.Connection = altConnString
             pivotcache.MaintainConnection = False
-            pivotcache.CommandText = "select CURRENT_TIMESTAMP" ' this should be sufficient for most databases
+        Catch ex As Exception
+            Globals.UserMsg("Exception setting connection string for pivot cache: " + ex.Message, "Create Pivot Table")
+        End Try
+        ' set a minimum command text that should be sufficient for the database engine
+        Dim pivotTableCmdTextToSet As String = Globals.fetchSetting("pivotTableCmdTextToSet" + Globals.env(), "select 1")
+        Try
+            pivotcache.CommandText = pivotTableCmdTextToSet
             pivotcache.CommandType = Excel.XlCmdType.xlCmdSql
         Catch ex As Exception
-            Globals.UserMsg("Exception creating pivot cache: " + ex.Message + " (if the reason was a too high Excel Version for the Pivot table, change this with setting ExcelVersionForPivot)", "Create Pivot Table")
+            Globals.UserMsg("Exception setting CommandText '" + pivotTableCmdTextToSet + "' for pivot cache: " + ex.Message, "Create Pivot Table")
         End Try
 
         Try
@@ -354,7 +364,7 @@ Public Module ConfigFiles
             Static MenuFolderDepth As Integer = 1 ' needed to not exceed max. menu depth (currently 5)
 
             ' read all leaf node entries (files) and sort them by name to create action menus
-            Dim di As DirectoryInfo = New DirectoryInfo(rootPath)
+            Dim di As New DirectoryInfo(rootPath)
             Dim fileList() As FileSystemInfo = di.GetFileSystemInfos("*.xcl").OrderBy(Function(fi) fi.Name).ToArray()
             If fileList.Length > 0 Then
                 ' for special folders split menu further into camelcase (or other special) separated names

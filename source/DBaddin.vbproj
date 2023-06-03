@@ -78,18 +78,18 @@
     </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="Microsoft.Office.Interop.Excel, Version=15.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
-      <HintPath>packages\ExcelDna.Interop.15.0.0\lib\net452\Microsoft.Office.Interop.Excel.dll</HintPath>
+      <HintPath>packages\ExcelDna.Interop.15.0.1\lib\net452\Microsoft.Office.Interop.Excel.dll</HintPath>
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </Reference>
     <Reference Include="Microsoft.Vbe.Interop, Version=15.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
-      <HintPath>packages\ExcelDna.Interop.15.0.0\lib\net452\Microsoft.Vbe.Interop.dll</HintPath>
+      <HintPath>packages\ExcelDna.Interop.15.0.1\lib\net452\Microsoft.Vbe.Interop.dll</HintPath>
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </Reference>
     <Reference Include="Microsoft.Vbe.Interop.Forms, Version=11.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </Reference>
     <Reference Include="Office, Version=15.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
-      <HintPath>packages\ExcelDna.Interop.15.0.0\lib\net452\Office.dll</HintPath>
+      <HintPath>packages\ExcelDna.Interop.15.0.1\lib\net452\Office.dll</HintPath>
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </Reference>
     <Reference Include="stdole, Version=7.0.3300.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
@@ -219,6 +219,7 @@
       <CustomToolNamespace>My.Resources</CustomToolNamespace>
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>SchemaFiles.Designer.vb</LastGenOutput>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />
@@ -231,17 +232,17 @@
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('packages\docfx.console.2.59.0\build\docfx.console.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\docfx.console.2.59.0\build\docfx.console.targets'))" />
-    <Error Condition="!Exists('packages\ExcelDna.Interop.15.0.0\build\ExcelDna.Interop.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\ExcelDna.Interop.15.0.0\build\ExcelDna.Interop.targets'))" />
     <Error Condition="!Exists('packages\ExcelDna.AddIn.1.6.0\build\ExcelDna.AddIn.props')" Text="$([System.String]::Format('$(ErrorText)', 'packages\ExcelDna.AddIn.1.6.0\build\ExcelDna.AddIn.props'))" />
     <Error Condition="!Exists('packages\ExcelDna.AddIn.1.6.0\build\ExcelDna.AddIn.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\ExcelDna.AddIn.1.6.0\build\ExcelDna.AddIn.targets'))" />
+    <Error Condition="!Exists('packages\ExcelDna.Interop.15.0.1\build\ExcelDna.Interop.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\ExcelDna.Interop.15.0.1\build\ExcelDna.Interop.targets'))" />
   </Target>
   <PropertyGroup>
     <PreBuildEvent>
     </PreBuildEvent>
   </PropertyGroup>
   <Import Project="packages\docfx.console.2.59.0\build\docfx.console.targets" Condition="Exists('packages\docfx.console.2.59.0\build\docfx.console.targets')" />
-  <Import Project="packages\ExcelDna.Interop.15.0.0\build\ExcelDna.Interop.targets" Condition="Exists('packages\ExcelDna.Interop.15.0.0\build\ExcelDna.Interop.targets')" />
   <Import Project="packages\ExcelDna.AddIn.1.6.0\build\ExcelDna.AddIn.targets" Condition="Exists('packages\ExcelDna.AddIn.1.6.0\build\ExcelDna.AddIn.targets')" />
+  <Import Project="packages\ExcelDna.Interop.15.0.1\build\ExcelDna.Interop.targets" Condition="Exists('packages\ExcelDna.Interop.15.0.1\build\ExcelDna.Interop.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

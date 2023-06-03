@@ -113,7 +113,7 @@ Public Module DBSheetConfig
             Dim selectPartModif As String = selectPart ' select part with appending LU to lookups
             If lookupsList IsNot Nothing Then
                 ' get existing sheet DBSheetLookups, if it doesn't exist create it anew
-                If Not Globals.existsSheet("DBSheetLookups") Then
+                If Not Globals.existsSheet("DBSheetLookups", ExcelDnaUtil.Application.ActiveWorkbook) Then
                     lookupWS = ExcelDnaUtil.Application.ActiveWorkbook.Worksheets.Add()
                     lookupWS.Name = "DBSheetLookups"
                 Else
@@ -122,7 +122,7 @@ Public Module DBSheetConfig
                 ' add lookup Queries in separate sheet
                 Dim lookupCol As Integer = 1
                 For Each LookupDef As String In lookupsList
-                    ' fetch Lookupquery and get rid of template table def
+                    ' fetch Lookup query and get rid of template table def
                     Dim LookupQuery As String = Replace(getEntry("lookup", LookupDef, 1), tblPlaceHolder, "LT")
                     Dim lookupName As String = Replace(getEntry("name", LookupDef, 1), specialNonNullableChar, "")
                     Dim lookupRangeName As String = tableName + lookupName + "Lookup"
@@ -281,7 +281,7 @@ Public Module DBSheetConfig
             Exit Sub
         End If
         ' name the worksheet to tableName, if defined in the settings
-        If CBool(Globals.fetchSetting("DBsheetAutoName", "False")) Then
+        If CBool(Globals.fetchSetting("DBSheetAutoName", "False")) Then
             Try
                 curCell.Parent.Name = Left(tableName, 31)
             Catch ex As Exception
