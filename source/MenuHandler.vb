@@ -66,7 +66,7 @@ Public Class MenuHandler
         Next
         customUIXml += "<dialogBoxLauncher><button id='DBModifEdit' label='DBModif design' onAction='showDBModifEdit' screentip='Show/edit DBModif Definitions of current workbook'/></dialogBoxLauncher>" +
         "</group></tab></tabs></ribbon>"
-        ' Context menus for refresh, jump and creation: in cell, row, column and ListRange (area of ListObjects)
+        ' Context menus for refresh, jump and creation: in cell, row, column, pivot table, ListRange (area of ListObjects) and query area
         customUIXml +=
         "<contextMenus>" +
             "<contextMenu idMso ='ContextMenuCell'>" +
@@ -139,6 +139,24 @@ Public Class MenuHandler
                     "<button id='DBSequenceLL' tag='DBSeqnce' label='DBSequence' imageMso='ShowOnNewButton' onAction='clickCreateButton'/>" +
                 "</menu>" +
                 "<menuSeparator id='MySeparatorLL' insertBeforeMso='Cut'/>" +
+            "</contextMenu>" +
+            "<contextMenu idMso='ContextMenuQuery'>" +
+                "<button id='refreshDataQ' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
+                "<button id='gotoDBFuncQ' label='jump to DBFunc/target (Ctl-Sh-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
+                "<menu id='createMenuQ' label='Insert/Edit DBFunc/DBModif' insertBeforeMso='Cut'>" +
+                    "<button id='DBMapperQ' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
+                    "<button id='DBSequenceQ' tag='DBSeqnce' label='DBSequence' imageMso='ShowOnNewButton' onAction='clickCreateButton'/>" +
+                "</menu>" +
+                "<menuSeparator id='MySeparatorQ' insertBeforeMso='Cut'/>" +
+            "</contextMenu>" +
+            "<contextMenu idMso='ContextMenuQueryLayout'>" +
+                "<button id='refreshDataQL' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Cut'/>" +
+                "<button id='gotoDBFuncQL' label='jump to DBFunc/target (Ctl-Sh-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Cut'/>" +
+                "<menu id='createMenuQL' label='Insert/Edit DBFunc/DBModif' insertBeforeMso='Cut'>" +
+                    "<button id='DBMapperQL' tag='DBMapper' label='DBMapper' imageMso='TableSave' onAction='clickCreateButton'/>" +
+                    "<button id='DBSequenceQL' tag='DBSeqnce' label='DBSequence' imageMso='ShowOnNewButton' onAction='clickCreateButton'/>" +
+                "</menu>" +
+                "<menuSeparator id='MySeparatorQL' insertBeforeMso='Cut'/>" +
             "</contextMenu>" +
         "</contextMenus></customUI>"
         Return customUIXml
