@@ -111,6 +111,7 @@ Partial Class EditDBModifDef
         Me.availSettingsLB.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
         Me.availSettingsLB.FormattingEnabled = True
         Me.availSettingsLB.Location = New System.Drawing.Point(107, 408)
+        Me.availSettingsLB.MaxDropDownItems = 30
         Me.availSettingsLB.Name = "availSettingsLB"
         Me.availSettingsLB.Size = New System.Drawing.Size(323, 21)
         Me.availSettingsLB.TabIndex = 5

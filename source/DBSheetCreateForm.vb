@@ -30,61 +30,61 @@ Public Class DBSheetCreateForm
         Lenvironment.Text = "Environment: " + Globals.fetchSetting("ConfigName" + Globals.env(), "")
 
         ' set up columns for DBSheetCols gridview
-        Dim nameCB As DataGridViewComboBoxColumn = New DataGridViewComboBoxColumn With {
+        Dim nameCB As New DataGridViewComboBoxColumn With {
                     .Name = "name",
                     .DataSource = New List(Of String),
                     .HeaderText = "name",
                     .DataPropertyName = "name",
                     .SortMode = DataGridViewColumnSortMode.NotSortable
                 }
-        Dim ftableCB As DataGridViewComboBoxColumn = New DataGridViewComboBoxColumn With {
+        Dim ftableCB As New DataGridViewComboBoxColumn With {
                     .Name = "ftable",
                     .DataSource = New List(Of String),
                     .HeaderText = "ftable",
                     .DataPropertyName = "ftable",
                     .SortMode = DataGridViewColumnSortMode.NotSortable
                 }
-        Dim fkeyCB As DataGridViewComboBoxColumn = New DataGridViewComboBoxColumn With {
+        Dim fkeyCB As New DataGridViewComboBoxColumn With {
                     .Name = "fkey",
                     .DataSource = New List(Of String),
                     .HeaderText = "fkey",
                     .DataPropertyName = "fkey",
                     .SortMode = DataGridViewColumnSortMode.NotSortable
                 }
-        Dim flookupCB As DataGridViewComboBoxColumn = New DataGridViewComboBoxColumn With {
+        Dim flookupCB As New DataGridViewComboBoxColumn With {
                     .Name = "flookup",
                     .DataSource = New List(Of String),
                     .HeaderText = "flookup",
                     .DataPropertyName = "flookup",
                     .SortMode = DataGridViewColumnSortMode.NotSortable
                 }
-        Dim outerCB As DataGridViewCheckBoxColumn = New DataGridViewCheckBoxColumn With {
+        Dim outerCB As New DataGridViewCheckBoxColumn With {
                     .Name = "outer",
                     .HeaderText = "outer",
                     .DataPropertyName = "outer",
                     .SortMode = DataGridViewColumnSortMode.NotSortable
                 }
-        Dim primkeyCB As DataGridViewCheckBoxColumn = New DataGridViewCheckBoxColumn With {
+        Dim primkeyCB As New DataGridViewCheckBoxColumn With {
                     .Name = "primkey",
                     .HeaderText = "primkey",
                     .DataPropertyName = "primkey",
                     .SortMode = DataGridViewColumnSortMode.NotSortable
                 }
-        Dim typeTB As DataGridViewTextBoxColumn = New DataGridViewTextBoxColumn With {
+        Dim typeTB As New DataGridViewTextBoxColumn With {
                     .Name = "type",
                     .HeaderText = "type",
                     .DataPropertyName = "type",
                     .[ReadOnly] = True,
                     .SortMode = DataGridViewColumnSortMode.NotSortable
                 }
-        Dim sortCB As DataGridViewComboBoxColumn = New DataGridViewComboBoxColumn With {
+        Dim sortCB As New DataGridViewComboBoxColumn With {
                     .Name = "sort",
                     .DataSource = New List(Of String)({"", "ASC", "DESC"}),
                     .HeaderText = "sort",
                     .DataPropertyName = "sort",
                     .SortMode = DataGridViewColumnSortMode.NotSortable
                 }
-        Dim lookupTB As DataGridViewTextBoxColumn = New DataGridViewTextBoxColumn With {
+        Dim lookupTB As New DataGridViewTextBoxColumn With {
                     .Name = "lookup",
                     .HeaderText = "lookup",
                     .DataPropertyName = "lookup",
@@ -176,7 +176,7 @@ Public Class DBSheetCreateForm
         myDBConnHelper.openConnection(usedForDBSheetCreate:=True)
         FormDisabled = True
         Database.Items.Clear()
-        Dim sqlCommand As OdbcCommand = New OdbcCommand(myDBConnHelper.dbGetAllStr, myDBConnHelper.dbshcnn)
+        Dim sqlCommand As New OdbcCommand(myDBConnHelper.dbGetAllStr, myDBConnHelper.dbshcnn)
         Try
             dbs = sqlCommand.ExecuteReader()
         Catch ex As OdbcException
@@ -583,7 +583,7 @@ Public Class DBSheetCreateForm
             DBSheetCols.DataSource = Nothing
             DBSheetCols.Rows.Clear()
             Dim tableSchemaReader As OdbcDataReader
-            Dim sqlCommand As OdbcCommand = New OdbcCommand() With {
+            Dim sqlCommand As New OdbcCommand() With {
                 .CommandText = "SELECT TOP 1 * FROM " + Table.Text,
                 .CommandType = CommandType.Text,
                 .Connection = myDBConnHelper.dbshcnn
@@ -649,7 +649,7 @@ Public Class DBSheetCreateForm
         TableDataTypes = New Dictionary(Of String, String)
         Dim rstSchema As OdbcDataReader
         Dim selectStmt As String = "SELECT TOP 1 * FROM " + Table.Text
-        Dim sqlCommand As OdbcCommand = New OdbcCommand(selectStmt, myDBConnHelper.dbshcnn)
+        Dim sqlCommand As New OdbcCommand(selectStmt, myDBConnHelper.dbshcnn)
         rstSchema = sqlCommand.ExecuteReader()
         Try
             Dim schemaInfo As DataTable = rstSchema.GetSchemaTable()
@@ -674,7 +674,7 @@ Public Class DBSheetCreateForm
         getforeignTables = New List(Of String)({""})
         Dim rstSchema As OdbcDataReader
         Dim selectStmt As String = "SELECT TOP 1 * FROM " + foreignTable
-        Dim sqlCommand As OdbcCommand = New OdbcCommand(selectStmt, myDBConnHelper.dbshcnn)
+        Dim sqlCommand As New OdbcCommand(selectStmt, myDBConnHelper.dbshcnn)
         rstSchema = sqlCommand.ExecuteReader()
         Try
             Dim schemaInfo As DataTable = rstSchema.GetSchemaTable()
@@ -901,7 +901,7 @@ Public Class DBSheetCreateForm
             Preview.Cells(1, 2).Value = theQueryText
             Preview.Cells(1, 2).WrapText = False
             ' create a DBListFetch with the query 
-            ConfigFiles.createFunctionsInCells(Preview.Cells(1, 1), {"RC", "=DBListFetch(RC[1], """", R[1]C,,,True)"})
+            Globals.createFunctionsInCells(Preview.Cells(1, 1), {"RC", "=DBListFetch(RC[1], """", R[1]C,,,True)"})
             newWB.Saved = True
             If isLookupQuery Then
                 Preview.Name = "TESTSHEET"
@@ -1029,7 +1029,7 @@ Public Class DBSheetCreateForm
         Try
             If saveAs Or currentFilepath = "" Then
                 Dim tableName As String = If(InStrRev(Table.Text, ".") > 0, Strings.Mid(Table.Text, InStrRev(Table.Text, ".") + 1), Table.Text)
-                Dim saveFileDialog1 As SaveFileDialog = New SaveFileDialog With {
+                Dim saveFileDialog1 As New SaveFileDialog With {
                     .Title = "Save DBSheet Definition",
                     .FileName = tableName + ".xml",
                     .InitialDirectory = Globals.fetchSetting("DBSheetDefinitions" + myDBConnHelper.DBenv, ""),

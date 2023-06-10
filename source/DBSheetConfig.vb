@@ -166,7 +166,7 @@ Public Module DBSheetConfig
                         If Not Globals.existsName(lookupRangeName) Then
                             lookupWS.Cells(2, lookupCol).Name = lookupRangeName
                             ' then create the DBListFetch with the lookup query
-                            ConfigFiles.createFunctionsInCells(lookupWS.Cells(1, lookupCol), {"RC", "=DBListFetch(RC[1],""""," + lookupRangeName + ")"})
+                            Globals.createFunctionsInCells(lookupWS.Cells(1, lookupCol), {"RC", "=DBListFetch(RC[1],""""," + lookupRangeName + ")"})
                         Else
                             Globals.LogWarn("DB Sheet Lookup " + lookupRangeName + " already exists in " + lookupWS.Range(lookupRangeName).Address + ", check if this is really the correct one !")
                         End If
@@ -193,7 +193,7 @@ Public Module DBSheetConfig
                             ' only create name and dblistfetch if lookup doesn't already exist!
                             If Not Globals.existsName(lookupRangeName) Then
                                 lookupWS.Cells(2, lookupCol).Name = lookupRangeName
-                                ConfigFiles.createFunctionsInCells(lookupWS.Cells(1, lookupCol), {"RC", "=DBListFetch(RC[1],""""," + lookupRangeName + ")"})
+                                Globals.createFunctionsInCells(lookupWS.Cells(1, lookupCol), {"RC", "=DBListFetch(RC[1],""""," + lookupRangeName + ")"})
                             Else
                                 Globals.LogWarn("DB Sheet Lookup " + lookupRangeName + " already exists in " + lookupWS.Range(lookupRangeName).Address + ", check if this is really the correct one !")
                             End If
@@ -217,7 +217,7 @@ Public Module DBSheetConfig
                     Exit Sub
                 End Try
             Else
-                createdListObject = ConfigFiles.createListObject(curCell)
+                createdListObject = Globals.createListObject(curCell)
                 If createdListObject Is Nothing Then Exit Sub
             End If
             With curCell
@@ -247,7 +247,7 @@ Public Module DBSheetConfig
             If existingName <> "" Then
                 createdListObject.QueryTable.PreserveColumnInfo = False
             Else
-                ConfigFiles.createFunctionsInCells(curCell, {"RC", "=DBSetQuery(R[1]C,"""",RC[1])"})
+                Globals.createFunctionsInCells(curCell, {"RC", "=DBSetQuery(R[1]C,"""",RC[1])"})
             End If
             ' finish creation in async called function (need to have the results from the above createFunctionsInCells/invocations)
             ExcelAsyncUtil.QueueAsMacro(Sub()

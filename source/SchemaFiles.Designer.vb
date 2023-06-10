@@ -137,7 +137,8 @@ Namespace My.Resources
         End Property
         
         '''<summary>
-        '''  Looks up a localized string similar to AdHocSQLTransferType
+        '''  Looks up a localized string similar to addOLEDBprefix + env
+        '''AdHocSQLTransferType
         '''AdHocSQLcmdDB + AdHocSQLStringsIndex
         '''AdHocSQLcmdEnv + AdHocSQLStringsIndex
         '''AltConnString + env
@@ -156,8 +157,7 @@ Namespace My.Resources
         '''ConnStringSearch + env
         '''ConstConnString + env
         '''connIDPrefixDBtype
-        '''dbGetAll + env
-        '''dbGetAllFieldName  [rest of string was truncated]&quot;;.
+        '''dbGetAll + e [rest of string was truncated]&quot;;.
         '''</summary>
         Public Shared ReadOnly Property Settings() As String
             Get

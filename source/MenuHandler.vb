@@ -239,24 +239,24 @@ Public Class MenuHandler
                 If ExcelDnaUtil.Application.ActiveCell.Formula <> "" Then
                     If Globals.QuestionMsg("Non-empty Cell selected, should content be replaced?") = MsgBoxResult.Cancel Then Exit Sub
                 End If
-                ConfigFiles.createPivotTable(ExcelDnaUtil.Application.ActiveCell)
-                ConfigFiles.createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBSetQuery(""" + queryString + ""","""",R[1]C)"})
+                Globals.createPivotTable(ExcelDnaUtil.Application.ActiveCell)
+                Globals.createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBSetQuery(""" + queryString + ""","""",R[1]C)"})
             ElseIf theAdHocSQLDlg.TransferType.Text = "ListObject" Then
                 If ExcelDnaUtil.Application.ActiveCell.Formula <> "" Then
                     If Globals.QuestionMsg("Non-empty Cell selected, should content be replaced?") = MsgBoxResult.Cancel Then Exit Sub
                 End If
-                ConfigFiles.createListObject(ExcelDnaUtil.Application.ActiveCell)
-                ConfigFiles.createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBSetQuery(""" + queryString + ""","""",RC[1])"})
+                Globals.createListObject(ExcelDnaUtil.Application.ActiveCell)
+                Globals.createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBSetQuery(""" + queryString + ""","""",RC[1])"})
             ElseIf theAdHocSQLDlg.TransferType.Text = "RowFetch" Then
                 If ExcelDnaUtil.Application.ActiveCell.Formula <> "" Then
                     If Globals.QuestionMsg("Non-empty Cell selected, should content be replaced?") = MsgBoxResult.Cancel Then Exit Sub
                 End If
-                ConfigFiles.createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBRowFetch(""" + queryString + ""","""",TRUE,R[1]C:R[1]C[10])"})
+                Globals.createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBRowFetch(""" + queryString + ""","""",TRUE,R[1]C:R[1]C[10])"})
             ElseIf theAdHocSQLDlg.TransferType.Text = "ListFetch" Then
                 If ExcelDnaUtil.Application.ActiveCell.Formula <> "" Then
                     If Globals.QuestionMsg("Non-empty Cell selected, should content be replaced?") = MsgBoxResult.Cancel Then Exit Sub
                 End If
-                ConfigFiles.createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBListFetch(""" + queryString + ""","""",R[1]C,,,TRUE,TRUE,TRUE)"})
+                Globals.createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBListFetch(""" + queryString + ""","""",R[1]C,,,TRUE,TRUE,TRUE)"})
             End If
         ElseIf dialogResult = System.Windows.Forms.DialogResult.Cancel Then 'Cancel is set when "close" is clicked
             ' "Close" was clicked: only add SQL String to combobox
@@ -715,19 +715,19 @@ Public Class MenuHandler
             Exit Sub
         End If
         If control.Tag = "DBListFetch" Then
-            ConfigFiles.createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBListFetch("""","""",R[1]C,,,TRUE,TRUE,TRUE)"})
+            Globals.createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBListFetch("""","""",R[1]C,,,TRUE,TRUE,TRUE)"})
         ElseIf control.Tag = "DBRowFetch" Then
-            ConfigFiles.createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBRowFetch("""","""",TRUE,R[1]C:R[1]C[10])"})
+            Globals.createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBRowFetch("""","""",TRUE,R[1]C:R[1]C[10])"})
         ElseIf control.Tag = "DBSetQueryPivot" Then
             ' first create a dummy pivot table
-            ConfigFiles.createPivotTable(ExcelDnaUtil.Application.ActiveCell)
+            Globals.createPivotTable(ExcelDnaUtil.Application.ActiveCell)
             ' then create the DBSetQuery assigning the (yet to be filled) query to the above listobject
-            ConfigFiles.createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBSetQuery("""","""",R[1]C)"})
+            Globals.createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBSetQuery("""","""",R[1]C)"})
         ElseIf control.Tag = "DBSetQueryListObject" Then
             ' first create a dummy ListObject
-            ConfigFiles.createListObject(ExcelDnaUtil.Application.ActiveCell)
+            Globals.createListObject(ExcelDnaUtil.Application.ActiveCell)
             ' then create the DBSetQuery assigning the (yet to be filled) query to the above listobject
-            ConfigFiles.createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBSetQuery("""","""",RC[1])"})
+            Globals.createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBSetQuery("""","""",RC[1])"})
         ElseIf control.Tag = "DBMapper" Or control.Tag = "DBAction" Or control.Tag = "DBSeqnce" Then
             If activeCellDBModifType = control.Tag Then  ' edit existing definition
                 DBModifs.createDBModif(control.Tag, targetDefName:=activeCellDBModifName)
@@ -781,7 +781,7 @@ Public Class MenuHandler
             curCell.Offset(i, 0).Value = formulaPart.Replace(vbLf, "")
             i += 1
         Next
-        ConfigFiles.createFunctionsInCells(curCell, {"RC", "=DBSetPowerQuery(R[1]C:R[" + (i - 1).ToString() + "]C,""" + sender.ToString() + """)"})
+        Globals.createFunctionsInCells(curCell, {"RC", "=DBSetPowerQuery(R[1]C:R[" + (i - 1).ToString() + "]C,""" + sender.ToString() + """)"})
         Functions.avoidRequeryDuringEdit = False
     End Sub
 

@@ -47,7 +47,7 @@ Public Class EditDBModifDef
         Else
             Dim availableSettings As String() = Split(My.Resources.SchemaFiles.Settings, vbLf) ' avoid dependency on vbCrLf being in the VS settings of Edit/Advanced/set End of Line Sequence
             For Each settingLine As String In availableSettings
-                Me.availSettingsLB.Items.Add(settingLine.Replace(vbCr, "")) ' remove vbCr, if compiled with End of Line Sequence vbCrLf
+                Me.availSettingsLB.Items.Add(settingLine.Replace(vbCr, "").Replace(" + env", Globals.env())) ' remove vbCr, if compiled with End of Line Sequence vbCrLf and "+ env" with current set environment
             Next
             ' show DBAddin settings (user/central/addin level): set the appropriate config xml into EditBox (depending on Me.Tag)
             ' get DBAddin user settings and display them
@@ -118,7 +118,7 @@ Public Class EditDBModifDef
                         Dim schemaString As String = My.Resources.SchemaFiles.DBModifDef
                         Dim schemadoc As XmlReader = XmlReader.Create(New StringReader(schemaString))
                         doc.Schemas.Add("DBModifDef", schemadoc)
-                        Dim eventHandler As Schema.ValidationEventHandler = New Schema.ValidationEventHandler(AddressOf myValidationEventHandler)
+                        Dim eventHandler As New Schema.ValidationEventHandler(AddressOf myValidationEventHandler)
                         doc.LoadXml(Me.EditBox.Text)
                         doc.Validate(eventHandler)
                     Catch ex As Exception
@@ -161,7 +161,7 @@ Public Class EditDBModifDef
                 If Me.Tag = "user" Then schemaString = My.Resources.SchemaFiles.DBAddinUser
                 Dim schemadoc As XmlReader = XmlReader.Create(New StringReader(schemaString))
                 doc.Schemas.Add("", schemadoc)
-                Dim eventHandler As Schema.ValidationEventHandler = New Schema.ValidationEventHandler(AddressOf myValidationEventHandler)
+                Dim eventHandler As New Schema.ValidationEventHandler(AddressOf myValidationEventHandler)
                 doc.LoadXml(Me.EditBox.Text)
                 doc.Validate(eventHandler)
             Catch ex As Exception
@@ -208,7 +208,6 @@ Public Class EditDBModifDef
     Private Sub availSettingsLB_SelectedIndexChanged(sender As Object, e As EventArgs) Handles availSettingsLB.SelectedIndexChanged
         Dim curLineBegin = 0
         Dim settingKey As String = availSettingsLB.Text
-        settingKey = settingKey.Replace(" + env", Globals.env())
         Me.EditBox.SelectAll()
         Me.EditBox.SelectionBackColor = Me.EditBox.BackColor
         For Each editBoxLine In Me.EditBox.Lines

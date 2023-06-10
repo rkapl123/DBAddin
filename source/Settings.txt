@@ -1,3 +1,4 @@
+addOLEDBprefix + env
 AdHocSQLTransferType
 AdHocSQLcmdDB + AdHocSQLStringsIndex
 AdHocSQLcmdEnv + AdHocSQLStringsIndex
@@ -46,6 +47,7 @@ maxRowCountCUD
 maxTriesForRevisionFind
 ownerQualifier + env
 pivotTableCmdTextToSet + env
+preferODBCconnString + env
 repairLegacyFunctionsAutoOpen
 specialConfigStoreFolders
 specialNonNullableChar + env
