@@ -284,6 +284,8 @@ done:
         End If
     End Sub
 
+
+
     ''' <summary>specific click handlers for the five definable command buttons</summary>
     Private Shared Sub cb1_Click() Handles cb1.Click
         cbClick(cb1.Name)
@@ -429,6 +431,30 @@ done:
         End If
     End Sub
 
+    ''' <summary>use Application_AfterCalculate to overcome the problem of auto-fitting formula ranges AFTER calculation (final column width is not available in dblistfetchAction procedure)</summary>
+    Private Sub Application_AfterCalculate() Handles Application.AfterCalculate
+        Try
+            For Each nm As Excel.Name In ExcelDnaUtil.Application.ActiveWorkbook.Names
+                ' look only for formula target ranges
+                If Left$(nm.Name, 10) = "DBFtargetF" Then
+                    ' get to the source cell to look up info in the StatusCollection
+                    Dim sourceName As String = Replace(nm.Name, "DBFtargetF", "DBFsource", 1, , vbTextCompare)
+                    Dim sourceCell As Excel.Range = Nothing
+                    Try : sourceCell = ExcelDnaUtil.Application.ActiveWorkbook.Names(sourceName).RefersToRange : Catch ex As Exception : End Try
+                    ' build the lookup key from the sourceCell
+                    Dim callID As String = "[" + sourceCell.Parent.Parent.Name + "]" + sourceCell.Parent.Name + "!" + sourceCell.Address
+                    If StatusCollection.ContainsKey(callID) Then
+                        ' if formulaRange is available (only set by dblistfetchAction if AutoFit is set to true), then auto fit columns and rows
+                        If StatusCollection(callID).formulaRange IsNot Nothing Then
+                            StatusCollection(callID).formulaRange.Columns.EntireColumn.AutoFit()
+                            StatusCollection(callID).formulaRange.Rows.EntireRow.AutoFit()
+                            StatusCollection(callID).formulaRange = Nothing
+                        End If
+                    End If
+                End If
+            Next
+        Catch ex As Exception : End Try
+    End Sub
 
     Private WithEvents mInsertButton As Microsoft.Office.Core.CommandBarButton
     Private WithEvents mDeleteButton As Microsoft.Office.Core.CommandBarButton

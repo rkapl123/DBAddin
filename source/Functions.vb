@@ -10,16 +10,18 @@ Imports System.Collections.Generic
 Imports System.Linq
 
 
-''' <summary>Provides a data structure for transporting information back from the calculation action procedure to the calling function</summary>
+''' <summary>Provides a data structure for transporting information back from the calculation action procedure to the calling function resp. the AfterCalculate event procedure</summary>
 Public Class ContainedStatusMsg
     ''' <summary>any status message used for displaying in the result of function</summary>
     Public statusMsg As String
+    ''' <summary>formula range passed from dblistfetchAction to overcome the problem of auto-fitting AFTER calculation</summary>
+    Public formulaRange As Excel.Range
 End Class
 
 ''' <summary>Contains the public callable DB functions and helper functions</summary>
 Public Module Functions
     ' Global objects/variables for DBFuncs
-    ''' <summary>global collection of information transport containers between function and calc event procedure</summary>
+    ''' <summary>global collection of information transport containers between action function and user-defined function resp. calc event procedure</summary>
     Public StatusCollection As Dictionary(Of String, ContainedStatusMsg)
     ''' <summary>connection object</summary>
     Public iconn As System.Data.IDbConnection
@@ -817,7 +819,6 @@ Public Module Functions
         Dim oldRows As Integer = arrayRows
         ' need to shift down 1 row if headings are present
         arrayRows += If(HeaderInfo, 1, 0)
-        Dim rowDataStart As Integer = 1 + If(HeaderInfo, 1, 0)
 
         Dim formulaSH As Excel.Worksheet = Nothing
         Dim formulaStart As Integer
@@ -852,17 +853,21 @@ Public Module Functions
         ' clear old formulas
         Dim oldFRows, oldFCols As Integer
         If Not IsNothing(formulaSH) Then
-            Try
-                oldFRows = formulaSH.Parent.Names(targetExtentF).RefersToRange.Rows.Count
-                oldFCols = formulaSH.Parent.Names(targetExtentF).RefersToRange.Columns.Count
-            Catch ex As Exception : End Try
-            If oldFRows > 2 Then
+            If formulaStart < startRow + If(HeaderInfo, 1, 0) Then
+                warning += "Error: formulaRange start above data-area, old formulas not cleared !"
+            Else
                 Try
-                    formulaSH.Range(formulaSH.Cells(formulaStart + 1, formulaRange.Column), formulaSH.Cells(formulaRange.Row + oldFRows - 1, formulaRange.Column + oldFCols - 1)).ClearContents()
-                Catch ex As Exception
-                    errMsg = "Error in clearing old data for formulaSH: (" + ex.Message + ") in query: " + Query
-                    GoTo err
-                End Try
+                    oldFRows = formulaSH.Parent.Names(targetExtentF).RefersToRange.Rows.Count
+                    oldFCols = formulaSH.Parent.Names(targetExtentF).RefersToRange.Columns.Count
+                Catch ex As Exception : End Try
+                If oldFRows > 2 Then
+                    Try
+                        formulaSH.Range(formulaSH.Cells(formulaStart + 1, formulaRange.Column), formulaSH.Cells(formulaRange.Row + oldFRows - 1, formulaRange.Column + oldFCols - 1)).ClearContents()
+                    Catch ex As Exception
+                        errMsg = "Error in clearing old data for formulaSH: (" + ex.Message + ") in query: " + Query
+                        GoTo err
+                    End Try
+                End If
             End If
         End If
 
@@ -958,7 +963,7 @@ Public Module Functions
         If formulaRange IsNot Nothing Then
             formulaSH = formulaRange.Parent
             With formulaRange
-                If .Row < startRow + rowDataStart - 1 Then
+                If .Row < startRow + If(HeaderInfo, 1, 0) Then
                     warning += "Error: formulaRange start above data-area, no formulas filled down !"
                 Else
                     ' retrieve bottom of formula range
@@ -1041,7 +1046,7 @@ Public Module Functions
                     newTargetRange.Columns(i + 1).NumberFormat = NumFormat(i)
                 Next
                 ' also restore for formula(filled) range
-                If formulaRange IsNot Nothing And NumFormatF IsNot Nothing Then
+                If formulaRange IsNot Nothing And NumFormatF IsNot Nothing And formulaFilledRange IsNot Nothing Then
                     For i = 0 To UBound(NumFormatF)
                         formulaFilledRange.Columns(i + 1).NumberFormat = NumFormatF(i)
                     Next
@@ -1055,15 +1060,12 @@ Public Module Functions
         'auto fit columns AFTER auto format so we don't have problems with applied formats visibility
         Try
             If AutoFit Then
+                If formulaFilledRange IsNot Nothing And formulaFilledRange IsNot ExcelEmpty.Value Then
+                    ' auto fit also formula(filled) range, pass it to AfterCalculation Event here
+                    StatusCollection(callID).formulaRange = formulaFilledRange
+                End If
                 newTargetRange.Columns.AutoFit()
                 newTargetRange.Rows.AutoFit()
-                If formulaRange IsNot Nothing And formulaFilledRange IsNot ExcelEmpty.Value Then
-                    ' auto fit also formula(filled) range
-                    If formulaFilledRange IsNot Nothing Then
-                        formulaFilledRange.Columns.AutoFit()
-                        formulaFilledRange.Rows.AutoFit()
-                    End If
-                End If
             End If
         Catch ex As Exception
             errMsg = "Error in auto fitting: " + ex.Message + " in query: " + Query
@@ -1491,13 +1493,6 @@ err:    If errMsg.Length = 0 Then errMsg = Err.Description + " in query: " + Que
         If AutoFit Then
             newTargetRange.Columns.AutoFit()
             newTargetRange.Rows.AutoFit()
-
-            If formulaRange IsNot Nothing And formulaFilledRange IsNot ExcelEmpty.Value Then
-                If formulaFilledRange IsNot Nothing Then
-                    formulaFilledRange.Columns.AutoFit()
-                    formulaFilledRange.Rows.AutoFit()
-                End If
-            End If
         End If
         If Err.Number <> 0 Then
             errMsg = "Error in auto fitting: " + Err.Description + " in query: " + Query

@@ -13,7 +13,6 @@ DBAddin.NET is the successor to the VB6 based Office Database Addin, see also th
 * Dependencies/Prerequisites
 	* .NET 4.7 or higher (usually distributed with Windows)
 	* Excel (minimum 2007 because of Ribbons)
-	* ADO 2.5 or higher (usually distributed with Windows, needed as long as ADODB is still used for DB Functions)
 
 If any of these are missing, please install them yourself before starting DBAddin.
 
@@ -128,8 +127,11 @@ Explanation:
 
 To change the settings, there use the drop-down "settings", where you can modify the DBAddin.xll.config and the referred DBAddinCentral.config including XML validation. If you have multiple same named entries in your settings files, the last one is taken as the active setting.
 
-### About Box, Settings, Log and fix legacy functions
+### Environment, About Box, Settings, Log and fix legacy functions
 
+The environment drop-down selector on top of the DBAddin settings Group allows to choose the environments defined with the `ConfigName`**N** settings (and the associated data). If this drop-down is disabled, you can enable it by setting `DontChangeEnvironment``to `false`.
+
+#### About Box and updates
 The About Box can be reached by clicking the small dialogBox Launcher in the right bottom corner of the DB Addin settings group of the DBAddin Ribbon:
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/AboutBox.PNG)  
@@ -149,10 +151,11 @@ You can also fix legacy DBAddin functions in case you decided to skip the possib
 
 #### Settings
 In the DBAddin settings Group, there is a drop-down "settings", where you can modify the DBAddin.xll.config and the referred DBAddinUser.config and DBAddinCentral.config including XML validation.
+At the bottom of all settings dialogs, there is a drop-down showing the available settings. Those settings that are environment-dependent (`ConfigName`**N**) are automatically displayed with the current selected environment number after the name. If you select the setting, it will be added at the bottom of all settings, you can cut/paste it anywhere you want. If the setting is already existing, an error message is displayed and the existing setting is highlighted. Any XML validation errors display the location with a row and column number, however these refer to the flat version of the text (without any word-wrap).
 
-#### Custom properties
-Right besides that drop-down, there is a shortcut to the Workbook properties (being the standard dialog Advanced Properties, accessible via File/Info) that allows you to change custom properties settings for DBAddin.
-A green check shows that custom property DBFskip is not set to true for this workbook, therefore refreshing DB functions on opening the Workbook.
+#### Custom workbook properties
+Right besides the settings drop-down, there is a shortcut button to the Workbook properties (being the standard dialog Advanced Properties, accessible via File/Info) that allows you to change custom properties settings for DBAddin.
+A green check on that button shows that the custom property DBFskip is not set to true for this workbook, therefore DB functions are always refreshed on opening the workbook.
 
 ### Tools
 Besides the hierarchical menu "DBConfigs" (see [DBFuncs User-doc](DBFuncs.md)) and the DBSheet Configuration (see [DBSheets](DBSheets.md)) there are other tools in the DB Addin Tools group:
@@ -222,7 +225,6 @@ Several connection strings for "DBFuncsTest.xls" are placed to the right of the 
 
 Following topics are still to be done:
 
-* Completely getting rid of ADODB (this is a legacy from transforming the code of the old Addin)
 * Fixing the problems with shifting formula ranges in case of shifting mode 1 (cells) in DBListFetch
 * Utilizing optimistic concurrency for DBSheets (similar to the old Addin, but with ADO.NET support)
 
