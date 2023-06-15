@@ -50,7 +50,7 @@ Public Class MenuHandler
                 "</menu>" +
             "</buttonGroup>" +
             "<buttonGroup id='buttonGroup3'>" +
-                "<button id='purgetool' label='Check/Purge' screentip='checks, unhides or purges DBFunctions underlying/hidden names' imageMso='BorderErase' onAction='clickpurgetoolbutton' supertip='while clicking hold: Ctrl to unhide all DB names and show Name Manager, Shift to purge hidden names, both Ctrl and Shift to display name manager. Nothing will just check DB Functions names'/>" +
+                "<button id='checkpurgetool' label='Check/Purge' screentip='checks, unhides or purges DBFunctions underlying/hidden names' imageMso='BorderErase' onAction='clickcheckpurgetoolbutton' supertip='while clicking hold: Ctrl to unhide all DB names and show Name Manager, Shift to purge hidden names, both Ctrl and Shift to display name manager. Nothing will just check DB Functions names'/>" +
                 "<button id='designmode' label='Buttons' onAction='showToggleDesignMode' getImage='getToggleDesignImage' getScreentip='getToggleDesignScreentip'/>" +
             "</buttonGroup>" +
             "<comboBox id='DBAdhocSQL' showLabel='false' sizeString='123456789012345678901234567' getText='GetAdhocSQLText' getItemCount='GetAdhocSQLItemCount' getItemLabel='GetAdhocSQLItemLabel' onChange='showDBAdHocSQL' screentip='enter Ad-hoc SQL statements to execute'/>" +
@@ -682,10 +682,10 @@ Public Class MenuHandler
         Globals.jumpButton()
     End Sub
 
-    ''' <summary>purge name tool button, purge names used for dbfunctions from workbook</summary>
+    ''' <summary>check/purge name tool button, purge names used for dbfunctions from workbook</summary>
     ''' <param name="control"></param>
-    Public Sub clickpurgetoolbutton(control As CustomUI.IRibbonControl)
-        Globals.purgeNames()
+    Public Sub clickcheckpurgetoolbutton(control As CustomUI.IRibbonControl)
+        Globals.checkpurgeNames()
     End Sub
 
     ''' <summary>show the trace log</summary>

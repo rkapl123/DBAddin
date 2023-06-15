@@ -919,39 +919,55 @@ Public Module Functions
             formulaRange = Nothing
         End If
 
-        Dim curSheet As Excel.Worksheet = ExcelDnaUtil.Application.ActiveSheet
-        targetSH.Activate()
         Dim resultingQueryRange As Excel.Range
         If IsNothing(theTargetQueryTable) Then
             ' no underlying query table yet, add one
             Try
                 theTargetQueryTable = targetSH.QueryTables.Add(Connection:=ConnString, Destination:=targetRange)
             Catch ex As Exception
-                errMsg = "Error in adding QueryTable: " + ex.Message + " in query: " + Query
+                errMsg = "Error in adding query table: " + ex.Message + ", query: " + Query
                 GoTo err
             End Try
             extendArea = 0 ' this is required to prevent "right" shifting of cells at the beginning if no QueryTable exists yet!
         End If
         With theTargetQueryTable
+
             ' now fill in the data from the query
             Try
+                .Connection = ConnString
+            Catch ex As Exception
+                errMsg = IIf(ex.HResult = -2146827284, "Probably the connection was deleted for the query table (you can reset this by removing the query definition of the external data range): ", "Error in setting connection string for QueryTable: ") + ex.Message + " in query: " + Query
+                GoTo err
+            End Try
+            Try
                 .CommandText = Query
+            Catch ex As Exception
+                errMsg = "Error in setting query for query table: " + ex.Message + ", query: " + Query
+                GoTo err
+            End Try
+            Try
                 .FieldNames = HeaderInfo
                 .RowNumbers = ShowRowNumbers
+                .AdjustColumnWidth = AutoFit
                 .BackgroundQuery = False
                 .RefreshStyle = IIf(extendArea = 0, Excel.XlCellInsertionMode.xlOverwriteCells, IIf(extendArea = 1, Excel.XlCellInsertionMode.xlInsertDeleteCells, Excel.XlCellInsertionMode.xlInsertEntireRows))
+            Catch ex As Exception
+                errMsg = "Error in setting parameters for query table: " + ex.Message + ", query: " + Query
+                GoTo err
+            End Try
+            Try
                 .Refresh()
                 If .FetchedRowOverflow Then
                     warning += "row count of returned data exceeds max row of excel: start row:" + targetRange.Row.ToString() + " + row count:" + .Recordset.Count.ToString() + " > max row+1:" + (targetRange.EntireColumn.Rows.Count + 1).ToString()
                 End If
             Catch ex As Exception
-                errMsg = "Error in setting parameters for QueryTable: " + ex.Message + " in query: " + Query
+                errMsg = "Error in refreshing query table: " + ex.Message + ", query: " + Query
                 GoTo err
             End Try
             Try
                 resultingQueryRange = .ResultRange
             Catch ex As Exception
-                errMsg = "Error in getting resulting range for QueryTable: " + ex.Message + " in query: " + Query
+                errMsg = "Error in getting resulting range for query table: " + ex.Message + ", query: " + Query
                 GoTo err
             End Try
         End With
@@ -981,7 +997,7 @@ Public Module Functions
                         If copyDownLastRow > .Cells.Row Then .Cells.AutoFill(Destination:=formulaSH.Range(.Cells, formulaSH.Cells(copyDownLastRow, .Column + .Columns.Count - 1)))
                         formulaFilledRange = formulaSH.Range(formulaSH.Cells(.Row, .Column), formulaSH.Cells(copyDownLastRow, .Column + .Columns.Count - 1))
                     Catch ex As Exception
-                        errMsg = "Error setting the formula fill range: " + ex.Message + " in query: " + Query
+                        errMsg = "Error setting the formula fill range: " + ex.Message + ", query: " + Query
                         GoTo err
                     End Try
 
@@ -996,7 +1012,7 @@ Public Module Functions
                             formulaFilledRange.Name = formulaRangeName    ' NOT USING formulaFilledRange.Name.Visible = True, or hidden range will also be visible...
                         End If
                     Catch ex As Exception
-                        errMsg = "Error in (re)assigning formula range name: " + ex.Message + " in query: " + Query
+                        errMsg = "Error in (re)assigning formula range name: " + ex.Message + ", query: " + Query
                         GoTo err
                     End Try
                 End If
@@ -1022,7 +1038,7 @@ Public Module Functions
             ' if refreshed range is a DBMapper and it is in the current workbook, resize it
             DBModifs.resizeDBMapperRange(totalTargetRange, oldTotalTargetRange)
         Catch ex As Exception
-            errMsg = "Error in (re)assigning data target name: " + ex.Message + " (maybe known issue with 'cell like' sheet names, e.g. 'C701 country' ?) in query: " + Query
+            errMsg = "Error in (re)assigning data target name: " + ex.Message + " (maybe known issue with 'cell like' sheet names, e.g. 'C701 country' ?), query: " + Query
             GoTo err
         End Try
 
@@ -1053,7 +1069,7 @@ Public Module Functions
                 End If
             End If
         Catch ex As Exception
-            errMsg = "Error in restoring formats: " + ex.Message + " in query: " + Query
+            errMsg = "Error in restoring formats: " + ex.Message + ", query: " + Query
             Globals.LogWarn(errMsg + ", caller: " + callID)
             GoTo err
         End Try
@@ -1068,14 +1084,13 @@ Public Module Functions
                 newTargetRange.Rows.AutoFit()
             End If
         Catch ex As Exception
-            errMsg = "Error in auto fitting: " + ex.Message + " in query: " + Query
+            errMsg = "Error in auto fitting: " + ex.Message + ", query: " + Query
             GoTo err
         End Try
         finishAction(calcMode, callID, scrnUpdate)
         Exit Sub
 
-err:    If errMsg.Length = 0 Then errMsg = Err.Description + " in query: " + Query
-        Globals.LogWarn(errMsg + ", caller: " + callID)
+err:    Globals.LogWarn(errMsg + ", caller: " + callID)
         If StatusCollection.ContainsKey(callID) Then StatusCollection(callID).statusMsg = errMsg
         finishAction(calcMode, callID, scrnUpdate, "Error")
         caller.Formula += " " ' recalculate to trigger return of error messages to calling function

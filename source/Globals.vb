@@ -287,8 +287,8 @@ Public Module Globals
                         End If
                         If Not CBool(fetchSetting("AvoidUpdateQueryTables_Refresh", "False")) Then
                             For Each qrytbl As Excel.QueryTable In ws.QueryTables
-                                ' no need to avoid double refreshing as query tables are always deleted after inserting data in DBListFetchAction
-                                qrytbl.Refresh()
+                                ' avoid double refreshing of query tables
+                                If getUnderlyingDBNameFromRange(qrytbl.ResultRange) = "" Then qrytbl.Refresh()
                             Next
                         End If
                         If Not CBool(fetchSetting("AvoidUpdatePivotTables_Refresh", "False")) Then
@@ -1086,8 +1086,8 @@ Last:
         DBModifs.preventChangeWhileFetching = False
     End Sub
 
-    ''' <summary>maintenance procedure to purge names used for dbfunctions from workbook, or unhide DB names</summary>
-    Public Sub purgeNames()
+    ''' <summary>maintenance procedure to check/purge names used for dbfunctions from workbook, or unhide DB names</summary>
+    Public Sub checkpurgeNames()
         Dim actWbNames As Excel.Names = Nothing
         Try : actWbNames = ExcelDnaUtil.Application.ActiveWorkbook.Names : Catch ex As Exception
             Globals.UserMsg("Exception when trying to get the active workbook's names for purging names: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
@@ -1160,6 +1160,8 @@ Last:
                     Catch ex As Exception
                         If InStr(DBname.RefersTo, "OFFSET(") > 0 Then
                             collectedErrors += "Offset formula that '" + DBname.Name + "' refers to, did not return a valid range" + vbCrLf
+                        ElseIf InStr(DBname.RefersTo, "#REF!") > 0 Then
+                            ' do nothing, already collected...
                         Else
                             collectedErrors += DBname.Name + "' RefersToRange resulted in Exception " + ex.Message + vbCrLf
                         End If
