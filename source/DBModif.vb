@@ -98,7 +98,7 @@ Public MustInherit Class DBModif
         If env <> "" AndAlso env <> "0" Then getEnv = Convert.ToInt16(env)
     End Function
 
-    ''' <summary>checks whether DBModifier needs saving, usually because execOnSave is set (in case of CUD DBMappers if any i/u/d Flages are present)</summary>
+    ''' <summary>checks whether DBModifier needs saving, usually because execOnSave is set (in case of CUD DBMappers if any i/u/d flags are present)</summary>
     ''' <returns>true if save needed</returns>
     Public Overridable Function DBModifSaveNeeded() As Boolean
         Return execOnSave
@@ -112,7 +112,7 @@ Public MustInherit Class DBModif
 
     ''' <summary>wrapper to get the single definition element values from the DBModifier CustomXML node, also checks for multiple definition elements</summary>
     ''' <param name="definitionXML">the CustomXML node for the DBModifier</param>
-    ''' <param name="nodeName">the definition element's name (eg "env")</param>
+    ''' <param name="nodeName">the definition element's name (e.g "env")</param>
     ''' <returns>the definition element's value</returns>
     ''' <exception cref="Exception">if multiple elements exist for the definition element's name throw warning !</exception>
     Protected Function getParamFromXML(definitionXML As CustomXMLNode, nodeName As String, Optional ReturnType As String = "") As String
@@ -220,7 +220,7 @@ Public MustInherit Class DBModif
         ' allow for avoidance of overwriting users changes with CUDFlags after a data error occurred
         If hadError Then
             If executedDBMappers.ContainsKey(DBMapperUnderlying) Then
-                Dim retval = QuestionMsg(theMessage:="Error(s) occurred during sequence, really refresh Targetrange? This could lead to loss of entries.", questionTitle:="Refresh of DB Functions in DB Sequence")
+                Dim retval = QuestionMsg(theMessage:="Error(s) occurred during sequence, really refresh Target-range? This could lead to loss of entries.", questionTitle:="Refresh of DB Functions in DB Sequence")
                 If retval = vbCancel Then Exit Function
             End If
         End If
@@ -374,7 +374,7 @@ Public Class DBMapper : Inherits DBModif
 
     ''' <summary>Database Table, where Data is to be stored</summary>
     Private ReadOnly tableName As String = ""
-    ''' <summary>count of primary keys in datatable, starting from the leftmost column</summary>
+    ''' <summary>count of primary keys in data-table, starting from the leftmost column</summary>
     Private ReadOnly primKeysCount As Integer = 0
     ''' <summary>if set, then insert row into table if primary key is missing there. Default = False (only update)</summary>
     Private ReadOnly insertIfMissing As Boolean = False
@@ -388,7 +388,7 @@ Public Class DBMapper : Inherits DBModif
     Private ReadOnly IgnoreDataErrors As Boolean = False
     ''' <summary>used to pass whether changes were done</summary>
     Private changesDone As Boolean = False
-    '''<summary>first column is treated as an autoincrementing key column, needed to ignore empty values there (otherwise DBMappers stop here)</summary>
+    '''<summary>first column is treated as an auto-incrementing key column, needed to ignore empty values there (otherwise DBMappers stop here)</summary>
     Private ReadOnly AutoIncFlag As Boolean = False
     ''' <summary>prevent filling of whole table during execution of DB Mappers, this is useful for very large tables that are incrementally filled and would take unnecessary long time to start the DB Mapper. If set to true then each record is searched independently by going to the database. If the records to be stored are not too many, then this is more efficient than loading a very large table.</summary>
     Private ReadOnly avoidFill As Boolean = False
@@ -414,7 +414,7 @@ Public Class DBMapper : Inherits DBModif
         If DBModifParams Is Nothing Then Exit Sub
         ' check for completeness
         If DBModifParams.Length < 4 Then
-            Throw New Exception("At least environment (can be empty), database, Tablename and primary keys have to be provided as DBMapper parameters !")
+            Throw New Exception("At least environment (can be empty), database, Table-name and primary keys have to be provided as DBMapper parameters !")
         End If
 
         ' fill parameters:
@@ -425,7 +425,7 @@ Public Class DBMapper : Inherits DBModif
         End If
         tableName = DBModifParams(2).Replace("""", "").Trim ' remove all quotes and trim right and left
         If tableName = "" Then
-            Throw New Exception("No Tablename given in DBMapper paramText!")
+            Throw New Exception("No Table-name given in DBMapper paramText!")
         End If
         Try
             primKeysCount = DBModifParams(3).Split(",").Length
@@ -454,7 +454,7 @@ Public Class DBMapper : Inherits DBModif
             database = getParamFromXML(definitionXML, "database")
             If database = "" Then Throw New Exception("No database given in DBMapper definition!")
             tableName = getParamFromXML(definitionXML, "tableName")
-            If tableName = "" Then Throw New Exception("No Tablename given in DBMapper definition!")
+            If tableName = "" Then Throw New Exception("No Table-name given in DBMapper definition!")
             Try
                 primKeysCount = Convert.ToInt32(getParamFromXML(definitionXML, "primKeysStr"))
             Catch ex As Exception
@@ -468,7 +468,7 @@ Public Class DBMapper : Inherits DBModif
             AutoIncFlag = Convert.ToBoolean(getParamFromXML(definitionXML, "AutoIncFlag", "Boolean"))
             avoidFill = Convert.ToBoolean(getParamFromXML(definitionXML, "avoidFill", "Boolean"))
             If TargetRange.ListObject IsNot Nothing Then
-                ' special grey table style for CUDFlags DBMapper
+                ' special gray table style for CUDFlags DBMapper
                 If CUDFlags Then
                     TargetRange.ListObject.TableStyle = Globals.fetchSetting("DBMapperCUDFlagStyle", "TableStyleLight11")
                     ' otherwise blue
@@ -476,7 +476,7 @@ Public Class DBMapper : Inherits DBModif
                     TargetRange.ListObject.TableStyle = Globals.fetchSetting("DBMapperStandardStyle", "TableStyleLight9")
                 End If
             End If
-            ' allow CUDFlags only on DBMappers with underlying Listobjects that were created with a query
+            ' allow CUDFlags only on DBMappers with underlying List-objects that were created with a query
             If CUDFlags And (TargetRange.ListObject Is Nothing OrElse TargetRange.ListObject.SourceType <> Excel.XlListObjectSourceType.xlSrcQuery) Then
                 CUDFlags = False
                 definitionXML.SelectSingleNode("ns0:CUDFlags").Delete()
@@ -524,12 +524,12 @@ Public Class DBMapper : Inherits DBModif
             Dim retval As MsgBoxResult = Globals.QuestionMsg("DB Mapper Range with CUD Flags is only one cell, really set CUD Flags ?",, "Set CUD Flags for DB Mapper")
             If retval = vbCancel Then Exit Sub
         End If
-        ' sanity check for whole column change (this happens when Ctrl-minus is pressed in the right area of the listobject)..
+        ' sanity check for whole column change (this happens when Ctrl-minus is pressed in the right area of the list-object)..
         If changedRangeColumns = 1 And targetRangeRows = changedRangeRows Then
             Globals.UserMsg("Whole column deleted, it is recommended to immediately close the DBSheet Workbook to avoid destroying the DBSheet!", "Set CUD Flags for DB Mapper")
             Exit Sub
         End If
-        ' sanity check for whole range change (this happens when the table is autofilled down by dragging while being INSIDE the table)..
+        ' sanity check for whole range change (this happens when the table is auto-filled down by dragging while being INSIDE the table)..
         ' in this case excel extends the change to the whole table and additionally the dragged area...
         If targetRangeColumns = changedRangeColumns And targetRangeRows <= changedRangeRows Then
             Dim retval As MsgBoxResult = Globals.QuestionMsg("Change affects whole DB Mapper Range, this might lead to erroneous behaviour, really set CUD Flags ?",, "Set CUD Flags for DB Mapper")
@@ -556,7 +556,7 @@ Public Class DBMapper : Inherits DBModif
                 Next
                 ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = True
             Else
-                ' empty DBMapper: data was inserted in an empty or first row, check if other cells (not inserted) are empty set insertflag
+                ' empty DBMapper: data was inserted in an empty or first row, check if other cells (not inserted) are empty set insert-flag
                 If changedRangeRows = 1 Then
                     insertFlag = True
                     For Each containedCell As Excel.Range In TargetRange.Rows(changedRange.Row - TargetRange.Row + 1).Cells
@@ -570,7 +570,7 @@ Public Class DBMapper : Inherits DBModif
                     Next
                 End If
 
-                ' inside a listobject Ctrl & + and Ctrl & - add and remove a whole listobject range row, outside with selected row they add/remove a whole sheet row
+                ' inside a list-object Ctrl & + and Ctrl & - add and remove a whole list-object range row, outside with selected row they add/remove a whole sheet row
                 If (changedRangeColumns = targetRangeColumns Or changedRangeColumns = sheetColumns) And changedRangeRows = 1 Then
                     Dim CUDMarkRow As Integer = changedRange.Row - TargetRange.Row + 1
                     ' if all cells (especially first) are empty (=inserting a row with Ctrl & +) add insert flag
@@ -592,7 +592,7 @@ Public Class DBMapper : Inherits DBModif
                     Dim CUDMarkRow As Integer = changedRow.Row - TargetRange.Row + 1
                     ' change only if not already set. Do this here as it is faster then...
                     If TargetRange.Cells(CUDMarkRow, targetRangeColumns + 1).Value IsNot Nothing Then Continue For
-                    ' repair automatic copying down of patterns (non null columns) from header row in Listobjects done by Excel
+                    ' repair automatic copying down of patterns (non null columns) from header row in List-objects done by Excel
                     If CUDMarkRow = 2 Then
                         With TargetRange.Rows(2).Interior
                             .Pattern = Excel.XlPattern.xlPatternNone
@@ -709,7 +709,7 @@ exitSub:
                 If retval = vbCancel Then Exit Sub
             End If
         End If
-        'now create/get a connection (dbcnn) for env(ironment) in case it was not already created by a step in the sequence before (transactions!)
+        'now create/get a connection (dbcnn) for environment in case it was not already created by a step in the sequence before (transactions!)
         If Not TransactionOpen Then
             ExcelDnaUtil.Application.StatusBar = "opening database connection for " + database
             If Not openDatabase() Then Exit Sub
@@ -755,7 +755,7 @@ exitSub:
             For Each schemaRow As DataRow In schemaReader.GetSchemaTable().Rows
                 Try : schemaDataTypeCollection.Add(schemaRow("DataTypeName"), schemaRow("ColumnName")) : Catch ex As Exception : End Try
             Next
-            ' cancel command to finish datareader (otherwise close takes very long until timeout)
+            ' cancel command to finish data-reader (otherwise close takes very long until timeout)
             da.SelectCommand.Cancel()
             schemaReader.Close()
         Catch ex As Exception
@@ -765,7 +765,7 @@ exitSub:
             End If
         End Try
 
-        ' first check if all column names (except ignored) of DBMapper Range exist in table and collect fieldnames
+        ' first check if all column names (except ignored) of DBMapper Range exist in table and collect field-names
         Dim allColumnsStr(TargetRange.Columns.Count - 1) As String
         Dim colNum As Integer = 1
         Dim fieldColNum As Integer = 0
@@ -788,7 +788,7 @@ exitSub:
                 End If
             ElseIf Strings.Right(fieldname.ToUpper(), 2) = "LU" And dscheck.Tables(0).Columns.Contains(Left(fieldname, Len(fieldname) - 2)) Then
                 ' if ignored and the column is a lookup then add the column without LU to preserve the order of columns !!!
-                fieldname = Left(fieldname, Len(fieldname) - 2) ' correct the LU to real fieldname
+                fieldname = Left(fieldname, Len(fieldname) - 2) ' correct the LU to real field-name
                 allColumnsStr(fieldColNum) = fieldname
                 fieldColNum += 1
             End If
@@ -825,7 +825,7 @@ exitSub:
 
         ' the actual dataset
         Dim ds As New DataSet()
-        ' replace the select command to avoid columns that are default filled but non-nullable (will produce errors if not assigned to new row)
+        ' replace the select command to avoid columns that are default filled but non null-able (will produce errors if not assigned to new row)
         da.SelectCommand.CommandText = "SELECT " + String.Join(",", allColumnsStr) + " FROM " + tableName
         ' fill schema again to reflect the changed columns
         Try
@@ -835,7 +835,7 @@ exitSub:
             GoTo cleanup
         End Try
 
-        ' for avoidFill mode (no uploading of whole table) replace select with parameterized query (params are added below)
+        ' for avoidFill mode (no uploading of whole table) replace select with parameterized query (parameters are added below)
         If avoidFill Then da.SelectCommand.CommandText = "SELECT " + String.Join(",", allColumnsStr) + " FROM " + tableName + primKeyCompound
 
         Dim allColumns(UBound(allColumnsStr)) As DataColumn
@@ -848,7 +848,7 @@ exitSub:
         For i As Integer = 0 To UBound(primKeyColumnsStr)
             primKeyColumns(i) = ds.Tables(0).Columns(primKeyColumnsStr(i))
 
-            ' for avoidFill mode (no uploading of whole table) set up params for parameterized query from primary keys
+            ' for avoidFill mode (no uploading of whole table) set up parameters for parameterized query from primary keys
             If avoidFill Then
                 Dim param As Common.DbParameter
                 If TypeName(idbcnn) = "SqlConnection" Then
@@ -922,7 +922,7 @@ exitSub:
         End Try
 
         Dim rowNum As Long = 2
-        ' walk through all rows in DBMapper Targetrange to store in data set
+        ' walk through all rows in DBMapper Target-range to store in data set
         Dim finishLoop As Boolean
         Do
             ' if CUDFlags are set, only insert/update/delete if CUDFlags column (right to DBMapper range) is filled...
@@ -950,11 +950,11 @@ exitSub:
                             End If
                         End If
                     End If
-                    ' special treatment for date(time) fields, try to convert from double (OLE Automation standard: julian datetime values) if not properly formatted
+                    ' special treatment for date(time) fields, try to convert from double (OLE Automation standard: Julian datetime values) if not properly formatted
                     If Left(ds.Tables(0).Columns(primKey).DataType.Name, 4) = "Date" Then
                         If TypeName(primKeyValue) = "Double" Then primKeyValue = Date.FromOADate(primKeyValue)
                     End If
-                    ' empty primary keys are valid if primary key has autoincrement property defined, so pass DBNull Value here to avoid exception in finding record below (record is not found of course)...
+                    ' empty primary keys are valid if primary key has auto-increment property defined, so pass DBNull Value here to avoid exception in finding record below (record is not found of course)...
                     primKeyValues(i - 1) = IIf(IsNothing(primKeyValue) OrElse primKeyValue.ToString() = "", DBNull.Value, primKeyValue)
                     If avoidFill Then
                         da.SelectCommand.Parameters.Item("@" + primKey).Value = primKeyValues(i - 1)
@@ -986,7 +986,7 @@ exitSub:
                     End Try
                 End If
 
-                ' get the record for updating, however avoid finding record with empty primary key value if autoincrement is given...
+                ' get the record for updating, however avoid finding record with empty primary key value if auto-increment is given...
                 Dim foundRow As DataRow = Nothing
                 If Not AutoIncrement Then
                     Try
@@ -998,7 +998,7 @@ exitSub:
                 End If
 
                 Dim insertRecord As Boolean = False
-                ' If we have an autoincrementing primary key (empty primary key value !) or didn't find a record with the given primary key (rst.EOF) ...
+                ' If we have an auto-incrementing primary key (empty primary key value !) or didn't find a record with the given primary key (rst.EOF) ...
                 If AutoIncrement OrElse IsNothing(foundRow) Then
                     If insertIfMissing Or rowCUDFlag = "i" Then
                         insertRecord = True
@@ -1017,12 +1017,12 @@ exitSub:
                                     primKeyValue = TargetRange.ListObject.ListColumns(primKey).Range(rowNum, 1).Value2
                                 End If
                             End If
-                            ' special treatment for date(time) fields, try to convert from double (OLE Automation standard: julian datetime values) if not properly formatted
+                            ' special treatment for date(time) fields, try to convert from double (OLE Automation standard: Julian datetime values) if not properly formatted
                             If Left(ds.Tables(0).Columns(primKey).DataType.Name, 4) = "Date" Then
                                 If TypeName(primKeyValue) = "Double" Then primKeyValue = Date.FromOADate(primKeyValue)
                             End If
                             Try
-                                ' skip empty primary field values for autoincrementing identity fields ..
+                                ' skip empty primary field values for auto-incrementing identity fields ..
                                 If CStr(primKeyValue) <> "" Then foundRow(primKey) = primKeyValue
                             Catch ex As Exception
                                 If Not notifyUserOfDataError("Error inserting primary key value into table " + tableName + ": " + ex.Message, rowNum, i) Then GoTo cleanup
@@ -1033,7 +1033,7 @@ exitSub:
                         If Not notifyUserOfDataError("Did Not find record with primary keys '" + primKeyValueStr + "', insertIfMissing = " + insertIfMissing.ToString() + " in sheet " + TargetRange.Parent.Name + ", row " + rowNum.ToString(), rowNum) Then GoTo cleanup
                         GoTo nextRow
                     End If
-                    ExcelDnaUtil.Application.StatusBar = Left("Inserting " + IIf(AutoIncrement, "new autoincremented key", primKeyValueStr) + " into " + tableName, 255)
+                    ExcelDnaUtil.Application.StatusBar = Left("Inserting " + IIf(AutoIncrement, "new auto-incremented key", primKeyValueStr) + " into " + tableName, 255)
                 End If
                 ' fill non primary key fields to prepare record for insert or update
                 If Not CUDFlags Or (CUDFlags And (rowCUDFlag = "i" Or rowCUDFlag = "u")) Then
@@ -1059,7 +1059,7 @@ exitSub:
                                             GoTo nextRow
                                         End If
                                     Else
-                                        ' special treatment for date(time) fields, try to convert from double (OLE Automation standard: julian datetime values) if not properly formatted
+                                        ' special treatment for date(time) fields, try to convert from double (OLE Automation standard: Julian datetime values) if not properly formatted
                                         If Left(ds.Tables(0).Columns(fieldname).DataType.Name, 4) = "Date" Then
                                             If TypeName(fieldval) = "Double" Then fieldval = Date.FromOADate(fieldval)
                                         End If
@@ -1177,7 +1177,7 @@ cleanup:
         End If
     End Sub
 
-    ''' <summary>notfication of error for user including selection of error cell</summary>
+    ''' <summary>notification of error for user including selection of error cell</summary>
     ''' <param name="message">error message</param>
     ''' <param name="rowNum">error cell row</param>
     ''' <param name="colNum">error cell column</param>
@@ -1417,7 +1417,7 @@ Public Module DBModifs
     Public idbcnn As System.Data.IDbConnection
     ''' <summary>avoid entering Application.SheetChange Event handler during listfetch/setquery</summary>
     Public preventChangeWhileFetching As Boolean = False
-    ''' <summary>indicates an error in execution of DBModifiers, used for commit/rollback and for noninteractive message return</summary>
+    ''' <summary>indicates an error in execution of DBModifiers, used for commit/rollback and for non-interactive message return</summary>
     Public hadError As Boolean
     ''' <summary>used to work around the fact that when started by Application.Run, Formulas are sometimes returned as local</summary>
     Public listSepLocal As String = ExcelDnaUtil.Application.International(Excel.XlApplicationInternational.xlListSeparator)
@@ -1466,7 +1466,7 @@ Public Module DBModifs
 
         Dim theConnString As String = Globals.fetchSetting("ConstConnString" + env.ToString(), "")
         If theConnString = "" Then
-            Globals.UserMsg("No Connectionstring given for environment: " + env.ToString() + ", please correct and rerun.", "Open Connection Error")
+            Globals.UserMsg("No connection string given for environment: " + env.ToString() + ", please correct and rerun.", "Open Connection Error")
             Exit Function
         End If
         Dim dbidentifier As String = Globals.fetchSetting("DBidentifierCCS" + env.ToString(), "")
@@ -1503,7 +1503,7 @@ Public Module DBModifs
         End Try
 
         Globals.LogInfo("open connection with " + theConnString)
-        ExcelDnaUtil.Application.StatusBar = "Trying " + Globals.CnnTimeout.ToString() + " sec. with connstring: " + theConnString
+        ExcelDnaUtil.Application.StatusBar = "Trying " + Globals.CnnTimeout.ToString() + " sec. with connection string: " + theConnString
         Try
             idbcnn.Open()
             openIdbConnection = True
@@ -1549,7 +1549,7 @@ Public Module DBModifs
     ''' <param name="targetDefName"></param>
     Public Sub createDBModif(createdDBModifType As String, Optional targetDefName As String = "")
         ' clipboard helper for legacy definitions:
-        ' if saveRangeToDB<Single> macro calls were copied into clipboard, 1st parameter (datarange) removed (empty), connid moved to 2nd place as database name (remove MSSQL)
+        ' if saveRangeToDB<Single> macro calls were copied into clipboard, 1st parameter (data-range) removed (empty), connid moved to 2nd place as database name (remove MSSQL)
         'mapper.saveRangeToDBSingle(Range("DB_DefName"), "tableName", "primKey1,primKey2,primKey3", "MSSQLDB_NAME", True) 
         '       -> def(, "DB_NAME", "tableName", "primKey1,primKey2,primKey3", True)    DBMapperName = DB_DefName
         'mapper.saveRangeToDBSingle(Range("DB_DefName"), "tableName", "primKey1,primKey2,primKey3", "MSSQLDB_NAME")       
@@ -1658,7 +1658,7 @@ Public Module DBModifs
                 .AskForExecute.Top = .CreateCB.Top
                 .execOnSave.Anchor = AnchorStyles.Bottom Or AnchorStyles.Left
                 .AskForExecute.Anchor = AnchorStyles.Bottom Or AnchorStyles.Left
-                ' fill Datagridview for DBSequence
+                ' fill Data grid-view for DBSequence
                 Dim cb As New DataGridViewComboBoxColumn With {
                     .HeaderText = "Sequence Step",
                     .ReadOnly = False
@@ -1699,7 +1699,7 @@ Public Module DBModifs
                 ' at last add special items DBBeginTrans and DBCommitTrans for setting DB Transaction brackets
                 ds.Add("DBBegin:Begins DB Transaction")
                 ds.Add("DBCommitRollback:Commits or Rolls back DB Transaction")
-                ' and bind the dataset to the combobox
+                ' and bind the dataset to the combo-box
                 cb.DataSource() = ds
                 .DBSeqenceDataGrid.Columns.Add(cb)
                 .DBSeqenceDataGrid.Columns(0).Width = 400
@@ -1819,7 +1819,7 @@ Public Module DBModifs
             If existingDBModif IsNot Nothing Then existingDBModif.addHiddenFeatureDefs(dbModifNode)
             ' refresh mapper definitions to reflect changes immediately...
             getDBModifDefinitions()
-            ' extend Datarange for new DBMappers immediately after definition...
+            ' extend Data-range for new DBMappers immediately after definition...
             If createdDBModifType = "DBMapper" Then
                 DirectCast(Globals.DBModifDefColl("DBMapper").Item(createdDBModifType + .DBModifName.Text), DBMapper).extendDataRange()
             End If
@@ -1999,7 +1999,7 @@ EndOuterLoop:
     <ExcelCommand(Name:="executeDBModif")>
     Public Function executeDBModif(DBModifName As String, Optional headLess As Boolean = False) As String
         hadError = False : Globals.nonInteractive = headLess
-        Globals.nonInteractiveErrMsgs = "" ' reset noninteractive messages
+        Globals.nonInteractiveErrMsgs = "" ' reset non-interactive messages
         Dim DBModiftype As String = Left(DBModifName, 8)
         If DBModiftype = "DBSeqnce" Or DBModiftype = "DBMapper" Or DBModiftype = "DBAction" Then
             If Not Globals.DBModifDefColl(DBModiftype).ContainsKey(DBModifName) Then
@@ -2064,7 +2064,7 @@ Public Class CustomCommandBuilder
         Me.allColumns = allColumns
     End Sub
 
-    ''' <summary>Creates Insert command with support for Autoincrement (Identity) fields</summary>
+    ''' <summary>Creates Insert command with support for Auto-increment (Identity) fields</summary>
     ''' <returns>Command for inserting</returns>
     Public Overridable Function InsertCommand() As Common.DbCommand
         Throw New NotImplementedException()
@@ -2089,7 +2089,7 @@ Public Class CustomCommandBuilder
 
 End Class
 
-''' <summary>Custom Command builder for SQLServer to avoid primary key problems with builtin ones
+''' <summary>Custom Command builder for SQLServer to avoid primary key problems with built-in ones
 ''' derived (transposed into VB.NET) from https://www.cogin.com/articles/CustomCommandBuilder.php
 ''' Copyright by Dejan Grujic 2004. http://www.cogin.com
 ''' </summary>
@@ -2105,7 +2105,7 @@ Public Class CustomSqlCommandBuilder
         Me.schemaDataTypeCollection = schemaDataTypeCollection
     End Sub
 
-    ''' <summary>Creates Insert command with support for Autoincrement (Identity) fields</summary>
+    ''' <summary>Creates Insert command with support for Auto-increment (Identity) fields</summary>
     ''' <returns>SqlCommand for inserting</returns>
     Public Overrides Function InsertCommand() As Common.DbCommand
         Dim command As SqlClient.SqlCommand = GetTextCommand("")
@@ -2216,7 +2216,7 @@ Public Class CustomSqlCommandBuilder
 
 End Class
 
-''' <summary>Custom Command builder for ODBC to avoid primary key problems with builtin ones
+''' <summary>Custom Command builder for ODBC to avoid primary key problems with built-in ones
 ''' derived (transposed into VB.NET) from https://www.cogin.com/articles/CustomCommandBuilder.php
 ''' Copyright by Dejan Grujic 2004. http://www.cogin.com
 ''' </summary>
@@ -2232,7 +2232,7 @@ Public Class CustomOdbcCommandBuilder
         Me.schemaDataTypeCollection = schemaDataTypeCollection
     End Sub
 
-    ''' <summary>Creates Insert command with support for Autoincrement (Identity) fields</summary>
+    ''' <summary>Creates Insert command with support for Auto-increment (Identity) fields</summary>
     ''' <returns>OdbcCommand for inserting</returns>
     Public Overrides Function InsertCommand() As Common.DbCommand
         Dim command As Odbc.OdbcCommand = GetTextCommand("")
@@ -2342,7 +2342,7 @@ Public Class CustomOdbcCommandBuilder
     End Function
 End Class
 
-''' <summary>Custom Command builder for OleDB to avoid primary key problems with builtin ones
+''' <summary>Custom Command builder for OleDB to avoid primary key problems with built-in ones
 ''' derived (transposed into VB.NET) from https://www.cogin.com/articles/CustomCommandBuilder.php
 ''' Copyright by Dejan Grujic 2004. http://www.cogin.com
 ''' </summary>
@@ -2358,7 +2358,7 @@ Public Class CustomOleDbCommandBuilder
         Me.schemaDataTypeCollection = schemaDataTypeCollection
     End Sub
 
-    ''' <summary>Creates Insert command with support for Autoincrement (Identity) fields</summary>
+    ''' <summary>Creates Insert command with support for Auto-increment (Identity) fields</summary>
     ''' <returns>OleDbCommand for inserting</returns>
     Public Overrides Function InsertCommand() As Common.DbCommand
         Dim command As OleDb.OleDbCommand = GetTextCommand("")

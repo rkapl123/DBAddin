@@ -162,14 +162,14 @@ Public Class MenuHandler
         Return customUIXml
     End Function
 
-    ''' <summary>initialise the AdhocSQL ribbon combobox entries</summary>
+    ''' <summary>initialize the AdhocSQL ribbon combo-box entries</summary>
     Private Sub initAdhocSQLconfig()
         Dim customSettings As NameValueCollection = Nothing
         Try : customSettings = ConfigurationManager.GetSection("UserSettings") : Catch ex As Exception
-            LogWarn("Error in getting Usersettings (DBAddinUser.config) for AdhocSQLconfig entries: " + ex.Message)
+            LogWarn("Error in getting User-settings (DBAddinUser.config) for AdhocSQLconfig entries: " + ex.Message)
         End Try
         AdHocSQLStrings = New List(Of String)
-        ' getting Usersettings might fail (formatting, etc)...
+        ' getting User-settings might fail (formatting, etc)...
         If Not IsNothing(customSettings) Then
             For Each key As String In customSettings.AllKeys
                 If Left(key, 11) = "AdhocSQLcmd" Then AdHocSQLStrings.Add(customSettings(key))
@@ -189,7 +189,7 @@ Public Class MenuHandler
         showDBAdHocSQL(Nothing, "")
     End Sub
 
-    ''' <summary>show Adhoc SQL Query editor</summary>
+    ''' <summary>show Ad-hoc SQL Query editor</summary>
     ''' <param name="control"></param>
     Public Sub showDBAdHocSQL(control As CustomUI.IRibbonControl, selectedSQLText As String)
         Dim queryString As String = ""
@@ -199,7 +199,7 @@ Public Class MenuHandler
         ' reflect potential change in environment...
         theRibbon.InvalidateControl("envDropDown")
         If dialogResult = System.Windows.Forms.DialogResult.OK Then 'OK is set when "transfer" is clicked
-            ' "Transfer" was clicked: place SQL String into currently selected Cell/DBFunction and add to combobox
+            ' "Transfer" was clicked: place SQL String into currently selected Cell/DBFunction and add to combo-box
             queryString = theAdHocSQLDlg.SQLText.Text
             If theAdHocSQLDlg.TransferType.Text = "Cell" Then
                 Dim targetFormula As String = ExcelDnaUtil.Application.ActiveCell.Formula
@@ -227,7 +227,7 @@ Public Class MenuHandler
                         ' db function, recreate with query inside
                         ' get the parts of the targeted function formula
                         Dim formulaParams As String = Mid$(targetFormula, Len(srchdFunc) + 3)
-                        ' replace querystring in existing formula 
+                        ' replace query-string in existing formula 
                         formulaParams = Left(formulaParams, Len(formulaParams) - 1)
                         Dim tempFormula As String = Globals.replaceDelimsWithSpecialSep(formulaParams, ",", """", "(", ")", vbTab)
                         Dim restFormula As String = Mid$(tempFormula, InStr(tempFormula, vbTab))
@@ -259,10 +259,10 @@ Public Class MenuHandler
                 Globals.createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBListFetch(""" + queryString + ""","""",R[1]C,,,TRUE,TRUE,TRUE)"})
             End If
         ElseIf dialogResult = System.Windows.Forms.DialogResult.Cancel Then 'Cancel is set when "close" is clicked
-            ' "Close" was clicked: only add SQL String to combobox
+            ' "Close" was clicked: only add SQL String to combo-box
             queryString = Strings.Trim(theAdHocSQLDlg.SQLText.Text)
         End If
-        If selectedSQLText = "" Then selectedSQLText = queryString ' if adhoc SQL dialog was opened with mini button (fresh SQL) then set selectedSQLText here at least to the queryText to get the right index
+        If selectedSQLText = "" Then selectedSQLText = queryString ' if ad-hoc SQL dialog was opened with mini button (fresh SQL) then set selectedSQLText here at least to the queryText to get the right index
 
         ' "Add" or "Transfer": store new sql command into AdHocSQLStrings and settings
         If Not AdHocSQLStrings.Contains(queryString) And Strings.Replace(queryString, " ", "") <> "" Then
@@ -279,12 +279,12 @@ Public Class MenuHandler
             selectedAdHocSQLIndex = AdHocSQLStrings.IndexOf(selectedSQLText)
         End If
         If Strings.Replace(queryString, " ", "") <> "" And selectedAdHocSQLIndex >= 0 Then
-            ' store the combobox values for later...
+            ' store the combo-box values for later...
             Globals.setUserSetting("AdHocSQLcmdEnv" + selectedAdHocSQLIndex.ToString(), theAdHocSQLDlg.EnvSwitch.SelectedIndex.ToString())
             Globals.setUserSetting("AdHocSQLcmdDB" + selectedAdHocSQLIndex.ToString(), theAdHocSQLDlg.Database.Text)
         End If
         Globals.setUserSetting("AdHocSQLTransferType", theAdHocSQLDlg.TransferType.Text)
-        ' reflect changes in sql combobox
+        ' reflect changes in sql combo-box
         theRibbon.InvalidateControl("DBAdhocSQL")
     End Sub
 
@@ -352,9 +352,9 @@ Public Class MenuHandler
         End If
     End Function
 
-    ''' <summary>display state of designmode in screentip of dialogBox launcher</summary>
+    ''' <summary>display state of design-mode in screentip of dialogBox launcher</summary>
     ''' <param name="control"></param>
-    ''' <returns>screentip and the state of designmode</returns>
+    ''' <returns>screentip and the state of design-mode</returns>
     Public Function getToggleCPropsScreentip(control As CustomUI.IRibbonControl) As String
         getToggleCPropsScreentip = ""
         Dim actWb As Excel.Workbook = Nothing
@@ -370,12 +370,12 @@ Public Class MenuHandler
                     End If
                 Next
             Catch ex As Exception
-                getToggleCPropsScreentip += "exception when collecting docproperties: " + ex.Message
+                getToggleCPropsScreentip += "exception when collecting doc-properties: " + ex.Message
             End Try
         End If
     End Function
 
-    ''' <summary>click on change props: show builtin properties dialog</summary>
+    ''' <summary>click on change props: show built-in properties dialog</summary>
     ''' <param name="control"></param>
     Public Sub showCProps(control As CustomUI.IRibbonControl)
         Dim actWb As Excel.Workbook = Nothing
@@ -430,34 +430,34 @@ Public Class MenuHandler
         createDBModif(Replace(Replace(sender.ToString(), "a ", ""), "DBSequence", "DBSeqnce"))
     End Sub
 
-    ''' <summary>toggle designmode button</summary>
+    ''' <summary>toggle design mode button</summary>
     ''' <param name="control"></param>
     Sub showToggleDesignMode(control As CustomUI.IRibbonControl)
         Dim cbrs As Object = ExcelDnaUtil.Application.CommandBars
         If cbrs IsNot Nothing AndAlso cbrs.GetEnabledMso("DesignMode") Then
             cbrs.ExecuteMso("DesignMode")
         Else
-            Globals.UserMsg("Couldn't toggle designmode, because Designmode commandbar button is not available (no button?)", "DBAddin toggle Designmode", MsgBoxStyle.Exclamation)
+            Globals.UserMsg("Couldn't toggle design mode, because Design mode command-bar button is not available (no button?)", "DBAddin toggle Design mode", MsgBoxStyle.Exclamation)
         End If
-        ' update state of designmode in screentip
+        ' update state of design mode in screentip
         Globals.theRibbon.InvalidateControl(control.Id)
     End Sub
 
-    ''' <summary>display state of designmode in screentip of button</summary>
+    ''' <summary>display state of design mode in screentip of button</summary>
     ''' <param name="control"></param>
-    ''' <returns>screentip and the state of designmode</returns>
+    ''' <returns>screentip and the state of design mode</returns>
     Public Function getToggleDesignScreentip(control As CustomUI.IRibbonControl) As String
         Dim cbrs As Object = ExcelDnaUtil.Application.CommandBars
         If cbrs IsNot Nothing AndAlso cbrs.GetEnabledMso("DesignMode") Then
-            Return "Designmode is currently " + IIf(cbrs.GetPressedMso("DesignMode"), "on !", "off !")
+            Return "Design mode is currently " + IIf(cbrs.GetPressedMso("DesignMode"), "on !", "off !")
         Else
-            Return "Designmode commandbar button not available (no button on sheet)"
+            Return "Design mode command-bar button not available (no button on sheet)"
         End If
     End Function
 
-    ''' <summary>display state of designmode in icon of button</summary>
+    ''' <summary>display state of design mode in icon of button</summary>
     ''' <param name="control"></param>
-    ''' <returns>screentip and the state of designmode</returns>
+    ''' <returns>screentip and the state of design mode</returns>
     Public Function getToggleDesignImage(control As CustomUI.IRibbonControl) As String
         Dim cbrs As Object = ExcelDnaUtil.Application.CommandBars
         If cbrs IsNot Nothing AndAlso cbrs.GetEnabledMso("DesignMode") Then
@@ -495,9 +495,9 @@ Public Class MenuHandler
         Return Globals.selectedEnvironment
     End Function
 
-    ''' <summary>tooltip for the environment select drop down</summary>
+    ''' <summary>tool-tip for the environment select drop down</summary>
     ''' <param name="control"></param>
-    ''' <returns>the tooltip</returns>
+    ''' <returns>the tool-tip</returns>
     Public Function GetEnvSelectedTooltip(control As CustomUI.IRibbonControl) As String
         If CBool(Globals.fetchSetting("DontChangeEnvironment", "False")) Then
             Return "DontChangeEnvironment is set, therefore changing the Environment is prevented !"
@@ -647,7 +647,7 @@ Public Class MenuHandler
         Try : actWb = ExcelDnaUtil.Application.ActiveWorkbook : Catch ex As Exception
             Globals.UserMsg("Exception when trying to get the active workbook for DB Modifier activation: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
         End Try
-        ' reset noninteractive messages (used for VBA invocations) and hadError for interactive invocations
+        ' reset non-interactive messages (used for VBA invocations) and hadError for interactive invocations
         Globals.nonInteractiveErrMsgs = "" : DBModifs.hadError = False
         Dim nodeName As String = Right(control.Id, Len(control.Id) - 1)
         If Not ExcelDnaUtil.Application.CommandBars.GetEnabledMso("FileNewDefault") Then
@@ -721,12 +721,12 @@ Public Class MenuHandler
         ElseIf control.Tag = "DBSetQueryPivot" Then
             ' first create a dummy pivot table
             Globals.createPivotTable(ExcelDnaUtil.Application.ActiveCell)
-            ' then create the DBSetQuery assigning the (yet to be filled) query to the above listobject
+            ' then create the DBSetQuery assigning the (yet to be filled) query to the above list-object
             Globals.createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBSetQuery("""","""",R[1]C)"})
         ElseIf control.Tag = "DBSetQueryListObject" Then
             ' first create a dummy ListObject
             Globals.createListObject(ExcelDnaUtil.Application.ActiveCell)
-            ' then create the DBSetQuery assigning the (yet to be filled) query to the above listobject
+            ' then create the DBSetQuery assigning the (yet to be filled) query to the above list-object
             Globals.createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBSetQuery("""","""",RC[1])"})
         ElseIf control.Tag = "DBMapper" Or control.Tag = "DBAction" Or control.Tag = "DBSeqnce" Then
             If activeCellDBModifType = control.Tag Then  ' edit existing definition

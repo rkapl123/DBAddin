@@ -1,4 +1,3 @@
-Imports ADODB
 Imports System.Data
 Imports System.Data.Common
 Imports System.Data.Odbc
@@ -24,16 +23,12 @@ Public Module Functions
     ''' <summary>global collection of information transport containers between action function and user-defined function resp. calc event procedure</summary>
     Public StatusCollection As Dictionary(Of String, ContainedStatusMsg)
     ''' <summary>connection object</summary>
-    Public iconn As System.Data.IDbConnection
-    ''' <summary>connection object: always use the same, if possible (same ConnectionString)</summary>
-    Public conn As ADODB.Connection
+    Public conn As System.Data.IDbConnection
     ''' <summary>connection string can be changed for calls with different connection strings</summary>
     Public CurrConnString As String
     ''' <summary>query cache for avoiding unnecessary recalculations/data retrievals by volatile inputs to DB Functions (now(), etc.)</summary>
     Public queryCache As Dictionary(Of String, String)
-    ''' <summary>prevent multiple connection retries for each function in case of error</summary>
-    Public dontTryConnection As Boolean
-    ''' <summary>avoid entering dblistfetch/dbrowfetch functions during clearing of listfetch areas (before saving)</summary>
+    ''' <summary>avoid entering dblistfetch/dbrowfetch functions during clearing of list-fetch areas (before saving)</summary>
     Public dontCalcWhileClearing As Boolean
 
     ''' <summary>Create database compliant date, time or datetime string from excel date type value</summary>
@@ -42,7 +37,7 @@ Public Module Functions
     ''' <returns>the DB compliant formatted date/time/datetime</returns>
     ''' <remarks>
     ''' formatting = 0: A simple date string (format 'YYYYMMDD'), datetime values are converted to 'YYYYMMDD HH:MM:SS' and time values are converted to 'HH:MM:SS'.
-    ''' formatting = 1: An ANSI compliant Date string (format date 'YYYY-MM-DD'), datetime values are converted to time stamp 'YYYY-MM-DD HH:MM:SS' and time values are converted to time time 'HH:MM:SS'.
+    ''' formatting = 1: An ANSI compliant Date string (format date 'YYYY-MM-DD'), datetime values are converted to 'YYYY-MM-DD HH:MM:SS' and time values are converted to 'HH:MM:SS'.
     ''' formatting = 2: An ODBC compliant Date string (format {d 'YYYY-MM-DD'}), datetime values are converted to {ts 'YYYY-MM-DD HH:MM:SS'} and time values are converted to {t 'HH:MM:SS'}.
     ''' formatting = 3: An Access/JetDB compliant Date string (format #YYYY-MM-DD#), datetime values are converted to #YYYY-MM-DD HH:MM:SS# and time values are converted to #HH:MM:SS#.
     ''' add 10 to formatting to include fractions of a second (1000) 
@@ -570,7 +565,7 @@ Public Module Functions
     ''' <returns>Status Message</returns>
     <ExcelFunction(Description:="Stores a query into a power query object defined in queryName")>
     Public Function DBSetPowerQuery(<ExcelArgument(Description:="query for getting data")> Query As Object,
-                               <ExcelArgument(Description:="Name of Powerquery where query should be set")> queryName As Object) As String
+                                    <ExcelArgument(Description:="Name of Powerquery where query should be set")> queryName As Object) As String
         Dim callID As String = ""
         Dim caller As Excel.Range
         Dim EnvPrefix As String = ""
@@ -746,15 +741,9 @@ Public Module Functions
             If Not StatusCollection.ContainsKey(callID) Then
                 Dim statusCont As New ContainedStatusMsg
                 StatusCollection.Add(callID, statusCont)
-                If Globals.fetchSetting("useAltDBListFetch", "false") = "true" Then
-                    ExcelAsyncUtil.QueueAsMacro(Sub()
-                                                    DBListFetchActionAlt(callID, CStr(Query), caller, ToRange(targetRange), CStr(ConnString), ToRange(formulaRange), extendDataArea, HeaderInfo, AutoFit, autoformat, ShowRowNums, targetRangeName, formulaRangeName)
-                                                End Sub)
-                Else
-                    ExcelAsyncUtil.QueueAsMacro(Sub()
-                                                    DBListFetchAction(callID, CStr(Query), caller, ToRange(targetRange), CStr(ConnString), ToRange(formulaRange), extendDataArea, HeaderInfo, AutoFit, autoformat, ShowRowNums, targetRangeName, formulaRangeName)
-                                                End Sub)
-                End If
+                ExcelAsyncUtil.QueueAsMacro(Sub()
+                                                DBListFetchAction(callID, CStr(Query), caller, ToRange(targetRange), CStr(ConnString), ToRange(formulaRange), extendDataArea, HeaderInfo, AutoFit, autoformat, ShowRowNums, targetRangeName, formulaRangeName)
+                                            End Sub)
             End If
         Catch ex As Exception
             Globals.LogWarn(ex.Message + ", callID : " + callID)
@@ -778,7 +767,7 @@ Public Module Functions
     ''' <param name="ShowRowNumbers"></param>
     ''' <param name="targetRangeName"></param>
     ''' <param name="formulaRangeName"></param>
-    Public Sub DBListFetchActionAlt(callID As String, Query As String, caller As Excel.Range, targetRange As Excel.Range, ConnString As String, formulaRange As Object, extendArea As Integer, HeaderInfo As Boolean, AutoFit As Boolean, autoformat As Boolean, ShowRowNumbers As Boolean, targetRangeName As String, formulaRangeName As String)
+    Public Sub DBListFetchAction(callID As String, Query As String, caller As Excel.Range, targetRange As Excel.Range, ConnString As String, formulaRange As Object, extendArea As Integer, HeaderInfo As Boolean, AutoFit As Boolean, autoformat As Boolean, ShowRowNumbers As Boolean, targetRangeName As String, formulaRangeName As String)
         Dim errMsg As String
         Globals.LogInfo("Entering DBListFetchAction: callID " + callID)
         Dim calcMode = ExcelDnaUtil.Application.Calculation
@@ -1096,439 +1085,6 @@ err:    Globals.LogWarn(errMsg + ", caller: " + callID)
         caller.Formula += " " ' recalculate to trigger return of error messages to calling function
     End Sub
 
-
-    ''' <summary>Actually do the work for DBListFetch: Query list of data delimited by maxRows and maxCols, write it into targetCells
-    '''             additionally copy formulas contained in formulaRange and extend list depending on extendArea</summary>
-    ''' <param name="callID"></param>
-    ''' <param name="Query"></param>
-    ''' <param name="caller"></param>
-    ''' <param name="targetRange"></param>
-    ''' <param name="ConnString"></param>
-    ''' <param name="formulaRange"></param>
-    ''' <param name="extendArea"></param>
-    ''' <param name="HeaderInfo"></param>
-    ''' <param name="AutoFit"></param>
-    ''' <param name="autoformat"></param>
-    ''' <param name="ShowRowNumbers"></param>
-    ''' <param name="targetRangeName"></param>
-    ''' <param name="formulaRangeName"></param>
-    Public Sub DBListFetchAction(callID As String, Query As String, caller As Excel.Range, targetRange As Excel.Range, ConnString As String, formulaRange As Object, extendArea As Integer, HeaderInfo As Boolean, AutoFit As Boolean, autoformat As Boolean, ShowRowNumbers As Boolean, targetRangeName As String, formulaRangeName As String)
-        Dim tableRst As ADODB.Recordset
-        Dim formulaFilledRange As Excel.Range = Nothing
-        Dim targetSH As Excel.Worksheet, formulaSH As Excel.Worksheet = Nothing
-        Dim NumFormat() As String = Nothing, NumFormatF() As String = Nothing
-        Dim headingOffset, rowDataStart, startRow, startCol, arrayCols, arrayRows, copyDown As Integer
-        Dim oldRows, oldCols, oldFRows, oldFCols, retrievedRows, targetColumns, formulaStart As Integer
-        Dim warning As String, errMsg As String, tmpname As String
-
-        Globals.LogInfo("Entering DBListFetchAction: callID " + callID)
-
-        On Error Resume Next
-        Dim calcMode = ExcelDnaUtil.Application.Calculation
-        Dim scrnUpdate As Boolean = ExcelDnaUtil.Application.ScreenUpdating
-        ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual
-        ' this works around the data validation input bug and being called when COM Model is not ready
-        ' when selecting a value from a list of a validated field or being invoked from a hyperlink (e.g. word), excel won't react to
-        ' Application.Calculation changes, so just leave here...
-        If ExcelDnaUtil.Application.Calculation <> Excel.XlCalculation.xlCalculationManual Then
-            errMsg = "Error in setting Application.Calculation to Manual: " + Err.Description + " in query: " + Query
-            GoTo err_0
-        End If
-        ExcelDnaUtil.Application.Cursor = Excel.XlMousePointer.xlWait  ' show the hourglass
-        targetSH = targetRange.Parent
-        formulaRange = formulaRange
-        warning = ""
-
-        Dim srcExtent As String, targetExtent As String, targetExtentF As String
-        srcExtent = caller.Name.Name
-        If Err.Number <> 0 Or InStr(1, srcExtent, "DBFsource") = 0 Then
-            Err.Clear()
-            srcExtent = "DBFsource" + Replace(Guid.NewGuid().ToString(), "-", "")
-            caller.Name = srcExtent
-            If Err.Number <> 0 Then
-                errMsg = "Error in setting srcExtent name: " + Err.Description + " in query: " + Query
-                GoTo err_0
-            End If
-        End If
-        caller.Parent.Parent.Names(srcExtent).Visible = False
-        targetExtent = Replace(srcExtent, "DBFsource", "DBFtarget")
-        targetExtentF = Replace(srcExtent, "DBFsource", "DBFtargetF")
-
-        If formulaRange IsNot Nothing Then
-            formulaSH = formulaRange.Parent
-            ' only first row of formulaRange is important, rest will be auto filled down (actually this is needed to make the auto format work)
-            formulaRange = formulaRange.Rows(1)
-        End If
-        Err.Clear()
-
-        startRow = targetRange.Cells(1, 1).Row : startCol = targetRange.Cells(1, 1).Column
-        If Err.Number <> 0 Then
-            errMsg = "Error in setting startRow/startCol: " + Err.Description + " in query: " + Query
-            GoTo err_0
-        End If
-
-        DBModifs.preventChangeWhileFetching = True
-        ' to prevent flickering...
-        ExcelDnaUtil.Application.ScreenUpdating = False
-        oldRows = targetSH.Parent.Names(targetExtent).RefersToRange.Rows.Count
-        oldCols = targetSH.Parent.Names(targetExtent).RefersToRange.Columns.Count
-        If Err.Number = 0 Then
-            ' clear old data area
-            targetSH.Parent.Names(targetExtent).RefersToRange.ClearContents
-            If Err.Number <> 0 Then
-                errMsg = "Error in clearing old data for targetExtent: (" + Err.Description + ") in query: " + Query
-                GoTo err_0
-            End If
-        End If
-        Err.Clear()
-        ' if formulas are adjacent to data extend total range to formula range ! total range is used to extend DBMappers defined under the DB Function target...
-        Dim additionalFormulaColumns As Integer = 0
-        If formulaRange IsNot Nothing Then
-            If targetSH Is formulaSH And formulaRange.Column = startCol + oldCols Then additionalFormulaColumns = formulaRange.Columns.Count
-        End If
-        Dim oldTotalTargetRange As Excel.Range = targetRange
-        If additionalFormulaColumns > 0 Then
-            oldTotalTargetRange = targetSH.Range(targetSH.Cells(startRow, startCol), targetSH.Cells(startRow + oldRows - 1, startCol + oldCols + additionalFormulaColumns))
-        End If
-
-        If Not IsNothing(formulaSH) Then
-            On Error Resume Next
-            oldFRows = formulaSH.Parent.Names(targetExtentF).RefersToRange.Rows.Count
-            oldFCols = formulaSH.Parent.Names(targetExtentF).RefersToRange.Columns.Count
-            If Err.Number = 0 And oldFRows > 2 Then
-                Err.Clear()
-                ' clear old formulas
-                formulaSH.Range(formulaSH.Cells(formulaRange.Row + 1, formulaRange.Column), formulaSH.Cells(formulaRange.Row + oldFRows - 1, formulaRange.Column + oldFCols - 1)).ClearContents()
-
-                If Err.Number <> 0 Then
-                    errMsg = "Error in clearing old data for formulaSH: (" + Err.Description + ") in query: " + Query
-                    GoTo err_0
-                End If
-            End If
-            Err.Clear()
-        End If
-
-        Dim ODBCconnString As String = ""
-        If InStr(1, UCase$(ConnString), ";ODBC;") > 0 Then
-            ODBCconnString = Mid$(ConnString, InStr(1, UCase$(ConnString), ";ODBC;") + 1)
-            ConnString = Left$(ConnString, InStr(1, UCase$(ConnString), ";ODBC;") - 1)
-        End If
-
-        If conn Is Nothing Then conn = New ADODB.Connection
-        If CurrConnString <> ConnString Then
-            If conn.State <> 0 Then conn.Close()
-            dontTryConnection = False
-        End If
-
-        If conn.State <> ADODB.ObjectStateEnum.adStateOpen And Not dontTryConnection Then
-            conn.ConnectionTimeout = CnnTimeout
-            conn.CommandTimeout = CmdTimeout
-            conn.CursorLocation = CursorLocationEnum.adUseClient
-            ExcelDnaUtil.Application.StatusBar = "Trying " + CnnTimeout.ToString() + " sec. with connection string: " + ConnString
-            Err.Clear()
-            conn.Open(ConnString)
-
-            If Err.Number <> 0 Then
-                Globals.LogWarn("Connection Error: " + Err.Description)
-                ' prevent multiple reconnecting if connection errors present...
-                dontTryConnection = True
-                StatusCollection(callID).statusMsg = "Connection Error: " + Err.Description
-            End If
-            CurrConnString = ConnString
-        End If
-
-        ExcelDnaUtil.Application.StatusBar = "Retrieving data for DBList: " + If(targetRangeName.Length > 0, targetRangeName, targetSH.Name + "!" + targetRange.Address)
-        tableRst = New ADODB.Recordset
-        tableRst.Open(Query, conn, CursorTypeEnum.adOpenForwardOnly, LockTypeEnum.adLockReadOnly, CommandTypeEnum.adCmdText)
-        Dim dberr As String = ""
-        If conn.Errors.Count > 0 Then
-            Dim errcount As Integer
-            For errcount = 0 To conn.Errors.Count - 1
-                If conn.Errors.Item(errcount).Description <> Err.Description Then dberr = dberr + ";" + conn.Errors.Item(errcount).Description
-            Next
-            If dberr.Length > 0 Then dberr = " (" + dberr + ")"
-        End If
-        If Err.Number <> 0 Then
-            errMsg = "Error in retrieving data: " + Err.Description + dberr + " in query: " + Query
-            GoTo err_1
-        End If
-        ' this fails in case of known issue with OLEDB driver...
-        retrievedRows = tableRst.RecordCount
-        If Err.Number <> 0 Then
-            errMsg = "Error in opening recordset: " + Err.Description + dberr + " in query: " + Query
-            GoTo err_1
-        End If
-        Dim aborted As Boolean = XlCall.Excel(XlCall.xlAbort) ' for long running actions, allow interruption
-        If aborted Then
-            errMsg = "data fetching interrupted by user !"
-            GoTo err_1
-        End If
-
-        ' from now on we don't propagate any errors as data is modified in sheet....
-        ExcelDnaUtil.Application.StatusBar = "Displaying data for DBList: " + If(targetRangeName.Length > 0, targetRangeName, targetSH.Name + "!" + targetRange.Address)
-        If tableRst.EOF Then warning = "Warning: No Data returned in query: " + Query
-        ' set size for named range (size: arrayRows, arrayCols) used for resizing the data area (old extent)
-        arrayCols = tableRst.Fields.Count
-        arrayRows = retrievedRows
-        ' need to shift down 1 row if headings are present
-        arrayRows += If(HeaderInfo, 1, 0)
-        rowDataStart = 1 + If(HeaderInfo, 1, 0)
-
-        ' check whether retrieved data exceeds excel's limits and limit output (arrayRows/arrayCols) in case ...
-        ' check rows
-        If targetRange.Row + arrayRows > (targetRange.EntireColumn.Rows.Count + 1) Then
-            warning = "row count of returned data exceeds max row of excel: start row:" + targetRange.Row.ToString() + " + row count:" + arrayRows.ToString() + " > max row+1:" + (targetRange.EntireColumn.Rows.Count + 1).ToString()
-            arrayRows = targetRange.EntireColumn.Rows.Count - startRow + 1
-        End If
-        ' check columns
-        If targetRange.Column + arrayCols > (targetRange.EntireRow.Columns.Count + 1) Then
-            warning = warning + ", column count of returned data exceed max column of excel: start column:" + targetRange.Column.ToString() + " + column count:" + arrayCols.ToString() + " > max column+1:" + (targetRange.EntireRow.Columns.Count + 1).ToString()
-            arrayCols = targetRange.EntireRow.Columns.Count - startCol + 1
-        End If
-
-        ' auto format: copy 1st rows formats range to apply them afterwards to whole column(s)
-        targetColumns = arrayCols - If(ShowRowNumbers, 0, 1)
-        If autoformat Then
-            arrayRows += If(HeaderInfo And arrayRows = 1, 1, 0)  ' need special case for autoformat
-            For i As Integer = 0 To targetColumns
-                ReDim Preserve NumFormat(i)
-                NumFormat(i) = targetSH.Cells(startRow + rowDataStart - 1, startCol + i).NumberFormat
-            Next
-            ' now for the calculated data area
-            If formulaRange IsNot Nothing Then
-                For i = 0 To formulaRange.Columns.Count - 1
-                    ReDim Preserve NumFormatF(i)
-                    NumFormatF(i) = formulaSH.Cells(startRow + rowDataStart - 1, formulaRange.Column + i).NumberFormat
-                Next
-            End If
-        End If
-        If arrayRows = 0 Then arrayRows = 1  ' sane behavior of named range in case no data retrieved...
-
-        ' check if formulaRange and targetRange overlap !
-        Dim possibleIntersection As Excel.Range = ExcelDnaUtil.Application.Intersect(formulaRange, targetSH.Range(targetRange.Cells(1, 1), targetRange.Cells(1, 1).Offset(arrayRows - 1, arrayCols - 1)))
-        Err.Clear()
-        If possibleIntersection IsNot Nothing Then
-            warning += ", formulaRange and targetRange intersect (" + targetSH.Name + "!" + possibleIntersection.Address + "), formula copying disabled !!"
-            formulaRange = Nothing
-        End If
-
-        ' data list and formula range extension (ignored in first call after creation -> no defined name is set -> oldRows=0)...
-        'TODO: check problems with shifting formula ranges in case of shifting mode 1 (cells)
-        headingOffset = IIf(HeaderInfo, 1, 0)  ' use that for generally regarding headings !!
-        If oldRows > 0 Then
-            ' either cells/rows are shifted down (old data area was smaller than current) ...
-            If oldRows < arrayRows Then
-                'prevent insertion from heading row if headings are present (to not get the header formats..)
-                Dim headingFirstRowPrevent As Integer = IIf(HeaderInfo And oldRows = 1 And arrayRows > 2, 1, 0)
-                '1: add cells (not whole rows)
-                If extendArea = 1 Then
-                    targetSH.Range(targetSH.Cells(startRow + oldRows + headingFirstRowPrevent, startCol), targetSH.Cells(startRow + arrayRows - 1, startCol + oldCols - 1)).Insert(Shift:=Excel.XlDirection.xlDown)
-                    If formulaRange IsNot Nothing Then
-                        formulaSH.Range(formulaSH.Cells(startRow + oldFRows + headingOffset, formulaRange.Column), formulaSH.Cells(startRow + arrayRows - 1 - headingFirstRowPrevent, formulaRange.Column + oldFCols - 1)).Insert(Shift:=Excel.XlDirection.xlDown)
-                    End If
-                    '2: add whole rows
-                ElseIf extendArea = 2 Then
-                    targetSH.Rows((startRow + oldRows + headingFirstRowPrevent).ToString() + ":" + (startRow + arrayRows - 1).ToString()).Insert(Shift:=Excel.XlDirection.xlDown)
-                    If formulaRange IsNot Nothing Then
-                        ' take care not to insert twice (if we're having formulas in the same sheet)
-                        If targetSH IsNot formulaSH Then formulaSH.Rows((startRow + oldFRows + headingOffset).ToString() + ":" + (startRow + arrayRows - 1 - headingFirstRowPrevent).ToString()).Insert(Shift:=Excel.XlDirection.xlDown)
-                    End If
-                End If
-                'else 0: just overwrite -> no special action
-
-                ' .... or cells/rows are shifted up (old data area was larger than current)
-            ElseIf oldRows > arrayRows Then
-                'prevent deletion of last row if headings are present (to not get the header formats, lose formulas, etc..)
-                Dim headingLastRowPrevent As Integer = IIf(HeaderInfo And arrayRows = 1 And oldRows > 2, 1, 0)
-                '1: add cells (not whole rows)
-                If extendArea = 1 Then
-                    targetSH.Range(targetSH.Cells(startRow + arrayRows + headingLastRowPrevent, startCol), targetSH.Cells(startRow + oldRows - 1, startCol + oldCols - 1)).Delete(Shift:=Excel.XlDirection.xlUp)
-                    If formulaRange IsNot Nothing Then formulaSH.Range(formulaSH.Cells(startRow + arrayRows + headingLastRowPrevent, formulaRange.Column), formulaSH.Cells(startRow + oldFRows - 1 + headingOffset, formulaRange.Column + oldFCols - 1)).Delete(Shift:=Excel.XlDirection.xlUp)
-                    '2: add whole rows
-                ElseIf extendArea = 2 Then
-                    targetSH.Rows((startRow + arrayRows + headingLastRowPrevent).ToString() + ":" + (startRow + oldRows - 1).ToString()).Delete(Shift:=Excel.XlDirection.xlUp)
-                    If formulaRange IsNot Nothing Then
-                        ' take care not to delete twice (if we're having formulas in the same sheet)
-                        If targetSH IsNot formulaSH Then formulaSH.Rows((startRow + arrayRows + headingLastRowPrevent).ToString() + ":" + (startRow + oldFRows - 1 + headingOffset).ToString()).Delete(Shift:=Excel.XlDirection.xlUp)
-                    End If
-                End If
-                '0: just overwrite -> no special action
-            End If
-            If Err.Number <> 0 Then
-                errMsg = "Error in resizing area: " + Err.Description + " in query: " + Query
-                GoTo err_1
-            End If
-        End If
-        Dim curSheet As Excel.Worksheet = ExcelDnaUtil.Application.ActiveSheet
-        targetSH.Activate()
-        ' now fill in the data from the query
-        If ODBCconnString.Length > 0 Then
-            With targetSH.QueryTables.Add(Connection:=ODBCconnString, Destination:=targetRange)
-                .CommandText = Query
-                .FieldNames = HeaderInfo
-                .RowNumbers = ShowRowNumbers
-                .PreserveFormatting = True
-                .AdjustColumnWidth = False
-                .FillAdjacentFormulas = False
-                .BackgroundQuery = True
-                .RefreshStyle = Excel.XlCellInsertionMode.xlOverwriteCells
-                .RefreshPeriod = 0
-                .PreserveColumnInfo = True
-                .Refresh()
-                tmpname = .Name
-                .Delete()
-            End With
-        Else
-            With targetSH.QueryTables.Add(Connection:=tableRst, Destination:=targetRange)
-                .FieldNames = HeaderInfo
-                .RowNumbers = ShowRowNumbers
-                .PreserveFormatting = True
-                .AdjustColumnWidth = False
-                .FillAdjacentFormulas = False
-                .BackgroundQuery = True
-                .RefreshStyle = Excel.XlCellInsertionMode.xlOverwriteCells   ' this is required to prevent "right" shifting of cells at the beginning !
-                .RefreshPeriod = 0
-                .PreserveColumnInfo = True
-                .Refresh()
-                tmpname = .Name
-                .Delete()
-            End With
-        End If
-        If Err.Number <> 0 Then
-            errMsg = "Error in adding QueryTable: " + Err.Description + " in query: " + Query
-            GoTo err_2
-        End If
-        tableRst.Close()
-        ' excel doesn't delete the query table name if it is not on the active sheet, 
-        ' so Switch to the query tables sheet and back again:
-        curSheet.Activate()
-
-        '''' formulas recreation (removal and auto fill new ones)
-        If formulaRange IsNot Nothing Then
-            formulaSH = formulaRange.Parent
-            With formulaRange
-                If .Row < startRow + rowDataStart - 1 Then
-                    warning += "Error: formulaRange start above data-area, no formulas filled down !"
-                Else
-                    ' retrieve bottom of formula range
-                    ' check for excels boundaries !!
-                    If .Cells.Row + arrayRows > .EntireColumn.Rows.Count + 1 Then
-                        warning += ", formulas would exceed max row of excel: start row:" + formulaStart.ToString() + " + row count:" + arrayRows.ToString() + " > max row+1:" + (.EntireColumn.Rows.Count + 1).ToString()
-                        copyDown = .EntireColumn.Rows.Count
-                    Else
-                        'the normal end of our auto filled rows = formula start + list size,
-                        'reduced by offset of formula start and startRow if formulas start below data area top
-                        copyDown = .Cells.Row + arrayRows - 1 - IIf(.Cells.Row > startRow, .Cells.Row - startRow, 0)
-                    End If
-                    ' sanity check not to fill upwards !
-                    If copyDown > .Cells.Row Then .Cells.AutoFill(Destination:=formulaSH.Range(.Cells, formulaSH.Cells(copyDown, .Column + .Columns.Count - 1)))
-                    formulaFilledRange = formulaSH.Range(formulaSH.Cells(.Row, .Column), formulaSH.Cells(copyDown, .Column + .Columns.Count - 1))
-
-                    ' reassign internal name to changed formula area
-                    ' delete the name to have a "clean" name area (otherwise visible = false setting wont work for dataTargetRange)
-                    formulaFilledRange.Parent.Parent.Names(targetExtentF).Delete
-                    Err.Clear() ' might not exist, so ignore errors here...
-                    formulaFilledRange.Name = targetExtentF
-                    formulaFilledRange.Name.Visible = False
-                    ' reassign visible defined name to changed formula area only if defined...
-                    If formulaRangeName.Length > 0 Then
-                        formulaFilledRange.Name = formulaRangeName    ' NOT USING formulaFilledRange.Name.Visible = True, or hidden range will also be visible...
-                    End If
-                    If Err.Number <> 0 Then
-                        errMsg = "Error in (re)assigning formula range name: " + Err.Description + " in query: " + Query
-                        GoTo err_0
-                    End If
-                End If
-            End With
-        End If
-        If Err.Number <> 0 Then
-            errMsg = "Error in filling formulas: " + Err.Description + " in query: " + Query
-            GoTo err_0
-        End If
-
-        ' reassign name to changed data area
-        ' set the new hidden targetExtent name...
-        Dim newTargetRange As Excel.Range = targetSH.Range(targetSH.Cells(startRow, startCol), targetSH.Cells(startRow + arrayRows - 1, startCol + targetColumns))
-        Err.Clear() ' might not exist, so ignore errors here...
-
-        ' delete the name to have a "clean" name area (otherwise visible = false setting wont work for dataTargetRange)
-        newTargetRange.Name = targetExtent
-        newTargetRange.Parent.Parent.Names(targetExtent).Visible = False
-        Dim totalTargetRange As Excel.Range = newTargetRange
-        If additionalFormulaColumns > 0 Then
-            totalTargetRange = targetSH.Range(targetSH.Cells(startRow, startCol), targetSH.Cells(startRow + arrayRows - 1, startCol + targetColumns + additionalFormulaColumns))
-        End If
-        ' (re)assign visible name for the total area, if given
-        If targetRangeName.Length > 0 Then
-            totalTargetRange.Name = targetRangeName
-        End If
-
-        If Err.Number <> 0 Then
-            errMsg = "Error in (re)assigning data target name: " + Err.Description + " (maybe known issue with 'cell like' sheetnames, e.g. 'C701 country' ?) in query: " + Query
-            GoTo err_0
-        End If
-
-        ' if refreshed range is a DBMapper and it is in the current workbook, resize it
-        DBModifs.resizeDBMapperRange(totalTargetRange, oldTotalTargetRange)
-
-        '''' any warnings, errors ?
-        If warning.Length > 0 Then
-            If InStr(1, warning, "Error:") = 0 And InStr(1, warning, "No Data") = 0 Then
-                If Left$(warning, 1) = "," Then
-                    warning = Right$(warning, Len(warning) - 2)
-                End If
-                StatusCollection(callID).statusMsg = "Retrieved " + retrievedRows.ToString() + " record" + If(retrievedRows > 1, "s", "") + ", Warning: " + warning
-            Else
-                StatusCollection(callID).statusMsg = warning
-            End If
-        Else
-            StatusCollection(callID).statusMsg = "Retrieved " + retrievedRows.ToString() + " record" + If(retrievedRows > 1, "s", "") + " from: " + Query
-        End If
-
-        ' auto format: restore formats
-        If autoformat Then
-            For i = 0 To UBound(NumFormat)
-                newTargetRange.Columns(i + 1).NumberFormat = NumFormat(i)
-            Next
-            ' now for the calculated cells...
-            If formulaRange IsNot Nothing Then
-                For i = 0 To UBound(NumFormatF)
-                    formulaFilledRange.Columns(i + 1).NumberFormat = NumFormatF(i)
-                Next
-            End If
-        End If
-
-        If Err.Number <> 0 Then
-            errMsg = "Error in restoring formats: " + Err.Description + " in query: " + Query
-            Globals.LogWarn(errMsg + ", caller: " + callID)
-            GoTo err_0
-        End If
-
-        'auto fit columns AFTER auto format so we don't have problems with applied formats visibility ...
-        If AutoFit Then
-            newTargetRange.Columns.AutoFit()
-            newTargetRange.Rows.AutoFit()
-        End If
-        If Err.Number <> 0 Then
-            errMsg = "Error in auto fitting: " + Err.Description + " in query: " + Query
-            GoTo err_0
-        End If
-        finishAction(calcMode, callID, scrnUpdate)
-        Exit Sub
-
-err_2: ' errors where recordset was opened and QueryTables were already added, but temp names were not deleted
-        targetSH.Names(tmpname).Delete
-        targetSH.Parent.Names(tmpname).Delete
-err_1: ' errors where recordset was opened
-        If tableRst.State <> 0 Then tableRst.Close()
-err_0: ' errors where recordset was not opened or is already closed
-        If errMsg.Length = 0 Then errMsg = Err.Description + " in query: " + Query
-        Globals.LogWarn(errMsg + ", caller: " + callID)
-        If StatusCollection.ContainsKey(callID) Then StatusCollection(callID).statusMsg = errMsg
-        finishAction(calcMode, callID, scrnUpdate, "Error")
-        caller.Formula += " " ' recalculate to trigger return of error messages to calling function
-    End Sub
-
     ''' <summary>Fetches a row (single record) queried (defined in query) from DB (defined in ConnString) into targetArray</summary>
     ''' <param name="Query">query for getting data</param>
     ''' <param name="ConnString">connection string defining DB, user, etc...</param>
@@ -1594,15 +1150,9 @@ err_0: ' errors where recordset was not opened or is already closed
                 Dim statusCont As New ContainedStatusMsg
                 StatusCollection.Add(callID, statusCont)
                 StatusCollection(callID).statusMsg = "" ' need this to prevent object not set errors in checkCache
-                If Globals.fetchSetting("useAltDBListFetch", "false") = "true" Then
-                    ExcelAsyncUtil.QueueAsMacro(Sub()
-                                                    DBRowFetchActionAlt(callID, CStr(Query), caller, tempArray, CStr(ConnString), HeaderInfo)
-                                                End Sub)
-                Else
-                    ExcelAsyncUtil.QueueAsMacro(Sub()
-                                                    DBRowFetchAction(callID, CStr(Query), caller, tempArray, CStr(ConnString), HeaderInfo)
-                                                End Sub)
-                End If
+                ExcelAsyncUtil.QueueAsMacro(Sub()
+                                                DBRowFetchAction(callID, CStr(Query), caller, tempArray, CStr(ConnString), HeaderInfo)
+                                            End Sub)
             End If
         Catch ex As Exception
             Globals.LogWarn(ex.Message + ", callID: " + callID)
@@ -1618,7 +1168,7 @@ err_0: ' errors where recordset was not opened or is already closed
     ''' <param name="targetArray"></param>
     ''' <param name="ConnString"></param>
     ''' <param name="HeaderInfo"></param>
-    Public Sub DBRowFetchActionAlt(callID As String, Query As String, caller As Excel.Range, targetArray As Object, ConnString As String, HeaderInfo As Boolean)
+    Public Sub DBRowFetchAction(callID As String, Query As String, caller As Excel.Range, targetArray As Object, ConnString As String, HeaderInfo As Boolean)
         Dim errMsg As String
         Dim targetSH As Excel.Worksheet
 
@@ -1657,13 +1207,13 @@ err_0: ' errors where recordset was not opened or is already closed
             If Globals.fetchSetting("preferODBCconnString" + Globals.env(), "false") = "true" Then
                 ' change to ODBC driver setting
                 ConnString = Replace(ConnString, Globals.fetchSetting("ConnStringSearch" + Globals.env(), "provider=SQLOLEDB"), Globals.fetchSetting("ConnStringReplace" + Globals.env(), "driver=SQL SERVER"))
-                iconn = New OdbcConnection(ConnString)
+                conn = New OdbcConnection(ConnString)
             ElseIf InStr(ConnString.ToLower, "provider=sqloledb") Or InStr(ConnString.ToLower, "driver=sql server") Then
                 ' remove provider=SQLOLEDB; (or whatever is in ConnStringSearch<>) for sql server as this is not allowed for ado.net (e.g. from a connection string for MS Query/Office)
                 ConnString = Replace(ConnString, Globals.fetchSetting("ConnStringSearch" + Globals.env(), "provider=SQLOLEDB") + ";", "")
-                iconn = New SqlConnection(ConnString)
+                conn = New SqlConnection(ConnString)
             ElseIf InStr(ConnString.ToLower, "oledb") Then
-                iconn = New OleDbConnection(ConnString)
+                conn = New OleDbConnection(ConnString)
             Else
                 errMsg = "Error creating new connection, no option found for connection string: " + ConnString + "(preferODBCconnString=true -> ODBC, containing provider=sqloledb/driver=sql server -> sql, containing oledb -> oledb)"
                 GoTo err
@@ -1672,18 +1222,18 @@ err_0: ' errors where recordset was not opened or is already closed
             errMsg = "Error creating new connection: " + ex.Message + " for connection string: " + ConnString
             GoTo err
         End Try
-        Try : iconn.Open() : Catch ex As Exception
+        Try : conn.Open() : Catch ex As Exception
             errMsg = "Error opening connection: " + ex.Message + " for connection string: " + ConnString
             GoTo err
         End Try
         Dim sqlCommand As Common.DbCommand
         Try
-            If TypeName(iconn) = "SqlConnection" Then
-                sqlCommand = New SqlCommand(Query, iconn)
-            ElseIf TypeName(iconn) = "OleDbConnection" Then
-                sqlCommand = New OleDbCommand(Query, iconn)
+            If TypeName(conn) = "SqlConnection" Then
+                sqlCommand = New SqlCommand(Query, conn)
+            ElseIf TypeName(conn) = "OleDbConnection" Then
+                sqlCommand = New OleDbCommand(Query, conn)
             Else
-                sqlCommand = New OdbcCommand(Query, iconn)
+                sqlCommand = New OdbcCommand(Query, conn)
             End If
         Catch ex As Exception
             errMsg = "Error creating new sqlCommand: " + ex.Message + " for Query: " + Query
@@ -1766,185 +1316,12 @@ err_0: ' errors where recordset was not opened or is already closed
         finishAction(calcMode, callID, scrnUpdate)
         Exit Sub
 
-err:
-        If errMsg.Length = 0 Then errMsg = Err.Description + " in query: " + Query
+err:    If errMsg.Length = 0 Then errMsg = Err.Description + " in query: " + Query
         Globals.LogWarn(errMsg + ", caller: " + callID)
         If StatusCollection.ContainsKey(callID) Then StatusCollection(callID).statusMsg = errMsg
         finishAction(calcMode, callID, scrnUpdate, "Error")
         caller.Formula += " " ' recalculate to trigger return of error messages to calling function
     End Sub
-
-    ''' <summary>Actually do the work for DBRowFetch: Query (assumed) one row of data, write it into targetCells</summary>
-    ''' <param name="callID"></param>
-    ''' <param name="Query"></param>
-    ''' <param name="caller"></param>
-    ''' <param name="targetArray"></param>
-    ''' <param name="ConnString"></param>
-    ''' <param name="HeaderInfo"></param>
-    Public Sub DBRowFetchAction(callID As String, Query As String, caller As Excel.Range, targetArray As Object, ConnString As String, HeaderInfo As Boolean)
-        Dim tableRst As ADODB.Recordset = Nothing
-        Dim targetCells As Object
-        Dim errMsg As String = "", refCollector As Excel.Range
-        Dim headerFilled As Boolean, DeleteExistingContent As Boolean, fillByRows As Boolean
-        Dim returnedRows As Long, fieldIter As Integer, rangeIter As Integer
-        Dim theCell As Excel.Range, targetSlice As Excel.Range, targetSlices As Excel.Range
-        Dim targetSH As Excel.Worksheet
-
-        On Error Resume Next
-        targetCells = targetArray
-        targetSH = targetCells(0).Parent
-        StatusCollection(callID).statusMsg = ""
-        Dim calcMode = ExcelDnaUtil.Application.Calculation
-        Dim scrnUpdate As Boolean = ExcelDnaUtil.Application.ScreenUpdating
-        ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual
-        ' this works around the data validation input bug and being called when COM Model is not ready
-        ' when selecting a value from a list of a validated field or being invoked from a hyperlink (e.g. word), excel won't react to
-        ' Application.Calculation changes, so just leave here...
-        If ExcelDnaUtil.Application.Calculation <> Excel.XlCalculation.xlCalculationManual Then
-            errMsg = "Error in setting Application.Calculation to Manual: " + Err.Description + " in query: " + Query
-            GoTo err_1
-        End If
-        ExcelDnaUtil.Application.Cursor = Excel.XlMousePointer.xlWait  ' show the hourglass
-        On Error GoTo err_1
-        ExcelDnaUtil.Application.StatusBar = "Retrieving data for DBRows: " + targetSH.Name + "!" + targetCells(0).Address
-
-        Dim srcExtent As String, targetExtent As String
-        On Error Resume Next
-        srcExtent = caller.Name.Name
-        If Err.Number <> 0 Or InStr(1, srcExtent, "DBFsource") = 0 Then
-            Err.Clear()
-            srcExtent = "DBFsource" + Replace(Guid.NewGuid().ToString(), "-", "")
-            caller.Name = srcExtent
-            ' dbfsource is a workbook name
-            caller.Parent.Parent.Names(srcExtent).Visible = False
-            If Err.Number <> 0 Then
-                errMsg = "Error in setting srcExtent name: " + Err.Description + " in query: " + Query
-                GoTo err_1
-            End If
-        End If
-        targetExtent = Replace(srcExtent, "DBFsource", "DBFtarget")
-        DBModifs.preventChangeWhileFetching = True
-        ' to prevent flickering...
-        ExcelDnaUtil.Application.ScreenUpdating = False
-        ' remove old data in case we changed the target range array
-        targetSH.Range(targetExtent).ClearContents()
-
-        If conn Is Nothing Then conn = New ADODB.Connection
-        If CurrConnString <> ConnString Then
-            If conn.State <> 0 Then conn.Close()
-            dontTryConnection = False
-        End If
-
-        If conn.State <> ADODB.ObjectStateEnum.adStateOpen And Not dontTryConnection Then
-            conn.ConnectionTimeout = CnnTimeout
-            conn.CommandTimeout = CmdTimeout
-            conn.CursorLocation = CursorLocationEnum.adUseClient
-            ExcelDnaUtil.Application.StatusBar = "Trying " + CnnTimeout.ToString() + " sec. with connection string: " + ConnString
-            Err.Clear()
-            conn.Open(ConnString)
-
-            If Err.Number <> 0 Then
-                Globals.LogWarn("Connection Error: " + Err.Description)
-                ' prevent multiple reconnecting if connection errors present...
-                dontTryConnection = True
-                StatusCollection(callID).statusMsg = "Connection Error: " + Err.Description
-            End If
-            CurrConnString = ConnString
-        End If
-
-        tableRst = New ADODB.Recordset
-        tableRst.Open(Query, conn, CursorTypeEnum.adOpenStatic, LockTypeEnum.adLockReadOnly, CommandTypeEnum.adCmdText)
-        On Error Resume Next
-        Dim dberr As String = ""
-        If conn.Errors.Count > 0 Then
-            Dim errcount As Integer
-            For errcount = 0 To conn.Errors.Count - 1
-                If conn.Errors.Item(errcount).Description <> Err.Description Then _
-                   dberr = dberr + ";" + conn.Errors.Item(errcount).Description
-            Next
-            errMsg = "Error in retrieving data: " + dberr + " in query: " + Query
-            GoTo err_1
-        End If
-
-        ' this fails in case of known issue with OLEDB driver...
-        returnedRows = tableRst.RecordCount
-        If Err.Number <> 0 Then
-            errMsg = "Error in opening recordset: " + Err.Description + " in query: " + Query
-            GoTo err_1
-        End If
-
-        On Error GoTo err_1
-        ' check whether anything retrieved? if not, delete possible existing content...
-        DeleteExistingContent = tableRst.EOF
-        If DeleteExistingContent Then StatusCollection(callID).statusMsg = "Warning: No Data returned in query: " + Query
-
-        ' if "heading range" is present then orientation of first range (header) defines layout of data: if "heading range" is column then data is returned columnwise, else row by row.
-        ' if there is just one block of data then it is assumed that there are usually more rows than columns and orientation is set by row/column size
-        fillByRows = IIf(UBound(targetCells) > 0, targetCells(0).Rows.Count < targetCells(0).Columns.Count, targetCells(0).Rows.Count > targetCells(0).Columns.Count)
-        ' put values (single record) from Recordset into targetCells
-        fieldIter = 0 : rangeIter = 0 : headerFilled = Not HeaderInfo    ' if we don't need headers the assume they are filled already....
-        refCollector = targetCells(0)
-        Do
-            If fillByRows Then
-                targetSlices = targetCells(rangeIter).Rows
-            Else
-                targetSlices = targetCells(rangeIter).Columns
-            End If
-            For Each targetSlice In targetSlices
-                Dim aborted As Boolean = XlCall.Excel(XlCall.xlAbort) ' for long running actions, allow interruption
-                If aborted Then
-                    errMsg = "data fetching interrupted by user !"
-                    GoTo err_1
-                End If
-                For Each theCell In targetSlice.Cells
-                    If tableRst.EOF Then
-                        theCell.Value = ""
-                    Else
-                        If Not headerFilled Then
-                            theCell.Value = tableRst.Fields(fieldIter).Name
-                        ElseIf DeleteExistingContent Then
-                            theCell.Value = ""
-                        Else
-                            On Error Resume Next
-                            theCell.Value = tableRst.Fields(fieldIter).Value
-                            If Err.Number <> 0 Then errMsg += "Field '" + tableRst.Fields(fieldIter).Name + "' caused following error: '" + Err.Description + "'"
-                            On Error GoTo err_1
-                        End If
-                        If fieldIter = tableRst.Fields.Count - 1 Then
-                            If headerFilled Then
-                                ExcelDnaUtil.Application.StatusBar = "Displaying data for DBRows: " + targetSH.Name + "!" + targetCells(0).Address.ToString() + ", record " + tableRst.AbsolutePosition.ToString() + "/" + returnedRows.ToString()
-                                tableRst.MoveNext()
-                            Else
-                                headerFilled = True
-                            End If
-                            fieldIter = -1
-                        End If
-                    End If
-                    fieldIter += 1
-                Next
-            Next
-            rangeIter += 1
-            If Not rangeIter > UBound(targetCells) Then refCollector = ExcelDnaUtil.Application.Union(refCollector, targetCells(rangeIter))
-        Loop Until rangeIter > UBound(targetCells)
-
-        ' delete the name to have a "clean" name area (otherwise visible = false setting wont work for dataTargetRange)
-        refCollector.Name = targetExtent
-        refCollector.Parent.Parent.Names(targetExtent).Visible = False
-
-        tableRst.Close()
-        If StatusCollection(callID).statusMsg.Length = 0 Then StatusCollection(callID).statusMsg = "Retrieved " + returnedRows.ToString() + " record" + If(returnedRows > 1, "s", "") + " from: " + Query
-        finishAction(calcMode, callID, scrnUpdate)
-        Exit Sub
-
-err_1:
-        If errMsg.Length = 0 Then errMsg = Err.Description + " in query: " + Query
-        If tableRst.State <> 0 Then tableRst.Close()
-        Globals.LogWarn(errMsg + ", caller: " + callID)
-        If StatusCollection.ContainsKey(callID) Then StatusCollection(callID).statusMsg = errMsg
-        finishAction(calcMode, callID, scrnUpdate, "Error")
-        caller.Formula += " " ' recalculate to trigger return of error messages to calling function
-    End Sub
-
 
     ''' <summary>remove all names from Range Target except the passed name (theName) and store them into list storedNames</summary>
     ''' <param name="Target"></param>
@@ -2061,7 +1438,7 @@ err_1:
                             checkParamsAndCache = "query contains: #" + Replace(myCell.ToString(), "ExcelError", "") + "!"
                         End If
                     ElseIf IsNumeric(myCell) Then
-                        ' ConnString = "" means a query from DBSetPowerQuery, here preserve the cr lf !
+                        ' ConnString = "" means a query from DBSetPowerQuery, here preserve the cr-lf !
                         retval += Convert.ToString(myCell, System.Globalization.CultureInfo.InvariantCulture) + IIf(ConnString = "", vbCrLf, " ")
                     Else
                         retval += myCell.ToString() + IIf(ConnString = "", vbCrLf, " ")

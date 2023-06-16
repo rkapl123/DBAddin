@@ -14,7 +14,7 @@ Imports System.Collections.Generic
 Public Class AddInEvents
     Implements IExcelAddIn
 
-    ''' <summary>the app object needed for excel event handling (most of this class is dedicated to that)</summary>
+    ''' <summary>the application object needed for excel event handling (most of this class is dedicated to that)</summary>
     WithEvents Application As Excel.Application
     ''' <summary>CommandButton that can be inserted on a worksheet (name property being the same as the respective target range (for DBMapper/DBAction) or DBSeqnce Name)</summary>
     Shared WithEvents cb1 As Forms.CommandButton
@@ -92,7 +92,7 @@ Public Class AddInEvents
     End Sub
 
     ''' <summary>saves defined DBMaps (depending on configuration), also used to remove contents of DBListfunction results (data safety/space consumption)
-    ''' choosing functions for removal of target data is done with custom docproperties</summary>
+    ''' choosing functions for removal of target data is done with custom doc-properties</summary>
     ''' <param name="Wb"></param>
     ''' <param name="SaveAsUI"></param>
     ''' <param name="Cancel"></param>
@@ -355,7 +355,7 @@ done:
         assignHandler = True
         Dim collShpNames As String = ""
         For Each shp As Excel.Shape In Sh.Shapes
-            ' Associate clickhandler with all click events of the CommandButtons.
+            ' Associate click-handler with all click events of the CommandButtons.
             Dim ctrlName As String
             Try : ctrlName = Sh.OLEObjects(shp.Name).Object.Name : Catch ex As Exception : ctrlName = "" : End Try
             If Left(ctrlName, 8) = "DBMapper" Or Left(ctrlName, 8) = "DBAction" Or Left(ctrlName, 8) = "DBSeqnce" Then
@@ -422,7 +422,7 @@ done:
     ''' <param name="Sh"></param>
     ''' <param name="Target"></param>
     Private Sub Application_SheetChange(Sh As Object, Target As Range) Handles Application.SheetChange
-        ' avoid entering into insert/update check resp. doCUDMarks if not listobject (data table), whole column modified, no DBMapper present and prevention while fetching (on refresh) being set
+        ' avoid entering into insert/update check resp. doCUDMarks if not list-object (data table), whole column modified, no DBMapper present and prevention while fetching (on refresh) being set
         If Not IsNothing(Target.ListObject) AndAlso Not Target.Rows.Count = Sh.Rows.Count AndAlso Globals.DBModifDefColl.ContainsKey("DBMapper") AndAlso Not DBModifs.preventChangeWhileFetching Then
             Dim targetName As String = DBModifs.getDBModifNameFromRange(Target)
             If Left(targetName, 8) = "DBMapper" Then

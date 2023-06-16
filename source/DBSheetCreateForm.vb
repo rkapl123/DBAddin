@@ -13,7 +13,7 @@ Public Class DBSheetCreateForm
     Private FormDisabled As Boolean
     ''' <summary>placeholder used in lookup queries to identify the current field's lookup table</summary>
     Private tblPlaceHolder As String = "!T!"
-    ''' <summary>character prepended before field name to specify non nullable fields</summary>
+    ''' <summary>character prepended before field name to specify non null-able fields</summary>
     Private specialNonNullableChar As String = "*"
     ''' <summary>common connection settings factored in helper class</summary>
     Private myDBConnHelper As DBConnHelper
@@ -29,7 +29,7 @@ Public Class DBSheetCreateForm
         specialNonNullableChar = Globals.fetchSetting("specialNonNullableChar" + Globals.env(), "*")
         Lenvironment.Text = "Environment: " + Globals.fetchSetting("ConfigName" + Globals.env(), "")
 
-        ' set up columns for DBSheetCols gridview
+        ' set up columns for DBSheetCols grid-view
         Dim nameCB As New DataGridViewComboBoxColumn With {
                     .Name = "name",
                     .DataSource = New List(Of String),
@@ -99,11 +99,11 @@ Public Class DBSheetCreateForm
             resetDBSheetCreateForm()
         Else ' otherwise jump in immediately
             assignDBSheet.Enabled = False
-            ' passwordless connection string, reset password and disable...
+            ' password-less connection string, reset password and disable...
             If InStr(myDBConnHelper.dbsheetConnString, myDBConnHelper.dbPwdSpec) = 0 Or myDBConnHelper.dbPwdSpec = "" Then
                 Password.Enabled = False
                 existingPwd = ""
-            Else ' set to stored existig password
+            Else ' set to stored existing password
                 Password.Text = existingPwd
             End If
             fillDatabasesAndSetDropDown()
@@ -123,7 +123,7 @@ Public Class DBSheetCreateForm
         existingPwd = ""
     End Sub
 
-    ''' <summary>enter pressed in Password textbox triggering initialisation</summary>
+    ''' <summary>enter pressed in Password text-box triggering initialization</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub Password_KeyPress(sender As Object, e As KeyPressEventArgs) Handles Password.KeyPress
@@ -138,7 +138,7 @@ Public Class DBSheetCreateForm
         FormLocalPwd = Password.Text
     End Sub
 
-    ''' <summary>leaving Password textbox triggering initialisation</summary>
+    ''' <summary>leaving Password text-box triggering initialization</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub Password_Leave(sender As Object, e As EventArgs) Handles Password.Leave
@@ -228,7 +228,7 @@ Public Class DBSheetCreateForm
         End Try
     End Sub
 
-    ''' <summary>selecting the Table triggers enabling the DBSheetCols definition (fils columns/fields of that table and resetting DBSheetCols definition)</summary>
+    ''' <summary>selecting the Table triggers enabling the DBSheetCols definition (fills columns/fields of that table and resetting DBSheetCols definition)</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub Table_SelectedIndexChanged(ByVal sender As Object, ByVal e As EventArgs) Handles Table.SelectedIndexChanged
@@ -253,8 +253,8 @@ Public Class DBSheetCreateForm
 
 #End Region
 
-#Region "DBSheetCols Gridview"
-    ''' <summary>handles the various changes in the DBSheetCols gridview</summary>
+#Region "DBSheetCols Grid-view"
+    ''' <summary>handles the various changes in the DBSheetCols grid-view</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub DBSheetCols_CellValueChanged(ByVal sender As Object, ByVal e As DataGridViewCellEventArgs) Handles DBSheetCols.CellValueChanged
@@ -262,9 +262,9 @@ Public Class DBSheetCreateForm
         FormDisabled = True
         Dim selIndex As Integer = e.RowIndex
         If e.ColumnIndex = 0 Then     ' field name column 
-            ' lock table and database choice to not let user accidentally clear DBSheet defs
+            ' lock table and database choice to not let user accidentally clear DBSheet definitions
             TableEditable(False)
-            ' fill empty lists for fkey and flookup comboboxes (resetting) ..
+            ' fill empty lists for fkey and flookup combo-boxes (resetting) ..
             DirectCast(DBSheetCols.Rows(selIndex).Cells("fkey"), DataGridViewComboBoxCell).DataSource = New List(Of String)({""})
             DirectCast(DBSheetCols.Rows(selIndex).Cells("flookup"), DataGridViewComboBoxCell).DataSource = New List(Of String)({""})
             ' if first column then always set primary key!
@@ -381,7 +381,7 @@ Public Class DBSheetCreateForm
             ' Delete key sets column values to empty
         ElseIf e.KeyCode = Keys.Delete Then
             If selRowIndex >= 0 Then
-                ' avoid setting tickboxes and type column to empty...
+                ' avoid setting tick-boxes and type column to empty...
                 If Not (selColIndex >= 4 And selColIndex <= 6) Then DBSheetCols.Rows(selRowIndex).Cells().Item(selColIndex).Value = ""
             End If
         End If
@@ -551,7 +551,7 @@ Public Class DBSheetCreateForm
         End If
     End Sub
 
-    ''' <summary>ignore data errors when loading data into gridview</summary>
+    ''' <summary>ignore data errors when loading data into grid-view</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub DBSheetCols_DataError(sender As Object, e As DataGridViewDataErrorEventArgs) Handles DBSheetCols.DataError
@@ -790,7 +790,7 @@ Public Class DBSheetCreateForm
                     If completeJoin <> "" Then
                         ' when having the complete join, use additional restriction not for main subtable
                         addRestrict = ""
-                        ' instead make it an additional condition for the join and replace placeholder with tablealias
+                        ' instead make it an additional condition for the join and replace placeholder with table-alias
                         completeJoin = quotedReplace(ciReplace(completeJoin, "WHERE", "AND"), "T" + tableCounter.ToString())
                     End If
                     Dim fkeyStr As String = DBSheetCols.Rows(i).Cells("fkey").Value.ToString()
@@ -849,9 +849,9 @@ Public Class DBSheetCreateForm
             If Query.Text <> "" Then
                 If testQuery.Text = "&test DBSheet Query" Then
                     testTheQuery(Query.Text)
-                ElseIf testQuery.Text = "&remove Testsheet" Then
+                ElseIf testQuery.Text = "&remove Test-sheet" Then
                     If ExcelDnaUtil.Application.ActiveSheet.Name <> "TESTSHEETQ" Then
-                        Globals.UserMsg("Active sheet doesn't seem to be a query test sheet !", "DBSheet Testquery Remove Warning", MessageBoxIcon.Exclamation)
+                        Globals.UserMsg("Active sheet doesn't seem to be a query test sheet !", "DBSheet test-query Remove Warning", MessageBoxIcon.Exclamation)
                     Else
                         ExcelDnaUtil.Application.ActiveWorkbook.Close(False)
                     End If
@@ -907,7 +907,7 @@ Public Class DBSheetCreateForm
                 Preview.Name = "TESTSHEET"
             Else
                 Preview.Name = "TESTSHEETQ"
-                testQuery.Text = "&remove Testsheet"
+                testQuery.Text = "&remove Test-sheet"
             End If
             Exit Sub
         Catch ex As System.Exception
@@ -916,7 +916,7 @@ Public Class DBSheetCreateForm
     End Sub
 #End Region
 
-#Region "DBSheet Definitionfiles Handling"
+#Region "DBSheet Definition files Handling"
 
     ''' <summary>direct assignment from Create Form...</summary>
     ''' <param name="sender"></param>
@@ -941,7 +941,7 @@ Public Class DBSheetCreateForm
                 currentFilepath = openFileDialog1.FileName
                 If currentFilepath <> "" Then Globals.setUserSetting("lastDBsheetCreatePath", Strings.Left(currentFilepath, InStrRev(currentFilepath, "\") - 1))
                 Dim DBSheetParams As String = File.ReadAllText(currentFilepath, System.Text.Encoding.Default)
-                ' fetch params into form from sheet or file
+                ' fetch parameters into form from sheet or file
                 FormDisabled = True
                 ' get Database from (legacy) connID (legacy connID was prefixed with connIDPrefixDBtype)
                 Dim configDatabase As String = Replace(DBSheetConfig.getEntry("connID", DBSheetParams), Globals.fetchSetting("connIDPrefixDBtype", "MSSQL"), "")
@@ -970,7 +970,7 @@ Public Class DBSheetCreateForm
                     newRow.outer = DBSheetConfig.getEntry("outer", DBSheetColumnDef) <> ""
                     newRow.primkey = DBSheetConfig.getEntry("primkey", DBSheetColumnDef) <> ""
                     If Not TableDataTypes.ContainsKey(newRow.name) Then
-                        Globals.UserMsg("couldn't find type information for field " + newRow.name + " in database (maybe wrong non-nullable information for field in definition) !", "DBSheet Definition Error")
+                        Globals.UserMsg("couldn't find type information for field " + newRow.name + " in database (maybe wrong non null-able information for field in definition) !", "DBSheet Definition Error")
                         Exit Sub
                     End If
                     newRow.type = TableDataTypes(newRow.name)
@@ -985,7 +985,7 @@ Public Class DBSheetCreateForm
                     theDBSheetDefTable.Add(newRow)
                 Next
                 DBSheetCols.DataSource = theDBSheetDefTable
-                ' re-add the fkey and flookup combobox values...
+                ' re-add the fkey and flookup combo-box values...
                 For i As Integer = 0 To DBSheetCols.Rows.Count - 2
                     If DBSheetCols.Rows(i).Cells("ftable").Value.ToString() <> "" Then
                         Dim colnameList As List(Of String) = getforeignTables(DBSheetCols.Rows(i).Cells("ftable").Value.ToString())
@@ -1107,7 +1107,7 @@ Public Class DBSheetCreateForm
         LTable.Enabled = choice
     End Sub
 
-    ''' <summary>if DBSheetCols Definitions should be editable, enable relevant cotrols</summary>
+    ''' <summary>if DBSheetCols Definitions should be editable, enable relevant controls</summary>
     ''' <param name="choice">editable True, not editable False</param>
     Private Sub DBSheetColsEditable(choice As Boolean)
         ' block password change if DBSheetDef is editable or no password needed
@@ -1136,7 +1136,7 @@ Public Class DBSheetCreateForm
 #End Region
 
 #Region "Various Helper functions"
-    ''' <summary>corrects field names of nonnullable fields prepended with specialNonNullableChar (e.g. "*") back to the real name</summary>
+    ''' <summary>corrects field names of non null-able fields prepended with specialNonNullableChar (e.g. "*") back to the real name</summary>
     ''' <param name="name"></param>
     ''' <returns>the corrected string</returns>
     Public Function correctNonNull(name As String) As String
@@ -1179,7 +1179,7 @@ Public Class DBSheetCreateForm
 #End Region
 End Class
 
-#Region "DBSheetCols Gridview Helper Classes"
+#Region "DBSheetCols Grid-view Helper Classes"
 ''' <summary>DataTable Class for filling DBSheetCols DataGridView</summary>
 Public Class DBSheetDefTable : Inherits DataTable
 

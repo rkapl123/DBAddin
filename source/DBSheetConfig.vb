@@ -12,7 +12,7 @@ Public Module DBSheetConfig
     Dim createdListObject As Excel.ListObject
     ''' <summary>the lookups list of the DBSheet definition (xml element with query, name, etc.)</summary>
     Dim lookupsList() As String
-    ''' <summary>the complete dbsheet configuration (XML)</summary>
+    ''' <summary>the complete db-sheet configuration (XML)</summary>
     Dim curConfig As String
     ''' <summary>the added and hidden worksheet with lookups inside</summary>
     Dim lookupWS As Excel.Worksheet
@@ -20,7 +20,7 @@ Public Module DBSheetConfig
     Dim databaseName As String
     ''' <summary>the Database table name of the DBSheet</summary>
     Dim tableName As String
-    ''' <summary>counter to know how many cells we filled for the dbmapper query 
+    ''' <summary>counter to know how many cells we filled for the db-mapper query 
     ''' (at least 2: dbsetquery function and query string, if additional where clause exists, 
     ''' add one for where clause, then one for each parameter)
     ''' </summary>
@@ -35,7 +35,7 @@ Public Module DBSheetConfig
     Public existingName As String
 
 
-    ''' <summary>create lookups (with dblistfetch) and a dbsetquery that acts as a listobject for a CUD DB Mapper</summary>
+    ''' <summary>create lookups (with dblistfetch) and a dbsetquery that acts as a list-object for a CUD DB Mapper</summary>
     Public Sub createDBSheet(Optional dbsheetDefPath As String = "")
         ' store currently selected cell, where DBSetQuery for DBMapper will be placed.
         curCell = ExcelDnaUtil.Application.ActiveCell
@@ -139,7 +139,7 @@ Public Module DBSheetConfig
                             End If
                         End If
                     End If
-                    ' replace fieldname of Lookups in query with fieldname + "LU" only for database lookups
+                    ' replace field-name of Lookups in query with field-name + "LU" only for database lookups
                     If getEntry("fkey", LookupDef, 1) <> "" Then
                         ' replace looked up ID names with ID name + "LU" in query string
                         Dim foundDelim As Integer
@@ -205,15 +205,15 @@ Public Module DBSheetConfig
             End If
             ' exchange the select part with the LU modified select part
             queryStr = Replace(queryStr, selectPart, selectPartModif)
-            ' then create the DBSetQuery assigning the (yet to be filled) query to the above listobject
+            ' then create the DBSetQuery assigning the (yet to be filled) query to the above list-object
             ' add DBSetQuery with queryStr as Basis for the final DBMapper
             ' first create a ListObject, but only if it doesn't exist already (to allow recreating DBSheets)
             If existingName <> "" Then
-                ' get the existing listobject
+                ' get the existing list-object
                 Try
                     createdListObject = curCell.Offset(0, 1).ListObject
                 Catch ex As Exception
-                    Globals.UserMsg("Error getting existing listobject for DBSheet for table " + tableName + ": " + ex.Message, "DBSheet Creation Error")
+                    Globals.UserMsg("Error getting existing list-object for DBSheet for table " + tableName + ": " + ex.Message, "DBSheet Creation Error")
                     Exit Sub
                 End Try
             Else
@@ -256,11 +256,11 @@ Public Module DBSheetConfig
         End If
     End Sub
 
-    ''' <summary>after creating lookups and setting the dbsetquery finish the listobject area with reverse lookups and dropdowns</summary>
+    ''' <summary>after creating lookups and setting the dbsetquery finish the list-object area with reverse lookups and drop-downs</summary>
     Private Sub finishDBMapperCreation()
         If existingName <> "" Then
             ' if there was an already an existing dbsheet, remove the Range name, the DBMapper definition and finally the validations
-            ExcelDnaUtil.Application.ActiveWindow.FreezePanes = False ' remove the freezepane, it will be applied later again.
+            ExcelDnaUtil.Application.ActiveWindow.FreezePanes = False ' remove the freeze-pane, it will be applied later again.
             ExcelDnaUtil.Application.ActiveWorkbook.Names(existingName).Delete
             Dim curColumnCount As Integer = getEntryList("columns", "field", "", curConfig).Length()
             curColumnCount = createdListObject.ListColumns.Count - curColumnCount
@@ -306,7 +306,7 @@ Public Module DBSheetConfig
                     End If
 
                     ' ..... create dropdown (validation) for lookup column
-                    ' a workaround with getting the local formula is necessary as Formula1 in Validation.Add doesn't accept english formulas
+                    ' a workaround with getting the local formula is necessary as Formula1 in Validation.Add doesn't accept English formulas
                     curCell.Offset(2 + addedCells, 0).Formula = "=OFFSET(" + lookupRangeName + ",0,0,,1)"
                     ' necessary as Excel>=2016 introduces the @operator automatically in formulas referring to list objects, referring to just that value in the same row. which is undesired here..
                     Dim localOffsetFormula As String = Replace(curCell.Offset(2 + addedCells, 0).FormulaLocal.ToString(), "@", "")
@@ -372,9 +372,9 @@ Public Module DBSheetConfig
             If lookupWS IsNot Nothing Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
             Exit Sub
         End Try
-        ' remove autofilter...
+        ' remove auto-filter...
         createdListObject.ShowAutoFilter = False
-        ' set DBMapper Rangename
+        ' set DBMapper Range-name
         Dim NamesList As Excel.Names = ExcelDnaUtil.Application.ActiveWorkbook.Names
         Dim alreadyExists As Boolean = True
         Try
@@ -436,13 +436,13 @@ Public Module DBSheetConfig
         'get new definitions into ribbon right now...
         DBModifs.getDBModifDefinitions()
 
-        ' format non-nullable fields specially, this needs to be after DB Mapper has been initialized (theme colours!)
+        ' format non null-able fields specially, this needs to be after DB Mapper has been initialized (theme colors!)
         Dim existingHeaderColour As Integer = createdListObject.TableStyle.TableStyleElements(Excel.XlTableStyleElementType.xlHeaderRow).Interior.Color
         ' walk through all fields of DBSheet
         Dim fieldList() As String = getEntryList("columns", "field", "", curConfig, True)
         For Each fieldDef As String In fieldList
             Dim fieldName As String = getEntry("name", fieldDef)
-            ' for non nullable fields ...
+            ' for non null-able fields ...
             If Left(fieldName, 1) = specialNonNullableChar Then
                 fieldName = Replace(fieldName, specialNonNullableChar, "")
                 ' with 2 column lookups the LU column is visible (actual resolved field column is hidden)
@@ -457,7 +457,7 @@ Public Module DBSheetConfig
         ' avoid spill over from definition cells (query, where clause, etc.) into DBSheet area in case a row is inserted
         createdListObject.ListColumns.Item(1).Range.Offset(0, -1).HorizontalAlignment = Excel.XlHAlign.xlHAlignRight
 
-        ' extend Datarange for new DBMappers immediately after definition...
+        ' extend Data range for new DBMappers immediately after definition...
         DirectCast(Globals.DBModifDefColl("DBMapper").Item("DBMapper" + tableName), DBMapper).extendDataRange()
         ' switch back to DBAddin tab for easier handling...
         Globals.theRibbon.ActivateTab("DBaddinTab")
@@ -508,13 +508,13 @@ getEntry_Err:
         setEntry = "<" + entryMarkup + ">" + content + "</" + entryMarkup + ">"
     End Function
 
-    ''' <summary>fetches entryMarkup parts contained within lists demarked by listMarkup within parentMarkup inside XMLString</summary>
+    ''' <summary>fetches entryMarkup parts contained within lists denoted by listMarkup within parentMarkup inside XMLString</summary>
     ''' <param name="parentMarkup"></param>
     ''' <param name="listMarkup"></param>
     ''' <param name="entryMarkup">element inside listMarkup that should be fetched, if empty take whole listMarkup instead</param>
     ''' <param name="XMLString"></param>
     ''' <param name="fetchListMarkup">if true, take listMarkup elements where entryMarkup was found, else take entryMarkup element</param>
-    ''' <returns>list containing parts, if entryMarkup = "" then list contains parts demarked by listMarkup</returns>
+    ''' <returns>list containing parts, if entryMarkup = "" then list contains parts denoted by listMarkup</returns>
     Public Function getEntryList(parentMarkup As String, listMarkup As String, entryMarkup As String, XMLString As String, Optional fetchListMarkup As Boolean = False) As Object
         Dim list() As String = Nothing
         Dim i As Long, posEnd As Long
@@ -529,7 +529,7 @@ getEntry_Err:
         Try
             parentEntry = getEntry(parentMarkup, XMLString)
             Do
-                ' first get outer element demarked by listMarkup
+                ' first get outer element denoted by listMarkup
                 ListItem = getEntry(listMarkup, XMLString, posEnd)
                 If entryMarkup = "" Then
                     part = ListItem

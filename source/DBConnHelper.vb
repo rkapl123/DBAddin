@@ -7,15 +7,15 @@ Imports System.Data.OleDb
 Public Class DBConnHelper
     ''' <summary>the connection string for dbsheet definitions, different from the normal one (extended rights for schema viewing required)</summary>
     Public dbsheetConnString As String
-    ''' <summary>identifier needed to fetch database from connection string (eg Database=)</summary>
+    ''' <summary>identifier needed to fetch database from connection string (e.g Database=)</summary>
     Public dbidentifier As String
     ''' <summary>statement/procedure to get all databases in a DB instance</summary>
     Public dbGetAllStr As String
-    ''' <summary>fieldname where databases are returned by dbGetAllStr</summary>
+    ''' <summary>field-name where databases are returned by dbGetAllStr</summary>
     Public DBGetAllFieldName As String
     ''' <summary>the DB connection for the dbsheet definition activities</summary>
     Public dbshcnn As DbConnection
-    ''' <summary>identifier needed to put password into connection string (eg PWD=)</summary>
+    ''' <summary>identifier needed to put password into connection string (e.g PWD=)</summary>
     Public dbPwdSpec As String
     ''' <summary>the environment of the DBConnHelper</summary>
     Public DBenv As String
@@ -51,7 +51,7 @@ Public Class DBConnHelper
         End If
     End Function
 
-    ''' <summary>opens a database connection with active connstring</summary>
+    ''' <summary>opens a database connection with active connection string</summary>
     Public Sub openConnection(Optional databaseName As String = "", Optional usedForDBSheetCreate As Boolean = False)
         ' connections are pooled by ADO depending on the connection string:
         If dbshcnn Is Nothing Or databaseName <> "" Then
@@ -121,7 +121,7 @@ Public Class DBConnHelper
             dbsheetConnString = Globals.fetchSetting("ConstConnString" + DBenv, "NONEXISTENT")
             If dbsheetConnString = "NONEXISTENT" Then
                 ' actually this cannot happen....
-                Globals.UserMsg("No Connectionstring given for environment: " + DBenv + ", please correct and rerun.", "DBSheet Definition Error")
+                Globals.UserMsg("No connection string given for environment: " + DBenv + ", please correct and rerun.", "DBSheet Definition Error")
                 Exit Sub
             End If
         End If

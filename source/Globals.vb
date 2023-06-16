@@ -1,5 +1,4 @@
 ﻿Imports ExcelDna.Integration
-Imports Microsoft.Office.Core
 Imports Microsoft.Office.Interop
 Imports System.Collections.Generic
 Imports System.Configuration
@@ -12,7 +11,7 @@ Public Module Globals
     Public theMenuHandler As MenuHandler
     ''' <summary>currently selected environment for DB Functions, zero based (env -1) !!</summary>
     Public selectedEnvironment As Integer
-    ''' <summary>reference object for the Addins ribbon</summary>
+    ''' <summary>reference object for the Add-ins ribbon</summary>
     Public theRibbon As CustomUI.IRibbonUI
     ''' <summary>environment definitions</summary>
     Public environdefs As String()
@@ -25,7 +24,7 @@ Public Module Globals
     Public nonInteractiveErrMsgs As String
     ''' <summary>set to true if warning was issued, this flag indicates that the log button should get an exclamation sign</summary>
     Public WarningIssued As Boolean
-    ''' <summary>the Textfile log source</summary>
+    ''' <summary>the Text-file log source</summary>
     Public theLogFileSource As TraceSource
     ''' <summary>the LogDisplay (Diagnostic Display) log source</summary>
     Public theLogDisplaySource As TraceSource
@@ -266,10 +265,6 @@ Public Module Globals
             UserMsg("Calculation is set to manual, this prevents DB Functions from being recalculated. Please set calculation to automatic and retry", "DB-Addin Refresh")
             Exit Sub
         End If
-        ' also reset the database connection in case of errors (might be nothing or not open...)
-        Try : conn.Close() : Catch ex As Exception : End Try
-        conn = Nothing
-        dontTryConnection = False
         Try
             ' look for old query caches and status collections (returned error messages) in active workbook and reset them to get new data
             resetCachesForWorkbook(actWb.Name)
@@ -787,11 +782,11 @@ Last:
         End Try
     End Sub
 
-    ''' <summary>create a ListObject one cell to the right of TargetCell and insert a dummy cmd sql definition for the listobject table (to be an external source)</summary>
+    ''' <summary>create a ListObject one cell to the right of TargetCell and insert a dummy cmd sql definition for the list-object table (to be an external source)</summary>
     ''' <param name="TargetCell">the reference cell for the ListObject (will be the source cell for the DBSetQuery function)</param>
     Public Function createListObject(TargetCell As Excel.Range) As Object
         Dim createdQueryTable As Object
-        ' if an alternate connection string is given for Listobject, use this one...
+        ' if an alternate connection string is given for List-object, use this one...
         Dim altConnString = Globals.fetchSetting("AltConnString" + Globals.env(), "")
         ' To get the connection string work also for SQLOLEDB provider for SQL Server, change to ODBC driver setting (this can be generally used to fix connection string problems with ListObjects)
         If altConnString = "" Then altConnString = "OLEDB;" + Replace(Globals.ConstConnString, Globals.fetchSetting("ConnStringSearch" + Globals.env(), "provider=SQLOLEDB"), Globals.fetchSetting("ConnStringReplace" + Globals.env(), "driver=SQL SERVER"))
@@ -813,20 +808,20 @@ Last:
                 .Refresh(BackgroundQuery:=False)
             End With
         Catch ex As Exception
-            Globals.UserMsg("Exception adding listobject query table:" + ex.Message, "Create List Object")
+            Globals.UserMsg("Exception adding list-object query table:" + ex.Message, "Create List Object")
             createListObject = Nothing
             Exit Function
         End Try
-        ' turn off autofilter can't be done here because it leads to memory corruption...
+        ' turn off auto-filter can't be done here because it leads to memory corruption...
         createListObject = createdQueryTable.ListObject
     End Function
 
-    ''' <summary>create a pivot table object one cell below TargetCell and insert a dummy cmd sql definition for the pivotcache external query</summary>>
+    ''' <summary>create a pivot table object one cell below TargetCell and insert a dummy cmd sql definition for the pivot-cache external query</summary>>
     ''' <param name="TargetCell">the reference cell for the pivot table (will be the source cell for the DBSetQuery function)</param>
     Public Sub createPivotTable(TargetCell As Excel.Range)
         Dim pivotcache As Excel.PivotCache = Nothing
         Dim pivotTables As Excel.PivotTables
-        ' if an alternate connection string is given for Listobject, use this one...
+        ' if an alternate connection string is given for List-object, use this one...
         Dim altConnString = Globals.fetchSetting("AltConnString" + Globals.env(), "")
         ' for standard connection strings only OLEDB drivers seem to work with pivot tables...
         If altConnString = "" Then altConnString = "OLEDB;" + Globals.ConstConnString
@@ -931,7 +926,7 @@ Last:
         Else
             theSheetName = Replace(Mid$(relAddress, 1, InStr(1, relAddress, "!") - 1), "'", "")
         End If
-        ' parse row or column out of RC style reference adresses
+        ' parse row or column out of RC style reference addresses
         Dim startRow As Long = 0, startCol As Long = 0, endRow As Long = 0, endCol As Long = 0
         Dim begins As String
         Dim relAddressPart() As String = Split(relAddress, ":")

@@ -93,7 +93,7 @@ Public Class DBModifCreate
                         TransactionOpened = False
                     End If
                     If (TransactionOpened And Strings.Left(definition(0), 7) = "Refresh") Then
-                        Globals.UserMsg("You placed a " + definition(0) + " inside of a transaction, currently this might lead to deadlocks as DB functions use a different connection method (ADODB) than DB Modifiers (ADO.NET)." + vbCrLf + "If the DB function done in the refresh doesn't query any data being modified inside the transaction, you may ignore this warning.", "DBModification Validation", MsgBoxStyle.Exclamation)
+                        Globals.UserMsg("You placed a " + definition(0) + " inside of a transaction, this might lead to deadlocks as DB functions use a different connection than DB Modifiers." + vbCrLf + "If the DB function done in the refresh doesn't query any data being modified inside the transaction, you may ignore this warning.", "DBModification Validation", MsgBoxStyle.Exclamation)
                     End If
                 Next
             End If

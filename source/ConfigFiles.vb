@@ -1,8 +1,7 @@
 Imports ExcelDna.Integration
-Imports Microsoft.Office.Interop
 Imports System.IO ' for getting config files for menu
-Imports System.Linq
-Imports System.Xml.Linq
+Imports System.Linq ' to enhance arrays with useful methods (count, orderby)
+Imports System.Xml.Linq ' XNamespace and XElement for constructing the ConfigMenuXML
 
 
 '''<summary>procedures used for loading config files (containing DBFunctions and general sheet content) and building the config menu</summary>
@@ -10,7 +9,7 @@ Public Module ConfigFiles
 
     ''' <summary>the folder used to store predefined DB item definitions</summary>
     Public ConfigStoreFolder As String
-    ''' <summary>Array of special ConfigStoreFolders for non default treatment of Name Separation (Camelcase) and max depth</summary>
+    ''' <summary>Array of special ConfigStoreFolders for non default treatment of Name Separation (Camel-case) and max depth</summary>
     Public specialConfigStoreFolders() As String
     ''' <summary>fixed max Depth for Ribbon</summary>
     Const maxMenuDepth As Integer = 5
@@ -22,7 +21,7 @@ Public Module ConfigFiles
     Public ConfigMenuXML As String = vbNullString
     ''' <summary>individual limitation of grouping of entries in special folders (set by _DBname_MaxDepth)</summary>
     Public specialFolderMaxDepth As Integer
-    ''' <summary>store found submenus in this collection</summary>
+    ''' <summary>store found sub-menus in this collection</summary>
     Private specialConfigFoldersTempColl As Collection
     ''' <summary>for correct display of menu</summary>
     Private ReadOnly xnspace As XNamespace = "http://schemas.microsoft.com/office/2009/07/customui"
@@ -66,7 +65,7 @@ Public Module ConfigFiles
                         ConfigArray(1) = replaceConfigSelectInFormula(ConfigArray(1), ConfigSelect)
                     End If
                 End If
-                ' for existing dbfunction replace querystring in existing formula of active cell, only works for single pair config templates
+                ' for existing dbfunction replace query-string in existing formula of active cell, only works for single pair config templates
                 If srchdFunc <> "" And ConfigArray.Count() = 2 Then
                     ExcelDnaUtil.Application.ActiveCell.Formula = replaceQueryInFormula(ConfigArray(1), srchdFunc, ExcelDnaUtil.Application.ActiveCell.Formula.ToString())
                 Else ' for other cells simply insert the ConfigArray
@@ -89,7 +88,7 @@ Public Module ConfigFiles
         Dim functionParts As String() = Globals.functionSplit(dbFunctionFormula, ",", """", "DBListFetch", "(", ")")
         If functionParts IsNot Nothing Then
             queryString = functionParts(0)
-            ' fetch tablename from query string
+            ' fetch table-name from query string
             Dim tableName As String = Mid$(queryString, InStr(queryString.ToUpper, "FROM ") + 5)
             ' remove last quoting...
             tableName = Left(tableName, Len(tableName) - 1)
@@ -100,7 +99,7 @@ Public Module ConfigFiles
             formulaParams = Left(formulaParams, Len(formulaParams) - 1)
             Dim tempFormula As String = Globals.replaceDelimsWithSpecialSep(formulaParams, ",", """", "(", ")", vbTab)
             Dim restFormula As String = Mid$(tempFormula, InStr(tempFormula, vbTab))
-            ' replace querystring in existing formula
+            ' replace query-string in existing formula
             replaceConfigSelectInFormula = "=DBListFetch(""" + queryString + """" + Replace(restFormula, vbTab, ",") + ")"
         Else
             ' when problems occurred, leave everything as is
@@ -125,7 +124,7 @@ Public Module ConfigFiles
             Dim tempFormula As String = Globals.replaceDelimsWithSpecialSep(formulaParams, ",", """", "(", ")", vbTab)
             Dim restFormula As String = Mid$(tempFormula, InStr(tempFormula, vbTab))
             ' for existing theFunction (DBSetQuery or DBRowFetch)...
-            ' replace querystring in existing formula and pass as result
+            ' replace query-string in existing formula and pass as result
             replaceQueryInFormula = "=" + theFunction + "(" + queryString + Replace(restFormula, vbTab, ",") + ")"
         Else
             ' when problems occurred, leave everything as is
@@ -133,7 +132,7 @@ Public Module ConfigFiles
         End If
     End Function
 
-    ''' <summary>creates the Config tree menu by reading the menu elements from the config store folder files/subfolders</summary>
+    ''' <summary>creates the Config tree menu by reading the menu elements from the config store folder files/sub-folders</summary>
     Public Sub createConfigTreeMenu()
         Dim currentBar, button As XElement
 
@@ -150,7 +149,7 @@ Public Module ConfigFiles
             button.SetAttributeValue("imageMso", "Refresh")
             button.SetAttributeValue("onAction", "refreshDBConfigTree")
             currentBar.Add(button)
-            ' collect all config files recursively, creating submenus for the structure (see readAllFiles) and buttons for the final config files.
+            ' collect all config files recursively, creating sub-menus for the structure (see readAllFiles) and buttons for the final config files.
             specialConfigFoldersTempColl = New Collection
             menuID = 0
             readAllFiles(ConfigStoreFolder, currentBar)
@@ -166,9 +165,9 @@ Public Module ConfigFiles
         End If
     End Sub
 
-    ''' <summary>reads all files contained in rootPath and its subfolders (recursively) and adds them to the DBConfig menu (sub)structure (recursively). For folders contained in specialConfigStoreFolders, apply further structuring by splitting names on camelcase or specialConfigStoreSeparator</summary>
+    ''' <summary>reads all files contained in rootPath and its sub-folders (recursively) and adds them to the DBConfig menu (sub)structure (recursively). For folders contained in specialConfigStoreFolders, apply further structuring by splitting names on camel-case or specialConfigStoreSeparator</summary>
     ''' <param name="rootPath">root folder to be searched for config files</param>
-    ''' <param name="currentBar">current menu element, where submenus and buttons are added</param>
+    ''' <param name="currentBar">current menu element, where sub-menus and buttons are added</param>
     ''' <param name="Folderpath">for sub menus path of current folder is passed (recursively)</param>
     Private Sub readAllFiles(rootPath As String, ByRef currentBar As XElement, Optional Folderpath As String = vbNullString)
         Try
@@ -179,7 +178,7 @@ Public Module ConfigFiles
             Dim di As New DirectoryInfo(rootPath)
             Dim fileList() As FileSystemInfo = di.GetFileSystemInfos("*.xcl").OrderBy(Function(fi) fi.Name).ToArray()
             If fileList.Length > 0 Then
-                ' for special folders split menu further into camelcase (or other special) separated names
+                ' for special folders split menu further into camel-case (or other special) separated names
                 Dim spclFolder As String = ""
                 For Each aFolder As String In specialConfigStoreFolders
                     ' is current folder contained in special config folders?
@@ -263,11 +262,11 @@ Public Module ConfigFiles
         End Try
     End Sub
 
-    ''' <summary>parses Substrings (filenames in special Folders) contained in nameParts (recursively) of passed xcl config filepath (fullPathName) and adds them to currentBar and submenus (recursively)</summary>
+    ''' <summary>parses Substrings (filenames in special Folders) contained in nameParts (recursively) of passed xcl config file-path (fullPathName) and adds them to currentBar and sub-menus (recursively)</summary>
     ''' <param name="nameParts">tokenized string (separated by space)</param>
-    ''' <param name="currentBar">current menu element, where submenus and buttons are added</param>
+    ''' <param name="currentBar">current menu element, where sub-menus and buttons are added</param>
     ''' <param name="fullPathName">full path name to xcl config file</param>
-    ''' <param name="newRootName">the new root name for the menu, used avoid multiple placement of buttons in submenus</param>
+    ''' <param name="newRootName">the new root name for the menu, used avoid multiple placement of buttons in sub-menus</param>
     ''' <param name="Folderpath">Path of enclosing Folder(s)</param>
     ''' <param name="MenuFolderDepth">required for keeping maxMenuDepth limit</param>
     ''' <returns>new bar as Xelement (for containment)</returns>
@@ -289,7 +288,7 @@ Public Module ConfigFiles
                 buildFileSepMenuCtrl = newBar
             Else  ' branch node: add new menu, recursively descend
                 Dim newName As String = Left$(nameParts, InStr(1, nameParts, " ") - 1)
-                ' prefix already exists: put new submenu below already existing prefix
+                ' prefix already exists: put new sub-menu below already existing prefix
                 If specialConfigFoldersTempColl.Contains(newRootName + newName) Then
                     newBar = specialConfigFoldersTempColl(newRootName + newName)
                 Else
@@ -319,7 +318,7 @@ Public Module ConfigFiles
         ' specialConfigStoreSeparator given: split by it
         If specialConfigStoreSeparator.Length > 0 Then
             stringParts = Join(Split(theString, specialConfigStoreSeparator), " ")
-        Else ' walk through string, separating by camelcase switch
+        Else ' walk through string, separating by camel-case switch
             Dim CamelCaseStrLen As Integer = Len(theString)
             Dim i As Integer
             For i = 1 To CamelCaseStrLen
@@ -329,12 +328,12 @@ Public Module ConfigFiles
                 If i > 1 Then
                     ' character before current character
                     Dim pre As Integer = Asc(Mid$(theString, i - 1, 1))
-                    ' underscore also separates camelcase, except preceded by $, - or another underscore
+                    ' underscore also separates camel-case, except preceded by $, - or another underscore
                     If charAsc = 95 Then
                         If Not (pre = 36 Or pre = 45 Or pre = 95) _
                             Then stringParts += " "
                     End If
-                    ' Uppercase characters separate unless they are preceded by other ppercase characters 
+                    ' Uppercase characters separate unless they are preceded by other uppercase characters 
                     ' also numbers can precede: And Not (pre >= 48 And pre <= 57) _
                     If (charAsc >= 65 And charAsc <= 90) Then
                         If Not (pre >= 65 And pre <= 90) And Not (pre = 36 Or pre = 45 Or pre = 95) Then stringParts += " "
