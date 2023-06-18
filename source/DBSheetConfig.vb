@@ -56,7 +56,7 @@ Public Module DBSheetConfig
         If dbsheetDefPath = "" Then
             ' ask for DBsheet definitions stored in xml file
             openFileDialog1 = New OpenFileDialog With {
-                .InitialDirectory = Globals.fetchSetting("lastDBsheetAssignPath", Globals.fetchSetting("DBSheetDefinitions" + Globals.env, "")),
+                .InitialDirectory = fetchSetting("lastDBsheetAssignPath", fetchSetting("DBSheetDefinitions" + env(), "")),
                 .Filter = "XML files (*.xml)|*.xml",
                 .RestoreDirectory = True
             }
@@ -65,12 +65,12 @@ Public Module DBSheetConfig
         End If
 
         If dbsheetDefPath <> "" Then
-            Globals.setUserSetting("lastDBsheetAssignPath", Strings.Left(dbsheetDefPath, InStrRev(dbsheetDefPath, "\") - 1))
+            setUserSetting("lastDBsheetAssignPath", Strings.Left(dbsheetDefPath, InStrRev(dbsheetDefPath, "\") - 1))
             ' Get the DBSheet Definition file name and read into curConfig
             curConfig = File.ReadAllText(dbsheetDefPath, Text.Encoding.Default)
-            tblPlaceHolder = Globals.fetchSetting("tblPlaceHolder" + env.ToString(), "!T!")
-            specialNonNullableChar = Globals.fetchSetting("specialNonNullableChar" + env.ToString, "*")
-            databaseName = Replace(getEntry("connID", curConfig), Globals.fetchSetting("connIDPrefixDBtype", "MSSQL"), "")
+            tblPlaceHolder = fetchSetting("tblPlaceHolder" + env.ToString(), "!T!")
+            specialNonNullableChar = fetchSetting("specialNonNullableChar" + env.ToString, "*")
+            databaseName = Replace(getEntry("connID", curConfig), fetchSetting("connIDPrefixDBtype", "MSSQL"), "")
             ' get the table name of the DBSheet for setting the DBMapper name
             tableName = getEntry("table", curConfig)
             ' if database is contained in table name, only get rightmost identifier as table name..
@@ -78,10 +78,10 @@ Public Module DBSheetConfig
             ' get query
             Dim queryStr As String = getEntry("query", curConfig)
             If queryStr = "" Then
-                Globals.UserMsg("No query found in DBSheetConfig !", "DBSheet Creation Error")
+                UserMsg("No query found in DBSheetConfig !", "DBSheet Creation Error")
                 Exit Sub
             End If
-            If Globals.QuestionMsg("Should TOP 100 be put into query, in case of very large underlying tables this helps in creating the DBSheet (you can restrict the query later on) ?", MsgBoxStyle.YesNo) = MsgBoxResult.Yes Then
+            If QuestionMsg("Should TOP 100 be put into query, in case of very large underlying tables this helps in creating the DBSheet (you can restrict the query later on) ?", MsgBoxStyle.YesNo) = MsgBoxResult.Yes Then
                 queryStr = "SELECT TOP 100 " + queryStr.Substring(7) ' skip "SELECT " in queryStr
             End If
             whereClauseStart = queryStr.IndexOf("WHERE", StringComparison.OrdinalIgnoreCase)
@@ -156,7 +156,7 @@ Public Module DBSheetConfig
                             End If
                         Next
                         If foundDelim = 0 Then
-                            Globals.UserMsg("Error in changing lookupName '" + lookupName + "' to '" + lookupName + "LU' in select statement of DBSheet query, it has to begin with blank and end with ',' blank or CrLf !", "DBSheet Creation Error")
+                            UserMsg("Error in changing lookupName '" + lookupName + "' to '" + lookupName + "LU' in select statement of DBSheet query, it has to begin with blank and end with ',' blank or CrLf !", "DBSheet Creation Error")
                             lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
                             Exit Sub
                         End If
@@ -168,7 +168,7 @@ Public Module DBSheetConfig
                             ' then create the DBListFetch with the lookup query
                             Globals.createFunctionsInCells(lookupWS.Cells(1, lookupCol), {"RC", "=DBListFetch(RC[1],""""," + lookupRangeName + ")"})
                         Else
-                            Globals.LogWarn("DB Sheet Lookup " + lookupRangeName + " already exists in " + lookupWS.Range(lookupRangeName).Address + ", check if this is really the correct one !")
+                            LogWarn("DB Sheet Lookup " + lookupRangeName + " already exists in " + lookupWS.Range(lookupRangeName).Address + ", check if this is really the correct one !")
                         End If
                     Else
                         'simple value lookup (one column), no need to resolve to an ID
@@ -185,7 +185,7 @@ Public Module DBSheetConfig
                                 ' fixed value lookups have only one column
                                 lookupWS.Range(lookupWS.Cells(2, lookupCol), lookupWS.Cells(2 + lrow - 1, lookupCol)).Name = lookupRangeName
                             Else
-                                Globals.LogWarn("DB Sheet Lookup " + lookupRangeName + " already exists in " + lookupWS.Range(lookupRangeName).Address + ", check if this is really the correct one !")
+                                LogWarn("DB Sheet Lookup " + lookupRangeName + " already exists in " + lookupWS.Range(lookupRangeName).Address + ", check if this is really the correct one !")
                             End If
                         Else ' single column DB lookup
                             lookupWS.Cells(1, lookupCol + 1).Value = LookupQuery
@@ -195,7 +195,7 @@ Public Module DBSheetConfig
                                 lookupWS.Cells(2, lookupCol).Name = lookupRangeName
                                 Globals.createFunctionsInCells(lookupWS.Cells(1, lookupCol), {"RC", "=DBListFetch(RC[1],""""," + lookupRangeName + ")"})
                             Else
-                                Globals.LogWarn("DB Sheet Lookup " + lookupRangeName + " already exists in " + lookupWS.Range(lookupRangeName).Address + ", check if this is really the correct one !")
+                                LogWarn("DB Sheet Lookup " + lookupRangeName + " already exists in " + lookupWS.Range(lookupRangeName).Address + ", check if this is really the correct one !")
                             End If
                         End If
                     End If
@@ -213,7 +213,7 @@ Public Module DBSheetConfig
                 Try
                     createdListObject = curCell.Offset(0, 1).ListObject
                 Catch ex As Exception
-                    Globals.UserMsg("Error getting existing list-object for DBSheet for table " + tableName + ": " + ex.Message, "DBSheet Creation Error")
+                    UserMsg("Error getting existing list-object for DBSheet for table " + tableName + ": " + ex.Message, "DBSheet Creation Error")
                     Exit Sub
                 End Try
             Else
@@ -226,7 +226,7 @@ Public Module DBSheetConfig
                     .Offset(1, 0).Value = queryStr
                     .Offset(1, 0).WrapText = False ' avoid row height increasing
                 Catch ex As Exception
-                    Globals.UserMsg("Error in adding query (" + queryStr + "): " + ex.Message, "DBSheet Creation Error")
+                    UserMsg("Error in adding query (" + queryStr + "): " + ex.Message, "DBSheet Creation Error")
                     lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
                     Exit Sub
                 End Try
@@ -236,7 +236,7 @@ Public Module DBSheetConfig
                         .Offset(2, 0).Value = changedWhereClause
                         .Offset(2, 0).WrapText = False
                     Catch ex As Exception
-                        Globals.UserMsg("Error in adding where clause (" + changedWhereClause + "): " + ex.Message, "DBSheet Creation Error")
+                        UserMsg("Error in adding where clause (" + changedWhereClause + "): " + ex.Message, "DBSheet Creation Error")
                         lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
                         Exit Sub
                     End Try
@@ -276,16 +276,16 @@ Public Module DBSheetConfig
         ' store lookup columns (<>LU) to be ignored in DBMapper
         Dim queryErrorPos As Integer = InStr(curCell.Value.ToString(), "Error")
         If queryErrorPos > 0 Then
-            Globals.UserMsg("DBSheet Query had an error:" + vbCrLf + Mid(curCell.Value.ToString(), queryErrorPos + Len("Error in query table refresh: ")), "DBSheet Creation Error")
+            UserMsg("DBSheet Query had an error:" + vbCrLf + Mid(curCell.Value.ToString(), queryErrorPos + Len("Error in query table refresh: ")), "DBSheet Creation Error")
             If lookupWS IsNot Nothing Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
             Exit Sub
         End If
         ' name the worksheet to tableName, if defined in the settings
-        If CBool(Globals.fetchSetting("DBSheetAutoName", "False")) Then
+        If CBool(fetchSetting("DBSheetAutoName", "False")) Then
             Try
                 curCell.Parent.Name = Left(tableName, 31)
             Catch ex As Exception
-                Globals.UserMsg("DBSheet setting worksheet name to '" + Left(tableName, 31) + "', error:" + ex.Message, "DBSheet Creation Error")
+                UserMsg("DBSheet setting worksheet name to '" + Left(tableName, 31) + "', error:" + ex.Message, "DBSheet Creation Error")
             End Try
         End If
         ' some visual aid for DBSheets
@@ -318,7 +318,7 @@ Public Module DBSheetConfig
                         finalLookupname = If(getEntry("fkey", LookupDef, 1) <> "", lookupName + "LU", lookupName)
                         lookupColumn = createdListObject.ListColumns(finalLookupname)
                     Catch ex As Exception
-                        Globals.UserMsg("lookup column " + finalLookupname + " not found in ListRange", "DBSheet Creation Error")
+                        UserMsg("lookup column " + finalLookupname + " not found in ListRange", "DBSheet Creation Error")
                         lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
                         Exit Sub
                     End Try
@@ -337,7 +337,7 @@ Public Module DBSheetConfig
                                 Formula1:=localOffsetFormula)
                         End If
                     Catch ex As Exception
-                        Globals.UserMsg("Error in adding validation formula " + localOffsetFormula + " to column " + lookupColumn.Name + ": " + ex.Message, "DBSheet Creation Error")
+                        UserMsg("Error in adding validation formula " + localOffsetFormula + " to column " + lookupColumn.Name + ": " + ex.Message, "DBSheet Creation Error")
                         lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
                         Exit Sub
                     End Try
@@ -354,7 +354,7 @@ Public Module DBSheetConfig
                             newCol.DataBodyRange.Formula = lookupFormula
                         Catch ex As Exception
                             lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
-                            Globals.UserMsg("Error in adding lookup formula " + lookupFormula + " to new column " + lookupName + ": " + ex.Message, "DBSheet Creation Error")
+                            UserMsg("Error in adding lookup formula " + lookupFormula + " to new column " + lookupName + ": " + ex.Message, "DBSheet Creation Error")
                             Exit Sub
                         End Try
                         ' hide the resolution formula column
@@ -368,7 +368,7 @@ Public Module DBSheetConfig
                 If ignoreColumns.Length > 0 Then ignoreColumns = Left(ignoreColumns, ignoreColumns.Length - 1)
             End If
         Catch ex As Exception
-            Globals.UserMsg("Error in DBSheet Creation: " + ex.Message, "DBSheet Creation Error")
+            UserMsg("Error in DBSheet Creation: " + ex.Message, "DBSheet Creation Error")
             If lookupWS IsNot Nothing Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
             Exit Sub
         End Try
@@ -384,14 +384,14 @@ Public Module DBSheetConfig
             alreadyExists = False
         End Try
         If alreadyExists Then
-            Globals.UserMsg("Error adding DBModifier 'DBMapper" + tableName + "', Name already exists in Workbook!", "DBSheet Creation Error")
+            UserMsg("Error adding DBModifier 'DBMapper" + tableName + "', Name already exists in Workbook!", "DBSheet Creation Error")
             If lookupWS IsNot Nothing Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
             Exit Sub
         End If
         Try
             NamesList.Add(Name:="DBMapper" + tableName, RefersTo:=createdListObject.Range) ' curCell.Offset(0, 1) DBMapper starting cell (one cell to the right of active cell)
         Catch ex As Exception
-            Globals.UserMsg("Error when assigning name 'DBMapper" + tableName + "' to DBSetQuery Target: " + ex.Message, "DBSheet Creation Error")
+            UserMsg("Error when assigning name 'DBMapper" + tableName + "' to DBSetQuery Target: " + ex.Message, "DBSheet Creation Error")
             If lookupWS IsNot Nothing Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
             Exit Sub
         End Try
@@ -406,7 +406,7 @@ Public Module DBSheetConfig
                 ExcelDnaUtil.Application.ActiveWindow.FreezePanes = True
             End If
         Catch ex As Exception
-            Globals.UserMsg("Exception: " + ex.Message, "DBSheet Creation Error")
+            UserMsg("Exception: " + ex.Message, "DBSheet Creation Error")
             If lookupWS IsNot Nothing Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
             Exit Sub
         End Try
@@ -463,7 +463,7 @@ Public Module DBSheetConfig
         Globals.theRibbon.ActivateTab("DBaddinTab")
         curCell.Select()
         If whereClauseStart >= 0 Then
-            Globals.UserMsg("Attention: A where clause was defined for this DBSheet, you need to extend the DBSetQuery function's Query argument in cell " + curCell.Address + "!", "DBSheet Creation")
+            UserMsg("Attention: A where clause was defined for this DBSheet, you need to extend the DBSetQuery function's Query argument in cell " + curCell.Address + "!", "DBSheet Creation")
         End If
     End Sub
 
@@ -497,7 +497,7 @@ Public Module DBSheetConfig
         Exit Function
 
 getEntry_Err:
-        Globals.UserMsg("Error: " + Err.Description + " in DBSheetConfig.getEntry")
+        UserMsg("Error: " + Err.Description + " in DBSheetConfig.getEntry")
     End Function
 
     ''' <summary>creates markup with setting value content in entryMarkup, used in DBSheetCreateForm.xmlDbsheetConfig</summary>
@@ -546,7 +546,7 @@ getEntry_Err:
                 End If
             Loop Until ListItem = ""
         Catch ex As Exception
-            Globals.UserMsg("Exception in getEntryList: " + ex.Message)
+            UserMsg("Exception in getEntryList: " + ex.Message)
         End Try
         getEntryList = list
     End Function

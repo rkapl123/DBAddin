@@ -55,8 +55,8 @@ Public Module ConfigFiles
                 Dim ConfigArray As String() = Split(ItemLine, vbTab)
                 ' if there is a ConfigSelect setting use it to replace the query with the template, replacing the contained table with the FROM <table>...
                 ' also regard the possibility to have a preference for a specific ConfigSelect(1, 2, or any other postfix being available in settings)
-                Dim ConfigSelect As String = Globals.fetchSetting("ConfigSelect" + Globals.fetchSetting("ConfigSelectPreference", ""), "")
-                If ConfigSelect = "" Then ConfigSelect = Globals.fetchSetting("ConfigSelect", "") ' if nothing found under given ConfigSelectPreference, fall back to standard ConfigSelect
+                Dim ConfigSelect As String = fetchSetting("ConfigSelect" + fetchSetting("ConfigSelectPreference", ""), "")
+                If ConfigSelect = "" Then ConfigSelect = fetchSetting("ConfigSelect", "") ' if nothing found under given ConfigSelectPreference, fall back to standard ConfigSelect
                 ' replace query in function formula in second part of pairs with ConfigSelect template. 
                 ' This works only for templates with actual query string as first argument (not having reference(s) to cell(s) with query string(s))
                 ' also only works for single pair config templates
@@ -74,7 +74,7 @@ Public Module ConfigFiles
             Loop Until fileReader.EndOfStream
             fileReader.Close()
         Catch ex As Exception
-            Globals.UserMsg("Error (" + ex.Message + ") during filling items from config file '" + theFileName + "' in ConfigFiles.loadConfig")
+            UserMsg("Error (" + ex.Message + ") during filling items from config file '" + theFileName + "' in ConfigFiles.loadConfig")
         End Try
     End Sub
 
@@ -137,7 +137,7 @@ Public Module ConfigFiles
         Dim currentBar, button As XElement
 
         If Not Directory.Exists(ConfigStoreFolder) Then
-            Globals.UserMsg("No predefined config store folder '" + ConfigStoreFolder + "' found, please correct setting and refresh!")
+            UserMsg("No predefined config store folder '" + ConfigStoreFolder + "' found, please correct setting and refresh!")
             ConfigMenuXML = "<menu xmlns='" + xnspace.ToString() + "'><button id='refreshDBConfig' label='refresh DBConfig Tree' imageMso='Refresh' onAction='refreshDBConfigTree'/></menu>"
         Else
             ' top level menu
@@ -188,9 +188,9 @@ Public Module ConfigFiles
                     End If
                 Next
                 If spclFolder <> "" And MenuFolderDepth < maxMenuDepth Then
-                    Dim firstCharLevel As Boolean = CBool(Globals.fetchSetting(spclFolder + "FirstLetterLevel", "False"))
-                    Dim specialConfigStoreSeparator As String = Globals.fetchSetting(spclFolder + "Separator", "")
-                    specialFolderMaxDepth = CInt(Globals.fetchSetting(spclFolder + "MaxDepth", "4"))
+                    Dim firstCharLevel As Boolean = CBool(fetchSetting(spclFolder + "FirstLetterLevel", "False"))
+                    Dim specialConfigStoreSeparator As String = fetchSetting(spclFolder + "Separator", "")
+                    specialFolderMaxDepth = CInt(fetchSetting(spclFolder + "MaxDepth", "4"))
                     Dim nameParts As String
                     For i As Long = 0 To UBound(fileList)
                         ' is current entry contained in next entry then revert order to allow for containment in next entry's hierarchy..
@@ -258,7 +258,7 @@ Public Module ConfigFiles
                 End If
             Next
         Catch ex As Exception
-            Globals.UserMsg("Error (" + ex.Message + ") in MenuHandler.readAllFiles")
+            UserMsg("Error (" + ex.Message + ") in MenuHandler.readAllFiles")
         End Try
     End Sub
 
@@ -305,7 +305,7 @@ Public Module ConfigFiles
                 buildFileSepMenuCtrl = newBar
             End If
         Catch ex As Exception
-            Globals.UserMsg("Error (" + ex.Message + ") in MenuHandler.buildFileSepMenuCtrl")
+            UserMsg("Error (" + ex.Message + ") in MenuHandler.buildFileSepMenuCtrl")
             buildFileSepMenuCtrl = Nothing
         End Try
     End Function

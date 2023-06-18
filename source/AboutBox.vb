@@ -34,7 +34,7 @@ Public NotInheritable Class AboutBox
         Me.LabelCompanyName.Text = "Information: " + My.Application.Info.CompanyName
         Me.TextBoxDescription.Text = My.Application.Info.Description
         dontChangeEventLevels = True
-        Dim theEventTypeFilter As EventTypeFilter = Globals.theLogDisplaySource.Listeners(0).Filter
+        Dim theEventTypeFilter As EventTypeFilter = theLogDisplaySource.Listeners(0).Filter
         Me.EventLevels.SelectedItem = theEventTypeFilter.EventType.ToString()
         dontChangeEventLevels = False
         BackgroundWorker1.RunWorkerAsync()
@@ -44,11 +44,11 @@ Public NotInheritable Class AboutBox
     Dim doUpdate As Boolean = False
     Const AddinName = "DBAddin-"
     Const updateFilenameZip = "downloadedVersion.zip"
-    Dim localUpdateFolder As String = Globals.fetchSetting("localUpdateFolder", "")
-    Dim localUpdateMessage As String = Globals.fetchSetting("localUpdateMessage", "A new version is available in the local update folder, quit Excel and open explorer to start deployAddin.cmd ?")
-    Dim updatesMajorVersion As String = Globals.fetchSetting("updatesMajorVersion", "1.0.0.")
-    Dim updatesDownloadFolder As String = Globals.fetchSetting("updatesDownloadFolder", "C:\temp\")
-    Dim updatesUrlBase As String = Globals.fetchSetting("updatesUrlBase", "https://github.com/rkapl123/DBAddin/archive/refs/tags/")
+    Dim localUpdateFolder As String = fetchSetting("localUpdateFolder", "")
+    Dim localUpdateMessage As String = fetchSetting("localUpdateMessage", "A new version is available in the local update folder, quit Excel and open explorer to start deployAddin.cmd ?")
+    Dim updatesMajorVersion As String = fetchSetting("updatesMajorVersion", "1.0.0.")
+    Dim updatesDownloadFolder As String = fetchSetting("updatesDownloadFolder", "C:\temp\")
+    Dim updatesUrlBase As String = fetchSetting("updatesUrlBase", "https://github.com/rkapl123/DBAddin/archive/refs/tags/")
     Dim response As Net.HttpWebResponse = Nothing
     Dim urlFile As String = ""
     ' check for zip file of next higher revision
@@ -63,7 +63,7 @@ Public NotInheritable Class AboutBox
         Try
             Net.ServicePointManager.SecurityProtocol = Net.SecurityProtocolType.Tls12 Or Net.SecurityProtocolType.SystemDefault
         Catch ex As Exception
-            Globals.UserMsg("Error setting the SecurityProtocol: " + ex.Message())
+            UserMsg("Error setting the SecurityProtocol: " + ex.Message())
             Exit Sub
         End Try
 
@@ -90,7 +90,7 @@ Public NotInheritable Class AboutBox
                 response.Close()
             End If
             triedRevision += 1
-        Loop Until revisionNotFoundTries = CInt(Globals.fetchSetting("maxTriesForRevisionFind", "10"))
+        Loop Until revisionNotFoundTries = CInt(fetchSetting("maxTriesForRevisionFind", "10"))
     End Sub
 
     Private Sub BackgroundWorker1_RunWorkerCompleted(sender As Object, e As RunWorkerCompletedEventArgs) Handles BackgroundWorker1.RunWorkerCompleted
@@ -102,8 +102,8 @@ Public NotInheritable Class AboutBox
             Else
                 Me.TextBoxDescription.Text = My.Application.Info.Description + vbCrLf + vbCrLf + "Version " + updatesMajorVersion + curRevision.ToString() +
                     " was not found on Github, it is probably more than 10 releases behind, reopen the Aboutbox to retry with maxTriesForRevisionFind (currently " +
-                    Globals.fetchSetting("maxTriesForRevisionFind", "10") + ") increased by 10."
-                Globals.setUserSetting("maxTriesForRevisionFind", (CInt(Globals.fetchSetting("maxTriesForRevisionFind", "10")) + 10).ToString())
+                    fetchSetting("maxTriesForRevisionFind", "10") + ") increased by 10."
+                setUserSetting("maxTriesForRevisionFind", (CInt(fetchSetting("maxTriesForRevisionFind", "10")) + 10).ToString())
                 Me.TextBoxDescription.BackColor = Drawing.Color.Violet
             End If
             Me.CheckForUpdates.Text = "no Update ..."
@@ -111,7 +111,7 @@ Public NotInheritable Class AboutBox
             Me.Refresh()
             Exit Sub
         Else
-            Globals.setUserSetting("maxTriesForRevisionFind", "10")
+            setUserSetting("maxTriesForRevisionFind", "10")
             Me.TextBoxDescription.Text = My.Application.Info.Description + vbCrLf + vbCrLf + "A new version (" + updatesMajorVersion + curRevision.ToString() + ") is available " +
                 IIf(localUpdateFolder <> "", "in " + localUpdateFolder, "on Github")
             Me.TextBoxDescription.BackColor = Drawing.Color.DarkOrange
@@ -123,13 +123,13 @@ Public NotInheritable Class AboutBox
         ' if there is a maintained local update folder, open it and let user update from there...
         If localUpdateFolder <> "" Then
             Try
-                If Globals.QuestionMsg(localUpdateMessage, MsgBoxStyle.OkCancel) = MsgBoxResult.Ok Then
+                If QuestionMsg(localUpdateMessage, MsgBoxStyle.OkCancel) = MsgBoxResult.Ok Then
                     System.Diagnostics.Process.Start("explorer.exe", localUpdateFolder)
                     Me.quitExcelAfterwards = True
                     Me.Close()
                 End If
             Catch ex As Exception
-                Globals.UserMsg("Error when opening local update folder: " + ex.Message())
+                UserMsg("Error when opening local update folder: " + ex.Message())
             End Try
             Exit Sub
         End If
@@ -141,7 +141,7 @@ Public NotInheritable Class AboutBox
         Try
             IO.Directory.CreateDirectory(updatesDownloadFolder)
         Catch ex As Exception
-            Globals.UserMsg("Couldn't create file download folder (" + updatesDownloadFolder + "): " + ex.Message())
+            UserMsg("Couldn't create file download folder (" + updatesDownloadFolder + "): " + ex.Message())
             Exit Sub
         End Try
 
@@ -153,7 +153,7 @@ Public NotInheritable Class AboutBox
         Try
             response = requestGet.GetResponse()
         Catch ex As Exception
-            Globals.UserMsg("Error when downloading new version: " + ex.Message())
+            UserMsg("Error when downloading new version: " + ex.Message())
             Exit Sub
         End Try
         ' save the version as zip file
@@ -173,14 +173,14 @@ Public NotInheritable Class AboutBox
         Try
             Compression.ZipFile.ExtractToDirectory(updatesDownloadFolder + updateFilenameZip, updatesDownloadFolder)
         Catch ex As Exception
-            Globals.UserMsg("Error when extracting new version: " + ex.Message())
+            UserMsg("Error when extracting new version: " + ex.Message())
         End Try
         Me.TextBoxDescription.Text = My.Application.Info.Description + vbCrLf + vbCrLf + "New version in " + updatesDownloadFolder + AddinName + updatesMajorVersion + curRevision.ToString() + "\Distribution, start deployAddin.cmd to install the new Version."
         Me.Refresh()
         Try
             System.Diagnostics.Process.Start("explorer.exe", updatesDownloadFolder + AddinName + updatesMajorVersion + curRevision.ToString() + "\Distribution")
         Catch ex As Exception
-            Globals.UserMsg("Error when opening Distribution folder of new version: " + ex.Message())
+            UserMsg("Error when opening Distribution folder of new version: " + ex.Message())
         End Try
     End Sub
 
@@ -196,7 +196,7 @@ Public NotInheritable Class AboutBox
         Try
             Process.Start(My.Application.Info.CompanyName)
         Catch ex As Exception
-            Globals.LogWarn(ex.Message)
+            LogWarn(ex.Message)
         End Try
     End Sub
 
@@ -205,9 +205,9 @@ Public NotInheritable Class AboutBox
     ''' <param name="e"></param>
     Private Sub LabelProductName_Click(sender As Object, e As EventArgs) Handles LabelProductName.Click
         Try
-            Process.Start(Globals.fetchSetting("LocalHelp", ""))
+            Process.Start(fetchSetting("LocalHelp", ""))
         Catch ex As Exception
-            Globals.LogWarn(ex.Message)
+            LogWarn(ex.Message)
         End Try
     End Sub
 
@@ -229,8 +229,8 @@ Public NotInheritable Class AboutBox
             Case "All"
                 theEventTypeFilter = New EventTypeFilter(SourceLevels.All)
         End Select
-        Globals.theLogDisplaySource.Listeners(0).Filter = theEventTypeFilter
-        Globals.theLogFileSource.Listeners("FileLogger").Filter = theEventTypeFilter
+        theLogDisplaySource.Listeners(0).Filter = theEventTypeFilter
+        theLogFileSource.Listeners("FileLogger").Filter = theEventTypeFilter
     End Sub
 
     Private Sub CheckForUpdates_Click(sender As Object, e As EventArgs) Handles CheckForUpdates.Click
@@ -244,12 +244,12 @@ Public NotInheritable Class AboutBox
         Try
             ExcelDnaUtil.Application.AddIns("DBAddin.Functions").Installed = True
         Catch ex As Exception
-            Globals.UserMsg("Legacy DB-Addin not available in Excel-Addins, can't reactivate it, so disabling this Add-in not possible !")
+            UserMsg("Legacy DB-Addin not available in Excel-Addins, can't reactivate it, so disabling this Add-in not possible !")
             Exit Sub
         End Try
         ' first reactivate legacy Addin
         My.Computer.Registry.SetValue("HKEY_CURRENT_USER\Software\Microsoft\Office\Excel\Addins\DBAddin.Connection", "LoadBehavior", 3)
-        Globals.UserMsg("Please restart Excel to make changes effective...", "Disable DBAddin and re-enable Legacy DBAddin", MsgBoxStyle.Exclamation)
+        UserMsg("Please restart Excel to make changes effective...", "Disable DBAddin and re-enable Legacy DBAddin", MsgBoxStyle.Exclamation)
         Try : ExcelDnaUtil.Application.AddIns("OebfaFuncs").Installed = False : Catch ex As Exception : End Try
         disableAddinAfterwards = True
         Me.Close()

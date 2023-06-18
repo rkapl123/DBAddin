@@ -48,7 +48,7 @@ Public Module Functions
                            <ExcelArgument(Description:="formatting option, 0:'YYYYMMDD', 1: DATE 'YYYY-MM-DD'), 2:{d 'YYYY-MM-DD'},3:Access/JetDB #DD/MM/YYYY#, add 10 to formatting to include fractions of a second (1000)")> Optional formatting As Integer = 99) As String
         DBDate = ""
         Try
-            If formatting > 3 Then formatting = Globals.DefaultDBDateFormatting
+            If formatting > 3 Then formatting = DefaultDBDateFormatting
             If TypeName(DatePart) = "Object(,)" Then
                 For Each myCell In DatePart
                     If TypeName(myCell) = "ExcelEmpty" Then
@@ -68,7 +68,7 @@ Public Module Functions
                 End If
             End If
         Catch ex As Exception
-            Globals.LogWarn(ex.Message)
+            LogWarn(ex.Message)
             DBDate = "Error (" + ex.Message + ") in function DBDate"
         End Try
     End Function
@@ -153,7 +153,7 @@ Public Module Functions
             Next
             DBString = "'" + retval + "'"
         Catch ex As Exception
-            Globals.LogWarn(ex.Message)
+            LogWarn(ex.Message)
             DBString = "Error (" + ex.Message + ") in DBString"
         End Try
     End Function
@@ -183,7 +183,7 @@ Public Module Functions
             Next
             PQString = """" + retval + """"
         Catch ex As Exception
-            Globals.LogWarn(ex.Message)
+            LogWarn(ex.Message)
             PQString = "Error (" + ex.Message + ") in PQString"
         End Try
     End Function
@@ -215,7 +215,7 @@ Public Module Functions
                 End If
             End If
         Catch ex As Exception
-            Globals.LogWarn(ex.Message)
+            LogWarn(ex.Message)
             PQDate = "Error (" + ex.Message + ") in function PQDate"
         End Try
     End Function
@@ -324,7 +324,7 @@ Public Module Functions
                             If OnlyString Then
                                 retval = retval + separator + IIf(DBcompliant, "'", "") + Convert.ToString(myCell, System.Globalization.CultureInfo.InvariantCulture) + IIf(DBcompliant, "'", "")
                             ElseIf OnlyDate Then
-                                retval = retval + separator + formatDBDate(myCell, Globals.DefaultDBDateFormatting)
+                                retval = retval + separator + formatDBDate(myCell, DefaultDBDateFormatting)
                             Else
                                 retval = retval + separator + Convert.ToString(myCell, System.Globalization.CultureInfo.InvariantCulture)
                             End If
@@ -341,7 +341,7 @@ Public Module Functions
                         If OnlyString Then
                             retval = retval + separator + IIf(DBcompliant, "'", "") + Convert.ToString(myRef, System.Globalization.CultureInfo.InvariantCulture) + IIf(DBcompliant, "'", "")
                         ElseIf OnlyDate Then
-                            retval = retval + separator + formatDBDate(myRef, Globals.DefaultDBDateFormatting)
+                            retval = retval + separator + formatDBDate(myRef, DefaultDBDateFormatting)
                         Else
                             retval = retval + separator + Convert.ToString(myRef, System.Globalization.CultureInfo.InvariantCulture)
                         End If
@@ -353,7 +353,7 @@ Public Module Functions
             Next
             DoConcatCellsSep = Mid$(retval, Len(separator) + 1) ' skip first separator
         Catch ex As Exception
-            Globals.LogWarn(ex.Message)
+            LogWarn(ex.Message)
             DoConcatCellsSep = "Error (" + ex.Message + ") in DoConcatCellsSep"
         End Try
     End Function
@@ -378,7 +378,7 @@ Public Module Functions
             resolveConnstring(ConnString, EnvPrefix, True)
             ' calcContainers are identified by workbook name + Sheet name + function caller cell Address
             callID = "[" + caller.Parent.Parent.Name + "]" + caller.Parent.Name + "!" + caller.Address
-            Globals.LogInfo("entering function, callID: " + callID)
+            LogInfo("entering function, callID: " + callID)
             ' check query, also converts query to string (if it is a range)
             ' error message or cached status message is returned from checkParamsAndCache, if query OK and result was not already calculated (cached) then empty string
             DBSetQuery = checkParamsAndCache(Query, callID, ConnString)
@@ -403,10 +403,10 @@ Public Module Functions
             End If
 
         Catch ex As Exception
-            Globals.LogWarn(ex.Message + ", callID: " + callID)
+            LogWarn(ex.Message + ", callID: " + callID)
             DBSetQuery = EnvPrefix + ", Error (" + ex.Message + ") in DBSetQuery, callID: " + callID
         End Try
-        Globals.LogInfo("leaving function, callID: " + callID)
+        LogInfo("leaving function, callID: " + callID)
     End Function
 
     ''' <summary>set Query parameters (query text and connection string) of Query List or pivot table (incl. chart)</summary>
@@ -431,7 +431,7 @@ Public Module Functions
         ' when selecting a value from a list of a validated field or being invoked from a hyperlink (e.g. word), excel won't react to
         ' Application.Calculation changes, so just leave here...
         If ExcelDnaUtil.Application.Calculation <> Excel.XlCalculation.xlCalculationManual Then
-            Globals.LogWarn("Error in setting Application.Calculation to Manual in query: " + Query + ", caller: " + callID)
+            LogWarn("Error in setting Application.Calculation to Manual in query: " + Query + ", caller: " + callID)
             StatusCollection(callID).statusMsg = "Error in setting Application.Calculation to Manual in query: " + Query
             caller.Formula += " " ' trigger recalculation to return error message to calling function
             Exit Sub
@@ -515,7 +515,7 @@ Public Module Functions
                 Try
                     theListObject.QueryTable.Refresh()
                 Catch ex As Exception
-                    Globals.LogWarn("QueryTable Refresh error: " + ex.Message + " in query: " + Query + ", caller: " + callID + ", retrying with RefreshStyle = xlInsertEntireRows")
+                    LogWarn("QueryTable Refresh error: " + ex.Message + " in query: " + Query + ", caller: " + callID + ", retrying with RefreshStyle = xlInsertEntireRows")
                     ' this fixes two errors with query tables where the table size was changed: 8000A03EC and out of memory error
                     theListObject.QueryTable.RefreshStyle = Excel.XlCellInsertionMode.xlInsertEntireRows
                     theListObject.QueryTable.PreserveColumnInfo = False
@@ -546,7 +546,7 @@ Public Module Functions
                 DBModifs.resizeDBMapperRange(theListObject.Range, oldRange)
             End If
         Catch ex As Exception
-            Globals.LogWarn(ex.Message + " in query: " + Query + ", caller: " + callID)
+            LogWarn(ex.Message + " in query: " + Query + ", caller: " + callID)
             If StatusCollection.ContainsKey(callID) Then StatusCollection(callID).statusMsg = ex.Message + " in query: " + Query
         End Try
 
@@ -574,7 +574,7 @@ Public Module Functions
             caller = ToRange(XlCall.Excel(XlCall.xlfCaller))
             ' calcContainers are identified by workbook name + Sheet name + function caller cell Address
             callID = "[" + caller.Parent.Parent.Name + "]" + caller.Parent.Name + "!" + caller.Address
-            Globals.LogInfo("entering function, callID: " + callID)
+            LogInfo("entering function, callID: " + callID)
             ' check query, also converts query to string (if it is a range)
             ' error message or cached status message is returned from checkParamsAndCache, if query OK and result was not already calculated (cached) then empty string
             DBSetPowerQuery = checkParamsAndCache(Query, callID, "")
@@ -591,10 +591,10 @@ Public Module Functions
             End If
 
         Catch ex As Exception
-            Globals.LogWarn(ex.Message + ", callID: " + callID)
+            LogWarn(ex.Message + ", callID: " + callID)
             DBSetPowerQuery = "Error (" + ex.Message + ") in DBSetPowerQuery, callID: " + callID
         End Try
-        Globals.LogInfo("leaving function, callID: " + callID)
+        LogInfo("leaving function, callID: " + callID)
     End Function
 
     Public avoidRequeryDuringEdit As Boolean = False
@@ -620,7 +620,7 @@ Public Module Functions
             Next
             StatusCollection(callID).statusMsg = "set and refreshed " + queryName
         Catch ex As Exception
-            Globals.LogWarn(ex.Message + " in query: " + Query + ", caller: " + callID)
+            LogWarn(ex.Message + " in query: " + Query + ", caller: " + callID)
             If StatusCollection.ContainsKey(callID) Then StatusCollection(callID).statusMsg = ex.Message + " in query: " + Query
         End Try
         ExcelDnaUtil.Application.Calculation = calcMode
@@ -659,7 +659,7 @@ Public Module Functions
         DBModifs.preventChangeWhileFetching = False
         ExcelDnaUtil.Application.Cursor = Excel.XlMousePointer.xlDefault  ' To return cursor to normal
         ExcelDnaUtil.Application.StatusBar = False
-        Globals.LogInfo("callID: " + callID + If(additionalLogInfo <> "", ", additionalInfo: " + additionalLogInfo, ""))
+        LogInfo("callID: " + callID + If(additionalLogInfo <> "", ", additionalInfo: " + additionalLogInfo, ""))
         ExcelDnaUtil.Application.ScreenUpdating = scrnUpdate ' coming from refresh, this might be off for dirtying "foreign" data targets (as we're on a different sheet than the calling function) 
         ExcelDnaUtil.Application.Calculation = calcMode
     End Sub
@@ -699,7 +699,7 @@ Public Module Functions
             resolveConnstring(ConnString, EnvPrefix, False)
             ' calcContainers are identified by workbook name + Sheet name + function caller cell Address
             callID = "[" + caller.Parent.Parent.Name + "]" + caller.Parent.Name + "!" + caller.Address
-            Globals.LogInfo("entering function, callID: " + callID)
+            LogInfo("entering function, callID: " + callID)
             ' prepare information for action procedure
             If dontCalcWhileClearing Then
                 DBListFetch = EnvPrefix + ", dontCalcWhileClearing = True !"
@@ -746,10 +746,10 @@ Public Module Functions
                                             End Sub)
             End If
         Catch ex As Exception
-            Globals.LogWarn(ex.Message + ", callID : " + callID)
+            LogWarn(ex.Message + ", callID : " + callID)
             DBListFetch = EnvPrefix + ", Error (" + ex.Message + ") in DBListFetch, callID : " + callID
         End Try
-        Globals.LogInfo("leaving function, callID: " + callID)
+        LogInfo("leaving function, callID: " + callID)
     End Function
 
     ''' <summary>Actually do the work for DBListFetch: Query list of data delimited by maxRows and maxCols, write it into targetCells
@@ -769,7 +769,7 @@ Public Module Functions
     ''' <param name="formulaRangeName"></param>
     Public Sub DBListFetchAction(callID As String, Query As String, caller As Excel.Range, targetRange As Excel.Range, ConnString As String, formulaRange As Object, extendArea As Integer, HeaderInfo As Boolean, AutoFit As Boolean, autoformat As Boolean, ShowRowNumbers As Boolean, targetRangeName As String, formulaRangeName As String)
         Dim errMsg As String
-        Globals.LogInfo("Entering DBListFetchAction: callID " + callID)
+        LogInfo("Entering DBListFetchAction: callID " + callID)
         Dim calcMode = ExcelDnaUtil.Application.Calculation
         Dim scrnUpdate As Boolean = ExcelDnaUtil.Application.ScreenUpdating
         Try
@@ -861,13 +861,13 @@ Public Module Functions
         End If
 
         If InStr(1, UCase$(ConnString), ";ODBC;") > 0 Then
-            If Globals.fetchSetting("preferODBCconnString" + Globals.env(), "false") = "true" Then
+            If fetchSetting("preferODBCconnString" + env(), "false") = "true" Then
                 ConnString = Mid$(ConnString, InStr(1, UCase$(ConnString), ";ODBC;") + 1)
             Else
                 ConnString = Left$(ConnString, InStr(1, UCase$(ConnString), ";ODBC;") - 1)
             End If
         End If
-        If Globals.fetchSetting("addOLEDBprefix" + Globals.env(), "false") = "true" Then
+        If fetchSetting("addOLEDBprefix" + env(), "false") = "true" Then
             ConnString = "OLEDB;" + ConnString
         End If
 
@@ -1059,7 +1059,7 @@ Public Module Functions
             End If
         Catch ex As Exception
             errMsg = "Error in restoring formats: " + ex.Message + ", query: " + Query
-            Globals.LogWarn(errMsg + ", caller: " + callID)
+            LogWarn(errMsg + ", caller: " + callID)
             GoTo err
         End Try
         'auto fit columns AFTER auto format so we don't have problems with applied formats visibility
@@ -1079,7 +1079,7 @@ Public Module Functions
         finishAction(calcMode, callID, scrnUpdate)
         Exit Sub
 
-err:    Globals.LogWarn(errMsg + ", caller: " + callID)
+err:    LogWarn(errMsg + ", caller: " + callID)
         If StatusCollection.ContainsKey(callID) Then StatusCollection(callID).statusMsg = errMsg
         finishAction(calcMode, callID, scrnUpdate, "Error")
         caller.Formula += " " ' recalculate to trigger return of error messages to calling function
@@ -1106,7 +1106,7 @@ err:    Globals.LogWarn(errMsg + ", caller: " + callID)
             resolveConnstring(ConnString, EnvPrefix, False)
             ' calcContainers are identified by workbook name + Sheet name + function caller cell Address 
             callID = "[" + caller.Parent.Parent.Name + "]" + caller.Parent.Name + "!" + caller.Address
-            Globals.LogInfo("entering function, callID: " + callID)
+            LogInfo("entering function, callID: " + callID)
             If dontCalcWhileClearing Then
                 DBRowFetch = EnvPrefix + ", dontCalcWhileClearing = True !"
                 Exit Function
@@ -1155,10 +1155,10 @@ err:    Globals.LogWarn(errMsg + ", caller: " + callID)
                                             End Sub)
             End If
         Catch ex As Exception
-            Globals.LogWarn(ex.Message + ", callID: " + callID)
+            LogWarn(ex.Message + ", callID: " + callID)
             DBRowFetch = EnvPrefix + ", Error (" + ex.Message + ") in DBRowFetch, callID: " + callID
         End Try
-        Globals.LogInfo("leaving function, callID: " + callID)
+        LogInfo("leaving function, callID: " + callID)
     End Function
 
     ''' <summary>Actually do the work for DBRowFetch: Query (assumed) one row of data, write it into targetCells</summary>
@@ -1204,13 +1204,13 @@ err:    Globals.LogWarn(errMsg + ", caller: " + callID)
             ConnString = Left$(ConnString, InStr(1, UCase$(ConnString), ";ODBC;") - 1)
         End If
         Try
-            If Globals.fetchSetting("preferODBCconnString" + Globals.env(), "false") = "true" Then
+            If fetchSetting("preferODBCconnString" + env(), "false") = "true" Then
                 ' change to ODBC driver setting
-                ConnString = Replace(ConnString, Globals.fetchSetting("ConnStringSearch" + Globals.env(), "provider=SQLOLEDB"), Globals.fetchSetting("ConnStringReplace" + Globals.env(), "driver=SQL SERVER"))
+                ConnString = Replace(ConnString, fetchSetting("ConnStringSearch" + env(), "provider=SQLOLEDB"), fetchSetting("ConnStringReplace" + env(), "driver=SQL SERVER"))
                 conn = New OdbcConnection(ConnString)
             ElseIf InStr(ConnString.ToLower, "provider=sqloledb") Or InStr(ConnString.ToLower, "driver=sql server") Then
                 ' remove provider=SQLOLEDB; (or whatever is in ConnStringSearch<>) for sql server as this is not allowed for ado.net (e.g. from a connection string for MS Query/Office)
-                ConnString = Replace(ConnString, Globals.fetchSetting("ConnStringSearch" + Globals.env(), "provider=SQLOLEDB") + ";", "")
+                ConnString = Replace(ConnString, fetchSetting("ConnStringSearch" + env(), "provider=SQLOLEDB") + ";", "")
                 conn = New SqlConnection(ConnString)
             ElseIf InStr(ConnString.ToLower, "oledb") Then
                 conn = New OleDbConnection(ConnString)
@@ -1317,7 +1317,7 @@ err:    Globals.LogWarn(errMsg + ", caller: " + callID)
         Exit Sub
 
 err:    If errMsg.Length = 0 Then errMsg = Err.Description + " in query: " + Query
-        Globals.LogWarn(errMsg + ", caller: " + callID)
+        LogWarn(errMsg + ", caller: " + callID)
         If StatusCollection.ContainsKey(callID) Then StatusCollection(callID).statusMsg = errMsg
         finishAction(calcMode, callID, scrnUpdate, "Error")
         caller.Formula += " " ' recalculate to trigger return of error messages to calling function
@@ -1364,11 +1364,11 @@ err:    If errMsg.Length = 0 Then errMsg = Err.Description + " in query: " + Que
     Public Function DBAddinEnvironment() As String
         ExcelDnaUtil.Application.Volatile()
         Try
-            DBAddinEnvironment = Globals.fetchSetting("ConfigName" + Globals.env(), "")
+            DBAddinEnvironment = fetchSetting("ConfigName" + env(), "")
             If ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual Then DBAddinEnvironment = "calc Mode is manual, please press F9 to get current DBAddin environment !"
         Catch ex As Exception
             DBAddinEnvironment = "Error happened: " + ex.Message
-            Globals.LogWarn(ex.Message)
+            LogWarn(ex.Message)
         End Try
     End Function
 
@@ -1378,13 +1378,13 @@ err:    If errMsg.Length = 0 Then errMsg = Err.Description + " in query: " + Que
     Public Function DBAddinSetting(<ExcelArgument(Description:="keyword for setting to get")> keyword As Object) As String
         ExcelDnaUtil.Application.Volatile()
         Try
-            Dim theConnString As String = Globals.fetchSetting("ConstConnString" + Globals.env(), "")
+            Dim theConnString As String = fetchSetting("ConstConnString" + env(), "")
             Dim keywordstart As Integer = InStr(1, UCase(theConnString), keyword.ToString()) + Len(keyword.ToString())
             DBAddinSetting = Mid$(theConnString, keywordstart, InStr(keywordstart, theConnString, ";") - keywordstart)
             If ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual Then DBAddinSetting = "calc Mode is manual, please press F9 to get current DBAddin server setting !"
         Catch ex As Exception
             DBAddinSetting = "Error happened: " + ex.Message
-            Globals.LogWarn(ex.Message)
+            LogWarn(ex.Message)
         End Try
     End Function
 

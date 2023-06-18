@@ -218,12 +218,12 @@ Public Class MenuHandler
                     If targetFormula = "" Then
                         ExcelDnaUtil.Application.ActiveCell = queryString
                     Else
-                        If Globals.QuestionMsg("Non-empty Cell with no DB function selected, should content be replaced?") = MsgBoxResult.Ok Then
+                        If QuestionMsg("Non-empty Cell with no DB function selected, should content be replaced?") = MsgBoxResult.Ok Then
                             ExcelDnaUtil.Application.ActiveCell = queryString
                         End If
                     End If
                 Else
-                    If Globals.QuestionMsg("Cell with DB function selected, should query be replaced?") = MsgBoxResult.Ok Then
+                    If QuestionMsg("Cell with DB function selected, should query be replaced?") = MsgBoxResult.Ok Then
                         ' db function, recreate with query inside
                         ' get the parts of the targeted function formula
                         Dim formulaParams As String = Mid$(targetFormula, Len(srchdFunc) + 3)
@@ -237,24 +237,24 @@ Public Class MenuHandler
                 End If
             ElseIf theAdHocSQLDlg.TransferType.Text = "Pivot" Then
                 If ExcelDnaUtil.Application.ActiveCell.Formula <> "" Then
-                    If Globals.QuestionMsg("Non-empty Cell selected, should content be replaced?") = MsgBoxResult.Cancel Then Exit Sub
+                    If QuestionMsg("Non-empty Cell selected, should content be replaced?") = MsgBoxResult.Cancel Then Exit Sub
                 End If
                 Globals.createPivotTable(ExcelDnaUtil.Application.ActiveCell)
                 Globals.createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBSetQuery(""" + queryString + ""","""",R[1]C)"})
             ElseIf theAdHocSQLDlg.TransferType.Text = "ListObject" Then
                 If ExcelDnaUtil.Application.ActiveCell.Formula <> "" Then
-                    If Globals.QuestionMsg("Non-empty Cell selected, should content be replaced?") = MsgBoxResult.Cancel Then Exit Sub
+                    If QuestionMsg("Non-empty Cell selected, should content be replaced?") = MsgBoxResult.Cancel Then Exit Sub
                 End If
                 Globals.createListObject(ExcelDnaUtil.Application.ActiveCell)
                 Globals.createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBSetQuery(""" + queryString + ""","""",RC[1])"})
             ElseIf theAdHocSQLDlg.TransferType.Text = "RowFetch" Then
                 If ExcelDnaUtil.Application.ActiveCell.Formula <> "" Then
-                    If Globals.QuestionMsg("Non-empty Cell selected, should content be replaced?") = MsgBoxResult.Cancel Then Exit Sub
+                    If QuestionMsg("Non-empty Cell selected, should content be replaced?") = MsgBoxResult.Cancel Then Exit Sub
                 End If
                 Globals.createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBRowFetch(""" + queryString + ""","""",TRUE,R[1]C:R[1]C[10])"})
             ElseIf theAdHocSQLDlg.TransferType.Text = "ListFetch" Then
                 If ExcelDnaUtil.Application.ActiveCell.Formula <> "" Then
-                    If Globals.QuestionMsg("Non-empty Cell selected, should content be replaced?") = MsgBoxResult.Cancel Then Exit Sub
+                    If QuestionMsg("Non-empty Cell selected, should content be replaced?") = MsgBoxResult.Cancel Then Exit Sub
                 End If
                 Globals.createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBListFetch(""" + queryString + ""","""",R[1]C,,,TRUE,TRUE,TRUE)"})
             End If
@@ -266,12 +266,12 @@ Public Class MenuHandler
 
         ' "Add" or "Transfer": store new sql command into AdHocSQLStrings and settings
         If Not AdHocSQLStrings.Contains(queryString) And Strings.Replace(queryString, " ", "") <> "" Then
-            If Globals.QuestionMsg("Should the current command be added to the AdHocSQL dropdown?",, "AdHoc SQL Command") = MsgBoxResult.Ok Then
+            If QuestionMsg("Should the current command be added to the AdHocSQL dropdown?",, "AdHoc SQL Command") = MsgBoxResult.Ok Then
                 ' add to AdHocSQLStrings
                 AdHocSQLStrings.Add(queryString)
                 selectedAdHocSQLIndex = AdHocSQLStrings.Count - 1
                 ' change in or add to user settings
-                Globals.setUserSetting("AdhocSQLcmd" + selectedAdHocSQLIndex.ToString(), queryString)
+                setUserSetting("AdhocSQLcmd" + selectedAdHocSQLIndex.ToString(), queryString)
             Else
                 queryString = ""
             End If
@@ -280,10 +280,10 @@ Public Class MenuHandler
         End If
         If Strings.Replace(queryString, " ", "") <> "" And selectedAdHocSQLIndex >= 0 Then
             ' store the combo-box values for later...
-            Globals.setUserSetting("AdHocSQLcmdEnv" + selectedAdHocSQLIndex.ToString(), theAdHocSQLDlg.EnvSwitch.SelectedIndex.ToString())
-            Globals.setUserSetting("AdHocSQLcmdDB" + selectedAdHocSQLIndex.ToString(), theAdHocSQLDlg.Database.Text)
+            setUserSetting("AdHocSQLcmdEnv" + selectedAdHocSQLIndex.ToString(), theAdHocSQLDlg.EnvSwitch.SelectedIndex.ToString())
+            setUserSetting("AdHocSQLcmdDB" + selectedAdHocSQLIndex.ToString(), theAdHocSQLDlg.Database.Text)
         End If
-        Globals.setUserSetting("AdHocSQLTransferType", theAdHocSQLDlg.TransferType.Text)
+        setUserSetting("AdHocSQLTransferType", theAdHocSQLDlg.TransferType.Text)
         ' reflect changes in sql combo-box
         theRibbon.InvalidateControl("DBAdhocSQL")
     End Sub
@@ -313,10 +313,10 @@ Public Class MenuHandler
         Try
             Wb = ExcelDnaUtil.Application.ActiveWorkbook
         Catch ex As Exception
-            Globals.UserMsg("Exception getting the active workbook: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references), can't repair legacy functions.")
+            UserMsg("Exception getting the active workbook: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references), can't repair legacy functions.")
             Exit Sub
         End Try
-        Globals.repairLegacyFunctions(Wb, True)
+        repairLegacyFunctions(Wb, True)
     End Sub
 
     ''' <summary>used for additional information</summary>
@@ -345,7 +345,7 @@ Public Class MenuHandler
     ''' <param name="control"></param>
     ''' <returns></returns>
     Public Function getLogsImage(control As CustomUI.IRibbonControl) As String
-        If Globals.WarningIssued Then
+        If WarningIssued Then
             Return "IndexUpdate"
         Else
             Return "MailMergeStartLetters"
@@ -380,18 +380,32 @@ Public Class MenuHandler
     Public Sub showCProps(control As CustomUI.IRibbonControl)
         Dim actWb As Excel.Workbook = Nothing
         Try : actWb = ExcelDnaUtil.Application.ActiveWorkbook : Catch ex As Exception
-            Globals.UserMsg("Exception when trying to get the active workbook for showing custom properties: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
+            UserMsg("Exception when trying to get the active workbook for showing custom properties: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
         End Try
         If actWb IsNot Nothing Then
             Try
                 ExcelDnaUtil.Application.Dialogs(Excel.XlBuiltInDialog.xlDialogProperties).Show
             Catch ex As Exception
-                Globals.UserMsg("The properties dialog can't be displayed, maybe you are in the formula/cell editor?", "Properties dialog display")
+                UserMsg("The properties dialog can't be displayed, maybe you are in the formula/cell editor?", "Properties dialog display")
             End Try
             ' to check whether DBFskip has changed:
             Globals.theRibbon.InvalidateControl(control.Id)
         End If
     End Sub
+
+    ''' <summary>converts a Mso Menu ID to a Drawing Image</summary>
+    ''' <param name="idMso">the Mso Menu ID to be converted</param>
+    ''' <returns>a System.Drawing.Image to be used by </returns>
+    Private Function convertFromMso(idMso As String) As System.Drawing.Image
+        Try
+            Dim p As stdole.IPictureDisp = ExcelDnaUtil.Application.CommandBars.GetImageMso(idMso, 16, 16)
+            Dim hPal As IntPtr = p.hPal
+            convertFromMso = System.Drawing.Image.FromHbitmap(p.Handle, hPal)
+        Catch ex As Exception
+            ' in case above image fetching doesn't work then no image is displayed (the image parameter is still required for ContextMenuStrip.Items.Add !)
+            convertFromMso = Nothing
+        End Try
+    End Function
 
     Private WithEvents ctMenuStrip As Windows.Forms.ContextMenuStrip
 
@@ -400,7 +414,7 @@ Public Class MenuHandler
     Sub showDBModifEdit(control As CustomUI.IRibbonControl)
         Dim actWb As Excel.Workbook = Nothing
         Try : actWb = ExcelDnaUtil.Application.ActiveWorkbook : Catch ex As Exception
-            Globals.UserMsg("Exception when trying to get the active workbook for show DBModif Editor: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
+            UserMsg("Exception when trying to get the active workbook for show DBModif Editor: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
             Exit Sub
         End Try
         ' only show dialog if there is a workbook and it has the relevant custom XML part.
@@ -437,7 +451,7 @@ Public Class MenuHandler
         If cbrs IsNot Nothing AndAlso cbrs.GetEnabledMso("DesignMode") Then
             cbrs.ExecuteMso("DesignMode")
         Else
-            Globals.UserMsg("Couldn't toggle design mode, because Design mode command-bar button is not available (no button?)", "DBAddin toggle Design mode", MsgBoxStyle.Exclamation)
+            UserMsg("Couldn't toggle design mode, because Design mode command-bar button is not available (no button?)", "DBAddin toggle Design mode", MsgBoxStyle.Exclamation)
         End If
         ' update state of design mode in screentip
         Globals.theRibbon.InvalidateControl(control.Id)
@@ -474,19 +488,19 @@ Public Class MenuHandler
     ''' <summary>for environment dropdown to get the total number of the entries</summary>
     ''' <returns></returns>
     Public Function GetEnvItemCount(control As CustomUI.IRibbonControl) As Integer
-        Return Globals.environdefs.Length
+        Return environdefs.Length
     End Function
 
     ''' <summary>for environment dropdown to get the label of the entries</summary>
     ''' <returns></returns>
     Public Function GetEnvItemLabel(control As CustomUI.IRibbonControl, index As Integer) As String
-        Return Globals.environdefs(index)
+        Return environdefs(index)
     End Function
 
     ''' <summary>for environment dropdown to get the ID of the entries</summary>
     ''' <returns></returns>
     Public Function GetEnvItemID(control As CustomUI.IRibbonControl, index As Integer) As String
-        Return Globals.environdefs(index)
+        Return environdefs(index)
     End Function
 
     ''' <summary>after selection of environment (using selectEnvironment) used to return the selected environment</summary>
@@ -499,7 +513,7 @@ Public Class MenuHandler
     ''' <param name="control"></param>
     ''' <returns>the tool-tip</returns>
     Public Function GetEnvSelectedTooltip(control As CustomUI.IRibbonControl) As String
-        If CBool(Globals.fetchSetting("DontChangeEnvironment", "False")) Then
+        If CBool(fetchSetting("DontChangeEnvironment", "False")) Then
             Return "DontChangeEnvironment is set, therefore changing the Environment is prevented !"
         Else
             Return "configured for Database Access in Addin config %appdata%\Microsoft\Addins\DBaddin.xll.config (or referenced central/user setting)"
@@ -510,25 +524,25 @@ Public Class MenuHandler
     ''' <param name="control"></param>
     ''' <returns>true if enabled</returns>
     Public Function GetEnvEnabled(control As CustomUI.IRibbonControl) As Integer
-        Return Not CBool(Globals.fetchSetting("DontChangeEnvironment", "False"))
+        Return Not CBool(fetchSetting("DontChangeEnvironment", "False"))
     End Function
 
     ''' <summary>Choose environment (configured in registry with ConstConnString(N), ConfigStoreFolder(N))</summary>
     ''' <param name="control"></param>
     Public Sub selectEnvironment(control As CustomUI.IRibbonControl, id As String, index As Integer)
         Globals.selectedEnvironment = index
-        Globals.initSettings()
+        initSettings()
         ' provide a chance to reconnect when switching environment...
         conn = Nothing
         Dim actWb As Excel.Workbook = Nothing
         Try : actWb = ExcelDnaUtil.Application.ActiveWorkbook : Catch ex As Exception
-            Globals.UserMsg("Exception when trying to get the active workbook for selecting environment: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
+            UserMsg("Exception when trying to get the active workbook for selecting environment: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
         End Try
         If actWb IsNot Nothing Then
-            Dim retval As MsgBoxResult = QuestionMsg("ConstConnString:" + Globals.ConstConnString + vbCrLf + "ConfigStoreFolder:" + ConfigFiles.ConfigStoreFolder + vbCrLf + vbCrLf + "Refresh DBFunctions in active workbook to see effects?", MsgBoxStyle.OkCancel, "Changed environment to: " + Globals.fetchSetting("ConfigName" + Globals.env(), ""))
+            Dim retval As MsgBoxResult = QuestionMsg("ConstConnString:" + ConstConnString + vbCrLf + "ConfigStoreFolder:" + ConfigFiles.ConfigStoreFolder + vbCrLf + vbCrLf + "Refresh DBFunctions in active workbook to see effects?", MsgBoxStyle.OkCancel, "Changed environment to: " + fetchSetting("ConfigName" + env(), ""))
             If retval = MsgBoxResult.Ok Then Globals.refreshDBFunctions(actWb)
         Else
-            Globals.UserMsg("ConstConnString:" + Globals.ConstConnString + vbCrLf + "ConfigStoreFolder:" + ConfigFiles.ConfigStoreFolder, "Changed environment to: " + Globals.fetchSetting("ConfigName" + Globals.env(), ""), MsgBoxStyle.Information)
+            UserMsg("ConstConnString:" + ConstConnString + vbCrLf + "ConfigStoreFolder:" + ConfigFiles.ConfigStoreFolder, "Changed environment to: " + fetchSetting("ConfigName" + env(), ""), MsgBoxStyle.Information)
         End If
     End Sub
 
@@ -536,8 +550,8 @@ Public Class MenuHandler
     ''' <param name="control"></param>
     Public Sub showAddinConfig(control As CustomUI.IRibbonControl)
         ' if settings (addin, user, central) should not be displayed according to setting then exit...
-        If InStr(Globals.fetchSetting("disableSettingsDisplay", ""), control.Id) > 0 Then
-            Globals.UserMsg("Display of " + control.Id + " settings disabled !", "DBAddin Settings disabled", MsgBoxStyle.Information)
+        If InStr(fetchSetting("disableSettingsDisplay", ""), control.Id) > 0 Then
+            UserMsg("Display of " + control.Id + " settings disabled !", "DBAddin Settings disabled", MsgBoxStyle.Information)
             Exit Sub
         End If
         Dim theEditDBModifDefDlg As New EditDBModifDef()
@@ -551,7 +565,7 @@ Public Class MenuHandler
             ConfigurationManager.RefreshSection("UserSettings")
         End If
         ' reflect changes in settings
-        Globals.initSettings()
+        initSettings()
         initAdhocSQLconfig()
         ' also display in ribbon
         Globals.theRibbon.Invalidate()
@@ -573,9 +587,9 @@ Public Class MenuHandler
     ''' <summary>on demand, refresh the DB Config tree</summary>
     ''' <param name="control"></param>
     Public Sub refreshDBConfigTree(control As CustomUI.IRibbonControl)
-        Globals.initSettings()
+        initSettings()
         ConfigFiles.createConfigTreeMenu()
-        Globals.UserMsg("refreshed DB Config Tree Menu", "DBAddin: refresh Config tree...", MsgBoxStyle.Information)
+        UserMsg("refreshed DB Config Tree Menu", "DBAddin: refresh Config tree...", MsgBoxStyle.Information)
         Globals.theRibbon.Invalidate()
     End Sub
 
@@ -617,7 +631,7 @@ Public Class MenuHandler
             xmlString += "</menu>"
             Return xmlString
         Catch ex As Exception
-            Globals.UserMsg("Exception caught while building xml: " + ex.Message)
+            UserMsg("Exception caught while building xml: " + ex.Message)
             Return ""
         End Try
     End Function
@@ -645,13 +659,13 @@ Public Class MenuHandler
     Public Sub DBModifClick(control As CustomUI.IRibbonControl)
         Dim actWb As Excel.Workbook = Nothing
         Try : actWb = ExcelDnaUtil.Application.ActiveWorkbook : Catch ex As Exception
-            Globals.UserMsg("Exception when trying to get the active workbook for DB Modifier activation: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
+            UserMsg("Exception when trying to get the active workbook for DB Modifier activation: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
         End Try
         ' reset non-interactive messages (used for VBA invocations) and hadError for interactive invocations
-        Globals.nonInteractiveErrMsgs = "" : DBModifs.hadError = False
+        nonInteractiveErrMsgs = "" : DBModifs.hadError = False
         Dim nodeName As String = Right(control.Id, Len(control.Id) - 1)
         If Not ExcelDnaUtil.Application.CommandBars.GetEnabledMso("FileNewDefault") Then
-            Globals.UserMsg("Cannot execute DB Modifier while cell editing active !", "DB Modifier execution", MsgBoxStyle.Exclamation)
+            UserMsg("Cannot execute DB Modifier while cell editing active !", "DB Modifier execution", MsgBoxStyle.Exclamation)
             Exit Sub
         End If
         Try
@@ -662,11 +676,11 @@ Public Class MenuHandler
                 If Not (actWb.ReadOnlyRecommended And actWb.ReadOnly) Then
                     Globals.DBModifDefColl(control.Tag).Item(nodeName).doDBModif()
                 Else
-                    Globals.UserMsg("ReadOnlyRecommended is set on active workbook (being readonly), therefore all DB Modifiers are disabled !", "DB Modifier execution", MsgBoxStyle.Exclamation)
+                    UserMsg("ReadOnlyRecommended is set on active workbook (being readonly), therefore all DB Modifiers are disabled !", "DB Modifier execution", MsgBoxStyle.Exclamation)
                 End If
             End If
         Catch ex As Exception
-            Globals.UserMsg("Exception: " + ex.Message + ",control.Tag:" + control.Tag + ",nodeName:" + nodeName, "DBModif Click")
+            UserMsg("Exception: " + ex.Message + ",control.Tag:" + control.Tag + ",nodeName:" + nodeName, "DBModif Click")
         End Try
     End Sub
 
@@ -685,7 +699,7 @@ Public Class MenuHandler
     ''' <summary>check/purge name tool button, purge names used for dbfunctions from workbook</summary>
     ''' <param name="control"></param>
     Public Sub clickcheckpurgetoolbutton(control As CustomUI.IRibbonControl)
-        Globals.checkpurgeNames()
+        checkpurgeNames()
     End Sub
 
     ''' <summary>show the trace log</summary>
@@ -711,7 +725,7 @@ Public Class MenuHandler
         Dim activeCellDBModifName As String = DBModifs.getDBModifNameFromRange(ExcelDnaUtil.Application.ActiveCell)
         Dim activeCellDBModifType As String = Left(activeCellDBModifName, 8)
         If (activeCellDBModifType = "DBMapper" Or activeCellDBModifType = "DBAction") And activeCellDBModifType <> control.Tag And control.Tag <> "DBSeqnce" Then
-            Globals.UserMsg("Active Cell already contains definition for a " + activeCellDBModifType + ", inserting " + IIf(control.Tag = "DBSetQueryPivot" Or control.Tag = "DBSetQueryListObject", "DBSetQuery", control.Tag) + " here will cause trouble !", "Inserting not allowed")
+            UserMsg("Active Cell already contains definition for a " + activeCellDBModifType + ", inserting " + IIf(control.Tag = "DBSetQueryPivot" Or control.Tag = "DBSetQueryListObject", "DBSetQuery", control.Tag) + " here will cause trouble !", "Inserting not allowed")
             Exit Sub
         End If
         If control.Tag = "DBListFetch" Then
@@ -738,11 +752,11 @@ Public Class MenuHandler
             Dim wbQueries As Object = Nothing
             Try : wbQueries = ExcelDnaUtil.Application.ActiveWorkbook.Queries
             Catch ex As Exception
-                Globals.LogWarn("Error getting power queries: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
+                LogWarn("Error getting power queries: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
                 Exit Sub
             End Try
             If IsNothing(wbQueries) Or wbQueries.Count = 0 Then
-                Globals.LogWarn("No power queries available...")
+                LogWarn("No power queries available...")
                 Exit Sub
             End If
             ctMenuStrip2 = New Windows.Forms.ContextMenuStrip()
@@ -766,7 +780,7 @@ Public Class MenuHandler
         ' restore previously stored query with Ctrl..
         If My.Computer.Keyboard.CtrlKeyDown Then
             actWb.Queries(sender.ToString()).Formula = Functions.queryBackupColl(sender.ToString())
-            Globals.UserMsg("Last power query restored for " + sender.ToString())
+            UserMsg("Last power query restored for " + sender.ToString())
             Exit Sub
         End If
         Dim theFormulaStr As String() = actWb.Queries(sender.ToString()).Formula.ToString().Split(vbCrLf)
@@ -776,7 +790,7 @@ Public Class MenuHandler
         For Each formulaPart As String In theFormulaStr
             If curCell.Offset(i, 0).Value <> "" Then
                 curCell.Offset(i, 0).Select()
-                If Globals.QuestionMsg("Cell not empty (would be overwritten), continue?") <> MsgBoxResult.Ok Then Exit Sub
+                If QuestionMsg("Cell not empty (would be overwritten), continue?") <> MsgBoxResult.Ok Then Exit Sub
             End If
             curCell.Offset(i, 0).Value = formulaPart.Replace(vbLf, "")
             i += 1
@@ -795,7 +809,7 @@ Public Class MenuHandler
         If actWb IsNot Nothing Then
             DBSheetConfig.createDBSheet()
         Else
-            Globals.UserMsg("Cannot assign DBSheet DB Mapper as there is no Workbook active !", "DB Sheet Assignment", MsgBoxStyle.Exclamation)
+            UserMsg("Cannot assign DBSheet DB Mapper as there is no Workbook active !", "DB Sheet Assignment", MsgBoxStyle.Exclamation)
         End If
     End Sub
 

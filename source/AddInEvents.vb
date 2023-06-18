@@ -45,40 +45,40 @@ Public Class AddInEvents
         Application = ExcelDnaUtil.Application
         Try
             If ExcelDnaUtil.Application.AddIns("DBAddin.Functions").Installed Then
-                Globals.UserMsg("Attention: legacy DBAddin (DBAddin.Functions) still active, this might lead to unexpected results!")
+                UserMsg("Attention: legacy DBAddin (DBAddin.Functions) still active, this might lead to unexpected results!")
             End If
         Catch ex As Exception : End Try
         ' for finding out what happened attach internal trace to ExcelDNA LogDisplay
-        Globals.theLogDisplaySource = New TraceSource("ExcelDna.Integration")
+        theLogDisplaySource = New TraceSource("ExcelDna.Integration")
         ' and also define a LogSource for DBAddin itself for writing text log messages
-        Globals.theLogFileSource = New TraceSource("DBAddin")
+        theLogFileSource = New TraceSource("DBAddin")
 
         ' IntelliSense needed for DB- and supporting functions
         ExcelDna.IntelliSense.IntelliSenseServer.Install()
 
         ' Ribbon and context menu setup
         Globals.theMenuHandler = New MenuHandler
-        Globals.LogInfo("initialize configuration settings")
+        LogInfo("initialize configuration settings")
         Functions.queryCache = New Dictionary(Of String, String)
         Functions.StatusCollection = New Dictionary(Of String, ContainedStatusMsg)
         Globals.DBModifDefColl = New Dictionary(Of String, Dictionary(Of String, DBModif))
 
         ' initialize settings and get the default environment
-        Globals.initSettings()
-        If Globals.environdefs.Length = 0 Then
-            Globals.UserMsg("Couldn't load any Environment, please check DB-Addin configurations !")
+        initSettings()
+        If environdefs.Length = 0 Then
+            UserMsg("Couldn't load any Environment, please check DB-Addin configurations !")
             Exit Sub
         End If
         ' Configs are 1 based, selectedEnvironment(index of environment dropdown) is 0 based. negative values not allowed!
-        Dim selEnv As Integer = CInt(Globals.fetchSetting("DefaultEnvironment", "1")) - 1
+        Dim selEnv As Integer = CInt(fetchSetting("DefaultEnvironment", "1")) - 1
         If selEnv > environdefs.Length - 1 OrElse selEnv < 0 Then
-            Globals.UserMsg("Default Environment " + (selEnv + 1).ToString() + " not existing, setting to first environment !")
+            UserMsg("Default Environment " + (selEnv + 1).ToString() + " not existing, setting to first environment !")
             selEnv = 0
         End If
         Globals.selectedEnvironment = selEnv
         ' after getting the default environment (should exist), set the Const Connection String again to avoid problems in generating DB ListObjects
-        ConstConnString = Globals.fetchSetting("ConstConnString" + Globals.env(), "")
-        ConfigStoreFolder = Globals.fetchSetting("ConfigStoreFolder" + Globals.env(), "")
+        ConstConnString = fetchSetting("ConstConnString" + env(), "")
+        ConfigStoreFolder = fetchSetting("ConfigStoreFolder" + env(), "")
     End Sub
 
     ''' <summary>AutoClose cleans up after finishing addin</summary>
@@ -87,7 +87,7 @@ Public Class AddInEvents
             Globals.theMenuHandler = Nothing
             ExcelDna.IntelliSense.IntelliSenseServer.Uninstall()
         Catch ex As Exception
-            Globals.UserMsg("DBAddin unloading error: " + ex.Message, "AutoClose")
+            UserMsg("DBAddin unloading error: " + ex.Message, "AutoClose")
         End Try
     End Sub
 
@@ -188,7 +188,7 @@ done:
                 End If
             Next
         Catch ex As Exception
-            Globals.UserMsg("Error getting doc properties: " + Wb.Name + ex.Message)
+            UserMsg("Error getting doc properties: " + Wb.Name + ex.Message)
         End Try
         ' skip searching for functions (takes time in large sheets!) if not necessary
         If Not doRefreshDBFuncsAfterSave Or (DBFCContentColl.Count = 0 And DBFCAllColl.Count = 0) Then Exit Sub
@@ -219,18 +219,18 @@ done:
                             Dim theTargetRange As Excel.Range
                             Try : theTargetRange = ExcelDnaUtil.Application.Range(targetName)
                             Catch ex As Exception
-                                Globals.LogWarn("Error in finding target range of DB Function in " + DBFuncCell.Address + "), refreshing all DB functions should solve this.")
+                                LogWarn("Error in finding target range of DB Function in " + DBFuncCell.Address + "), refreshing all DB functions should solve this.")
                                 dontCalcWhileClearing = False
                                 Exit Sub
                             End Try
                             If DBFCC Then
                                 theTargetRange.Parent.Range(theTargetRange.Parent.Cells(theTargetRange.Row, theTargetRange.Column), theTargetRange.Parent.Cells(theTargetRange.Row + theTargetRange.Rows.Count - 1, theTargetRange.Column + theTargetRange.Columns.Count - 1)).ClearContents
-                                Globals.LogInfo("Contents of selected DB Functions targets cleared")
+                                LogInfo("Contents of selected DB Functions targets cleared")
                             End If
                             If DBFCA Then
                                 theTargetRange.Parent.Range(theTargetRange.Parent.Cells(theTargetRange.Row + 2, theTargetRange.Column), theTargetRange.Parent.Cells(theTargetRange.Row + theTargetRange.Rows.Count - 1, theTargetRange.Column + theTargetRange.Columns.Count - 1)).Clear
                                 theTargetRange.Parent.Range(theTargetRange.Parent.Cells(theTargetRange.Row, theTargetRange.Column), theTargetRange.Parent.Cells(theTargetRange.Row + 2, theTargetRange.Column + theTargetRange.Columns.Count - 1)).ClearContents
-                                Globals.LogInfo("All cleared from selected DB Functions targets")
+                                LogInfo("All cleared from selected DB Functions targets")
                             End If
                         End If
                     Catch ex As Exception
@@ -247,7 +247,7 @@ done:
                                             End Sub)
             End If
         Catch ex As Exception
-            Globals.UserMsg("Error clearing DBfunction targets in Workbook " + Wb.Name + ": " + ex.Message)
+            UserMsg("Error clearing DBfunction targets in Workbook " + Wb.Name + ": " + ex.Message)
         End Try
         dontCalcWhileClearing = False
     End Sub
@@ -258,7 +258,7 @@ done:
         If Not Wb.IsAddin Then
             ' in case of reopening workbooks with db functions, look for old query caches and status collections (returned error messages) and reset them to get new data
             Globals.resetCachesForWorkbook(Wb.Name)
-            Globals.repairLegacyFunctions(Wb)
+            repairLegacyFunctions(Wb)
             ' when opening, force recalculation of DB functions in workbook.
             ' this is required as there is no recalculation if no dependencies have changed (usually when opening workbooks)
             ' however the most important dependency for DB functions is the database data....
@@ -275,12 +275,12 @@ done:
             If Globals.DBModifDefColl Is Nothing Then
                 Globals.DBModifDefColl = New Dictionary(Of String, Dictionary(Of String, DBModif))
             End If
-            Globals.LogInfo("getting DBModif Definitions on Workbook Activate")
+            LogInfo("getting DBModif Definitions on Workbook Activate")
             DBModifs.getDBModifDefinitions()
             ' unfortunately, Excel doesn't fire SheetActivate when opening workbooks, so do that here...
-            Globals.LogInfo("assign command button click handlers on Workbook Activate")
+            LogInfo("assign command button click handlers on Workbook Activate")
             assignHandler(Wb.ActiveSheet)
-            Globals.LogInfo("finished actions on Workbook Activate")
+            LogInfo("finished actions on Workbook Activate")
         End If
     End Sub
 
@@ -322,7 +322,7 @@ done:
     ''' <param name="cbName">name of command button, defines whether a DBModification is invoked (starts with DBMapper/DBAction/DBSeqnce)</param>
     Private Shared Sub cbClick(cbName As String)
         ' reset non interactive messages (used for VBA invocations) and hadError for interactive invocations
-        Globals.nonInteractiveErrMsgs = "" : DBModifs.hadError = False
+        nonInteractiveErrMsgs = "" : DBModifs.hadError = False
         Dim DBModifType As String = Left(cbName, 8)
         If DBModifType <> "DBSeqnce" Then
             Dim targetRange As Excel.Range
@@ -331,11 +331,11 @@ done:
             Catch ex As Exception
                 ' if target name relates to an invalid (offset) formula, referstorange fails  ...
                 If InStr(ExcelDnaUtil.Application.ActiveWorkbook.Names.Item(cbName).RefersTo, "OFFSET(") > 0 Then
-                    Globals.UserMsg("Offset formula that '" + cbName + "' refers to, did not return a valid range." + vbCrLf + "Please check the offset formula to return a valid range !", "DBModifier Definitions Error")
+                    UserMsg("Offset formula that '" + cbName + "' refers to, did not return a valid range." + vbCrLf + "Please check the offset formula to return a valid range !", "DBModifier Definitions Error")
                     ExcelDnaUtil.Application.Dialogs(Excel.XlBuiltInDialog.xlDialogNameManager).Show()
                 Else
-                    Globals.UserMsg("No underlying " + Left(cbName, 8) + " Range named " + cbName + " found, exiting without DBModification.")
-                    Globals.LogWarn("targetRange assignment failed: " + ex.Message)
+                    UserMsg("No underlying " + Left(cbName, 8) + " Range named " + cbName + " found, exiting without DBModification.")
+                    LogWarn("targetRange assignment failed: " + ex.Message)
                 End If
                 Exit Sub
             End Try
@@ -381,7 +381,7 @@ done:
                 ElseIf cb0 Is Nothing Then
                     cb0 = Sh.OLEObjects(shp.Name).Object
                 Else
-                    Globals.UserMsg("Only max. of 10 DBModifier Buttons are allowed on a Worksheet, currently in use: " + collShpNames + " !")
+                    UserMsg("Only max. of 10 DBModifier Buttons are allowed on a Worksheet, currently in use: " + collShpNames + " !")
                     assignHandler = False
                     Exit For
                 End If

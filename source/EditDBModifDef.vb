@@ -47,7 +47,7 @@ Public Class EditDBModifDef
         Else
             Dim availableSettings As String() = Split(My.Resources.SchemaFiles.Settings, vbLf) ' avoid dependency on vbCrLf being in the VS settings of Edit/Advanced/set End of Line Sequence
             For Each settingLine As String In availableSettings
-                Me.availSettingsLB.Items.Add(settingLine.Replace(vbCr, "").Replace(" + env", Globals.env())) ' remove vbCr, if compiled with End of Line Sequence vbCrLf and "+ env" with current set environment
+                Me.availSettingsLB.Items.Add(settingLine.Replace(vbCr, "").Replace(" + env", env())) ' remove vbCr, if compiled with End of Line Sequence vbCrLf and "+ env" with current set environment
             Next
             ' show DBAddin settings (user/central/addin level): set the appropriate config xml into EditBox (depending on Me.Tag)
             ' get DBAddin user settings and display them
@@ -66,7 +66,7 @@ Public Class EditDBModifDef
                 settingsPath += ".config"
                 settingsStr = File.ReadAllText(settingsPath, System.Text.Encoding.Default)
             Catch ex As Exception
-                Globals.UserMsg("Couldn't read DBAddin.xll.config settings from " + settingsPath + ":" + ex.Message, "Edit DB Addin Settings")
+                UserMsg("Couldn't read DBAddin.xll.config settings from " + settingsPath + ":" + ex.Message, "Edit DB Addin Settings")
                 Exit Sub
             End Try
             ' if central or user settings were chosen, overwrite settingsStr
@@ -85,12 +85,12 @@ Public Class EditDBModifDef
                     Try
                         settingsStr = File.ReadAllText(settingsPath, System.Text.Encoding.Default)
                     Catch ex As Exception
-                        Globals.UserMsg("Couldn't read DB Addin " + Me.Tag + " settings from " + settingsPath + ":" + ex.Message, "Edit DB Addin Settings")
+                        UserMsg("Couldn't read DB Addin " + Me.Tag + " settings from " + settingsPath + ":" + ex.Message, "Edit DB Addin Settings")
                         Exit Sub
                     End Try
                     Me.Text = Me.Tag + " settings in " + settingsPath
                 Else
-                    Globals.UserMsg("No attribute available as filename reference to " + Me.Tag + " settings (searched xpath: " + xpathStr + ") !", "Edit DB Addin Settings")
+                    UserMsg("No attribute available as filename reference to " + Me.Tag + " settings (searched xpath: " + xpathStr + ") !", "Edit DB Addin Settings")
                     Exit Sub
                 End If
             End If
@@ -122,7 +122,7 @@ Public Class EditDBModifDef
                         doc.LoadXml(Me.EditBox.Text)
                         doc.Validate(eventHandler)
                     Catch ex As Exception
-                        Globals.UserMsg("Problems with parsing changed definition: " + ex.Message, "Edit DB Modifier Definitions XML")
+                        UserMsg("Problems with parsing changed definition: " + ex.Message, "Edit DB Modifier Definitions XML")
                         Exit Sub
                     End Try
                     doc.WriteTo(xml_writer)
@@ -138,7 +138,7 @@ Public Class EditDBModifDef
                     Try : ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties("DBFskip").Delete : Catch ex As Exception : End Try
                     ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties.Add(Name:="DBFskip", LinkToContent:=False, Type:=MsoDocProperties.msoPropertyTypeBoolean, Value:=Me.DBFskip.Checked)
                 Catch ex As Exception
-                    Globals.UserMsg("Error when adding DBFskip to Workbook:" + ex.Message, "Edit DB Modifier Definitions XML")
+                    UserMsg("Error when adding DBFskip to Workbook:" + ex.Message, "Edit DB Modifier Definitions XML")
                     Exit Sub
                 End Try
             End If
@@ -147,7 +147,7 @@ Public Class EditDBModifDef
                     Try : ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties("doDBMOnSave").Delete : Catch ex As Exception : End Try
                     ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties.Add(Name:="doDBMOnSave", LinkToContent:=False, Type:=MsoDocProperties.msoPropertyTypeBoolean, Value:=Me.doDBMOnSave.Checked)
                 Catch ex As Exception
-                    Globals.UserMsg("Error when adding doDBMOnSave to Workbook:" + ex.Message, "Edit DB Modifier Definitions XML")
+                    UserMsg("Error when adding doDBMOnSave to Workbook:" + ex.Message, "Edit DB Modifier Definitions XML")
                     Exit Sub
                 End Try
             End If
@@ -165,13 +165,13 @@ Public Class EditDBModifDef
                 doc.LoadXml(Me.EditBox.Text)
                 doc.Validate(eventHandler)
             Catch ex As Exception
-                Globals.UserMsg("Problems with parsing changed " + Me.Tag + " settings: " + ex.Message, "Edit DB Addin Settings")
+                UserMsg("Problems with parsing changed " + Me.Tag + " settings: " + ex.Message, "Edit DB Addin Settings")
                 Exit Sub
             End Try
             Try
                 File.WriteAllText(settingsPath, Me.EditBox.Text, System.Text.Encoding.UTF8)
             Catch ex As Exception
-                Globals.UserMsg("Couldn't write " + Me.Tag + " settings into " + settingsPath + ": " + ex.Message, "Edit DB Addin Settings")
+                UserMsg("Couldn't write " + Me.Tag + " settings into " + settingsPath + ": " + ex.Message, "Edit DB Addin Settings")
                 Exit Sub
             End Try
         End If
@@ -216,7 +216,7 @@ Public Class EditDBModifDef
                 Me.EditBox.SelectionLength = editBoxLine.Length + 1
                 Me.EditBox.SelectionBackColor = Drawing.Color.Yellow
                 Me.EditBox.ScrollToCaret()
-                Globals.UserMsg("Setting " + settingKey + " already exists in " + Me.Tag + " settings", "Edit DB Addin Settings")
+                UserMsg("Setting " + settingKey + " already exists in " + Me.Tag + " settings", "Edit DB Addin Settings")
                 Exit Sub
             End If
             curLineBegin += editBoxLine.Length + 1

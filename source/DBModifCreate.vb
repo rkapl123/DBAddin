@@ -35,18 +35,18 @@ Public Class DBModifCreate
         End If
         Dim primKeys As Integer = 0
         ' besides valid range name, also check for requirements: 
-        ' mandatory fields filled (visible Tablename, Primary keys And Database), NameValidation above OK, no Double invocation for execOnSave in DB Sequences And sequence parts and only one primary key for AutoInc Flag
+        ' mandatory fields filled (visible Table-name, Primary keys And Database), NameValidation above OK, no Double invocation for execOnSave in DB Sequences And sequence parts and only one primary key for AutoInc Flag
         ' Beware: All If/ElseIf branches have to contain an validation error message, because the dialog stays open in this case. Only the Else branch closes the dialog.
         If NameValidationResult <> "" Then
-            Globals.UserMsg("Invalid DBModifier name '" + Me.DBModifName.Text + "', Error: " + NameValidationResult, "DBModification Validation Error")
+            UserMsg("Invalid DBModifier name '" + Me.DBModifName.Text + "', Error: " + NameValidationResult, "DBModification Validation Error")
         ElseIf Me.Tablename.Text = "" And Me.Tablename.Visible Then
-            Globals.UserMsg("Field Tablename is required, please fill in!", "DBModification Validation Error")
+            UserMsg("Field Table-name is required, please fill in!", "DBModification Validation Error")
         ElseIf Me.PrimaryKeys.Visible AndAlso Not Integer.TryParse(Me.PrimaryKeys.Text, primKeys) Then
-            Globals.UserMsg("Field Primary Keys is required and has to be an integer number, please fill in accordingly!", "DBModification Validation  Error")
+            UserMsg("Field Primary Keys is required and has to be an integer number, please fill in accordingly!", "DBModification Validation  Error")
         ElseIf Me.Database.Text = "" And Me.Database.Visible Then
-            Globals.UserMsg("Field Database is required, please fill in!", "DBModification Validation Error")
+            UserMsg("Field Database is required, please fill in!", "DBModification Validation Error")
         ElseIf Me.Tag = "DBMapper" AndAlso Me.AutoIncFlag.Checked AndAlso primKeys > 1 Then
-            Globals.UserMsg("Only one primary key is allowed when Auto Incrementing is enabled!", "DBModification Validation Error")
+            UserMsg("Only one primary key is allowed when Auto Incrementing is enabled!", "DBModification Validation Error")
         Else
             ' check for double invocation because of execOnSave both being set on current DB Modifier ...
             If Me.execOnSave.Checked And Globals.DBModifDefColl.ContainsKey("DBSeqnce") Then
@@ -63,7 +63,7 @@ Public Class DBModifCreate
                                     Dim DBModifTargetAddress As String = "(Target Address could not be found...)"
                                     If Globals.DBModifDefColl(definition(0)).ContainsKey(definition(1)) Then DBModifTargetAddress = Globals.DBModifDefColl(definition(0)).Item(definition(1)).getTargetRangeAddress()
                                     Dim foundDBModifName As String = IIf(DBModifierCheck.getName = "DBSeqnce", "Unnamed DBSequence", DBModifierCheck.getName)
-                                    Globals.UserMsg(Me.Tag + Me.DBModifName.Text + " in " + DBModifTargetAddress + " will be executed twice on saving, because it is part of '" + foundDBModifName + "', which is also executed on saving." + vbCrLf + IIf(Me.execOnSave.Checked, "Disabling 'Execute on save' now, you ", "You") + " can reenable after disabling it on '" + foundDBModifName + "'", "DBModification Validation")
+                                    UserMsg(Me.Tag + Me.DBModifName.Text + " in " + DBModifTargetAddress + " will be executed twice on saving, because it is part of '" + foundDBModifName + "', which is also executed on saving." + vbCrLf + IIf(Me.execOnSave.Checked, "Disabling 'Execute on save' now, you ", "You") + " can re-enable after disabling it on '" + foundDBModifName + "'", "DBModification Validation")
                                     Me.execOnSave.Checked = False
                                 End If
                             Next
@@ -76,7 +76,7 @@ Public Class DBModifCreate
                         If (definition(0) = "DBAction" Or definition(0) = "DBMapper") AndAlso Globals.DBModifDefColl(definition(0)).ContainsKey(definition(1)) AndAlso Globals.DBModifDefColl(definition(0)).Item(definition(1)).execOnSave Then
                             Dim foundDBModifName As String = IIf(definition(1) = "", "Unnamed " + definition(0), definition(1))
                             Dim DBModifTargetAddress As String = Globals.DBModifDefColl(definition(0)).Item(definition(1)).getTargetRangeAddress()
-                            Globals.UserMsg(foundDBModifName + " in " + DBModifTargetAddress + " will be executed twice on saving, because it is part of this DBSequence, which is also executed on saving." + vbCrLf + IIf(Me.execOnSave.Checked, "Disabling 'Execute on save' now, you ", "You") + " can reenable after disabling it on '" + foundDBModifName + "'", "DBModification Validation")
+                            UserMsg(foundDBModifName + " in " + DBModifTargetAddress + " will be executed twice on saving, because it is part of this DBSequence, which is also executed on saving." + vbCrLf + IIf(Me.execOnSave.Checked, "Disabling 'Execute on save' now, you ", "You") + " can re-enable after disabling it on '" + foundDBModifName + "'", "DBModification Validation")
                             Me.execOnSave.Checked = False
                         End If
                     Next
@@ -93,7 +93,7 @@ Public Class DBModifCreate
                         TransactionOpened = False
                     End If
                     If (TransactionOpened And Strings.Left(definition(0), 7) = "Refresh") Then
-                        Globals.UserMsg("You placed a " + definition(0) + " inside of a transaction, this might lead to deadlocks as DB functions use a different connection than DB Modifiers." + vbCrLf + "If the DB function done in the refresh doesn't query any data being modified inside the transaction, you may ignore this warning.", "DBModification Validation", MsgBoxStyle.Exclamation)
+                        UserMsg("You placed a " + definition(0) + " inside of a transaction, this might lead to deadlocks as DB functions use a different connection than DB Modifiers." + vbCrLf + "If the DB function done in the refresh doesn't query any data being modified inside the transaction, you may ignore this warning.", "DBModification Validation", MsgBoxStyle.Exclamation)
                     End If
                 Next
             End If
@@ -131,7 +131,7 @@ Public Class DBModifCreate
             ExcelDnaUtil.Application.Worksheets(rangePart(0)).Select()
             ExcelDnaUtil.Application.Range(rangePart(1)).Select()
         Catch ex As Exception
-            Globals.UserMsg("Couldn't select " + clickAddress + ":" + ex.Message)
+            UserMsg("Couldn't select " + clickAddress + ":" + ex.Message)
         End Try
     End Sub
 
@@ -183,7 +183,7 @@ Public Class DBModifCreate
     Private Sub DBModifCreate_Shown(sender As Object, e As EventArgs) Handles Me.Shown
         ' on creating the form and DBSequenceDataGrid in DBModif.createDBModif, Data Errors produced when filling DBSeqenceDataGrid are caught by 
         ' DBModifCreate.DBSeqenceDataGrid_DataError event procedure and stored in DBSeqStepValidationErrors. 
-        ' If any errors have been caught, display these in alternate textform RepairDBSeqnce along with instructions on how to repair them
+        ' If any errors have been caught, display these in alternate text-form RepairDBSeqnce along with instructions on how to repair them
         If DBSeqStepValidationErrors <> "" Then
             ' first get allowed values from filled DataGridView DataSource
             Dim cb As DataGridViewComboBoxColumn = DBSeqenceDataGrid.Columns(0)
@@ -201,23 +201,23 @@ Public Class DBModifCreate
             Me.DBSeqenceDataGrid.Hide()
             ' go into "repaired" mode (indicating rewriting DBSequence Steps in DBModif.createDBModif)
             Me.Tag = "repaired"
-            Globals.UserMsg("Defined DBSequence steps did not match allowed values." + vbCrLf + "Please follow the instructions in textbox to fix it...", "DBSequence definition Insert error")
+            UserMsg("Defined DBSequence steps did not match allowed values." + vbCrLf + "Please follow the instructions in text-box to fix it...", "DBSequence definition Insert error")
         End If
         DBSeqStepValidationErrorsShown = True
     End Sub
 
-    ''' <summary>Create Commandbutton Click event</summary>
+    ''' <summary>Create Command-button Click event</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub CreateCB_Click(sender As Object, e As EventArgs) Handles CreateCB.Click
-        ' create a commandbutton for the current DBmodification?
+        ' create a command-button for the current DBmodification?
         Dim cbshp As Excel.OLEObject = Nothing
-        Dim cb As Forms.CommandButton = Nothing
+        Dim cb As Forms.CommandButton
         Try
             cbshp = ExcelDnaUtil.Application.ActiveSheet.OLEObjects.Add(ClassType:="Forms.CommandButton.1", Link:=False, DisplayAsIcon:=False, Left:=600, Top:=70, Width:=120, Height:=24)
             cb = cbshp.Object
         Catch ex As Exception
-            Globals.UserMsg("Can't create command button: " + ex.Message, "CommandButton create Error")
+            UserMsg("Can't create command button: " + ex.Message, "CommandButton create Error")
             cbshp.Delete()
             Exit Sub
         End Try
@@ -228,18 +228,18 @@ Public Class DBModifCreate
         Catch ex As Exception
             cbshp.Delete()
             If ex.Message.Contains("HRESULT: 0x8002802C (TYPE_E_AMBIGUOUSNAME)") Then
-                Globals.UserMsg("Can't name the new command button '" + cbName + "' as there already exists a button with that name", "CommandButton create Error")
+                UserMsg("Can't name the new command button '" + cbName + "' as there already exists a button with that name", "CommandButton create Error")
             Else
-                Globals.UserMsg("Can't name command button '" + cbName + "': " + ex.Message, "CommandButton create Error")
+                UserMsg("Can't name command button '" + cbName + "': " + ex.Message, "CommandButton create Error")
             End If
             Exit Sub
         End Try
         If Len(cbName) > 31 Then
             cbshp.Delete()
-            Globals.UserMsg("CommandButton codenames cannot be longer than 31 characters ! '" + cbName + "': ", "CommandButton create Error")
+            UserMsg("CommandButton code-names cannot be longer than 31 characters ! '" + cbName + "': ", "CommandButton create Error")
             Exit Sub
         End If
-        ' fail to assign a handler? remove commandbutton (otherwise it gets hard to edit an existing DBModification with a different name).
+        ' fail to assign a handler? remove command-button (otherwise it gets hard to edit an existing DBModification with a different name).
         If Not AddInEvents.assignHandler(ExcelDnaUtil.Application.ActiveSheet) Then
             cbshp.Delete()
         End If

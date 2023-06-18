@@ -2,6 +2,7 @@
 Imports System.Windows.Forms
 Imports System.ComponentModel
 
+''' <summary>User-form for ad-hoc SQL execution</summary>
 Public Class AdHocSQL
     ''' <summary>common connection settings factored in helper class</summary>
     Private myDBConnHelper As DBConnHelper
@@ -21,24 +22,24 @@ Public Class AdHocSQL
         For Each TransType As String In {"Cell", "ListFetch", "RowFetch", "ListObject", "Pivot"}
             Me.TransferType.Items.Add(TransType)
         Next
-        Me.TransferType.SelectedIndex = Me.TransferType.Items.IndexOf(Globals.fetchSetting("AdHocSQLTransferType", "Cell"))
+        Me.TransferType.SelectedIndex = Me.TransferType.Items.IndexOf(fetchSetting("AdHocSQLTransferType", "Cell"))
 
         Me.EnvSwitch.Items.Clear()
-        For Each env As String In Globals.environdefs
+        For Each env As String In environdefs
             Me.EnvSwitch.Items.Add(env)
         Next
-        Dim userSetEnv As String = Globals.fetchSetting("AdHocSQLcmdEnv" + AdHocSQLStringsIndex.ToString(), Globals.env(baseZero:=True))
+        Dim userSetEnv As String = fetchSetting("AdHocSQLcmdEnv" + AdHocSQLStringsIndex.ToString(), env(baseZero:=True))
         ' get settings for connection
         myDBConnHelper = New DBConnHelper((Integer.Parse(userSetEnv) + 1).ToString())
         ' issue warning if current selected environment not same as that stored for command (prod/test !)
-        If userSetEnv <> Globals.env(baseZero:=True) Then
-            If Globals.QuestionMsg("Current selected environment different from the environment stored for AdHocSQLcmd, change to this environment?",, "AdHoc SQL Command", MsgBoxStyle.Question + MsgBoxStyle.DefaultButton2) = MsgBoxResult.Ok Then
+        If userSetEnv <> env(baseZero:=True) Then
+            If QuestionMsg("Current selected environment different from the environment stored for AdHocSQLcmd, change to this environment?",, "AdHoc SQL Command", MsgBoxStyle.Question + MsgBoxStyle.DefaultButton2) = MsgBoxResult.Ok Then
                 storedUserSetEnv = userSetEnv
-                userSetEnv = Globals.env(baseZero:=True)
-                myDBConnHelper = New DBConnHelper(Globals.env())
+                userSetEnv = env(baseZero:=True)
+                myDBConnHelper = New DBConnHelper(env())
             End If
         End If
-        userSetDB = Globals.fetchSetting("AdHocSQLcmdDB" + AdHocSQLStringsIndex.ToString(), Globals.fetchSubstr(myDBConnHelper.dbsheetConnString, myDBConnHelper.dbidentifier, ";"))
+        userSetDB = fetchSetting("AdHocSQLcmdDB" + AdHocSQLStringsIndex.ToString(), Globals.fetchSubstr(myDBConnHelper.dbsheetConnString, myDBConnHelper.dbidentifier, ";"))
         fillDatabasesAndSetDropDown()
         Me.EnvSwitch.SelectedIndex = Integer.Parse(userSetEnv)
         Me.Database.SelectedIndex = Me.Database.Items.IndexOf(userSetDB)
@@ -57,7 +58,7 @@ Public Class AdHocSQL
         Try
             fillDatabases()
         Catch ex As System.Exception
-            Globals.UserMsg(ex.Message)
+            UserMsg("fillDatabasesAndSetDropDown:" + ex.Message)
             Exit Sub
         End Try
     End Sub
@@ -106,7 +107,7 @@ Public Class AdHocSQL
         fillDatabasesAndSetDropDown()
         ' reset previously set database
         If Me.Database.Items.IndexOf(PrevSelDB) = -1 Then
-            Globals.UserMsg("Previously selected database '" + PrevSelDB + "' doesn't exist in this environment !", "AdHoc SQL Command")
+            UserMsg("Previously selected database '" + PrevSelDB + "' doesn't exist in this environment !", "AdHoc SQL Command")
         End If
         Me.Database.SelectedIndex = Me.Database.Items.IndexOf(PrevSelDB)
     End Sub
@@ -119,7 +120,7 @@ Public Class AdHocSQL
         Try
             myDBConnHelper.openConnection(Me.Database.Text)
         Catch ex As System.Exception
-            Globals.UserMsg("Exception in Database_SelectionChangeCommitted: " + ex.Message)
+            UserMsg("Exception in Database_SelectionChangeCommitted: " + ex.Message)
         End Try
     End Sub
 
@@ -134,11 +135,11 @@ Public Class AdHocSQL
         If Not BackgroundWorker1.IsBusy Then
             ' only select commands are executed immediately, others are asked for (with default button being cancel)
             If InStr(Strings.LTrim(SQLText.Text.ToLower()), "select") <> 1 Then
-                If LCase(Globals.fetchSetting("DMLStatementsAllowed", "False")) <> "true" Then
-                    Globals.UserMsg("Non Select Statements (DML) are forbidden (DMLStatementsAllowed needs to be True) !", "AdHoc SQL Command")
+                If LCase(fetchSetting("DMLStatementsAllowed", "False")) <> "true" Then
+                    UserMsg("Non Select Statements (DML) are forbidden (DMLStatementsAllowed needs to be True) !", "AdHoc SQL Command")
                     Exit Sub
                 End If
-                If Globals.QuestionMsg("Do you really want to execute the command ?",, "AdHoc SQL Command", MsgBoxStyle.Question + MsgBoxStyle.DefaultButton2) = vbCancel Then Exit Sub
+                If QuestionMsg("Do you really want to execute the command ?",, "AdHoc SQL Command", MsgBoxStyle.Question + MsgBoxStyle.DefaultButton2) = vbCancel Then Exit Sub
             End If
             elapsedTime = New DateTime(0)
             Timer1.Interval = 1000
@@ -161,12 +162,12 @@ Public Class AdHocSQL
         Try
             myDBConnHelper.openConnection(Me.Database.Text)
         Catch ex As System.Exception
-            Globals.UserMsg("Exception in BackgroundWorker1_DoWork (opening Database connection): " + ex.Message)
+            UserMsg("Exception in BackgroundWorker1_DoWork (opening Database connection): " + ex.Message)
         End Try
 
         ' set up command
         SqlCmd = myDBConnHelper.getCommand(SQLText.Text)
-        SqlCmd.CommandTimeout = Globals.CmdTimeout
+        SqlCmd.CommandTimeout = CmdTimeout
         SqlCmd.CommandType = CommandType.Text
         ' execute command on DB Server
         nonRowResult = ""
@@ -249,10 +250,10 @@ Public Class AdHocSQL
     ''' <summary>common procedure to close the form, regarding (cancelling) a busy backgroundworker = sqlcmd)</summary>
     Private Sub finishForm(theDialogResult As DialogResult)
         If BackgroundWorker1.IsBusy Then
-            If Globals.QuestionMsg("Cancel the running SQL Command ?",, "AdHoc SQL Command") = MsgBoxResult.Cancel Then Exit Sub
+            If QuestionMsg("Cancel the running SQL Command ?",, "AdHoc SQL Command") = MsgBoxResult.Cancel Then Exit Sub
             SqlCmd.Cancel()
             BackgroundWorker1.CancelAsync()
-            If Globals.QuestionMsg("Also close the Adhoc SQL Command Tool now ?",, "AdHoc SQL Command") = MsgBoxResult.Cancel Then Exit Sub
+            If QuestionMsg("Also close the Adhoc SQL Command Tool now ?",, "AdHoc SQL Command") = MsgBoxResult.Cancel Then Exit Sub
         End If
         ' get rid of leading and trailing blanks for dropdown and combobox presets
         Me.SQLText.Text = Strings.Trim(Me.SQLText.Text)

@@ -145,6 +145,7 @@
     </Compile>
     <Compile Include="Functions.vb" />
     <Compile Include="DBModif.vb" />
+    <Compile Include="Logging.vb" />
     <Compile Include="MenuHandler.vb" />
     <Compile Include="My Project\AssemblyInfo.vb" />
     <Compile Include="My Project\Resources.Designer.vb">
@@ -162,6 +163,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>SchemaFiles.resx</DependentUpon>
     </Compile>
+    <Compile Include="SettingsTools.vb" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="DBaddin-AddIn.dna">
