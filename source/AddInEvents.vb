@@ -57,11 +57,11 @@ Public Class AddInEvents
         ExcelDna.IntelliSense.IntelliSenseServer.Install()
 
         ' Ribbon and context menu setup
-        Globals.theMenuHandler = New MenuHandler
+        theMenuHandler = New MenuHandler
         LogInfo("initialize configuration settings")
         Functions.queryCache = New Dictionary(Of String, String)
         Functions.StatusCollection = New Dictionary(Of String, ContainedStatusMsg)
-        Globals.DBModifDefColl = New Dictionary(Of String, Dictionary(Of String, DBModif))
+        DBModifDefColl = New Dictionary(Of String, Dictionary(Of String, DBModif))
 
         ' initialize settings and get the default environment
         initSettings()
@@ -75,7 +75,7 @@ Public Class AddInEvents
             UserMsg("Default Environment " + (selEnv + 1).ToString() + " not existing, setting to first environment !")
             selEnv = 0
         End If
-        Globals.selectedEnvironment = selEnv
+        selectedEnvironment = selEnv
         ' after getting the default environment (should exist), set the Const Connection String again to avoid problems in generating DB ListObjects
         ConstConnString = fetchSetting("ConstConnString" + env(), "")
         ConfigStoreFolder = fetchSetting("ConfigStoreFolder" + env(), "")
@@ -84,7 +84,7 @@ Public Class AddInEvents
     ''' <summary>AutoClose cleans up after finishing addin</summary>
     Public Sub AutoClose() Implements IExcelAddIn.AutoClose
         Try
-            Globals.theMenuHandler = Nothing
+            theMenuHandler = Nothing
             ExcelDna.IntelliSense.IntelliSenseServer.Uninstall()
         Catch ex As Exception
             UserMsg("DBAddin unloading error: " + ex.Message, "AutoClose")
@@ -98,15 +98,15 @@ Public Class AddInEvents
     ''' <param name="Cancel"></param>
     Private Sub Application_WorkbookSave(Wb As Excel.Workbook, ByVal SaveAsUI As Boolean, ByRef Cancel As Boolean) Handles Application.WorkbookBeforeSave
         ' ask if modifications should be done if no overriding flag is defined...
-        Dim doDBMOnSave As Boolean = Globals.getCustPropertyBool("doDBMOnSave", Wb)
+        Dim doDBMOnSave As Boolean = getCustPropertyBool("doDBMOnSave", Wb)
 
         Dim askForEveryModifier As Boolean = False
         ' if overriding flag not given and Readonly is NOT recommended on this workbook and workbook IS NOT Readonly, ...
         If Not (Wb.ReadOnlyRecommended And Wb.ReadOnly) And Not doDBMOnSave Then
             Dim TotalDBModifCount As Integer = 0
-            For Each DBmodifType As String In Globals.DBModifDefColl.Keys
-                For Each dbmapdefkey As String In Globals.DBModifDefColl(DBmodifType).Keys
-                    If Globals.DBModifDefColl(DBmodifType).Item(dbmapdefkey).execOnSave Then TotalDBModifCount += 1
+            For Each DBmodifType As String In DBModifDefColl.Keys
+                For Each dbmapdefkey As String In DBModifDefColl(DBmodifType).Keys
+                    If DBModifDefColl(DBmodifType).Item(dbmapdefkey).execOnSave Then TotalDBModifCount += 1
                 Next
             Next
             ' ...ask for saving, if this is necessary for any DBmodifier...
@@ -121,14 +121,14 @@ Public Class AddInEvents
                 End If
             ElseIf TotalDBModifCount = 1 Then
                 ' only one DBModifier needs saving, ask only once for saving...
-                For Each DBmodifType As String In Globals.DBModifDefColl.Keys
-                    For Each dbmapdefkey As String In Globals.DBModifDefColl(DBmodifType).Keys
-                        If Globals.DBModifDefColl(DBmodifType).Item(dbmapdefkey).execOnSave Then
+                For Each DBmodifType As String In DBModifDefColl.Keys
+                    For Each dbmapdefkey As String In DBModifDefColl(DBmodifType).Keys
+                        If DBModifDefColl(DBmodifType).Item(dbmapdefkey).execOnSave Then
                             If nonInteractive Then
                                 ' always save in non interactive (headless/automation) mode
                                 doDBMOnSave = True
                             Else
-                                doDBMOnSave = IIf(Globals.DBModifDefColl(DBmodifType).Item(dbmapdefkey).confirmExecution(WbIsSaving:=True) = MsgBoxResult.Yes, True, False)
+                                doDBMOnSave = IIf(DBModifDefColl(DBmodifType).Item(dbmapdefkey).confirmExecution(WbIsSaving:=True) = MsgBoxResult.Yes, True, False)
                             End If
                         End If
                     Next
@@ -139,9 +139,9 @@ Public Class AddInEvents
         ' save all DBmappers/DBActions/DBSequences on saving if above resulted in YES!
         If doDBMOnSave Then
             ' first do DBModifiers defined on active sheet or any DB Sequence:
-            For Each DBmodifType As String In Globals.DBModifDefColl.Keys
-                For Each dbmapdefkey As String In Globals.DBModifDefColl(DBmodifType).Keys
-                    With Globals.DBModifDefColl(DBmodifType).Item(dbmapdefkey)
+            For Each DBmodifType As String In DBModifDefColl.Keys
+                For Each dbmapdefkey As String In DBModifDefColl(DBmodifType).Keys
+                    With DBModifDefColl(DBmodifType).Item(dbmapdefkey)
                         If (DBmodifType = "DBSeqnce" OrElse .getTargetRange().Parent Is ExcelDnaUtil.Application.ActiveSheet) And .DBModifSaveNeeded Then
                             ' ask for saving, if decided so...
                             If askForEveryModifier Then
@@ -156,9 +156,9 @@ Public Class AddInEvents
                 Next
             Next
             ' then all the rest (no defined order!)
-            For Each DBmodifType As String In Globals.DBModifDefColl.Keys
-                For Each dbmapdefkey As String In Globals.DBModifDefColl(DBmodifType).Keys
-                    With Globals.DBModifDefColl(DBmodifType).Item(dbmapdefkey)
+            For Each DBmodifType As String In DBModifDefColl.Keys
+                For Each dbmapdefkey As String In DBModifDefColl(DBmodifType).Keys
+                    With DBModifDefColl(DBmodifType).Item(dbmapdefkey)
                         If Not (DBmodifType = "DBSeqnce" OrElse .getTargetRange().Parent Is ExcelDnaUtil.Application.ActiveSheet) And .DBModifSaveNeeded Then
                             If askForEveryModifier Then
                                 Dim answer As MsgBoxResult = .confirmExecution(WbIsSaving:=True)
@@ -243,7 +243,7 @@ done:
             ' refresh content area of db functions after save event, requires execution out of context of Application_WorkbookSave
             If DBFCContentColl.Count > 0 Or DBFCAllColl.Count > 0 Then
                 ExcelAsyncUtil.QueueAsMacro(Sub()
-                                                Globals.refreshDBFuncLater()
+                                                refreshDBFuncLater()
                                             End Sub)
             End If
         Catch ex As Exception
@@ -257,12 +257,12 @@ done:
     Private Sub Application_WorkbookOpen(Wb As Excel.Workbook) Handles Application.WorkbookOpen
         If Not Wb.IsAddin Then
             ' in case of reopening workbooks with db functions, look for old query caches and status collections (returned error messages) and reset them to get new data
-            Globals.resetCachesForWorkbook(Wb.Name)
+            resetCachesForWorkbook(Wb.Name)
             repairLegacyFunctions(Wb)
             ' when opening, force recalculation of DB functions in workbook.
             ' this is required as there is no recalculation if no dependencies have changed (usually when opening workbooks)
             ' however the most important dependency for DB functions is the database data....
-            If Not Globals.getCustPropertyBool("DBFskip", Wb) Then Globals.refreshDBFunctions(Wb)
+            If Not getCustPropertyBool("DBFskip", Wb) Then refreshDBFunctions(Wb)
         End If
     End Sub
 
@@ -272,8 +272,8 @@ done:
         ' avoid when being activated by DBFuncsAction
         If Not DBModifs.preventChangeWhileFetching Then
             ' in case AutoOpen hasn't been triggered (e.g. when Excel was started via Internet Explorer)...
-            If Globals.DBModifDefColl Is Nothing Then
-                Globals.DBModifDefColl = New Dictionary(Of String, Dictionary(Of String, DBModif))
+            If DBModifDefColl Is Nothing Then
+                DBModifDefColl = New Dictionary(Of String, Dictionary(Of String, DBModif))
             End If
             LogInfo("getting DBModif Definitions on Workbook Activate")
             DBModifs.getDBModifDefinitions()
@@ -344,7 +344,7 @@ done:
         If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown Then
             DBModifs.createDBModif(DBModifType, targetDefName:=cbName)
         Else
-            Globals.DBModifDefColl(DBModifType).Item(cbName).doDBModif()
+            DBModifDefColl(DBModifType).Item(cbName).doDBModif()
         End If
     End Sub
 
@@ -395,7 +395,7 @@ done:
         ' avoid when being activated by DBFuncsAction 
         If Not DBModifs.preventChangeWhileFetching Then
             ' only when needed assign button handler for this sheet ...
-            If Not IsNothing(Globals.DBModifDefColl) AndAlso Globals.DBModifDefColl.Count > 0 Then assignHandler(Sh)
+            If Not IsNothing(DBModifDefColl) AndAlso DBModifDefColl.Count > 0 Then assignHandler(Sh)
         End If
     End Sub
 
@@ -411,9 +411,9 @@ done:
     ''' <summary>Actually clean up after closing workbook</summary>
     ''' <param name="Wb"></param>
     Private Sub Application_WorkbookDeactivate(Wb As Workbook) Handles Application.WorkbookDeactivate
-        If WbIsClosing AndAlso Not IsNothing(Globals.DBModifDefColl) AndAlso Globals.DBModifDefColl.Count > 0 Then
-            Globals.DBModifDefColl.Clear()
-            Globals.theRibbon.Invalidate()
+        If WbIsClosing AndAlso Not IsNothing(DBModifDefColl) AndAlso DBModifDefColl.Count > 0 Then
+            DBModifDefColl.Clear()
+            theRibbon.Invalidate()
         End If
         WbIsClosing = False
     End Sub
@@ -423,10 +423,10 @@ done:
     ''' <param name="Target"></param>
     Private Sub Application_SheetChange(Sh As Object, Target As Range) Handles Application.SheetChange
         ' avoid entering into insert/update check resp. doCUDMarks if not list-object (data table), whole column modified, no DBMapper present and prevention while fetching (on refresh) being set
-        If Not IsNothing(Target.ListObject) AndAlso Not Target.Rows.Count = Sh.Rows.Count AndAlso Globals.DBModifDefColl.ContainsKey("DBMapper") AndAlso Not DBModifs.preventChangeWhileFetching Then
+        If Not IsNothing(Target.ListObject) AndAlso Not Target.Rows.Count = Sh.Rows.Count AndAlso DBModifDefColl.ContainsKey("DBMapper") AndAlso Not DBModifs.preventChangeWhileFetching Then
             Dim targetName As String = DBModifs.getDBModifNameFromRange(Target)
             If Left(targetName, 8) = "DBMapper" Then
-                DirectCast(Globals.DBModifDefColl("DBMapper").Item(targetName), DBMapper).insertCUDMarks(Target)
+                DirectCast(DBModifDefColl("DBMapper").Item(targetName), DBMapper).insertCUDMarks(Target)
             End If
         End If
     End Sub
@@ -465,7 +465,7 @@ done:
     ''' <param name="Cancel"></param>
     Private Sub Application_SheetBeforeRightClick(Sh As Object, Target As Range, ByRef Cancel As Boolean) Handles Application.SheetBeforeRightClick
         ' check if we are in a CUD DBMapper, if not then leave...
-        If Not IsNothing(Target.ListObject) AndAlso Not IsNothing(Globals.DBModifDefColl) AndAlso Globals.DBModifDefColl.ContainsKey("DBMapper") Then
+        If Not IsNothing(Target.ListObject) AndAlso Not IsNothing(DBModifDefColl) AndAlso DBModifDefColl.ContainsKey("DBMapper") Then
             Dim targetName As String = getDBModifNameFromRange(Target)
             If Left(targetName, 8) <> "DBMapper" Then Exit Sub
         Else

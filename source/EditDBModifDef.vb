@@ -10,7 +10,7 @@ Imports System.Configuration
 Public Class EditDBModifDef
     ''' <summary>the edited CustomXmlParts for the DBModif definitions</summary>
     Private CustomXmlParts As Object
-    ''' <summary>the settings path for user or central setting (for resaving after modification)</summary>
+    ''' <summary>the settings path for user or central setting (for re-saving after modification)</summary>
     Private settingsPath As String = ""
 
     ''' <summary>put the custom xml definition in the edit box for display/editing</summary>
@@ -78,7 +78,7 @@ Public Class EditDBModifDef
                 doc.LoadXml(settingsStr)
                 If Not IsNothing(doc.SelectSingleNode(xpathStr)) Then
                     Dim settingfilename As String = doc.SelectSingleNode(xpathStr).Value
-                    ' no path given in centralfilename: assume it is in same directory
+                    ' no path given in central filename: assume it is in same directory
                     If InStr(settingfilename, "\") = 0 Then settingfilename = Replace(settingsPath, "DBaddin.xll.config", "") + settingfilename
                     ' and read central settings
                     settingsPath = settingfilename
@@ -100,7 +100,7 @@ Public Class EditDBModifDef
         End If
     End Sub
 
-    ''' <summary>store the displayed/edited textbox content back into the custom xml definition, including validation feedback</summary>
+    ''' <summary>store the displayed/edited text-box content back into the custom xml definition, including validation feedback</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub OKBtn_Click(sender As Object, e As EventArgs) Handles OKBtn.Click
@@ -132,7 +132,7 @@ Public Class EditDBModifDef
                     CustomXmlParts.Add(sw.ToString())
                 End Using
             End Using
-            ' add/change the tickboxes doDBMOnSave and DBFskip
+            ' add/change the tick-boxes doDBMOnSave and DBFskip
             If Not Me.DBFskip.CheckState = CheckState.Indeterminate Then
                 Try
                     Try : ExcelDnaUtil.Application.ActiveWorkbook.CustomDocumentProperties("DBFskip").Delete : Catch ex As Exception : End Try

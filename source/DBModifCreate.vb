@@ -49,11 +49,11 @@ Public Class DBModifCreate
             UserMsg("Only one primary key is allowed when Auto Incrementing is enabled!", "DBModification Validation Error")
         Else
             ' check for double invocation because of execOnSave both being set on current DB Modifier ...
-            If Me.execOnSave.Checked And Globals.DBModifDefColl.ContainsKey("DBSeqnce") Then
+            If Me.execOnSave.Checked And DBModifDefColl.ContainsKey("DBSeqnce") Then
                 Dim MyDBModifName As String = Me.Tag + Me.DBModifName.Text
                 ' and on DB Sequence that contains the current DB Mapper or DB Action:
                 If Me.Tag <> "DBSeqnce" Then
-                    For Each DBModifierCheck As DBSeqnce In Globals.DBModifDefColl("DBSeqnce").Values
+                    For Each DBModifierCheck As DBSeqnce In DBModifDefColl("DBSeqnce").Values
                         ' check for Sequences that have execOnSave set...
                         If DBModifierCheck.execOnSave Then
                             ' ...if they contain the current DBAction/DBMapper
@@ -61,7 +61,7 @@ Public Class DBModifCreate
                                 Dim definition() As String = Split(sequenceParam, ":")
                                 If MyDBModifName = definition(1) Then
                                     Dim DBModifTargetAddress As String = "(Target Address could not be found...)"
-                                    If Globals.DBModifDefColl(definition(0)).ContainsKey(definition(1)) Then DBModifTargetAddress = Globals.DBModifDefColl(definition(0)).Item(definition(1)).getTargetRangeAddress()
+                                    If DBModifDefColl(definition(0)).ContainsKey(definition(1)) Then DBModifTargetAddress = DBModifDefColl(definition(0)).Item(definition(1)).getTargetRangeAddress()
                                     Dim foundDBModifName As String = IIf(DBModifierCheck.getName = "DBSeqnce", "Unnamed DBSequence", DBModifierCheck.getName)
                                     UserMsg(Me.Tag + Me.DBModifName.Text + " in " + DBModifTargetAddress + " will be executed twice on saving, because it is part of '" + foundDBModifName + "', which is also executed on saving." + vbCrLf + IIf(Me.execOnSave.Checked, "Disabling 'Execute on save' now, you ", "You") + " can re-enable after disabling it on '" + foundDBModifName + "'", "DBModification Validation")
                                     Me.execOnSave.Checked = False
@@ -73,9 +73,9 @@ Public Class DBModifCreate
                 Else ' or on any DB Modifier being contained in current DB Sequence:
                     For i As Integer = 0 To Me.DBSeqenceDataGrid.Rows().Count - 2
                         Dim definition() As String = Split(Me.DBSeqenceDataGrid.Rows(i).Cells(0).Value, ":")
-                        If (definition(0) = "DBAction" Or definition(0) = "DBMapper") AndAlso Globals.DBModifDefColl(definition(0)).ContainsKey(definition(1)) AndAlso Globals.DBModifDefColl(definition(0)).Item(definition(1)).execOnSave Then
+                        If (definition(0) = "DBAction" Or definition(0) = "DBMapper") AndAlso DBModifDefColl(definition(0)).ContainsKey(definition(1)) AndAlso DBModifDefColl(definition(0)).Item(definition(1)).execOnSave Then
                             Dim foundDBModifName As String = IIf(definition(1) = "", "Unnamed " + definition(0), definition(1))
-                            Dim DBModifTargetAddress As String = Globals.DBModifDefColl(definition(0)).Item(definition(1)).getTargetRangeAddress()
+                            Dim DBModifTargetAddress As String = DBModifDefColl(definition(0)).Item(definition(1)).getTargetRangeAddress()
                             UserMsg(foundDBModifName + " in " + DBModifTargetAddress + " will be executed twice on saving, because it is part of this DBSequence, which is also executed on saving." + vbCrLf + IIf(Me.execOnSave.Checked, "Disabling 'Execute on save' now, you ", "You") + " can re-enable after disabling it on '" + foundDBModifName + "'", "DBModification Validation")
                             Me.execOnSave.Checked = False
                         End If

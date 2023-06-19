@@ -39,7 +39,7 @@ Public Class AdHocSQL
                 myDBConnHelper = New DBConnHelper(env())
             End If
         End If
-        userSetDB = fetchSetting("AdHocSQLcmdDB" + AdHocSQLStringsIndex.ToString(), Globals.fetchSubstr(myDBConnHelper.dbsheetConnString, myDBConnHelper.dbidentifier, ";"))
+        userSetDB = fetchSetting("AdHocSQLcmdDB" + AdHocSQLStringsIndex.ToString(), fetchSubstr(myDBConnHelper.dbsheetConnString, myDBConnHelper.dbidentifier, ";"))
         fillDatabasesAndSetDropDown()
         Me.EnvSwitch.SelectedIndex = Integer.Parse(userSetEnv)
         Me.Database.SelectedIndex = Me.Database.Items.IndexOf(userSetDB)

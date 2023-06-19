@@ -12,7 +12,7 @@ Public Class MenuHandler
 
     ''' <summary>callback after Excel loaded the Ribbon, used to initialize data for the Ribbon</summary>
     Public Sub ribbonLoaded(theRibbon As CustomUI.IRibbonUI)
-        Globals.theRibbon = theRibbon
+        MenuHandlerGlobals.theRibbon = theRibbon
         initAdhocSQLconfig()
     End Sub
 
@@ -229,7 +229,7 @@ Public Class MenuHandler
                         Dim formulaParams As String = Mid$(targetFormula, Len(srchdFunc) + 3)
                         ' replace query-string in existing formula 
                         formulaParams = Left(formulaParams, Len(formulaParams) - 1)
-                        Dim tempFormula As String = Globals.replaceDelimsWithSpecialSep(formulaParams, ",", """", "(", ")", vbTab)
+                        Dim tempFormula As String = replaceDelimsWithSpecialSep(formulaParams, ",", """", "(", ")", vbTab)
                         Dim restFormula As String = Mid$(tempFormula, InStr(tempFormula, vbTab))
                         ' ..and put into active cell
                         ExcelDnaUtil.Application.ActiveCell.Formula = "=" + srchdFunc + "(""" + queryString + """" + Replace(restFormula, vbTab, ",") + ")"
@@ -239,24 +239,24 @@ Public Class MenuHandler
                 If ExcelDnaUtil.Application.ActiveCell.Formula <> "" Then
                     If QuestionMsg("Non-empty Cell selected, should content be replaced?") = MsgBoxResult.Cancel Then Exit Sub
                 End If
-                Globals.createPivotTable(ExcelDnaUtil.Application.ActiveCell)
-                Globals.createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBSetQuery(""" + queryString + ""","""",R[1]C)"})
+                createPivotTable(ExcelDnaUtil.Application.ActiveCell)
+                createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBSetQuery(""" + queryString + ""","""",R[1]C)"})
             ElseIf theAdHocSQLDlg.TransferType.Text = "ListObject" Then
                 If ExcelDnaUtil.Application.ActiveCell.Formula <> "" Then
                     If QuestionMsg("Non-empty Cell selected, should content be replaced?") = MsgBoxResult.Cancel Then Exit Sub
                 End If
-                Globals.createListObject(ExcelDnaUtil.Application.ActiveCell)
-                Globals.createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBSetQuery(""" + queryString + ""","""",RC[1])"})
+                createListObject(ExcelDnaUtil.Application.ActiveCell)
+                createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBSetQuery(""" + queryString + ""","""",RC[1])"})
             ElseIf theAdHocSQLDlg.TransferType.Text = "RowFetch" Then
                 If ExcelDnaUtil.Application.ActiveCell.Formula <> "" Then
                     If QuestionMsg("Non-empty Cell selected, should content be replaced?") = MsgBoxResult.Cancel Then Exit Sub
                 End If
-                Globals.createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBRowFetch(""" + queryString + ""","""",TRUE,R[1]C:R[1]C[10])"})
+                createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBRowFetch(""" + queryString + ""","""",TRUE,R[1]C:R[1]C[10])"})
             ElseIf theAdHocSQLDlg.TransferType.Text = "ListFetch" Then
                 If ExcelDnaUtil.Application.ActiveCell.Formula <> "" Then
                     If QuestionMsg("Non-empty Cell selected, should content be replaced?") = MsgBoxResult.Cancel Then Exit Sub
                 End If
-                Globals.createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBListFetch(""" + queryString + ""","""",R[1]C,,,TRUE,TRUE,TRUE)"})
+                createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBListFetch(""" + queryString + ""","""",R[1]C,,,TRUE,TRUE,TRUE)"})
             End If
         ElseIf dialogResult = System.Windows.Forms.DialogResult.Cancel Then 'Cancel is set when "close" is clicked
             ' "Close" was clicked: only add SQL String to combo-box
@@ -334,7 +334,7 @@ Public Class MenuHandler
         Try : actWb = ExcelDnaUtil.Application.ActiveWorkbook : Catch ex As Exception
             LogWarn("Exception when trying to get the active workbook: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
         End Try
-        If Globals.getCustPropertyBool("DBFskip", actWb) Then
+        If getCustPropertyBool("DBFskip", actWb) Then
             Return "DeclineTask"
         Else
             Return "AcceptTask"
@@ -389,7 +389,7 @@ Public Class MenuHandler
                 UserMsg("The properties dialog can't be displayed, maybe you are in the formula/cell editor?", "Properties dialog display")
             End Try
             ' to check whether DBFskip has changed:
-            Globals.theRibbon.InvalidateControl(control.Id)
+            theRibbon.InvalidateControl(control.Id)
         End If
     End Sub
 
@@ -454,7 +454,7 @@ Public Class MenuHandler
             UserMsg("Couldn't toggle design mode, because Design mode command-bar button is not available (no button?)", "DBAddin toggle Design mode", MsgBoxStyle.Exclamation)
         End If
         ' update state of design mode in screentip
-        Globals.theRibbon.InvalidateControl(control.Id)
+        theRibbon.InvalidateControl(control.Id)
     End Sub
 
     ''' <summary>display state of design mode in screentip of button</summary>
@@ -506,7 +506,7 @@ Public Class MenuHandler
     ''' <summary>after selection of environment (using selectEnvironment) used to return the selected environment</summary>
     ''' <returns></returns>
     Public Function GetSelectedEnvironment(control As CustomUI.IRibbonControl) As Integer
-        Return Globals.selectedEnvironment
+        Return selectedEnvironment
     End Function
 
     ''' <summary>tool-tip for the environment select drop down</summary>
@@ -530,7 +530,7 @@ Public Class MenuHandler
     ''' <summary>Choose environment (configured in registry with ConstConnString(N), ConfigStoreFolder(N))</summary>
     ''' <param name="control"></param>
     Public Sub selectEnvironment(control As CustomUI.IRibbonControl, id As String, index As Integer)
-        Globals.selectedEnvironment = index
+        selectedEnvironment = index
         initSettings()
         ' provide a chance to reconnect when switching environment...
         conn = Nothing
@@ -540,7 +540,7 @@ Public Class MenuHandler
         End Try
         If actWb IsNot Nothing Then
             Dim retval As MsgBoxResult = QuestionMsg("ConstConnString:" + ConstConnString + vbCrLf + "ConfigStoreFolder:" + ConfigFiles.ConfigStoreFolder + vbCrLf + vbCrLf + "Refresh DBFunctions in active workbook to see effects?", MsgBoxStyle.OkCancel, "Changed environment to: " + fetchSetting("ConfigName" + env(), ""))
-            If retval = MsgBoxResult.Ok Then Globals.refreshDBFunctions(actWb)
+            If retval = MsgBoxResult.Ok Then refreshDBFunctions(actWb)
         Else
             UserMsg("ConstConnString:" + ConstConnString + vbCrLf + "ConfigStoreFolder:" + ConfigFiles.ConfigStoreFolder, "Changed environment to: " + fetchSetting("ConfigName" + env(), ""), MsgBoxStyle.Information)
         End If
@@ -568,7 +568,7 @@ Public Class MenuHandler
         initSettings()
         initAdhocSQLconfig()
         ' also display in ribbon
-        Globals.theRibbon.Invalidate()
+        theRibbon.Invalidate()
     End Sub
 
     ''' <summary>dialogBoxLauncher of DBAddin settings group: activate about box</summary>
@@ -590,7 +590,7 @@ Public Class MenuHandler
         initSettings()
         ConfigFiles.createConfigTreeMenu()
         UserMsg("refreshed DB Config Tree Menu", "DBAddin: refresh Config tree...", MsgBoxStyle.Information)
-        Globals.theRibbon.Invalidate()
+        theRibbon.Invalidate()
     End Sub
 
     ''' <summary>get DB Config Menu from File</summary>
@@ -620,12 +620,12 @@ Public Class MenuHandler
     Public Function getDBModifMenuContent(control As CustomUI.IRibbonControl) As String
         Dim xmlString As String = "<menu xmlns='http://schemas.microsoft.com/office/2009/07/customui'>"
         Try
-            If Not Globals.DBModifDefColl.ContainsKey(control.Id) Then Return ""
+            If Not DBModifDefColl.ContainsKey(control.Id) Then Return ""
             Dim DBModifTypeName As String = IIf(control.Id = "DBSeqnce", "DBSequence", IIf(control.Id = "DBMapper", "DB Mapper", IIf(control.Id = "DBAction", "DB Action", "undefined DBModifTypeName")))
-            For Each nodeName As String In Globals.DBModifDefColl(control.Id).Keys
+            For Each nodeName As String In DBModifDefColl(control.Id).Keys
                 Dim descName As String = IIf(nodeName = control.Id, "Unnamed " + DBModifTypeName, Replace(nodeName, DBModifTypeName, ""))
                 Dim imageMsoStr As String = IIf(control.Id = "DBSeqnce", "ShowOnNewButton", IIf(control.Id = "DBMapper", "TableSave", IIf(control.Id = "DBAction", "TableIndexes", "undefined imageMso")))
-                Dim superTipStr As String = IIf(control.Id = "DBSeqnce", "executes " + DBModifTypeName + " defined in " + nodeName, IIf(control.Id = "DBMapper", "stores data defined in DBMapper (named " + nodeName + ") range on " + Globals.DBModifDefColl(control.Id).Item(nodeName).getTargetRangeAddress(), IIf(control.Id = "DBAction", "executes Action defined in DBAction (named " + nodeName + ") range on " + Globals.DBModifDefColl(control.Id).Item(nodeName).getTargetRangeAddress(), "undefined superTip")))
+                Dim superTipStr As String = IIf(control.Id = "DBSeqnce", "executes " + DBModifTypeName + " defined in " + nodeName, IIf(control.Id = "DBMapper", "stores data defined in DBMapper (named " + nodeName + ") range on " + DBModifDefColl(control.Id).Item(nodeName).getTargetRangeAddress(), IIf(control.Id = "DBAction", "executes Action defined in DBAction (named " + nodeName + ") range on " + DBModifDefColl(control.Id).Item(nodeName).getTargetRangeAddress(), "undefined superTip")))
                 xmlString = xmlString + "<button id='_" + nodeName + "' label='do " + descName + "' imageMso='" + imageMsoStr + "' onAction='DBModifClick' tag='" + control.Id + "' screentip='do " + DBModifTypeName + ": " + descName + "' supertip='" + superTipStr + "' />"
             Next
             xmlString += "</menu>"
@@ -648,7 +648,7 @@ Public Class MenuHandler
     ''' <returns>true if to be displayed</returns>
     Public Function getDBModifMenuVisible(control As CustomUI.IRibbonControl) As Boolean
         Try
-            Return Globals.DBModifDefColl.ContainsKey(control.Id)
+            Return DBModifDefColl.ContainsKey(control.Id)
         Catch ex As Exception
             Return False
         End Try
@@ -674,7 +674,7 @@ Public Class MenuHandler
             Else
                 ' DB sequence actions (the sequence to be done) are stored directly in DBMapperDefColl, so different invocation here
                 If Not (actWb.ReadOnlyRecommended And actWb.ReadOnly) Then
-                    Globals.DBModifDefColl(control.Tag).Item(nodeName).doDBModif()
+                    DBModifDefColl(control.Tag).Item(nodeName).doDBModif()
                 Else
                     UserMsg("ReadOnlyRecommended is set on active workbook (being readonly), therefore all DB Modifiers are disabled !", "DB Modifier execution", MsgBoxStyle.Exclamation)
                 End If
@@ -687,13 +687,13 @@ Public Class MenuHandler
     ''' <summary>context menu entry refreshData: refresh Data in db function (if area or cell selected) or all db functions</summary>
     ''' <param name="control"></param>
     Public Sub clickrefreshData(control As CustomUI.IRibbonControl)
-        Globals.refreshData()
+        refreshData()
     End Sub
 
     ''' <summary>context menu entry gotoDBFunc: jumps from DB function to data area and back</summary>
     ''' <param name="control"></param>
     Public Sub clickjumpButton(control As CustomUI.IRibbonControl)
-        Globals.jumpButton()
+        jumpButton()
     End Sub
 
     ''' <summary>check/purge name tool button, purge names used for dbfunctions from workbook</summary>
@@ -729,19 +729,19 @@ Public Class MenuHandler
             Exit Sub
         End If
         If control.Tag = "DBListFetch" Then
-            Globals.createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBListFetch("""","""",R[1]C,,,TRUE,TRUE,TRUE)"})
+            createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBListFetch("""","""",R[1]C,,,TRUE,TRUE,TRUE)"})
         ElseIf control.Tag = "DBRowFetch" Then
-            Globals.createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBRowFetch("""","""",TRUE,R[1]C:R[1]C[10])"})
+            createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBRowFetch("""","""",TRUE,R[1]C:R[1]C[10])"})
         ElseIf control.Tag = "DBSetQueryPivot" Then
             ' first create a dummy pivot table
-            Globals.createPivotTable(ExcelDnaUtil.Application.ActiveCell)
+            createPivotTable(ExcelDnaUtil.Application.ActiveCell)
             ' then create the DBSetQuery assigning the (yet to be filled) query to the above list-object
-            Globals.createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBSetQuery("""","""",R[1]C)"})
+            createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBSetQuery("""","""",R[1]C)"})
         ElseIf control.Tag = "DBSetQueryListObject" Then
             ' first create a dummy ListObject
-            Globals.createListObject(ExcelDnaUtil.Application.ActiveCell)
+            createListObject(ExcelDnaUtil.Application.ActiveCell)
             ' then create the DBSetQuery assigning the (yet to be filled) query to the above list-object
-            Globals.createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBSetQuery("""","""",RC[1])"})
+            createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBSetQuery("""","""",RC[1])"})
         ElseIf control.Tag = "DBMapper" Or control.Tag = "DBAction" Or control.Tag = "DBSeqnce" Then
             If activeCellDBModifType = control.Tag Then  ' edit existing definition
                 DBModifs.createDBModif(control.Tag, targetDefName:=activeCellDBModifName)
@@ -795,7 +795,7 @@ Public Class MenuHandler
             curCell.Offset(i, 0).Value = formulaPart.Replace(vbLf, "")
             i += 1
         Next
-        Globals.createFunctionsInCells(curCell, {"RC", "=DBSetPowerQuery(R[1]C:R[" + (i - 1).ToString() + "]C,""" + sender.ToString() + """)"})
+        createFunctionsInCells(curCell, {"RC", "=DBSetPowerQuery(R[1]C:R[" + (i - 1).ToString() + "]C,""" + sender.ToString() + """)"})
         Functions.avoidRequeryDuringEdit = False
     End Sub
 
@@ -815,3 +815,139 @@ Public Class MenuHandler
 
 #Enable Warning IDE0060
 End Class
+
+''' <summary>global variables for MenuHandler</summary>
+Public Module MenuHandlerGlobals
+    ''' <summary>ribbon menu handler</summary>
+    Public theMenuHandler As MenuHandler
+    ''' <summary>reference object for the Add-ins ribbon</summary>
+    Public theRibbon As CustomUI.IRibbonUI
+
+    ''' <summary>refresh DB Functions (and - if called from outside any db function area - all other external data ranges)</summary>
+    <ExcelCommand(Name:="refreshData", ShortCut:="^R")>
+    Public Sub refreshData()
+        initSettings()
+        ' enable events in case there were some problems in procedure with EnableEvents = false, this fails if a cell dropdown is open.
+        Try
+            ExcelDnaUtil.Application.EnableEvents = True
+        Catch ex As Exception
+            UserMsg("Can't refresh data while lookup dropdown is open !!", "DB-Addin Refresh")
+            Exit Sub
+        End Try
+        Dim actWb As Excel.Workbook = Nothing
+        Try : actWb = ExcelDnaUtil.Application.ActiveWorkbook : Catch ex As Exception : End Try
+        If IsNothing(actWb) Then
+            UserMsg("Couldn't get active workbook for refreshing data, this might be due to the active workbook being hidden, Errors in VBA Macros or missing references", "DB-Addin Refresh")
+            Exit Sub
+        End If
+        Try : Dim actWbName As String = actWb.Name : Catch ex As Exception
+            UserMsg("Couldn't get active workbook name for refreshing data, this might be due to Errors in VBA Macros or missing references", "DB-Addin Refresh")
+            Exit Sub
+        End Try
+        If ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual Then
+            UserMsg("Calculation is set to manual, this prevents DB Functions from being recalculated. Please set calculation to automatic and retry", "DB-Addin Refresh")
+            Exit Sub
+        End If
+        Try
+            ' look for old query caches and status collections (returned error messages) in active workbook and reset them to get new data
+            resetCachesForWorkbook(actWb.Name)
+            Dim underlyingName As String = getUnderlyingDBNameFromRange(ExcelDnaUtil.Application.ActiveCell)
+            ' now for DBListfetch/DBRowfetch resetting, either called outside of all db function areas...
+            If underlyingName = "" Then
+                refreshDBFunctions(actWb)
+                ' general refresh: also refresh all embedded queries, pivot tables and list objects..
+                Try
+                    Dim ws As Excel.Worksheet
+                    For Each ws In actWb.Worksheets
+                        If ws.ProtectContents And (ws.QueryTables.Count > 0 Or ws.PivotTables.Count > 0) Then
+                            UserMsg("Worksheet " + ws.Name + " is content protected, can't refresh QueryTables/PivotTables !", "DB-Addin Refresh")
+                            Continue For
+                        End If
+                        If Not CBool(fetchSetting("AvoidUpdateQueryTables_Refresh", "False")) Then
+                            For Each qrytbl As Excel.QueryTable In ws.QueryTables
+                                ' avoid double refreshing of query tables
+                                If getUnderlyingDBNameFromRange(qrytbl.ResultRange) = "" Then qrytbl.Refresh()
+                            Next
+                        End If
+                        If Not CBool(fetchSetting("AvoidUpdatePivotTables_Refresh", "False")) Then
+                            For Each pivottbl As Excel.PivotTable In ws.PivotTables
+                                ' avoid double refreshing of dbsetquery list objects
+                                If getUnderlyingDBNameFromRange(pivottbl.TableRange1) = "" Then pivottbl.PivotCache.Refresh()
+                            Next
+                        End If
+                        If Not CBool(fetchSetting("AvoidUpdateListObjects_Refresh", "False")) Then
+                            For Each listobj As Excel.ListObject In ws.ListObjects
+                                ' avoid double refreshing of dbsetquery list objects
+                                If getUnderlyingDBNameFromRange(listobj.Range) = "" Then listobj.QueryTable.Refresh()
+                            Next
+                        End If
+                    Next
+                    If Not CBool(fetchSetting("AvoidUpdateLinks_Refresh", "False")) Then
+                        For Each linksrc As String In actWb.LinkSources(Excel.XlLink.xlExcelLinks)
+                            ' first check file existence to not run into excel opening a file dialog for missing files....
+                            If System.IO.File.Exists(linksrc) Then
+                                actWb.UpdateLink(Name:=linksrc, Type:=Excel.XlLink.xlExcelLinks)
+                            Else
+                                LogWarn("File " + linksrc + " doesn't exist, couldn't update excel links to it!")
+                            End If
+                        Next
+                    End If
+                Catch ex As Exception
+                End Try
+            Else ' or called inside a db function area (target or source = function cell)
+                If Left$(underlyingName, 10) = "DBFtargetF" Then
+                    underlyingName = Replace(underlyingName, "DBFtargetF", "DBFsource", 1, , vbTextCompare)
+                    If ExcelDnaUtil.Application.Range(underlyingName).Parent.ProtectContents Then
+                        UserMsg("Worksheet " + ExcelDnaUtil.Application.Range(underlyingName).Parent.Name + " is content protected, can't refresh DB Function !", "DB-Addin Refresh")
+                        Exit Sub
+                    End If
+                    ExcelDnaUtil.Application.Range(underlyingName).Formula += " "
+                    ' we're being called on a target area
+                ElseIf Left$(underlyingName, 9) = "DBFtarget" Then
+                    underlyingName = Replace(underlyingName, "DBFtarget", "DBFsource", 1, , vbTextCompare)
+                    If ExcelDnaUtil.Application.Range(underlyingName).Parent.ProtectContents Then
+                        UserMsg("Worksheet " + ExcelDnaUtil.Application.Range(underlyingName).Parent.Name + " is content protected, can't refresh DB Function !", "DB-Addin Refresh")
+                        Exit Sub
+                    End If
+                    ExcelDnaUtil.Application.Range(underlyingName).Formula += " "
+                    ' we're being called on a source (invoking function) cell
+                ElseIf Left$(underlyingName, 9) = "DBFsource" Then
+                    If ExcelDnaUtil.Application.Range(underlyingName).Parent.ProtectContents Then
+                        UserMsg("Worksheet " + ExcelDnaUtil.Application.Range(underlyingName).Parent.Name + " is content protected, can't refresh DB Function !", "DB-Addin Refresh")
+                        Exit Sub
+                    End If
+                    ExcelDnaUtil.Application.Range(underlyingName).Formula += " "
+                Else
+                    UserMsg("Error in refreshData, underlyingName does not begin with DBFtarget, DBFtargetF or DBFsource: " + underlyingName, "DB-Addin Refresh")
+                End If
+            End If
+        Catch ex As Exception
+            UserMsg("Exception: " + ex.Message, "refresh Data", "DB-Addin Refresh")
+        End Try
+    End Sub
+
+    ''' <summary>jumps between DB Function and target area</summary>
+    <ExcelCommand(Name:="jumpButton", ShortCut:="^J")>
+    Public Sub jumpButton()
+        If checkMultipleDBRangeNames(ExcelDnaUtil.Application.ActiveCell) Then
+            UserMsg("Multiple hidden DB Function names in selected cell (making 'jump' ambiguous/impossible), please use purge names tool!", "DB-Addin Jump")
+            Exit Sub
+        End If
+        Dim underlyingName As String = getUnderlyingDBNameFromRange(ExcelDnaUtil.Application.ActiveCell)
+        If underlyingName = "" Then Exit Sub
+        If Left$(underlyingName, 10) = "DBFtargetF" Then
+            underlyingName = Replace(underlyingName, "DBFtargetF", "DBFsource", 1, , vbTextCompare)
+        ElseIf Left$(underlyingName, 9) = "DBFtarget" Then
+            underlyingName = Replace(underlyingName, "DBFtarget", "DBFsource", 1, , vbTextCompare)
+        Else
+            underlyingName = Replace(underlyingName, "DBFsource", "DBFtarget", 1, , vbTextCompare)
+        End If
+        Try
+            ExcelDnaUtil.Application.Range(underlyingName).Parent.Select()
+            ExcelDnaUtil.Application.Range(underlyingName).Select()
+        Catch ex As Exception
+            UserMsg("Can't jump to target/source, corresponding workbook open? " + ex.Message, "DB-Addin Jump")
+        End Try
+    End Sub
+
+End Module

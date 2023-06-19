@@ -85,7 +85,7 @@ Public Module ConfigFiles
     Private Function replaceConfigSelectInFormula(dbFunctionFormula As String, ConfigSelect As String) As String
         ' get the query from the config templates function formula (standard templates are created with DBListFetch)
         Dim queryString As String
-        Dim functionParts As String() = Globals.functionSplit(dbFunctionFormula, ",", """", "DBListFetch", "(", ")")
+        Dim functionParts As String() = functionSplit(dbFunctionFormula, ",", """", "DBListFetch", "(", ")")
         If functionParts IsNot Nothing Then
             queryString = functionParts(0)
             ' fetch table-name from query string
@@ -97,7 +97,7 @@ Public Module ConfigFiles
             ' reconstruct the rest of the db function formula
             Dim formulaParams As String = Mid$(dbFunctionFormula, Len("DBListFetch") + 3)
             formulaParams = Left(formulaParams, Len(formulaParams) - 1)
-            Dim tempFormula As String = Globals.replaceDelimsWithSpecialSep(formulaParams, ",", """", "(", ")", vbTab)
+            Dim tempFormula As String = replaceDelimsWithSpecialSep(formulaParams, ",", """", "(", ")", vbTab)
             Dim restFormula As String = Mid$(tempFormula, InStr(tempFormula, vbTab))
             ' replace query-string in existing formula
             replaceConfigSelectInFormula = "=DBListFetch(""" + queryString + """" + Replace(restFormula, vbTab, ",") + ")"
@@ -115,13 +115,13 @@ Public Module ConfigFiles
     Private Function replaceQueryInFormula(dbFunctionFormula As String, theFunction As String, targetFormula As String) As String
         ' get the query from the config templates function formula (standard templates are created with DBListFetch)
         Dim queryString As String
-        Dim functionParts As String() = Globals.functionSplit(dbFunctionFormula, ",", """", "DBListFetch", "(", ")")
+        Dim functionParts As String() = functionSplit(dbFunctionFormula, ",", """", "DBListFetch", "(", ")")
         If functionParts IsNot Nothing Then
             queryString = functionParts(0)
             ' get the parts of the targeted function formula
             Dim formulaParams As String = Mid$(targetFormula, Len(theFunction) + 3)
             formulaParams = Left(formulaParams, Len(formulaParams) - 1)
-            Dim tempFormula As String = Globals.replaceDelimsWithSpecialSep(formulaParams, ",", """", "(", ")", vbTab)
+            Dim tempFormula As String = replaceDelimsWithSpecialSep(formulaParams, ",", """", "(", ")", vbTab)
             Dim restFormula As String = Mid$(tempFormula, InStr(tempFormula, vbTab))
             ' for existing theFunction (DBSetQuery or DBRowFetch)...
             ' replace query-string in existing formula and pass as result

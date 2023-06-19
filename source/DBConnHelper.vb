@@ -60,7 +60,7 @@ Public Class DBConnHelper
             If InStr(1, dbsheetConnString, dbPwdSpec) > 0 And dbPwdSpec <> "" Then
                 If Strings.Len(existingPwd) > 0 Then
                     If InStr(1, dbsheetConnString, dbPwdSpec) > 0 Then
-                        dbsheetConnString = Globals.Change(dbsheetConnString, dbPwdSpec, existingPwd, ";")
+                        dbsheetConnString = Change(dbsheetConnString, dbPwdSpec, existingPwd, ";")
                     Else
                         dbsheetConnString = dbsheetConnString + ";" + dbPwdSpec + existingPwd
                     End If
@@ -71,16 +71,16 @@ Public Class DBConnHelper
             ' add database name to connection string, needed for schema retrieval!!!
             If databaseName <> "" Then
                 If InStr(1, dbsheetConnString.ToUpper, dbidentifier.ToUpper) > 0 Then
-                    dbsheetConnString = Globals.Change(dbsheetConnString, dbidentifier, databaseName, ";")
+                    dbsheetConnString = Change(dbsheetConnString, dbidentifier, databaseName, ";")
                 Else
                     dbsheetConnString = dbsheetConnString + ";" + dbidentifier + databaseName
                 End If
             End If
             ' need to change/set the connection timeout in the connection string as the property is readonly then...
             If InStr(dbsheetConnString, "Connection Timeout=") > 0 Then
-                dbsheetConnString = Globals.Change(dbsheetConnString, "Connection Timeout=", CnnTimeout.ToString(), ";")
+                dbsheetConnString = Change(dbsheetConnString, "Connection Timeout=", CnnTimeout.ToString(), ";")
             ElseIf InStr(dbsheetConnString, "Connect Timeout=") > 0 Then
-                dbsheetConnString = Globals.Change(dbsheetConnString, "Connect Timeout=", CnnTimeout.ToString(), ";")
+                dbsheetConnString = Change(dbsheetConnString, "Connect Timeout=", CnnTimeout.ToString(), ";")
             Else
                 dbsheetConnString += ";Connection Timeout=" + CnnTimeout.ToString()
             End If
@@ -89,11 +89,11 @@ Public Class DBConnHelper
         Try
             If Not usedForDBSheetCreate And (InStr(dbsheetConnString.ToLower, "provider=sqloledb") Or InStr(dbsheetConnString.ToLower, "driver=sql server")) Then
                 ' ADO.NET doesn't like provider= and driver= 
-                If Globals.fetchSubstr(dbsheetConnString, "provider=", ";", True) <> "" Then
-                    correctConnString = Replace(dbsheetConnString, Globals.fetchSubstr(dbsheetConnString, "provider=", ";", True) + ";", "")
+                If fetchSubstr(dbsheetConnString, "provider=", ";", True) <> "" Then
+                    correctConnString = Replace(dbsheetConnString, fetchSubstr(dbsheetConnString, "provider=", ";", True) + ";", "")
                 End If
-                If Globals.fetchSubstr(correctConnString, "driver=", ";", True) <> "" Then
-                    correctConnString = Replace(correctConnString, Globals.fetchSubstr(correctConnString, "driver=", ";", True) + ";", "")
+                If fetchSubstr(correctConnString, "driver=", ";", True) <> "" Then
+                    correctConnString = Replace(correctConnString, fetchSubstr(correctConnString, "driver=", ";", True) + ";", "")
                 End If
                 dbshcnn = New SqlConnection(correctConnString)
             ElseIf Not usedForDBSheetCreate And InStr(dbsheetConnString.ToLower, "oledb") Then

@@ -164,7 +164,7 @@ Public Class DBSheetCreateForm
             Exit Sub
         End Try
         Me.Text = "DB Sheet creation: Select Database and Table to start building a DBSheet Definition"
-        Database.SelectedIndex = Database.Items.IndexOf(Globals.fetchSubstr(myDBConnHelper.dbsheetConnString, myDBConnHelper.dbidentifier, ";"))
+        Database.SelectedIndex = Database.Items.IndexOf(fetchSubstr(myDBConnHelper.dbsheetConnString, myDBConnHelper.dbidentifier, ";"))
         'initialization of everything else is triggered by above change and caught by Database_SelectedIndexChanged
     End Sub
 
@@ -780,9 +780,9 @@ Public Class DBSheetCreateForm
                     End If
                     Dim theTable As String = "T" + tableCounter.ToString()
                     ' either we go for the whole part after the last join
-                    Dim completeJoin As String = Globals.fetchSubstr(lookupStr, "JOIN ", "")
+                    Dim completeJoin As String = fetchSubstr(lookupStr, "JOIN ", "")
                     ' or we have a simple WHERE and just "AND" it to the created join
-                    Dim addRestrict As String = quotedReplace(Globals.fetchSubstr(lookupStr, "WHERE ", ""), "T" + tableCounter.ToString())
+                    Dim addRestrict As String = quotedReplace(fetchSubstr(lookupStr, "WHERE ", ""), "T" + tableCounter.ToString())
 
                     ' remove any ORDER BY clause from additional restrict...
                     Dim restrPos As Integer = addRestrict.ToUpper().LastIndexOf(" ORDER") + 1
@@ -810,7 +810,7 @@ Public Class DBSheetCreateForm
                         fromStr += " LEFT JOIN " + vbCrLf + completeJoin
                     End If
 
-                    selectPart = Globals.fetchSubstr(lookupStr, "SELECT ", " FROM ").Trim()
+                    selectPart = fetchSubstr(lookupStr, "SELECT ", " FROM ").Trim()
                     ' remove second field in lookup query's select clause
                     restrPos = selectPart.LastIndexOf(",") + 1
                     selectPart = selectPart.Substring(0, Math.Min(restrPos - 1, selectPart.Length))
@@ -901,7 +901,7 @@ Public Class DBSheetCreateForm
             Preview.Cells(1, 2).Value = theQueryText
             Preview.Cells(1, 2).WrapText = False
             ' create a DBListFetch with the query 
-            Globals.createFunctionsInCells(Preview.Cells(1, 1), {"RC", "=DBListFetch(RC[1], """", R[1]C,,,True)"})
+            createFunctionsInCells(Preview.Cells(1, 1), {"RC", "=DBListFetch(RC[1], """", R[1]C,,,True)"})
             newWB.Saved = True
             If isLookupQuery Then
                 Preview.Name = "TESTSHEET"

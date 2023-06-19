@@ -2,11 +2,12 @@
 Imports Microsoft.Office.Interop
 Imports System.Collections.Generic
 Imports System.Configuration
-Imports System.Diagnostics
 
 ''' <summary>Global variables and functions for DB Addin</summary>
 Public Module SettingsTools
     ' Global settings
+    ''' <summary>currently selected environment for DB Functions, zero based (env -1) !!</summary>
+    Public selectedEnvironment As Integer
     ''' <summary>environment definitions</summary>
     Public environdefs As String()
     ''' <summary>Default ConnectionString, if no connection string is given by user....</summary>
@@ -80,7 +81,7 @@ Public Module SettingsTools
     ''' <summary>environment for settings (+1 of selected Environment which is the index of the dropdown, if baseZero is set then simply the index)</summary>
     ''' <returns></returns>
     Public Function env(Optional baseZero As Boolean = False) As String
-        Return (Globals.selectedEnvironment + IIf(baseZero, 0, 1)).ToString()
+        Return (selectedEnvironment + IIf(baseZero, 0, 1)).ToString()
     End Function
 
     ''' <summary>initializes global configuration variables</summary>

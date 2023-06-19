@@ -113,7 +113,7 @@ Public Module DBSheetConfig
             Dim selectPartModif As String = selectPart ' select part with appending LU to lookups
             If lookupsList IsNot Nothing Then
                 ' get existing sheet DBSheetLookups, if it doesn't exist create it anew
-                If Not Globals.existsSheet("DBSheetLookups", ExcelDnaUtil.Application.ActiveWorkbook) Then
+                If Not existsSheet("DBSheetLookups", ExcelDnaUtil.Application.ActiveWorkbook) Then
                     lookupWS = ExcelDnaUtil.Application.ActiveWorkbook.Worksheets.Add()
                     lookupWS.Name = "DBSheetLookups"
                 Else
@@ -126,7 +126,7 @@ Public Module DBSheetConfig
                     Dim LookupQuery As String = Replace(getEntry("lookup", LookupDef, 1), tblPlaceHolder, "LT")
                     Dim lookupName As String = Replace(getEntry("name", LookupDef, 1), specialNonNullableChar, "")
                     Dim lookupRangeName As String = tableName + lookupName + "Lookup"
-                    If Globals.existsName(lookupRangeName) Then
+                    If existsName(lookupRangeName) Then
                         ' overwrite existing lookup with warning...
                         lookupCol = lookupWS.Range(lookupRangeName).Column
                     Else
@@ -163,10 +163,10 @@ Public Module DBSheetConfig
                         lookupWS.Cells(1, lookupCol + 1).Value = LookupQuery
                         lookupWS.Cells(1, lookupCol + 1).WrapText = False
                         ' only create name and dblistfetch if lookup doesn't already exist!
-                        If Not Globals.existsName(lookupRangeName) Then
+                        If Not existsName(lookupRangeName) Then
                             lookupWS.Cells(2, lookupCol).Name = lookupRangeName
                             ' then create the DBListFetch with the lookup query
-                            Globals.createFunctionsInCells(lookupWS.Cells(1, lookupCol), {"RC", "=DBListFetch(RC[1],""""," + lookupRangeName + ")"})
+                            createFunctionsInCells(lookupWS.Cells(1, lookupCol), {"RC", "=DBListFetch(RC[1],""""," + lookupRangeName + ")"})
                         Else
                             LogWarn("DB Sheet Lookup " + lookupRangeName + " already exists in " + lookupWS.Range(lookupRangeName).Address + ", check if this is really the correct one !")
                         End If
@@ -181,7 +181,7 @@ Public Module DBSheetConfig
                             ' add the name, so there is something in the top row (for moving to right...
                             lookupWS.Cells(1, lookupCol).Value = lookupRangeName
                             ' only create name and dblistfetch if lookup doesn't already exist!
-                            If Not Globals.existsName(lookupRangeName) Then
+                            If Not existsName(lookupRangeName) Then
                                 ' fixed value lookups have only one column
                                 lookupWS.Range(lookupWS.Cells(2, lookupCol), lookupWS.Cells(2 + lrow - 1, lookupCol)).Name = lookupRangeName
                             Else
@@ -191,9 +191,9 @@ Public Module DBSheetConfig
                             lookupWS.Cells(1, lookupCol + 1).Value = LookupQuery
                             lookupWS.Cells(1, lookupCol + 1).WrapText = False
                             ' only create name and dblistfetch if lookup doesn't already exist!
-                            If Not Globals.existsName(lookupRangeName) Then
+                            If Not existsName(lookupRangeName) Then
                                 lookupWS.Cells(2, lookupCol).Name = lookupRangeName
-                                Globals.createFunctionsInCells(lookupWS.Cells(1, lookupCol), {"RC", "=DBListFetch(RC[1],""""," + lookupRangeName + ")"})
+                                createFunctionsInCells(lookupWS.Cells(1, lookupCol), {"RC", "=DBListFetch(RC[1],""""," + lookupRangeName + ")"})
                             Else
                                 LogWarn("DB Sheet Lookup " + lookupRangeName + " already exists in " + lookupWS.Range(lookupRangeName).Address + ", check if this is really the correct one !")
                             End If
@@ -217,7 +217,7 @@ Public Module DBSheetConfig
                     Exit Sub
                 End Try
             Else
-                createdListObject = Globals.createListObject(curCell)
+                createdListObject = createListObject(curCell)
                 If createdListObject Is Nothing Then Exit Sub
             End If
             With curCell
@@ -247,7 +247,7 @@ Public Module DBSheetConfig
             If existingName <> "" Then
                 createdListObject.QueryTable.PreserveColumnInfo = False
             Else
-                Globals.createFunctionsInCells(curCell, {"RC", "=DBSetQuery(R[1]C,"""",RC[1])"})
+                createFunctionsInCells(curCell, {"RC", "=DBSetQuery(R[1]C,"""",RC[1])"})
             End If
             ' finish creation in async called function (need to have the results from the above createFunctionsInCells/invocations)
             ExcelAsyncUtil.QueueAsMacro(Sub()
@@ -458,9 +458,9 @@ Public Module DBSheetConfig
         createdListObject.ListColumns.Item(1).Range.Offset(0, -1).HorizontalAlignment = Excel.XlHAlign.xlHAlignRight
 
         ' extend Data range for new DBMappers immediately after definition...
-        DirectCast(Globals.DBModifDefColl("DBMapper").Item("DBMapper" + tableName), DBMapper).extendDataRange()
+        DirectCast(DBModifDefColl("DBMapper").Item("DBMapper" + tableName), DBMapper).extendDataRange()
         ' switch back to DBAddin tab for easier handling...
-        Globals.theRibbon.ActivateTab("DBaddinTab")
+        theRibbon.ActivateTab("DBaddinTab")
         curCell.Select()
         If whereClauseStart >= 0 Then
             UserMsg("Attention: A where clause was defined for this DBSheet, you need to extend the DBSetQuery function's Query argument in cell " + curCell.Address + "!", "DBSheet Creation")

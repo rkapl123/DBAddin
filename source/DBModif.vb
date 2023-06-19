@@ -158,7 +158,7 @@ Public MustInherit Class DBModif
         Dim setEnv As Integer = getEnv()
         If DBSequenceEnv = "" Then
             ' if Environment is not existing (default environment = 0), take from selectedEnvironment
-            If setEnv = 0 Then setEnv = Globals.selectedEnvironment + 1
+            If setEnv = 0 Then setEnv = selectedEnvironment + 1
         Else
             ' if Environment is not existing (default environment = 0), take from sequence environment
             If setEnv = 0 Then
@@ -244,17 +244,17 @@ Public MustInherit Class DBModif
             Dim functionFormula As String = ExcelDnaUtil.Application.Range(srcExtent).Formula
             If UCase(Left(functionFormula, 12)) = "=DBLISTFETCH" Then
                 LogInfo("Refresh DBListFetch: " + callID)
-                Dim functionArgs = Globals.functionSplit(functionFormula, ",", """", "DBListFetch", "(", ")")
+                Dim functionArgs = functionSplit(functionFormula, ",", """", "DBListFetch", "(", ")")
                 If functionArgs.Length() < 3 Then
-                    functionArgs = Globals.functionSplit(functionFormula, listSepLocal, """", "DBListFetch", "(", ")")
+                    functionArgs = functionSplit(functionFormula, listSepLocal, """", "DBListFetch", "(", ")")
                 End If
                 Dim targetRangeName As String : targetRangeName = functionArgs(2)
                 ' check if fetched argument targetRangeName is really a name or just a plain range address
-                If Not Globals.existsNameInWb(targetRangeName, caller.Parent.Parent) And Not Globals.existsNameInSheet(targetRangeName, caller.Parent) Then targetRangeName = ""
+                If Not existsNameInWb(targetRangeName, caller.Parent.Parent) And Not existsNameInSheet(targetRangeName, caller.Parent) Then targetRangeName = ""
                 Dim formulaRangeName As String
                 If UBound(functionArgs) > 2 Then
                     formulaRangeName = functionArgs(3)
-                    If Not Globals.existsNameInWb(formulaRangeName, caller.Parent.Parent) And Not Globals.existsNameInSheet(formulaRangeName, caller.Parent) Then formulaRangeName = ""
+                    If Not existsNameInWb(formulaRangeName, caller.Parent.Parent) And Not existsNameInSheet(formulaRangeName, caller.Parent) Then formulaRangeName = ""
                 Else
                     formulaRangeName = ""
                 End If
@@ -282,18 +282,18 @@ Public MustInherit Class DBModif
                 DBListFetchAction(callID, getQuery(functionArgs(0), caller), caller, target, getConnString(functionArgs(1), caller, False), formulaRange, extendDataArea, HeaderInfo, AutoFit, autoformat, ShowRowNums, targetRangeName, formulaRangeName)
             ElseIf UCase(Left(functionFormula, 11)) = "=DBSETQUERY" Then
                 LogInfo("Refresh DBSetQuery: " + callID)
-                Dim functionArgs = Globals.functionSplit(functionFormula, ",", """", "DBSetQuery", "(", ")")
+                Dim functionArgs = functionSplit(functionFormula, ",", """", "DBSetQuery", "(", ")")
                 If functionArgs.Length() < 3 Then
-                    functionArgs = Globals.functionSplit(functionFormula, listSepLocal, """", "DBSetQuery", "(", ")")
+                    functionArgs = functionSplit(functionFormula, listSepLocal, """", "DBSetQuery", "(", ")")
                 End If
                 Dim targetRangeName As String : targetRangeName = functionArgs(2)
                 If UBound(functionArgs) = 3 Then targetRangeName += "," + functionArgs(3)
                 Functions.DBSetQueryAction(callID, getQuery(functionArgs(0), caller), target, getConnString(functionArgs(1), caller, True), caller, targetRangeName)
             ElseIf UCase(Left(functionFormula, 11)) = "=DBROWFETCH" Then
                 LogInfo("Refresh DBRowFetch: " + callID)
-                Dim functionArgs = Globals.functionSplit(functionFormula, ",", """", "DBRowFetch", "(", ")")
+                Dim functionArgs = functionSplit(functionFormula, ",", """", "DBRowFetch", "(", ")")
                 If functionArgs.Length() < 3 Then
-                    functionArgs = Globals.functionSplit(functionFormula, listSepLocal, """", "DBRowFetch", "(", ")")
+                    functionArgs = functionSplit(functionFormula, listSepLocal, """", "DBRowFetch", "(", ")")
                 End If
                 Dim HeaderInfo As Boolean = False
                 Dim tempArray() As Excel.Range = Nothing
@@ -364,7 +364,7 @@ Public MustInherit Class DBModif
         If Integer.TryParse(ConnString, testInt) Then
             ConnString = Convert.ToDouble(testInt)
         End If
-        Globals.resolveConnstring(ConnString, EnvPrefix, getConnStrForDBSet)
+        resolveConnstring(ConnString, EnvPrefix, getConnStrForDBSet)
         getConnString = CStr(ConnString)
     End Function
 End Class
@@ -410,7 +410,7 @@ Public Class DBMapper : Inherits DBModif
         Dim paramText As String = paramDefs
         TargetRange = paramTarget
 
-        Dim DBModifParams() As String = Globals.functionSplit(paramText, ",", """", "def", "(", ")")
+        Dim DBModifParams() As String = functionSplit(paramText, ",", """", "def", "(", ")")
         If DBModifParams Is Nothing Then Exit Sub
         ' check for completeness
         If DBModifParams.Length < 4 Then
@@ -1412,7 +1412,8 @@ End Class
 
 ''' <summary>global helper functions for DBModifiers</summary>
 Public Module DBModifs
-
+    ''' <summary>DBModif definition collections of DBmodif types (key of top level dictionary) with values being collections of DBModifierNames (key of contained dictionaries) and DBModifiers (value of contained dictionaries))</summary>
+    Public DBModifDefColl As Dictionary(Of String, Dictionary(Of String, DBModif))
     ''' <summary>main db connection for DB modifiers</summary>
     Public idbcnn As System.Data.IDbConnection
     ''' <summary>avoid entering Application.SheetChange Event handler during listfetch/setquery</summary>
@@ -1475,12 +1476,12 @@ Public Module DBModifs
             Exit Function
         End If
         ' change the database in the connection string
-        theConnString = Globals.Change(theConnString, dbidentifier, database, ";")
+        theConnString = Change(theConnString, dbidentifier, database, ";")
         ' need to change/set the connection timeout in the connection string as the property is readonly then...
         If InStr(theConnString, "Connection Timeout=") > 0 Then
-            theConnString = Globals.Change(theConnString, "Connection Timeout=", CnnTimeout.ToString(), ";")
+            theConnString = Change(theConnString, "Connection Timeout=", CnnTimeout.ToString(), ";")
         ElseIf InStr(theConnString, "Connect Timeout=") > 0 Then
-            theConnString = Globals.Change(theConnString, "Connect Timeout=", CnnTimeout.ToString(), ";")
+            theConnString = Change(theConnString, "Connect Timeout=", CnnTimeout.ToString(), ";")
         Else
             theConnString += ";Connection Timeout=" + CnnTimeout.ToString()
         End If
@@ -1535,7 +1536,7 @@ Public Module DBModifs
                 End Try
                 ' pass the associated DBMapper the new target range
                 Try
-                    Dim extendedMapper As DBMapper = Globals.DBModifDefColl("DBMapper").Item(dbMapperRangeName)
+                    Dim extendedMapper As DBMapper = DBModifDefColl("DBMapper").Item(dbMapperRangeName)
                     extendedMapper.setTargetRange(theRange)
                 Catch ex As Exception
                     Throw New Exception("Error passing new Range to the associated DBMapper object when extending '" + dbMapperRangeName + "' to DBListFetch/DBSetQuery target range: " + ex.Message)
@@ -1821,7 +1822,7 @@ Public Module DBModifs
             getDBModifDefinitions()
             ' extend Data-range for new DBMappers immediately after definition...
             If createdDBModifType = "DBMapper" Then
-                DirectCast(Globals.DBModifDefColl("DBMapper").Item(createdDBModifType + .DBModifName.Text), DBMapper).extendDataRange()
+                DirectCast(DBModifDefColl("DBMapper").Item(createdDBModifType + .DBModifName.Text), DBMapper).extendDataRange()
             End If
 
         End With
@@ -1837,7 +1838,7 @@ Public Module DBModifs
         ' load DBModifier definitions (objects) into Global collection DBModifDefColl
         LogInfo("reading DBModifier Definitions for Workbook: " + ExcelDnaUtil.Application.ActiveWorkbook.Name)
         Try
-            Globals.DBModifDefColl.Clear()
+            DBModifDefColl.Clear()
             Dim CustomXmlParts As Object = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
             If CustomXmlParts.Count = 1 Then
                 ' read DBModifier definitions from CustomXMLParts
@@ -1926,7 +1927,7 @@ EndOuterLoop:
             ElseIf CustomXmlParts.Count > 1 Then
                 UserMsg("Multiple CustomXmlParts for DBModifDef existing!", IIf(onlyCheck, "check", "get") + " DBModif Definitions")
             End If
-            Globals.theRibbon.Invalidate()
+            theRibbon.Invalidate()
         Catch ex As Exception
             UserMsg("Exception in getting DB Modifier Definitions: " + ex.Message, "DBModifier Definitions Error")
         End Try
@@ -2002,14 +2003,14 @@ EndOuterLoop:
         nonInteractiveErrMsgs = "" ' reset non-interactive messages
         Dim DBModiftype As String = Left(DBModifName, 8)
         If DBModiftype = "DBSeqnce" Or DBModiftype = "DBMapper" Or DBModiftype = "DBAction" Then
-            If Not Globals.DBModifDefColl(DBModiftype).ContainsKey(DBModifName) Then
-                If Globals.DBModifDefColl(DBModiftype).Count = 0 Then
+            If Not DBModifDefColl(DBModiftype).ContainsKey(DBModifName) Then
+                If DBModifDefColl(DBModiftype).Count = 0 Then
                     nonInteractive = False
                     Return "No DBModifier contained in Workbook at all!"
                 End If
                 Dim DBModifavailable As String = ""
                 For Each DBMtype As String In {"DBMapper", "DBAction", "DBSeqnce"}
-                    For Each DBMkey As String In Globals.DBModifDefColl(DBMtype).Keys
+                    For Each DBMkey As String In DBModifDefColl(DBMtype).Keys
                         DBModifavailable += "," + DBMkey
                     Next
                 Next
@@ -2018,7 +2019,7 @@ EndOuterLoop:
             End If
             LogInfo("Doing DBModifier '" + DBModifName + "' ...")
             Try
-                Globals.DBModifDefColl(DBModiftype).Item(DBModifName).doDBModif()
+                DBModifDefColl(DBModiftype).Item(DBModifName).doDBModif()
             Catch ex As Exception
                 nonInteractive = False
                 Return "DB Modifier '" + DBModifName + "' doDBModif had following error(s): " + ex.Message
@@ -2036,7 +2037,7 @@ EndOuterLoop:
     <ExcelCommand(Name:="deleteRow", ShortCut:="^D")>
     Public Sub deleteRow()
         Dim targetName As String = getDBModifNameFromRange(ExcelDnaUtil.Application.Selection)
-        If Left(targetName, 8) = "DBMapper" Then DirectCast(Globals.DBModifDefColl("DBMapper").Item(targetName), DBMapper).insertCUDMarks(ExcelDnaUtil.Application.Selection, deleteFlag:=True)
+        If Left(targetName, 8) = "DBMapper" Then DirectCast(DBModifDefColl("DBMapper").Item(targetName), DBMapper).insertCUDMarks(ExcelDnaUtil.Application.Selection, deleteFlag:=True)
     End Sub
 
     ''' <summary>inserts a row in a DBMapper, used as a ExcelCommand to have a keyboard shortcut</summary>
@@ -2045,7 +2046,7 @@ EndOuterLoop:
         Dim targetName As String = getDBModifNameFromRange(ExcelDnaUtil.Application.Selection)
         If Left(targetName, 8) = "DBMapper" Then
             ' get the target range for the DBMapper to get the ListObject
-            Dim insertTarget As Excel.Range = DirectCast(Globals.DBModifDefColl("DBMapper").Item(targetName), DBMapper).getTargetRange
+            Dim insertTarget As Excel.Range = DirectCast(DBModifDefColl("DBMapper").Item(targetName), DBMapper).getTargetRange
             ' calculate insert row from selection and top row of insert target
             Dim insertRow As Integer = ExcelDnaUtil.Application.Selection.Row - insertTarget.Row
             ' just add a row to the ListObject, the rest (shifting down existing CUD Marks and adding "i") is being taken care of the Application_SheetChange event procedure and the insertCUDMarks method
