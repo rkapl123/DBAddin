@@ -433,8 +433,14 @@ done:
 
     ''' <summary>use Application_AfterCalculate to overcome the problem of auto-fitting formula ranges AFTER calculation (final column width is not available in dblistfetchAction procedure)</summary>
     Private Sub Application_AfterCalculate() Handles Application.AfterCalculate
+        Dim actWbNames As Excel.Names
+        Try : actWbNames = ExcelDnaUtil.Application.ActiveWorkbook.Names : Catch ex As Exception
+            LogWarn("Exception when trying to get the active workbook names: " + ex.Message + ", this might be either due to errors in the VBA-IDE (missing references) or due to opening this workbook from an MS-Office hyperlink, starting up Excel (timing issue). Switch to another workbook and back to fix.")
+            Exit Sub
+        End Try
+
         Try
-            For Each nm As Excel.Name In ExcelDnaUtil.Application.ActiveWorkbook.Names
+            For Each nm As Excel.Name In actWbNames
                 ' look only for formula target ranges
                 If Left$(nm.Name, 10) = "DBFtargetF" Then
                     ' get to the source cell to look up info in the StatusCollection

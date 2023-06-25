@@ -1,4 +1,3 @@
-addOLEDBprefix + env
 AdHocSQLTransferType
 AdHocSQLcmdDB + AdHocSQLStringsIndex
 AdHocSQLcmdEnv + AdHocSQLStringsIndex

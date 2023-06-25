@@ -165,6 +165,26 @@ All three concatenation functions (chainCells, concatCells and concatCellsSep) w
 
 Both `concatCells` and `concatCellsSep` have a "Text" sibling that essentially does the same, except that it concatenates the displayed Values, not the true Values. So if you want to concatenate what you see, then `concatCellsText` and `concatCellsSepText` are the functions you need.
 
+#### currentWorkbook
+
+<pre lang="vb">currentWorkbook(onlyPath)</pre>
+
+currentWorkbook gets current Workbook path + filename or Workbook path only, if onlyPath is set. This can be used in connection string construction of Excel Queries:
+
+<pre lang="vb">DBListFetch("Select l.*,r.* FROM [Table1$A:B] l LEFT JOIN [Table1$E:F] r ON l.Col1=r.ColA";"ODBC;Driver={Microsoft Excel Driver (*.xls, *.xlsx, *.xlsm, *.xlsb)};DBQ="&currentWorkbook();K2)</pre>
+
+#### DBAddinEnvironment
+
+<pre lang="vb">DBAddinEnvironment()</pre>
+
+DBAddinEnvironment gets the current selected Environment (name) for DB Functions.
+
+#### DBAddinSetting
+
+<pre lang="vb">DBAddinSetting(keyword)</pre>
+
+DBAddinSetting gets the settings as given in keyword (e.g. SERVER=) in the connection string of the currently selected Environment for DB Functions. If no keyword is passed, then the whole connection string is returned in a warning message.
+
 #### DBinClause
 
 <pre lang="vbnet">DBinClause(ParameterList)</pre>

@@ -193,7 +193,7 @@ Public Module Functions
     ''' <returns>the powerquery #date function</returns>
     <ExcelFunction(Description:="Create powerquery compliant #date, #time or #datetime function from excel date type value")>
     Public Function PQDate(<ExcelArgument(Description:="date/time/datetime")> ByVal DatePart As Object,
-                           <ExcelArgument(Description:="enforce dateteime for date only values (without fractional part)")> Optional forceDateTime As Boolean = False) As String
+                           <ExcelArgument(Description:="enforce datetime for date only values (without fractional part)")> Optional forceDateTime As Boolean = False) As String
         PQDate = ""
         Try
             If TypeName(DatePart) = "Object(,)" Then
@@ -291,6 +291,18 @@ Public Module Functions
     <ExcelFunction(Description:="chains values contained in chainPart together with commas, mainly used for creating select header")>
     Public Function chainCells(<ExcelArgument(AllowReference:=True, Description:="range where values should be chained")> ParamArray chainPart As Object()) As String
         chainCells = DoConcatCellsSep(",", False, False, False, chainPart)
+    End Function
+
+    ''' <summary>get current Workbook path + filename or Workbook path only, if onlyPath is set</summary>
+    ''' <param name="onlyPath">only path of file location?</param>
+    ''' <returns>current Workbook path + filename or Workbook path only</returns>
+    <ExcelFunction(Description:="get current Workbook path + filename or Workbook path only, if onlyPath is set")>
+    Public Function currentWorkbook(<ExcelArgument(Description:="only path of file location?")> Optional onlyPath As Boolean = False) As String
+        If onlyPath Then
+            currentWorkbook = ExcelDnaUtil.Application.ActiveWorkbook.Path + "\"
+        Else
+            currentWorkbook = ExcelDnaUtil.Application.ActiveWorkbook.Path + "\" + ExcelDnaUtil.Application.ActiveWorkbook.Name
+        End If
     End Function
 
     ''' <summary>private function that actually concatenates values contained in Object array concatParts together (either using .text or .value for cells in concatParts) using a separator</summary>
@@ -411,10 +423,10 @@ Public Module Functions
 
     ''' <summary>set Query parameters (query text and connection string) of Query List or pivot table (incl. chart)</summary>
     ''' <param name="callID">the key for the statusMsg container</param>
-    ''' <param name="Query"></param>
-    ''' <param name="targetRange"></param>
-    ''' <param name="ConnString"></param>
-    ''' <param name="caller"></param>
+    ''' <param name="Query">query for getting data</param>
+    ''' <param name="targetRange">Range with Object beneath to put the Query/ConnString into</param>
+    ''' <param name="ConnString">connection string defining DB, user, etc...</param>
+    ''' <param name="caller">calling range passed by Action procedure</param>
     ''' <param name="targetRangeName"></param>
     Sub DBSetQueryAction(callID As String, Query As String, targetRange As Object, ConnString As String, caller As Excel.Range, targetRangeName As String)
         Dim TargetCell As Excel.Range
@@ -567,7 +579,7 @@ Public Module Functions
     End Sub
 
     ''' <summary>Stores a query into an powerquery defined by queryName</summary>
-    ''' <param name="Query">query for getting data</param>
+    ''' <param name="Query">(power) query for getting data</param>
     ''' <param name="queryName">powerquery name</param>
     ''' <returns>Status Message</returns>
     <ExcelFunction(Description:="Stores a query into a power query object defined in queryName")>
@@ -609,9 +621,9 @@ Public Module Functions
 
     ''' <summary>set Query parameters (query text and connection string) of Query List or pivot table (incl. chart)</summary>
     ''' <param name="callID">the key for the statusMsg container</param>
-    ''' <param name="Query"></param>
-    ''' <param name="caller"></param>
-    ''' <param name="queryName"></param>
+    ''' <param name="Query">(power) query for getting data</param>
+    ''' <param name="caller">calling range passed by Action procedure</param>
+    ''' <param name="queryName">Name of Powerquery where query should be set</param>
     Sub DBSetPowerQueryAction(callID As String, Query As String, caller As Excel.Range, queryName As String)
         Dim targetWB As Excel.Workbook = caller.Parent.Parent
         If avoidRequeryDuringEdit Then Exit Sub
@@ -635,10 +647,10 @@ Public Module Functions
     End Sub
 
     ''' <summary>common for DBListFetch, DBRowFetch and DBSetQuery Action procedures, setting the Extent Names at the beginning</summary>
-    ''' <param name="caller"></param>
-    ''' <param name="srcExtent"></param>
-    ''' <param name="targetExtent"></param>
-    ''' <param name="targetExtentF"></param>
+    ''' <param name="caller">calling range passed by Action procedure</param>
+    ''' <param name="srcExtent">by ref returned source range extent (place of db function) name</param>
+    ''' <param name="targetExtent">by ref returned target range extent (place of results) name</param>
+    ''' <param name="targetExtentF">by ref returned target formula range extent (place of formulas automatically extended with data) name</param>
     ''' <returns>error message in case of error, or empty if none</returns>
     Private Function setExtents(caller As Excel.Range, ByRef srcExtent As String, ByRef targetExtent As String, Optional ByRef targetExtentF As String = "") As String
         On Error Resume Next
@@ -663,6 +675,7 @@ Public Module Functions
     ''' <param name="scrnUpdate">reset ScreenUpdating to this</param>
     ''' <param name="additionalLogInfo">for logging purpose</param>
     Private Sub finishAction(calcMode As Excel.XlCalculation, callID As String, scrnUpdate As Boolean, Optional additionalLogInfo As String = "")
+        On Error Resume Next
         DBModifs.preventChangeWhileFetching = False
         ExcelDnaUtil.Application.Cursor = Excel.XlMousePointer.xlDefault  ' To return cursor to normal
         ExcelDnaUtil.Application.StatusBar = False
@@ -841,10 +854,9 @@ Public Module Functions
         If formulaRange IsNot Nothing Then
             If targetSH Is formulaSH And formulaRange.Column = startCol + oldCols Then additionalFormulaColumns = formulaRange.Columns.Count
         End If
-        Dim oldTotalTargetRange As Excel.Range = targetRange
-        If additionalFormulaColumns > 0 Then
-            oldTotalTargetRange = targetSH.Range(targetSH.Cells(startRow, startCol), targetSH.Cells(startRow + oldRows - 1, startCol + oldCols + additionalFormulaColumns))
-        End If
+        ' used for resizing potential DBMapper under DBListfetch TargetRange
+        Dim oldTotalTargetRange As Excel.Range = Nothing
+        Try : oldTotalTargetRange = targetSH.Range(targetSH.Cells(startRow, startCol), targetSH.Cells(startRow + oldRows - 1, startCol + oldCols + additionalFormulaColumns - 1)) : Catch ex As Exception : End Try
 
         ' clear old formulas
         Dim oldFRows, oldFCols As Integer
@@ -874,15 +886,8 @@ Public Module Functions
                 ConnString = Left$(ConnString, InStr(1, UCase$(ConnString), ";ODBC;") - 1)
             End If
         End If
-        If fetchSetting("addOLEDBprefix" + env(), "false") = "true" Then
-            ConnString = "OLEDB;" + ConnString
-        End If
-
-        Dim aborted As Boolean = XlCall.Excel(XlCall.xlAbort) ' for long running actions, allow interruption
-        If aborted Then
-            errMsg = "data fetching interrupted by user !"
-            GoTo err
-        End If
+        ' for oledb drivers add OLEDB; in front, excel ms query needs that!
+        If InStr(1, UCase$(ConnString), "OLEDB") > 0 AndAlso Left(UCase$(ConnString), 6) <> "OLEDB;" Then ConnString = "OLEDB;" + ConnString
 
         ' from now on we don't propagate any errors as data is modified in sheet....
         ExcelDnaUtil.Application.StatusBar = "Displaying data for DBList: " + If(targetRangeName.Length > 0, targetRangeName, targetSH.Name + "!" + targetRange.Address)
@@ -1424,15 +1429,15 @@ err:    If errMsg.Length = 0 Then errMsg = Err.Description + " in query: " + Que
         End Try
     End Function
 
-    ''' <summary>Get the server settings for the currently selected Environment for DB Functions</summary>
+    ''' <summary>Get the settings as given in keyword (e.g. SERVER=) for the currently selected Environment for DB Functions</summary>
     ''' <returns>Server part from connection string of environment</returns>
     <ExcelFunction(Description:="Get the settings as given in keyword (e.g. SERVER=) for the currently selected Environment for DB Functions")>
     Public Function DBAddinSetting(<ExcelArgument(Description:="keyword for setting to get")> keyword As Object) As String
         ExcelDnaUtil.Application.Volatile()
         Try
             Dim theConnString As String = fetchSetting("ConstConnString" + env(), "")
-            If TypeName(keyword) = "ExcelMissing" Or TypeName(keyword) = "ExcelEmpty" Then
-                DBAddinSetting = "No Argument was given to search in connection string of current environment: " + theConnString
+            If TypeName(keyword) = "ExcelMissing" Or TypeName(keyword) = "ExcelEmpty" Or keyword.ToString() = "" Then
+                DBAddinSetting = "No keyword, returning whole connection string of current environment: " + theConnString
             Else
                 Dim keywordstart As Integer = InStr(1, UCase(theConnString), UCase(keyword.ToString()))
                 If keywordstart > 0 Then
@@ -1480,11 +1485,8 @@ err:    If errMsg.Length = 0 Then errMsg = Err.Description + " in query: " + Que
             If TypeName(Query) = "ExcelEmpty" Then
                 checkParamsAndCache = "empty query provided !"
             ElseIf Left(TypeName(Query), 10) = "ExcelError" Then
-                If Query = ExcelError.ExcelErrorValue Then
-                    checkParamsAndCache = "query contains: #Val! (in case query is an argument of a DBfunction, check if it's > 255 chars)"
-                Else
-                    checkParamsAndCache = "query contains: #" + Replace(Query.ToString(), "ExcelError", "") + "!"
-                End If
+                checkParamsAndCache = "query contains: #" + Replace(Query.ToString(), "ExcelError", "")
+                If Query = ExcelError.ExcelErrorValue Then checkParamsAndCache += " (in case query is an argument of a DBfunction, check if it's > 255 chars)"
             ElseIf TypeName(Query) = "Object(,)" Then
                 ' if query is reference then get the query string out of it..
                 Dim myCell
@@ -1493,14 +1495,11 @@ err:    If errMsg.Length = 0 Then errMsg = Err.Description + " in query: " + Que
                     If TypeName(myCell) = "ExcelEmpty" Then
                         'do nothing here
                     ElseIf Left(TypeName(myCell), 10) = "ExcelError" Then
-                        If myCell = ExcelError.ExcelErrorValue Then
-                            checkParamsAndCache = "query contains: #Val! (in case query is an argument of a DBfunction, check if it's > 255 chars)"
-                        Else
-                            checkParamsAndCache = "query contains: #" + Replace(myCell.ToString(), "ExcelError", "") + "!"
-                        End If
+                        checkParamsAndCache = "query contains: #" + Replace(myCell.ToString(), "ExcelError", "") + "!"
+                        If myCell = ExcelError.ExcelErrorValue Then checkParamsAndCache += " (in case query is an argument of a DBfunction, check if it's > 255 chars)"
                     ElseIf IsNumeric(myCell) Then
-                        ' ConnString = "" means a query from DBSetPowerQuery, here preserve the cr-lf !
-                        retval += Convert.ToString(myCell, System.Globalization.CultureInfo.InvariantCulture) + IIf(ConnString = "", vbCrLf, " ")
+                            ' ConnString = "" means a query from DBSetPowerQuery, here preserve the cr-lf !
+                            retval += Convert.ToString(myCell, System.Globalization.CultureInfo.InvariantCulture) + IIf(ConnString = "", vbCrLf, " ")
                     Else
                         retval += myCell.ToString() + IIf(ConnString = "", vbCrLf, " ")
                     End If

@@ -375,7 +375,11 @@ Public Module DBSheetConfig
         ' remove auto-filter...
         createdListObject.ShowAutoFilter = False
         ' set DBMapper Range-name
-        Dim NamesList As Excel.Names = ExcelDnaUtil.Application.ActiveWorkbook.Names
+        Dim NamesList As Excel.Names
+        Try : NamesList = ExcelDnaUtil.Application.ActiveWorkbook.Names : Catch ex As Exception
+            LogWarn("Exception when trying to get the active workbook names: " + ex.Message + ", this might be either due to errors in the VBA-IDE (missing references) or due to opening this workbook from an MS-Office hyperlink, starting up Excel (timing issue). Switch to another workbook and back to fix.")
+            Exit Sub
+        End Try
         Dim alreadyExists As Boolean = True
         Try
             Dim testExist As String = NamesList.Item("DBMapper" + tableName).ToString()

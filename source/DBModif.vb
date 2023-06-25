@@ -66,9 +66,10 @@ Public MustInherit Class DBModif
     ''' <returns>the targetRangeAddress nicely formatted</returns>
     Public Function getTargetRangeAddress() As String
         getTargetRangeAddress = ""
-        Dim actWbNames As Excel.Names = Nothing
+        Dim actWbNames As Excel.Names
         Try : actWbNames = ExcelDnaUtil.Application.ActiveWorkbook.Names : Catch ex As Exception
-            LogWarn("Exception when trying to get the active workbook names: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
+            LogWarn("Exception when trying to get the active workbook names: " + ex.Message + ", this might be either due to errors in the VBA-IDE (missing references) or due to opening this workbook from an MS-Office hyperlink, starting up Excel (timing issue). Switch to another workbook and back to fix.")
+            Exit Function
         End Try
         If TypeName(Me) <> "DBSeqnce" Then
             Dim addRefersToFormula As String = ""
@@ -367,6 +368,7 @@ Public MustInherit Class DBModif
         resolveConnstring(ConnString, EnvPrefix, getConnStrForDBSet)
         getConnString = CStr(ConnString)
     End Function
+
 End Class
 
 ''' <summary>DBMappers are used to store a range of data in Excel to the database. A special type of DBMapper is the CUD DBMapper for realizing the former DBSheets</summary>
@@ -625,9 +627,10 @@ exitSub:
 
     ''' <summary>extend DataRange to "whole" DBMApper area (first row (header/field names) to the right and first column (first primary key) down)</summary>
     Public Sub extendDataRange()
-        Dim actWbNames As Excel.Names = Nothing
+        Dim actWbNames As Excel.Names
         Try : actWbNames = ExcelDnaUtil.Application.ActiveWorkbook.Names : Catch ex As Exception
-            LogWarn("Exception when trying to get the active workbook names: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
+            UserMsg("Exception when trying to get the active workbook names: " + ex.Message + ", this might be either due to errors in the VBA-IDE (missing references) or due to opening this workbook from an MS-Office hyperlink, starting up Excel (timing issue). Switch to another workbook and back to fix.")
+            Exit Sub
         End Try
         ' only extend like this if no CUD Flags or AutoIncFlag present (may have non existing first (primary) columns -> auto identity columns !)
         If Not (CUDFlags Or AutoIncFlag) Then
@@ -1475,6 +1478,13 @@ Public Module DBModifs
             UserMsg("No DB identifier given for environment: " + env.ToString() + ", please correct and rerun.", "Open Connection Error")
             Exit Function
         End If
+        If InStr(1, UCase$(theConnString), ";ODBC;") > 0 Then
+            If fetchSetting("preferODBCconnString" + env.ToString(), "false") = "true" Then
+                theConnString = Mid$(theConnString, InStr(1, UCase$(theConnString), ";ODBC;") + 1)
+            Else
+                theConnString = Left$(theConnString, InStr(1, UCase$(theConnString), ";ODBC;") - 1)
+            End If
+        End If
         ' change the database in the connection string
         theConnString = Change(theConnString, dbidentifier, database, ";")
         ' need to change/set the connection timeout in the connection string as the property is readonly then...
@@ -1519,9 +1529,10 @@ Public Module DBModifs
     ''' <param name="theRange">new extent after refresh of DBListFetch/DBSetQuery function</param>
     ''' <param name="oldRange">extent before refresh of DBListFetch/DBSetQuery function</param>
     Public Sub resizeDBMapperRange(theRange As Excel.Range, oldRange As Excel.Range)
-        Dim actWbNames As Excel.Names = Nothing
+        Dim actWbNames As Excel.Names
         Try : actWbNames = ExcelDnaUtil.Application.ActiveWorkbook.Names : Catch ex As Exception
-            LogWarn("Exception when trying to get the active workbook: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
+            LogWarn("Exception when trying to get the active workbook names for getting DBModifier definitions: " + ex.Message + ", this might be either due to errors in the VBA-IDE (missing references) or due to opening this workbook from an MS-Office hyperlink, starting up Excel (timing issue). Switch to another workbook and back to fix.")
+            Exit Sub
         End Try
         ' only do this for the active workbook...
         If theRange.Parent.Parent Is ExcelDnaUtil.Application.ActiveWorkbook Then
@@ -1558,11 +1569,12 @@ Public Module DBModifs
         '
         ' for saveRangeToDB(DataRange, tableNamesStr, primKeysStr, primKeyColumnsStr, startDataColumn, connid, ParamArray optionalArray())
         ' remove primKeyColumnsStr and startDataColumn before copying to clipboard...
+        If IsNothing(ExcelDnaUtil.Application.ActiveWorkbook) Then Exit Sub
         Dim actWbNames As Excel.Names = Nothing
         Try : actWbNames = ExcelDnaUtil.Application.ActiveWorkbook.Names : Catch ex As Exception
-            UserMsg("Exception when trying to get the active workbook names for creating DB Modifier: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
+            UserMsg("Exception when trying to get the active workbook names for creating DB Modifier: " + ex.Message + ", this might be either due to errors in the VBA-IDE (missing references) or due to opening this workbook from an MS-Office hyperlink, starting up Excel (timing issue). Switch to another workbook and back to fix.")
+            Exit Sub
         End Try
-        If IsNothing(ExcelDnaUtil.Application.ActiveWorkbook) Then Exit Sub
         Dim existingDBModif As DBModif = Nothing
         Dim existingDefName As String = targetDefName
         Dim createdDBMapperFromClipboard As Boolean = False
@@ -1830,9 +1842,10 @@ Public Module DBModifs
 
     ''' <summary>gets defined names for DBModifier (DBMapper/DBAction/DBSeqnce) invocation in the current workbook and updates Ribbon with it</summary>
     Public Sub getDBModifDefinitions(Optional onlyCheck As Boolean = False)
-        Dim actWbNames As Excel.Names = Nothing
+        Dim actWbNames As Excel.Names
         Try : actWbNames = ExcelDnaUtil.Application.ActiveWorkbook.Names : Catch ex As Exception
-            UserMsg("Exception when trying to get the active workbook names for getting DBModifier definitions: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
+            UserMsg("Exception when trying to get the active workbook names for getting DBModifier definitions: " + ex.Message + ", this might be either due to errors in the VBA-IDE (missing references) or due to opening this workbook from an MS-Office hyperlink, starting up Excel (timing issue). Switch to another workbook and back to fix.")
+            Exit Sub
         End Try
         If IsNothing(ExcelDnaUtil.Application.ActiveWorkbook) Then Exit Sub
         ' load DBModifier definitions (objects) into Global collection DBModifDefColl
@@ -1944,10 +1957,9 @@ EndOuterLoop:
         getDBModifNameFromRange = ""
         If theRange Is Nothing Then Exit Function
         Try : theWbNames = theRange.Parent.Parent.Names : Catch ex As Exception
-            UserMsg("Exception getting theRange's parent workbook names: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references), can't repair legacy functions.")
+            UserMsg("Exception getting the range's parent workbook names: " + ex.Message + ", this might be either due to errors in the VBA-IDE (missing references) or due to opening this workbook from an MS-Office hyperlink, starting up Excel (timing issue). Switch to another workbook and back to fix.")
             Exit Function
         End Try
-
         Try
             ' try all names in workbook
             For Each nm In theWbNames

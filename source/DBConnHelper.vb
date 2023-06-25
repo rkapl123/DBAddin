@@ -125,5 +125,12 @@ Public Class DBConnHelper
                 Exit Sub
             End If
         End If
+        If InStr(1, UCase$(dbsheetConnString), ";ODBC;") > 0 Then
+            If fetchSetting("preferODBCconnString" + DBenv, "false") = "true" Then
+                dbsheetConnString = Mid$(dbsheetConnString, InStr(1, UCase$(dbsheetConnString), ";ODBC;") + 1)
+            Else
+                dbsheetConnString = Left$(dbsheetConnString, InStr(1, UCase$(dbsheetConnString), ";ODBC;") - 1)
+            End If
+        End If
     End Sub
 End Class

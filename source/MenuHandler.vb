@@ -330,9 +330,10 @@ Public Class MenuHandler
     ''' <param name="control"></param>
     ''' <returns></returns>
     Public Function getCPropsImage(control As CustomUI.IRibbonControl) As String
-        Dim actWb As Excel.Workbook = Nothing
+        Dim actWb As Excel.Workbook
         Try : actWb = ExcelDnaUtil.Application.ActiveWorkbook : Catch ex As Exception
             LogWarn("Exception when trying to get the active workbook: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
+            Return "AcceptTask"
         End Try
         If getCustPropertyBool("DBFskip", actWb) Then
             Return "DeclineTask"
@@ -418,8 +419,7 @@ Public Class MenuHandler
             Exit Sub
         End Try
         ' only show dialog if there is a workbook and it has the relevant custom XML part.
-        If actWb IsNot Nothing AndAlso
-            actWb.CustomXMLParts.SelectByNamespace("DBModifDef").Count > 0 Then
+        If actWb IsNot Nothing AndAlso actWb.CustomXMLParts.SelectByNamespace("DBModifDef").Count > 0 Then
             Dim CustomXmlParts As Object = actWb.CustomXMLParts.SelectByNamespace("DBModifDef")
             ' check if any DBModifier exist below root node, only if at least one is defined, open dialog
             If CustomXmlParts(1).SelectNodes("/ns0:root/*").Count > 0 Then

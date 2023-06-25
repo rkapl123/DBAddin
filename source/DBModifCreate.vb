@@ -227,8 +227,8 @@ Public Class DBModifCreate
             cb.Caption = IIf(Me.DBModifName.Text = "", "Unnamed " + Me.Tag, Me.Tag + Me.DBModifName.Text)
         Catch ex As Exception
             cbshp.Delete()
-            If ex.Message.Contains("HRESULT: 0x8002802C (TYPE_E_AMBIGUOUSNAME)") Then
-                UserMsg("Can't name the new command button '" + cbName + "' as there already exists a button with that name", "CommandButton create Error")
+            If ex.Message.Contains("0x8002802C") Then
+                UserMsg("Can't name the new command button '" + cbName + "' as there already exists a button with that name: " + ex.Message, "CommandButton create Error")
             Else
                 UserMsg("Can't name command button '" + cbName + "': " + ex.Message, "CommandButton create Error")
             End If

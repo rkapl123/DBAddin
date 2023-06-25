@@ -207,7 +207,8 @@ Public Module SettingsTools
     Public Sub checkpurgeNames()
         Dim actWbNames As Excel.Names = Nothing
         Try : actWbNames = ExcelDnaUtil.Application.ActiveWorkbook.Names : Catch ex As Exception
-            UserMsg("Exception when trying to get the active workbook's names for purging names: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
+            UserMsg("Exception when trying to get the active workbook names for purging names: " + ex.Message + ", this might be either due to errors in the VBA-IDE (missing references) or due to opening this workbook from an MS-Office hyperlink, starting up Excel (timing issue). Switch to another workbook and back to fix.")
+            Exit Sub
         End Try
         If IsNothing(actWbNames) Then Exit Sub
         ' with Ctrl unhide all DB names and show Name Manager...
