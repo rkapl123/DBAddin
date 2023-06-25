@@ -195,7 +195,7 @@ Creates an in clause from cell values, strings are created using `DBinClauseStr`
 
 <pre lang="vbnet">DBinClause("ABC", 1, DateRange)</pre>
 
-Would return `('ABC',1,'20070115')`, if DateRange contained `15/01/2007` as a date value.  
+Would return `('ABC',1,39097)`, if DateRange contained `15/01/2007` as a date value. To get a date compliant value there, use either DBDate() as a converting function in DateRange, or use DBinClauseDate.  
 
 #### DBString
 
