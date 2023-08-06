@@ -2,7 +2,7 @@
 
 DBAddin is a ExcelDNA based Add-in for Database interoperability.
 
-First, DBaddin provides DB Functions (see [DBFuncs User-doc](DBFuncs.md)), which are an alternative to the Excel built-in MSQuery (integrated statically into worksheets having severe limitations in terms of querying and constructing parameterized queries (MS-Query allows parameterized queries only in simple queries that can be displayed graphically)).  
+First, DBAddin provides DB Functions (see [DBFuncs User-doc](DBFuncs.md)), which are an alternative to the Excel built-in MSQuery (integrated statically into worksheets having severe limitations in terms of querying and constructing parameterized queries (MS-Query allows parameterized queries only in simple queries that can be displayed graphically)).  
 
 Next, methods for working with database data ([DBModifications](DBModif.md): DBMapper, DBAction and DBSequences) are included. This also includes a row entry oriented way to modify data in so called DBSheets (see [DBSheets](DBSheets.md)).
 
@@ -17,7 +17,7 @@ DBAddin.NET is the successor to the VB6 based Office Database Addin, see also th
 If any of these are missing, please install them yourself before starting DBAddin.
 
 Download the latest zip package in [https://github.com/rkapl123/DBAddin/tags](https://github.com/rkapl123/DBAddin/tags), unzip to any location and run deployAddin.cmd in the folder Distribution.
-This copies DBAddin.xll, DBAddin.xll.config, DBaddinUser.config and DBAddinCentral.config to your %appdata%\Microsoft\AddIns folder and starts Excel for activating DBAddin (adding it to the registered Addins).
+This copies DBAddin.xll, DBAddin.xll.config, DBAddinUser.config and DBAddinCentral.config to your %appdata%\Microsoft\AddIns folder and starts Excel for activating DBAddin (adding it to the registered Addins).
 
 ### Settings
 
@@ -25,20 +25,21 @@ Settings can be configured in three config files, depending on your distribution
 
 * DBAddin.xll.config in section appSettings. DBAddin.xll.config can have a reference
   * to a DBAddinCentral.config (filename is free to define) in the file attribute of the appSettings element and
-  * to DBaddinUser.config (filename is free to define) in the configSource attribute of the UserSettings element
+  * to DBAddinUser.config (filename is free to define) in the configSource attribute of the UserSettings element
   * DBAddin.xll.config is expected in the same folder as the DBAddin.xll (%appdata%\Microsoft\AddIns)
 * DBAddinCentral.config (this is a reference copy of the appSettings section, where the key/value pairs override the settings in DBAddin.xll.config). This is meant to be a centrally maintained settings configuration.
-* DBaddinUser.config (this is a reference copy of the UserSettings section, where the key/value pairs override both the settings in DBAddin.xll.config and DBAddinCentral.config). This is meant to be a user locally maintained settings configuration.
+* DBAddinUser.config (this is a reference copy of the UserSettings section, where the key/value pairs override both the settings in DBAddin.xll.config and DBAddinCentral.config). This is meant to be a user locally maintained settings configuration.
 
 In the DBAddin settings Group, there is a drop-down named "settings", where you can modify these three settings inside Excel.
 
 After installation you'd want to adapt the connection strings (ConstConnString**N**) that are globally applied if no function-specific connection string is given and environment **N** is selected.
-This can be done by modifying DBAddin.xll.config or the referred DBaddinUser.config or DBAddinCentral.config (in this example the settings apply to environment 3):
+This can be done by modifying DBAddin.xll.config or the referred DBAddinUser.config or DBAddinCentral.config (in this example the settings apply to environment 3):
 
 ```xml
 <appSettings>
     <add key="ConfigName3" value="MSSQL"/>
     <add key="ConstConnString3" value="provider=SQLOLEDB;Server=Lenovo-PC;Trusted_Connection=Yes;Database=pubs;Packet Size=32767"/>
+    <add key="preferODBCconnString3" value="false"/>
     <add key="ConfigStoreFolder3" value="C:\dev\DBAddin.NET\source\ConfigStore"/>
     <add key="ConnStringSearch3" value="provider=SQLOLEDB"/>
     <add key="ConnStringReplace3" value="driver=SQL SERVER"/>
@@ -55,6 +56,7 @@ This can be done by modifying DBAddin.xll.config or the referred DBaddinUser.con
 Explanation:
 *   `ConfigName`**N**: freely definable name for your environment (e.g. Production or your database instance)
 *   `ConstConnString`**N**: the standard connection string used to connect to the database
+*   `preferODBCconnString`**N**: in case of an ODBC-Alternative part in the second part, this decides whether to prefer the ODBC-Alternative. This only works in DBListFetch, DBRowFetch and DBSetQuery.
 *   `ConfigStoreFolder`**N**: all config files (*.xcl) under this folder are shown in a hierarchical manner in "load config"
 *   `ConnStringSearch`**N**: part to be searched for replacement within the standard connection string in DBSetQuery
 *   `ConnStringReplace`**N**: replacement for above
@@ -68,7 +70,7 @@ Explanation:
 
 ### Other Settings
 
-Other settings possible in DBAddin.xll.config (or DBAddinCentral.config/DBaddinUser.config):
+Other settings possible in DBAddin.xll.config (or DBAddinCentral.config/DBAddinUser.config):
 
 ```xml
     <add key="CmdTimeout" value="30" />
@@ -111,7 +113,7 @@ Explanation:
 *   `DebugAddin`: activate Info messages to debug addin.
 *   `DefaultDBDateFormatting`: default formatting choice for DBDate.
 *   `DefaultEnvironment`: default selected environment on startup.
-*   `disableSettingsDisplay`: enter a name here for settings that should not be available for viewing/editing to the user (`addin`: DBAddin.xll.config, `central`: DBAddinCentral.config, `user`: DBaddinUser.config).
+*   `disableSettingsDisplay`: enter a name here for settings that should not be available for viewing/editing to the user (`addin`: DBAddin.xll.config, `central`: DBAddinCentral.config, `user`: DBAddinUser.config).
 *   `DMLStatementsAllowed`: Allows DML Statements in the Ad-hoc SQL Query Tool.
 *   `DontChangeEnvironment`: prevent changing the environment selector (Non-Production environments might confuse some people or lead to errors).
 *   `ExcelVersionForPivot`: The default Version when creating DBSetQuery enabled pivot tables (see [DBFuncs User-doc](DBFuncs.md), 0=2000, 1=2002, 2=2003, 3=2007, 4=2010, 5=2013, 6=2016, 7=2019).
@@ -125,7 +127,7 @@ Explanation:
 *   `updatesMajorVersion`: Usually the versions are numbered 1.0.0.x, in case this is different, the Major Version can be overridden here.
 *   `updatesUrlBase`: Here, the URL base for the update zip packages can be overridden.
 
-To change the settings, there use the drop-down "settings", where you can modify the DBAddin.xll.config and the referred DBAddinCentral.config including XML validation. If you have multiple same named entries in your settings files, the last one is taken as the active setting.
+To change the settings, use the drop-down "settings" where you can modify the DBAddin.xll.config and the referred DBAddinCentral.config including XML validation. If you have multiple same named entries in your settings files, the last one is taken as the active setting. The settings dialog has a drop-down at its bottom providing all the available settings to be selected. On selection, the chosen setting is added to the bottom of the current open config. For `+  env` settings, an input box will provide the possibility to set the number to be used instead of `+ env`.
 
 ### Environment, About Box, Settings, Log and fix legacy functions
 
@@ -225,7 +227,6 @@ Several connection strings for "DBFuncsTest.xls" are placed to the right of the 
 
 Following topics are still to be done:
 
-* Fixing the problems with shifting formula ranges in case of shifting mode 1 (cells) in DBListFetch
 * Utilizing optimistic concurrency for DBSheets (similar to the old Addin, but with ADO.NET support)
 
 ### docfx generated API documentation

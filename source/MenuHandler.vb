@@ -424,8 +424,6 @@ Public Class MenuHandler
             ' check if any DBModifier exist below root node, only if at least one is defined, open dialog
             If CustomXmlParts(1).SelectNodes("/ns0:root/*").Count > 0 Then
                 Dim theEditDBModifDefDlg As New EditDBModifDef()
-                theEditDBModifDefDlg.availSettingsLB.Hide()
-                theEditDBModifDefDlg.availSettLbl.Hide()
                 If theEditDBModifDefDlg.ShowDialog() = System.Windows.Forms.DialogResult.OK Then DBModifs.getDBModifDefinitions()
                 Exit Sub
             End If

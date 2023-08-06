@@ -3,7 +3,7 @@
 There are three ways to query data with DBAddin:
 
 1.  A list-oriented way using `DBListFetch`:  
-    Here the values are entered into a rectangular list starting from the TargetRange cell (similar to MS-Query, actually the `QueryTables` Object is used to fill the data into the Worksheet).
+    Here the values are entered into a rectangular list starting from the TargetRange cell (similar to MS-Query, actually a `QueryTable` Object is created and modified).
 2.  A record-oriented way using `DBRowFetch`:  
     Here the values are entered into several ranges given in the Parameter list `TargetArray`. Each of these ranges is filled in order of appearance with the results of the query.
 3.  Setting the Query of a ListObject (new since Excel 2007) or a PivotTable to a defined query using `DBSetQuery`:  
@@ -77,7 +77,7 @@ The parameter ShowRowNums defines whether Row numbers should be displayed in the
 
 ##### Connection String Special Settings
 
-In case the "normal" connection string's driver (usually OLEDB) has problems in displaying data with DBListFetch and the problem is not existing in conventional MS-Query based query tables (using special ODBC connection strings that can't be used with DB functions), then following special connection string setting can be used:  
+In case the "normal" connection string's driver (usually OLEDB) has problems in displaying data with DBListFetch and the problem is not existing with ODBC connection strings, then following special dual connection string setting can be used together with the flag `preferODBCconnString`:  
 
 `StandardConnectionString;SpecialODBCConnectionString`
 
@@ -384,14 +384,14 @@ Explanation:
 ### Known Issues / Limitations
 
 *  All DB getting functions (DBListfetch, DBRowFetch, etc....)
-	*   A fundamental restriction for DB functions is that they should only exist alone in a cell (with no other DB functions). This is needed because linking the functions with their cell targets is done via a hidden name in the function cell (created on first invocation)  
+	*   A fundamental restriction for DB functions is that there should only one DB Function in a cell. This is needed because linking the functions with their cell targets is done via a hidden name in the function cell (created on first invocation)  
 	*   Query composition: Composing Queries (as these sometimes tend to be quite long) can become challenging, especially when handling parameters coming from cells. There is a simple way to avoid lots of trouble by placing the parts of a query in different lines/cells and putting all these cells together as a range in the DB functions first argument (query).
 	*   When invoking an Excel Workbook from the command-line using CmdLogAddin (from a cmd script or the task scheduler), Excel may initialize the Add-in later than invoking the calculation of the DB function, which leads to an uninitialized host application object and therefore non-functional db functions (they all rely on the caller object of the Excel application to retrieve their calling cell's address). I'm still investigating into this.
 
 * DBListFetch:
-	*   formulaRange and extendArea = 1 or 2: Don't place content in cells directly below the formula Range as this will be deleted when doing recalculations. One cell below is OK.
+	*   no Headers and extendArea = 1: Don't place the output of DBlistFetch functions that a) depend on the same inputs and b) have no headers and c) use extendArea = 1 (cell extension). The calculation sequence leads to unpredictable behavior with potential data loss
 	*   Worksheets with names like Cell references (Letter + number + blank + something else, eg. 'C701 Country') lead to a fundamental error with the names used for the data target. Avoid using those sheet names in conjunction with DBListFetch, i.e. do not use a blank between the 'cell reference' and the rest (eg. 'C701Country' instead of 'C701 Country').
-	*   GUID Columns are not displayed when working with the standard data fetching method used by DBListFetch (using an opened record-set for adding a - temporary - query table). A workaround has been built that circumvents this problem by adding the query-table the way that excel does (using the connection string and query directly when adding the query-table). This however implicitly opens another connection, so is more resource intensive. For details see [Connection String Special Settings](#Connection_String_Special_Settings)
+	*   GUID Columns are not displayed when using the SQL Server OLEDB driver. To work around this, a different connection string using ODBC can be used. To generally set this in a dual connection string, set preferODBCconnString to true. For details see [Connection String Special Settings](#connection_string_special_settings)
 
 * DBSetQuery
 	* in DBSetQuery the underlying ListObject sometimes doesn't work with the SQLOLEDB provider, so there is a mechanism to change the provider part to something that works better. You can define a searched part of the connection string and its replacement in the settings of the environment (here environment 3):

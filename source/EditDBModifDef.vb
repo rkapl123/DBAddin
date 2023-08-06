@@ -44,10 +44,14 @@ Public Class EditDBModifDef
             Catch ex As Exception
                 Me.doDBMOnSave.CheckState = CheckState.Indeterminate
             End Try
-        Else
-            Dim availableSettings As String() = Split(My.Resources.SchemaFiles.Settings, vbLf) ' avoid dependency on vbCrLf being in the VS settings of Edit/Advanced/set End of Line Sequence
+            Dim availableSettings As String() = Split(My.Resources.SchemaFiles.SettingsDBModif, vbLf) ' avoid dependency on vbCrLf being in the VS settings of Edit/Advanced/set End of Line Sequence
             For Each settingLine As String In availableSettings
-                Me.availSettingsLB.Items.Add(settingLine.Replace(vbCr, "").Replace(" + env", env())) ' remove vbCr, if compiled with End of Line Sequence vbCrLf and "+ env" with current set environment
+                Me.availSettingsLB.Items.Add(settingLine.Replace(vbCr, "")) ' remove vbCr, if compiled with End of Line Sequence vbCrLf
+            Next
+        Else
+            Dim availableSettings As String() = Split(My.Resources.SchemaFiles.Settings, vbLf)
+            For Each settingLine As String In availableSettings
+                Me.availSettingsLB.Items.Add(settingLine.Replace(vbCr, "")) ' remove vbCr, if compiled with End of Line Sequence vbCrLf
             Next
             ' show DBAddin settings (user/central/addin level): set the appropriate config xml into EditBox (depending on Me.Tag)
             ' get DBAddin user settings and display them
@@ -208,24 +212,37 @@ Public Class EditDBModifDef
     Private Sub availSettingsLB_SelectedIndexChanged(sender As Object, e As EventArgs) Handles availSettingsLB.SelectedIndexChanged
         Dim curLineBegin = 0
         Dim settingKey As String = availSettingsLB.Text
-        Me.EditBox.SelectAll()
-        Me.EditBox.SelectionBackColor = Me.EditBox.BackColor
-        For Each editBoxLine In Me.EditBox.Lines
-            If InStr(editBoxLine, "<add key=""" + settingKey + """") > 0 Then
-                Me.EditBox.SelectionStart = curLineBegin
-                Me.EditBox.SelectionLength = editBoxLine.Length + 1
-                Me.EditBox.SelectionBackColor = Drawing.Color.Yellow
-                Me.EditBox.ScrollToCaret()
-                UserMsg("Setting " + settingKey + " already exists in " + Me.Tag + " settings", "Edit DB Addin Settings")
-                Exit Sub
-            End If
-            curLineBegin += editBoxLine.Length + 1
-        Next
-        ' duplicate "</UserSettings>" at the end ...
-        Me.EditBox.Text = Me.EditBox.Text + vbCrLf + Me.EditBox.Lines(Me.EditBox.Lines.Length - 1)
-        ' ... and replace the penultimate line with the new setting
-        Dim lines() As String = Me.EditBox.Lines
-        lines(Me.EditBox.Lines.Length - 2) = "    <add key=""" + settingKey + """ value=""""/>"
+        If InStr(settingKey, "+ env") > 0 Then
+            Dim envToBeSet As String = InputBox("Environment to use:", "Edit DB Addin Settings", env())
+            settingKey = settingKey.Replace(" + env", envToBeSet)
+        End If
+        Dim lines() As String
+        If Me.DBFskip.Visible Then
+            ' duplicate "</root>" at the end ...
+            Me.EditBox.Text = Me.EditBox.Text + vbCrLf + Me.EditBox.Lines(Me.EditBox.Lines.Length - 1)
+            ' ... and replace the last line with the new setting
+            lines = Me.EditBox.Lines
+            lines(Me.EditBox.Lines.Length - 1) = "    <" + settingKey + "><" + settingKey + "/>"
+        Else
+            Me.EditBox.SelectAll()
+            Me.EditBox.SelectionBackColor = Me.EditBox.BackColor
+            For Each editBoxLine In Me.EditBox.Lines
+                If InStr(editBoxLine, "<add key=""" + settingKey + """") > 0 Then
+                    Me.EditBox.SelectionStart = curLineBegin
+                    Me.EditBox.SelectionLength = editBoxLine.Length + 1
+                    Me.EditBox.SelectionBackColor = Drawing.Color.Yellow
+                    Me.EditBox.ScrollToCaret()
+                    UserMsg("Setting " + settingKey + " already exists in " + Me.Tag + " settings", "Edit DB Addin Settings")
+                    Exit Sub
+                End If
+                curLineBegin += editBoxLine.Length + 1
+            Next
+            ' duplicate "</UserSettings>" at the end ...
+            Me.EditBox.Text = Me.EditBox.Text + vbCrLf + Me.EditBox.Lines(Me.EditBox.Lines.Length - 1)
+            ' ... and replace the penultimate line with the new setting
+            lines = Me.EditBox.Lines
+            lines(Me.EditBox.Lines.Length - 2) = "    <add key=""" + settingKey + """ value=""""/>"
+        End If
         Me.EditBox.Lines = lines
         Me.EditBox.SelectionStart = Me.EditBox.Text.Length
         Me.EditBox.ScrollToCaret()

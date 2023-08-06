@@ -97,81 +97,84 @@ Public Class AddInEvents
     ''' <param name="SaveAsUI"></param>
     ''' <param name="Cancel"></param>
     Private Sub Application_WorkbookSave(Wb As Excel.Workbook, ByVal SaveAsUI As Boolean, ByRef Cancel As Boolean) Handles Application.WorkbookBeforeSave
-        ' ask if modifications should be done if no overriding flag is defined...
-        Dim doDBMOnSave As Boolean = getCustPropertyBool("doDBMOnSave", Wb)
-
-        Dim askForEveryModifier As Boolean = False
-        ' if overriding flag not given and Readonly is NOT recommended on this workbook and workbook IS NOT Readonly, ...
-        If Not (Wb.ReadOnlyRecommended And Wb.ReadOnly) And Not doDBMOnSave Then
-            Dim TotalDBModifCount As Integer = 0
-            For Each DBmodifType As String In DBModifDefColl.Keys
-                For Each dbmapdefkey As String In DBModifDefColl(DBmodifType).Keys
-                    If DBModifDefColl(DBmodifType).Item(dbmapdefkey).execOnSave Then TotalDBModifCount += 1
-                Next
-            Next
-            ' ...ask for saving, if this is necessary for any DBmodifier...
-            If TotalDBModifCount > 1 Then
-                ' multiple DBmodifiers, ask how to proceed
-                Dim answer As MsgBoxResult = QuestionMsg(theMessage:="do all DB Modifications defined in Workbook (Yes=All with exec on Save, No=Ask every time. Cancel=Don't do any DB Modifications) ?", questionType:=MsgBoxStyle.YesNoCancel, questionTitle:="Do DB Modifiers on Save")
-                If answer = MsgBoxResult.Yes Then doDBMOnSave = True
-                If answer = MsgBoxResult.Cancel Then doDBMOnSave = False
-                If answer = MsgBoxResult.No Then
-                    doDBMOnSave = True
-                    askForEveryModifier = True
-                End If
-            ElseIf TotalDBModifCount = 1 Then
-                ' only one DBModifier needs saving, ask only once for saving...
+        Try
+            ' ask if modifications should be done if no overriding flag is defined...
+            Dim doDBMOnSave As Boolean = getCustPropertyBool("doDBMOnSave", Wb)
+            Dim askForEveryModifier As Boolean = False
+            ' if overriding flag not given and Readonly is NOT recommended on this workbook and workbook IS NOT Readonly, ...
+            If Not (Wb.ReadOnlyRecommended And Wb.ReadOnly) And Not doDBMOnSave Then
+                Dim TotalDBModifCount As Integer = 0
                 For Each DBmodifType As String In DBModifDefColl.Keys
                     For Each dbmapdefkey As String In DBModifDefColl(DBmodifType).Keys
-                        If DBModifDefColl(DBmodifType).Item(dbmapdefkey).execOnSave Then
-                            If nonInteractive Then
-                                ' always save in non interactive (headless/automation) mode
-                                doDBMOnSave = True
-                            Else
-                                doDBMOnSave = IIf(DBModifDefColl(DBmodifType).Item(dbmapdefkey).confirmExecution(WbIsSaving:=True) = MsgBoxResult.Yes, True, False)
+                        If DBModifDefColl(DBmodifType).Item(dbmapdefkey).execOnSave Then TotalDBModifCount += 1
+                    Next
+                Next
+                ' ...ask for saving, if this is necessary for any DBmodifier...
+                If TotalDBModifCount > 1 Then
+                    ' multiple DBmodifiers, ask how to proceed
+                    Dim answer As MsgBoxResult = QuestionMsg(theMessage:="do all DB Modifications defined in Workbook (Yes=All with exec on Save, No=Ask every time. Cancel=Don't do any DB Modifications) ?", questionType:=MsgBoxStyle.YesNoCancel, questionTitle:="Do DB Modifiers on Save")
+                    If answer = MsgBoxResult.Yes Then doDBMOnSave = True
+                    If answer = MsgBoxResult.Cancel Then doDBMOnSave = False
+                    If answer = MsgBoxResult.No Then
+                        doDBMOnSave = True
+                        askForEveryModifier = True
+                    End If
+                ElseIf TotalDBModifCount = 1 Then
+                    ' only one DBModifier needs saving, ask only once for saving...
+                    For Each DBmodifType As String In DBModifDefColl.Keys
+                        For Each dbmapdefkey As String In DBModifDefColl(DBmodifType).Keys
+                            If DBModifDefColl(DBmodifType).Item(dbmapdefkey).execOnSave Then
+                                If nonInteractive Then
+                                    ' always save in non interactive (headless/automation) mode
+                                    doDBMOnSave = True
+                                Else
+                                    doDBMOnSave = IIf(DBModifDefColl(DBmodifType).Item(dbmapdefkey).confirmExecution(WbIsSaving:=True) = MsgBoxResult.Yes, True, False)
+                                End If
                             End If
-                        End If
+                        Next
+                    Next
+                End If
+            End If
+
+            ' save all DBmappers/DBActions/DBSequences on saving if above resulted in YES!
+            If doDBMOnSave Then
+                ' first do DBModifiers defined on active sheet or any DB Sequence:
+                For Each DBmodifType As String In DBModifDefColl.Keys
+                    For Each dbmapdefkey As String In DBModifDefColl(DBmodifType).Keys
+                        With DBModifDefColl(DBmodifType).Item(dbmapdefkey)
+                            If (DBmodifType = "DBSeqnce" OrElse .getTargetRange().Parent Is ExcelDnaUtil.Application.ActiveSheet) And .DBModifSaveNeeded Then
+                                ' ask for saving, if decided so...
+                                If askForEveryModifier Then
+                                    Dim answer As MsgBoxResult = .confirmExecution(WbIsSaving:=True)
+                                    If answer = MsgBoxResult.Yes Then .doDBModif(WbIsSaving:=True)
+                                    If answer = MsgBoxResult.Cancel Then GoTo done
+                                Else
+                                    .doDBModif(WbIsSaving:=True)
+                                End If
+                            End If
+                        End With
+                    Next
+                Next
+                ' then all the rest (no defined order!)
+                For Each DBmodifType As String In DBModifDefColl.Keys
+                    For Each dbmapdefkey As String In DBModifDefColl(DBmodifType).Keys
+                        With DBModifDefColl(DBmodifType).Item(dbmapdefkey)
+                            If Not (DBmodifType = "DBSeqnce" OrElse .getTargetRange().Parent Is ExcelDnaUtil.Application.ActiveSheet) And .DBModifSaveNeeded Then
+                                If askForEveryModifier Then
+                                    Dim answer As MsgBoxResult = .confirmExecution(WbIsSaving:=True)
+                                    If answer = MsgBoxResult.Yes Then .doDBModif(WbIsSaving:=True)
+                                    If answer = MsgBoxResult.Cancel Then GoTo done
+                                Else
+                                    .doDBModif(WbIsSaving:=True)
+                                End If
+                            End If
+                        End With
                     Next
                 Next
             End If
-        End If
-
-        ' save all DBmappers/DBActions/DBSequences on saving if above resulted in YES!
-        If doDBMOnSave Then
-            ' first do DBModifiers defined on active sheet or any DB Sequence:
-            For Each DBmodifType As String In DBModifDefColl.Keys
-                For Each dbmapdefkey As String In DBModifDefColl(DBmodifType).Keys
-                    With DBModifDefColl(DBmodifType).Item(dbmapdefkey)
-                        If (DBmodifType = "DBSeqnce" OrElse .getTargetRange().Parent Is ExcelDnaUtil.Application.ActiveSheet) And .DBModifSaveNeeded Then
-                            ' ask for saving, if decided so...
-                            If askForEveryModifier Then
-                                Dim answer As MsgBoxResult = .confirmExecution(WbIsSaving:=True)
-                                If answer = MsgBoxResult.Yes Then .doDBModif(WbIsSaving:=True)
-                                If answer = MsgBoxResult.Cancel Then GoTo done
-                            Else
-                                .doDBModif(WbIsSaving:=True)
-                            End If
-                        End If
-                    End With
-                Next
-            Next
-            ' then all the rest (no defined order!)
-            For Each DBmodifType As String In DBModifDefColl.Keys
-                For Each dbmapdefkey As String In DBModifDefColl(DBmodifType).Keys
-                    With DBModifDefColl(DBmodifType).Item(dbmapdefkey)
-                        If Not (DBmodifType = "DBSeqnce" OrElse .getTargetRange().Parent Is ExcelDnaUtil.Application.ActiveSheet) And .DBModifSaveNeeded Then
-                            If askForEveryModifier Then
-                                Dim answer As MsgBoxResult = .confirmExecution(WbIsSaving:=True)
-                                If answer = MsgBoxResult.Yes Then .doDBModif(WbIsSaving:=True)
-                                If answer = MsgBoxResult.Cancel Then GoTo done
-                            Else
-                                .doDBModif(WbIsSaving:=True)
-                            End If
-                        End If
-                    End With
-                Next
-            Next
-        End If
+        Catch ex As Exception
+            UserMsg("Error doing DBMapper on save: " + Wb.Name + ex.Message)
+        End Try
 done:
         ' clear DB Functions content and refresh afterwards..
         Dim DBFCContentColl As New Collection
@@ -411,10 +414,12 @@ done:
     ''' <summary>Actually clean up after closing workbook</summary>
     ''' <param name="Wb"></param>
     Private Sub Application_WorkbookDeactivate(Wb As Workbook) Handles Application.WorkbookDeactivate
-        If WbIsClosing AndAlso Not IsNothing(DBModifDefColl) AndAlso DBModifDefColl.Count > 0 Then
-            DBModifDefColl.Clear()
-            theRibbon.Invalidate()
-        End If
+        Try
+            If WbIsClosing AndAlso Not IsNothing(DBModifDefColl) AndAlso DBModifDefColl.Count > 0 Then
+                DBModifDefColl.Clear()
+                theRibbon.Invalidate()
+            End If
+        Catch ex As Exception : End Try
         WbIsClosing = False
     End Sub
 
@@ -433,13 +438,8 @@ done:
 
     ''' <summary>use Application_AfterCalculate to overcome the problem of auto-fitting formula ranges AFTER calculation (final column width is not available in dblistfetchAction procedure)</summary>
     Private Sub Application_AfterCalculate() Handles Application.AfterCalculate
-        Dim actWbNames As Excel.Names
-        Try : actWbNames = ExcelDnaUtil.Application.ActiveWorkbook.Names : Catch ex As Exception
-            LogWarn("Exception when trying to get the active workbook names: " + ex.Message + ", this might be either due to errors in the VBA-IDE (missing references) or due to opening this workbook from an MS-Office hyperlink, starting up Excel (timing issue). Switch to another workbook and back to fix.")
-            Exit Sub
-        End Try
-
         Try
+            Dim actWbNames As Excel.Names = ExcelDnaUtil.Application.ActiveWorkbook.Names
             For Each nm As Excel.Name In actWbNames
                 ' look only for formula target ranges
                 If Left$(nm.Name, 10) = "DBFtargetF" Then
