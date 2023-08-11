@@ -33,7 +33,7 @@ Good books on this topic are "The Practical SQL Handbook: Using Structured Query
 
 I use the enclosed the test workbook called "DBSheetsTest.xlsx" as an example to guide through the possibilities of DBSheets.
 
-This Workbook uses the pubs database for MSSQL, (available for download/installation [from Microsoft](http://www.microsoft.com/downloads/details.aspx?FamilyId=06616212-0356-46A0-8DA2-EEBC53A68034&displaylang=en) or search "pubs download" on Microsoft.com, if this is not installed on your DB server already). For MySQL, Sybase, Oracle and DB2, I enclosed the pubs database myself in the test folder.
+This Workbook uses the pubs database for MSSQL, (available for download [from Microsoft's sql-server-samples github page](https://github.com/Microsoft/sql-server-samples/tree/master/samples/databases/northwind-pubs)). For MySQL, Sybase, Oracle and DB2, I enclosed the pubs database myself in the test folder.
 
 DBSheets consist of an Excel data table containing the table data, the header and - if any foreign lookup fields are present - the lookup resolutions for those foreign lookups in usually hidden columns.  
 
