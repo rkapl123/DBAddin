@@ -328,7 +328,7 @@ Cells in other worksheets are also filled, these are also taking the reference r
 
 There are no checks (except for Excels sheet boundaries) especially whether any cells are overwritten !  
 
-If the setting `ConfigSelect` (or any other ConfigSelect, see [Settings continued](https://rkapl123.github.io/DBAddin#settings-continued) is found in the settings, then the query template given there (e.g. `SELECT TOP 10 * FROM !Table!`) is used instead of the standard config (currently `SELECT TOP 10000 * FROM <Table>`) when inserting cell configurations. The respective Table is being replaced into `!Table!`.
+If the setting `ConfigSelect` (or any other ConfigSelect, see [Other Settings](https://rkapl123.github.io/DBAddin#other-settings) is found in the settings, then the query template given there (e.g. `SELECT TOP 10 * FROM !Table!`) is used instead of the standard config (currently `SELECT TOP 10000 * FROM <Table>`) when inserting cell configurations. The respective Table is being replaced into `!Table!`.
 
 #### Refreshing the config tree
 
@@ -351,7 +351,7 @@ Below the results for a DB Function created in Cell A1:
 *   DBSetPowerQuery:   `=DBSetPowerQuery(B1;"name of power query")`
 
 DBSetQuery also creates the target Object (a Pivot Table or a ListObject) below respectively to the right of the DB Function, so it is easier to start with.
-In case you want to insert DB Configurations (see [Cell Config Deployment](#Cell-Config-Deployment)), just place the selection on the inserted DB function cell and select your config, the stored query will replace the empty query in the created DB function.
+In case you want to insert DB Configurations (see [Cell Config Deployment](#cell-config-deployment)), just place the selection on the inserted DB function cell and select your config, the stored query will replace the empty query in the created DB function.
 For pivot tables the excel version of the created pivot table can be set with the user setting `ExcelVersionForPivot` (the numbers corresponding to the versions are: 0=2000, 1=2002, 2=2003, 3=2007, 4=2010, 5=2013, 6=2016, 7=2019=default if not set).
 This is important to either provide backward compatibility with other users excels versions or to use the latest features.
 
@@ -393,7 +393,7 @@ Explanation:
 * DBListFetch:
 	*   no Headers and extendArea = 1: Don't place the output of DBlistFetch functions that a) depend on the same inputs and b) have no headers and c) use extendArea = 1 (cell extension). The calculation sequence leads to unpredictable behavior with potential data loss
 	*   Worksheets with names like Cell references (Letter + number + blank + something else, eg. 'C701 Country') lead to a fundamental error with the names used for the data target. Avoid using those sheet names in conjunction with DBListFetch, i.e. do not use a blank between the 'cell reference' and the rest (eg. 'C701Country' instead of 'C701 Country').
-	*   GUID Columns are not displayed when using the SQL Server OLEDB driver. To work around this, a different connection string using ODBC can be used. To generally set this in a dual connection string, set preferODBCconnString to true. For details see [Connection String Special Settings](#connection_string_special_settings)
+	*   GUID Columns are not displayed when using the SQL Server OLEDB driver. To work around this, a different connection string using ODBC can be used. To generally set this in a dual connection string, set preferODBCconnString to true. For details see [Connection String Special Settings](#connection-string-special-settings)
 
 * DBSetQuery
 	* in DBSetQuery the underlying ListObject sometimes doesn't work with the SQLOLEDB provider, so there is a mechanism to change the provider part to something that works better. You can define a searched part of the connection string and its replacement in the settings of the environment (here environment 3):

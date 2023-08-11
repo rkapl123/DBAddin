@@ -43,7 +43,7 @@ Additionally, if there are lookups, there is also a hidden sheet containing the 
 
 The header row and the primary key column(s), which are located leftmost, should not be modified, except for new rows where there is no primary key yet.
 
-Non null-able columns have a darker pattern than null-able columns, this is however only effected once at creation/assigning the DBSheet. If column definitions change, you have to reflect this in the DBSheet Definition and recreate the DBSheet again (see [Finishing DBSheet definition creation](#Finishing-DBSheet-definition-creation)).
+Non null-able columns have a darker pattern than null-able columns, this is however only effected once at creation/assigning the DBSheet. If column definitions change, you have to reflect this in the DBSheet Definition and recreate the DBSheet again (see [Finishing DBSheet definition creation](#finishing-dbsheet-definition-creation)).
 
 Lookup columns are restricted with excel's cell validation, including a drop-down of allowed values.
 

@@ -13,7 +13,7 @@ Imports System.Runtime.InteropServices
 <Assembly: AssemblyDescription("DBAddin is a ExcelDNA based Add-in for Database interoperability (DB Functions for database querying and Methods (DBModifiers) to manipulate data in DB Tables are provided).")>
 <Assembly: AssemblyCompany("https://rkapl123.github.io/DBAddin/")>
 <Assembly: AssemblyProduct("")>
-<Assembly: AssemblyCopyright("Copyright ©  2020-2021, MIT License")>
+<Assembly: AssemblyCopyright("Copyright ©  2020-2023, MIT License")>
 <Assembly: AssemblyTrademark("")>
 
 <Assembly: ComVisible(True)>
