@@ -248,4 +248,14 @@ Public Class EditDBModifDef
         Me.EditBox.ScrollToCaret()
     End Sub
 
+    ''' <summary>override paste key combinations to avoid pasting rich text into edit box</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub EditBox_KeyDown(sender As Object, e As KeyEventArgs) Handles EditBox.KeyDown
+        If (e.Control And e.KeyCode = Keys.V) Then
+            Me.EditBox.Paste(DataFormats.GetFormat("Text"))
+            e.Handled = True
+        End If
+    End Sub
+
 End Class

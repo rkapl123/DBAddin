@@ -1,6 +1,6 @@
 ## DB Functions
 
-There are three ways to query data with DBAddin:
+There are four ways to query data with DBAddin:
 
 1.  A list-oriented way using `DBListFetch`:  
     Here the values are entered into a rectangular list starting from the TargetRange cell (similar to MS-Query, actually a `QueryTable` Object is created and modified).
@@ -8,6 +8,8 @@ There are three ways to query data with DBAddin:
     Here the values are entered into several ranges given in the Parameter list `TargetArray`. Each of these ranges is filled in order of appearance with the results of the query.
 3.  Setting the Query of a ListObject (new since Excel 2007) or a PivotTable to a defined query using `DBSetQuery`:  
     This requires an existing object (e.g. a ListObject created from a DB query/connection or a pivot table) and sets the target's query-object to the desired one.
+3.  Setting an existing Power-Query to a defined query using `DBSetPowerQuery`:  
+    This sets the query of the target Power-query Object.
 
 All these functions insert the queried data outside their calling cell context, which means that the target ranges can be put anywhere in the workbook (even outside of the workbook).
 

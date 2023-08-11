@@ -277,6 +277,11 @@ Public Class AdHocSQL
             e.SuppressKeyPress = True
             finishForm(DialogResult.OK)
         End If
+        ' override paste key combinations to avoid pasting rich text into edit box
+        If (e.Modifiers = Keys.Control And e.KeyCode = Keys.V) Then
+            Me.SQLText.Paste(DataFormats.GetFormat("Text"))
+            e.Handled = True
+        End If
     End Sub
 
     ''' <summary>when being on the database also allow Ctrl-Enter</summary>
