@@ -397,7 +397,7 @@ Explanation:
 * DBListFetch:
 	*   no Headers and extendArea = 1: Don't place the output of DBlistFetch functions that a) depend on the same inputs and b) have no headers and c) use extendArea = 1 (cell extension). The calculation sequence leads to unpredictable behavior with potential data loss
 	*   Worksheets with names like Cell references (Letter + number + blank + something else, eg. 'C701 Country') lead to a fundamental error with the names used for the data target. Avoid using those sheet names in conjunction with DBListFetch, i.e. do not use a blank between the 'cell reference' and the rest (eg. 'C701Country' instead of 'C701 Country').
-	*   GUID Columns are not displayed when using the SQL Server OLEDB driver. To work around this, a different connection string using ODBC can be used. To set this in a connection string see [Connection String Special Settings](#connection-string-special-settings)
+	*   GUID Columns are not displayed when using the SQL Server OLEDB driver. To work around this, a different connection string using ODBC can be used. To set this in a connection string see [Connection String Special ODBC Settings](#connection-string-special-odbc-settings)
 
 * DBSetQuery
 	* in DBSetQuery the underlying ListObject sometimes doesn't work with the SQLOLEDB provider, so there is a mechanism to change the provider part to something that works better. You can define a searched part of the connection string and its replacement in the settings of the environment (here environment 3):

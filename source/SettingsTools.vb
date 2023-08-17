@@ -3,9 +3,8 @@ Imports Microsoft.Office.Interop
 Imports System.Collections.Generic
 Imports System.Configuration
 
-''' <summary>Global variables and functions for DB Addin</summary>
+''' <summary>Global setting variables/functions and repairLegacyFunctions and checkpurgeNames tools</summary>
 Public Module SettingsTools
-    ' Global settings
     ''' <summary>currently selected environment for DB Functions, zero based (env -1) !!</summary>
     Public selectedEnvironment As Integer
     ''' <summary>environment definitions</summary>
