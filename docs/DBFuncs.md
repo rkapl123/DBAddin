@@ -84,7 +84,7 @@ The parameter ShowRowNums defines whether Row numbers should be displayed in the
 
 ##### Connection String Special ODBC Settings
 
-In case the "normal" connection string's driver (usually OLEDB) has problems in displaying data with DBListFetch and the problem is not existing with ODBC connection strings, then the special connection string composition `ODBC;ODBCConnectionString` be used.
+In case the "normal" connection string's driver (usually OLEDB) has problems in displaying data with DBListFetch and the problem is not existing with ODBC connection strings, then the special connection string composition `ODBC;ODBCConnectionString` can be used.
 
 Example:  
 
