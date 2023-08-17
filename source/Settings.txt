@@ -46,7 +46,6 @@ maxRowCountCUD
 maxTriesForRevisionFind
 ownerQualifier + env
 pivotTableCmdTextToSet + env
-preferODBCconnString + env
 repairLegacyFunctionsAutoOpen
 specialConfigStoreFolders
 specialNonNullableChar + env

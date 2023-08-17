@@ -89,13 +89,12 @@ Public MustInherit Class DBModif
         End If
     End Function
 
-    ''' <summary>public accessor function: get Environment (integer) where connection id should be taken from (if not existing, take from selectedEnvironment being passed in defaultEnv)</summary>
-    ''' <param name="defaultEnv">optionally passed selected Environment</param>
-    ''' <returns>the Environment of the DBModif</returns>
-    Protected Function getEnv(Optional defaultEnv As Integer = 0) As Integer
-        getEnv = defaultEnv
+    ''' <summary>public accessor function: get Environment (integer) where connection id should be taken from</summary>
+    ''' <returns>the Environment of the DBModif, 0 to indicate a not set environment</returns>
+    Protected Function getEnv() As Integer
+        getEnv = 0
         If TypeName(Me) = "DBSeqnce" Then Throw New NotImplementedException()
-        ' set environment on DBModif overrides selected environment. Could be empty or 0 to indicate a not set environment...
+        ' set environment on DBModif overrides selected environment. Could be empty or 0 to indicate a not set environment
         If env <> "" AndAlso env <> "0" Then getEnv = Convert.ToInt16(env)
     End Function
 
@@ -161,7 +160,7 @@ Public MustInherit Class DBModif
             ' if Environment is not existing (default environment = 0), take from selectedEnvironment
             If setEnv = 0 Then setEnv = selectedEnvironment + 1
         Else
-            ' if Environment is not existing (default environment = 0), take from sequence environment
+            ' if Environment is not existing (default environment = 0), take from environment of enclosing sequence 
             If setEnv = 0 Then
                 setEnv = CInt(DBSequenceEnv)
             Else
@@ -1478,13 +1477,7 @@ Public Module DBModifs
             UserMsg("No DB identifier given for environment: " + env.ToString() + ", please correct and rerun.", "Open Connection Error")
             Exit Function
         End If
-        If InStr(1, UCase$(theConnString), ";ODBC;") > 0 Then
-            If fetchSetting("preferODBCconnString" + env.ToString(), "false") = "true" Then
-                theConnString = Mid$(theConnString, InStr(1, UCase$(theConnString), ";ODBC;") + 1)
-            Else
-                theConnString = Left$(theConnString, InStr(1, UCase$(theConnString), ";ODBC;") - 1)
-            End If
-        End If
+
         ' change the database in the connection string
         theConnString = Change(theConnString, dbidentifier, database, ";")
         ' need to change/set the connection timeout in the connection string as the property is readonly then...
@@ -1497,13 +1490,20 @@ Public Module DBModifs
         End If
 
         Try
-            If InStr(theConnString.ToLower, "provider=sqloledb") Or InStr(theConnString.ToLower, "driver=sql server") Then
-                ' remove provider=SQLOLEDB; (or whatever is in ConnStringSearch<>) for sql server as this is not allowed for ado.net (legacy adodb)
+            If Left(theConnString.ToUpper, 5) = "ODBC;" Then
+                ' change to ODBC driver setting, if SQLOLEDB
+                theConnString = Replace(theConnString, fetchSetting("ConnStringSearch" + env.ToString(), "provider=SQLOLEDB"), fetchSetting("ConnStringReplace" + env.ToString(), "driver=SQL SERVER"))
+                ' remove "ODBC;"
+                theConnString = Right(theConnString, theConnString.Length - 5)
+                idbcnn = New Odbc.OdbcConnection(theConnString)
+            ElseIf InStr(theConnString.ToLower, "provider=sqloledb") Or InStr(theConnString.ToLower, "driver=sql server") Then
+                ' remove provider=SQLOLEDB; (or whatever is in ConnStringSearch<>) for sql server as this is not allowed for ado.net (e.g. from a connection string for MS Query/Office)
                 theConnString = Replace(theConnString, fetchSetting("ConnStringSearch" + env.ToString(), "provider=SQLOLEDB") + ";", "")
                 idbcnn = New SqlClient.SqlConnection(theConnString)
             ElseIf InStr(theConnString.ToLower, "oledb") Then
                 idbcnn = New OleDb.OleDbConnection(theConnString)
             Else
+                ' try with odbc
                 idbcnn = New Odbc.OdbcConnection(theConnString)
             End If
         Catch ex As Exception

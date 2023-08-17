@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Class CustomOleDbCommandBuilder
    ">
-    <meta name="generator" content="docfx 2.58.0.0">
+    <meta name="generator" content="docfx 2.59.0.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -73,7 +73,7 @@
   
   <h1 id="DBaddin_CustomOleDbCommandBuilder" data-uid="DBaddin.CustomOleDbCommandBuilder" class="text-break">Class CustomOleDbCommandBuilder
   </h1>
-  <div class="markdown level0 summary"><p>Custom Command builder for OleDB to avoid primary key problems with builtin ones
+  <div class="markdown level0 summary"><p>Custom Command builder for OleDB to avoid primary key problems with built-in ones
 derived (transposed into VB.NET) from <a href="https://www.cogin.com/articles/CustomCommandBuilder.php">https://www.cogin.com/articles/CustomCommandBuilder.php</a>
 Copyright by Dejan Grujic 2004. <a href="http://www.cogin.com">http://www.cogin.com</a></p>
 </div>
@@ -83,6 +83,18 @@ Copyright by Dejan Grujic 2004. <a href="http://www.cogin.com">http://www.cogin.
     <div class="level0"><span class="xref">System.Object</span></div>
     <div class="level1"><a class="xref" href="DBaddin.CustomCommandBuilder.html">CustomCommandBuilder</a></div>
     <div class="level2"><span class="xref">CustomOleDbCommandBuilder</span></div>
+  </div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <a class="xref" href="DBaddin.CustomCommandBuilder.html#DBaddin_CustomCommandBuilder_dataTable">CustomCommandBuilder.dataTable</a>
+    </div>
+    <div>
+      <a class="xref" href="DBaddin.CustomCommandBuilder.html#DBaddin_CustomCommandBuilder_allColumns">CustomCommandBuilder.allColumns</a>
+    </div>
+    <div>
+      <a class="xref" href="DBaddin.CustomCommandBuilder.html#DBaddin_CustomCommandBuilder_TableName">CustomCommandBuilder.TableName()</a>
+    </div>
   </div>
   <h6><strong>Namespace</strong>: <a class="xref" href="DBaddin.html">DBaddin</a></h6>
   <h6><strong>Assembly</strong>: DBaddin.dll</h6>
@@ -97,7 +109,7 @@ Copyright by Dejan Grujic 2004. <a href="http://www.cogin.com">http://www.cogin.
     <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_CustomOleDbCommandBuilder__ctor_System_Data_DataTable_System_Data_OleDb_OleDbConnection_System_Data_DataColumn___Microsoft_VisualBasic_Collection_.md&amp;value=---%0Auid%3A%20DBaddin.CustomOleDbCommandBuilder.%23ctor(System.Data.DataTable%2CSystem.Data.OleDb.OleDbConnection%2CSystem.Data.DataColumn%5B%5D%2CMicrosoft.VisualBasic.Collection)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L2249">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L2368">View Source</a>
   </span>
   <a id="DBaddin_CustomOleDbCommandBuilder__ctor_" data-uid="DBaddin.CustomOleDbCommandBuilder.#ctor*"></a>
   <h4 id="DBaddin_CustomOleDbCommandBuilder__ctor_System_Data_DataTable_System_Data_OleDb_OleDbConnection_System_Data_DataColumn___Microsoft_VisualBasic_Collection_" data-uid="DBaddin.CustomOleDbCommandBuilder.#ctor(System.Data.DataTable,System.Data.OleDb.OleDbConnection,System.Data.DataColumn[],Microsoft.VisualBasic.Collection)">CustomOleDbCommandBuilder(DataTable, OleDbConnection, DataColumn[], Collection)</h4>
@@ -141,7 +153,7 @@ Copyright by Dejan Grujic 2004. <a href="http://www.cogin.com">http://www.cogin.
     <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_CustomOleDbCommandBuilder_DeleteCommand.md&amp;value=---%0Auid%3A%20DBaddin.CustomOleDbCommandBuilder.DeleteCommand%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L2293">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L2411">View Source</a>
   </span>
   <a id="DBaddin_CustomOleDbCommandBuilder_DeleteCommand_" data-uid="DBaddin.CustomOleDbCommandBuilder.DeleteCommand*"></a>
   <h4 id="DBaddin_CustomOleDbCommandBuilder_DeleteCommand" data-uid="DBaddin.CustomOleDbCommandBuilder.DeleteCommand">DeleteCommand()</h4>
@@ -173,11 +185,11 @@ Copyright by Dejan Grujic 2004. <a href="http://www.cogin.com">http://www.cogin.
     <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_CustomOleDbCommandBuilder_InsertCommand.md&amp;value=---%0Auid%3A%20DBaddin.CustomOleDbCommandBuilder.InsertCommand%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L2258">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L2376">View Source</a>
   </span>
   <a id="DBaddin_CustomOleDbCommandBuilder_InsertCommand_" data-uid="DBaddin.CustomOleDbCommandBuilder.InsertCommand*"></a>
   <h4 id="DBaddin_CustomOleDbCommandBuilder_InsertCommand" data-uid="DBaddin.CustomOleDbCommandBuilder.InsertCommand">InsertCommand()</h4>
-  <div class="markdown level1 summary"><p>Creates Insert command with support for Autoincrement (Identity) fields</p>
+  <div class="markdown level1 summary"><p>Creates Insert command with support for Auto-increment (Identity) fields</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
@@ -205,7 +217,7 @@ Copyright by Dejan Grujic 2004. <a href="http://www.cogin.com">http://www.cogin.
     <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_CustomOleDbCommandBuilder_UpdateCommand.md&amp;value=---%0Auid%3A%20DBaddin.CustomOleDbCommandBuilder.UpdateCommand%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L2310">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L2428">View Source</a>
   </span>
   <a id="DBaddin_CustomOleDbCommandBuilder_UpdateCommand_" data-uid="DBaddin.CustomOleDbCommandBuilder.UpdateCommand*"></a>
   <h4 id="DBaddin_CustomOleDbCommandBuilder_UpdateCommand" data-uid="DBaddin.CustomOleDbCommandBuilder.UpdateCommand">UpdateCommand()</h4>
@@ -243,7 +255,7 @@ Copyright by Dejan Grujic 2004. <a href="http://www.cogin.com">http://www.cogin.
                     <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_CustomOleDbCommandBuilder.md&amp;value=---%0Auid%3A%20DBaddin.CustomOleDbCommandBuilder%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
                   </li>
                   <li>
-                    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L2241" class="contribution-link">View Source</a>
+                    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/DBModif.vb/#L2362" class="contribution-link">View Source</a>
                   </li>
                 </ul>
               </div>

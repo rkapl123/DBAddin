@@ -1,0 +1,14 @@
+askBeforeExecute
+AutoIncFlag
+avoidFill
+confirmText
+CUDFlags
+env
+executeAdditionalProc
+database
+ignoreColumns
+IgnoreDataErrors
+insertIfMissing
+primKeysStr
+seqStep
+tableName

@@ -5,10 +5,10 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <title>Class AddInEvents
+    <title>Class MenuHandlerGlobals
    </title>
     <meta name="viewport" content="width=device-width">
-    <meta name="title" content="Class AddInEvents
+    <meta name="title" content="Class MenuHandlerGlobals
    ">
     <meta name="generator" content="docfx 2.59.0.0">
     
@@ -68,65 +68,42 @@
         </div>
         <div class="article row grid-right">
           <div class="col-md-10">
-            <article class="content wrap" id="_content" data-uid="DBaddin.AddInEvents">
+            <article class="content wrap" id="_content" data-uid="DBaddin.MenuHandlerGlobals">
   
   
-  <h1 id="DBaddin_AddInEvents" data-uid="DBaddin.AddInEvents" class="text-break">Class AddInEvents
+  <h1 id="DBaddin_MenuHandlerGlobals" data-uid="DBaddin.MenuHandlerGlobals" class="text-break">Class MenuHandlerGlobals
   </h1>
-  <div class="markdown level0 summary"><p>AddIn Connection class, also handling Events from Excel (Open, Close, Activate)</p>
+  <div class="markdown level0 summary"><p>global ribbon variable and procedures for MenuHandler</p>
 </div>
   <div class="markdown level0 conceptual"></div>
   <div class="inheritance">
     <h5>Inheritance</h5>
-    <div class="level0"><span class="xref">System.Object</span></div>
-    <div class="level1"><span class="xref">AddInEvents</span></div>
-  </div>
-  <div classs="implements">
-    <h5>Implements</h5>
-    <div><span class="xref">ExcelDna.Integration.IExcelAddIn</span></div>
+    <div class="level0"><span class="xref">MenuHandlerGlobals</span></div>
   </div>
   <h6><strong>Namespace</strong>: <a class="xref" href="DBaddin.html">DBaddin</a></h6>
   <h6><strong>Assembly</strong>: DBaddin.dll</h6>
-  <h5 id="DBaddin_AddInEvents_syntax">Syntax</h5>
+  <h5 id="DBaddin_MenuHandlerGlobals_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">[ComVisible(true)]
-public class AddInEvents : IExcelAddIn</code></pre>
+    <pre><code class="lang-csharp hljs">public class MenuHandlerGlobals</code></pre>
   </div>
-  <h3 id="methods">Methods
+  <h3 id="fields">Fields
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_AddInEvents_assignHandler_System_Object_.md&amp;value=---%0Auid%3A%20DBaddin.AddInEvents.assignHandler(System.Object)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_MenuHandlerGlobals_theRibbon.md&amp;value=---%0Auid%3A%20DBaddin.MenuHandlerGlobals.theRibbon%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/AddInEvents.vb/#L349">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/MenuHandler.vb/#L827">View Source</a>
   </span>
-  <a id="DBaddin_AddInEvents_assignHandler_" data-uid="DBaddin.AddInEvents.assignHandler*"></a>
-  <h4 id="DBaddin_AddInEvents_assignHandler_System_Object_" data-uid="DBaddin.AddInEvents.assignHandler(System.Object)">assignHandler(Object)</h4>
-  <div class="markdown level1 summary"><p>assign click handlers to command buttons in passed sheet Sh, maximum 10 buttons are supported</p>
+  <h4 id="DBaddin_MenuHandlerGlobals_theRibbon" data-uid="DBaddin.MenuHandlerGlobals.theRibbon">theRibbon</h4>
+  <div class="markdown level1 summary"><p>reference object for the ribbon</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static bool assignHandler(object Sh)</code></pre>
+    <pre><code class="lang-csharp hljs">public static IRibbonUI theRibbon</code></pre>
   </div>
-  <h5 class="parameters">Parameters</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="parametername">Sh</span></td>
-        <td><p>sheet where command buttons are located</p>
-</td>
-      </tr>
-    </tbody>
-  </table>
-  <h5 class="returns">Returns</h5>
+  <h5 class="fieldValue">Field Value</h5>
   <table class="table table-bordered table-striped table-condensed">
     <thead>
       <tr>
@@ -139,43 +116,41 @@ public class AddInEvents : IExcelAddIn</code></pre>
       </tr>
     </tbody>
   </table>
-  <h3 id="eii">Explicit Interface Implementations
+  <h3 id="methods">Methods
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_AddInEvents_AutoClose.md&amp;value=---%0Auid%3A%20DBaddin.AddInEvents.AutoClose%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_MenuHandlerGlobals_jumpButton.md&amp;value=---%0Auid%3A%20DBaddin.MenuHandlerGlobals.jumpButton%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/AddInEvents.vb/#L84">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/MenuHandler.vb/#L933">View Source</a>
   </span>
-  <a id="DBaddin_AddInEvents_AutoClose_" data-uid="DBaddin.AddInEvents.AutoClose*"></a>
-  <h4 id="DBaddin_AddInEvents_AutoClose" data-uid="DBaddin.AddInEvents.AutoClose">IExcelAddIn.AutoClose()</h4>
-  <div class="markdown level1 summary"><p>AutoClose cleans up after finishing addin</p>
+  <a id="DBaddin_MenuHandlerGlobals_jumpButton_" data-uid="DBaddin.MenuHandlerGlobals.jumpButton*"></a>
+  <h4 id="DBaddin_MenuHandlerGlobals_jumpButton" data-uid="DBaddin.MenuHandlerGlobals.jumpButton">jumpButton()</h4>
+  <div class="markdown level1 summary"><p>jumps between DB Function and target area</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void IExcelAddIn.AutoClose()</code></pre>
+    <pre><code class="lang-csharp hljs">[ExcelCommand(Name = &quot;jumpButton&quot;, ShortCut = &quot;^J&quot;)]
+public static void jumpButton()</code></pre>
   </div>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_AddInEvents_AutoOpen.md&amp;value=---%0Auid%3A%20DBaddin.AddInEvents.AutoOpen%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_MenuHandlerGlobals_refreshData.md&amp;value=---%0Auid%3A%20DBaddin.MenuHandlerGlobals.refreshData%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/AddInEvents.vb/#L41">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/MenuHandler.vb/#L830">View Source</a>
   </span>
-  <a id="DBaddin_AddInEvents_AutoOpen_" data-uid="DBaddin.AddInEvents.AutoOpen*"></a>
-  <h4 id="DBaddin_AddInEvents_AutoOpen" data-uid="DBaddin.AddInEvents.AutoOpen">IExcelAddIn.AutoOpen()</h4>
-  <div class="markdown level1 summary"><p>connect to Excel when opening Addin</p>
+  <a id="DBaddin_MenuHandlerGlobals_refreshData_" data-uid="DBaddin.MenuHandlerGlobals.refreshData*"></a>
+  <h4 id="DBaddin_MenuHandlerGlobals_refreshData" data-uid="DBaddin.MenuHandlerGlobals.refreshData">refreshData()</h4>
+  <div class="markdown level1 summary"><p>refresh DB Functions (and - if called from outside any db function area - all other external data ranges)</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void IExcelAddIn.AutoOpen()</code></pre>
-  </div>
-  <h3 id="implements">Implements</h3>
-  <div>
-      <span class="xref">ExcelDna.Integration.IExcelAddIn</span>
+    <pre><code class="lang-csharp hljs">[ExcelCommand(Name = &quot;refreshData&quot;, ShortCut = &quot;^R&quot;)]
+public static void refreshData()</code></pre>
   </div>
 </article>
           </div>
@@ -185,10 +160,10 @@ public class AddInEvents : IExcelAddIn</code></pre>
               <div class="contribution">
                 <ul class="nav">
                   <li>
-                    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_AddInEvents.md&amp;value=---%0Auid%3A%20DBaddin.AddInEvents%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
+                    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_MenuHandlerGlobals.md&amp;value=---%0Auid%3A%20DBaddin.MenuHandlerGlobals%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
                   </li>
                   <li>
-                    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/AddInEvents.vb/#L13" class="contribution-link">View Source</a>
+                    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/MenuHandler.vb/#L825" class="contribution-link">View Source</a>
                   </li>
                 </ul>
               </div>

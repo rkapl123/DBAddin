@@ -87,7 +87,13 @@ Public Class DBConnHelper
         End If
         Dim correctConnString As String = ""
         Try
-            If Not usedForDBSheetCreate And (InStr(dbsheetConnString.ToLower, "provider=sqloledb") Or InStr(dbsheetConnString.ToLower, "driver=sql server")) Then
+            If Not usedForDBSheetCreate And Left(dbsheetConnString.ToUpper, 5) = "ODBC;" Then
+                ' change to ODBC driver setting, if SQLOLEDB
+                dbsheetConnString = Replace(dbsheetConnString, fetchSetting("ConnStringSearch" + env(), "provider=SQLOLEDB"), fetchSetting("ConnStringReplace" + env(), "driver=SQL SERVER"))
+                ' remove "ODBC;"
+                dbsheetConnString = Right(dbsheetConnString, dbsheetConnString.Length - 5)
+                conn = New OdbcConnection(dbsheetConnString)
+            ElseIf Not usedForDBSheetCreate And (InStr(dbsheetConnString.ToLower, "provider=sqloledb") Or InStr(dbsheetConnString.ToLower, "driver=sql server")) Then
                 ' ADO.NET doesn't like provider= and driver= 
                 If fetchSubstr(dbsheetConnString, "provider=", ";", True) <> "" Then
                     correctConnString = Replace(dbsheetConnString, fetchSubstr(dbsheetConnString, "provider=", ";", True) + ";", "")
@@ -107,8 +113,9 @@ Public Class DBConnHelper
             dbshcnn.Open()
         Catch ex As Exception
             dbsheetConnString = Replace(dbsheetConnString, dbPwdSpec + existingPwd, dbPwdSpec + "*******")
+            correctConnString = Replace(correctConnString, dbPwdSpec + existingPwd, dbPwdSpec + "*******")
             dbshcnn = Nothing
-            Throw New Exception("Error connecting to DB: " + ex.Message + ", connection string: " + dbsheetConnString + IIf(correctConnString <> "", " (corrected ConnString: " + correctConnString + ")", ""))
+            Throw New Exception("Error connecting to DB: " + ex.Message + ", connection string: " + dbsheetConnString + IIf(correctConnString <> "", " (corrected ConnString for provider=sqloledb or driver=sql server : " + correctConnString + ")", ""))
         End Try
     End Sub
 
@@ -123,13 +130,6 @@ Public Class DBConnHelper
                 ' actually this cannot happen....
                 UserMsg("No connection string given for environment: " + DBenv + ", please correct and rerun.", "DBSheet Definition Error")
                 Exit Sub
-            End If
-        End If
-        If InStr(1, UCase$(dbsheetConnString), ";ODBC;") > 0 Then
-            If fetchSetting("preferODBCconnString" + DBenv, "false") = "true" Then
-                dbsheetConnString = Mid$(dbsheetConnString, InStr(1, UCase$(dbsheetConnString), ";ODBC;") + 1)
-            Else
-                dbsheetConnString = Left$(dbsheetConnString, InStr(1, UCase$(dbsheetConnString), ";ODBC;") - 1)
             End If
         End If
     End Sub

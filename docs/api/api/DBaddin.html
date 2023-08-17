@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Namespace DBaddin
    ">
-    <meta name="generator" content="docfx 2.58.0.0">
+    <meta name="generator" content="docfx 2.59.0.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -84,27 +84,28 @@
       <section><p>AddIn Connection class, also handling Events from Excel (Open, Close, Activate)</p>
 </section>
       <h4><a class="xref" href="DBaddin.AdHocSQL.html">AdHocSQL</a></h4>
-      <section></section>
+      <section><p>User-form for ad-hoc SQL execution</p>
+</section>
       <h4><a class="xref" href="DBaddin.ConfigFiles.html">ConfigFiles</a></h4>
       <section><p>procedures used for loading config files (containing DBFunctions and general sheet content) and building the config menu</p>
 </section>
       <h4><a class="xref" href="DBaddin.ContainedStatusMsg.html">ContainedStatusMsg</a></h4>
-      <section><p>Provides a data structure for transporting information back from the calculation action procedure to the calling function</p>
+      <section><p>Provides a data structure for transporting information back from the calculation action procedure to the calling function resp. the AfterCalculate event procedure</p>
 </section>
       <h4><a class="xref" href="DBaddin.CustomCommandBuilder.html">CustomCommandBuilder</a></h4>
       <section></section>
       <h4><a class="xref" href="DBaddin.CustomOdbcCommandBuilder.html">CustomOdbcCommandBuilder</a></h4>
-      <section><p>Custom Command builder for ODBC to avoid primary key problems with builtin ones
+      <section><p>Custom Command builder for ODBC to avoid primary key problems with built-in ones
 derived (transposed into VB.NET) from <a href="https://www.cogin.com/articles/CustomCommandBuilder.php">https://www.cogin.com/articles/CustomCommandBuilder.php</a>
 Copyright by Dejan Grujic 2004. <a href="http://www.cogin.com">http://www.cogin.com</a></p>
 </section>
       <h4><a class="xref" href="DBaddin.CustomOleDbCommandBuilder.html">CustomOleDbCommandBuilder</a></h4>
-      <section><p>Custom Command builder for OleDB to avoid primary key problems with builtin ones
+      <section><p>Custom Command builder for OleDB to avoid primary key problems with built-in ones
 derived (transposed into VB.NET) from <a href="https://www.cogin.com/articles/CustomCommandBuilder.php">https://www.cogin.com/articles/CustomCommandBuilder.php</a>
 Copyright by Dejan Grujic 2004. <a href="http://www.cogin.com">http://www.cogin.com</a></p>
 </section>
       <h4><a class="xref" href="DBaddin.CustomSqlCommandBuilder.html">CustomSqlCommandBuilder</a></h4>
-      <section><p>Custom Command builder for SQLServer to avoid primary key problems with builtin ones
+      <section><p>Custom Command builder for SQLServer to avoid primary key problems with built-in ones
 derived (transposed into VB.NET) from <a href="https://www.cogin.com/articles/CustomCommandBuilder.php">https://www.cogin.com/articles/CustomCommandBuilder.php</a>
 Copyright by Dejan Grujic 2004. <a href="http://www.cogin.com">http://www.cogin.com</a></p>
 </section>
@@ -142,16 +143,25 @@ Copyright by Dejan Grujic 2004. <a href="http://www.cogin.com">http://www.cogin.
       <section><p>DataTable Class for filling DBSheetCols DataGridView</p>
 </section>
       <h4><a class="xref" href="DBaddin.EditDBModifDef.html">EditDBModifDef</a></h4>
-      <section><p>Dialog used to display and edit the CustomXMLPart utilized for storing the DBModif definitions, and the the three parts of DBAddin settings (Addin level, user and central)</p>
+      <section><p>Dialog used to display and edit the CustomXMLPart utilized for storing the DBModif definitions, and the three parts of DBAddin settings (Addin level, user and central)</p>
 </section>
       <h4><a class="xref" href="DBaddin.Functions.html">Functions</a></h4>
       <section><p>Contains the public callable DB functions and helper functions</p>
 </section>
       <h4><a class="xref" href="DBaddin.Globals.html">Globals</a></h4>
-      <section><p>Global variables and functions for DB Addin</p>
+      <section><p>Global functions for DB Addin</p>
+</section>
+      <h4><a class="xref" href="DBaddin.Logging.html">Logging</a></h4>
+      <section><p>Logging variables and functions for DB Addin</p>
 </section>
       <h4><a class="xref" href="DBaddin.MenuHandler.html">MenuHandler</a></h4>
       <section><p>handles all Menu related aspects (context menu for building/refreshing, &quot;DBAddin&quot;/&quot;Load Config&quot; tree menu for retrieving stored configuration files, etc.)</p>
+</section>
+      <h4><a class="xref" href="DBaddin.MenuHandlerGlobals.html">MenuHandlerGlobals</a></h4>
+      <section><p>global ribbon variable and procedures for MenuHandler</p>
+</section>
+      <h4><a class="xref" href="DBaddin.SettingsTools.html">SettingsTools</a></h4>
+      <section><p>Global variables and functions for DB Addin</p>
 </section>
 </article>
           </div>

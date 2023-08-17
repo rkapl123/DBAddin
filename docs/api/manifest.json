@@ -9,7 +9,7 @@
       "output": {
         ".html": {
           "relative_path": "api/index.html",
-          "hash": "AVowXhvrhXrHV+h8Brzl6zA2QqNdkdG3TRQwc7mkKTE="
+          "hash": "BEeC/Iep2UhTvP/8c7HmMuC6Ft6QqSLmJvYueOiZtsQ="
         }
       },
       "is_incremental": true,
@@ -21,10 +21,10 @@
       "output": {
         ".html": {
           "relative_path": "articles/intro.html",
-          "hash": "ib7l5jAZBPeyDyydF7hbra05W6o5aPmxcmZZT1eJoP4="
+          "hash": "34W/jMjtuYSulHJJoot650i73nz0C1G7JpTv99F29iQ="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {
@@ -45,7 +45,7 @@
       "output": {
         ".html": {
           "relative_path": "index.html",
-          "hash": "HvPF1UfIbx+h9ryk9+tM43+xWvOP+cxSumiHJHf7Jig="
+          "hash": "IGlqSfc7Z5EuKd3zAWM0xjycLxUglKCq4cqCinqvfWk="
         }
       },
       "is_incremental": true,
@@ -57,7 +57,7 @@
       "output": {
         ".html": {
           "relative_path": "api/DBAddinUnitTests.UnitTest1.html",
-          "hash": "hOIeRAz2/FdWJtzzRGIgz7yFz06WGeTfH0fWSZmCGuI="
+          "hash": "EfYIdxete9AJeFOYjvVAn2ECdEkRuqJS2xDV0eVBv18="
         }
       },
       "is_incremental": true,
@@ -69,7 +69,7 @@
       "output": {
         ".html": {
           "relative_path": "api/DBAddinUnitTests.html",
-          "hash": "vOiyv/p4V2ONyCeps0Wh1cM2631Q9+TR1lnqcTtkBpk="
+          "hash": "e7Hp7+uKFWNRyyh3h1V8pd7O2tLh/Y41JKFm/EU9i6U="
         }
       },
       "is_incremental": true,
@@ -81,7 +81,7 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.AboutBox.html",
-          "hash": "NKIXGgQxrXWc29tq7XN20zXqAARTGgg1kDk17SalRKc="
+          "hash": "QmLuSBxxp90Pj/9jgL6u2gxaddjScQZ8Cea8zp2u6n0="
         }
       },
       "is_incremental": true,
@@ -93,7 +93,7 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.AdHocSQL.html",
-          "hash": "Xbd9OoyBNNTL7HdQsUFdIWqUicEs3pr88GxGNOuCtsM="
+          "hash": "TeIFTy0f7cM4eyxMHHcLXDasnQ2YItsdj8whHUXoITk="
         }
       },
       "is_incremental": true,
@@ -105,7 +105,7 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.AddInEvents.html",
-          "hash": "TspK70b8BJpHKNGgRlU94GvJ+V32cOonGLJTtYnGWvs="
+          "hash": "qd5QFrzvN2AFUTajG3nLsqnV7EL62yRvwOdRZ/Jsu3M="
         }
       },
       "is_incremental": true,
@@ -117,7 +117,7 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.ConfigFiles.html",
-          "hash": "KUWFrZNWO1Pt7n5n9xP8/rcdfAshl1nBhKwgcwpbvhE="
+          "hash": "/VsujNnMXCmdh3vuQdOymlxrMSyqs+h94MSgN/mn8g8="
         }
       },
       "is_incremental": true,
@@ -129,7 +129,7 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.ContainedStatusMsg.html",
-          "hash": "e6pSUolTcv4a3FtFT6NwCU27UnX6o8KFmIoE+TdEm68="
+          "hash": "Hii2bY0IGV5ALwHH0cNQVwc1fW45sSijBiMDnIhmx6I="
         }
       },
       "is_incremental": true,
@@ -141,7 +141,7 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.CustomCommandBuilder.html",
-          "hash": "FcWd975Kwc0Oyu+XpKjVlcMaFVmboBd33Z24ORDkjkQ="
+          "hash": "4XJb7aUNrmzRxSZQTn1uUoMr229DFtF6amhb9c3+zFo="
         }
       },
       "is_incremental": true,
@@ -153,7 +153,7 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.CustomOdbcCommandBuilder.html",
-          "hash": "+ElfNRZpMuSYsEVQIP1waq5UNPATGAtbCBRydYQaYGE="
+          "hash": "l6aFj7WyT4oPl1Uici//rDB7DcX/zA+k9KhuVmmCGFc="
         }
       },
       "is_incremental": true,
@@ -165,7 +165,7 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.CustomOleDbCommandBuilder.html",
-          "hash": "t1nDf5DPFRggZt9Jx76kvVElp7pBhJqIdMlMj1CX5Bs="
+          "hash": "x1PhPDVbTDzdKrSrhaAuFRi2A1QyKnf1wK82w736ktw="
         }
       },
       "is_incremental": true,
@@ -177,7 +177,7 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.CustomSqlCommandBuilder.html",
-          "hash": "q/YhhwvM7oaJot//jcBBJlhAoZgR4ZpoIh2RpC8WLfI="
+          "hash": "qZrr5reVIWTFuvnApVyw9vKZj7MefjI2AnUPRqe09EE="
         }
       },
       "is_incremental": true,
@@ -189,7 +189,7 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.DBAction.html",
-          "hash": "X7IbB+bOL7JKbSB1VVQp61e6gT0BZdQm3LnxlRMEfw0="
+          "hash": "2TRsWH/4y+xv7A58pdEZy4KrRu0byppIE2g/k7Raljw="
         }
       },
       "is_incremental": true,
@@ -201,7 +201,7 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.DBConnHelper.html",
-          "hash": "U5d+Z8ibELVqZff36ztuBP4pxqobdt3iy5G3HnaULFU="
+          "hash": "nAGwQHnYp5NQoUEcmliMquvS0x3HOudaSZCFELopXDE="
         }
       },
       "is_incremental": true,
@@ -213,7 +213,7 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.DBMapper.html",
-          "hash": "+3nN1kx27RZbKDLxKx6kQOqtOmvKDxVyqBYEvGV4GPM="
+          "hash": "CtmWrYsvoV3GxCBSCLkVbp5vO/cNLnpOHAK3y88ZjNk="
         }
       },
       "is_incremental": true,
@@ -225,7 +225,7 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.DBModif.html",
-          "hash": "5UH1rorFZ9IdYzVKZPUv9WpHnNv9bbtSqzulTdH38rs="
+          "hash": "egciePI9IXQmSV9Hrx62ChFzhMHl3I+LBq/O0FLdFF4="
         }
       },
       "is_incremental": true,
@@ -237,7 +237,7 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.DBModifCreate.html",
-          "hash": "07jF/gQa4fv2XCSfN+ARhB9IMU90MH9moM8xrJq2nIM="
+          "hash": "6Dmp0QJZpCaPWXhWTdbYu/hYwUiz01c+z4JRUGdnCDc="
         }
       },
       "is_incremental": true,
@@ -249,7 +249,7 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.DBModifs.html",
-          "hash": "8xrNk27aKFaMxh4hhCqe7wVR6u7x5Pj7L86zSoW6OBw="
+          "hash": "tTky2A++dWfpKTwEz6Kk2G6UChDCOxCHce+5HJAE7oc="
         }
       },
       "is_incremental": true,
@@ -261,7 +261,7 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.DBSeqnce.html",
-          "hash": "zz5QpfK5tKbitYatOMlP8iIzxQatSQw7O1LOZTsXCOE="
+          "hash": "CkmjDGJqhcYcdjxmi9CkP6r9u4MMcQo1FJ99hKl5GUo="
         }
       },
       "is_incremental": true,
@@ -273,7 +273,7 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.DBSheetConfig.html",
-          "hash": "D+96AlVfgebHRGD6saJhbuio5aqwIEt2XLOjp9IF5T4="
+          "hash": "fU0Q5or6VMVu7nWpRv0v6+0gK0NjYCPafAFLhVL87Rg="
         }
       },
       "is_incremental": true,
@@ -285,7 +285,7 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.DBSheetCreateForm.html",
-          "hash": "vb1DHZbzJxRhWSQ2RtQxft38nv4WQXTeQx4AnxpKteE="
+          "hash": "8wMyHRLzGoXzzV+ISYqHME4kJIY0g1+0xK/umNd+Ur8="
         }
       },
       "is_incremental": true,
@@ -297,7 +297,7 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.DBSheetDefRow.html",
-          "hash": "GcBxH72x3FN9xi5JuglRy4witHgSHlb/1vckopZCmLk="
+          "hash": "XH40zkDbjdo22ju20Bdk3BC8UZsGg0mIB02vtw8XY8w="
         }
       },
       "is_incremental": true,
@@ -309,7 +309,7 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.DBSheetDefTable.html",
-          "hash": "xGc9+kX112eLM5qC8bJ7FwVylGa3KgHYLGPS0vS+qaE="
+          "hash": "ruQuYPOUJSsnOhM41W957G7MINHGUKEqPTCBkN4Vv/Q="
         }
       },
       "is_incremental": true,
@@ -321,7 +321,7 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.EditDBModifDef.html",
-          "hash": "vjHjSsJrqpYZ0oz8ylYc57j16yewxBTht12W4BowyEk="
+          "hash": "e411K827uImVpLW0a8M0YKe1zqg4hE39WogesRrtFQg="
         }
       },
       "is_incremental": true,
@@ -333,7 +333,7 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.Functions.html",
-          "hash": "Yp1GyqN46qUZ/CD3YsFYCnrQrysYREXRdXVapyYQ4pc="
+          "hash": "w11ePSQoFxVjFuF54uCzxIiW0hv1z3ZCgSTmiDsgLpY="
         }
       },
       "is_incremental": true,
@@ -345,7 +345,19 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.Globals.html",
-          "hash": "OMriiFZKnFJBwTXcrlRr4Nd3lY60XfyAuDofnLnc6N0="
+          "hash": "rTvjHLGi0inZ+WwEvBN+mJ/i0eL+KtPBl5C10PHdkkE="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/DBaddin.Logging.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DBaddin.Logging.html",
+          "hash": "+NwOmSSa4fynVE1i3uek5b0Y8y+BlWxCI059TC0cOOI="
         }
       },
       "is_incremental": true,
@@ -357,7 +369,19 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.MenuHandler.html",
-          "hash": "DhLZhhFx+tRi/dXk2MHV7tsnkFA28aSsPaTP3mPZOzs="
+          "hash": "f6L3p2w4MDk4BOdGPSnR+XTaKa1UMZZTDKUS+jzlyMk="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/DBaddin.MenuHandlerGlobals.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DBaddin.MenuHandlerGlobals.html",
+          "hash": "8qPhaaMv3kZj8SUDnnwm0KV5LYeMe3QQpcR+mn4b4Ls="
         }
       },
       "is_incremental": true,
@@ -369,7 +393,7 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.My.Resources.SchemaFiles.html",
-          "hash": "2W3I68m3J6HMKMIJnyaopBhO1IxozNh1askCtqIHfQw="
+          "hash": "c3PjSjej6Dp5fuhLbogyB4bI0ZZusMXkdQpFH4ZfBw8="
         }
       },
       "is_incremental": true,
@@ -381,7 +405,19 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.My.Resources.html",
-          "hash": "egJDUTjy8P9AaOF3G2NcLdN5WreE46CRX8yyx6Og7+o="
+          "hash": "/Ofx0DIkvez+afwlzCH2vJrJ71IxU1keEAWMW7Ubqy4="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/DBaddin.SettingsTools.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/DBaddin.SettingsTools.html",
+          "hash": "FZbR1+gIalfcy2giuuhYhxdEZVhlPcx7MQfZsk8Meow="
         }
       },
       "is_incremental": true,
@@ -393,7 +429,7 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.html",
-          "hash": "iiUB9fGs5rPmPFeZRzQwbUXSK5DeJ7kiSkkh9AuQ6U0="
+          "hash": "gSNTgtkGomh8xUyqcZ17KBHJGeafhgobdwVOWbDMIBI="
         }
       },
       "is_incremental": true,
@@ -405,7 +441,7 @@
       "output": {
         ".html": {
           "relative_path": "api/toc.html",
-          "hash": "oxL4cjS92yrla/JPONRnfUX+1AeCTs7D1GH7LYYJjdM="
+          "hash": "9LunGuHgAxLe6AjvHcc+UokORwh9+PbVihzfFktlYAc="
         }
       },
       "is_incremental": false,
@@ -437,13 +473,13 @@
           "can_incremental": true,
           "incrementalPhase": "build",
           "total_file_count": 3,
-          "skipped_file_count": 2
+          "skipped_file_count": 3
         },
         "ManagedReferenceDocumentProcessor": {
           "can_incremental": true,
           "incrementalPhase": "build",
-          "total_file_count": 29,
-          "skipped_file_count": 29
+          "total_file_count": 32,
+          "skipped_file_count": 32
         },
         "TocDocumentProcessor": {
           "can_incremental": false,

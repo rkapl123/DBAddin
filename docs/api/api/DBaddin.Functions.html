@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Class Functions
    ">
-    <meta name="generator" content="docfx 2.58.0.0">
+    <meta name="generator" content="docfx 2.59.0.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -90,18 +90,45 @@
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_avoidRequeryDuringEdit.md&amp;value=---%0Auid%3A%20DBaddin.Functions.avoidRequeryDuringEdit%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L617">View Source</a>
+  </span>
+  <h4 id="DBaddin_Functions_avoidRequeryDuringEdit" data-uid="DBaddin.Functions.avoidRequeryDuringEdit">avoidRequeryDuringEdit</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool avoidRequeryDuringEdit</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
     <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_conn.md&amp;value=---%0Auid%3A%20DBaddin.Functions.conn%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L21">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L26">View Source</a>
   </span>
   <h4 id="DBaddin_Functions_conn" data-uid="DBaddin.Functions.conn">conn</h4>
-  <div class="markdown level1 summary"><p>connection object: always use the same, if possible (same ConnectionString)</p>
+  <div class="markdown level1 summary"><p>connection object</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static Connection conn</code></pre>
+    <pre><code class="lang-csharp hljs">public static IDbConnection conn</code></pre>
   </div>
   <h5 class="fieldValue">Field Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -121,7 +148,7 @@
     <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_CurrConnString.md&amp;value=---%0Auid%3A%20DBaddin.Functions.CurrConnString%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L23">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L28">View Source</a>
   </span>
   <h4 id="DBaddin_Functions_CurrConnString" data-uid="DBaddin.Functions.CurrConnString">CurrConnString</h4>
   <div class="markdown level1 summary"><p>connection string can be changed for calls with different connection strings</p>
@@ -149,10 +176,10 @@
     <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_dontCalcWhileClearing.md&amp;value=---%0Auid%3A%20DBaddin.Functions.dontCalcWhileClearing%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L29">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L32">View Source</a>
   </span>
   <h4 id="DBaddin_Functions_dontCalcWhileClearing" data-uid="DBaddin.Functions.dontCalcWhileClearing">dontCalcWhileClearing</h4>
-  <div class="markdown level1 summary"><p>avoid entering dblistfetch/dbrowfetch functions during clearing of listfetch areas (before saving)</p>
+  <div class="markdown level1 summary"><p>avoid entering dblistfetch/dbrowfetch functions during clearing of list-fetch areas (before saving)</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
@@ -174,18 +201,17 @@
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_dontTryConnection.md&amp;value=---%0Auid%3A%20DBaddin.Functions.dontTryConnection%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_queryBackupColl.md&amp;value=---%0Auid%3A%20DBaddin.Functions.queryBackupColl%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L27">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L618">View Source</a>
   </span>
-  <h4 id="DBaddin_Functions_dontTryConnection" data-uid="DBaddin.Functions.dontTryConnection">dontTryConnection</h4>
-  <div class="markdown level1 summary"><p>prevent multiple connection retries for each function in case of error</p>
-</div>
+  <h4 id="DBaddin_Functions_queryBackupColl" data-uid="DBaddin.Functions.queryBackupColl">queryBackupColl</h4>
+  <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static bool dontTryConnection</code></pre>
+    <pre><code class="lang-csharp hljs">public static Dictionary&lt;string, string&gt; queryBackupColl</code></pre>
   </div>
   <h5 class="fieldValue">Field Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -205,7 +231,7 @@
     <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_queryCache.md&amp;value=---%0Auid%3A%20DBaddin.Functions.queryCache%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L25">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L30">View Source</a>
   </span>
   <h4 id="DBaddin_Functions_queryCache" data-uid="DBaddin.Functions.queryCache">queryCache</h4>
   <div class="markdown level1 summary"><p>query cache for avoiding unnecessary recalculations/data retrievals by volatile inputs to DB Functions (now(), etc.)</p>
@@ -233,10 +259,10 @@
     <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_StatusCollection.md&amp;value=---%0Auid%3A%20DBaddin.Functions.StatusCollection%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L18">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L24">View Source</a>
   </span>
   <h4 id="DBaddin_Functions_StatusCollection" data-uid="DBaddin.Functions.StatusCollection">StatusCollection</h4>
-  <div class="markdown level1 summary"><p>global collection of information transport containers between function and calc event procedure</p>
+  <div class="markdown level1 summary"><p>global collection of information transport containers between action function and user-defined function resp. calc event procedure</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
@@ -263,16 +289,16 @@
     <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_chainCells_System_Object___.md&amp;value=---%0Auid%3A%20DBaddin.Functions.chainCells(System.Object%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L212">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L291">View Source</a>
   </span>
   <a id="DBaddin_Functions_chainCells_" data-uid="DBaddin.Functions.chainCells*"></a>
   <h4 id="DBaddin_Functions_chainCells_System_Object___" data-uid="DBaddin.Functions.chainCells(System.Object[])">chainCells(Object[])</h4>
-  <div class="markdown level1 summary"><p>chains values contained in thetarget together with commas, mainly used for creating select header</p>
+  <div class="markdown level1 summary"><p>chains values contained in chainPart together with commas, mainly used for creating select header</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">[ExcelFunction(Description = &quot;chains values contained in thetarget together with commas, mainly used for creating select header&quot;)]
+    <pre><code class="lang-csharp hljs">[ExcelFunction(Description = &quot;chains values contained in chainPart together with commas, mainly used for creating select header&quot;)]
 public static string chainCells([ExcelArgument(AllowReference = true, Description = &quot;range where values should be chained&quot;)] params object[] chainPart)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
@@ -310,16 +336,16 @@ public static string chainCells([ExcelArgument(AllowReference = true, Descriptio
     <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_concatCells_System_Object___.md&amp;value=---%0Auid%3A%20DBaddin.Functions.concatCells(System.Object%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L194">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L273">View Source</a>
   </span>
   <a id="DBaddin_Functions_concatCells_" data-uid="DBaddin.Functions.concatCells*"></a>
   <h4 id="DBaddin_Functions_concatCells_System_Object___" data-uid="DBaddin.Functions.concatCells(System.Object[])">concatCells(Object[])</h4>
-  <div class="markdown level1 summary"><p>concatenates values contained in thetarget together (using .value attribute for cells)</p>
+  <div class="markdown level1 summary"><p>concatenates values contained in concatPart together (using .value attribute for cells)</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">[ExcelFunction(Description = &quot;concatenates values contained in thetarget together (using .value attribute for cells)&quot;)]
+    <pre><code class="lang-csharp hljs">[ExcelFunction(Description = &quot;concatenates values contained in concatPart together (using .value attribute for cells)&quot;)]
 public static string concatCells([ExcelArgument(AllowReference = true, Description = &quot;all cells/values which should be concatenated&quot;)] params object[] concatPart)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
@@ -357,16 +383,16 @@ public static string concatCells([ExcelArgument(AllowReference = true, Descripti
     <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_concatCellsSep_System_String_System_Object___.md&amp;value=---%0Auid%3A%20DBaddin.Functions.concatCellsSep(System.String%2CSystem.Object%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L203">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L282">View Source</a>
   </span>
   <a id="DBaddin_Functions_concatCellsSep_" data-uid="DBaddin.Functions.concatCellsSep*"></a>
   <h4 id="DBaddin_Functions_concatCellsSep_System_String_System_Object___" data-uid="DBaddin.Functions.concatCellsSep(System.String,System.Object[])">concatCellsSep(String, Object[])</h4>
-  <div class="markdown level1 summary"><p>concatenates values contained in thetarget (using .value for cells) using a separator</p>
+  <div class="markdown level1 summary"><p>concatenates values contained in concatPart (using .value for cells) using a separator</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">[ExcelFunction(Description = &quot;concatenates values contained in thetarget (using .value for cells) using a separator&quot;)]
+    <pre><code class="lang-csharp hljs">[ExcelFunction(Description = &quot;concatenates values contained in concatPart (using .value for cells) using a separator&quot;)]
 public static string concatCellsSep([ExcelArgument(AllowReference = true, Description = &quot;the separator&quot;)] string separator, [ExcelArgument(AllowReference = true, Description = &quot;all cells/values which should be concatenated&quot;)] params object[] concatPart)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
@@ -406,18 +432,20 @@ public static string concatCellsSep([ExcelArgument(AllowReference = true, Descri
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_convertToBool_System_Object_.md&amp;value=---%0Auid%3A%20DBaddin.Functions.convertToBool(System.Object)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_currentWorkbook_System_Boolean_.md&amp;value=---%0Auid%3A%20DBaddin.Functions.currentWorkbook(System.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L580">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L299">View Source</a>
   </span>
-  <a id="DBaddin_Functions_convertToBool_" data-uid="DBaddin.Functions.convertToBool*"></a>
-  <h4 id="DBaddin_Functions_convertToBool_System_Object_" data-uid="DBaddin.Functions.convertToBool(System.Object)">convertToBool(Object)</h4>
-  <div class="markdown level1 summary"></div>
+  <a id="DBaddin_Functions_currentWorkbook_" data-uid="DBaddin.Functions.currentWorkbook*"></a>
+  <h4 id="DBaddin_Functions_currentWorkbook_System_Boolean_" data-uid="DBaddin.Functions.currentWorkbook(System.Boolean)">currentWorkbook(Boolean)</h4>
+  <div class="markdown level1 summary"><p>get current Workbook path + filename or Workbook path only, if onlyPath is set</p>
+</div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static bool convertToBool(object value)</code></pre>
+    <pre><code class="lang-csharp hljs">[ExcelFunction(Description = &quot;get current Workbook path + filename or Workbook path only, if onlyPath is set&quot;)]
+public static string currentWorkbook([ExcelArgument(Description = &quot;only path of file location?&quot;)] bool onlyPath = false)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -429,8 +457,9 @@ public static string concatCellsSep([ExcelArgument(AllowReference = true, Descri
     </thead>
     <tbody>
       <tr>
-        <td><span class="parametername">value</span></td>
-        <td></td>
+        <td><span class="parametername">onlyPath</span></td>
+        <td><p>only path of file location?</p>
+</td>
       </tr>
     </tbody>
   </table>
@@ -443,7 +472,8 @@ public static string concatCellsSep([ExcelArgument(AllowReference = true, Descri
     </thead>
     <tbody>
       <tr>
-        <td></td>
+        <td><p>current Workbook path + filename or Workbook path only</p>
+</td>
       </tr>
     </tbody>
   </table>
@@ -452,7 +482,7 @@ public static string concatCellsSep([ExcelArgument(AllowReference = true, Descri
     <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_DBAddinEnvironment.md&amp;value=---%0Auid%3A%20DBaddin.Functions.DBAddinEnvironment%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L1332">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L1422">View Source</a>
   </span>
   <a id="DBaddin_Functions_DBAddinEnvironment_" data-uid="DBaddin.Functions.DBAddinEnvironment*"></a>
   <h4 id="DBaddin_Functions_DBAddinEnvironment" data-uid="DBaddin.Functions.DBAddinEnvironment">DBAddinEnvironment()</h4>
@@ -480,21 +510,36 @@ public static string DBAddinEnvironment()</code></pre>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_DBAddinServerSetting.md&amp;value=---%0Auid%3A%20DBaddin.Functions.DBAddinServerSetting%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_DBAddinSetting_System_Object_.md&amp;value=---%0Auid%3A%20DBaddin.Functions.DBAddinSetting(System.Object)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L1346">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L1436">View Source</a>
   </span>
-  <a id="DBaddin_Functions_DBAddinServerSetting_" data-uid="DBaddin.Functions.DBAddinServerSetting*"></a>
-  <h4 id="DBaddin_Functions_DBAddinServerSetting" data-uid="DBaddin.Functions.DBAddinServerSetting">DBAddinServerSetting()</h4>
-  <div class="markdown level1 summary"><p>Get the server settings for the currently selected Environment for DB Functions</p>
+  <a id="DBaddin_Functions_DBAddinSetting_" data-uid="DBaddin.Functions.DBAddinSetting*"></a>
+  <h4 id="DBaddin_Functions_DBAddinSetting_System_Object_" data-uid="DBaddin.Functions.DBAddinSetting(System.Object)">DBAddinSetting(Object)</h4>
+  <div class="markdown level1 summary"><p>Get the settings as given in keyword (e.g. SERVER=) for the currently selected Environment for DB Functions</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">[ExcelFunction(Description = &quot;Get the server settings for the currently selected Environment for DB Functions&quot;)]
-public static string DBAddinServerSetting()</code></pre>
+    <pre><code class="lang-csharp hljs">[ExcelFunction(Description = &quot;Get the settings as given in keyword (e.g. SERVER=) for the currently selected Environment for DB Functions&quot;)]
+public static string DBAddinSetting([ExcelArgument(Description = &quot;keyword for setting to get&quot;)] object keyword)</code></pre>
   </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">keyword</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
   <h5 class="returns">Returns</h5>
   <table class="table table-bordered table-striped table-condensed">
     <thead>
@@ -514,16 +559,16 @@ public static string DBAddinServerSetting()</code></pre>
     <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_DBDate_System_Object_System_Int32_.md&amp;value=---%0Auid%3A%20DBaddin.Functions.DBDate(System.Object%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L43">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L46">View Source</a>
   </span>
   <a id="DBaddin_Functions_DBDate_" data-uid="DBaddin.Functions.DBDate*"></a>
   <h4 id="DBaddin_Functions_DBDate_System_Object_System_Int32_" data-uid="DBaddin.Functions.DBDate(System.Object,System.Int32)">DBDate(Object, Int32)</h4>
-  <div class="markdown level1 summary"><p>Create database compliant date, time or datetime string from excel datetype value</p>
+  <div class="markdown level1 summary"><p>Create database compliant date, time or datetime string from excel date type value</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">[ExcelFunction(Description = &quot;Create database compliant date, time or datetime string from excel datetype value&quot;)]
+    <pre><code class="lang-csharp hljs">[ExcelFunction(Description = &quot;Create database compliant date, time or datetime string from excel date type value&quot;)]
 public static string DBDate([ExcelArgument(Description = &quot;date/time/datetime&quot;)] object DatePart, [ExcelArgument(Description = &quot;formatting option, 0:'YYYYMMDD', 1: DATE 'YYYY-MM-DD'), 2:{d 'YYYY-MM-DD'},3:Access/JetDB #DD/MM/YYYY#, add 10 to formatting to include fractions of a second (1000)&quot;)] int formatting = 99)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
@@ -562,8 +607,8 @@ public static string DBDate([ExcelArgument(Description = &quot;date/time/datetim
     </tbody>
   </table>
   <h5 id="DBaddin_Functions_DBDate_System_Object_System_Int32__remarks">Remarks</h5>
-  <div class="markdown level1 remarks"><p>formatting = 0: A simple datestring (format &apos;YYYYMMDD&apos;), datetime values are converted to &apos;YYYYMMDD HH:MM:SS&apos; and time values are converted to &apos;HH:MM:SS&apos;.
-formatting = 1: An ANSI compliant Date string (format date &apos;YYYY-MM-DD&apos;), datetime values are converted to timestamp &apos;YYYY-MM-DD HH:MM:SS&apos; and time values are converted to time time &apos;HH:MM:SS&apos;.
+  <div class="markdown level1 remarks"><p>formatting = 0: A simple date string (format &apos;YYYYMMDD&apos;), datetime values are converted to &apos;YYYYMMDD HH:MM:SS&apos; and time values are converted to &apos;HH:MM:SS&apos;.
+formatting = 1: An ANSI compliant Date string (format date &apos;YYYY-MM-DD&apos;), datetime values are converted to &apos;YYYY-MM-DD HH:MM:SS&apos; and time values are converted to &apos;HH:MM:SS&apos;.
 formatting = 2: An ODBC compliant Date string (format {d &apos;YYYY-MM-DD&apos;}), datetime values are converted to {ts &apos;YYYY-MM-DD HH:MM:SS&apos;} and time values are converted to {t &apos;HH:MM:SS&apos;}.
 formatting = 3: An Access/JetDB compliant Date string (format #YYYY-MM-DD#), datetime values are converted to #YYYY-MM-DD HH:MM:SS# and time values are converted to #HH:MM:SS#.
 add 10 to formatting to include fractions of a second (1000) 
@@ -574,7 +619,7 @@ formatting &gt;13 or empty (99=default value): take the formatting option from s
     <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_DBinClause_System_Object___.md&amp;value=---%0Auid%3A%20DBaddin.Functions.DBinClause(System.Object%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L162">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L241">View Source</a>
   </span>
   <a id="DBaddin_Functions_DBinClause_" data-uid="DBaddin.Functions.DBinClause*"></a>
   <h4 id="DBaddin_Functions_DBinClause_System_Object___" data-uid="DBaddin.Functions.DBinClause(System.Object[])">DBinClause(Object[])</h4>
@@ -622,7 +667,7 @@ public static string DBinClause([ExcelArgument(AllowReference = true, Descriptio
     <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_DBinClauseDate_System_Object___.md&amp;value=---%0Auid%3A%20DBaddin.Functions.DBinClauseDate(System.Object%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L184">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L263">View Source</a>
   </span>
   <a id="DBaddin_Functions_DBinClauseDate_" data-uid="DBaddin.Functions.DBinClauseDate*"></a>
   <h4 id="DBaddin_Functions_DBinClauseDate_System_Object___" data-uid="DBaddin.Functions.DBinClauseDate(System.Object[])">DBinClauseDate(Object[])</h4>
@@ -670,7 +715,7 @@ public static string DBinClauseDate([ExcelArgument(AllowReference = true, Descri
     <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_DBinClauseStr_System_Object___.md&amp;value=---%0Auid%3A%20DBaddin.Functions.DBinClauseStr(System.Object%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L173">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L252">View Source</a>
   </span>
   <a id="DBaddin_Functions_DBinClauseStr_" data-uid="DBaddin.Functions.DBinClauseStr*"></a>
   <h4 id="DBaddin_Functions_DBinClauseStr_System_Object___" data-uid="DBaddin.Functions.DBinClauseStr(System.Object[])">DBinClauseStr(Object[])</h4>
@@ -718,7 +763,7 @@ public static string DBinClauseStr([ExcelArgument(AllowReference = true, Descrip
     <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_DBListFetch_System_Object_System_Object_System_Object_System_Object_System_Int32_System_Object_System_Object_System_Object_System_Object_.md&amp;value=---%0Auid%3A%20DBaddin.Functions.DBListFetch(System.Object%2CSystem.Object%2CSystem.Object%2CSystem.Object%2CSystem.Int32%2CSystem.Object%2CSystem.Object%2CSystem.Object%2CSystem.Object)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L507">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L712">View Source</a>
   </span>
   <a id="DBaddin_Functions_DBListFetch_" data-uid="DBaddin.Functions.DBListFetch*"></a>
   <h4 id="DBaddin_Functions_DBListFetch_System_Object_System_Object_System_Object_System_Object_System_Int32_System_Object_System_Object_System_Object_System_Object_" data-uid="DBaddin.Functions.DBListFetch(System.Object,System.Object,System.Object,System.Object,System.Int32,System.Object,System.Object,System.Object,System.Object)">DBListFetch(Object, Object, Object, Object, Int32, Object, Object, Object, Object)</h4>
@@ -730,7 +775,7 @@ and add field headers if HeaderInfo = TRUE</p>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
     <pre><code class="lang-csharp hljs">[ExcelFunction(Description = &quot;Fetches a list of data defined by query into TargetRange. Optionally copy formulas contained in FormulaRange, extend list depending on ExtendDataArea (0(default) = overwrite, 1=insert Cells, 2=insert Rows) and add field headers if HeaderInfo = TRUE&quot;)]
-public static string DBListFetch([ExcelArgument(Description = &quot;query for getting data&quot;)] object Query, [ExcelArgument(Description = &quot;connection string defining DB, user, etc...&quot;)] object ConnString, [ExcelArgument(Description = &quot;Range to put the data into&quot;, AllowReference = true)] object targetRange, [ExcelArgument(Description = &quot;Range to copy formulas down from&quot;, AllowReference = true)] object formulaRange = null, [ExcelArgument(Description = &quot;how to deal with extending List Area&quot;)] int extendDataArea = 0, [ExcelArgument(Description = &quot;should headers be included in list&quot;)] object HeaderInfo = null, [ExcelArgument(Description = &quot;should columns be autofitted ?&quot;)] object AutoFit = null, [ExcelArgument(Description = &quot;should 1st row formats be autofilled down?&quot;)] object autoformat = null, [ExcelArgument(Description = &quot;should row numbers be displayed in 1st column?&quot;)] object ShowRowNums = null)</code></pre>
+public static string DBListFetch([ExcelArgument(Description = &quot;query for getting data&quot;)] object Query, [ExcelArgument(Description = &quot;connection string defining DB, user, etc...&quot;)] object ConnString, [ExcelArgument(Description = &quot;Range to put the data into&quot;, AllowReference = true)] object targetRange, [ExcelArgument(Description = &quot;Range to copy formulas down from&quot;, AllowReference = true)] object formulaRange = null, [ExcelArgument(Description = &quot;how to deal with extending List Area&quot;)] int extendDataArea = 0, [ExcelArgument(Description = &quot;should headers be included in list&quot;)] object HeaderInfo = null, [ExcelArgument(Description = &quot;should columns be auto-fitted ?&quot;)] object AutoFit = null, [ExcelArgument(Description = &quot;should 1st row formats be auto-filled down?&quot;)] object autoformat = null, [ExcelArgument(Description = &quot;should row numbers be displayed in 1st column?&quot;)] object ShowRowNums = null)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -773,12 +818,12 @@ public static string DBListFetch([ExcelArgument(Description = &quot;query for ge
       </tr>
       <tr>
         <td><span class="parametername">AutoFit</span></td>
-        <td><p>should columns be autofitted ?</p>
+        <td><p>should columns be auto fitted ?</p>
 </td>
       </tr>
       <tr>
         <td><span class="parametername">autoformat</span></td>
-        <td><p>should 1st row formats be autofilled down?</p>
+        <td><p>should 1st row formats be auto filled down?</p>
 </td>
       </tr>
       <tr>
@@ -807,7 +852,7 @@ public static string DBListFetch([ExcelArgument(Description = &quot;query for ge
     <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_DBListFetchAction_System_String_System_String_Microsoft_Office_Interop_Excel_Range_Microsoft_Office_Interop_Excel_Range_System_String_System_Object_System_Int32_System_Boolean_System_Boolean_System_Boolean_System_Boolean_System_String_System_String_.md&amp;value=---%0Auid%3A%20DBaddin.Functions.DBListFetchAction(System.String%2CSystem.String%2CMicrosoft.Office.Interop.Excel.Range%2CMicrosoft.Office.Interop.Excel.Range%2CSystem.String%2CSystem.Object%2CSystem.Int32%2CSystem.Boolean%2CSystem.Boolean%2CSystem.Boolean%2CSystem.Boolean%2CSystem.String%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L608">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L798">View Source</a>
   </span>
   <a id="DBaddin_Functions_DBListFetchAction_" data-uid="DBaddin.Functions.DBListFetchAction*"></a>
   <h4 id="DBaddin_Functions_DBListFetchAction_System_String_System_String_Microsoft_Office_Interop_Excel_Range_Microsoft_Office_Interop_Excel_Range_System_String_System_Object_System_Int32_System_Boolean_System_Boolean_System_Boolean_System_Boolean_System_String_System_String_" data-uid="DBaddin.Functions.DBListFetchAction(System.String,System.String,Microsoft.Office.Interop.Excel.Range,Microsoft.Office.Interop.Excel.Range,System.String,System.Object,System.Int32,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.String,System.String)">DBListFetchAction(String, String, Range, Range, String, Object, Int32, Boolean, Boolean, Boolean, Boolean, String, String)</h4>
@@ -887,7 +932,7 @@ public static string DBListFetch([ExcelArgument(Description = &quot;query for ge
     <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_DBRowFetch_System_Object_System_Object_System_Object___.md&amp;value=---%0Auid%3A%20DBaddin.Functions.DBRowFetch(System.Object%2CSystem.Object%2CSystem.Object%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L1052">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L1157">View Source</a>
   </span>
   <a id="DBaddin_Functions_DBRowFetch_" data-uid="DBaddin.Functions.DBRowFetch*"></a>
   <h4 id="DBaddin_Functions_DBRowFetch_System_Object_System_Object_System_Object___" data-uid="DBaddin.Functions.DBRowFetch(System.Object,System.Object,System.Object[])">DBRowFetch(Object, Object, Object[])</h4>
@@ -944,7 +989,7 @@ public static string DBRowFetch([ExcelArgument(Description = &quot;query for get
     <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_DBRowFetchAction_System_String_System_String_Microsoft_Office_Interop_Excel_Range_System_Object_System_String_System_Boolean_.md&amp;value=---%0Auid%3A%20DBaddin.Functions.DBRowFetchAction(System.String%2CSystem.String%2CMicrosoft.Office.Interop.Excel.Range%2CSystem.Object%2CSystem.String%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L1130">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L1233">View Source</a>
   </span>
   <a id="DBaddin_Functions_DBRowFetchAction_" data-uid="DBaddin.Functions.DBRowFetchAction*"></a>
   <h4 id="DBaddin_Functions_DBRowFetchAction_System_String_System_String_Microsoft_Office_Interop_Excel_Range_System_Object_System_String_System_Boolean_" data-uid="DBaddin.Functions.DBRowFetchAction(System.String,System.String,Microsoft.Office.Interop.Excel.Range,System.Object,System.String,System.Boolean)">DBRowFetchAction(String, String, Range, Object, String, Boolean)</h4>
@@ -992,19 +1037,118 @@ public static string DBRowFetch([ExcelArgument(Description = &quot;query for get
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_DBSetQuery_System_Object_System_Object_System_Object_.md&amp;value=---%0Auid%3A%20DBaddin.Functions.DBSetQuery(System.Object%2CSystem.Object%2CSystem.Object)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_DBSetPowerQuery_System_Object_System_Object_.md&amp;value=---%0Auid%3A%20DBaddin.Functions.DBSetPowerQuery(System.Object%2CSystem.Object)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L287">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L586">View Source</a>
   </span>
-  <a id="DBaddin_Functions_DBSetQuery_" data-uid="DBaddin.Functions.DBSetQuery*"></a>
-  <h4 id="DBaddin_Functions_DBSetQuery_System_Object_System_Object_System_Object_" data-uid="DBaddin.Functions.DBSetQuery(System.Object,System.Object,System.Object)">DBSetQuery(Object, Object, Object)</h4>
-  <div class="markdown level1 summary"><p>Stores a query into an Object defined in targetRange (an embedded MS Query/Listobject, Pivot table, etc.)</p>
+  <a id="DBaddin_Functions_DBSetPowerQuery_" data-uid="DBaddin.Functions.DBSetPowerQuery*"></a>
+  <h4 id="DBaddin_Functions_DBSetPowerQuery_System_Object_System_Object_" data-uid="DBaddin.Functions.DBSetPowerQuery(System.Object,System.Object)">DBSetPowerQuery(Object, Object)</h4>
+  <div class="markdown level1 summary"><p>Stores a query into an powerquery defined by queryName</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">[ExcelFunction(Description = &quot;Stores a query into an Object (embedded Listobject or Pivot table) defined in targetRange&quot;)]
+    <pre><code class="lang-csharp hljs">[ExcelFunction(Description = &quot;Stores a query into a power query object defined in queryName&quot;)]
+public static string DBSetPowerQuery([ExcelArgument(Description = &quot;query for getting data&quot;)] object Query, [ExcelArgument(Description = &quot;Name of Powerquery where query should be set&quot;)] object queryName)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">Query</span></td>
+        <td><p>(power) query for getting data</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="parametername">queryName</span></td>
+        <td><p>powerquery name</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><p>Status Message</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_DBSetPowerQueryAction_System_String_System_String_Microsoft_Office_Interop_Excel_Range_System_String_.md&amp;value=---%0Auid%3A%20DBaddin.Functions.DBSetPowerQueryAction(System.String%2CSystem.String%2CMicrosoft.Office.Interop.Excel.Range%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L625">View Source</a>
+  </span>
+  <a id="DBaddin_Functions_DBSetPowerQueryAction_" data-uid="DBaddin.Functions.DBSetPowerQueryAction*"></a>
+  <h4 id="DBaddin_Functions_DBSetPowerQueryAction_System_String_System_String_Microsoft_Office_Interop_Excel_Range_System_String_" data-uid="DBaddin.Functions.DBSetPowerQueryAction(System.String,System.String,Microsoft.Office.Interop.Excel.Range,System.String)">DBSetPowerQueryAction(String, String, Range, String)</h4>
+  <div class="markdown level1 summary"><p>set Query parameters (query text and connection string) of Query List or pivot table (incl. chart)</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static void DBSetPowerQueryAction(string callID, string Query, Range caller, string queryName)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">callID</span></td>
+        <td><p>the key for the statusMsg container</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="parametername">Query</span></td>
+        <td><p>(power) query for getting data</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="parametername">caller</span></td>
+        <td><p>calling range passed by Action procedure</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="parametername">queryName</span></td>
+        <td><p>Name of Powerquery where query should be set</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_DBSetQuery_System_Object_System_Object_System_Object_.md&amp;value=---%0Auid%3A%20DBaddin.Functions.DBSetQuery(System.Object%2CSystem.Object%2CSystem.Object)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L378">View Source</a>
+  </span>
+  <a id="DBaddin_Functions_DBSetQuery_" data-uid="DBaddin.Functions.DBSetQuery*"></a>
+  <h4 id="DBaddin_Functions_DBSetQuery_System_Object_System_Object_System_Object_" data-uid="DBaddin.Functions.DBSetQuery(System.Object,System.Object,System.Object)">DBSetQuery(Object, Object, Object)</h4>
+  <div class="markdown level1 summary"><p>Stores a query into an Object defined in targetRange (an embedded MS Query/List object, Pivot table, etc.)</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">[ExcelFunction(Description = &quot;Stores a query into an Object (embedded List object or Pivot table) defined in targetRange&quot;)]
 public static string DBSetQuery([ExcelArgument(Description = &quot;query for getting data&quot;)] object Query, [ExcelArgument(Description = &quot;connection string defining DB, user, etc...&quot;)] object ConnString, [ExcelArgument(Description = &quot;Range with embedded Object to put the Query/ConnString into&quot;, AllowReference = true)] object targetRange)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
@@ -1049,19 +1193,19 @@ public static string DBSetQuery([ExcelArgument(Description = &quot;query for get
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_DBSetQueryAction_System_String_System_String_System_Object_System_String_Microsoft_Office_Interop_Excel_Range_System_String_.md&amp;value=---%0Auid%3A%20DBaddin.Functions.DBSetQueryAction(System.String%2CSystem.String%2CSystem.Object%2CSystem.String%2CMicrosoft.Office.Interop.Excel.Range%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_DBSetQueryAction_System_String_System_String_Microsoft_Office_Interop_Excel_Range_System_String_Microsoft_Office_Interop_Excel_Range_System_String_.md&amp;value=---%0Auid%3A%20DBaddin.Functions.DBSetQueryAction(System.String%2CSystem.String%2CMicrosoft.Office.Interop.Excel.Range%2CSystem.String%2CMicrosoft.Office.Interop.Excel.Range%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L339">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L432">View Source</a>
   </span>
   <a id="DBaddin_Functions_DBSetQueryAction_" data-uid="DBaddin.Functions.DBSetQueryAction*"></a>
-  <h4 id="DBaddin_Functions_DBSetQueryAction_System_String_System_String_System_Object_System_String_Microsoft_Office_Interop_Excel_Range_System_String_" data-uid="DBaddin.Functions.DBSetQueryAction(System.String,System.String,System.Object,System.String,Microsoft.Office.Interop.Excel.Range,System.String)">DBSetQueryAction(String, String, Object, String, Range, String)</h4>
+  <h4 id="DBaddin_Functions_DBSetQueryAction_System_String_System_String_Microsoft_Office_Interop_Excel_Range_System_String_Microsoft_Office_Interop_Excel_Range_System_String_" data-uid="DBaddin.Functions.DBSetQueryAction(System.String,System.String,Microsoft.Office.Interop.Excel.Range,System.String,Microsoft.Office.Interop.Excel.Range,System.String)">DBSetQueryAction(String, String, Range, String, Range, String)</h4>
   <div class="markdown level1 summary"><p>set Query parameters (query text and connection string) of Query List or pivot table (incl. chart)</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static void DBSetQueryAction(string callID, string Query, object targetRange, string ConnString, Range caller, string targetRangeName)</code></pre>
+    <pre><code class="lang-csharp hljs">public static void DBSetQueryAction(string callID, string Query, Range targetRange, string ConnString, Range caller, string targetRangeName)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -1079,19 +1223,23 @@ public static string DBSetQuery([ExcelArgument(Description = &quot;query for get
       </tr>
       <tr>
         <td><span class="parametername">Query</span></td>
-        <td></td>
+        <td><p>query for getting data</p>
+</td>
       </tr>
       <tr>
         <td><span class="parametername">targetRange</span></td>
-        <td></td>
+        <td><p>Range with Object beneath to put the Query/ConnString into</p>
+</td>
       </tr>
       <tr>
         <td><span class="parametername">ConnString</span></td>
-        <td></td>
+        <td><p>connection string defining DB, user, etc...</p>
+</td>
       </tr>
       <tr>
         <td><span class="parametername">caller</span></td>
-        <td></td>
+        <td><p>calling range passed by Action procedure</p>
+</td>
       </tr>
       <tr>
         <td><span class="parametername">targetRangeName</span></td>
@@ -1104,7 +1252,7 @@ public static string DBSetQuery([ExcelArgument(Description = &quot;query for get
     <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_DBString_System_Object___.md&amp;value=---%0Auid%3A%20DBaddin.Functions.DBString(System.Object%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L131">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L134">View Source</a>
   </span>
   <a id="DBaddin_Functions_DBString_" data-uid="DBaddin.Functions.DBString*"></a>
   <h4 id="DBaddin_Functions_DBString_System_Object___" data-uid="DBaddin.Functions.DBString(System.Object[])">DBString(Object[])</h4>
@@ -1148,19 +1296,20 @@ public static string DBString([ExcelArgument(Description = &quot;array of string
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_existsNameInSheet_System_String__Microsoft_Office_Interop_Excel_Worksheet_.md&amp;value=---%0Auid%3A%20DBaddin.Functions.existsNameInSheet(System.String%40%2CMicrosoft.Office.Interop.Excel.Worksheet)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_PQDate_System_Object_System_Boolean_.md&amp;value=---%0Auid%3A%20DBaddin.Functions.PQDate(System.Object%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L1512">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L194">View Source</a>
   </span>
-  <a id="DBaddin_Functions_existsNameInSheet_" data-uid="DBaddin.Functions.existsNameInSheet*"></a>
-  <h4 id="DBaddin_Functions_existsNameInSheet_System_String__Microsoft_Office_Interop_Excel_Worksheet_" data-uid="DBaddin.Functions.existsNameInSheet(System.String@,Microsoft.Office.Interop.Excel.Worksheet)">existsNameInSheet(ref String, Worksheet)</h4>
-  <div class="markdown level1 summary"><p>checks whether theName exists as a name in Worksheet theWs</p>
+  <a id="DBaddin_Functions_PQDate_" data-uid="DBaddin.Functions.PQDate*"></a>
+  <h4 id="DBaddin_Functions_PQDate_System_Object_System_Boolean_" data-uid="DBaddin.Functions.PQDate(System.Object,System.Boolean)">PQDate(Object, Boolean)</h4>
+  <div class="markdown level1 summary"><p>Creates a powerquery compliant #date function from excel date type value</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static bool existsNameInSheet(ref string theName, Worksheet theWs)</code></pre>
+    <pre><code class="lang-csharp hljs">[ExcelFunction(Description = &quot;Create powerquery compliant #date, #time or #datetime function from excel date type value&quot;)]
+public static string PQDate([ExcelArgument(Description = &quot;date/time/datetime&quot;)] object DatePart, [ExcelArgument(Description = &quot;enforce datetime for date only values (without fractional part)&quot;)] bool forceDateTime = false)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -1172,11 +1321,12 @@ public static string DBString([ExcelArgument(Description = &quot;array of string
     </thead>
     <tbody>
       <tr>
-        <td><span class="parametername">theName</span></td>
-        <td></td>
+        <td><span class="parametername">DatePart</span></td>
+        <td><p>date/time/datetime single parameter or range reference</p>
+</td>
       </tr>
       <tr>
-        <td><span class="parametername">theWs</span></td>
+        <td><span class="parametername">forceDateTime</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -1190,26 +1340,27 @@ public static string DBString([ExcelArgument(Description = &quot;array of string
     </thead>
     <tbody>
       <tr>
-        <td><p>true if it exists</p>
+        <td><p>the powerquery #date function</p>
 </td>
       </tr>
     </tbody>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_existsNameInWb_System_String__Microsoft_Office_Interop_Excel_Workbook_.md&amp;value=---%0Auid%3A%20DBaddin.Functions.existsNameInWb(System.String%40%2CMicrosoft.Office.Interop.Excel.Workbook)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_PQString_System_Object___.md&amp;value=---%0Auid%3A%20DBaddin.Functions.PQString(System.Object%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L1498">View Source</a>
+    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L164">View Source</a>
   </span>
-  <a id="DBaddin_Functions_existsNameInWb_" data-uid="DBaddin.Functions.existsNameInWb*"></a>
-  <h4 id="DBaddin_Functions_existsNameInWb_System_String__Microsoft_Office_Interop_Excel_Workbook_" data-uid="DBaddin.Functions.existsNameInWb(System.String@,Microsoft.Office.Interop.Excel.Workbook)">existsNameInWb(ref String, Workbook)</h4>
-  <div class="markdown level1 summary"><p>checks whether theName exists as a name in Workbook theWb</p>
+  <a id="DBaddin_Functions_PQString_" data-uid="DBaddin.Functions.PQString*"></a>
+  <h4 id="DBaddin_Functions_PQString_System_Object___" data-uid="DBaddin.Functions.PQString(System.Object[])">PQString(Object[])</h4>
+  <div class="markdown level1 summary"><p>Create a powerquery compliant string from cell values, potentially concatenating with other parts for easy inclusion of wildcards (%,_)</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static bool existsNameInWb(ref string theName, Workbook theWb)</code></pre>
+    <pre><code class="lang-csharp hljs">[ExcelFunction(Description = &quot;Create a powerquery compliant string from cell values, potentially concatenating with other parts for easy inclusion of wildcards (%,_)&quot;)]
+public static string PQString([ExcelArgument(Description = &quot;array of strings/wildcards or ranges containing strings/wildcards&quot;)] params object[] StringPart)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -1221,12 +1372,9 @@ public static string DBString([ExcelArgument(Description = &quot;array of string
     </thead>
     <tbody>
       <tr>
-        <td><span class="parametername">theName</span></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td><span class="parametername">theWb</span></td>
-        <td></td>
+        <td><span class="parametername">StringPart</span></td>
+        <td><p>array of strings/wildcards or ranges containing strings/wildcards</p>
+</td>
       </tr>
     </tbody>
   </table>
@@ -1239,49 +1387,8 @@ public static string DBString([ExcelArgument(Description = &quot;array of string
     </thead>
     <tbody>
       <tr>
-        <td><p>true if it exists</p>
+        <td><p>powerquery compliant string</p>
 </td>
-      </tr>
-    </tbody>
-  </table>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
-    <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions_resolveConnstring_System_Object__System_String__System_Boolean_.md&amp;value=---%0Auid%3A%20DBaddin.Functions.resolveConnstring(System.Object%40%2CSystem.String%40%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L1455">View Source</a>
-  </span>
-  <a id="DBaddin_Functions_resolveConnstring_" data-uid="DBaddin.Functions.resolveConnstring*"></a>
-  <h4 id="DBaddin_Functions_resolveConnstring_System_Object__System_String__System_Boolean_" data-uid="DBaddin.Functions.resolveConnstring(System.Object@,System.String@,System.Boolean)">resolveConnstring(ref Object, ref String, Boolean)</h4>
-  <div class="markdown level1 summary"><p>create a final connection string from passed String or number (environment), as well as a EnvPrefix for showing the environment (or set ConnString)</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static void resolveConnstring(ref object ConnString, ref string EnvPrefix, bool getConnStrForDBSet)</code></pre>
-  </div>
-  <h5 class="parameters">Parameters</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="parametername">ConnString</span></td>
-        <td><p>passed connection string or environment number, resolved (=returned) to actual connection string</p>
-</td>
-      </tr>
-      <tr>
-        <td><span class="parametername">EnvPrefix</span></td>
-        <td><p>prefix for showing environment (ConnString set if no environment)</p>
-</td>
-      </tr>
-      <tr>
-        <td><span class="parametername">getConnStrForDBSet</span></td>
-        <td></td>
       </tr>
     </tbody>
   </table>
@@ -1296,7 +1403,7 @@ public static string DBString([ExcelArgument(Description = &quot;array of string
                     <a href="https://github.com/rkapl123/DBAddin/new/master/apiSpec/new?filename=DBaddin_Functions.md&amp;value=---%0Auid%3A%20DBaddin.Functions%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
                   </li>
                   <li>
-                    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L15" class="contribution-link">View Source</a>
+                    <a href="https://github.com/rkapl123/DBAddin/blob/master/source/Functions.vb/#L21" class="contribution-link">View Source</a>
                   </li>
                 </ul>
               </div>

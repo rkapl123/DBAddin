@@ -56,8 +56,7 @@ Public Class AddInEvents
         ' IntelliSense needed for DB- and supporting functions
         ExcelDna.IntelliSense.IntelliSenseServer.Install()
 
-        ' Ribbon and context menu setup
-        theMenuHandler = New MenuHandler
+        ' caches and collection initialization 
         LogInfo("initialize configuration settings")
         Functions.queryCache = New Dictionary(Of String, String)
         Functions.StatusCollection = New Dictionary(Of String, ContainedStatusMsg)
@@ -83,12 +82,7 @@ Public Class AddInEvents
 
     ''' <summary>AutoClose cleans up after finishing addin</summary>
     Public Sub AutoClose() Implements IExcelAddIn.AutoClose
-        Try
-            theMenuHandler = Nothing
-            ExcelDna.IntelliSense.IntelliSenseServer.Uninstall()
-        Catch ex As Exception
-            UserMsg("DBAddin unloading error: " + ex.Message, "AutoClose")
-        End Try
+        ExcelDna.IntelliSense.IntelliSenseServer.Uninstall()
     End Sub
 
     ''' <summary>saves defined DBMaps (depending on configuration), also used to remove contents of DBListfunction results (data safety/space consumption)
@@ -286,7 +280,6 @@ done:
             LogInfo("finished actions on Workbook Activate")
         End If
     End Sub
-
 
 
     ''' <summary>specific click handlers for the five definable command buttons</summary>

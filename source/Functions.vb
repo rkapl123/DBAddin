@@ -390,7 +390,6 @@ Public Module Functions
             resolveConnstring(ConnString, EnvPrefix, True)
             ' calcContainers are identified by workbook name + Sheet name + function caller cell Address
             callID = "[" + caller.Parent.Parent.Name + "]" + caller.Parent.Name + "!" + caller.Address
-            LogInfo("entering function, callID: " + callID)
             ' check query, also converts query to string (if it is a range)
             ' error message or cached status message is returned from checkParamsAndCache, if query OK and result was not already calculated (cached) then empty string
             DBSetQuery = checkParamsAndCache(Query, callID, ConnString)
@@ -401,6 +400,10 @@ Public Module Functions
 
             ' needed for check whether target range is actually a table List object reference
             Dim functionArgs = functionSplit(caller.Formula, ",", """", "DBSetQuery", "(", ")")
+            ' targetRangeName can be either a simple range (A1) or a list object reference
+            ' this list object reference can either be a complete table (sub)range: Tablename[[#Headerrows]] or Tablename[fieldname] or Tablename[#All]
+            ' or a separator split single cell: Tablename[[#Headerrows],[fieldname]]
+            ' in the latter case, functionSplit will return 4 arguments and the last needs to be rejoined
             Dim targetRangeName As String = functionArgs(2)
             If UBound(functionArgs) = 3 Then targetRangeName += "," + functionArgs(3)
 
@@ -410,15 +413,13 @@ Public Module Functions
                 StatusCollection.Add(callID, statusCont)
                 StatusCollection(callID).statusMsg = "" ' need this to prevent object not set errors in checkCache
                 ExcelAsyncUtil.QueueAsMacro(Sub()
-                                                DBSetQueryAction(callID, Query, targetRange, ConnString, caller, targetRangeName)
+                                                DBSetQueryAction(callID, Query, ToRange(targetRange), ConnString, caller, targetRangeName)
                                             End Sub)
             End If
-
         Catch ex As Exception
             LogWarn(ex.Message + ", callID: " + callID)
             DBSetQuery = EnvPrefix + ", Error (" + ex.Message + ") in DBSetQuery, callID: " + callID
         End Try
-        LogInfo("leaving function, callID: " + callID)
     End Function
 
     ''' <summary>set Query parameters (query text and connection string) of Query List or pivot table (incl. chart)</summary>
@@ -428,12 +429,12 @@ Public Module Functions
     ''' <param name="ConnString">connection string defining DB, user, etc...</param>
     ''' <param name="caller">calling range passed by Action procedure</param>
     ''' <param name="targetRangeName"></param>
-    Sub DBSetQueryAction(callID As String, Query As String, targetRange As Object, ConnString As String, caller As Excel.Range, targetRangeName As String)
-        Dim TargetCell As Excel.Range
+    Sub DBSetQueryAction(callID As String, Query As String, targetRange As Excel.Range, ConnString As String, caller As Excel.Range, targetRangeName As String)
         Dim targetSH As Excel.Worksheet
         Dim targetWB As Excel.Workbook
         Dim thePivotTable As Excel.PivotTable = Nothing
         Dim theListObject As Excel.ListObject = Nothing
+        Dim errMsg As String
 
         Dim calcMode = ExcelDnaUtil.Application.Calculation
         Try
@@ -443,114 +444,109 @@ Public Module Functions
         ' when selecting a value from a list of a validated field or being invoked from a hyperlink (e.g. word), excel won't react to
         ' Application.Calculation changes, so just leave here...
         If ExcelDnaUtil.Application.Calculation <> Excel.XlCalculation.xlCalculationManual Then
-            LogWarn("Error in setting Application.Calculation to Manual in query: " + Query + ", caller: " + callID)
-            StatusCollection(callID).statusMsg = "Error in setting Application.Calculation to Manual in query: " + Query
-            caller.Formula += " " ' trigger recalculation to return error message to calling function
-            Exit Sub
-        End If
-        ' when being called from DBSequence.doDBModif, targetRange is an Excel.Range, otherwise it's a reference
-        If TypeName(targetRange) = "ExcelReference" Then
-            TargetCell = ToRange(targetRange)
-        Else
-            TargetCell = targetRange
+            errMsg = "Error in setting Application.Calculation to Manual"
+            GoTo err
         End If
 
-        targetSH = TargetCell.Parent
-        targetWB = TargetCell.Parent.Parent
-        Dim callerFormula As String = caller.Formula.ToString()
+        Dim callerFormula As String
+        Try
+            targetSH = targetRange.Parent
+            targetWB = targetRange.Parent.Parent
+            callerFormula = caller.Formula.ToString()
+        Catch ex As Exception
+            errMsg = "Error in getting targetSH/targetWB from TargetCell or getting formula"
+            GoTo err
+        End Try
+
         Dim srcExtent As String = "", targetExtent As String = ""
-        Dim errMsg As String = setExtents(caller, srcExtent, targetExtent)
+        errMsg = setExtents(caller, srcExtent, targetExtent)
+        If errMsg <> "" Then GoTo err
 
         ' try to get either a pivot table object or a list object from the target cell. What we have is checked later...
-        Try : thePivotTable = TargetCell.PivotTable : Catch ex As Exception : End Try
-        Try : theListObject = TargetCell.ListObject : Catch ex As Exception : End Try
+        Try : thePivotTable = targetRange.PivotTable : Catch ex As Exception : End Try
+        Try : theListObject = targetRange.ListObject : Catch ex As Exception : End Try
 
         Dim connType As String = ""
         Dim bgQuery As Boolean
         DBModifs.preventChangeWhileFetching = True
-
-        StatusCollection(callID).statusMsg = ""
         Try
-            If errMsg <> "" Then Throw New Exception(errMsg)
+            Dim thePivotCache As Excel.PivotCache = Nothing
+            Dim theQueryTable As Excel.QueryTable = Nothing
             ' first, get the connection type from the underlying PivotCache or QueryTable (OLEDB or ODBC)
             If thePivotTable IsNot Nothing Then
+                thePivotCache = thePivotTable.PivotCache
                 Try
-                    connType = Left$(thePivotTable.PivotCache.Connection.ToString(), InStr(1, thePivotTable.PivotCache.Connection.ToString(), ";"))
+                    connType = Left$(thePivotCache.Connection.ToString(), InStr(1, thePivotCache.Connection.ToString(), ";"))
                 Catch ex As Exception
-                    Throw New Exception("couldn't get connection from Pivot Table, please create Pivot Table with external data source, " + ex.Message)
+                    errMsg = "couldn't get connection from Pivot Table, please create Pivot Table with external data source, " + ex.Message
+                    GoTo err
                 End Try
             End If
             If theListObject IsNot Nothing Then
+                theQueryTable = theListObject.QueryTable
                 Try
-                    connType = Left$(theListObject.QueryTable.Connection.ToString(), InStr(1, theListObject.QueryTable.Connection.ToString(), ";"))
+                    connType = Left$(theQueryTable.Connection.ToString(), InStr(1, theQueryTable.Connection.ToString(), ";"))
                 Catch ex As Exception
-                    Throw New Exception("couldn't get connection from ListObject, please create ListObject with external data source, " + ex.Message)
+                    errMsg = "couldn't get connection from ListObject, please create ListObject with external data source, " + ex.Message
+                    GoTo err
                 End Try
             End If
 
-            If InStr(1, UCase$(ConnString), ";ODBC;") > 0 Then
-                If fetchSetting("preferODBCconnString" + env(), "false") = "true" Then
-                    ConnString = Mid$(ConnString, InStr(1, UCase$(ConnString), ";ODBC;") + 1)
-                Else
-                    ConnString = Left$(ConnString, InStr(1, UCase$(ConnString), ";ODBC;") - 1)
-                End If
-            End If
             ' if we haven't already set the connection type in the alternative connection string then set it now..
             If Left(ConnString, 6) <> "OLEDB;" And Left(ConnString, 5) <> "ODBC;" Then ConnString = connType + ConnString
-
             ' now set the connection string and the query and refresh it.
             If thePivotTable IsNot Nothing Then
-                bgQuery = thePivotTable.PivotCache.BackgroundQuery
-                thePivotTable.PivotCache.Connection = ConnString
-                thePivotTable.PivotCache.CommandType = Excel.XlCmdType.xlCmdSql
-                thePivotTable.PivotCache.CommandText = Query
-                thePivotTable.PivotCache.BackgroundQuery = False
-                thePivotTable.PivotCache.Refresh()
+                bgQuery = thePivotCache.BackgroundQuery
+                thePivotCache.Connection = ConnString
+                thePivotCache.CommandType = Excel.XlCmdType.xlCmdSql
+                thePivotCache.CommandText = Query
+                thePivotCache.BackgroundQuery = False
+                thePivotCache.Refresh()
                 StatusCollection(callID).statusMsg = "Set " + connType + " PivotTable to (bgQuery= " + bgQuery.ToString() + "): " + Query
-                thePivotTable.PivotCache.BackgroundQuery = bgQuery
+                thePivotCache.BackgroundQuery = bgQuery
                 ' give hidden name to target range of pivot query (jump function)
-                thePivotTable.TableRange1.Name = targetExtent
-                thePivotTable.TableRange1.Parent.Parent.Names(targetExtent).Visible = False
-            End If
-            If theListObject IsNot Nothing Then
-                bgQuery = theListObject.QueryTable.BackgroundQuery
+                Dim theTableRange As Excel.Range = thePivotTable.TableRange1
+                theTableRange.Name = targetExtent
+                theTableRange.Parent.Parent.Names(targetExtent).Visible = False
+            ElseIf theListObject IsNot Nothing Then
+                bgQuery = theQueryTable.BackgroundQuery
                 ' check whether target range is actually a table List object reference, if so, replace with simple address as this doesn't produce a #REF! error on QueryTable.Refresh
                 ' this simple address is below being set to caller.Formula
-                If InStr(targetRangeName, theListObject.Name) > 0 Then callerFormula = Replace(callerFormula, targetRangeName, Replace(TargetCell.Cells(1, 1).Address, "$", ""))
+                If InStr(targetRangeName, theListObject.Name) > 0 Then callerFormula = Replace(callerFormula, targetRangeName, Replace(targetRange.Cells(1, 1).Address, "$", ""))
                 ' in case list object is sorted externally, give a warning (otherwise this leads to confusion when trying to order in the query)...
                 If theListObject.Sort.SortFields.Count > 0 Then UserMsg("List Object " + theListObject.Name + " set by DBSetQuery in " + callID + " is already sorted by Excel, ordering statements in the query don't have any effect !", MsgBoxStyle.Exclamation)
                 ' in case of CUDFlags, reset them now (before resizing)...
-                Dim dbMapperRangeName As String = getDBModifNameFromRange(TargetCell)
+                Dim dbMapperRangeName As String = getDBModifNameFromRange(targetRange)
                 If Left(dbMapperRangeName, 8) = "DBMapper" Then
                     Dim dbMapper As DBMapper = DBModifDefColl("DBMapper").Item(dbMapperRangeName)
                     dbMapper.resetCUDFlags()
                 End If
-                theListObject.QueryTable.Connection = ConnString
-                theListObject.QueryTable.CommandType = Excel.XlCmdType.xlCmdSql
-                theListObject.QueryTable.CommandText = Query
-                theListObject.QueryTable.BackgroundQuery = False
-                Dim theRefreshStyle As Excel.XlCellInsertionMode = theListObject.QueryTable.RefreshStyle
-                Dim thePreserveColumnInfo As Boolean = theListObject.QueryTable.PreserveColumnInfo
+                theQueryTable.Connection = ConnString
+                theQueryTable.CommandType = Excel.XlCmdType.xlCmdSql
+                theQueryTable.CommandText = Query
+                theQueryTable.BackgroundQuery = False
+                Dim theRefreshStyle As Excel.XlCellInsertionMode = theQueryTable.RefreshStyle
+                Dim thePreserveColumnInfo As Boolean = theQueryTable.PreserveColumnInfo
                 Try
-                    theListObject.QueryTable.Refresh()
+                    theQueryTable.Refresh()
                 Catch ex As Exception
-                    LogWarn("QueryTable Refresh error: " + ex.Message + " in query: " + Query + ", caller: " + callID + ", retrying with RefreshStyle = xlInsertEntireRows")
+                    LogWarn("QueryTable Refresh error: " + ex.Message + " in query: " + Query + ", retrying with RefreshStyle = xlInsertEntireRows")
                     ' this fixes two errors with query tables where the table size was changed: 8000A03EC and out of memory error
-                    theListObject.QueryTable.RefreshStyle = Excel.XlCellInsertionMode.xlInsertEntireRows
-                    theListObject.QueryTable.PreserveColumnInfo = False
+                    theQueryTable.RefreshStyle = Excel.XlCellInsertionMode.xlInsertEntireRows
+                    theQueryTable.PreserveColumnInfo = False
                     Try
-                        theListObject.QueryTable.Refresh()
+                        theQueryTable.Refresh()
                     Catch ex1 As Exception
-                        Throw New Exception("Error in query table refresh after retrying with RefreshStyle=InsertEntireRows and PreserveColumnInfo=False: " + ex1.Message)
+                        Throw New Exception("Error in query table refresh: " + ex1.Message + "(after retrying with RefreshStyle=InsertEntireRows and PreserveColumnInfo=False)")
                     Finally
-                        theListObject.QueryTable.RefreshStyle = theRefreshStyle
-                        theListObject.QueryTable.PreserveColumnInfo = thePreserveColumnInfo
+                        theQueryTable.RefreshStyle = theRefreshStyle
+                        theQueryTable.PreserveColumnInfo = thePreserveColumnInfo
                     End Try
                 End Try
-                StatusCollection(callID).statusMsg = "Set " + connType + " ListObject to (bgQuery= " + bgQuery.ToString() + ", " + If(theListObject.QueryTable.FetchedRowOverflow, "Too many rows fetched to display !", "") + "): " + Query
-                theListObject.QueryTable.BackgroundQuery = bgQuery
+                StatusCollection(callID).statusMsg = "Set " + connType + " ListObject to (bgQuery= " + bgQuery.ToString() + ", " + If(theQueryTable.FetchedRowOverflow, "Too many rows fetched to display !", "") + "): " + Query
+                theQueryTable.BackgroundQuery = bgQuery
                 Try
-                    Dim testTarget = TargetCell.Address
+                    Dim testTarget = targetRange.Address
                 Catch ex As Exception
                     caller.Formula = callerFormula ' restore formula as excel deletes target range when changing query fundamentally
                 End Try
@@ -563,19 +559,24 @@ Public Module Functions
                 theListObject.Range.Parent.Parent.Names(targetExtent).Visible = False
                 ' if refreshed range is a DBMapper and it is in the current workbook, resize it, but ONLY if it the DBMapper is the same area as the old range
                 DBModifs.resizeDBMapperRange(theListObject.Range, oldRange)
+            Else         ' neither PivotTable or ListObject could be found in TargetCell
+                errMsg = "No PivotTable or ListObject with external data connection could be found in TargetRange " + targetRange.Address
+                GoTo err
             End If
         Catch ex As Exception
-            LogWarn(ex.Message + " in query: " + Query + ", caller: " + callID)
-            If StatusCollection.ContainsKey(callID) Then StatusCollection(callID).statusMsg = ex.Message + " in query: " + Query
+            errMsg = ex.Message + " in query: " + Query
+            GoTo err
         End Try
-
-        ' neither PivotTable or ListObject could be found in TargetCell
-        If StatusCollection.ContainsKey(callID) AndAlso StatusCollection(callID).statusMsg = "" Then
-            StatusCollection(callID).statusMsg = "No PivotTable or ListObject with external data connection could be found in TargetRange " + TargetCell.Address
-        End If
         DBModifs.preventChangeWhileFetching = False
         ExcelDnaUtil.Application.Calculation = calcMode
-        caller.Formula += " " ' trigger recalculation to return error message to calling function
+        Exit Sub
+err:
+        ExcelDnaUtil.Application.Calculation = calcMode
+        LogWarn(errMsg + " caller: " + callID)
+        If StatusCollection.ContainsKey(callID) Then StatusCollection(callID).statusMsg = errMsg
+        DBModifs.preventChangeWhileFetching = False
+        ' trigger recalculation to return error message to calling function
+        Try : caller.Formula += " " : Catch ex As Exception : End Try
     End Sub
 
     ''' <summary>Stores a query into an powerquery defined by queryName</summary>
@@ -593,7 +594,6 @@ Public Module Functions
             caller = ToRange(XlCall.Excel(XlCall.xlfCaller))
             ' calcContainers are identified by workbook name + Sheet name + function caller cell Address
             callID = "[" + caller.Parent.Parent.Name + "]" + caller.Parent.Name + "!" + caller.Address
-            LogInfo("entering function, callID: " + callID)
             ' check query, also converts query to string (if it is a range)
             ' error message or cached status message is returned from checkParamsAndCache, if query OK and result was not already calculated (cached) then empty string
             DBSetPowerQuery = checkParamsAndCache(Query, callID, "")
@@ -608,12 +608,10 @@ Public Module Functions
                                                 DBSetPowerQueryAction(callID, Query, caller, queryName)
                                             End Sub)
             End If
-
         Catch ex As Exception
             LogWarn(ex.Message + ", callID: " + callID)
             DBSetPowerQuery = "Error (" + ex.Message + ") in DBSetPowerQuery, callID: " + callID
         End Try
-        LogInfo("leaving function, callID: " + callID)
     End Function
 
     Public avoidRequeryDuringEdit As Boolean = False
@@ -626,10 +624,15 @@ Public Module Functions
     ''' <param name="queryName">Name of Powerquery where query should be set</param>
     Sub DBSetPowerQueryAction(callID As String, Query As String, caller As Excel.Range, queryName As String)
         Dim targetWB As Excel.Workbook = caller.Parent.Parent
+        Dim errMsg As String
         If avoidRequeryDuringEdit Then Exit Sub
-
         Dim calcMode = ExcelDnaUtil.Application.Calculation
         Try
+            ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual
+        Catch ex As Exception : End Try
+
+        Try
+            StatusCollection(callID).statusMsg = ""
             queryBackupColl(queryName) = targetWB.Queries(queryName).Formula
             ' set the query
             targetWB.Queries(queryName).Formula = Query
@@ -639,11 +642,19 @@ Public Module Functions
             Next
             StatusCollection(callID).statusMsg = "set and refreshed " + queryName
         Catch ex As Exception
-            LogWarn(ex.Message + " in query: " + Query + ", caller: " + callID)
-            If StatusCollection.ContainsKey(callID) Then StatusCollection(callID).statusMsg = ex.Message + " in query: " + Query
+            errMsg = ex.Message + " in query: " + Query
+            GoTo err
         End Try
         ExcelDnaUtil.Application.Calculation = calcMode
-        caller.Formula += " " ' trigger recalculation to return error message to calling function
+        ' trigger recalculation to return message to calling function
+        Try : caller.Formula += " " : Catch ex As Exception : End Try
+        Exit Sub
+err:
+        ExcelDnaUtil.Application.Calculation = calcMode
+        LogWarn(errMsg + " caller: " + callID)
+        If StatusCollection.ContainsKey(callID) Then StatusCollection(callID).statusMsg = errMsg
+        ' trigger recalculation to return error message to calling function
+        Try : caller.Formula += " " : Catch ex As Exception : End Try
     End Sub
 
     ''' <summary>common for DBListFetch, DBRowFetch and DBSetQuery Action procedures, setting the Extent Names at the beginning</summary>
@@ -718,7 +729,6 @@ Public Module Functions
             resolveConnstring(ConnString, EnvPrefix, False)
             ' calcContainers are identified by workbook name + Sheet name + function caller cell Address
             callID = "[" + caller.Parent.Parent.Name + "]" + caller.Parent.Name + "!" + caller.Address
-            LogInfo("entering function, callID: " + callID)
             ' prepare information for action procedure
             If dontCalcWhileClearing Then
                 DBListFetch = EnvPrefix + ", dontCalcWhileClearing = True !"
@@ -768,7 +778,6 @@ Public Module Functions
             LogWarn(ex.Message + ", callID : " + callID)
             DBListFetch = EnvPrefix + ", Error (" + ex.Message + ") in DBListFetch, callID : " + callID
         End Try
-        LogInfo("leaving function, callID: " + callID)
     End Function
 
     ''' <summary>Actually do the work for DBListFetch: Query list of data delimited by maxRows and maxCols, write it into targetCells
@@ -788,7 +797,6 @@ Public Module Functions
     ''' <param name="formulaRangeName"></param>
     Public Sub DBListFetchAction(callID As String, Query As String, caller As Excel.Range, targetRange As Excel.Range, ConnString As String, formulaRange As Object, extendArea As Integer, HeaderInfo As Boolean, AutoFit As Boolean, autoformat As Boolean, ShowRowNumbers As Boolean, targetRangeName As String, formulaRangeName As String)
         Dim errMsg As String
-        LogInfo("Entering DBListFetchAction: callID " + callID)
         Dim calcMode = ExcelDnaUtil.Application.Calculation
         Try
             ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual
@@ -874,13 +882,6 @@ Public Module Functions
                 End If
             End If
 
-            If InStr(1, UCase$(ConnString), ";ODBC;") > 0 Then
-                If fetchSetting("preferODBCconnString" + env(), "false") = "true" Then
-                    ConnString = Mid$(ConnString, InStr(1, UCase$(ConnString), ";ODBC;") + 1)
-                Else
-                    ConnString = Left$(ConnString, InStr(1, UCase$(ConnString), ";ODBC;") - 1)
-                End If
-            End If
             ' for oledb drivers add OLEDB; in front, excel ms query needs that!
             If InStr(1, UCase$(ConnString), "OLEDB") > 0 AndAlso Left(UCase$(ConnString), 5) <> "ODBC;" AndAlso Left(UCase$(ConnString), 6) <> "OLEDB;" Then ConnString = "OLEDB;" + ConnString
 
@@ -1169,7 +1170,6 @@ err:    LogWarn(errMsg + ", caller: " + callID)
             resolveConnstring(ConnString, EnvPrefix, False)
             ' calcContainers are identified by workbook name + Sheet name + function caller cell Address 
             callID = "[" + caller.Parent.Parent.Name + "]" + caller.Parent.Name + "!" + caller.Address
-            LogInfo("entering function, callID: " + callID)
             If dontCalcWhileClearing Then
                 DBRowFetch = EnvPrefix + ", dontCalcWhileClearing = True !"
                 Exit Function
@@ -1221,7 +1221,6 @@ err:    LogWarn(errMsg + ", caller: " + callID)
             LogWarn(ex.Message + ", callID: " + callID)
             DBRowFetch = EnvPrefix + ", Error (" + ex.Message + ") in DBRowFetch, callID: " + callID
         End Try
-        LogInfo("leaving function, callID: " + callID)
     End Function
 
     ''' <summary>Actually do the work for DBRowFetch: Query (assumed) one row of data, write it into targetCells</summary>
@@ -1262,13 +1261,12 @@ err:    LogWarn(errMsg + ", caller: " + callID)
         ' remove old data in case we changed the target range array
         Try : targetSH.Range(targetExtent).ClearContents() : Catch ex As Exception : End Try
 
-        If InStr(1, UCase$(ConnString), ";ODBC;") > 0 Then
-            ConnString = Left$(ConnString, InStr(1, UCase$(ConnString), ";ODBC;") - 1)
-        End If
         Try
-            If fetchSetting("preferODBCconnString" + env(), "false") = "true" Then
-                ' change to ODBC driver setting
+            If Left(ConnString.ToUpper, 5) = "ODBC;" Then
+                ' change to ODBC driver setting, if SQLOLEDB
                 ConnString = Replace(ConnString, fetchSetting("ConnStringSearch" + env(), "provider=SQLOLEDB"), fetchSetting("ConnStringReplace" + env(), "driver=SQL SERVER"))
+                ' remove "ODBC;"
+                ConnString = Right(ConnString, ConnString.Length - 5)
                 conn = New OdbcConnection(ConnString)
             ElseIf InStr(ConnString.ToLower, "provider=sqloledb") Or InStr(ConnString.ToLower, "driver=sql server") Then
                 ' remove provider=SQLOLEDB; (or whatever is in ConnStringSearch<>) for sql server as this is not allowed for ado.net (e.g. from a connection string for MS Query/Office)
@@ -1277,8 +1275,8 @@ err:    LogWarn(errMsg + ", caller: " + callID)
             ElseIf InStr(ConnString.ToLower, "oledb") Then
                 conn = New OleDbConnection(ConnString)
             Else
-                errMsg = "Error creating new connection, no option found for connection string: " + ConnString + "(preferODBCconnString=true -> ODBC, containing provider=sqloledb/driver=sql server -> sql, containing oledb -> oledb)"
-                GoTo err
+                ' try with odbc
+                conn = New Odbc.OdbcConnection(ConnString)
             End If
         Catch ex As Exception
             errMsg = "Error creating new connection: " + ex.Message + " for connection string: " + ConnString
@@ -1377,11 +1375,11 @@ err:    LogWarn(errMsg + ", caller: " + callID)
         finishAction(calcMode, callID)
         Exit Sub
 
-err:    If errMsg.Length = 0 Then errMsg = Err.Description + " in query: " + Query
-        LogWarn(errMsg + ", caller: " + callID)
+err:    LogWarn(errMsg + ", caller: " + callID)
         If StatusCollection.ContainsKey(callID) Then StatusCollection(callID).statusMsg = errMsg
         finishAction(calcMode, callID, "Error")
-        caller.Formula += " " ' recalculate to trigger return of error messages to calling function
+        ' recalculate to trigger return of error messages to calling function
+        Try : caller.Formula += " " : Catch ex As Exception : End Try
     End Sub
 
     ''' <summary>remove all names from Range Target except the passed name (theName) and store them into list storedNames</summary>
@@ -1549,13 +1547,27 @@ err:    If errMsg.Length = 0 Then errMsg = Err.Description + " in query: " + Que
     ''' <returns>range for passed reference</returns>
     Private Function ToRange(reference As Object) As Excel.Range
         If TypeName(reference) <> "ExcelReference" Then Return Nothing
+        Dim item As String
+        Try : item = XlCall.Excel(XlCall.xlSheetNm, reference)
+        Catch ex As Exception
+            Return Nothing
+        End Try
 
-        Dim item As String = XlCall.Excel(XlCall.xlSheetNm, reference)
-        Dim index As Integer = item.LastIndexOf("]")
-        Dim wbname As String = item.Substring(0, index).Substring(1)
-        item = item.Substring(index + 1)
-        Dim ws As Excel.Worksheet = ExcelDnaUtil.Application.Workbooks(wbname).Worksheets(item)
-        Return ws.Range(ws.Cells(reference.RowFirst + 1, reference.ColumnFirst + 1), ws.Cells(reference.RowLast + 1, reference.ColumnLast + 1))
+        Dim index As Integer
+        Dim wbname As String
+        Try
+            index = item.LastIndexOf("]")
+            wbname = item.Substring(0, index).Substring(1)
+            item = item.Substring(index + 1)
+        Catch ex As Exception
+            Return Nothing
+        End Try
+        Dim returnedRange As Excel.Range = Nothing
+        Try
+            Dim ws As Excel.Worksheet = ExcelDnaUtil.Application.Workbooks(wbname).Worksheets(item)
+            returnedRange = ws.Range(ws.Cells(reference.RowFirst + 1, reference.ColumnFirst + 1), ws.Cells(reference.RowLast + 1, reference.ColumnLast + 1))
+        Catch ex As Exception : End Try
+        Return returnedRange
     End Function
 
 End Module

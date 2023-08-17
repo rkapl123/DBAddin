@@ -13,16 +13,21 @@ There are four ways to query data with DBAddin:
 
 All these functions insert the queried data outside their calling cell context, which means that the target ranges can be put anywhere in the workbook (even outside of the workbook).
 
-Additionally, some helper functions are available:
+Additionally, following helper functions are available:
 
 *   `chainCells`, which concatenates the values in the given range together by using "," as separator, thus making the creation of the select field clause easier.
 *   `concatCells` simply concatenating cells (making the "&" operator obsolete)
 *   `concatCellsText` above Function using the Text property of the cells, therefore getting the displayed values.
 *   `concatCellsSep` concatenating cells with given separator.
 *   `concatCellsSepText` above Function using the Text property of the cells, therefore getting the displayed values.
-*   `DBString`, building a quoted string from an open ended parameter list given in the argument. This can also be used to easily build wild-cards into the String.
-*   `DBinClause`, building an SQL "in" clause from an open ended parameter list given in the argument.
+*   `currentWorkbook`, gets current Workbook path + filename or Workbook path only. This can be used in connection string construction of Excel Workbook Queries.
+*   `DBAddinEnvironment`, gets the current selected Environment (name) for DB Functions.
+*   `DBAddinSetting`, gets the settings as given in keyword  in the connection string of the currently selected Environment.
 *   `DBDate`, building a quoted Date string (standard format YYYYMMDD, but other formats can be chosen) from the date value given in the argument.
+*   `PQDate`, building a powerquery compliant Date string from the date value given in the argument.
+*   `DBinClause`, building an SQL "in" clause from an open ended parameter list given in the argument.
+*   `DBString`, building a quoted string from an open ended parameter list given in the argument. This can also be used to easily build wild-cards into the String.
+*   `PQString`, building a powerquery compliant string from an open ended parameter list given in the argument. This can also be used to easily build wild-cards into the String.
 
 An additional cell context menu is available:
 
@@ -77,17 +82,15 @@ The parameter `AutoFormat` defines whether the first data row's format informati
 
 The parameter ShowRowNums defines whether Row numbers should be displayed in the first column (`TRUE`) or not (`FALSE` = Default).
 
-##### Connection String Special Settings
+##### Connection String Special ODBC Settings
 
-In case the "normal" connection string's driver (usually OLEDB) has problems in displaying data with DBListFetch and the problem is not existing with ODBC connection strings, then following special dual connection string setting can be used together with the flag `preferODBCconnString`:  
-
-`StandardConnectionString;SpecialODBCConnectionString`
+In case the "normal" connection string's driver (usually OLEDB) has problems in displaying data with DBListFetch and the problem is not existing with ODBC connection strings, then the special connection string composition `ODBC;ODBCConnectionString` be used.
 
 Example:  
 
-`provider=SQLOLEDB;Server=LENOVO-PC;Trusted_Connection=Yes;Database=pubs;ODBC;DRIVER=SQL Server;SERVER=LENOVO-PC;DATABASE=pubs;Trusted_Connection=Yes`
+`ODBC;DRIVER=SQL Server;SERVER=LENOVO-PC;DATABASE=pubs;Trusted_Connection=Yes`
 
-This works around the issue with displaying GUID columns in SQL-Server.  
+This can be used to work around the issue with displaying GUID columns in SQL-Server.  
 
 #### DBRowFetch
 
@@ -187,37 +190,6 @@ DBAddinEnvironment gets the current selected Environment (name) for DB Functions
 
 DBAddinSetting gets the settings as given in keyword (e.g. SERVER=) in the connection string of the currently selected Environment for DB Functions. If no keyword is passed, then the whole connection string is returned in a warning message.
 
-#### DBinClause
-
-<pre lang="vbnet">DBinClause(ParameterList)</pre>
-<pre lang="vbnet">DBinClauseStr(ParameterList)</pre>
-<pre lang="vbnet">DBinClauseDate(ParameterList)</pre>
-
-Creates an in clause from cell values, strings are created using `DBinClauseStr` with quotation marks, dates are created using `DBinClauseDate` using default date formatting (see DBDate for details).
-
-<pre lang="vbnet">DBinClause("ABC", 1, DateRange)</pre>
-
-Would return `('ABC',1,39097)`, if DateRange contained `15/01/2007` as a date value. To get a date compliant value there, use either DBDate() as a converting function in DateRange, or use DBinClauseDate.  
-
-#### DBString
-
-<pre lang="vb">DBString(ParameterList)</pre>
-
-This builds a Database compliant string (quoted using single quotes) from the open ended parameter list given in the argument. This can also be used to easily build wild-cards into the String, like
-
-<pre lang="vb">DBString("_",E1,"%")</pre>
-
-When E1 contains "test", this results in '\_test%', thus matching in a like clause the strings 'stestString', 'atestAnotherString', etc.
-
-#### PQString
-
-<pre lang="vb">PQString(ParameterList)</pre>
-
-This builds a Powerquery compliant string (quoted using double quotes) from the open ended parameter list given in the argument.
-
-<pre lang="vb">PQString("a ",E1)</pre>
-
-When E1 contains "test", this results in "a test".
 
 #### DBDate
 
@@ -250,6 +222,38 @@ Of course you can also change the default setting for formatting by changing the
 
 This builds a power-query function from the date/datetime/time value given in the argument. Depending on the value (fractional, integer or smaller than 1), this can be `#datetime(year, month, day, hour, min, sec)`, `#date(year, month, day)` or `#time(hour, min, sec)`
 The return of `#datetime(year, month, day, hour, min, sec)` can be enforced by setting `forceDateTime` to true.
+
+#### DBinClause
+
+<pre lang="vbnet">DBinClause(ParameterList)</pre>
+<pre lang="vbnet">DBinClauseStr(ParameterList)</pre>
+<pre lang="vbnet">DBinClauseDate(ParameterList)</pre>
+
+Creates an in clause from cell values, strings are created using `DBinClauseStr` with quotation marks, dates are created using `DBinClauseDate` using default date formatting (see DBDate for details).
+
+<pre lang="vbnet">DBinClause("ABC", 1, DateRange)</pre>
+
+Would return `('ABC',1,39097)`, if DateRange contained `15/01/2007` as a date value. To get a date compliant value there, use either DBDate() as a converting function in DateRange, or use DBinClauseDate.  
+
+#### DBString
+
+<pre lang="vb">DBString(ParameterList)</pre>
+
+This builds a Database compliant string (quoted using single quotes) from the open ended parameter list given in the argument. This can also be used to easily build wild-cards into the String, like
+
+<pre lang="vb">DBString("_",E1,"%")</pre>
+
+When E1 contains "test", this results in '\_test%', thus matching in a like clause the strings 'stestString', 'atestAnotherString', etc.
+
+#### PQString
+
+<pre lang="vb">PQString(ParameterList)</pre>
+
+This builds a Powerquery compliant string (quoted using double quotes) from the open ended parameter list given in the argument.
+
+<pre lang="vb">PQString("a ",E1)</pre>
+
+When E1 contains "test", this results in "a test".
 
 ### Modifications of DBFunc Behavior
 
@@ -393,7 +397,7 @@ Explanation:
 * DBListFetch:
 	*   no Headers and extendArea = 1: Don't place the output of DBlistFetch functions that a) depend on the same inputs and b) have no headers and c) use extendArea = 1 (cell extension). The calculation sequence leads to unpredictable behavior with potential data loss
 	*   Worksheets with names like Cell references (Letter + number + blank + something else, eg. 'C701 Country') lead to a fundamental error with the names used for the data target. Avoid using those sheet names in conjunction with DBListFetch, i.e. do not use a blank between the 'cell reference' and the rest (eg. 'C701Country' instead of 'C701 Country').
-	*   GUID Columns are not displayed when using the SQL Server OLEDB driver. To work around this, a different connection string using ODBC can be used. To generally set this in a dual connection string, set preferODBCconnString to true. For details see [Connection String Special Settings](#connection-string-special-settings)
+	*   GUID Columns are not displayed when using the SQL Server OLEDB driver. To work around this, a different connection string using ODBC can be used. To set this in a connection string see [Connection String Special Settings](#connection-string-special-settings)
 
 * DBSetQuery
 	* in DBSetQuery the underlying ListObject sometimes doesn't work with the SQLOLEDB provider, so there is a mechanism to change the provider part to something that works better. You can define a searched part of the connection string and its replacement in the settings of the environment (here environment 3):

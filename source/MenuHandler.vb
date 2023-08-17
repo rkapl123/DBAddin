@@ -5,6 +5,7 @@ Imports System.Configuration
 Imports System.Collections.Specialized
 Imports System.Collections.Generic
 
+
 ''' <summary>handles all Menu related aspects (context menu for building/refreshing, "DBAddin"/"Load Config" tree menu for retrieving stored configuration files, etc.)</summary>
 <ComVisible(True)>
 Public Class MenuHandler
@@ -14,6 +15,12 @@ Public Class MenuHandler
     Public Sub ribbonLoaded(theRibbon As CustomUI.IRibbonUI)
         MenuHandlerGlobals.theRibbon = theRibbon
         initAdhocSQLconfig()
+    End Sub
+
+    ''' <summary>used to avoid crashes when closing excel (especially with multiple users of IntelliSenseServer)</summary>
+    ''' <param name="custom"></param>
+    Public Overrides Sub OnBeginShutdown(ByRef custom As Array)
+        ExcelDna.IntelliSense.IntelliSenseServer.Uninstall()
     End Sub
 
     ''' <summary>creates the Ribbon (only at startup). any changes to the ribbon can only be done via dynamic menus</summary>
@@ -183,7 +190,7 @@ Public Class MenuHandler
     Private AdHocSQLStrings As Collections.Generic.List(Of String)
     Private selectedAdHocSQLIndex As Integer
 
-    ''' <summary>dialogBoxLauncher of DBAddin settings group: activate about box</summary>
+    ''' <summary>dialogBoxLauncher of DBAddin settings group: activate adhoc SQL query dialog</summary>
     ''' <param name="control"></param>
     Public Sub showDBAdHocSQLDBOX(control As CustomUI.IRibbonControl)
         showDBAdHocSQL(Nothing, "")
@@ -814,11 +821,9 @@ Public Class MenuHandler
 #Enable Warning IDE0060
 End Class
 
-''' <summary>global variables for MenuHandler</summary>
+''' <summary>global ribbon variable and procedures for MenuHandler</summary>
 Public Module MenuHandlerGlobals
-    ''' <summary>ribbon menu handler</summary>
-    Public theMenuHandler As MenuHandler
-    ''' <summary>reference object for the Add-ins ribbon</summary>
+    ''' <summary>reference object for the ribbon</summary>
     Public theRibbon As CustomUI.IRibbonUI
 
     ''' <summary>refresh DB Functions (and - if called from outside any db function area - all other external data ranges)</summary>

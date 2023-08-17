@@ -39,7 +39,6 @@ This can be done by modifying DBAddin.xll.config or the referred DBAddinUser.con
 <appSettings>
     <add key="ConfigName3" value="MSSQL"/>
     <add key="ConstConnString3" value="provider=SQLOLEDB;Server=Lenovo-PC;Trusted_Connection=Yes;Database=pubs;Packet Size=32767"/>
-    <add key="preferODBCconnString3" value="false"/>
     <add key="ConfigStoreFolder3" value="C:\dev\DBAddin.NET\source\ConfigStore"/>
     <add key="ConnStringSearch3" value="provider=SQLOLEDB"/>
     <add key="ConnStringReplace3" value="driver=SQL SERVER"/>
@@ -55,16 +54,15 @@ This can be done by modifying DBAddin.xll.config or the referred DBAddinUser.con
 
 Explanation:
 *   `ConfigName`**N**: freely definable name for your environment (e.g. Production or your database instance)
-*   `ConstConnString`**N**: the standard connection string used to connect to the database
-*   `preferODBCconnString`**N**: in case of an ODBC-Alternative part in the second part, this decides whether to prefer the ODBC-Alternative. This only works in DBListFetch, DBRowFetch and DBSetQuery.
+*   `ConstConnString`**N**: the standard connection string used to connect to the database. Set `ODBC;` in front to specify ODBC connection strings explicitly.
 *   `ConfigStoreFolder`**N**: all config files (*.xcl) under this folder are shown in a hierarchical manner in "load config"
-*   `ConnStringSearch`**N**: part to be searched for replacement within the standard connection string in DBSetQuery
+*   `ConnStringSearch`**N**: part to be searched for replacement within the standard connection string in DBModifiers and DBRowFetch.
 *   `ConnStringReplace`**N**: replacement for above
-*   `dbGetAll`**N**: command for retrieving all databases/schemas from the database can be entered (for (MS) SQL server this is "`sp_helpdb`" for Oracle its "`select username from sys.all_users`".
+*   `dbGetAll`**N**: command for retrieving all databases/schemas from the database can be entered (for MS SQL server this is "`sp_helpdb`" for Oracle its "`select username from sys.all_users`".
 *   `dbGetAllFieldName`**N**: If the result of above command has more than one column (like in sqlserver), you have to give the field name where the databases can be retrieved from.
 *   `DBidentifierCCS`**N**: used to identify the database within the standard connection string or within DBSheetConnString
 *   `dbPwdSpec`**N**: Password entry specifier within DBSheetConnString
-*   `DBSheetConnString`**N**: the connection string used to connect to the database for the DBSheet definitions
+*   `DBSheetConnString`**N**: the connection string used to connect to the database for DBSheet definitions. If this is not set the standard connection string `ConstConnString`**N** is used.
 *   `DBSheetDefinitions`**N**: path to the stored DBSheetdefinitions (default directory of assign DBsheet definitions and load/save DBSheet Definitions)
 *   `ownerQualifier`**N**: default owner qualifier for table when loading DBSheet definitions, if table name is not fully qualified (legacy DBSheet definitions)
 
@@ -228,6 +226,13 @@ Several connection strings for "DBFuncsTest.xls" are placed to the right of the 
 Following topics are still to be done:
 
 * Utilizing optimistic concurrency for DBSheets (similar to the old Addin, but with ADO.NET support)
+
+### History (from the very beginning)
+
+* 2006: First versions of DBFuncs and DBSheets implemented as xla Addins.
+* 31/01/2007: Published as a [Codeproject article](https://www.codeproject.com/Articles/17464/Excel-addin-for-Database-Querying-by-User-Defined)
+* 02/11/2007: Changed implementation to VB 6.0 and made this available at [sourceforge](https://sourceforge.net/projects/dbaddin/)
+* 01/04/2019 - 24/11/2020: Changed implementation to ExcelDNA based and moved to Github.
 
 ### docfx generated API documentation
 [DBFuncs API documentation](api/index.html).
