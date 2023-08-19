@@ -463,6 +463,33 @@ done:
     ''' <param name="Target"></param>
     ''' <param name="Cancel"></param>
     Private Sub Application_SheetBeforeRightClick(Sh As Object, Target As Range, ByRef Cancel As Boolean) Handles Application.SheetBeforeRightClick
+        ' show underlying name(s) of dbfunc target areas
+        If My.Computer.Keyboard.AltKeyDown Then
+            Dim nm As Excel.Name
+            Dim rng, testRng As Excel.Range
+            Dim underlyingDBName As String = getUnderlyingDBNameFromRange(ExcelDnaUtil.Application.ActiveCell)
+            Dim underlyingNameFromRange As String = ""
+            Try
+                testRng = Nothing
+                Try : testRng = ExcelDnaUtil.Application.Range(underlyingDBName) : Catch ex As Exception : End Try
+                For Each nm In ExcelDnaUtil.Application.ActiveWorkbook.Names
+                    rng = Nothing
+                    Try : rng = nm.RefersToRange : Catch ex As Exception : End Try
+                    If rng IsNot Nothing Then
+                        Dim testQryTblName As String = " " ' space cannot exist in a name, so this default will never be found
+                        Try : Dim testQryTbl As Excel.QueryTable = ExcelDnaUtil.Application.ActiveCell.QueryTable : testQryTblName = testQryTbl.Name : Catch ex As Exception : End Try
+                        If testRng IsNot Nothing AndAlso nm.Visible AndAlso InStr(nm.Name, "DBFtarget") = 0 AndAlso InStr(nm.Name, "DBFsource") = 0 AndAlso nm.Name <> "'" + rng.Parent.Name + "'!_FilterDatabase" AndAlso InStr(nm.Name, testQryTblName) = 0 AndAlso testRng.Cells(1, 1).Address = rng.Cells(1, 1).Address And testRng.Parent Is rng.Parent Then
+                            underlyingNameFromRange += nm.Name + ","
+                        End If
+                    End If
+                Next
+            Catch ex As Exception : End Try
+            If underlyingNameFromRange <> "" Then
+                UserMsg("Underlying name(s): " + Left(underlyingNameFromRange, Len(underlyingNameFromRange) - 1), "DBAddin Information", MsgBoxStyle.Information)
+                Cancel = True
+            End If
+            Exit Sub
+        End If
         ' check if we are in a CUD DBMapper, if not then leave...
         If Not IsNothing(Target.ListObject) AndAlso Not IsNothing(DBModifDefColl) AndAlso DBModifDefColl.ContainsKey("DBMapper") Then
             Dim targetName As String = getDBModifNameFromRange(Target)

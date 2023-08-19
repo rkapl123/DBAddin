@@ -527,10 +527,11 @@ Public Module Functions
                 theQueryTable.BackgroundQuery = False
                 Dim theRefreshStyle As Excel.XlCellInsertionMode = theQueryTable.RefreshStyle
                 Dim thePreserveColumnInfo As Boolean = theQueryTable.PreserveColumnInfo
+                Dim warning As String = ""
                 Try
                     theQueryTable.Refresh()
                 Catch ex As Exception
-                    LogWarn("QueryTable Refresh error: " + ex.Message + " in query: " + Query + ", retrying with RefreshStyle = xlInsertEntireRows")
+                    warning = "workaround taken for table size changed and side-effects on other data tables: RefreshStyle set to InsertEntireRows and PreserveColumnInfo set to False,"
                     ' this fixes two errors with query tables where the table size was changed: 8000A03EC and out of memory error
                     theQueryTable.RefreshStyle = Excel.XlCellInsertionMode.xlInsertEntireRows
                     theQueryTable.PreserveColumnInfo = False
@@ -543,7 +544,7 @@ Public Module Functions
                         theQueryTable.PreserveColumnInfo = thePreserveColumnInfo
                     End Try
                 End Try
-                StatusCollection(callID).statusMsg = "Set " + connType + " ListObject to (bgQuery= " + bgQuery.ToString() + ", " + If(theQueryTable.FetchedRowOverflow, "Too many rows fetched to display !", "") + "): " + Query
+                StatusCollection(callID).statusMsg = "Set " + connType + " ListObject to (bgQuery= " + bgQuery.ToString() + "), " + warning + If(theQueryTable.FetchedRowOverflow, "too many rows fetched to display,", "") + ": " + Query
                 theQueryTable.BackgroundQuery = bgQuery
                 Try
                     Dim testTarget = targetRange.Address
@@ -809,7 +810,6 @@ err:
         End Try
         Dim warning As String = ""
         Try
-
             If ExcelDnaUtil.Application.Calculation <> Excel.XlCalculation.xlCalculationManual Then
                 errMsg = "Error in setting Application.Calculation to Manual in query: " + Query
                 GoTo err
@@ -829,8 +829,10 @@ err:
             ' size for existing named range used for resizing the data area (old extent)
             Dim oldCols As Integer = 0, oldRows As Integer = 0
             Try
-                oldCols = theTargetQueryTable.ResultRange.Columns.Count
-                oldRows = theTargetQueryTable.ResultRange.Rows.Count
+                oldCols = targetSH.Parent.Names(targetExtent).RefersToRange.Columns.Count
+                oldRows = targetSH.Parent.Names(targetExtent).RefersToRange.Rows.Count
+                ' legacy dblistfetch (adodb): this is needed to clear old data
+                If IsNothing(theTargetQueryTable) OrElse theTargetQueryTable.ResultRange.Address <> targetSH.Parent.Names(targetExtent).RefersToRange.Address Then targetSH.Parent.Names(targetExtent).RefersToRange.ClearContents()
             Catch ex As Exception : End Try
 
             Dim startRow, startCol As Integer
@@ -946,6 +948,8 @@ err:
                     errMsg = "Error in setting query for query table: " + ex.Message + ", query: " + Query
                     GoTo err
                 End Try
+                Dim rowNumberHeader As String = ""
+                If ShowRowNumbers And .RowNumbers Then rowNumberHeader = targetRange.Cells(1, 1).Value
                 Try
                     .FieldNames = HeaderInfo
                     .RowNumbers = ShowRowNumbers
@@ -971,6 +975,8 @@ err:
                     errMsg = "Error in getting resulting range for query table: " + ex.Message + ", query: " + Query
                     GoTo err
                 End Try
+                ' reset rownumber header (deleted by refresh)
+                If ShowRowNumbers Then targetRange.Cells(1, 1).Value = rowNumberHeader
             End With
             ' get new query area dimensions
             Dim qryRows, qryCols As Integer
@@ -1063,13 +1069,13 @@ err:
 
             ' reassign name to changed data area
             ' set the new hidden targetExtent name...
-            Dim newTargetRange As Excel.Range
+            Dim newTargetRange, totalTargetRange As Excel.Range
             Try
                 newTargetRange = targetSH.Range(targetSH.Cells(startRow, startCol), targetSH.Cells(startRow + qryRows - 1, startCol + qryCols - 1))
                 ' delete the name to have a "clean" name area (otherwise visible = false setting wont work for dataTargetRange)
                 newTargetRange.Name = targetExtent
                 newTargetRange.Parent.Parent.Names(targetExtent).Visible = False
-                Dim totalTargetRange As Excel.Range = newTargetRange
+                totalTargetRange = newTargetRange
                 If additionalFormulaColumns > 0 Then
                     totalTargetRange = targetSH.Range(targetSH.Cells(startRow, startCol), targetSH.Cells(startRow + qryRows - 1, startCol + qryCols - 1 + additionalFormulaColumns))
                 End If
@@ -1117,6 +1123,10 @@ err:
                 errMsg = "Error in restoring formats: " + ex.Message + ", query: " + Query
                 GoTo err
             End Try
+            ' set complete header row bold
+            Try
+                If HeaderInfo Then totalTargetRange.Rows(1).Font.Bold = True
+            Catch ex As Exception : End Try
             'auto fit columns AFTER auto format so we don't have problems with applied formats visibility
             Try
                 If AutoFit Then

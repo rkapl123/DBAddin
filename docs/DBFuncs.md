@@ -35,7 +35,8 @@ An additional cell context menu is available:
 
 It provides:
 *   A "jump" feature that allows to move the focus from the DB function's cell to the data area and from the data area back to the DB function's cell (useful in complex workbooks with lots of remote (not on same-sheet) target ranges)
-*   Refreshing the currently selected DB function or it's data area. If no DB function or a corresponding data area is selected, then all DB Functions are refreshed. Additionally, all built-in query tables, pivot tables, list objects and links to external workbooks are refreshed here as well. Any of these additional refreshes can be avoided by setting `AvoidUpdate<type>_Refresh` to `True`, where `type` is either `QueryTables`, `PivotTables`, `ListObjects`, or `Links`.
+*   Refreshing the currently selected DB function or its data area. If no DB function or a corresponding data area is selected, then all DB Functions are refreshed. Additionally, all built-in query tables, pivot tables, list objects and links to external workbooks are refreshed here as well. Any of these additional refreshes can be avoided by setting `AvoidUpdate<type>_Refresh` to `True`, where `type` is either `QueryTables`, `PivotTables`, `ListObjects`, or `Links`.
+*   If the ALT-Key is pressed while right-clicking in an DB function target area the underlying name(s) is/are displayed, if any have been provided.
 
 *   [Creation of DB Functions](#create-db-functions)  
 
@@ -140,7 +141,7 @@ As Power-queries use double quotes for quoting, special variations of DBString a
 
 <pre lang="vb">chainCells(ParameterList)</pre>
 
-chainCells "chains" the values in the given range together by using "," as separator. It's use is mainly to facilitate the creation of the select field clause in the `Query` parameter, e.g.
+chainCells "chains" the values in the given range together by using "," as separator. Its use is mainly to facilitate the creation of the select field clause in the `Query` parameter, e.g.
 
 <pre lang="vb">DBRowFetch("select " & chainCells(E1:E4) & " from jobs where job_id = 1","",A1,A8:A9,C8:D8)</pre>
 
@@ -150,7 +151,7 @@ Where cells E1:E4 contain job_desc, min_lvl, max_lvl, job_id respectively.
 
 <pre lang="vb">concatCells(ParameterList)</pre>
 
-`concatCells` concatenates the values in the given range together. It's use is mainly to facilitate the building of very long and complex queries:
+`concatCells` concatenates the values in the given range together. Its use is mainly to facilitate the building of very long and complex queries:
 
 <pre lang="vb">DBRowFetch(concatCells(E1:E4),"",A1,A8:A9,C8:D8)</pre>
 
@@ -160,7 +161,7 @@ Where cells E1:E4 contain the constituents of the query respectively.
 
 <pre lang="vb">concatCellsSep(separator, ParameterList)</pre>
 
-`concatCellsSep` does the same as concatCells, however inserting a separator between the concatenated values. It's use is the building of long and complex queries, too:
+`concatCellsSep` does the same as concatCells, however inserting a separator between the concatenated values. Its use is the building of long and complex queries, too:
 
 <pre lang="vbnet">DBRowFetch(concatCellsSep(E1:E4),"",A1,A8:A9,C8:D8)</pre>
 
@@ -322,7 +323,7 @@ The maximum depth of the sub menus can be stated in "(pathName)MaxDepth", which 
 
 You can add another hierarchy layer by setting "(pathName)FirstLetterLevel" to "True", which adds the first letter as the top level hierarchy.  
 
-You can decide for each sub-folder whether it's contents should be hierarchically organized by entering the relative path from ConfigStoreFolder for each sub-folder in "specialConfigStoreFolders", or you can decide for all sub-folders of that folder by just entering the topmost folder in "specialConfigStoreFolders".
+You can decide for each sub-folder whether its contents should be hierarchically organized by entering the relative path from ConfigStoreFolder for each sub-folder in "specialConfigStoreFolders", or you can decide for all sub-folders of that folder by just entering the topmost folder in "specialConfigStoreFolders".
 
 #### Inserting configurations
 
@@ -330,7 +331,7 @@ If the user retrieves the relevant configuration, a warning is shown and then th
 
 Cells in other worksheets are also filled, these are also taking the reference relative to the current selection. If the worksheet doesn't exist it is created.  
 
-There are no checks (except for Excels sheet boundaries) especially whether any cells are overwritten !  
+There are no checks (except for Excels sheet boundaries), especially concerning overwriting any cells !  
 
 If the setting `ConfigSelect` (or any other ConfigSelect, see [Other Settings](https://rkapl123.github.io/DBAddin#other-settings) is found in the settings, then the query template given there (e.g. `SELECT TOP 10 * FROM !Table!`) is used instead of the standard config (currently `SELECT TOP 10000 * FROM <Table>`) when inserting cell configurations. The respective Table is being replaced into `!Table!`.
 
@@ -362,7 +363,7 @@ This is important to either provide backward compatibility with other users exce
 When creating `DBSetPowerQuery`, the invocation provides a drop-down list of available power-queries that are added to the sheet below the `DBSetPowerQuery` function as the Query argument and can be modified (parameterized) further.
 In case the modifications resulted in a parsing error, you can enter the power-query editor of that query to determine the reason of the problem. In case the Power-query has become corrupted by the modification, you can restore the previously set power-query by holding Ctrl when selecting the power-query in the provided drop-down list.
 
-#### Settings
+### Settings
 
 Following Settings in DBAddin.xll.config or the referred DBAddinCentral.config or DBaddinUser.config affect the behavior of DB functions:
 ```xml

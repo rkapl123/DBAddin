@@ -212,10 +212,10 @@ Public Module SettingsTools
         If IsNothing(actWbNames) Then Exit Sub
         ' with Ctrl unhide all DB names and show Name Manager...
         If My.Computer.Keyboard.CtrlKeyDown And Not My.Computer.Keyboard.ShiftKeyDown Then
-            Dim retval As MsgBoxResult = QuestionMsg("Unhiding all hidden DB function names, continue (refreshing will hide them again)?", MsgBoxStyle.OkCancel, "Unhide names")
+            Dim retval As MsgBoxResult = QuestionMsg("Unhiding all hidden DB function names, should ALL names (also non DB function names) also be revealed (refreshing will only hide DB function names again)?", MsgBoxStyle.YesNoCancel, "Unhide names")
             If retval = vbCancel Then Exit Sub
             For Each DBname As Excel.Name In actWbNames
-                If DBname.Name Like "*DBFtarget*" Or DBname.Name Like "*DBFsource*" Then DBname.Visible = True
+                If DBname.Name Like "*DBFtarget*" Or DBname.Name Like "*DBFsource*" Or retval = vbYes Then DBname.Visible = True
             Next
             Try
                 ExcelDnaUtil.Application.Dialogs(Excel.XlBuiltInDialog.xlDialogNameManager).Show()
@@ -225,23 +225,25 @@ Public Module SettingsTools
             ' with Shift remove hidden names
         ElseIf My.Computer.Keyboard.ShiftKeyDown And Not My.Computer.Keyboard.CtrlKeyDown Then
             Dim resultingPurges As String = ""
-            Dim retval As MsgBoxResult = QuestionMsg("Purging hidden names, should ExternalData names (from Queries) also be purged?", MsgBoxStyle.YesNoCancel, "Purge names")
+            Dim retval As MsgBoxResult = QuestionMsg("Purging hidden names, should ExternalData names (from Queries) also be purged (this will also remove all standard MS-Queries in the workbook !)?", MsgBoxStyle.YesNoCancel, "Purge names")
             If retval = vbCancel Then Exit Sub
             Dim calcMode = ExcelDnaUtil.Application.Calculation
             ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual
             Try
                 For Each DBname As Excel.Name In actWbNames
-                    If Not DBname.Visible Then ' only hidden names...
-                        If (DBname.Name Like "*ExterneDaten*" Or DBname.Name Like "*ExternalData*") And retval = vbYes Then
-                            resultingPurges += DBname.Name + ", "
-                            DBname.Delete()
-                        ElseIf DBname.Name Like "*DBFtarget*" Then
-                            resultingPurges += DBname.Name + ", "
-                            DBname.Delete()
-                        ElseIf DBname.Name Like "*DBFsource*" Then
-                            resultingPurges += DBname.Name + ", "
-                            DBname.Delete()
-                        End If
+                    ' external data names
+                    Dim underlyingDBName As String = ""
+                    Try : underlyingDBName = getUnderlyingDBNameFromRange(ExcelDnaUtil.Application.Range(DBname.Name)) : Catch ex As Exception : End Try
+                    Dim possibleQryTblName As String = ""
+                    Try : Dim possibleQryTbl As Excel.QueryTables = ExcelDnaUtil.Application.Range(DBname.Name).QueryTable : possibleQryTblName = possibleQryTbl.Name : Catch ex As Exception : End Try
+                    If DBname.Name = "'" + ExcelDnaUtil.Application.Range(DBname.Name) + "'!" + possibleQryTblName And Left(underlyingDBName, 9) = "DBFtarget" And retval = vbYes Then
+                        resultingPurges += DBname.Name + ", "
+                        DBname.Delete()
+                    End If
+                    ' only hidden DBFunc names...
+                    If Not DBname.Visible And (Left(underlyingDBName, 9) = "DBFtarget" Or Left(underlyingDBName, 9) = "DBFsource") Then
+                        resultingPurges += DBname.Name + ", "
+                        DBname.Delete()
                     End If
                 Next
                 If resultingPurges = "" Then
