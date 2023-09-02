@@ -333,10 +333,10 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.Functions.html",
-          "hash": "w11ePSQoFxVjFuF54uCzxIiW0hv1z3ZCgSTmiDsgLpY="
+          "hash": "dBTsBLEg31SpuZ4y4xvSRF59so6htHq9Nr2w6FuAIpo="
         }
       },
-      "is_incremental": true,
+      "is_incremental": false,
       "version": ""
     },
     {
@@ -420,7 +420,7 @@
           "hash": "Sl0/VFMNFtUlZvU9BxLRwgJhbl3tHSHyf22N2k+ul20="
         }
       },
-      "is_incremental": false,
+      "is_incremental": true,
       "version": ""
     },
     {

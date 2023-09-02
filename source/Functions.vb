@@ -412,8 +412,9 @@ Public Module Functions
                 Dim statusCont As New ContainedStatusMsg
                 StatusCollection.Add(callID, statusCont)
                 StatusCollection(callID).statusMsg = "" ' need this to prevent object not set errors in checkCache
+                targetRange = ToRange(targetRange)
                 ExcelAsyncUtil.QueueAsMacro(Sub()
-                                                DBSetQueryAction(callID, Query, ToRange(targetRange), ConnString, caller, targetRangeName)
+                                                DBSetQueryAction(callID, Query, targetRange, ConnString, caller, targetRangeName)
                                             End Sub)
             End If
         Catch ex As Exception
@@ -771,8 +772,10 @@ err:
             If Not StatusCollection.ContainsKey(callID) Then
                 Dim statusCont As New ContainedStatusMsg
                 StatusCollection.Add(callID, statusCont)
+                targetRange = ToRange(targetRange)
+                formulaRange = ToRange(formulaRange)
                 ExcelAsyncUtil.QueueAsMacro(Sub()
-                                                DBListFetchAction(callID, CStr(Query), caller, ToRange(targetRange), CStr(ConnString), ToRange(formulaRange), extendDataArea, HeaderInfo, AutoFit, autoformat, ShowRowNums, targetRangeName, formulaRangeName)
+                                                DBListFetchAction(callID, CStr(Query), caller, targetRange, CStr(ConnString), formulaRange, extendDataArea, HeaderInfo, AutoFit, autoformat, ShowRowNums, targetRangeName, formulaRangeName)
                                             End Sub)
             End If
         Catch ex As Exception
