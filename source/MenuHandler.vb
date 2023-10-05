@@ -20,7 +20,7 @@ Public Class MenuHandler
     ''' <summary>used to avoid crashes when closing excel (especially with multiple users of IntelliSenseServer)</summary>
     ''' <param name="custom"></param>
     Public Overrides Sub OnBeginShutdown(ByRef custom As Array)
-        ExcelDna.IntelliSense.IntelliSenseServer.Uninstall()
+        'ExcelDna.IntelliSense.IntelliSenseServer.Uninstall()
     End Sub
 
     ''' <summary>creates the Ribbon (only at startup). any changes to the ribbon can only be done via dynamic menus</summary>

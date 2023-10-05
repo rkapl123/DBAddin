@@ -893,7 +893,7 @@ err:
             ' from now on we don't propagate any errors as data is modified in sheet....
             ExcelDnaUtil.Application.StatusBar = "Displaying data for DBList: " + If(targetRangeName.Length > 0, targetRangeName, targetSH.Name + "!" + targetRange.Address)
 
-            ' auto format: copy 1st rows formats range to apply them afterwards to whole column(s)
+            ' auto format: store 1st rows formats range to apply afterwards to whole column(s), this is needed as formats are reset by the query refresh
             Dim NumFormat() As String = Nothing, NumFormatF() As String = Nothing
             If autoformat Then
                 For i As Integer = 0 To oldCols
@@ -901,16 +901,13 @@ err:
                     NumFormat(i) = targetSH.Cells(startRow + If(HeaderInfo, 1, 0), startCol + i).NumberFormat
                 Next
             End If
-            ' now for the calculated data area, both formats and Formulas are stored
-            Dim FormulaCache() As String = Nothing
+            ' now for the calculated data area
             If formulaRange IsNot Nothing Then
                 For i = 0 To formulaRange.Columns.Count - 1
                     If autoformat Then
                         ReDim Preserve NumFormatF(i)
                         NumFormatF(i) = formulaSH.Cells(formulaStart, formulaRange.Column + i).NumberFormat
                     End If
-                    ReDim Preserve FormulaCache(i)
-                    FormulaCache(i) = formulaSH.Cells(formulaStart, formulaRange.Column + i).FormulaR1C1
                 Next
             End If
 
@@ -951,7 +948,7 @@ err:
                     errMsg = "Error in setting query for query table: " + ex.Message + ", query: " + Query
                     GoTo err
                 End Try
-                Dim rowNumberHeader As String = ""
+                Dim rowNumberHeader As String = "" ' only store row number header if row numbers are already in place (otherwise we would get the false header before the extension)
                 If ShowRowNumbers And .RowNumbers Then rowNumberHeader = targetRange.Cells(1, 1).Value
                 Try
                     .FieldNames = HeaderInfo
@@ -1026,15 +1023,6 @@ err:
                             GoTo err
                         End Try
                     End If
-                    ' fill formulas down (again), first restore from FormulaCache
-                    Try
-                        For i = 0 To UBound(FormulaCache)
-                            formulaSH.Cells(.Row, .Column + i).FormulaR1C1 = FormulaCache(i)
-                        Next
-                    Catch ex As Exception
-                        errMsg = "Error restoring formulas for fill-down: " + ex.Message + ", query: " + Query
-                        GoTo err
-                    End Try
                     ' determine bottom of formula range
                     ' check for excels boundaries !!
                     If .Row + resultRows > .EntireColumn.Rows.Count Then

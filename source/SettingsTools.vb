@@ -225,22 +225,33 @@ Public Module SettingsTools
             ' with Shift remove hidden names
         ElseIf My.Computer.Keyboard.ShiftKeyDown And Not My.Computer.Keyboard.CtrlKeyDown Then
             Dim resultingPurges As String = ""
-            Dim retval As MsgBoxResult = QuestionMsg("Purging hidden names, should ExternalData names (from Queries) also be purged (this will also remove all standard MS-Queries in the workbook !)?", MsgBoxStyle.YesNoCancel, "Purge names")
+            Dim retval As MsgBoxResult = QuestionMsg("Purging hidden DBFunc names, should associated ExternalData definitions (from Queries) also be purged ? (DB-Functions can be refreshed in cells manually again)", MsgBoxStyle.YesNoCancel, "Purge DBFunc names")
             If retval = vbCancel Then Exit Sub
             Dim calcMode = ExcelDnaUtil.Application.Calculation
             ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual
             Try
+                If retval = vbYes Then
+                    Dim curWs As Excel.Worksheet = ExcelDnaUtil.Application.ActiveSheet
+                    For Each ws As Excel.Worksheet In ExcelDnaUtil.Application.ActiveWorkbook.Worksheets
+                        ws.Activate()
+                        For Each DBname As Excel.Name In ws.Names
+                            ' external data names
+                            Dim underlyingDBName As String = ""
+                            Try : underlyingDBName = getUnderlyingDBNameFromRange(ExcelDnaUtil.Application.Range(DBname.Name)) : Catch ex As Exception : End Try
+                            Dim possibleQryTblName As String = "" : Dim possibleQryTbl As Excel.QueryTable = Nothing
+                            Try : possibleQryTbl = ExcelDnaUtil.Application.Range(DBname.Name).QueryTable : possibleQryTblName = possibleQryTbl.Name : Catch ex As Exception : End Try
+                            If DBname.Name = IIf(InStr(ws.Name, " "), "'", "") + ws.Name + IIf(InStr(ws.Name, " "), "'", "") + "!" + possibleQryTblName And Left(underlyingDBName, 9) = "DBFtarget" Then
+                                resultingPurges += DBname.Name + ", "
+                                possibleQryTbl.Delete()
+                            End If
+                        Next
+                    Next
+                    curWs.Activate()
+                End If
                 For Each DBname As Excel.Name In actWbNames
-                    ' external data names
+                    ' only hidden DBFunc names...
                     Dim underlyingDBName As String = ""
                     Try : underlyingDBName = getUnderlyingDBNameFromRange(ExcelDnaUtil.Application.Range(DBname.Name)) : Catch ex As Exception : End Try
-                    Dim possibleQryTblName As String = ""
-                    Try : Dim possibleQryTbl As Excel.QueryTables = ExcelDnaUtil.Application.Range(DBname.Name).QueryTable : possibleQryTblName = possibleQryTbl.Name : Catch ex As Exception : End Try
-                    If DBname.Name = "'" + ExcelDnaUtil.Application.Range(DBname.Name) + "'!" + possibleQryTblName And Left(underlyingDBName, 9) = "DBFtarget" And retval = vbYes Then
-                        resultingPurges += DBname.Name + ", "
-                        DBname.Delete()
-                    End If
-                    ' only hidden DBFunc names...
                     If Not DBname.Visible And (Left(underlyingDBName, 9) = "DBFtarget" Or Left(underlyingDBName, 9) = "DBFsource") Then
                         resultingPurges += DBname.Name + ", "
                         DBname.Delete()
