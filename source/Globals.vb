@@ -324,6 +324,9 @@ Last:
             Exit Sub
         End If
         DBModifs.preventChangeWhileFetching = True
+        ' prevent recalculation during "dirtying" the db functions
+        Dim calcMode As Long = ExcelDnaUtil.Application.Calculation
+        ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual
         Try
             ' walk through all DB functions (having hidden names DBFsource*) cells there to find DB Functions and change their formula, adding " " to trigger recalculation
             For Each DBname As Excel.Name In WbNames
@@ -368,7 +371,7 @@ Last:
                         ' get the callID of the underlying name of the target (key of the queryCache and StatusCollection)
                         callID = "[" + DBFuncCell.Parent.Parent.Name + "]" + DBFuncCell.Parent.Name + "!" + DBFuncCell.Address
                         ' remove query cache to force re-fetching
-                        queryCache.Remove(callID)
+                        If queryCache.ContainsKey(callID) Then queryCache.Remove(callID)
                         ' trigger recalculation by changing formula of DB Function
                         DBFuncCell.Formula += " "
                     Catch ex As Exception
@@ -383,6 +386,8 @@ Last:
         Catch ex As Exception
             UserMsg("Exception: " + ex.Message + ", " + Wb.Path + "\" + Wb.Name, "refresh DBFunctions")
         End Try
+        ' after all db function cells have been "dirtied" set calculation mode to automatic again (if it was automatic)
+        ExcelDnaUtil.Application.Calculation = calcMode
         DBModifs.preventChangeWhileFetching = False
     End Sub
 

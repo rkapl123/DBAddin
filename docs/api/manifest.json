@@ -105,7 +105,7 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.AddInEvents.html",
-          "hash": "qd5QFrzvN2AFUTajG3nLsqnV7EL62yRvwOdRZ/Jsu3M="
+          "hash": "+FhJxUJJiKFRZx01myS/4vDXz/aaiffspUcUL0AIWx8="
         }
       },
       "is_incremental": true,
@@ -333,7 +333,7 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.Functions.html",
-          "hash": "RJ1/dLxFDb1gTe1wAvGFBvWsJa7fps/y4ERHpeuvYZ8="
+          "hash": "OBN3K4FmDaPthmdbhfYSDVWTeViJxu/UVoMx/4U+FCM="
         }
       },
       "is_incremental": true,
@@ -345,7 +345,7 @@
       "output": {
         ".html": {
           "relative_path": "api/DBaddin.Globals.html",
-          "hash": "rTvjHLGi0inZ+WwEvBN+mJ/i0eL+KtPBl5C10PHdkkE="
+          "hash": "nrTAiKHiShJNEOl3mQwMBXhwa0HYlnh2mmKLQfqdhkE="
         }
       },
       "is_incremental": true,

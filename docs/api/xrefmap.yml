@@ -2218,6 +2218,25 @@ references:
   isSpec: "True"
   fullName: DBaddin.Functions.PQString
   nameWithType: Functions.PQString
+- uid: DBaddin.Functions.preventRefresh(System.Boolean)
+  name: preventRefresh(Boolean)
+  href: api/DBaddin.Functions.html#DBaddin_Functions_preventRefresh_System_Boolean_
+  commentId: M:DBaddin.Functions.preventRefresh(System.Boolean)
+  fullName: DBaddin.Functions.preventRefresh(System.Boolean)
+  nameWithType: Functions.preventRefresh(Boolean)
+- uid: DBaddin.Functions.preventRefresh*
+  name: preventRefresh
+  href: api/DBaddin.Functions.html#DBaddin_Functions_preventRefresh_
+  commentId: Overload:DBaddin.Functions.preventRefresh
+  isSpec: "True"
+  fullName: DBaddin.Functions.preventRefresh
+  nameWithType: Functions.preventRefresh
+- uid: DBaddin.Functions.preventRefreshFlag
+  name: preventRefreshFlag
+  href: api/DBaddin.Functions.html#DBaddin_Functions_preventRefreshFlag
+  commentId: F:DBaddin.Functions.preventRefreshFlag
+  fullName: DBaddin.Functions.preventRefreshFlag
+  nameWithType: Functions.preventRefreshFlag
 - uid: DBaddin.Functions.queryBackupColl
   name: queryBackupColl
   href: api/DBaddin.Functions.html#DBaddin_Functions_queryBackupColl

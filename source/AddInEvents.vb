@@ -60,6 +60,8 @@ Public Class AddInEvents
         LogInfo("initialize configuration settings")
         Functions.queryCache = New Dictionary(Of String, String)
         Functions.StatusCollection = New Dictionary(Of String, ContainedStatusMsg)
+        ' prevent refreshing due to recalculation of volatile dependent db functions (e.g. today()) during workbook opened together with excel (this is done explicitly later using refreshDBFunctions)
+        Functions.preventRefreshFlag = True
         DBModifDefColl = New Dictionary(Of String, Dictionary(Of String, DBModif))
 
         ' initialize settings and get the default environment
@@ -253,13 +255,18 @@ done:
     ''' <param name="Wb"></param>
     Private Sub Application_WorkbookOpen(Wb As Excel.Workbook) Handles Application.WorkbookOpen
         If Not Wb.IsAddin Then
-            ' in case of reopening workbooks with db functions, look for old query caches and status collections (returned error messages) and reset them to get new data
-            resetCachesForWorkbook(Wb.Name)
+            LogInfo("repair legacy functions for workbook: " + Wb.Name)
             repairLegacyFunctions(Wb)
+            Functions.preventRefreshFlag = False
             ' when opening, force recalculation of DB functions in workbook.
-            ' this is required as there is no recalculation if no dependencies have changed (usually when opening workbooks)
-            ' however the most important dependency for DB functions is the database data....
-            If Not getCustPropertyBool("DBFskip", Wb) Then refreshDBFunctions(Wb)
+            ' this is required as there is no recalculation as no dependencies have changed (usually when opening workbooks) and all db functions have been realized as non-volatile.
+            ' still, the most important dependency for DB functions is the database data, nevertheless, there is an exception:
+            ' if a dbfunction depends on other volatile functions (e.g. today()), then it is already being calculated before the WorkbookOpen event,
+            ' in this case the queryCache prevents another fetching from the database during refreshDBFunctions
+            If Not getCustPropertyBool("DBFskip", Wb) Then
+                LogInfo("refreshing DB functions for workbook: " + Wb.Name)
+                refreshDBFunctions(Wb)
+            End If
         End If
     End Sub
 
@@ -267,7 +274,7 @@ done:
     ''' <param name="Wb"></param>
     Private Sub Application_WorkbookActivate(Wb As Excel.Workbook) Handles Application.WorkbookActivate
         ' avoid when being activated by DBFuncsAction
-        If Not DBModifs.preventChangeWhileFetching Then
+        If Not DBModifs.preventChangeWhileFetching And Not Wb.IsAddin Then
             ' in case AutoOpen hasn't been triggered (e.g. when Excel was started via Internet Explorer)...
             If DBModifDefColl Is Nothing Then
                 DBModifDefColl = New Dictionary(Of String, Dictionary(Of String, DBModif))
@@ -411,6 +418,8 @@ done:
             If WbIsClosing AndAlso Not IsNothing(DBModifDefColl) AndAlso DBModifDefColl.Count > 0 Then
                 DBModifDefColl.Clear()
                 theRibbon.Invalidate()
+                ' reset query caches and status collections (returned error messages) to get new data later on reopening the workbook
+                resetCachesForWorkbook(Wb.Name)
             End If
         Catch ex As Exception : End Try
         WbIsClosing = False

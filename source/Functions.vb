@@ -30,6 +30,17 @@ Public Module Functions
     Public queryCache As Dictionary(Of String, String)
     ''' <summary>avoid entering dblistfetch/dbrowfetch functions during clearing of list-fetch areas (before saving)</summary>
     Public dontCalcWhileClearing As Boolean
+    ''' <summary>avoid refreshing of DB Functions</summary>
+    Public preventRefreshFlag As Boolean
+
+    ''' <summary>set preventing of refreshing DB Functions</summary>
+    ''' <param name="setPreventRefresh">set preventRefreshFlag to this value</param>
+    ''' <returns>whether the preventRefresh flag was changed</returns>
+    <ExcelFunction(Description:="set preventing of refreshing DB Functions")>
+    Public Function preventRefresh(<ExcelArgument(Description:="set to TRUE to prevent refresh, FALSE to enable again")> setPreventRefresh As Boolean) As String
+        preventRefreshFlag = setPreventRefresh
+        Return "preventRefreshFlag was set to " + preventRefreshFlag.ToString() + IIf(preventRefreshFlag, ", DB Functions will not refresh on any change or refresh context menu", ", DB Functions refresh again")
+    End Function
 
     ''' <summary>Create database compliant date, time or datetime string from excel date type value</summary>
     ''' <param name="DatePart">date/time/datetime single parameter or range reference</param>
@@ -383,6 +394,7 @@ Public Module Functions
         Dim caller As Excel.Range
         Dim EnvPrefix As String = ""
         If ExcelDnaUtil.IsInFunctionWizard() Then Return "invoked from function wizard..."
+        If preventRefreshFlag Then Return "preventRefresh set, no DB Function refreshing..."
         Try
             DBSetQuery = checkQueryAndTarget(Query, targetRange)
             If DBSetQuery.Length > 0 Then Exit Function
@@ -592,6 +604,7 @@ err:
         Dim caller As Excel.Range
         Dim EnvPrefix As String = ""
         If ExcelDnaUtil.IsInFunctionWizard() Then Return "invoked from function wizard..."
+        If preventRefreshFlag Then Return "preventRefresh set, no DB Function refreshing..."
         Try
             caller = ToRange(XlCall.Excel(XlCall.xlfCaller))
             ' calcContainers are identified by workbook name + Sheet name + function caller cell Address
@@ -724,6 +737,7 @@ err:
         Dim callID As String = ""
         Dim EnvPrefix As String = ""
         If ExcelDnaUtil.IsInFunctionWizard() Then Return "invoked from function wizard..."
+        If preventRefreshFlag Then Return "preventRefresh set, no DB Function refreshing..."
         Try
             DBListFetch = checkQueryAndTarget(Query, targetRange)
             If DBListFetch.Length > 0 Then Exit Function
@@ -826,6 +840,7 @@ err:
                 errMsg += " in query: " + Query
                 GoTo err
             End If
+            Dim callerFormula As String = caller.Formula.ToString()
 
             Dim theTargetQueryTable As Object = Nothing
             Try : theTargetQueryTable = targetRange.QueryTable : Catch ex As Exception : End Try
@@ -894,7 +909,7 @@ err:
             ExcelDnaUtil.Application.StatusBar = "Displaying data for DBList: " + If(targetRangeName.Length > 0, targetRangeName, targetSH.Name + "!" + targetRange.Address)
 
             ' auto format: store 1st rows formats range to apply afterwards to whole column(s), this is needed as formats are reset by the query refresh
-            Dim NumFormat() As String = Nothing, NumFormatF() As String = Nothing
+            Dim NumFormat() As String = Nothing, NumFormatF() As String = Nothing, FormulasF() As String = Nothing
             If autoformat Then
                 For i As Integer = 0 To oldCols
                     ReDim Preserve NumFormat(i)
@@ -908,6 +923,9 @@ err:
                         ReDim Preserve NumFormatF(i)
                         NumFormatF(i) = formulaSH.Cells(formulaStart, formulaRange.Column + i).NumberFormat
                     End If
+                    ' also preserve the formulas for potential restoring after refresh (in case of extendArea = 1 (Excel.XlCellInsertionMode.xlInsertDeleteCells) excel shifts down the target range, resulting in formula modification)
+                    ReDim Preserve FormulasF(i)
+                    FormulasF(i) = formulaSH.Cells(formulaStart, formulaRange.Column + i).Formula
                 Next
             End If
 
@@ -975,9 +993,17 @@ err:
                     errMsg = "Error in getting resulting range for query table: " + ex.Message + ", query: " + Query
                     GoTo err
                 End Try
-                ' reset rownumber header (deleted by refresh)
+                ' reset row number header (deleted by refresh)
                 If ShowRowNumbers Then targetRange.Cells(1, 1).Value = rowNumberHeader
             End With
+            ' in case of extendArea = 1 (Excel.XlCellInsertionMode.xlInsertDeleteCells) excel shifts down the target range, this resets the caller formula and the calculated area back
+            If caller.Formula <> callerFormula Then caller.Formula = callerFormula
+            If formulaRange IsNot Nothing Then
+                For i = 0 To formulaRange.Columns.Count - 1
+                    If FormulasF(i) <> formulaSH.Cells(formulaStart, formulaRange.Column + i).Formula Then formulaSH.Cells(formulaStart, formulaRange.Column + i).Formula = FormulasF(i)
+                Next
+            End If
+
             ' get new query area dimensions
             Dim qryRows, qryCols As Integer
             Try
@@ -1164,6 +1190,7 @@ err:    LogWarn(errMsg + ", caller: " + callID)
         Dim HeaderInfo As Boolean
         Dim EnvPrefix As String = ""
         If ExcelDnaUtil.IsInFunctionWizard() Then Return "invoked from function wizard..."
+        If preventRefreshFlag Then Return "preventRefresh set, no DB Function refreshing..."
         Try
             DBRowFetch = checkQueryAndTarget(Query, targetArray)
             If DBRowFetch.Length > 0 Then Exit Function
@@ -1526,8 +1553,10 @@ err:    LogWarn(errMsg + ", caller: " + callID)
         If queryCache.ContainsKey(callID) Then
             doFetching = (ConnString + Query.ToString() <> queryCache(callID))
             ' refresh the query cache with new query/connection string ...
-            queryCache.Remove(callID)
-            queryCache.Add(callID, ConnString + Query.ToString())
+            If doFetching Then
+                queryCache.Remove(callID)
+                queryCache.Add(callID, ConnString + Query.ToString())
+            End If
         Else
             queryCache.Add(callID, ConnString + Query.ToString())
             doFetching = True
