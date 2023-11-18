@@ -60,8 +60,6 @@ Public Class AddInEvents
         LogInfo("initialize configuration settings")
         Functions.queryCache = New Dictionary(Of String, String)
         Functions.StatusCollection = New Dictionary(Of String, ContainedStatusMsg)
-        ' prevent refreshing due to recalculation of volatile dependent db functions (e.g. today()) during workbook opened together with excel (this is done explicitly later using refreshDBFunctions)
-        Functions.preventRefreshFlag = True
         DBModifDefColl = New Dictionary(Of String, Dictionary(Of String, DBModif))
 
         ' initialize settings and get the default environment
@@ -265,7 +263,7 @@ done:
             ' in this case the queryCache prevents another fetching from the database during refreshDBFunctions
             If Not getCustPropertyBool("DBFskip", Wb) Then
                 LogInfo("refreshing DB functions for workbook: " + Wb.Name)
-                refreshDBFunctions(Wb)
+                refreshDBFunctions(Wb, False, True)
             End If
         End If
     End Sub

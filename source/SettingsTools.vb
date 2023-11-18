@@ -222,10 +222,10 @@ Public Module SettingsTools
             Catch ex As Exception
                 UserMsg("The name manager dialog can't be displayed, maybe you are in the formula/cell editor?", "Name manager dialog display")
             End Try
-            ' with Shift remove hidden names
+            ' with Shift remove DBFunc names
         ElseIf My.Computer.Keyboard.ShiftKeyDown And Not My.Computer.Keyboard.CtrlKeyDown Then
             Dim resultingPurges As String = ""
-            Dim retval As MsgBoxResult = QuestionMsg("Purging hidden DBFunc names, should associated ExternalData definitions (from Queries) also be purged ? (DB-Functions can be refreshed in cells manually again)", MsgBoxStyle.YesNoCancel, "Purge DBFunc names")
+            Dim retval As MsgBoxResult = QuestionMsg("Purging DBFunc names, should associated ExternalData definitions (from Queries) also be purged ? (DB-Functions can be refreshed in cells manually again)", MsgBoxStyle.YesNoCancel, "Purge DBFunc names")
             If retval = vbCancel Then Exit Sub
             Dim calcMode = ExcelDnaUtil.Application.Calculation
             ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual
@@ -249,10 +249,10 @@ Public Module SettingsTools
                     curWs.Activate()
                 End If
                 For Each DBname As Excel.Name In actWbNames
-                    ' only hidden DBFunc names...
+                    ' only DBFunc names...
                     Dim underlyingDBName As String = ""
                     Try : underlyingDBName = getUnderlyingDBNameFromRange(ExcelDnaUtil.Application.Range(DBname.Name)) : Catch ex As Exception : End Try
-                    If Not DBname.Visible And (Left(underlyingDBName, 9) = "DBFtarget" Or Left(underlyingDBName, 9) = "DBFsource") Then
+                    If Left(underlyingDBName, 9) = "DBFtarget" Or Left(underlyingDBName, 9) = "DBFsource" Then
                         resultingPurges += DBname.Name + ", "
                         DBname.Delete()
                     End If
@@ -267,7 +267,11 @@ Public Module SettingsTools
             End Try
             ExcelDnaUtil.Application.Calculation = calcMode
         ElseIf My.Computer.Keyboard.ShiftKeyDown And My.Computer.Keyboard.CtrlKeyDown Then
-            ExcelDnaUtil.Application.Dialogs(Excel.XlBuiltInDialog.xlDialogNameManager).Show()
+            Try
+                ExcelDnaUtil.Application.Dialogs(Excel.XlBuiltInDialog.xlDialogNameManager).Show()
+            Catch ex As Exception
+                UserMsg("The name manager dialog can't be displayed, maybe you are in the formula/cell editor?", "Name manager dialog display")
+            End Try
         Else
             Dim NamesList As Excel.Names = actWbNames
             Dim collectedErrors As String = ""

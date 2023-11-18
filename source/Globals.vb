@@ -310,7 +310,7 @@ Last:
     ''' <summary>recalculate fully the DB functions, if we have DBFuncs in the workbook somewhere</summary>
     ''' <param name="Wb">workbook to refresh DB Functions in</param>
     ''' <param name="ignoreCalcMode">when calling refreshDBFunctions time delayed (when saving a workbook and DBFC* is set), need to trigger calculation regardless of calculation mode being manual, otherwise data is not refreshed</param>
-    Public Sub refreshDBFunctions(Wb As Excel.Workbook, Optional ignoreCalcMode As Boolean = False)
+    Public Sub refreshDBFunctions(Wb As Excel.Workbook, Optional ignoreCalcMode As Boolean = False, Optional calledOnWBOpen As Boolean = False)
         Dim WbNames As Excel.Names
         Try : WbNames = Wb.Names
         Catch ex As Exception
@@ -324,9 +324,8 @@ Last:
             Exit Sub
         End If
         DBModifs.preventChangeWhileFetching = True
-        ' prevent recalculation during "dirtying" the db functions
         Dim calcMode As Long = ExcelDnaUtil.Application.Calculation
-        ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual
+        Dim calcModeSet As Boolean = False
         Try
             ' walk through all DB functions (having hidden names DBFsource*) cells there to find DB Functions and change their formula, adding " " to trigger recalculation
             For Each DBname As Excel.Name In WbNames
@@ -343,6 +342,10 @@ Last:
                     Dim callID As String = "" : Dim underlyingName As String = ""
                     If Not (DBFuncCell.Formula.ToString().ToUpper.Contains("DBLISTFETCH") Or DBFuncCell.Formula.ToString().ToUpper.Contains("DBROWFETCH") Or DBFuncCell.Formula.ToString().ToUpper.Contains("DBSETQUERY")) Then
                         LogWarn("Found former DB Function in Cell " + DBFuncCell.Parent.Name + "!" + DBFuncCell.Address + " that doesn't contain a DB Function anymore.")
+                    Else
+                        ' only if there are really DB Functions, set calculation to manual to prevent recalculation during "dirtying" the db functions
+                        ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual
+                        calcModeSet = True
                     End If
                     Try
                         ' repair DBSheet auto-filling lookup functionality, in case it was lost due to accidental editing of these cells.
@@ -371,7 +374,7 @@ Last:
                         ' get the callID of the underlying name of the target (key of the queryCache and StatusCollection)
                         callID = "[" + DBFuncCell.Parent.Parent.Name + "]" + DBFuncCell.Parent.Name + "!" + DBFuncCell.Address
                         ' remove query cache to force re-fetching
-                        If queryCache.ContainsKey(callID) Then queryCache.Remove(callID)
+                        If queryCache.ContainsKey(callID) And Not calledOnWBOpen Then queryCache.Remove(callID)
                         ' trigger recalculation by changing formula of DB Function
                         DBFuncCell.Formula += " "
                     Catch ex As Exception
@@ -387,7 +390,7 @@ Last:
             UserMsg("Exception: " + ex.Message + ", " + Wb.Path + "\" + Wb.Name, "refresh DBFunctions")
         End Try
         ' after all db function cells have been "dirtied" set calculation mode to automatic again (if it was automatic)
-        ExcelDnaUtil.Application.Calculation = calcMode
+        If calcModeSet Then ExcelDnaUtil.Application.Calculation = calcMode
         DBModifs.preventChangeWhileFetching = False
     End Sub
 
