@@ -188,9 +188,9 @@ Public Module ConfigFiles
                     End If
                 Next
                 If spclFolder <> "" And MenuFolderDepth < maxMenuDepth Then
-                    Dim firstCharLevel As Boolean = CBool(fetchSetting(spclFolder + "FirstLetterLevel", "False"))
+                    Dim firstCharLevel As Boolean = fetchSettingBool(spclFolder + "FirstLetterLevel", "False")
                     Dim specialConfigStoreSeparator As String = fetchSetting(spclFolder + "Separator", "")
-                    specialFolderMaxDepth = CInt(fetchSetting(spclFolder + "MaxDepth", "4"))
+                    specialFolderMaxDepth = fetchSettingInt(spclFolder + "MaxDepth", "4")
                     Dim nameParts As String
                     For i As Long = 0 To UBound(fileList)
                         ' is current entry contained in next entry then revert order to allow for containment in next entry's hierarchy..

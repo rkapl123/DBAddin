@@ -68,7 +68,7 @@ Explanation:
 
 ### Other Settings
 
-Other settings possible in DBAddin.xll.config (or DBAddinCentral.config/DBAddinUser.config):
+Other (general) settings possible in DBAddin.xll.config (or DBAddinCentral.config/DBAddinUser.config):
 
 ```xml
     <add key="CmdTimeout" value="30" />
@@ -94,6 +94,10 @@ Other settings possible in DBAddin.xll.config (or DBAddinCentral.config/DBAddinU
     <add key="localUpdateMessage" value="New version available in local update folder, start deployAddin.cmd to install it:" />
     <add key="maxNumberMassChange" value="10" />
     <add key="repairLegacyFunctionsAutoOpen" value="True" />
+    <add key="shortCutRefreshData" value="^R" />
+    <add key="shortCutJumpButton" value="^J" />
+    <add key="shortCutDeleteRow" value="^D" />
+    <add key="shortCutInsertRow" value="^I" />
     <add key="updatesDownloadFolder" value="C:\temp\" />
     <add key="updatesMajorVersion" value="1.0.0." />
     <add key="updatesUrlBase" value="https://github.com/rkapl123/DBAddin/archive/refs/tags/" />
@@ -121,11 +125,15 @@ Explanation:
 *   `localUpdateMessage`: For the alternative folder update, you can also provide an alternative message to display.
 *   `maxNumberMassChange`: Threshold of Number of changes in CUDFlag DBMappers to issue a warning.
 *   `repairLegacyFunctionsAutoOpen`: Set this to False if legacy DB Addin functions should not be checked/repaired on auto open of workbooks.
+*   `shortCutRefreshData`: Set this to override the default value of the refreshData context button and avoid conflicts with other addins. For syntax see [https://msdn.microsoft.com/en-us/library/office/ff197461.aspx](https://msdn.microsoft.com/en-us/library/office/ff197461.aspx).
+*   `shortCutJumpButton`: Set this to override the default value of the jump to DBFunc/target context button and avoid conflicts with other addins.
+*   `shortCutDeleteRow`: Set this to override the default value of the delete Row context button and avoid conflicts with other addins.
+*   `shortCutInsertRow`: Set this to override the default value of the insert Row context button and avoid conflicts with other addins.
 *   `updatesDownloadFolder`: You can specify a different download folder here instead of `C:\temp\`.
 *   `updatesMajorVersion`: Usually the versions are numbered 1.0.0.x, in case this is different, the Major Version can be overridden here.
 *   `updatesUrlBase`: Here, the URL base for the update zip packages can be overridden.
 
-To change the settings, use the drop-down "settings" where you can modify the DBAddin.xll.config and the referred DBAddinCentral.config including XML validation. If you have multiple same named entries in your settings files, the last one is taken as the active setting. The settings dialog has a drop-down at its bottom providing all the available settings to be selected. On selection, the chosen setting is added to the bottom of the current open config. For `+  env` settings, an input box will provide the possibility to set the number to be used instead of `+ env`.
+To change the settings, use the drop-down "settings" where you can modify the DBAddin.xll.config and the referred DBAddinCentral.config including XML validation. If you have multiple same named entries in your settings files, the last one is taken as the active setting. The settings dialog has a drop-down at its bottom providing all the available settings to be selected. On selection, the chosen setting is added to the bottom of the current open config. For `+  env` settings, an input box will provide the possibility to set the number to be used instead of `+ env`. There are other specific settings available for use with [DB Functions](DBFuncs.md), [DB Modifications](DBModif.md) and [DB Sheets](DBSheets.md), see there for more details.
 
 ### Environment, About Box, Settings, Log and fix legacy functions
 

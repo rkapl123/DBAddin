@@ -20,7 +20,29 @@ Public Module SettingsTools
     ''' <summary>The path where the User specific settings (overrides) can be found</summary>
     Private UserSettingsPath As String
 
-    ''' <summary>encapsulates setting fetching (currently ConfigurationManager from DBAddin.xll.config)</summary>
+    ''' <summary>exception proof fetching of integer settings</summary>
+    ''' <param name="Key">registry key to take value from</param>
+    ''' <param name="defaultValue">Value that is taken if Key was not found</param>
+    ''' <returns>the setting value</returns>
+    Public Function fetchSettingInt(Key As String, defaultValue As String) As Integer
+        fetchSettingInt = 0
+        ' catch invalid boolean expression (e.g. empty string) -> false
+        Try : fetchSettingInt = CInt(fetchSetting(Key, defaultValue)) : Catch ex As Exception : End Try
+        Return fetchSettingInt
+    End Function
+
+    ''' <summary>exception proof fetching of bool settings</summary>    
+    ''' <param name="Key">registry key to take value from</param>
+    ''' <param name="defaultValue">Value that is taken if Key was not found</param>
+    ''' <returns>the setting value</returns>
+    Public Function fetchSettingBool(Key As String, defaultValue As String) As Boolean
+        fetchSettingBool = False
+        ' catch invalid boolean expression (e.g. empty string) -> false
+        Try : fetchSettingBool = CBool(fetchSetting(Key, defaultValue)) : Catch ex As Exception : End Try
+        Return fetchSettingBool
+    End Function
+
+    ''' <summary>encapsulates setting fetching (currently ConfigurationManager from DBAddin.xll.config), use only for strings. For Integer and Boolean use fetchSettingInt and fetchSettingBool</summary>
     ''' <param name="Key">registry key to take value from</param>
     ''' <param name="defaultValue">Value that is taken if Key was not found</param>
     ''' <returns>the setting value</returns>
@@ -83,16 +105,17 @@ Public Module SettingsTools
         Return (selectedEnvironment + IIf(baseZero, 0, 1)).ToString()
     End Function
 
+    Public refreshDataKey, jumpButtonKey, deleteRowKey, insertRowKey As String
     ''' <summary>initializes global configuration variables</summary>
     Public Sub initSettings()
         Try
-            DebugAddin = CBool(fetchSetting("DebugAddin", "False"))
+            DebugAddin = fetchSettingBool("DebugAddin", "False")
             ConstConnString = fetchSetting("ConstConnString" + env(), "")
-            CnnTimeout = CInt(fetchSetting("CnnTimeout", "15"))
-            CmdTimeout = CInt(fetchSetting("CmdTimeout", "60"))
+            CnnTimeout = fetchSettingInt("CnnTimeout", "15")
+            CmdTimeout = fetchSettingInt("CmdTimeout", "60")
             ConfigStoreFolder = fetchSetting("ConfigStoreFolder" + env(), "")
             specialConfigStoreFolders = Split(fetchSetting("specialConfigStoreFolders", ""), ":")
-            DefaultDBDateFormatting = CInt(fetchSetting("DefaultDBDateFormatting", "0"))
+            DefaultDBDateFormatting = fetchSettingInt("DefaultDBDateFormatting", "0")
             ' load environments
             Dim i As Integer = 1
             ReDim Preserve environdefs(-1)
@@ -108,6 +131,20 @@ Public Module SettingsTools
         Catch ex As Exception
             UserMsg("Error in initialization of Settings: " + ex.Message)
         End Try
+        ' overridable shortcuts, first reset
+        Try : ExcelDnaUtil.Application.OnKey(refreshDataKey) : Catch ex As Exception : End Try
+        Try : ExcelDnaUtil.Application.OnKey(jumpButtonKey) : Catch ex As Exception : End Try
+        Try : ExcelDnaUtil.Application.OnKey(deleteRowKey) : Catch ex As Exception : End Try
+        Try : ExcelDnaUtil.Application.OnKey(insertRowKey) : Catch ex As Exception : End Try
+        refreshDataKey = fetchSetting("shortCutRefreshData", "^R")
+        jumpButtonKey = fetchSetting("shortCutJumpButton", "^J")
+        deleteRowKey = fetchSetting("shortCutDeleteRow", "^D")
+        insertRowKey = fetchSetting("shortCutInsertRow", "^I")
+        ' then set to (new) values:
+        Try : ExcelDnaUtil.Application.OnKey(refreshDataKey, "refreshData") : Catch ex As Exception : End Try
+        Try : ExcelDnaUtil.Application.OnKey(jumpButtonKey, "jumpButton") : Catch ex As Exception : End Try
+        Try : ExcelDnaUtil.Application.OnKey(deleteRowKey, "deleteRow") : Catch ex As Exception : End Try
+        Try : ExcelDnaUtil.Application.OnKey(insertRowKey, "insertRow") : Catch ex As Exception : End Try
         ' get module info for path of xll (to get config there):
         For Each tModule As Diagnostics.ProcessModule In Diagnostics.Process.GetCurrentProcess().Modules
             UserSettingsPath = tModule.FileName
@@ -141,7 +178,7 @@ Public Module SettingsTools
         Dim WbNames As Excel.Names
 
         ' skip repair on auto open if explicitly set
-        If Not CBool(fetchSetting("repairLegacyFunctionsAutoOpen", "True")) AndAlso Not showResponse Then Exit Sub
+        If Not fetchSettingBool("repairLegacyFunctionsAutoOpen", "True") AndAlso Not showResponse Then Exit Sub
 
         Try : WbNames = actWB.Names
         Catch ex As Exception

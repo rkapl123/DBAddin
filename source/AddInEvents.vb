@@ -69,7 +69,7 @@ Public Class AddInEvents
             Exit Sub
         End If
         ' Configs are 1 based, selectedEnvironment(index of environment dropdown) is 0 based. negative values not allowed!
-        Dim selEnv As Integer = CInt(fetchSetting("DefaultEnvironment", "1")) - 1
+        Dim selEnv As Integer = fetchSettingInt("DefaultEnvironment", "1") - 1
         If selEnv > environdefs.Length - 1 OrElse selEnv < 0 Then
             UserMsg("Default Environment " + (selEnv + 1).ToString() + " not existing, setting to first environment !")
             selEnv = 0
@@ -82,6 +82,11 @@ Public Class AddInEvents
 
     ''' <summary>AutoClose cleans up after finishing addin</summary>
     Public Sub AutoClose() Implements IExcelAddIn.AutoClose
+        ' reset last assigned shortcuts
+        Try : ExcelDnaUtil.Application.OnKey(refreshDataKey) : Catch ex As Exception : End Try
+        Try : ExcelDnaUtil.Application.OnKey(jumpButtonKey) : Catch ex As Exception : End Try
+        Try : ExcelDnaUtil.Application.OnKey(deleteRowKey) : Catch ex As Exception : End Try
+        Try : ExcelDnaUtil.Application.OnKey(insertRowKey) : Catch ex As Exception : End Try
         ExcelDna.IntelliSense.IntelliSenseServer.Uninstall()
     End Sub
 

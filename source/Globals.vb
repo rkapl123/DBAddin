@@ -456,7 +456,7 @@ Last:
         Dim altConnString = fetchSetting("AltConnString" + env(), "")
         ' for standard connection strings only OLEDB drivers seem to work with pivot tables...
         If altConnString = "" Then altConnString = "OLEDB;" + ConstConnString
-        Dim ExcelVersionForPivot As Excel.XlPivotTableVersionList = CInt(fetchSetting("ExcelVersionForPivot", "8"))
+        Dim ExcelVersionForPivot As Excel.XlPivotTableVersionList = fetchSettingInt("ExcelVersionForPivot", "8")
         Try
             ' don't use TargetCell.Parent.Parent.PivotCaches().Add(Excel.XlPivotTableSourceType.xlExternal) as we can't set the Version there...
             pivotcache = ExcelDnaUtil.Application.ActiveWorkbook.PivotCaches.Create(SourceType:=Excel.XlPivotTableSourceType.xlExternal, Version:=ExcelVersionForPivot)

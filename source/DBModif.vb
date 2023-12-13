@@ -536,7 +536,7 @@ Public Class DBMapper : Inherits DBModif
             Dim retval As MsgBoxResult = QuestionMsg("Change affects whole DB Mapper Range, this might lead to erroneous behaviour, really set CUD Flags ?",, "Set CUD Flags for DB Mapper")
             If retval = vbCancel Then Exit Sub
         End If
-        If changedRangeRows > CInt(fetchSetting("maxRowCountCUD", "10000")) Then
+        If changedRangeRows > fetchSettingInt("maxRowCountCUD", "10000") Then
             If Not QuestionMsg("A large range was changed (" + changedRangeRows.ToString() + " > maxRowCountCUD:" + fetchSetting("maxRowCountCUD", "10000") + "), this will probably lead to CUD flag setting taking very long. Continue?",, "Set CUD Flags for DB Mapper") Then Exit Sub
         End If
         If changedRange.Parent.ProtectContents Then
@@ -703,7 +703,7 @@ exitSub:
         extendDataRange()
         ' check for mass changes and warn if necessary
         If CUDFlags Then
-            Dim maxMassChanges As Integer = CInt(fetchSetting("maxNumberMassChange", "30"))
+            Dim maxMassChanges As Integer = fetchSettingInt("maxNumberMassChange", "30")
             Dim curWs As Excel.Worksheet = TargetRange.Parent ' this is necessary because using TargetRange directly in CountIf deletes the content of the CUD area !!
             Dim changesToBeDone As Integer = ExcelDnaUtil.Application.WorksheetFunction.CountIf(curWs.Range(TargetRange.Columns(TargetRange.Columns.Count + 1).Address), "<>")
             If changesToBeDone > maxMassChanges Then
@@ -2046,14 +2046,14 @@ EndOuterLoop:
     End Function
 
     ''' <summary>marks a row in a DBMapper for deletion, used as a ExcelCommand to have a keyboard shortcut</summary>
-    <ExcelCommand(Name:="deleteRow", ShortCut:="^D")>
+    <ExcelCommand(Name:="deleteRow")>
     Public Sub deleteRow()
         Dim targetName As String = getDBModifNameFromRange(ExcelDnaUtil.Application.Selection)
         If Left(targetName, 8) = "DBMapper" Then DirectCast(DBModifDefColl("DBMapper").Item(targetName), DBMapper).insertCUDMarks(ExcelDnaUtil.Application.Selection, deleteFlag:=True)
     End Sub
 
     ''' <summary>inserts a row in a DBMapper, used as a ExcelCommand to have a keyboard shortcut</summary>
-    <ExcelCommand(Name:="insertRow", ShortCut:="^I")>
+    <ExcelCommand(Name:="insertRow")>
     Public Sub insertRow()
         Dim targetName As String = getDBModifNameFromRange(ExcelDnaUtil.Application.Selection)
         If Left(targetName, 8) = "DBMapper" Then

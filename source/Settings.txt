@@ -47,6 +47,10 @@ maxTriesForRevisionFind
 ownerQualifier + env
 pivotTableCmdTextToSet + env
 repairLegacyFunctionsAutoOpen
+shortCutRefreshData
+shortCutJumpButton
+shortCutDeleteRow
+shortCutInsertRow
 specialConfigStoreFolders
 specialNonNullableChar + env
 tblPlaceHolder + env

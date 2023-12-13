@@ -518,7 +518,7 @@ Public Class MenuHandler
     ''' <param name="control"></param>
     ''' <returns>the tool-tip</returns>
     Public Function GetEnvSelectedTooltip(control As CustomUI.IRibbonControl) As String
-        If CBool(fetchSetting("DontChangeEnvironment", "False")) Then
+        If fetchSettingBool("DontChangeEnvironment", "False") Then
             Return "DontChangeEnvironment is set, therefore changing the Environment is prevented !"
         Else
             Return "configured for Database Access in Addin config %appdata%\Microsoft\Addins\DBaddin.xll.config (or referenced central/user setting)"
@@ -529,7 +529,7 @@ Public Class MenuHandler
     ''' <param name="control"></param>
     ''' <returns>true if enabled</returns>
     Public Function GetEnvEnabled(control As CustomUI.IRibbonControl) As Integer
-        Return Not CBool(fetchSetting("DontChangeEnvironment", "False"))
+        Return Not fetchSettingBool("DontChangeEnvironment", "False")
     End Function
 
     ''' <summary>Choose environment (configured in registry with ConstConnString(N), ConfigStoreFolder(N))</summary>
@@ -827,7 +827,7 @@ Public Module MenuHandlerGlobals
     Public theRibbon As CustomUI.IRibbonUI
 
     ''' <summary>refresh DB Functions (and - if called from outside any db function area - all other external data ranges)</summary>
-    <ExcelCommand(Name:="refreshData", ShortCut:="^R")>
+    <ExcelCommand(Name:="refreshData")>
     Public Sub refreshData()
         initSettings()
         ' enable events in case there were some problems in procedure with EnableEvents = false, this fails if a cell dropdown is open.
@@ -866,26 +866,26 @@ Public Module MenuHandlerGlobals
                             UserMsg("Worksheet " + ws.Name + " is content protected, can't refresh QueryTables/PivotTables !", "DB-Addin Refresh")
                             Continue For
                         End If
-                        If Not CBool(fetchSetting("AvoidUpdateQueryTables_Refresh", "False")) Then
+                        If Not fetchSettingBool("AvoidUpdateQueryTables_Refresh", "False") Then
                             For Each qrytbl As Excel.QueryTable In ws.QueryTables
                                 ' avoid double refreshing of query tables
                                 If getUnderlyingDBNameFromRange(qrytbl.ResultRange) = "" Then qrytbl.Refresh()
                             Next
                         End If
-                        If Not CBool(fetchSetting("AvoidUpdatePivotTables_Refresh", "False")) Then
+                        If Not fetchSettingBool("AvoidUpdatePivotTables_Refresh", "False") Then
                             For Each pivottbl As Excel.PivotTable In ws.PivotTables
                                 ' avoid double refreshing of dbsetquery list objects
                                 If getUnderlyingDBNameFromRange(pivottbl.TableRange1) = "" Then pivottbl.PivotCache.Refresh()
                             Next
                         End If
-                        If Not CBool(fetchSetting("AvoidUpdateListObjects_Refresh", "False")) Then
+                        If Not fetchSettingBool("AvoidUpdateListObjects_Refresh", "False") Then
                             For Each listobj As Excel.ListObject In ws.ListObjects
                                 ' avoid double refreshing of dbsetquery list objects
                                 If getUnderlyingDBNameFromRange(listobj.Range) = "" Then listobj.QueryTable.Refresh()
                             Next
                         End If
                     Next
-                    If Not CBool(fetchSetting("AvoidUpdateLinks_Refresh", "False")) Then
+                    If Not fetchSettingBool("AvoidUpdateLinks_Refresh", "False") Then
                         For Each linksrc As String In actWb.LinkSources(Excel.XlLink.xlExcelLinks)
                             ' first check file existence to not run into excel opening a file dialog for missing files....
                             If System.IO.File.Exists(linksrc) Then
@@ -930,7 +930,7 @@ Public Module MenuHandlerGlobals
     End Sub
 
     ''' <summary>jumps between DB Function and target area</summary>
-    <ExcelCommand(Name:="jumpButton", ShortCut:="^J")>
+    <ExcelCommand(Name:="jumpButton")>
     Public Sub jumpButton()
         If checkMultipleDBRangeNames(ExcelDnaUtil.Application.ActiveCell) Then
             UserMsg("Multiple hidden DB Function names in selected cell (making 'jump' ambiguous/impossible), please use purge names tool!", "DB-Addin Jump")

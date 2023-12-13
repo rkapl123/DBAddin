@@ -281,7 +281,7 @@ Public Module DBSheetConfig
             Exit Sub
         End If
         ' name the worksheet to tableName, if defined in the settings
-        If CBool(fetchSetting("DBSheetAutoName", "False")) Then
+        If fetchSettingBool("DBSheetAutoName", "False") Then
             Try
                 curCell.Parent.Name = Left(tableName, 31)
             Catch ex As Exception

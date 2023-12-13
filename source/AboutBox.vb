@@ -90,7 +90,7 @@ Public NotInheritable Class AboutBox
                 response.Close()
             End If
             triedRevision += 1
-        Loop Until revisionNotFoundTries = CInt(fetchSetting("maxTriesForRevisionFind", "10"))
+        Loop Until revisionNotFoundTries = fetchSettingInt("maxTriesForRevisionFind", "10")
     End Sub
 
     Private Sub BackgroundWorker1_RunWorkerCompleted(sender As Object, e As RunWorkerCompletedEventArgs) Handles BackgroundWorker1.RunWorkerCompleted
@@ -103,7 +103,7 @@ Public NotInheritable Class AboutBox
                 Me.TextBoxDescription.Text = My.Application.Info.Description + vbCrLf + vbCrLf + "Version " + updatesMajorVersion + curRevision.ToString() +
                     " was not found on Github, it is probably more than 10 releases behind, reopen the Aboutbox to retry with maxTriesForRevisionFind (currently " +
                     fetchSetting("maxTriesForRevisionFind", "10") + ") increased by 10."
-                setUserSetting("maxTriesForRevisionFind", (CInt(fetchSetting("maxTriesForRevisionFind", "10")) + 10).ToString())
+                setUserSetting("maxTriesForRevisionFind", (fetchSettingInt("maxTriesForRevisionFind", "10") + 10).ToString())
                 Me.TextBoxDescription.BackColor = Drawing.Color.Violet
             End If
             Me.CheckForUpdates.Text = "no Update ..."
