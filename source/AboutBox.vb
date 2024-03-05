@@ -3,22 +3,22 @@ Imports System.ComponentModel
 Imports System.Diagnostics
 Imports System.IO
 
-''' <summary>About box: used to provide information about version/buildtime and links for local help and project homepage</summary>
+''' <summary>About box: used to provide information about version/build-time and links for local help and project homepage</summary>
 Public NotInheritable Class AboutBox
     ''' <summary>flag for disabling addin after closing (set on DisableAddin_Click)</summary>
     Public disableAddinAfterwards As Boolean = False
     ''' <summary>flag for quitting excel after closing (set on CheckForUpdates_Click)</summary>
     Public quitExcelAfterwards As Boolean = False
-    ''' <summary>when setting EventLevels Listitem at load, prevent event from being fired with this</summary>
+    ''' <summary>when setting EventLevels List item at load, prevent event from being fired with this</summary>
     Private dontChangeEventLevels As Boolean
 
-    ''' <summary>set up Aboutbox</summary>
+    ''' <summary>set up About box</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub AboutBox1_Load(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles MyBase.Load
         Dim sModuleInfo As String = vbNullString
 
-        ' get module info for buildtime (FileDateTime of xll):
+        ' get module info for build-time (FileDateTime of xll):
         For Each tModule As ProcessModule In Process.GetCurrentProcess().Modules
             Dim sModule As String = tModule.FileName
             If sModule.ToUpper.Contains("DBADDIN") Then
@@ -29,7 +29,7 @@ Public NotInheritable Class AboutBox
         ' set the UI elements
         Me.Text = String.Format("About {0}", My.Application.Info.Title)
         Me.LabelProductName.Text = "DB Addin Help"
-        Me.LabelVersion.Text = String.Format("Version {0} Buildtime {1}", My.Application.Info.Version.ToString(), sModuleInfo)
+        Me.LabelVersion.Text = String.Format("Version {0} Build-time {1}", My.Application.Info.Version.ToString(), sModuleInfo)
         Me.LabelCopyright.Text = My.Application.Info.Copyright
         Me.LabelCompanyName.Text = "Information: " + My.Application.Info.CompanyName
         Me.TextBoxDescription.Text = My.Application.Info.Description
@@ -101,7 +101,7 @@ Public NotInheritable Class AboutBox
                 Me.TextBoxDescription.BackColor = Drawing.Color.FromKnownColor(Drawing.KnownColor.Control)
             Else
                 Me.TextBoxDescription.Text = My.Application.Info.Description + vbCrLf + vbCrLf + "Version " + updatesMajorVersion + curRevision.ToString() +
-                    " was not found on Github, it is probably more than 10 releases behind, reopen the Aboutbox to retry with maxTriesForRevisionFind (currently " +
+                    " was not found on Github, it is probably more than 10 releases behind, reopen the About box to retry with maxTriesForRevisionFind (currently " +
                     fetchSetting("maxTriesForRevisionFind", "10") + ") increased by 10."
                 setUserSetting("maxTriesForRevisionFind", (fetchSettingInt("maxTriesForRevisionFind", "10") + 10).ToString())
                 Me.TextBoxDescription.BackColor = Drawing.Color.Violet
@@ -184,7 +184,7 @@ Public NotInheritable Class AboutBox
         End Try
     End Sub
 
-    ''' <summary>Close Aboutbox</summary>
+    ''' <summary>Close About box</summary>
     Private Sub OKButton_Click(ByVal sender As Object, ByVal e As EventArgs) Handles OKButton.Click
         Me.Close()
     End Sub

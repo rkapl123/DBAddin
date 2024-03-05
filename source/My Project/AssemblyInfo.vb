@@ -13,7 +13,7 @@ Imports System.Runtime.InteropServices
 <Assembly: AssemblyDescription("DBAddin is a ExcelDNA based Add-in for Database interoperability (DB Functions for database querying and Methods to manipulate data in DB Tables (DBModifiers) are provided).")>
 <Assembly: AssemblyCompany("https://rkapl123.github.io/DBAddin/")>
 <Assembly: AssemblyProduct("")>
-<Assembly: AssemblyCopyright("Copyright ©  2020-2023, MIT License")>
+<Assembly: AssemblyCopyright("Copyright ©  2020-2024, MIT License")>
 <Assembly: AssemblyTrademark("")>
 
 <Assembly: ComVisible(True)>
@@ -31,6 +31,6 @@ Imports System.Runtime.InteropServices
 ' You can specify all the values or you can default the Build and Revision Numbers 
 ' by using the '*' as shown below:
 
-<Assembly: AssemblyVersion("1.0.0.59")>
-<Assembly: AssemblyFileVersion("1.0.0.59")>
+<Assembly: AssemblyVersion("1.0.0.60")>
+<Assembly: AssemblyFileVersion("1.0.0.60")>
 <Assembly: NeutralResourcesLanguage("de-DE")>

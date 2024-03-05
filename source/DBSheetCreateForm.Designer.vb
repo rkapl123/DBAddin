@@ -414,7 +414,7 @@ Partial Class DBSheetCreateForm
         Me.Lenvironment.AutoSize = True
         Me.Lenvironment.BackColor = System.Drawing.Color.Transparent
         Me.Lenvironment.ForeColor = System.Drawing.SystemColors.ControlText
-        Me.Lenvironment.Location = New System.Drawing.Point(365, 14)
+        Me.Lenvironment.Location = New System.Drawing.Point(675, 44)
         Me.Lenvironment.Name = "Lenvironment"
         Me.Lenvironment.RightToLeft = System.Windows.Forms.RightToLeft.No
         Me.Lenvironment.Size = New System.Drawing.Size(71, 13)

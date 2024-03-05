@@ -6,6 +6,7 @@ Imports System.Data.OleDb
 Imports ExcelDna.Integration
 Imports Microsoft.Office.Interop
 Imports System.Collections.Generic
+Imports System.Runtime.InteropServices
 Imports System.Linq
 
 
@@ -391,7 +392,7 @@ Public Module Functions
                                <ExcelArgument(Description:="connection string defining DB, user, etc...")> ConnString As Object,
                                <ExcelArgument(Description:="Range with embedded Object to put the Query/ConnString into", AllowReference:=True)> targetRange As Object) As String
         Dim callID As String = ""
-        Dim caller As Excel.Range
+        Dim caller As Excel.Range = Nothing
         Dim EnvPrefix As String = ""
         If ExcelDnaUtil.IsInFunctionWizard() Then Return "invoked from function wizard..."
         If preventRefreshFlag Then Return "preventRefresh set, no DB Function refreshing..."

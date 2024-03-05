@@ -2104,7 +2104,7 @@ End Class
 
 ''' <summary>Custom Command builder for SQLServer to avoid primary key problems with built-in ones
 ''' derived (transposed into VB.NET) from https://www.cogin.com/articles/CustomCommandBuilder.php
-''' Copyright by Dejan Grujic 2004. http://www.cogin.com
+''' Copyright by Dejan_Grujic 2004. http://www.cogin.com
 ''' </summary>
 Public Class CustomSqlCommandBuilder
     Inherits CustomCommandBuilder
@@ -2231,7 +2231,7 @@ End Class
 
 ''' <summary>Custom Command builder for ODBC to avoid primary key problems with built-in ones
 ''' derived (transposed into VB.NET) from https://www.cogin.com/articles/CustomCommandBuilder.php
-''' Copyright by Dejan Grujic 2004. http://www.cogin.com
+''' Copyright by Dejan_Grujic 2004. http://www.cogin.com
 ''' </summary>
 Public Class CustomOdbcCommandBuilder
     Inherits CustomCommandBuilder
@@ -2357,7 +2357,7 @@ End Class
 
 ''' <summary>Custom Command builder for OleDB to avoid primary key problems with built-in ones
 ''' derived (transposed into VB.NET) from https://www.cogin.com/articles/CustomCommandBuilder.php
-''' Copyright by Dejan Grujic 2004. http://www.cogin.com
+''' Copyright by Dejan_Grujic 2004. http://www.cogin.com
 ''' </summary>
 Public Class CustomOleDbCommandBuilder
     Inherits CustomCommandBuilder

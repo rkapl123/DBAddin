@@ -31,7 +31,7 @@ Public Module SettingsTools
         Return fetchSettingInt
     End Function
 
-    ''' <summary>exception proof fetching of bool settings</summary>    
+    ''' <summary>exception proof fetching of boolean settings</summary>    
     ''' <param name="Key">registry key to take value from</param>
     ''' <param name="defaultValue">Value that is taken if Key was not found</param>
     ''' <returns>the setting value</returns>
@@ -239,7 +239,7 @@ Public Module SettingsTools
         DBModifs.preventChangeWhileFetching = False
     End Sub
 
-    ''' <summary>maintenance procedure to check/purge names used for dbfunctions from workbook, or unhide DB names</summary>
+    ''' <summary>maintenance procedure to check/purge names used for db-functions from workbook, or unhide DB names</summary>
     Public Sub checkpurgeNames()
         Dim actWbNames As Excel.Names = Nothing
         Try : actWbNames = ExcelDnaUtil.Application.ActiveWorkbook.Names : Catch ex As Exception

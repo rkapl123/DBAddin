@@ -175,22 +175,16 @@
     <None Include="Settings.txt" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="api\index.md" />
     <None Include="app.config" />
-    <None Include="articles\intro.md" />
-    <None Include="articles\toc.md" />
     <None Include="DBModifDef.xsd">
       <SubType>Designer</SubType>
     </None>
-    <None Include="docfx.json" />
-    <None Include="index.md" />
     <None Include="My Project\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.vb</LastGenOutput>
     </None>
     <None Include="packages.config" />
     <None Include="Properties\ExcelDna.Build.props" />
-    <None Include="toc.yml" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="AboutBox.resx">
@@ -232,7 +226,6 @@
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('packages\docfx.console.2.59.0\build\docfx.console.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\docfx.console.2.59.0\build\docfx.console.targets'))" />
     <Error Condition="!Exists('packages\ExcelDna.AddIn.1.6.0\build\ExcelDna.AddIn.props')" Text="$([System.String]::Format('$(ErrorText)', 'packages\ExcelDna.AddIn.1.6.0\build\ExcelDna.AddIn.props'))" />
     <Error Condition="!Exists('packages\ExcelDna.AddIn.1.6.0\build\ExcelDna.AddIn.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\ExcelDna.AddIn.1.6.0\build\ExcelDna.AddIn.targets'))" />
     <Error Condition="!Exists('packages\ExcelDna.Interop.15.0.1\build\ExcelDna.Interop.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\ExcelDna.Interop.15.0.1\build\ExcelDna.Interop.targets'))" />
@@ -241,7 +234,6 @@
     <PreBuildEvent>
     </PreBuildEvent>
   </PropertyGroup>
-  <Import Project="packages\docfx.console.2.59.0\build\docfx.console.targets" Condition="Exists('packages\docfx.console.2.59.0\build\docfx.console.targets')" />
   <Import Project="packages\ExcelDna.AddIn.1.6.0\build\ExcelDna.AddIn.targets" Condition="Exists('packages\ExcelDna.AddIn.1.6.0\build\ExcelDna.AddIn.targets')" />
   <Import Project="packages\ExcelDna.Interop.15.0.1\build\ExcelDna.Interop.targets" Condition="Exists('packages\ExcelDna.Interop.15.0.1\build\ExcelDna.Interop.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

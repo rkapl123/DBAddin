@@ -154,7 +154,7 @@ Public Class AdHocSQL
     Private nonRowResult As String
     Private dt As DataTable
 
-    ''' <summary>start sql command and load data into datatable in the background (to show progress and have cancellation control)</summary>
+    ''' <summary>start sql command and load data into data table in the background (to show progress and have cancellation control)</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub BackgroundWorker1_DoWork(sender As Object, e As DoWorkEventArgs) Handles BackgroundWorker1.DoWork
@@ -180,7 +180,7 @@ Public Class AdHocSQL
         End Try
         ' get results (into data table)
         If Not IsNothing(theResult) Then
-            ' for row returning results (select/storedprocedures)
+            ' for row returning results (select/stored procedures)
             If theResult.FieldCount > 0 Then
                 dt = New DataTable()
                 Try
@@ -210,7 +210,7 @@ Public Class AdHocSQL
             AdHocSQLQueryResult.Rows.Add(nonRowResult)
             Me.RowsReturned.Text = ""
         Else
-            ' row returning results: display row count and elapsed time and pass datatable to datagrid
+            ' row returning results: display row count and elapsed time and pass data table to data grid
             Me.RowsReturned.Text = dt.Rows.Count.ToString() + " rows returned. (" + elapsedTime.ToString("T") + ")"
             AdHocSQLQueryResult.Columns.Clear()
             AdHocSQLQueryResult.AutoGenerateColumns = True
@@ -247,15 +247,15 @@ Public Class AdHocSQL
         finishForm(DialogResult.Cancel)
     End Sub
 
-    ''' <summary>common procedure to close the form, regarding (cancelling) a busy backgroundworker = sqlcmd)</summary>
+    ''' <summary>common procedure to close the form, regarding (canceling) a busy background worker = sqlcmd)</summary>
     Private Sub finishForm(theDialogResult As DialogResult)
         If BackgroundWorker1.IsBusy Then
             If QuestionMsg("Cancel the running SQL Command ?",, "AdHoc SQL Command") = MsgBoxResult.Cancel Then Exit Sub
             SqlCmd.Cancel()
             BackgroundWorker1.CancelAsync()
-            If QuestionMsg("Also close the Adhoc SQL Command Tool now ?",, "AdHoc SQL Command") = MsgBoxResult.Cancel Then Exit Sub
+            If QuestionMsg("Also close the Ad-hoc SQL Command Tool now ?",, "AdHoc SQL Command") = MsgBoxResult.Cancel Then Exit Sub
         End If
-        ' get rid of leading and trailing blanks for dropdown and combobox presets
+        ' get rid of leading and trailing blanks for dropdown and combo box presets
         Me.SQLText.Text = Strings.Trim(Me.SQLText.Text)
         ' if the user environment was changed to the currently selected (global) one, reset it here to the passed one...
         If storedUserSetEnv <> "" Then
@@ -266,7 +266,7 @@ Public Class AdHocSQL
         Me.Hide()
     End Sub
 
-    ''' <summary>keyboard shortcuts for executing (ctrl-return), Transfer (shift-return) and maybe other things in the future (autocomplete)</summary>
+    ''' <summary>keyboard shortcuts for executing (ctrl-return), Transfer (shift-return) and maybe other things in the future (auto-complete)</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub SQLText_KeyDown(sender As Object, e As KeyEventArgs) Handles SQLText.KeyDown
@@ -304,7 +304,7 @@ Public Class AdHocSQL
         End If
     End Sub
 
-    ''' <summary>needed together with KeyPreview=True on form to simulate ESC cancelling the form and catching this successfully (preventing closing when cancelling an ongoing sqlcommand)</summary>
+    ''' <summary>needed together with KeyPreview=True on form to simulate ESC canceling the form and catching this successfully (preventing closing when canceling an ongoing sql-command)</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub AdHocSQL_KeyUp(sender As Object, e As KeyEventArgs) Handles Me.KeyUp

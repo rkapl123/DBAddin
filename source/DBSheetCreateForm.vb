@@ -112,7 +112,7 @@ Public Class DBSheetCreateForm
     End Sub
 
     Private Sub resetDBSheetCreateForm()
-        Me.Text = "DB Sheet creation: Please enter required Password into Pwd to access schema information"
+        Me.Text = "DB Sheet creation: Please enter required Password into Field Pwd to access schema information"
         TableEditable(False)
         saveEnabled(False)
         DBSheetColsEditable(False)

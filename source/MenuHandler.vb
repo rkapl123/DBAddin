@@ -23,6 +23,26 @@ Public Class MenuHandler
         'ExcelDna.IntelliSense.IntelliSenseServer.Uninstall()
     End Sub
 
+    ''' <summary>used to clean up com objects to avoid excel crashes on shutdown</summary>
+    ''' <param name="RemoveMode"></param>
+    ''' <param name="custom"></param>
+    Public Overrides Sub OnDisconnection(RemoveMode As ExcelDna.Integration.Extensibility.ext_DisconnectMode, ByRef custom As Array)
+        For Each aKey As String In Functions.StatusCollection.Keys
+            Dim clearRange As Excel.Range = Functions.StatusCollection(aKey).formulaRange
+            If Not IsNothing(clearRange) Then Marshal.ReleaseComObject(clearRange)
+        Next
+        For Each DBmodifType As String In DBModifDefColl.Keys
+            For Each dbmapdefkey As String In DBModifDefColl(DBmodifType).Keys
+                Dim clearRange As Excel.Range = DBModifDefColl(DBmodifType).Item(dbmapdefkey).getTargetRange()
+                If Not IsNothing(clearRange) Then Marshal.ReleaseComObject(clearRange)
+            Next
+        Next
+        Do
+            GC.Collect()
+            GC.WaitForPendingFinalizers()
+        Loop While (Marshal.AreComObjectsAvailableForCleanup())
+    End Sub
+
     ''' <summary>creates the Ribbon (only at startup). any changes to the ribbon can only be done via dynamic menus</summary>
     ''' <returns></returns>
     Public Overrides Function GetCustomUI(RibbonID As String) As String
@@ -111,6 +131,7 @@ Public Class MenuHandler
             "<contextMenu idMso ='ContextMenuPivotTable'>" +
                 "<button id='refreshDataPT' label='refresh data (Ctl-Sh-R)' imageMso='Refresh' onAction='clickrefreshData' insertBeforeMso='Copy'/>" +
                 "<button id='gotoDBFuncPT' label='jump to DBFunc/target (Ctl-Sh-J)' imageMso='ConvertTextToTable' onAction='clickjumpButton' insertBeforeMso='Copy'/>" +
+                "<button id='createChart' label='create Pivot Chart' imageMso='ChartInsert' onAction='clickCreateChart' insertBeforeMso='Copy'/>" +
                 "<menuSeparator id='MySeparatorPT' insertBeforeMso='Copy'/>" +
             "</contextMenu>" +
             "<contextMenu idMso='ContextMenuRow'>" +
@@ -187,10 +208,22 @@ Public Class MenuHandler
 
 #Disable Warning IDE0060 ' Hide not used Parameter warning as this is very often the case with the below callbacks from the ribbon
 
+    ''' <summary>context menu entry: create Chart for underlying Pivot table</summary>
+    ''' <param name="control"></param>
+    Public Sub clickCreateChart(control As CustomUI.IRibbonControl)
+        Dim theChart As Excel.Shape
+        Try
+            theChart = ExcelDnaUtil.Application.ActiveSheet.Shapes.AddChart2(-1, Excel.XlChartType.xlColumnClustered)
+            theChart.Chart.SetSourceData(ExcelDnaUtil.Application.ActiveCell)
+        Catch ex As Exception
+            UserMsg("Exception setting chart to underlying pivot table: " + ex.Message)
+        End Try
+    End Sub
+
     Private AdHocSQLStrings As Collections.Generic.List(Of String)
     Private selectedAdHocSQLIndex As Integer
 
-    ''' <summary>dialogBoxLauncher of DBAddin settings group: activate adhoc SQL query dialog</summary>
+    ''' <summary>dialogBoxLauncher of DBAddin settings group: activate ad-hoc SQL query dialog</summary>
     ''' <param name="control"></param>
     Public Sub showDBAdHocSQLDBOX(control As CustomUI.IRibbonControl)
         showDBAdHocSQL(Nothing, "")
@@ -333,7 +366,7 @@ Public Class MenuHandler
         getSuperTipInfo = ""
     End Function
 
-    ''' <summary>display warning button icon on Cprops change if DBFskip is set...</summary>
+    ''' <summary>display warning button icon on custom properties change if DBFskip is set...</summary>
     ''' <param name="control"></param>
     ''' <returns></returns>
     Public Function getCPropsImage(control As CustomUI.IRibbonControl) As String
@@ -360,9 +393,9 @@ Public Class MenuHandler
         End If
     End Function
 
-    ''' <summary>display state of design-mode in screentip of dialogBox launcher</summary>
+    ''' <summary>display state of design-mode in screen-tip of dialogBox launcher</summary>
     ''' <param name="control"></param>
-    ''' <returns>screentip and the state of design-mode</returns>
+    ''' <returns>screen-tip and the state of design-mode</returns>
     Public Function getToggleCPropsScreentip(control As CustomUI.IRibbonControl) As String
         getToggleCPropsScreentip = ""
         Dim actWb As Excel.Workbook = Nothing
@@ -458,13 +491,13 @@ Public Class MenuHandler
         Else
             UserMsg("Couldn't toggle design mode, because Design mode command-bar button is not available (no button?)", "DBAddin toggle Design mode", MsgBoxStyle.Exclamation)
         End If
-        ' update state of design mode in screentip
+        ' update state of design mode in screen-tip
         theRibbon.InvalidateControl(control.Id)
     End Sub
 
-    ''' <summary>display state of design mode in screentip of button</summary>
+    ''' <summary>display state of design mode in screen-tip of button</summary>
     ''' <param name="control"></param>
-    ''' <returns>screentip and the state of design mode</returns>
+    ''' <returns>screen-tip and the state of design mode</returns>
     Public Function getToggleDesignScreentip(control As CustomUI.IRibbonControl) As String
         Dim cbrs As Object = ExcelDnaUtil.Application.CommandBars
         If cbrs IsNot Nothing AndAlso cbrs.GetEnabledMso("DesignMode") Then
@@ -476,7 +509,7 @@ Public Class MenuHandler
 
     ''' <summary>display state of design mode in icon of button</summary>
     ''' <param name="control"></param>
-    ''' <returns>screentip and the state of design mode</returns>
+    ''' <returns>screen-tip and the state of design mode</returns>
     Public Function getToggleDesignImage(control As CustomUI.IRibbonControl) As String
         Dim cbrs As Object = ExcelDnaUtil.Application.CommandBars
         If cbrs IsNot Nothing AndAlso cbrs.GetEnabledMso("DesignMode") Then
@@ -631,7 +664,7 @@ Public Class MenuHandler
                 Dim descName As String = IIf(nodeName = control.Id, "Unnamed " + DBModifTypeName, Replace(nodeName, DBModifTypeName, ""))
                 Dim imageMsoStr As String = IIf(control.Id = "DBSeqnce", "ShowOnNewButton", IIf(control.Id = "DBMapper", "TableSave", IIf(control.Id = "DBAction", "TableIndexes", "undefined imageMso")))
                 Dim superTipStr As String = IIf(control.Id = "DBSeqnce", "executes " + DBModifTypeName + " defined in " + nodeName, IIf(control.Id = "DBMapper", "stores data defined in DBMapper (named " + nodeName + ") range on " + DBModifDefColl(control.Id).Item(nodeName).getTargetRangeAddress(), IIf(control.Id = "DBAction", "executes Action defined in DBAction (named " + nodeName + ") range on " + DBModifDefColl(control.Id).Item(nodeName).getTargetRangeAddress(), "undefined superTip")))
-                xmlString = xmlString + "<button id='_" + nodeName + "' label='do " + descName + "' imageMso='" + imageMsoStr + "' onAction='DBModifClick' tag='" + control.Id + "' screentip='do " + DBModifTypeName + ": " + descName + "' supertip='" + superTipStr + "' />"
+                xmlString = xmlString + "<button id='_" + nodeName + "' label='do " + descName + "' imageMso='" + imageMsoStr + "' onAction='DBModifClick' tag='" + control.Id + "' screen-tip='do " + DBModifTypeName + ": " + descName + "' super-tip='" + superTipStr + "' />"
             Next
             xmlString += "</menu>"
             Return xmlString
@@ -641,9 +674,9 @@ Public Class MenuHandler
         End Try
     End Function
 
-    ''' <summary>show a screentip for the dynamic DBMapper/DBAction/DBSequence Menus (also showing the ID behind)</summary>
+    ''' <summary>show a screen-tip for the dynamic DBMapper/DBAction/DBSequence Menus (also showing the ID behind)</summary>
     ''' <param name="control"></param>
-    ''' <returns>the screentip</returns>
+    ''' <returns>the screen-tip</returns>
     Public Function getDBModifScreentip(control As CustomUI.IRibbonControl) As String
         Return "Select DBModifier to store/do action/do sequence (" + control.Id + ")"
     End Function
@@ -701,7 +734,7 @@ Public Class MenuHandler
         jumpButton()
     End Sub
 
-    ''' <summary>check/purge name tool button, purge names used for dbfunctions from workbook</summary>
+    ''' <summary>check/purge name tool button, purge names used for db-functions from workbook</summary>
     ''' <param name="control"></param>
     Public Sub clickcheckpurgetoolbutton(control As CustomUI.IRibbonControl)
         checkpurgeNames()
