@@ -243,4 +243,4 @@ Following topics are still to be done:
 * 01/04/2019 - 24/11/2020: Changed implementation to ExcelDNA based and moved to Github.
 
 ### livedoc generated API documentation
-[DBFuncs API documentation](devdoc/index.html).
+[DBFuncs API documentation](devdoc/index.htm).
