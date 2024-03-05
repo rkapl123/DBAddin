@@ -241,3 +241,6 @@ Following topics are still to be done:
 * 31/01/2007: Published as a [Codeproject article](https://www.codeproject.com/Articles/17464/Excel-addin-for-Database-Querying-by-User-Defined)
 * 02/11/2007: Changed implementation to VB 6.0 and made this available at [sourceforge](https://sourceforge.net/projects/dbaddin/)
 * 01/04/2019 - 24/11/2020: Changed implementation to ExcelDNA based and moved to Github.
+
+### livedoc generated API documentation
+[DBFuncs API documentation](devdoc/index.html).

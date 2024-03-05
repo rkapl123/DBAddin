@@ -340,8 +340,8 @@ Public Class DBSheetCreateForm
         selRowIndex = DBSheetCols.CurrentCell.RowIndex
         selColIndex = DBSheetCols.CurrentCell.ColumnIndex
         ' menu via menu key 
-        If e.KeyCode = Keys.Apps Or (e.KeyCode = Keys.F10 And e.Modifiers = Keys.Shift) Or (e.KeyCode = Keys.Down And e.Modifiers = Keys.Alt) Then
-            ' only for whole rows ...
+        ' only for whole rows ...
+        If e.KeyCode = Keys.Apps Or (e.KeyCode = Keys.F10 And e.Modifiers = Keys.Shift) Then
             If DBSheetCols.SelectedRows.Count > 0 Then
                 ' whole row selection -> move up/down menu...
                 selColIndex = -1
@@ -353,8 +353,6 @@ Public Class DBSheetCreateForm
                 displayContextMenus()
                 DBSheetCols.ContextMenuStrip.Show()
             End If
-            ' set to handled to avoid moving down cell selection (Keys.Down)
-            e.Handled = True
             ' Ctrl-C only when rows are available to copy
         ElseIf e.KeyCode = Keys.C And e.Modifiers = Keys.Control And DBSheetCols.DataSource.Rows.Count > 0 Then
             clipboardDataRow = DBSheetCols.DataSource.GetNewRow()
@@ -382,8 +380,16 @@ Public Class DBSheetCreateForm
         ElseIf e.KeyCode = Keys.Delete Then
             If selRowIndex >= 0 Then
                 ' avoid setting tick-boxes and type column to empty...
-                If Not (selColIndex >= 4 And selColIndex <= 6) Then DBSheetCols.Rows(selRowIndex).Cells().Item(selColIndex).Value = ""
+                If selColIndex <> 0 And Not (selColIndex >= 4 And selColIndex <= 6) Then DBSheetCols.Rows(selRowIndex).Cells().Item(selColIndex).Value = ""
             End If
+            ' shortcut for move up
+        ElseIf e.KeyCode = Keys.Up And DBSheetCols.SelectedRows.Count > 0 Then
+            moveRow(-1)
+            e.Handled = True
+            ' shortcut for move down
+        ElseIf e.KeyCode = Keys.Down And DBSheetCols.SelectedRows.Count > 0 Then
+            moveRow(1)
+            e.Handled = True
         End If
     End Sub
 
@@ -428,60 +434,51 @@ Public Class DBSheetCreateForm
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub MoveRowUp_Click(sender As Object, e As EventArgs) Handles MoveRowUp.Click
-        Try
-            ' avoid moving up of first row
-            If selRowIndex = 0 Then Return
-            If (DBSheetCols.DataSource.Rows.Count - 1 < selRowIndex) Then
-                UserMsg("Editing not finished in selected row (values not committed), cannot move up!", "DBSheet Definition Error")
-                Exit Sub
-            End If
-            If DBSheetCols.Rows(selRowIndex - 1).Cells("primkey").Value And Not DBSheetCols.Rows(selRowIndex).Cells("primkey").Value Then
-                UserMsg("All primary keys have to be first and there is a primary key column that would be shifted below this NON-primary one !", "DBSheet Definition Error")
-                Exit Sub
-            End If
-            Dim rw As DBSheetDefRow = DBSheetCols.DataSource.GetNewRow()
-            rw.ItemArray = DBSheetCols.DataSource.Rows(selRowIndex).ItemArray.Clone()
-            Dim colnameList As List(Of String) = DirectCast(DBSheetCols.Rows(selRowIndex).Cells("fkey"), DataGridViewComboBoxCell).DataSource
-            FormDisabled = True
-            DBSheetCols.DataSource.Rows.RemoveAt(selRowIndex)
-            DBSheetCols.DataSource.Rows.InsertAt(rw, selRowIndex - 1)
-            DirectCast(DBSheetCols.Rows(selRowIndex - 1).Cells("flookup"), DataGridViewComboBoxCell).DataSource = colnameList
-            DirectCast(DBSheetCols.Rows(selRowIndex - 1).Cells("fkey"), DataGridViewComboBoxCell).DataSource = colnameList
-            DBSheetCols.CurrentCell = DBSheetCols.Rows(selRowIndex - 1).Cells(0)
-            DBSheetCols.Rows(selRowIndex - 1).Selected = True
-        Catch ex As System.Exception
-            UserMsg("Exception in MoveRowUpToolStripMenuItem_Click: " + ex.Message)
-        End Try
-        FormDisabled = False
+        moveRow(-1)
     End Sub
 
     ''' <summary>move (shift) row down</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub MoveRowDown_Click(sender As Object, e As EventArgs) Handles MoveRowDown.Click
+        moveRow(1)
+    End Sub
+
+    ''' <summary>move row in direction given in param direction (-1: up, 1: down)</summary>
+    ''' <param name="direction"></param>
+    Private Sub moveRow(direction As Integer)
         Try
-            ' avoid moving down of last row, DBSeqenceDataGrid.Rows.Count is 1 more than the actual inserted rows because of the "new" row, selIndex is 0 based
-            If selRowIndex = DBSheetCols.Rows.Count - 2 Then Exit Sub
+            ' avoid moving down of last row, DBSeqenceDataGrid.Rows.Count is 1 more than the actual inserted rows because of the "new" row, selIndex is 0 based. Also avoid moving up of first row
+            If (selRowIndex = DBSheetCols.Rows.Count - 2 And direction = 1) Or (selRowIndex = 0 And direction = -1) Then Exit Sub
             If Not DBSheetCols.Rows(selRowIndex + 1).Cells("primkey").Value And DBSheetCols.Rows(selRowIndex).Cells("primkey").Value Then
                 UserMsg("All primary keys have to be first and there is a NON-primary key column that would be shifted above this primary one !", "DBSheet Definition Error")
                 Exit Sub
+            End If
+            If direction = -1 Then
+                If (DBSheetCols.DataSource.Rows.Count - 1 < selRowIndex) Then
+                    UserMsg("Editing not finished in selected row (values not committed), cannot move up!", "DBSheet Definition Error")
+                    Exit Sub
+                End If
+                If DBSheetCols.Rows(selRowIndex - 1).Cells("primkey").Value And Not DBSheetCols.Rows(selRowIndex).Cells("primkey").Value Then
+                    UserMsg("All primary keys have to be first and there is a primary key column that would be shifted below this NON-primary one !", "DBSheet Definition Error")
+                    Exit Sub
+                End If
             End If
             Dim rw As DBSheetDefRow = DBSheetCols.DataSource.GetNewRow()
             rw.ItemArray = DBSheetCols.DataSource.Rows(selRowIndex).ItemArray.Clone()
             Dim colnameList As List(Of String) = DirectCast(DBSheetCols.Rows(selRowIndex).Cells("fkey"), DataGridViewComboBoxCell).DataSource
             FormDisabled = True
             DBSheetCols.DataSource.Rows.RemoveAt(selRowIndex)
-            DBSheetCols.DataSource.Rows.InsertAt(rw, selRowIndex + 1)
-            DirectCast(DBSheetCols.Rows(selRowIndex + 1).Cells("flookup"), DataGridViewComboBoxCell).DataSource = colnameList
-            DirectCast(DBSheetCols.Rows(selRowIndex + 1).Cells("fkey"), DataGridViewComboBoxCell).DataSource = colnameList
-            DBSheetCols.CurrentCell = DBSheetCols.Rows(selRowIndex + 1).Cells(0)
-            DBSheetCols.Rows(selRowIndex + 1).Selected = True
+            DBSheetCols.DataSource.Rows.InsertAt(rw, selRowIndex + direction)
+            DirectCast(DBSheetCols.Rows(selRowIndex + direction).Cells("flookup"), DataGridViewComboBoxCell).DataSource = colnameList
+            DirectCast(DBSheetCols.Rows(selRowIndex + direction).Cells("fkey"), DataGridViewComboBoxCell).DataSource = colnameList
+            DBSheetCols.CurrentCell = DBSheetCols.Rows(selRowIndex + direction).Cells(0)
+            DBSheetCols.Rows(selRowIndex + direction).Selected = True
         Catch ex As System.Exception
-            UserMsg("Exception in MoveRowDownToolStripMenuItem_Click: " + ex.Message)
+            UserMsg("Exception in moveRow: " + ex.Message)
         End Try
         FormDisabled = False
     End Sub
-
     ''' <summary>(re)generates the lookup query for active row/cell</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>

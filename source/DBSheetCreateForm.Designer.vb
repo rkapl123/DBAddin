@@ -144,6 +144,7 @@ Partial Class DBSheetCreateForm
         Me.Table.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.Table.BackColor = System.Drawing.SystemColors.Window
         Me.Table.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
+        Me.Table.DropDownWidth = 250
         Me.Table.ForeColor = System.Drawing.SystemColors.WindowText
         Me.Table.Location = New System.Drawing.Point(907, 41)
         Me.Table.Name = "Table"
@@ -314,18 +315,18 @@ Partial Class DBSheetCreateForm
         '
         Me.DBSheetColsMoveMenu.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.MoveRowUp, Me.MoveRowDown})
         Me.DBSheetColsMoveMenu.Name = "DBSheetColsContextMenu"
-        Me.DBSheetColsMoveMenu.Size = New System.Drawing.Size(161, 48)
+        Me.DBSheetColsMoveMenu.Size = New System.Drawing.Size(181, 70)
         '
         'MoveRowUp
         '
         Me.MoveRowUp.Name = "MoveRowUp"
-        Me.MoveRowUp.Size = New System.Drawing.Size(160, 22)
+        Me.MoveRowUp.Size = New System.Drawing.Size(180, 22)
         Me.MoveRowUp.Text = "move row up"
         '
         'MoveRowDown
         '
         Me.MoveRowDown.Name = "MoveRowDown"
-        Me.MoveRowDown.Size = New System.Drawing.Size(160, 22)
+        Me.MoveRowDown.Size = New System.Drawing.Size(180, 22)
         Me.MoveRowDown.Text = "move row down"
         '
         'LDatabase

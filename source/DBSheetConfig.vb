@@ -4,7 +4,7 @@ Imports ExcelDna.Integration
 Imports Microsoft.Office.Core
 Imports Microsoft.Office.Interop
 
-'''<summary>Helper module  for easier manipulation of DBSheet definition</summary> 
+'''<summary>Helper module for easier manipulation of DBSheet definition</summary> 
 Public Module DBSheetConfig
     ''' <summary>the current cell where the DBSheet Definition is inserted at</summary>
     Dim curCell As Excel.Range
@@ -37,6 +37,10 @@ Public Module DBSheetConfig
 
     ''' <summary>create lookups (with dblistfetch) and a dbsetquery that acts as a list-object for a CUD DB Mapper</summary>
     Public Sub createDBSheet(Optional dbsheetDefPath As String = "")
+        If ExcelDnaUtil.Application.ActiveWorkbook.Windows(1).WindowState = Excel.XlWindowState.xlMinimized Then
+            UserMsg("No assignment possible when active workbook is minimized!", "DBSheet Creation Error")
+            Exit Sub
+        End If
         ' store currently selected cell, where DBSetQuery for DBMapper will be placed.
         curCell = ExcelDnaUtil.Application.ActiveCell
         existingName = getDBModifNameFromRange(curCell)
@@ -47,7 +51,7 @@ Public Module DBSheetConfig
                 ' either dbsetquery (needed for curCell) is to the cell to the left
                 curCell = ExcelDnaUtil.Application.Range(existingName).Cells(1, 1).Offset(0, -1)
             Else
-                ' or the dbmapper area (needed for existingName for removing definitions and dbmapper name) is to the right
+                ' or the db-mapper area (needed for existingName for removing definitions and db-mapper name) is to the right
                 existingName = getDBModifNameFromRange(curCell.Offset(0, 1))
             End If
         End If
@@ -117,6 +121,15 @@ Public Module DBSheetConfig
                     lookupWS = ExcelDnaUtil.Application.ActiveWorkbook.Worksheets.Add()
                     lookupWS.Name = "DBSheetLookups"
                 Else
+                    If QuestionMsg("Existing DBSheetLookups sheet detected, should all lookup definitions be removed (if definitions with existing names are added, this might lead to errors)?", MsgBoxStyle.YesNo) = MsgBoxResult.Yes Then
+                        ExcelDnaUtil.Application.Worksheets("DBSheetLookups").Cells.Clear
+                        For Each LookupDef As String In lookupsList
+                            Dim lookupRangeName As String = tableName + Replace(getEntry("name", LookupDef, 1), specialNonNullableChar, "") + "Lookup"
+                            If existsName(lookupRangeName) Then
+                                Try : ExcelDnaUtil.Application.Names(lookupRangeName).Delete : Catch ex As Exception : End Try
+                            End If
+                        Next
+                    End If
                     lookupWS = ExcelDnaUtil.Application.Worksheets("DBSheetLookups")
                 End If
                 ' add lookup Queries in separate sheet
