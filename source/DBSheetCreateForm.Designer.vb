@@ -144,11 +144,12 @@ Partial Class DBSheetCreateForm
         Me.Table.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.Table.BackColor = System.Drawing.SystemColors.Window
         Me.Table.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
-        Me.Table.DropDownWidth = 250
+        Me.Table.DropDownWidth = 300
         Me.Table.ForeColor = System.Drawing.SystemColors.WindowText
+        Me.Table.IntegralHeight = False
         Me.Table.Location = New System.Drawing.Point(907, 41)
+        Me.Table.MaxDropDownItems = 50
         Me.Table.Name = "Table"
-        Me.Table.RightToLeft = System.Windows.Forms.RightToLeft.No
         Me.Table.Size = New System.Drawing.Size(194, 21)
         Me.Table.Sorted = True
         Me.Table.TabIndex = 6
@@ -249,6 +250,7 @@ Partial Class DBSheetCreateForm
         Me.Database.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
         Me.Database.ForeColor = System.Drawing.SystemColors.WindowText
         Me.Database.Location = New System.Drawing.Point(907, 10)
+        Me.Database.MaxDropDownItems = 50
         Me.Database.Name = "Database"
         Me.Database.RightToLeft = System.Windows.Forms.RightToLeft.No
         Me.Database.Size = New System.Drawing.Size(194, 21)
@@ -315,18 +317,18 @@ Partial Class DBSheetCreateForm
         '
         Me.DBSheetColsMoveMenu.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.MoveRowUp, Me.MoveRowDown})
         Me.DBSheetColsMoveMenu.Name = "DBSheetColsContextMenu"
-        Me.DBSheetColsMoveMenu.Size = New System.Drawing.Size(181, 70)
+        Me.DBSheetColsMoveMenu.Size = New System.Drawing.Size(161, 48)
         '
         'MoveRowUp
         '
         Me.MoveRowUp.Name = "MoveRowUp"
-        Me.MoveRowUp.Size = New System.Drawing.Size(180, 22)
+        Me.MoveRowUp.Size = New System.Drawing.Size(160, 22)
         Me.MoveRowUp.Text = "move row up"
         '
         'MoveRowDown
         '
         Me.MoveRowDown.Name = "MoveRowDown"
-        Me.MoveRowDown.Size = New System.Drawing.Size(180, 22)
+        Me.MoveRowDown.Size = New System.Drawing.Size(160, 22)
         Me.MoveRowDown.Text = "move row down"
         '
         'LDatabase
@@ -403,15 +405,17 @@ Partial Class DBSheetCreateForm
         '
         'CurrentFileLinkLabel
         '
-        Me.CurrentFileLinkLabel.AutoSize = True
+        Me.CurrentFileLinkLabel.AutoEllipsis = True
         Me.CurrentFileLinkLabel.Location = New System.Drawing.Point(252, 44)
+        Me.CurrentFileLinkLabel.MaximumSize = New System.Drawing.Size(430, 18)
         Me.CurrentFileLinkLabel.Name = "CurrentFileLinkLabel"
-        Me.CurrentFileLinkLabel.Size = New System.Drawing.Size(0, 13)
+        Me.CurrentFileLinkLabel.Size = New System.Drawing.Size(417, 18)
         Me.CurrentFileLinkLabel.TabIndex = 101
         '
         'Lenvironment
         '
         Me.Lenvironment.AllowDrop = True
+        Me.Lenvironment.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.Lenvironment.AutoSize = True
         Me.Lenvironment.BackColor = System.Drawing.Color.Transparent
         Me.Lenvironment.ForeColor = System.Drawing.SystemColors.ControlText
@@ -434,9 +438,9 @@ Partial Class DBSheetCreateForm
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.BackColor = System.Drawing.SystemColors.Control
         Me.ClientSize = New System.Drawing.Size(1113, 544)
+        Me.Controls.Add(Me.Lenvironment)
         Me.Controls.Add(Me.assignDBSheet)
         Me.Controls.Add(Me.CurrentFileLinkLabel)
-        Me.Controls.Add(Me.Lenvironment)
         Me.Controls.Add(Me.LQuery)
         Me.Controls.Add(Me.LPwd)
         Me.Controls.Add(Me.LDatabase)

@@ -996,7 +996,7 @@ Public Class DBSheetCreateForm
                 TableEditable(False)
                 DBSheetColsEditable(True)
                 saveEnabled(True)
-                CurrentFileLinkLabel.Text = currentFilepath
+                setLinkLabel(currentFilepath)
                 assignDBSheet.Enabled = True
             End If
         Catch ex As System.Exception
@@ -1035,8 +1035,7 @@ Public Class DBSheetCreateForm
                 }
                 Dim result As DialogResult = saveFileDialog1.ShowDialog()
                 If result = Windows.Forms.DialogResult.OK Then
-                    currentFilepath = saveFileDialog1.FileName
-                    CurrentFileLinkLabel.Text = currentFilepath
+                    setLinkLabel(saveFileDialog1.FileName)
                 Else
                     Exit Sub
                 End If
@@ -1048,6 +1047,15 @@ Public Class DBSheetCreateForm
         Catch ex As System.Exception
             UserMsg("Exception in saveDefinitionsToFile: " + ex.Message)
         End Try
+    End Sub
+
+    ''' <summary>sets current definition file path hyperlink label. Displayed is only the filename, full path is stored in tag and visible in tooltip</summary>
+    ''' <param name="currentFilepath">definition file path</param>
+    Private Sub setLinkLabel(currentFilepath As String)
+        CurrentFileLinkLabel.Text = Strings.Mid(currentFilepath, InStrRev(currentFilepath, "\") + 1)
+        CurrentFileLinkLabel.Tag = currentFilepath
+        Dim ToolTip As System.Windows.Forms.ToolTip = New System.Windows.Forms.ToolTip()
+        ToolTip.SetToolTip(CurrentFileLinkLabel, currentFilepath)
     End Sub
 
     ''' <summary>creates xml DBsheet parameter string from the data entered in theDBSheetCreateForm</summary>
@@ -1090,7 +1098,7 @@ Public Class DBSheetCreateForm
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub CurrentFileLinkLabel_Click(sender As Object, e As EventArgs) Handles CurrentFileLinkLabel.Click
-        Diagnostics.Process.Start(CurrentFileLinkLabel.Text)
+        Diagnostics.Process.Start(CurrentFileLinkLabel.Tag)
     End Sub
 #End Region
 
