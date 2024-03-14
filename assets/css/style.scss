@@ -1,5 +1,9 @@
 ---
 ---
 
-$max-width:100%;
 @import "{{ site.theme }}";
+.main-content {
+  h1 {
+   color: #ff0000;
+ }
+}
