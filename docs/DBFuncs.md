@@ -171,6 +171,19 @@ All three concatenation functions (chainCells, concatCells and concatCellsSep) w
 
 Both `concatCells` and `concatCellsSep` have a "Text" sibling that essentially does the same, except that it concatenates the displayed Values, not the true Values. So if you want to concatenate what you see, then `concatCellsText` and `concatCellsSepText` are the functions you need.
 
+#### concatParamStringOnRanges
+
+<pre lang="vb">concatParamStringOnRanges(paramString, separator, paramEnclosing, convertAsString, convertAsDate, ParameterList paramRanges)</pre>
+
+`concatParamStringOnRanges` concatenates parameters using separator into the template paramString through replacing the placeholders (enclosed by ! if not overriden in paramEnclosing) by the values given in paramRanges. 
+
+<pre lang="vbnet">concatParamStringOnRanges("INSERT INTO Test (Col1,Col2,Col3,Col4) VALUES(!1!,!2!,!3!,!4!)",";",,"1","3",C1:C200,D1:D200,E1:E200,F1:F200)</pre>
+
+Where cells C1:C200, D1:D200, E1:E200 and F1:F200 contain the parameters being replaced into the template string. The first range is being replaced into `!1!`, the second in `!2!`, and so on. Parameter ranges are read row-wise from left to right (as usual) and need to have the same size.
+Assuming range C1:C200, D1:D200 and E1:E200 contain numbers, the parameters in C1:C200 are replaced in the template as strings (surrounded by quotes), parameters in D1:D200 are unquoted numbers and parameters in E1:E200 are replaced in the template as date values (using the default DBDate formating).  
+
+The individual INSERT in the above example rows are each finished by a closing ";". `concatParamStringOnRanges` can be used to build DML Strings from ranges, which can further be used in DB Actions.  
+
 #### currentWorkbook
 
 <pre lang="vb">currentWorkbook(onlyPath)</pre>

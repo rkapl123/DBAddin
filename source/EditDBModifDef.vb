@@ -222,7 +222,7 @@ Public Class EditDBModifDef
             Me.EditBox.Text = Me.EditBox.Text + vbCrLf + Me.EditBox.Lines(Me.EditBox.Lines.Length - 1)
             ' ... and replace the last line with the new setting
             lines = Me.EditBox.Lines
-            lines(Me.EditBox.Lines.Length - 1) = "    <" + settingKey + "><" + settingKey + "/>"
+            lines(Me.EditBox.Lines.Length - 1) = "    <" + settingKey + "></" + settingKey + ">"
         Else
             Me.EditBox.SelectAll()
             Me.EditBox.SelectionBackColor = Me.EditBox.BackColor

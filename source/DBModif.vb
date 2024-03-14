@@ -39,11 +39,6 @@ Public MustInherit Class DBModif
         confirmText = getParamFromXML(definitionXML, "confirmText")
     End Sub
 
-    ''' <summary>needed for legacy DBmapper constructor</summary>
-    Public Sub New()
-
-    End Sub
-
     ''' <summary>asks user the confirmation question, in case it is required by the DB Modifier</summary>
     ''' <returns>Yes, No or Cancel (only possible when saving to finish questions)</returns>
     Public Function confirmExecution(Optional WbIsSaving As Boolean = False) As MsgBoxResult
@@ -393,53 +388,10 @@ Public Class DBMapper : Inherits DBModif
     Private ReadOnly AutoIncFlag As Boolean = False
     ''' <summary>prevent filling of whole table during execution of DB Mappers, this is useful for very large tables that are incrementally filled and would take unnecessary long time to start the DB Mapper. If set to true then each record is searched independently by going to the database. If the records to be stored are not too many, then this is more efficient than loading a very large table.</summary>
     Private ReadOnly avoidFill As Boolean = False
+    ''' <summary>flag to prevent automatic resizing of columns</summary>
+    Private ReadOnly preventColResize As Boolean = False
 
-    ''' <summary>legacy constructor for mapping existing DBMapper macro calls (copy in clipboard)</summary>
-    ''' <param name="defkey"></param>
-    ''' <param name="paramDefs"></param>
-    ''' <param name="paramTarget"></param>
-    Public Sub New(defkey As String, paramDefs As String, paramTarget As Excel.Range)
-        dbmodifName = defkey
-        ' if no target range is set, then no parameters can be found...
-        If paramTarget Is Nothing Then
-            Throw New Exception("paramTarget is Nothing")
-        End If
-        paramTargetName = getDBModifNameFromRange(paramTarget)
-        If Left(paramTargetName, 8) <> "DBMapper" Then
-            Throw New Exception("target " + paramTargetName + " not matching passed DBModif type DBMapper for " + getTargetRangeAddress() + "/" + dbmodifName + "!")
-        End If
-        Dim paramText As String = paramDefs
-        TargetRange = paramTarget
-
-        Dim DBModifParams() As String = functionSplit(paramText, ",", """", "def", "(", ")")
-        If DBModifParams Is Nothing Then Exit Sub
-        ' check for completeness
-        If DBModifParams.Length < 4 Then
-            Throw New Exception("At least environment (can be empty), database, Table-name and primary keys have to be provided as DBMapper parameters !")
-        End If
-
-        ' fill parameters:
-        env = DBModifParams(0)
-        database = DBModifParams(1).Replace("""", "").Trim
-        If database = "" Then
-            Throw New Exception("No database given in DBMapper paramText!")
-        End If
-        tableName = DBModifParams(2).Replace("""", "").Trim ' remove all quotes and trim right and left
-        If tableName = "" Then
-            Throw New Exception("No Table-name given in DBMapper paramText!")
-        End If
-        Try
-            primKeysCount = DBModifParams(3).Split(",").Length
-        Catch ex As Exception
-            Throw New Exception("couldn't get primary key count given in DBMapper paramText (should be a comma separated list)!")
-        End Try
-        If DBModifParams.Length > 4 AndAlso DBModifParams(4) <> "" Then insertIfMissing = Convert.ToBoolean(DBModifParams(4))
-        If DBModifParams.Length > 5 AndAlso DBModifParams(5) <> "" Then executeAdditionalProc = DBModifParams(5).Replace("""", "").Trim
-        If DBModifParams.Length > 6 AndAlso DBModifParams(6) <> "" Then ignoreColumns = DBModifParams(6).Replace("""", "").Trim
-        If DBModifParams.Length > 7 AndAlso DBModifParams(7) <> "" Then execOnSave = Convert.ToBoolean(DBModifParams(7))
-    End Sub
-
-    ''' <summary>normal constructor with definition XML</summary>
+    ''' <summary>constructor with definition XML</summary>
     ''' <param name="definitionXML"></param>
     ''' <param name="paramTarget"></param>
     Public Sub New(definitionXML As CustomXMLNode, paramTarget As Excel.Range)
@@ -468,6 +420,7 @@ Public Class DBMapper : Inherits DBModif
             CUDFlags = Convert.ToBoolean(getParamFromXML(definitionXML, "CUDFlags", "Boolean"))
             AutoIncFlag = Convert.ToBoolean(getParamFromXML(definitionXML, "AutoIncFlag", "Boolean"))
             avoidFill = Convert.ToBoolean(getParamFromXML(definitionXML, "avoidFill", "Boolean"))
+            preventColResize = Convert.ToBoolean(getParamFromXML(definitionXML, "preventColResize", "Boolean"))
             If TargetRange.ListObject IsNot Nothing Then
                 ' special gray table style for CUDFlags DBMapper
                 If CUDFlags Then
@@ -640,6 +593,8 @@ exitSub:
             While Not (TargetRange.Cells(1, colCount + 1).Value Is Nothing OrElse TargetRange.Cells(1, colCount + 1).Value.ToString() = "")
                 colCount += 1
             End While
+            ' if we don't want columns to automatically extend then reset to original column count
+            If preventColResize Then colCount = TargetRange.Columns.Count
             preventChangeWhileFetching = True
             Try
                 ' only if the referral is to a real range (not an offset formula !)
@@ -1151,7 +1106,7 @@ cleanup:
         ExcelDnaUtil.Application.StatusBar = False
         ' close connection to return it to the pool (automatically closes recordset objects, so no need for checkrst.Close() or rst.Close())...
         If calledByDBSeq = "" Then idbcnn.Close()
-        ' DBSheet surrogate (CUDFlags), ask for refresh after DB Modification was done
+        ' DBSheet (CUDFlags), ask for refresh after DB Modification was done
         If changesDone Then
             Dim DBFunctionSrcExtent = getUnderlyingDBNameFromRange(TargetRange)
             If DBFunctionSrcExtent <> "" Then
@@ -1560,15 +1515,7 @@ Public Module DBModifs
     ''' <param name="createdDBModifType"></param>
     ''' <param name="targetDefName"></param>
     Public Sub createDBModif(createdDBModifType As String, Optional targetDefName As String = "")
-        ' clipboard helper for legacy definitions:
-        ' if saveRangeToDB<Single> macro calls were copied into clipboard, 1st parameter (data-range) removed (empty), connid moved to 2nd place as database name (remove MSSQL)
-        'mapper.saveRangeToDBSingle(Range("DB_DefName"), "tableName", "primKey1,primKey2,primKey3", "MSSQLDB_NAME", True) 
-        '       -> def(, "DB_NAME", "tableName", "primKey1,primKey2,primKey3", True)    DBMapperName = DB_DefName
-        'mapper.saveRangeToDBSingle(Range("DB_DefName"), "tableName", "primKey1,primKey2,primKey3", "MSSQLDB_NAME")       
-        '       -> def(, "DB_NAME", "tableName", "primKey1,primKey2,primKey3")          DBMapperName = DB_DefName
-        '
-        ' for saveRangeToDB(DataRange, tableNamesStr, primKeysStr, primKeyColumnsStr, startDataColumn, connid, ParamArray optionalArray())
-        ' remove primKeyColumnsStr and startDataColumn before copying to clipboard...
+
         If IsNothing(ExcelDnaUtil.Application.ActiveWorkbook) Then Exit Sub
         Dim actWbNames As Excel.Names = Nothing
         Try : actWbNames = ExcelDnaUtil.Application.ActiveWorkbook.Names : Catch ex As Exception
@@ -1577,40 +1524,6 @@ Public Module DBModifs
         End Try
         Dim existingDBModif As DBModif = Nothing
         Dim existingDefName As String = targetDefName
-        Dim createdDBMapperFromClipboard As Boolean = False
-        If Clipboard.ContainsText() And createdDBModifType = "DBMapper" Then
-            Dim cpbdtext As String = Clipboard.GetText()
-            If InStr(cpbdtext.ToLower(), "saverangetodb") > 0 Then
-                Dim firstBracket As Integer = InStr(cpbdtext, "(")
-                Dim firstComma As Integer = InStr(cpbdtext, ",")
-                Dim connDefStart As Integer = InStrRev(cpbdtext, """" + fetchSetting("connIDPrefixDBtype", "MSSQL"))
-                Dim commaBeforeConnDef As Integer = InStrRev(cpbdtext, ",", connDefStart)
-                ' after conndef, all parameters are optional, so in case there is no comma afterwards, set this to end of whole definition string
-                Dim commaAfterConnDef As Integer = IIf(InStr(connDefStart, cpbdtext, ",") > 0, InStr(connDefStart, cpbdtext, ","), Len(cpbdtext))
-                Dim DB_DefName, newDefString, RangeDefName As String
-                RangeDefName = Mid(cpbdtext, firstBracket + 1, firstComma - firstBracket - 1)
-                Try : DB_DefName = "DBMapper" + Replace(Replace(Mid(RangeDefName, InStr(RangeDefName, "Range(""") + 7), """)", ""), ":", "")
-                Catch ex As Exception
-                    UserMsg("Error when retrieving DB_DefName from clipboard: " + ex.Message, "DBMapper Legacy Creation Error") : Exit Sub
-                End Try
-                Try : newDefString = "def(" + Replace(Mid(cpbdtext, commaBeforeConnDef, commaAfterConnDef - commaBeforeConnDef), "MSSQL", "") + Mid(cpbdtext, firstComma, commaBeforeConnDef - firstComma - 1) + Mid(cpbdtext, commaAfterConnDef - 1)
-                Catch ex As Exception
-                    UserMsg("Error when building new definition from clipboard: " + ex.Message, "DBMapper Legacy Creation Error") : Exit Sub
-                End Try
-                ' assign new name to active cell
-                Try : actWbNames.Add(Name:=DB_DefName, RefersTo:=ExcelDnaUtil.Application.ActiveCell)
-                Catch ex As Exception
-                    UserMsg("Error when assigning name '" + DB_DefName + "' to active cell: " + ex.Message, "DBMapper Legacy Creation Error")
-                    Exit Sub
-                End Try
-
-                ' build a new DBMapper with legacy constructor
-                existingDBModif = New DBMapper(defkey:=DB_DefName, paramDefs:=newDefString, paramTarget:=ExcelDnaUtil.Application.ActiveCell)
-                existingDefName = DB_DefName
-                createdDBMapperFromClipboard = True
-                Clipboard.Clear()
-            End If
-        End If
 
         ' fetch parameters if there is an existing definition...
         If DBModifDefColl.ContainsKey(createdDBModifType) AndAlso DBModifDefColl(createdDBModifType).ContainsKey(existingDefName) Then
@@ -1736,13 +1649,7 @@ Public Module DBModifs
             If existingDBModif IsNot Nothing Then existingDBModif.setDBModifCreateFields(theDBModifCreateDlg)
 
             ' display dialog for parameters
-            If theDBModifCreateDlg.ShowDialog() = DialogResult.Cancel Then
-                ' remove targetRange Name created in clipboard helper
-                If createdDBMapperFromClipboard Then
-                    Try : actWbNames.Item(existingDefName).Delete() : Catch ex As Exception : End Try
-                End If
-                Exit Sub
-            End If
+            If theDBModifCreateDlg.ShowDialog() = DialogResult.Cancel Then Exit Sub
 
             ' only for DBMapper or DBAction: change or add target range name
             If createdDBModifType <> "DBSeqnce" Then
@@ -1913,7 +1820,7 @@ Public Module DBModifs
                         ElseIf DBModiftype = "DBSeqnce" Then
                             newDBModif = New DBSeqnce(customXMLNodeDef)
                         Else
-                            UserMsg("Not supported DBModiftype: " + DBModiftype, "DBModifier Definitions Error")
+                            UserMsg("Not supported DBModifier type: " + DBModiftype, "DBModifier Definitions Error")
                         End If
                         ' ... and add it to the collection DBModifDefColl
                         Dim defColl As Dictionary(Of String, DBModif) ' definition lookup collection for DBModifiername -> object
@@ -1928,7 +1835,7 @@ Public Module DBModifs
                                 ' add definition to existing DBModiftype "menu"
                                 defColl = DBModifDefColl(DBModiftype)
                                 If defColl.ContainsKey(nodeName) Then
-                                    UserMsg("DBModifier " + nodeName + " added twice, this indicates legacy definitions that were modified!" + vbCrLf + "To fix, convert all other definitions in the same way and then remove the legacy definitions by editing the raw DB Modif definitions.", IIf(onlyCheck, "check", "get") + " DBModif Definitions")
+                                    UserMsg("DBModifier " + nodeName + " added twice, this potentially indicates legacy definitions that were modified!" + vbCrLf + "To fix, convert all other definitions in the same way and then remove the legacy definitions by editing the raw DB Modif definitions.", IIf(onlyCheck, "check", "get") + " DBModif Definitions")
                                 Else
                                     defColl.Add(nodeName, newDBModif)
                                 End If

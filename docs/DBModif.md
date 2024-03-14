@@ -22,11 +22,11 @@ The DBModifier creation/editing is shown below (examples already filled, when ac
 
 *   DBMapper Name: Enter the name for the selected Range (containing the Data including header fields) that will be used to identify the DBMap in the "Execute DBModifier" Group dropdowns. If no name is given here, then UnnamedDBMapper will be used to identify it.
 *   Tablename: Database Table, where Data is to be stored.
-*   Primary Keys: String containing primary Key names for updating table data, comma separated.
+*   Primary keys count: amount of columns from the left to be used as primary keys for updating table data.
 *   Database: Database to store DBMaps Data into.
-*   Ignore Columns: columns to be ignored (e.g. helper columns), comma separated.
+*   Ignore Columns: comma separated list of column numbers to be ignored (e.g. helper columns or irrelevant columns).
 *   Additional Stored Procedure: additional stored procedure to be executed after saving.
-*   Insert If Missing: if set, then insert row into table if primary key is missing there. Default = False (only update).
+*   Insert If Missing: if set, then insert row into table if the primary key is missing there. Default = False (only update).
 *   Store DBMap on Save: should DBMap also be saved on Excel Workbook Saving? (default no). If multiple DBModifiers (DB Mappers and DB Actions, DB Sequences are not bound to a worksheet) are defined to be stored/executed on save, then the DBModifiers being on the active worksheet are done first (without any specific order), then those on the other worksheets are done (also without any specific order).
 *   Environment: The Environment, where connection id should be taken from (if not existing, take from selected Environment in DB Addin General Settings Group).
 *   Exec on Save: Should the DBMap be executed when the workbook is being saved?
@@ -97,12 +97,13 @@ You can edit the DBModifiers either by Ctrl-Shift clicking the Execute DBModifie
 .. or by Ctrl-Shift clicking the created commandbuttons.  
 .. or by using the Insert/Edit DBFunc/DBModif context menu within a DBMapper or DBAction range.  
 
-## Hidden settings (not available in creation dialogs)
+## Additional settings ("hidden" as they are not available in creation dialogs)
 
 Following Settings of DBModifiers can only be edited in the Edit DBModifier Definitions Window:
 
 *  `confirmText` (all DB Modifiers, String): an alternative text displayed in the confirmation of DB Modifiers.
 *  `avoidFill` (only DBMappers, Boolean): prevent filling of whole table during execution of DB Mappers, this is useful for very large tables that are incrementally filled and would take unnecessary long time to start the DB Mapper. If set to true then each record is searched independently by going to the database. If the records to be stored are not too many, then this is more efficient than loading a very large table.
+*  `preventColResize` (only DBMappers, Boolean): prevent automatic resizing of DB Mappers columns to include new ones, this is useful if header columns can be added accidentally and thus lead to errors.
 
 ## Settings
 

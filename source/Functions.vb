@@ -382,6 +382,87 @@ Public Module Functions
         End Try
     End Function
 
+    ''' <summary>concatenate parameters into template String through replacing the placeholders by the values given in paramRanges</summary>
+    ''' <param name="paramString">template String, the parameter placeholders are identified with !1!, !2!, ... (assuming ! is the default paramEnclosing)</param>
+    ''' <param name="separator">separator to be used for concatenation</param>
+    ''' <param name="paramEnclosing">enclosing character around parameter placeholders (defaults to !)</param>
+    ''' <param name="convertAsString">comma separated locations of numerical parameters that should always be converted as strings</param>
+    ''' <param name="convertAsDate">comma separated locations of numerical parameters that should always be converted as date values (using the default DBDate formating)</param>
+    ''' <param name="paramRanges">ranges to be used as parameters that are replaced into the template string, where the order of the parameter range determines which placeholder is being replaced</param>
+    ''' <returns></returns>
+    <ExcelFunction(Description:="concatenate parameters into template string through replacing the placeholders by the values given in paramRanges")>
+    Public Function concatParamStringOnRanges(<ExcelArgument(Description:="template string, the parameter placeholders are identified with !1!, !2!, ... (assuming ! is the default paramEnclosing)")> paramString As String,
+                                              <ExcelArgument(Description:="separator to be used for concatenation")> separator As String,
+                                              <ExcelArgument(Description:="enclosing character around parameter placeholders (defaults to !)")> paramEnclosing As String,
+                                              <ExcelArgument(Description:="comma separated locations of numerical parameters that should always be converted as strings")> convertAsString As String,
+                                              <ExcelArgument(Description:="comma separated locations of numerical parameters that should always be converted as date values (using the default DBDate formating)")> convertAsDate As String,
+                                              <ExcelArgument(Description:="ranges to be used as parameters that are replaced into the template string, where the order of the parameter range determines which placeholder is being replaced")> ParamArray paramRanges As Object()) As String
+        Try
+            Dim refCount As Integer = 0
+            If paramEnclosing = "" Then paramEnclosing = "!"
+            Dim convAsString() As String = Split(convertAsString, ",")
+            Dim convAsDate() As String = Split(convertAsDate, ",")
+            Dim parameterList As List(Of List(Of String)) = New List(Of List(Of String))
+            Dim maxCellCount As Integer = 0
+            ' assumption: all references in paramRanges are multi-cell ranges (otherwise error is thrown)
+            For Each myRef As Object In paramRanges
+                Dim parameters As List(Of String) = New List(Of String)
+                refCount += 1
+                If Not TypeName(myRef) = "Object(,)" Then
+                    LogWarn("Error in concatParamStringOnRanges: parameter range " + refCount.ToString() + " not a multi-cell reference (should be at least 2 cells)")
+                    concatParamStringOnRanges = "Error in concatParamStringOnRanges: parameter range " + refCount.ToString() + " not a multi-cell reference (should be at least 2 cells)"
+                    Exit Function
+                End If
+                Dim stringConversion As Boolean = convAsString.Contains(refCount.ToString())
+                Dim dateConversion As Boolean = convAsDate.Contains(refCount.ToString())
+                If stringConversion And dateConversion Then
+                    LogWarn("Error in concatParamStringOnRanges: both string and date conversion set for parameter range " + refCount.ToString() + ": convertAsString: " + convertAsString + ",convertAsDate: " + convertAsDate)
+                    concatParamStringOnRanges = "Error in concatParamStringOnRanges: both string and date conversion set for parameter range " + refCount.ToString() + ": convertAsString: " + convertAsString + ",convertAsDate: " + convertAsDate
+                    Exit Function
+                End If
+                Dim cellCount = 0
+                ' walk through all cells of the parameter range, converting cell values and storing for later transposing
+                For Each myCell As Object In myRef
+                    If TypeName(myCell) = "ExcelEmpty" Then
+                        parameters.Add("NULL")
+                    ElseIf IsNumeric(myCell) Then
+                        If stringConversion Then
+                            parameters.Add("'" + Convert.ToString(myCell, System.Globalization.CultureInfo.InvariantCulture) + "'")
+                        ElseIf dateConversion Then
+                            parameters.Add(formatDBDate(myCell, DefaultDBDateFormatting))
+                        Else
+                            parameters.Add(Convert.ToString(myCell, System.Globalization.CultureInfo.InvariantCulture))
+                        End If
+                    Else
+                        parameters.Add("'" + myCell + "'")
+                    End If
+                    cellCount += 1
+                Next
+                If maxCellCount = 0 Then
+                    maxCellCount = cellCount
+                ElseIf maxCellCount <> cellCount Then
+                    LogWarn("Error in concatParamStringOnRanges: size (" + cellCount.ToString() + ") of parameter range " + refCount.ToString() + " not the same as the one before (" + maxCellCount.ToString() + "), all ranges need to be the same size")
+                    concatParamStringOnRanges = "Error in concatParamStringOnRanges: size (" + cellCount.ToString() + ") of parameter range " + refCount.ToString() + " not the same as the one before (" + maxCellCount.ToString() + "), all ranges need to be the same size"
+                    Exit Function
+                End If
+                parameterList.Add(parameters)
+            Next
+            ' now transpose the parameters and replace them instead of the placeholders into the result...
+            Dim retval As String = ""
+            For cellCount As Integer = 1 To maxCellCount
+                Dim rowString As String = paramString
+                For paramCount As Integer = 1 To refCount
+                    rowString = rowString.Replace(paramEnclosing + paramCount.ToString() + paramEnclosing, parameterList(paramCount - 1).Item(cellCount - 1))
+                Next
+                retval += rowString + separator
+            Next
+            concatParamStringOnRanges = IIf(retval = "", "Error in concatParamStringOnRanges: no parameter ranges given", retval)
+        Catch ex As Exception
+            LogWarn("Error in concatParamStringOnRanges: exception " + ex.Message)
+            concatParamStringOnRanges = "Error in concatParamStringOnRanges: exception " + ex.Message
+        End Try
+    End Function
+
     ''' <summary>Stores a query into an Object defined in targetRange (an embedded MS Query/List object, Pivot table, etc.)</summary>
     ''' <param name="Query">query for getting data</param>
     ''' <param name="ConnString">connection string defining DB, user, etc...</param>
