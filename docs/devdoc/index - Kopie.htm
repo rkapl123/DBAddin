@@ -1,0 +1,81 @@
+<html>
+	<head>
+		<title>Class Library Documentation</title>
+		<link href="styles/default.css" type="text/css" rel="stylesheet"/>
+	</head>
+	<body>
+		<div class="header"> </div>
+		<br class="clear"/>
+		<div class="navigation">
+			<ul>
+				<li>
+					<a class="current" href="index.htm">Documentation</a>
+				</li>
+			</ul>
+			<ul>
+				<li>
+					<a href="4294967296-DBaddin.htm">DBaddin</a>
+				</li>
+			</ul>
+		</div>
+		<div class="content">
+			<h1>Class Library Documentation</h1>
+			<h2 id="overview">Overview</h2>
+			<p>DBAddin is an ExcelDNA based Add-in for Database interoperability:</p>
+			<ul>
+			<li>DB Functions for database querying </li>
+			<li>a mapping mechanism (DBMappers) to save data to DB Tables.  </li>
+			<li>Database Actions to be executed on the Database (DBActions)</li>
+			<li>Sequences of DBMappers and DBActions (DBSequences)</li>
+			<li>Special configurations of DBMappers for Worksheets enabling editing of DB Tables in a CRUD manner (DBSheets)</li>
+			</ul>
+			<p>DB Functions are an alternative to the Excel built-in MSQuery, which is integrated statically into the worksheet and has some limitations in terms of querying possibilities and flexibility of constructing parameterized queries (MS-Query allows parameterized queries only in simple queries that can be displayed graphically).  </p>
+			<p>Other useful functions for easier creation of queries and working with database data are included as well.  </p>
+			<p>DBAddin has three main areas and the Addin global code area, which are mapped to the following source files:</p>
+			<h3 id="db-functions-and-their-config-files">DB Functions and their config files</h3>
+			<ul>
+			<li>Functions.vb - Contains the public callable DB functions and helper functions and a data structure for transporting information back from the calculation action procedure to the calling function</li>
+			<li>ConfigFiles.vb - procedures used for loading config files (containing DBFunctions and general sheet content) and building the config menu</li>
+			</ul>
+			<h3 id="db-modifiers">DB Modifiers</h3>
+			<ul>
+			<li>DBModif.vb - DBModif Class: Abstraction of a DB Modification Object and descendant concrete classes DBMapper, DBAction or DBSeqnce; also contains global helper functions for DBModifiers and an abstract helper class CustomCommandBuilder for building Insert/Update/Delete Statements for DBMapper having concrete implementations in CustomSqlCommandBuilder, CustomOleDbCommandBuilder and CustomOdbcCommandBuilder.</li>
+			<li>DBModifCreate.vb  - Dialog for creating DB Modifier configurations</li>
+			<li>EditDBModifDef.vb  - Dialog used to display and edit the CustomXMLPart utilized for storing the DBModif definitions, reused to also show DBAddin settings</li>
+			</ul>
+			<h3 id="dbsheet-definition-creation-and-assignment">DBSheet definition creation and assignment</h3>
+			<ul>
+			<li>DBSheetConfig.vb  - Helper module  for easier manipulation of DBSheet definition </li>
+			<li>DBSheetCreateForm.vb  - Form for defining/creating DBSheet definitions</li>
+			<li>DBConnHelper.vb - connection helper class (Connection configuration data) used for DBSheetCreateForm.vb and AdHocSQL.vb</li>
+			</ul>
+			<h3 id="addin-global-code">Addin global code</h3>
+			<ul>
+			<li>Globals.vb - Global variables and functions for DB Addin</li>
+			<li>MenuHandler.vb - handles all Menu related aspects (context menu for building/refreshing, &quot;DBAddin&quot;/&quot;Load Config&quot; tree menu for retrieving stored configuration files, etc.)</li>
+			<li>AboutBox.vb - About box: used to provide information about version/buildtime and links for local help and project homepage</li>
+			<li>AddInEvents.vb - AddIn Connection class, also handling Events from Excel (Open, Close, Activate)</li>
+			<li>AdHocSQL.vb - Issuing adhoc SQL Commands from a dialog box</li>
+			</ul>
+
+			<h2>Namespaces</h2>
+			<table>
+				<thead>
+					<tr>
+						<th>Name</th>
+						<th>Description</th>
+					</tr>
+				</thead>
+				<tr>
+					<td>
+						<a href="4294967296-DBaddin.htm">DBaddin</a>
+					</td>
+					<td/>
+				</tr>
+			</table>
+		</div>
+		<div class="footer">
+			Produced by the <a href="https://livedocumenter.barryjones.me.uk/">Live Documenter</a>.
+		</div>
+	</body>
+</html>
