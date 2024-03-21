@@ -50,6 +50,12 @@ Partial Class DBModifCreate
         Me.AskForExecute = New System.Windows.Forms.CheckBox()
         Me.IgnoreDataErrors = New System.Windows.Forms.CheckBox()
         Me.AutoIncFlag = New System.Windows.Forms.CheckBox()
+        Me.parametrized = New System.Windows.Forms.CheckBox()
+        Me.continueIfRowEmpty = New System.Windows.Forms.CheckBox()
+        Me.paramRangesStr = New System.Windows.Forms.TextBox()
+        Me.paramEnclosing = New System.Windows.Forms.TextBox()
+        Me.convertAsString = New System.Windows.Forms.TextBox()
+        Me.convertAsDate = New System.Windows.Forms.TextBox()
         Me.EnvironmentLabel = New System.Windows.Forms.Label()
         Me.MoveMenu = New System.Windows.Forms.ContextMenuStrip(Me.components)
         Me.MoveRowUp = New System.Windows.Forms.ToolStripMenuItem()
@@ -62,7 +68,7 @@ Partial Class DBModifCreate
         '
         Me.Cancel_Button.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.Cancel_Button.DialogResult = System.Windows.Forms.DialogResult.Cancel
-        Me.Cancel_Button.Location = New System.Drawing.Point(401, 434)
+        Me.Cancel_Button.Location = New System.Drawing.Point(401, 441)
         Me.Cancel_Button.Name = "Cancel_Button"
         Me.Cancel_Button.Size = New System.Drawing.Size(67, 23)
         Me.Cancel_Button.TabIndex = 3
@@ -73,7 +79,7 @@ Partial Class DBModifCreate
         'OK_Button
         '
         Me.OK_Button.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.OK_Button.Location = New System.Drawing.Point(361, 434)
+        Me.OK_Button.Location = New System.Drawing.Point(361, 441)
         Me.OK_Button.Name = "OK_Button"
         Me.OK_Button.Size = New System.Drawing.Size(34, 23)
         Me.OK_Button.TabIndex = 2
@@ -85,7 +91,7 @@ Partial Class DBModifCreate
         'CreateCB
         '
         Me.CreateCB.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.CreateCB.Location = New System.Drawing.Point(287, 434)
+        Me.CreateCB.Location = New System.Drawing.Point(287, 441)
         Me.CreateCB.Name = "CreateCB"
         Me.CreateCB.Size = New System.Drawing.Size(68, 23)
         Me.CreateCB.TabIndex = 1
@@ -241,7 +247,7 @@ Partial Class DBModifCreate
         Me.DBSeqenceDataGrid.Location = New System.Drawing.Point(12, 209)
         Me.DBSeqenceDataGrid.MultiSelect = False
         Me.DBSeqenceDataGrid.Name = "DBSeqenceDataGrid"
-        Me.DBSeqenceDataGrid.Size = New System.Drawing.Size(452, 219)
+        Me.DBSeqenceDataGrid.Size = New System.Drawing.Size(452, 226)
         Me.DBSeqenceDataGrid.TabIndex = 13
         Me.ToolTip1.SetToolTip(Me.DBSeqenceDataGrid, "Define the steps for the DB Sequence in the order of their desired execution here" &
         ". Any DBMapper and/or DBAction can be selected.")
@@ -252,9 +258,9 @@ Partial Class DBModifCreate
         Me.TargetRangeAddress.AutoEllipsis = True
         Me.TargetRangeAddress.Font = New System.Drawing.Font("Microsoft Sans Serif", 8.25!, System.Drawing.FontStyle.Underline, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.TargetRangeAddress.ForeColor = System.Drawing.Color.DodgerBlue
-        Me.TargetRangeAddress.Location = New System.Drawing.Point(12, 434)
+        Me.TargetRangeAddress.Location = New System.Drawing.Point(12, 441)
         Me.TargetRangeAddress.Name = "TargetRangeAddress"
-        Me.TargetRangeAddress.Size = New System.Drawing.Size(269, 23)
+        Me.TargetRangeAddress.Size = New System.Drawing.Size(136, 23)
         Me.TargetRangeAddress.TabIndex = 11
         Me.ToolTip1.SetToolTip(Me.TargetRangeAddress, "click to select Target Range with Data for DBMapper or SQL DML for DBAction")
         '
@@ -279,7 +285,7 @@ Partial Class DBModifCreate
         Me.RepairDBSeqnce.Multiline = True
         Me.RepairDBSeqnce.Name = "RepairDBSeqnce"
         Me.RepairDBSeqnce.ScrollBars = System.Windows.Forms.ScrollBars.Vertical
-        Me.RepairDBSeqnce.Size = New System.Drawing.Size(456, 219)
+        Me.RepairDBSeqnce.Size = New System.Drawing.Size(456, 226)
         Me.RepairDBSeqnce.TabIndex = 14
         Me.ToolTip1.SetToolTip(Me.RepairDBSeqnce, "use this textbox to repair DB Sequence entries...")
         '
@@ -317,6 +323,66 @@ Partial Class DBModifCreate
         Me.ToolTip1.SetToolTip(Me.AutoIncFlag, resources.GetString("AutoIncFlag.ToolTip"))
         Me.AutoIncFlag.UseVisualStyleBackColor = True
         '
+        'parametrized
+        '
+        Me.parametrized.AutoSize = True
+        Me.parametrized.Location = New System.Drawing.Point(12, 438)
+        Me.parametrized.Name = "parametrized"
+        Me.parametrized.Size = New System.Drawing.Size(86, 17)
+        Me.parametrized.TabIndex = 15
+        Me.parametrized.Text = "parametrized"
+        Me.ToolTip1.SetToolTip(Me.parametrized, "is DBAction parametrized (placeholders to be filled with values from named ranges" &
+        ")")
+        Me.parametrized.UseVisualStyleBackColor = True
+        '
+        'continueIfRowEmpty
+        '
+        Me.continueIfRowEmpty.AutoSize = True
+        Me.continueIfRowEmpty.Location = New System.Drawing.Point(102, 438)
+        Me.continueIfRowEmpty.Name = "continueIfRowEmpty"
+        Me.continueIfRowEmpty.Size = New System.Drawing.Size(126, 17)
+        Me.continueIfRowEmpty.TabIndex = 16
+        Me.continueIfRowEmpty.Text = "continue if row empty"
+        Me.ToolTip1.SetToolTip(Me.continueIfRowEmpty, "only for parametrized DBAction: if all values in the given Ranges are empty for o" &
+        "ne row, continue concatenation with all values being NULL, else finish at this r" &
+        "ow (excluding it)")
+        Me.continueIfRowEmpty.UseVisualStyleBackColor = True
+        '
+        'paramRangesStr
+        '
+        Me.paramRangesStr.Location = New System.Drawing.Point(167, 319)
+        Me.paramRangesStr.Name = "paramRangesStr"
+        Me.paramRangesStr.Size = New System.Drawing.Size(297, 20)
+        Me.paramRangesStr.TabIndex = 17
+        Me.ToolTip1.SetToolTip(Me.paramRangesStr, "parameter ranges, comma separated. Only workbook- and sheet names are possible")
+        '
+        'paramEnclosing
+        '
+        Me.paramEnclosing.Location = New System.Drawing.Point(167, 345)
+        Me.paramEnclosing.Name = "paramEnclosing"
+        Me.paramEnclosing.Size = New System.Drawing.Size(297, 20)
+        Me.paramEnclosing.TabIndex = 18
+        Me.ToolTip1.SetToolTip(Me.paramEnclosing, "enclosing character of parameters, defaults to ! (so !1! for first parameter, !2!" &
+        " for second, etc.)")
+        '
+        'convertAsString
+        '
+        Me.convertAsString.Location = New System.Drawing.Point(167, 371)
+        Me.convertAsString.Name = "convertAsString"
+        Me.convertAsString.Size = New System.Drawing.Size(297, 20)
+        Me.convertAsString.TabIndex = 19
+        Me.ToolTip1.SetToolTip(Me.convertAsString, "column number of numerical parameters that should always explicitly be converted " &
+        "to strings")
+        '
+        'convertAsDate
+        '
+        Me.convertAsDate.Location = New System.Drawing.Point(167, 397)
+        Me.convertAsDate.Name = "convertAsDate"
+        Me.convertAsDate.Size = New System.Drawing.Size(297, 20)
+        Me.convertAsDate.TabIndex = 20
+        Me.ToolTip1.SetToolTip(Me.convertAsDate, "column number of numerical parameters that should always explicitly be converted " &
+        "to Dates (using default date format from DefaultDBDateFormatting)")
+        '
         'EnvironmentLabel
         '
         Me.EnvironmentLabel.AutoSize = True
@@ -349,8 +415,14 @@ Partial Class DBModifCreate
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.CancelButton = Me.Cancel_Button
-        Me.ClientSize = New System.Drawing.Size(479, 469)
+        Me.ClientSize = New System.Drawing.Size(479, 476)
         Me.ControlBox = False
+        Me.Controls.Add(Me.convertAsDate)
+        Me.Controls.Add(Me.convertAsString)
+        Me.Controls.Add(Me.paramEnclosing)
+        Me.Controls.Add(Me.paramRangesStr)
+        Me.Controls.Add(Me.continueIfRowEmpty)
+        Me.Controls.Add(Me.parametrized)
         Me.Controls.Add(Me.AutoIncFlag)
         Me.Controls.Add(Me.CreateCB)
         Me.Controls.Add(Me.OK_Button)
@@ -420,4 +492,10 @@ Partial Class DBModifCreate
     Friend WithEvents MoveRowUp As Windows.Forms.ToolStripMenuItem
     Friend WithEvents MoveRowDown As Windows.Forms.ToolStripMenuItem
     Friend WithEvents AutoIncFlag As Windows.Forms.CheckBox
+    Friend WithEvents parametrized As Windows.Forms.CheckBox
+    Friend WithEvents continueIfRowEmpty As Windows.Forms.CheckBox
+    Friend WithEvents paramRangesStr As Windows.Forms.TextBox
+    Friend WithEvents paramEnclosing As Windows.Forms.TextBox
+    Friend WithEvents convertAsString As Windows.Forms.TextBox
+    Friend WithEvents convertAsDate As Windows.Forms.TextBox
 End Class

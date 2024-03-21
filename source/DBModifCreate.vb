@@ -245,4 +245,24 @@ Public Class DBModifCreate
         End If
     End Sub
 
+    Private Sub parametrized_Click(sender As Object, e As EventArgs) Handles parametrized.Click
+        setDBActionParametrizedGUI()
+    End Sub
+
+    Public Sub setDBActionParametrizedGUI()
+        If Me.parametrized.Checked Then
+            Me.paramRangesStr.Enabled = True
+            Me.convertAsDate.Enabled = True
+            Me.convertAsString.Enabled = True
+            Me.paramEnclosing.Enabled = True
+            Me.continueIfRowEmpty.Enabled = True
+        Else
+            Me.paramRangesStr.Enabled = False
+            Me.convertAsDate.Enabled = False
+            Me.convertAsString.Enabled = False
+            Me.paramEnclosing.Enabled = False
+            Me.continueIfRowEmpty.Enabled = False
+        End If
+
+    End Sub
 End Class

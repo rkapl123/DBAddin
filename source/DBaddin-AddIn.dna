@@ -2,7 +2,7 @@
   <ExternalLibrary Path="DBAddin.dll" ExplicitExports="true" ExplicitRegistration="true" LoadFromBytes="true" Pack="true" UseVersionAsOutputVersion="true" />
   <Reference Path="ExcelDna.Registration.dll" Pack="true" />
   <Reference Path="ExcelDna.IntelliSense.dll" Pack="true" />
-  <Image Path="DBModifDef.xsd" Pack="true" />
+  <Image Path="Resources/DBModifDef.xsd" Pack="true" />
   <!-- 
        The RuntimeVersion attribute above allows two settings:
        * RuntimeVersion="v2.0" - for .NET 2.0, 3.0 and 3.5

@@ -58,6 +58,17 @@ The clickable Hyperlink shows the range address of the data range, a named offse
 *   The actual DBAction to be done is defined in a range that is named like the DBAction definition (the hyperlink takes you there). This range can be dynamically computed as all ranges in excel.
 *   Create CB: create a commandbutton for the DB Sequence in the current Worksheet.
 *   Hyperlink: click on it to highlight/select the DB Action range.
+*   parametrized: If checked, brings parameters into the template paramString by replacing the placeholders (enclosed by ! if not overriden in paramEnclosing) with the values in the corresponding paramRanges. 
+*   Parameter Range Names: string of named ranges (if necessary qualified with sheet name!range_name) to be used as parameters that are replaced into the template string, where the order of the parameter range determines which placeholder is being replaced
+*   continue if row empty: if all values in the given Ranges are empty for one row, continue concatenation with all values being NULL, else finish at this row (excluding it), defaults to false
+*   Cols num params string: comma separated locations of numerical parameters that should always be converted as strings
+*   Cols num params date: comma separated locations of numerical parameters that should always be converted as date values (using the default DBDate formating)
+
+Example for parametrization: DB Action cell contains `INSERT INTO Test (Col1,Col2,Col3,Col4) VALUES(!1!,!2!,!3!,!4!)`; Cols num params string: `1`; Cols num params date: `3`; Parameter Range Names: `paramC1,paramD1,paramE1,paramF1`
+
+Where cells in param range paramC1, paramD1, paramE1 and paramF1 contain the parameters being replaced into the template string. The first range is being replaced into `!1!`, the second in `!2!`, and so on. Parameter ranges are read row-wise from left to right (as usual) and need to have the same size.
+Assuming param range paramC1, paramD1 and paramE1 contain numbers, the parameters in paramC1 are replaced in the template as strings (surrounded by quotes), parameters in paramD1 are unquoted numbers and parameters in paramE1 are replaced in the template as date values (using the default DBDate formating).  
+Date values (formatted as dates) are automatically recognized, there is no need to explicitly mark them with Cols num params date
 
 You can always edit these parameters by selecting a cell in the range of the DB Action area and invoking the context menu again.
 

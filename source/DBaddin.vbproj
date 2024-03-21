@@ -171,14 +171,23 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <SubType>Designer</SubType>
     </Content>
+    <None Include="Resources\Settings.txt" />
+    <None Include="Resources\DBAddinCentral.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Resources\DBAddinUser.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Resources\DBModifDef.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Resources\DotNetConfig20.xsd">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="Resources\SettingsDBModif.txt" />
-    <None Include="Settings.txt" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
-    <None Include="DBModifDef.xsd">
-      <SubType>Designer</SubType>
-    </None>
     <None Include="My Project\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.vb</LastGenOutput>

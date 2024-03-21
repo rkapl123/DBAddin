@@ -1179,6 +1179,19 @@ End Class
 ''' <summary>DBActions are used to issue DML commands defined in Cells against the database</summary>
 Public Class DBAction : Inherits DBModif
 
+    ''' <summary>is DBAction parametrized (placeholders to be filled with values from named ranges), default to false</summary>
+    Private ReadOnly parametrized As Boolean
+    ''' <summary>only for parametrized DBAction: enclosing character around parameter placeholders, defaults to !</summary>
+    Private ReadOnly paramEnclosing As String
+    ''' <summary>only for parametrized DBAction: comma separated locations of numerical parameters that should always be converted as strings</summary>
+    Private ReadOnly convertAsString As String = ""
+    ''' <summary>only for parametrized DBAction: comma separated locations of numerical parameters that should always be converted as date values (using the default DBDate formating)</summary>
+    Private ReadOnly convertAsDate As String = ""
+    ''' <summary>only for parametrized DBAction: if all values in the given Ranges are empty for one row, continue concatenation with all values being NULL, else finish at this row (excluding it), defaults to false</summary>
+    Private ReadOnly continueIfRowEmpty As Boolean
+    ''' <summary>only for parametrized DBAction: string of named ranges to be used as parameters that are replaced into the template string, where the order of the parameter range determines which placeholder is being replaced</summary>
+    Private ReadOnly paramRangesStr As String = ""
+
     ''' <summary>normal constructor with definition xml</summary>
     ''' <param name="definitionXML"></param>
     ''' <param name="paramTarget"></param>
@@ -1196,6 +1209,12 @@ Public Class DBAction : Inherits DBModif
             If database = "" Then Throw New Exception("No database given in DBAction definition!")
             ' AFTER setting TargetRange and all the rest check for defined action to have a decent getTargetRangeAddress for undefined actions...
             If paramTarget.Cells(1, 1).Text = "" Then Throw New Exception("No Action defined in " + paramTargetName + "(" + getTargetRangeAddress() + ")")
+            parametrized = Convert.ToBoolean(getParamFromXML(definitionXML, "parametrized", "Boolean"))
+            paramEnclosing = getParamFromXML(definitionXML, "paramEnclosing")
+            convertAsString = getParamFromXML(definitionXML, "convertAsString")
+            convertAsDate = getParamFromXML(definitionXML, "convertAsDate")
+            continueIfRowEmpty = Convert.ToBoolean(getParamFromXML(definitionXML, "continueIfRowEmpty", "Boolean"))
+            paramRangesStr = getParamFromXML(definitionXML, "paramRangesStr")
         Catch ex As Exception
             UserMsg("Error when creating DB Action '" + dbmodifName + "': " + ex.Message, "DBModifier Definitions Error")
         End Try
@@ -1215,21 +1234,16 @@ Public Class DBAction : Inherits DBModif
         Dim result As Integer
         Try
             ExcelDnaUtil.Application.StatusBar = "executing DBAction " + paramTargetName
+
             Dim executeText As String = ""
             For Each targetCell As Excel.Range In TargetRange
-                executeText += targetCell.Text + " "
+                executeText += targetCell.Value2 + " "
             Next
-            Dim DmlCmd As IDbCommand
-            If TypeName(idbcnn) = "SqlConnection" Then
-                DmlCmd = New SqlClient.SqlCommand(executeText, idbcnn, trans)
-            ElseIf TypeName(idbcnn) = "OleDbConnection" Then
-                DmlCmd = New OleDb.OleDbCommand(executeText, idbcnn, trans)
+            If parametrized Then
+                result = executeTemplateSQL(executeText)
             Else
-                DmlCmd = New Odbc.OdbcCommand(executeText, idbcnn, trans)
+                result = executeSQL(executeText)
             End If
-            DmlCmd.CommandTimeout = CmdTimeout
-            DmlCmd.CommandType = CommandType.Text
-            result = DmlCmd.ExecuteNonQuery()
         Catch ex As Exception
             hadError = True
             UserMsg("Error in executing DB Action " + paramTargetName + ": " + ex.Message, "DBAction Error")
@@ -1244,6 +1258,115 @@ Public Class DBAction : Inherits DBModif
         If calledByDBSeq = "" Then idbcnn.Close()
     End Sub
 
+    Private Function executeSQL(executeText As String) As Integer
+        Dim DmlCmd As IDbCommand
+        If TypeName(idbcnn) = "SqlConnection" Then
+            DmlCmd = New SqlClient.SqlCommand(executeText, idbcnn, trans)
+        ElseIf TypeName(idbcnn) = "OleDbConnection" Then
+            DmlCmd = New OleDb.OleDbCommand(executeText, idbcnn, trans)
+        Else
+            DmlCmd = New Odbc.OdbcCommand(executeText, idbcnn, trans)
+        End If
+        DmlCmd.CommandTimeout = CmdTimeout
+        DmlCmd.CommandType = CommandType.Text
+        executeSQL = DmlCmd.ExecuteNonQuery()
+    End Function
+
+    ''' <summary>concatenate parameters into SQL template string through replacing the placeholders by the values given in paramRanges and execute the final SQL, empty values and excel errors get a NULL value.</summary>
+    ''' <param name="paramString">SQL template string, the parameter placeholders are identified with !1!, !2!, ... (assuming ! is the default paramEnclosing)</param>
+    Private Function executeTemplateSQL(paramString As String) As Integer
+        executeTemplateSQL = 0
+        Dim paramRanges As List(Of Excel.Range) = New List(Of Excel.Range)
+        Dim actWbNames As Excel.Names
+        Try : actWbNames = ExcelDnaUtil.Application.ActiveWorkbook.Names : Catch ex As Exception
+            Throw New Exception("Exception when trying to get the active workbook names for executeTemplateSQL: " + ex.Message + ", this might be either due to errors in the VBA-IDE (missing references) or due to opening this workbook from an MS-Office hyperlink, starting up Excel (timing issue). Switch to another workbook and back to fix.")
+            Exit Function
+        End Try
+        If paramRangesStr = "" Then
+            Throw New Exception("No parameter range(s) given")
+            Exit Function
+        End If
+        For Each paramRange As String In Split(paramRangesStr, ",")
+            If Not existsName(paramRange) Then
+                Throw New Exception("Name '" + paramRange + "' doesn't exist as a workbook name or is not in current worksheet (you need to qualify names from other worksheets with sheet_name!range_name).")
+                Exit Function
+            End If
+            Try
+                paramRanges.Add(actWbNames.Item(paramRange).RefersToRange)
+            Catch ex As Exception
+                Throw New Exception("Couldn't get range from name '" + paramRange + "', exception: " + ex.Message)
+                Exit Function
+            End Try
+        Next
+        Dim refCount As Integer = 0
+        Dim convAsString() As String = Split(convertAsString, ",")
+        Dim convAsDate() As String = Split(convertAsDate, ",")
+        Dim parameterList As List(Of List(Of String)) = New List(Of List(Of String))
+        Dim parameterAddressList As List(Of List(Of String)) = New List(Of List(Of String))
+        Dim maxCellCount As Integer = 0
+        ' assumption: all references in paramRanges are multi-cell ranges (otherwise error is thrown)
+        For Each paramRange As Excel.Range In paramRanges
+            Dim parameters As List(Of String) = New List(Of String)
+            Dim parameterAddress As List(Of String) = New List(Of String)
+            refCount += 1
+            Dim stringConversion As Boolean = convAsString.Contains(refCount.ToString())
+            Dim dateConversion As Boolean = convAsDate.Contains(refCount.ToString())
+            If stringConversion And dateConversion Then
+                Throw New Exception("Both string and date conversion set for parameter range " + refCount.ToString() + ": convertAsString: " + convertAsString + ",convertAsDate: " + convertAsDate)
+            End If
+            Dim cellCount = 0
+            ' walk through all cells of the parameter range, converting cell values and storing for later transposing
+            For Each paramCell As Excel.Range In paramRange
+                Try
+                    If paramCell.Value = Nothing Or IsXLCVErr(paramCell.Value) Then
+                        parameters.Add("NULL")
+                    ElseIf IsNumeric(paramCell.Value) Then
+                        If stringConversion Then
+                            parameters.Add("'" + Convert.ToString(paramCell.Value, System.Globalization.CultureInfo.InvariantCulture) + "'")
+                        ElseIf dateConversion Then
+                            parameters.Add(formatDBDate(paramCell.Value, DefaultDBDateFormatting))
+                        Else
+                            parameters.Add(Convert.ToString(paramCell.Value, System.Globalization.CultureInfo.InvariantCulture))
+                        End If
+                    ElseIf IsDate(paramCell.Value) Then
+                        parameters.Add(formatDBDate(paramCell.Value2, DefaultDBDateFormatting))
+                    Else
+                        parameters.Add("'" + paramCell.Value + "'")
+                    End If
+                Catch ex As Exception
+                    Throw New Exception("Converting parameters in row " + cellCount.ToString() + " of parameter " + refCount.ToString() + " exception: " + ex.Message)
+                End Try
+                parameterAddress.Add(IIf(paramCell.Parent.Name <> ExcelDnaUtil.Application.ActiveSheet.Name, paramCell.Parent.Name + "!", "") + paramCell.Address)
+                cellCount += 1
+            Next
+            If maxCellCount = 0 Then
+                maxCellCount = cellCount
+            ElseIf maxCellCount <> cellCount Then
+                Throw New Exception("Size (" + cellCount.ToString() + ") of parameter range " + refCount.ToString() + " not the same as the one before (" + maxCellCount.ToString() + "), all ranges need to be the same size")
+            End If
+            parameterList.Add(parameters)
+            parameterAddressList.Add(parameterAddress)
+        Next
+        ' now transpose the parameters and replace them instead of the placeholders into the result...
+        For cellCount As Integer = 1 To maxCellCount
+            Dim rowSQL As String = paramString
+            Dim parameterAddresses As String = ""
+            Dim rowFilled As Boolean = False
+            For paramCount As Integer = 1 To refCount
+                If parameterList(paramCount - 1).Item(cellCount - 1) <> "NULL" Then rowFilled = True
+                rowSQL = rowSQL.Replace(IIf(paramEnclosing = "", "!", paramEnclosing) + paramCount.ToString() + IIf(paramEnclosing = "", "!", paramEnclosing), parameterList(paramCount - 1).Item(cellCount - 1))
+                parameterAddresses += parameterAddressList(paramCount - 1).Item(cellCount - 1) + ","
+            Next
+            ' leave early if needed
+            If Not continueIfRowEmpty And Not rowFilled Then Exit Function
+            Try
+                executeTemplateSQL += executeSQL(rowSQL)
+            Catch ex As Exception
+                Throw New Exception(ex.Message + " occurred in " + parameterAddresses + vbCrLf + rowSQL)
+            End Try
+        Next
+    End Function
+
     ''' <summary>set the fields in the DB Modifier Create Dialog with attributes of object</summary>
     ''' <param name="theDBModifCreateDlg"></param>
     Public Overrides Sub setDBModifCreateFields(ByRef theDBModifCreateDlg As DBModifCreate)
@@ -1253,6 +1376,12 @@ Public Class DBAction : Inherits DBModif
             .Database.Text = database
             .execOnSave.Checked = execOnSave
             .AskForExecute.Checked = askBeforeExecute
+            .parametrized.Checked = parametrized
+            .continueIfRowEmpty.Checked = continueIfRowEmpty
+            .paramEnclosing.Text = paramEnclosing
+            .paramRangesStr.Text = paramRangesStr
+            .convertAsDate.Text = convertAsDate
+            .convertAsString.Text = convertAsString
         End With
     End Sub
 End Class
@@ -1570,6 +1699,39 @@ Public Module DBModifs
                 .AutoIncFlag.Hide()
                 .IgnoreDataErrors.Hide()
             End If
+            If createdDBModifType = "DBAction" Then
+                .paramRangesStr.Top = .Tablename.Top
+                .TablenameLabel.Show()
+                .TablenameLabel.Text = "Parameter Range Names:"
+                .paramRangesStr.Left = .Tablename.Left
+                .paramEnclosing.Top = .PrimaryKeys.Top
+                .PrimaryKeysLabel.Show()
+                .PrimaryKeysLabel.Text = "Parameter enclosing char:"
+                .paramEnclosing.Left = .PrimaryKeys.Left
+                .convertAsDate.Top = .IgnoreColumns.Top
+                .IgnoreColumnsLabel.Text = "Cols num params date:"
+                .IgnoreColumnsLabel.Show()
+                .convertAsDate.Left = .IgnoreColumns.Left
+                .convertAsString.Top = .addStoredProc.Top
+                .AdditionalStoredProcLabel.Show()
+                .AdditionalStoredProcLabel.Text = "Cols num params string:"
+                .convertAsString.Left = .addStoredProc.Left
+                .parametrized.Top = .CUDflags.Top
+                .parametrized.Left = .CUDflags.Left
+                .continueIfRowEmpty.Top = .IgnoreDataErrors.Top
+                .continueIfRowEmpty.Left = .IgnoreDataErrors.Left
+            Else
+                .TablenameLabel.Text = "Tablename:"
+                .PrimaryKeysLabel.Text = "Primary keys count:"
+                .IgnoreColumnsLabel.Text = "Ignore columns:"
+                .AdditionalStoredProcLabel.Text = "Additional stored procedure:"
+                .parametrized.Hide()
+                .paramRangesStr.Hide()
+                .paramEnclosing.Hide()
+                .convertAsDate.Hide()
+                .convertAsString.Hide()
+                .continueIfRowEmpty.Hide()
+            End If
             If createdDBModifType = "DBSeqnce" Then
                 theDBModifCreateDlg.FormBorderStyle = FormBorderStyle.Sizable
                 ' hide controls irrelevant for DBSeqnce
@@ -1631,22 +1793,16 @@ Public Module DBModifs
                 .DBSeqenceDataGrid.Columns(0).Width = 400
             Else
                 theDBModifCreateDlg.FormBorderStyle = FormBorderStyle.FixedDialog
-                If createdDBModifType = "DBAction" Then
-                    theDBModifCreateDlg.MinimumSize = New Drawing.Size(width:=490, height:=160)
-                    theDBModifCreateDlg.Size = New Drawing.Size(width:=490, height:=160)
-                    .execOnSave.Top = .Tablename.Top
-                    .AskForExecute.Top = .Tablename.Top
-                    .envSel.Top = .Tablename.Top
-                Else
-                    theDBModifCreateDlg.MinimumSize = New Drawing.Size(width:=490, height:=290)
-                    theDBModifCreateDlg.Size = New Drawing.Size(width:=490, height:=290)
-                End If
+                theDBModifCreateDlg.MinimumSize = New Drawing.Size(width:=490, height:=290)
+                theDBModifCreateDlg.Size = New Drawing.Size(width:=490, height:=290)
                 ' hide controls irrelevant for DBMapper and DBAction
                 .DBSeqenceDataGrid.Hide()
             End If
 
             ' delegate filling of dialog fields to created DBModif object
             If existingDBModif IsNot Nothing Then existingDBModif.setDBModifCreateFields(theDBModifCreateDlg)
+            ' reflect parametrized settings of DBAction in GUI
+            theDBModifCreateDlg.setDBActionParametrizedGUI()
 
             ' display dialog for parameters
             If theDBModifCreateDlg.ShowDialog() = DialogResult.Cancel Then Exit Sub
@@ -1722,9 +1878,15 @@ Public Module DBModifs
             ElseIf createdDBModifType = "DBAction" Then
                 dbModifNode.AppendChildNode("env", NamespaceURI:="DBModifDef", NodeValue:=(.envSel.SelectedIndex + 1).ToString())
                 dbModifNode.AppendChildNode("database", NamespaceURI:="DBModifDef", NodeValue:= .Database.Text)
+                dbModifNode.AppendChildNode("parametrized", NamespaceURI:="DBModifDef", NodeValue:= .parametrized.Checked.ToString())
+                dbModifNode.AppendChildNode("continueIfRowEmpty", NamespaceURI:="DBModifDef", NodeValue:= .continueIfRowEmpty.Checked.ToString())
+                If .paramRangesStr.Text <> "" Then dbModifNode.AppendChildNode("paramRangesStr", NamespaceURI:="DBModifDef", NodeValue:= .paramRangesStr.Text)
+                If .paramEnclosing.Text <> "" Then dbModifNode.AppendChildNode("paramEnclosing", NamespaceURI:="DBModifDef", NodeValue:= .paramEnclosing.Text)
+                If .convertAsDate.Text <> "" Then dbModifNode.AppendChildNode("convertAsDate", NamespaceURI:="DBModifDef", NodeValue:= .convertAsDate.Text)
+                If .convertAsString.Text <> "" Then dbModifNode.AppendChildNode("convertAsString", NamespaceURI:="DBModifDef", NodeValue:= .convertAsString.Text)
             ElseIf createdDBModifType = "DBSeqnce" Then
-                ' "repaired" mode (indicating rewriting DBSequence Steps)
-                If .Tag = "repaired" Then
+                    ' "repaired" mode (indicating rewriting DBSequence Steps)
+                    If .Tag = "repaired" Then
                     Dim repairedSequence() As String = Split(.RepairDBSeqnce.Text, vbCrLf)
                     For i As Integer = 0 To UBound(repairedSequence)
                         dbModifNode.AppendChildNode("seqStep", NamespaceURI:="DBModifDef", NodeValue:=repairedSequence(i))
@@ -1891,6 +2053,7 @@ EndOuterLoop:
 
     ''' <summary>To check for errors in passed range obj, makes use of the fact that Range.Value never passes Integer Values back except for Errors</summary>
     ''' <param name="rangeval">Range.Value to be checked for errors</param>
+    ''' <remarks>https://xldennis.wordpress.com/2006/11/22/dealing-with-cverr-values-in-net-%E2%80%93-part-i-the-problem/ and https://xldennis.wordpress.com/2006/11/29/dealing-with-cverr-values-in-net-part-ii-solutions/</remarks>
     ''' <returns>true if error</returns>
     Public Function IsXLCVErr(rangeval As Object) As Boolean
         Return TypeOf (rangeval) Is Int32
@@ -1902,6 +2065,7 @@ EndOuterLoop:
     Public Function CVErrText(whichError As Integer) As String
         Select Case whichError
             Case -2146826281 : Return "#Div0!"
+            Case -2146826245 : Return "#GettingData"
             Case -2146826246 : Return "#N/A"
             Case -2146826259 : Return "#Name"
             Case -2146826288 : Return "#Null!"

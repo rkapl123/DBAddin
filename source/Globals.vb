@@ -628,4 +628,59 @@ Last:
         Return tempBool
     End Function
 
+    ''' <summary>takes an OADate and formats it as a DB Compliant string, using formatting as formatting instruction</summary>
+    ''' <param name="datVal">OADate (double) date parameter</param>
+    ''' <param name="formatting">formatting flag (see DBDate for details)</param>
+    ''' <returns>formatted Date string</returns>
+    Public Function formatDBDate(datVal As Double, formatting As Integer) As String
+        formatDBDate = ""
+        If Int(datVal) = datVal Then
+            If formatting = 0 Then
+                formatDBDate = "'" + Format(Date.FromOADate(datVal), "yyyyMMdd") + "'"
+            ElseIf formatting = 1 Then
+                formatDBDate = "DATE '" + Format(Date.FromOADate(datVal), "yyyy-MM-dd") + "'"
+            ElseIf formatting = 2 Then
+                formatDBDate = "{d '" + Format(Date.FromOADate(datVal), "yyyy-MM-dd") + "'}"
+            ElseIf formatting = 3 Then
+                formatDBDate = "#" + Format(Date.FromOADate(datVal), "yyyy-MM-dd") + "#"
+            End If
+        ElseIf CInt(datVal) > 1 Then
+            If formatting = 0 Then
+                formatDBDate = "'" + Format(Date.FromOADate(datVal), "yyyyMMdd HH:mm:ss") + "'"
+            ElseIf formatting = 1 Then
+                formatDBDate = "timestamp '" + Format(Date.FromOADate(datVal), "yyyy-MM-dd HH:mm:ss") + "'"
+            ElseIf formatting = 2 Then
+                formatDBDate = "{ts '" + Format(Date.FromOADate(datVal), "yyyy-MM-dd HH:mm:ss") + "'}"
+            ElseIf formatting = 3 Then
+                formatDBDate = "#" + Format(Date.FromOADate(datVal), "yyyy-MM-dd HH:mm:ss") + "#"
+            ElseIf formatting = 10 Then
+                formatDBDate = "'" + Format(Date.FromOADate(datVal), "yyyyMMdd HH:mm:ss.fff") + "'"
+            ElseIf formatting = 11 Then
+                formatDBDate = "timestamp '" + Format(Date.FromOADate(datVal), "yyyy-MM-dd HH:mm:ss.fff") + "'"
+            ElseIf formatting = 12 Then
+                formatDBDate = "{ts '" + Format(Date.FromOADate(datVal), "yyyy-MM-dd HH:mm:ss.fff") + "'}"
+            ElseIf formatting = 13 Then
+                formatDBDate = "#" + Format(Date.FromOADate(datVal), "yyyy-MM-dd HH:mm:ss.fff") + "#"
+            End If
+        Else
+            If formatting = 0 Then
+                formatDBDate = "'" + Format(Date.FromOADate(datVal), "HH:mm:ss") + "'"
+            ElseIf formatting = 1 Then
+                formatDBDate = "time '" + Format(Date.FromOADate(datVal), "HH:mm:ss") + "'"
+            ElseIf formatting = 2 Then
+                formatDBDate = "{t '" + Format(Date.FromOADate(datVal), "HH:mm:ss") + "'}"
+            ElseIf formatting = 3 Then
+                formatDBDate = "#" + Format(Date.FromOADate(datVal), "HH:mm:ss") + "#"
+            ElseIf formatting = 10 Then
+                formatDBDate = "'" + Format(Date.FromOADate(datVal), "HH:mm:ss.fff") + "'"
+            ElseIf formatting = 11 Then
+                formatDBDate = "time '" + Format(Date.FromOADate(datVal), "HH:mm:ss.fff") + "'"
+            ElseIf formatting = 12 Then
+                formatDBDate = "{t '" + Format(Date.FromOADate(datVal), "HH:mm:ss.fff") + "'}"
+            ElseIf formatting = 13 Then
+                formatDBDate = "#" + Format(Date.FromOADate(datVal), "HH:mm:ss.fff") + "#"
+            End If
+        End If
+    End Function
+
 End Module

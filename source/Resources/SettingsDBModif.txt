@@ -2,6 +2,9 @@ askBeforeExecute
 AutoIncFlag
 avoidFill
 confirmText
+continueIfRowEmpty
+convertAsDate
+convertAsString
 database
 CUDFlags
 env
@@ -11,11 +14,13 @@ database
 ignoreColumns
 IgnoreDataErrors
 insertIfMissing
+parametrized
+paramEnclosing
+paramRangesStr
 primKeysStr
 preventColResize
 seqStep
 tableName
-
 									
 									
 									

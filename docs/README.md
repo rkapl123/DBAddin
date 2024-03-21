@@ -242,5 +242,5 @@ Following topics are still to be done:
 * 02/11/2007: Changed implementation to VB 6.0 and made this available at [sourceforge](https://sourceforge.net/projects/dbaddin/)
 * 01/04/2019 - 24/11/2020: Changed implementation to ExcelDNA based and moved to Github.
 
-### livedoc generated API documentation
-[DBFuncs API documentation](devdoc/index.htm).
+### API documentation
+[DBAddin API documentation generated with livedoc](devdoc/index.htm).
