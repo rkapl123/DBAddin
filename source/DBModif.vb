@@ -2,6 +2,7 @@ Imports ExcelDna.Integration
 Imports Microsoft.Office.Interop
 Imports System.Windows.Forms
 Imports System.Collections.Generic
+Imports System.Runtime.InteropServices
 Imports Microsoft.Office.Core
 Imports System.Collections
 Imports System.Data
@@ -37,6 +38,10 @@ Public MustInherit Class DBModif
         execOnSave = Convert.ToBoolean(getParamFromXML(definitionXML, "execOnSave", "Boolean"))
         askBeforeExecute = Convert.ToBoolean(getParamFromXML(definitionXML, "askBeforeExecute", "Boolean"))
         confirmText = getParamFromXML(definitionXML, "confirmText")
+    End Sub
+    Protected Overrides Sub Finalize()
+        MyBase.Finalize()
+        If Not IsNothing(TargetRange) Then Marshal.ReleaseComObject(TargetRange)
     End Sub
 
     ''' <summary>asks user the confirmation question, in case it is required by the DB Modifier</summary>
@@ -1207,14 +1212,15 @@ Public Class DBAction : Inherits DBModif
             env = getParamFromXML(definitionXML, "env")
             database = getParamFromXML(definitionXML, "database")
             If database = "" Then Throw New Exception("No database given in DBAction definition!")
-            ' AFTER setting TargetRange and all the rest check for defined action to have a decent getTargetRangeAddress for undefined actions...
-            If paramTarget.Cells(1, 1).Text = "" Then Throw New Exception("No Action defined in " + paramTargetName + "(" + getTargetRangeAddress() + ")")
             parametrized = Convert.ToBoolean(getParamFromXML(definitionXML, "parametrized", "Boolean"))
             paramEnclosing = getParamFromXML(definitionXML, "paramEnclosing")
             convertAsString = getParamFromXML(definitionXML, "convertAsString")
             convertAsDate = getParamFromXML(definitionXML, "convertAsDate")
             continueIfRowEmpty = Convert.ToBoolean(getParamFromXML(definitionXML, "continueIfRowEmpty", "Boolean"))
             paramRangesStr = getParamFromXML(definitionXML, "paramRangesStr")
+            ' AFTER setting TargetRange and all the rest check for defined action to have a decent getTargetRangeAddress for undefined actions
+            ' this has to come last as it throws an error, thus skipping the rest of the parameters...
+            If paramTarget.Cells(1, 1).Text = "" Then Throw New Exception("No Action defined in " + paramTargetName + "(" + getTargetRangeAddress() + ")")
         Catch ex As Exception
             UserMsg("Error when creating DB Action '" + dbmodifName + "': " + ex.Message, "DBModifier Definitions Error")
         End Try
@@ -1246,7 +1252,7 @@ Public Class DBAction : Inherits DBModif
             End If
         Catch ex As Exception
             hadError = True
-            UserMsg("Error in executing DB Action " + paramTargetName + ": " + ex.Message, "DBAction Error")
+            UserMsg("Error in executing DB Action " + paramTargetName + ":" + vbCrLf + ex.Message, "DBAction Error")
             ExcelDnaUtil.Application.StatusBar = False
             Exit Sub
         End Try
@@ -1276,49 +1282,34 @@ Public Class DBAction : Inherits DBModif
     ''' <param name="paramString">SQL template string, the parameter placeholders are identified with !1!, !2!, ... (assuming ! is the default paramEnclosing)</param>
     Private Function executeTemplateSQL(paramString As String) As Integer
         executeTemplateSQL = 0
-        Dim paramRanges As List(Of Excel.Range) = New List(Of Excel.Range)
-        Dim actWbNames As Excel.Names
-        Try : actWbNames = ExcelDnaUtil.Application.ActiveWorkbook.Names : Catch ex As Exception
-            Throw New Exception("Exception when trying to get the active workbook names for executeTemplateSQL: " + ex.Message + ", this might be either due to errors in the VBA-IDE (missing references) or due to opening this workbook from an MS-Office hyperlink, starting up Excel (timing issue). Switch to another workbook and back to fix.")
-            Exit Function
-        End Try
-        If paramRangesStr = "" Then
-            Throw New Exception("No parameter range(s) given")
-            Exit Function
-        End If
+
+        ' first get parameter ranges and assign them into the paramRanges list
+        Dim paramRanges As New List(Of Excel.Range)
+        If paramRangesStr = "" Then Throw New Exception("No parameter range(s) given")
         For Each paramRange As String In Split(paramRangesStr, ",")
-            If Not existsName(paramRange) Then
-                Throw New Exception("Name '" + paramRange + "' doesn't exist as a workbook name or is not in current worksheet (you need to qualify names from other worksheets with sheet_name!range_name).")
-                Exit Function
-            End If
-            Try
-                paramRanges.Add(actWbNames.Item(paramRange).RefersToRange)
-            Catch ex As Exception
-                Throw New Exception("Couldn't get range from name '" + paramRange + "', exception: " + ex.Message)
-                Exit Function
-            End Try
+            paramRanges.Add(checkAndReturnRange(paramRange))
         Next
+
+        ' then walk through the parameter ranges and convert the values, putting each set of parameters from one range into parameters which are accumulated in paramtersList
+        ' parameterAddress/parameterAddressList is used for better error handling messages later on.
         Dim refCount As Integer = 0
         Dim convAsString() As String = Split(convertAsString, ",")
         Dim convAsDate() As String = Split(convertAsDate, ",")
-        Dim parameterList As List(Of List(Of String)) = New List(Of List(Of String))
-        Dim parameterAddressList As List(Of List(Of String)) = New List(Of List(Of String))
+        Dim parameterList As New List(Of List(Of String))
+        Dim parameterAddressList As New List(Of List(Of String))
         Dim maxCellCount As Integer = 0
-        ' assumption: all references in paramRanges are multi-cell ranges (otherwise error is thrown)
         For Each paramRange As Excel.Range In paramRanges
-            Dim parameters As List(Of String) = New List(Of String)
-            Dim parameterAddress As List(Of String) = New List(Of String)
+            Dim parameters As New List(Of String)
+            Dim parameterAddress As New List(Of String)
             refCount += 1
             Dim stringConversion As Boolean = convAsString.Contains(refCount.ToString())
             Dim dateConversion As Boolean = convAsDate.Contains(refCount.ToString())
-            If stringConversion And dateConversion Then
-                Throw New Exception("Both string and date conversion set for parameter range " + refCount.ToString() + ": convertAsString: " + convertAsString + ",convertAsDate: " + convertAsDate)
-            End If
+            If stringConversion And dateConversion Then Throw New Exception("Both string and date conversion set for parameter range " + refCount.ToString() + ": convertAsString: " + convertAsString + ",convertAsDate: " + convertAsDate)
             Dim cellCount = 0
             ' walk through all cells of the parameter range, converting cell values and storing for later transposing
             For Each paramCell As Excel.Range In paramRange
                 Try
-                    If paramCell.Value = Nothing Or IsXLCVErr(paramCell.Value) Then
+                    If IsNothing(paramCell.Value) Or IsXLCVErr(paramCell.Value) Then
                         parameters.Add("NULL")
                     ElseIf IsNumeric(paramCell.Value) Then
                         If stringConversion Then
@@ -1347,7 +1338,8 @@ Public Class DBAction : Inherits DBModif
             parameterList.Add(parameters)
             parameterAddressList.Add(parameterAddress)
         Next
-        ' now transpose the parameters and replace them instead of the placeholders into the result...
+
+        ' finally transpose the parameters and replace the placeholders with their values into the final rowSQL before executing each rowSQL ...
         For cellCount As Integer = 1 To maxCellCount
             Dim rowSQL As String = paramString
             Dim parameterAddresses As String = ""
@@ -1682,6 +1674,7 @@ Public Module DBModifs
             .envSel.DataSource = environdefs
             .envSel.SelectedIndex = -1
             .DBModifName.Text = Replace(existingDefName, createdDBModifType, "")
+            .DBModifName.Tag = existingDefName
             .RepairDBSeqnce.Hide()
             .NameLabel.Text = IIf(createdDBModifType = "DBSeqnce", "DBSequence", createdDBModifType) + " Name:"
             .Text = "Edit " + IIf(createdDBModifType = "DBSeqnce", "DBSequence", createdDBModifType) + " definition"
@@ -1807,7 +1800,7 @@ Public Module DBModifs
             ' display dialog for parameters
             If theDBModifCreateDlg.ShowDialog() = DialogResult.Cancel Then Exit Sub
 
-            ' only for DBMapper or DBAction: change or add target range name
+            ' only for DBMapper or DBAction: change or add target range name, for DBAction check template placeholders
             If createdDBModifType <> "DBSeqnce" Then
                 Dim targetRange As Excel.Range
                 If existingDBModif Is Nothing Then
@@ -1817,12 +1810,6 @@ Public Module DBModifs
                 End If
 
                 If existingDefName = "" Then
-                    Dim checkExists As Excel.Name = Nothing
-                    Try : checkExists = actWbNames.Item(createdDBModifType + .DBModifName.Text) : Catch ex As Exception : End Try
-                    If Not IsNothing(checkExists) Then
-                        UserMsg("DBModifier range name '" + createdDBModifType + .DBModifName.Text + "' already exists!", "DBModifier Creation Error")
-                        Exit Sub
-                    End If
                     Try
                         actWbNames.Add(Name:=createdDBModifType + .DBModifName.Text, RefersTo:=targetRange)
                     Catch ex As Exception
@@ -1833,6 +1820,26 @@ Public Module DBModifs
                     ' rename named range...
                     actWbNames.Item(existingDefName).Name = createdDBModifType + .DBModifName.Text
                 End If
+
+                ' cross check with template parameter placeholders
+                If createdDBModifType = "DBAction" And theDBModifCreateDlg.paramRangesStr.Text <> "" Then
+                    Dim templateSQL As String = ""
+                    For Each aCell As Excel.Range In targetRange
+                        templateSQL += aCell.Value
+                    Next
+                    Dim paramEnclosing As String = IIf(theDBModifCreateDlg.paramEnclosing.Text = "", "!", theDBModifCreateDlg.paramEnclosing.Text)
+                    Dim paramNum As Integer = 0
+                    For Each paramRange In Split(theDBModifCreateDlg.paramRangesStr.Text, ",")
+                        paramNum += 1 : Dim placeHolder As String = paramEnclosing + paramNum.ToString() + paramEnclosing
+                        If InStr(templateSQL, placeHolder) = 0 Then
+                            UserMsg("Didn't find a corresponding placeholder (" + placeHolder + ") in DBAction template SQL for parameter " + paramNum.ToString() + ", this might be an error!", "DBAction Validation", MsgBoxStyle.Exclamation)
+                        End If
+                        templateSQL = templateSQL.Replace(placeHolder, "match" + paramNum.ToString())
+                    Next
+                    If templateSQL Like "*" + paramEnclosing + "*" + paramEnclosing + "*" Then
+                        UserMsg("found placeholders (" + paramEnclosing + "*" + paramEnclosing + ") not covered by parameters in DBAction template SQL (" + templateSQL + "), this might be an error!", "DBAction Validation", MsgBoxStyle.Exclamation)
+                    End If
+                End If
             End If
 
             Dim CustomXmlParts As Object = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
@@ -1840,14 +1847,6 @@ Public Module DBModifs
                 ' in case no CustomXmlPart in Namespace DBModifDef exists in the workbook, add one
                 ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.Add("<root xmlns=""DBModifDef""></root>")
                 CustomXmlParts = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
-            End If
-
-            ' warning shown, if a new created definition already exists with the same name!
-            If existingDefName = "" And Not IsNothing(CustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:" + createdDBModifType + "[@Name='" + .DBModifName.Text + "']")) Then
-                If QuestionMsg("There is already a " + createdDBModifType + " definition named '" + .DBModifName.Text + "' in the DBModif Definitions of the current workbook, this will cause error messages ! Discard entered definition?",, "DBModifier Creation Error") = MsgBoxResult.Ok Then
-                    actWbNames.Item(createdDBModifType + .DBModifName.Text).Delete()
-                    Exit Sub
-                End If
             End If
 
             ' remove old node in case of renaming DBModifier
@@ -1885,8 +1884,8 @@ Public Module DBModifs
                 If .convertAsDate.Text <> "" Then dbModifNode.AppendChildNode("convertAsDate", NamespaceURI:="DBModifDef", NodeValue:= .convertAsDate.Text)
                 If .convertAsString.Text <> "" Then dbModifNode.AppendChildNode("convertAsString", NamespaceURI:="DBModifDef", NodeValue:= .convertAsString.Text)
             ElseIf createdDBModifType = "DBSeqnce" Then
-                    ' "repaired" mode (indicating rewriting DBSequence Steps)
-                    If .Tag = "repaired" Then
+                ' "repaired" mode (indicating rewriting DBSequence Steps)
+                If .Tag = "repaired" Then
                     Dim repairedSequence() As String = Split(.RepairDBSeqnce.Text, vbCrLf)
                     For i As Integer = 0 To UBound(repairedSequence)
                         dbModifNode.AppendChildNode("seqStep", NamespaceURI:="DBModifDef", NodeValue:=repairedSequence(i))
@@ -1908,6 +1907,47 @@ Public Module DBModifs
 
         End With
     End Sub
+
+    ''' <summary>check one param range input (name) and return the range if successful</summary>
+    ''' <param name="paramRange">name of parameter range</param>
+    ''' <returns></returns>
+    Public Function checkAndReturnRange(paramRange As String) As Excel.Range
+        Dim actWbNames As Excel.Names
+        Try : actWbNames = ExcelDnaUtil.Application.ActiveWorkbook.Names : Catch ex As Exception
+            Throw New Exception("Exception when trying to get the active workbook names for executeTemplateSQL: " + ex.Message + ", this might be either due to errors in the VBA-IDE (missing references) or due to opening this workbook from an MS-Office hyperlink, starting up Excel (timing issue). Switch to another workbook and back to fix.")
+        End Try
+        ' either get the range from a workbook based name or current sheet name (no ! in name)
+        If InStr(paramRange, "!") = 0 Then
+            If Not existsName(paramRange) Then
+                Throw New Exception("Name '" + paramRange + "' doesn't exist as a workbook name (you need to qualify names defined in worksheets with sheet_name!range_name).")
+            Else
+                checkAndReturnRange = actWbNames.Item(paramRange).RefersToRange
+            End If
+        Else
+            ' .. or from a worksheet based name from a sheet
+            Dim wsNameParts() As String = Split(paramRange, "!")
+            Dim sheetName As String = wsNameParts(0).Replace("'", "")
+            Dim nameSheet = ExcelDnaUtil.Application.ActiveWorkbook.Worksheets(sheetName)
+            If existsSheet(sheetName, ExcelDnaUtil.Application.ActiveWorkbook) Then
+                If nameSheet Is ExcelDnaUtil.Application.ActiveSheet Then
+                    ' different access to names from current sheet, these are in actWbNames with full qualification
+                    If existsName(paramRange) Then
+                        checkAndReturnRange = actWbNames.Item(paramRange).RefersToRange
+                    Else
+                        Throw New Exception("Name '" + paramRange + "' is not defined in current worksheet")
+                    End If
+                Else
+                    If existsNameInSheet(wsNameParts(1), nameSheet) Then
+                        checkAndReturnRange = getRangeFromNameInSheet(wsNameParts(1), nameSheet)
+                    Else
+                        Throw New Exception("Name '" + paramRange + "' is not defined in worksheet '" + sheetName + "'")
+                    End If
+                End If
+            Else
+                Throw New Exception("Sheet '" + sheetName + "' referred to in '" + paramRange + "' does not exist in active workbook")
+            End If
+        End If
+    End Function
 
     ''' <summary>gets defined names for DBModifier (DBMapper/DBAction/DBSeqnce) invocation in the current workbook and updates Ribbon with it</summary>
     Public Sub getDBModifDefinitions(Optional onlyCheck As Boolean = False)

@@ -36,17 +36,17 @@ Public Class DBModifCreate
         Dim primKeys As Integer = 0
         ' besides valid range name, also check for requirements: 
         ' mandatory fields filled (visible Table-name, Primary keys And Database), NameValidation above OK, no Double invocation for execOnSave in DB Sequences And sequence parts and only one primary key for AutoInc Flag
-        ' Beware: All If/ElseIf branches have to contain an validation error message, because the dialog stays open in this case. Only the Else branch closes the dialog.
+        ' Beware: All If/ElseIf branches have to contain a validation error message, because the dialog stays open in this case. Only the Else branch closes the dialog.
         If NameValidationResult <> "" Then
-            UserMsg("Invalid DBModifier name '" + Me.DBModifName.Text + "', Error: " + NameValidationResult, "DBModification Validation Error")
+            UserMsg("Invalid DBModifier name '" + Me.DBModifName.Text + "', Error: " + NameValidationResult, Me.Tag + " Validation")
         ElseIf Me.Tablename.Text = "" And Me.Tablename.Visible Then
-            UserMsg("Field Table-name is required, please fill in!", "DBModification Validation Error")
+            UserMsg("Field Table-name is required, please fill in!", Me.Tag + " Validation")
         ElseIf Me.PrimaryKeys.Visible AndAlso Not Integer.TryParse(Me.PrimaryKeys.Text, primKeys) Then
-            UserMsg("Field Primary Keys is required and has to be an integer number, please fill in accordingly!", "DBModification Validation  Error")
+            UserMsg("Field Primary Keys is required and has to be an integer number, please fill in accordingly!", Me.Tag + " Validation")
         ElseIf Me.Database.Text = "" And Me.Database.Visible Then
-            UserMsg("Field Database is required, please fill in!", "DBModification Validation Error")
+            UserMsg("Field Database is required, please fill in!", Me.Tag + " Validation")
         ElseIf Me.Tag = "DBMapper" AndAlso Me.AutoIncFlag.Checked AndAlso primKeys > 1 Then
-            UserMsg("Only one primary key is allowed when Auto Incrementing is enabled!", "DBModification Validation Error")
+            UserMsg("Only one primary key is allowed when Auto Incrementing is enabled!", Me.Tag + " Validation")
         Else
             ' check for double invocation because of execOnSave both being set on current DB Modifier ...
             If Me.execOnSave.Checked And DBModifDefColl.ContainsKey("DBSeqnce") Then
@@ -63,7 +63,7 @@ Public Class DBModifCreate
                                     Dim DBModifTargetAddress As String = "(Target Address could not be found...)"
                                     If DBModifDefColl(definition(0)).ContainsKey(definition(1)) Then DBModifTargetAddress = DBModifDefColl(definition(0)).Item(definition(1)).getTargetRangeAddress()
                                     Dim foundDBModifName As String = IIf(DBModifierCheck.getName = "DBSeqnce", "Unnamed DBSequence", DBModifierCheck.getName)
-                                    UserMsg(Me.Tag + Me.DBModifName.Text + " in " + DBModifTargetAddress + " will be executed twice on saving, because it is part of '" + foundDBModifName + "', which is also executed on saving." + vbCrLf + IIf(Me.execOnSave.Checked, "Disabling 'Execute on save' now, you ", "You") + " can re-enable after disabling it on '" + foundDBModifName + "'", "DBModification Validation")
+                                    UserMsg(Me.Tag + Me.DBModifName.Text + " in " + DBModifTargetAddress + " will be executed twice on saving, because it is part of '" + foundDBModifName + "', which is also executed on saving." + vbCrLf + IIf(Me.execOnSave.Checked, "Disabling 'Execute on save' now, you ", "You") + " can re-enable after disabling it on '" + foundDBModifName + "'", Me.Tag + " Validation")
                                     Me.execOnSave.Checked = False
                                 End If
                             Next
@@ -76,13 +76,14 @@ Public Class DBModifCreate
                         If (definition(0) = "DBAction" Or definition(0) = "DBMapper") AndAlso DBModifDefColl(definition(0)).ContainsKey(definition(1)) AndAlso DBModifDefColl(definition(0)).Item(definition(1)).execOnSave Then
                             Dim foundDBModifName As String = IIf(definition(1) = "", "Unnamed " + definition(0), definition(1))
                             Dim DBModifTargetAddress As String = DBModifDefColl(definition(0)).Item(definition(1)).getTargetRangeAddress()
-                            UserMsg(foundDBModifName + " in " + DBModifTargetAddress + " will be executed twice on saving, because it is part of this DBSequence, which is also executed on saving." + vbCrLf + IIf(Me.execOnSave.Checked, "Disabling 'Execute on save' now, you ", "You") + " can re-enable after disabling it on '" + foundDBModifName + "'", "DBModification Validation")
+                            UserMsg(foundDBModifName + " in " + DBModifTargetAddress + " will be executed twice on saving, because it is part of this DBSequence, which is also executed on saving." + vbCrLf + IIf(Me.execOnSave.Checked, "Disabling 'Execute on save' now, you ", "You") + " can re-enable after disabling it on '" + foundDBModifName + "'", Me.Tag + " Validation")
                             Me.execOnSave.Checked = False
                         End If
                     Next
                     If Not Me.execOnSave.Checked Then Exit Sub
                 End If
             End If
+            ' checks for DBSequences if refresh is done inside of transaction brackets (would lead to deadlocks)
             If Me.Tag = "DBSeqnce" Then
                 Dim TransactionOpened As Boolean = False
                 For i As Integer = 0 To Me.DBSeqenceDataGrid.Rows().Count - 2
@@ -93,9 +94,38 @@ Public Class DBModifCreate
                         TransactionOpened = False
                     End If
                     If (TransactionOpened And Strings.Left(definition(0), 7) = "Refresh") Then
-                        UserMsg("You placed a " + definition(0) + " inside of a transaction, this might lead to deadlocks as DB functions use a different connection than DB Modifiers." + vbCrLf + "If the DB function done in the refresh doesn't query any data being modified inside the transaction, you may ignore this warning.", "DBModification Validation", MsgBoxStyle.Exclamation)
+                        UserMsg("You placed a " + definition(0) + " inside of a transaction, this might lead to deadlocks as DB functions use a different connection than DB Modifiers." + vbCrLf + "If the DB function done in the refresh doesn't query any data being modified inside the transaction, you may ignore this warning.", "DBSeqnce Validation", MsgBoxStyle.Exclamation)
                     End If
                 Next
+            End If
+            ' validate parameter ranges for DBAction
+            If Me.Tag = "DBAction" And Me.paramRangesStr.Text <> "" Then
+                For Each paramRange In Split(Me.paramRangesStr.Text, ",")
+                    Try
+                        checkAndReturnRange(paramRange)
+                    Catch ex As Exception
+                        UserMsg(ex.Message, "DBAction Validation")
+                        Exit Sub
+                    End Try
+                Next
+            End If
+            ' check if a new created definition already exists with the same name
+            Dim CustomXmlParts As Object = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
+            If Me.DBModifName.Tag = "" Then
+                ' either in the DBModifier definitions (CustomXML) ..
+                If CustomXmlParts.Count > 0 AndAlso Not IsNothing(CustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:" + Me.Tag + "[@Name='" + Me.DBModifName.Text + "']")) Then
+                    UserMsg("There is already a " + Me.Tag + " definition named '" + Me.DBModifName.Text + "' in the DBModif Definitions of the current workbook", Me.Tag + "Validation")
+                    Exit Sub
+                End If
+                ' or as a name (DBMapper/DBAction)
+                Dim checkExists As Excel.Name = Nothing
+                Dim actWbNames As Excel.Names = Nothing
+                Try : actWbNames = ExcelDnaUtil.Application.ActiveWorkbook.Names : Catch ex As Exception : End Try
+                Try : checkExists = actWbNames.Item(Me.Tag + Me.DBModifName.Text) : Catch ex As Exception : End Try
+                If Not IsNothing(checkExists) And Me.Tag <> "DBSeqnce" Then
+                    UserMsg("DBModifier range name '" + Me.Tag + Me.DBModifName.Text + "' already exists!", Me.Tag + "Validation")
+                    Exit Sub
+                End If
             End If
             Me.DialogResult = DialogResult.OK
             Me.Close()
@@ -166,6 +196,7 @@ Public Class DBModifCreate
     Private selRowIndex As Integer
     Private selColIndex As Integer
 
+
     ''' <summary>prepare context menus to be displayed after right mouse click</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
@@ -177,10 +208,30 @@ Public Class DBModifCreate
         End If
     End Sub
 
+
     ''' <summary>Shown Event to display Data Errors when adding DBSequence Grid elements</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub DBModifCreate_Shown(sender As Object, e As EventArgs) Handles Me.Shown
+        If Me.Tag = "DBAction" Then
+            ' add all visible names to context menu on paramRangesStr text box, first workbook level names
+            Dim submenu As ToolStripMenuItem = New ToolStripMenuItem
+            submenu.Text = ExcelDnaUtil.Application.ActiveWorkbook.Name
+            For Each aName As Excel.Name In ExcelDnaUtil.Application.ActiveWorkbook.Names()
+                If aName.Visible And InStr(aName.Name, "!") = 0 Then submenu.DropDownItems.Add(aName.Name, Nothing, AddressOf paramRangesContextMenuHandler)
+            Next
+            If submenu.DropDownItems.Count > 0 Then paramRangeMenu.Items.Add(submenu)
+            ' then for each worksheet the worksheet level names
+            For Each ws As Excel.Worksheet In ExcelDnaUtil.Application.ActiveWorkbook.Worksheets()
+                submenu = New ToolStripMenuItem
+                submenu.Text = ws.Name
+                For Each aName As Excel.Name In ws.Names()
+                    If aName.Visible Then submenu.DropDownItems.Add(aName.Name, Nothing, AddressOf paramRangesContextMenuHandler)
+                Next
+                If submenu.DropDownItems.Count > 0 Then paramRangeMenu.Items.Add(submenu)
+            Next
+        End If
+
         ' on creating the form and DBSequenceDataGrid in DBModif.createDBModif, Data Errors produced when filling DBSeqenceDataGrid are caught by 
         ' DBModifCreate.DBSeqenceDataGrid_DataError event procedure and stored in DBSeqStepValidationErrors. 
         ' If any errors have been caught, display these in alternate text-form RepairDBSeqnce along with instructions on how to repair them
@@ -227,6 +278,7 @@ Public Class DBModifCreate
             cb.Caption = IIf(Me.DBModifName.Text = "", "Unnamed " + Me.Tag, Me.Tag + Me.DBModifName.Text)
         Catch ex As Exception
             cbshp.Delete()
+            ' known failure when setting the cb name if there already exists a button with that name
             If ex.Message.Contains("0x8002802C") Then
                 UserMsg("Can't name the new command button '" + cbName + "' as there already exists a button with that name: " + ex.Message, "CommandButton create Error")
             Else
@@ -245,10 +297,14 @@ Public Class DBModifCreate
         End If
     End Sub
 
+    ''' <summary>trigger to enable/disable all parametrized settings</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
     Private Sub parametrized_Click(sender As Object, e As EventArgs) Handles parametrized.Click
         setDBActionParametrizedGUI()
     End Sub
 
+    ''' <summary>setDBActionParametrizedGUI: actual enabling of parametrized settings (done separately to be able to set this on form startup)</summary>
     Public Sub setDBActionParametrizedGUI()
         If Me.parametrized.Checked Then
             Me.paramRangesStr.Enabled = True
@@ -265,4 +321,21 @@ Public Class DBModifCreate
         End If
 
     End Sub
+    ''' <summary>enables the context menu on paramRangesStr text box</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub paramRangesStr_MouseDown(sender As Object, e As MouseEventArgs) Handles paramRangesStr.MouseDown
+        If e.Button = System.Windows.Forms.MouseButtons.Right Then
+            paramRangesStr.ContextMenuStrip = paramRangeMenu
+        End If
+    End Sub
+
+    ''' <summary>event handler for context menu on paramRangesStr text box</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Sub paramRangesContextMenuHandler(sender As Object, e As EventArgs)
+        paramRangesStr.Text += IIf(Len(paramRangesStr.Text) > 0, ",", "") + sender.Text
+        paramRangesStr.SelectionStart = Len(paramRangesStr.Text)
+    End Sub
+
 End Class

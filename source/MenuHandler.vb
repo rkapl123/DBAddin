@@ -37,6 +37,9 @@ Public Class MenuHandler
                 If Not IsNothing(clearRange) Then Marshal.ReleaseComObject(clearRange)
             Next
         Next
+        If Not IsNothing(DBSheetConfig.curCell) Then Marshal.ReleaseComObject(DBSheetConfig.curCell)
+        If Not IsNothing(DBSheetConfig.createdListObject) Then Marshal.ReleaseComObject(DBSheetConfig.createdListObject)
+        If Not IsNothing(DBSheetConfig.lookupWS) Then Marshal.ReleaseComObject(DBSheetConfig.lookupWS)
         Do
             GC.Collect()
             GC.WaitForPendingFinalizers()
@@ -61,7 +64,6 @@ Public Class MenuHandler
                 "<button id='props' label='Workbook Properties' onAction='showCProps' getImage='getCPropsImage' screentip='Change custom properties relevant for DB Addin:' getSupertip='getToggleCPropsScreentip' />" +
             "</buttonGroup>" +
             "<buttonGroup id='buttonGroup1'>" +
-                "<button id='repairLegacy' label='fix legacy functions' imageMso='ControlWizards' onAction='clickRepairLegacyFunctions' screentip='click to fix legacy functions from old VB6 DBAddin'/>" +
                 "<button id='showLog' label='Log' screentip='shows Database Addins Diagnostic Display' getImage='getLogsImage' onAction='clickShowLog'/>" +
             "</buttonGroup>" +
             "<dialogBoxLauncher><button id='dialog' label='About DBAddin' onAction='showAbout' screentip='Show Aboutbox with help, version information, update check/download and project homepage' getSupertip='getSuperTipInfo'/></dialogBoxLauncher>" +
@@ -348,17 +350,6 @@ Public Class MenuHandler
         End If
     End Function
 
-    Public Sub clickRepairLegacyFunctions(control As CustomUI.IRibbonControl)
-        Dim Wb As Excel.Workbook
-        Try
-            Wb = ExcelDnaUtil.Application.ActiveWorkbook
-        Catch ex As Exception
-            UserMsg("Exception getting the active workbook: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references), can't repair legacy functions.")
-            Exit Sub
-        End Try
-        repairLegacyFunctions(Wb, True)
-    End Sub
-
     ''' <summary>used for additional information</summary>
     ''' <param name="control"></param>
     ''' <returns></returns>
@@ -616,10 +607,6 @@ Public Class MenuHandler
         myAbout.ShowDialog()
         ' if quitting was chosen, then quit excel here..
         If myAbout.quitExcelAfterwards Then ExcelDnaUtil.Application.Quit()
-        ' if disabling the addin was chosen, then suicide here..
-        If myAbout.disableAddinAfterwards Then
-            Try : ExcelDnaUtil.Application.AddIns("DBaddin").Installed = False : Catch ex As Exception : End Try
-        End If
     End Sub
 
     ''' <summary>on demand, refresh the DB Config tree</summary>

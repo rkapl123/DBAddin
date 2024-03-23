@@ -148,14 +148,12 @@ You can get updates from here, in case there are new versions, this is shown wit
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/AboutBoxUpdateAvailable.PNG)  
 
-There is a possibility to set the future log events displayed (the starting value is set in the config file).
+There is a possibility to set the future log events displayed (the starting value is set in the config file). You can also fix functions from the legacy DBAddin (VB6) using the "fix legacy funcs" button in case you decided to skip the possibility offered on opening a Workbook.
 
 #### Log
 To see the Log, there is a separate Button in the settings group of the DBAddin ribbon that also indicates the existence of warning log entries with a red exclamation mark.
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/ConfigMenu.PNG)  
-
-You can also fix legacy DBAddin functions in case you decided to skip the possibility offered on opening a Workbook with the "fix legacy function" button.
 
 #### Settings
 In the DBAddin settings Group, there is a drop-down "settings", where you can modify the DBAddin.xll.config and the referred DBAddinUser.config and DBAddinCentral.config including XML validation.

@@ -60,6 +60,7 @@ Partial Class DBModifCreate
         Me.MoveMenu = New System.Windows.Forms.ContextMenuStrip(Me.components)
         Me.MoveRowUp = New System.Windows.Forms.ToolStripMenuItem()
         Me.MoveRowDown = New System.Windows.Forms.ToolStripMenuItem()
+        Me.paramRangeMenu = New System.Windows.Forms.ContextMenuStrip(Me.components)
         CType(Me.DBSeqenceDataGrid, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.MoveMenu.SuspendLayout()
         Me.SuspendLayout()
@@ -354,7 +355,9 @@ Partial Class DBModifCreate
         Me.paramRangesStr.Name = "paramRangesStr"
         Me.paramRangesStr.Size = New System.Drawing.Size(297, 20)
         Me.paramRangesStr.TabIndex = 17
-        Me.ToolTip1.SetToolTip(Me.paramRangesStr, "parameter ranges, comma separated. Only workbook- and sheet names are possible")
+        Me.ToolTip1.SetToolTip(Me.paramRangesStr, "parameter ranges, comma separated. Only workbook- and sheet names are possible. c" &
+        "ontext menu (right mouse) lists all available/visible names for easier inserting" &
+        "")
         '
         'paramEnclosing
         '
@@ -409,6 +412,11 @@ Partial Class DBModifCreate
         Me.MoveRowDown.Name = "MoveRowDown"
         Me.MoveRowDown.Size = New System.Drawing.Size(164, 22)
         Me.MoveRowDown.Text = "Move Row Down"
+        '
+        'paramRangeMenu
+        '
+        Me.paramRangeMenu.Name = "paramRangeMenu"
+        Me.paramRangeMenu.Size = New System.Drawing.Size(61, 4)
         '
         'DBModifCreate
         '
@@ -498,4 +506,5 @@ Partial Class DBModifCreate
     Friend WithEvents paramEnclosing As Windows.Forms.TextBox
     Friend WithEvents convertAsString As Windows.Forms.TextBox
     Friend WithEvents convertAsDate As Windows.Forms.TextBox
+    Friend WithEvents paramRangeMenu As Windows.Forms.ContextMenuStrip
 End Class

@@ -156,8 +156,8 @@ Public Module Globals
     End Function
 
     ''' <summary>checks whether worksheet called theName exists in workbook theWb</summary>
-    ''' <param name="theName"></param>
-    ''' <param name="theWb"></param>
+    ''' <param name="theName">string name of worksheet name</param>
+    ''' <param name="theWb">given workbook</param>
     ''' <returns>True if sheet exists</returns>
     Public Function existsSheet(ByRef theName As String, theWb As Excel.Workbook) As Boolean
         existsSheet = True
@@ -179,8 +179,8 @@ Last:
     End Function
 
     ''' <summary>checks whether theName exists as a name in Workbook theWb</summary>
-    ''' <param name="theName"></param>
-    ''' <param name="theWb"></param>
+    ''' <param name="theName">string name of range name</param>
+    ''' <param name="theWb">given workbook</param>
     ''' <returns>true if it exists</returns>
     Public Function existsNameInWb(ByRef theName As String, theWb As Excel.Workbook) As Boolean
         existsNameInWb = False
@@ -193,8 +193,8 @@ Last:
     End Function
 
     ''' <summary>checks whether theName exists as a name in Worksheet theWs</summary>
-    ''' <param name="theName"></param>
-    ''' <param name="theWs"></param>
+    ''' <param name="theName">string name of range name</param>
+    ''' <param name="theWs">given sheet</param>
     ''' <returns>true if it exists</returns>
     Public Function existsNameInSheet(ByRef theName As String, theWs As Excel.Worksheet) As Boolean
         existsNameInSheet = False
@@ -206,8 +206,22 @@ Last:
         Next
     End Function
 
+    ''' <summary>get the range from a worksheet name in the given sheet</summary>
+    ''' <param name="theName">string name of range name</param>
+    ''' <param name="theWs">given sheet</param>
+    ''' <returns></returns>
+    Public Function getRangeFromNameInSheet(ByRef theName As String, theWs As Excel.Worksheet) As Excel.Range
+        For Each aName As Excel.Name In theWs.Names()
+            If aName.Name = theWs.Name + "!" + theName Then
+                getRangeFromNameInSheet = aName.RefersToRange
+                Exit Function
+            End If
+        Next
+        getRangeFromNameInSheet = Nothing
+    End Function
+
     ''' <summary>gets underlying DBtarget/DBsource Name from theRange</summary>
-    ''' <param name="theRange"></param>
+    ''' <param name="theRange">given range</param>
     ''' <returns>the retrieved name</returns>
     Public Function getUnderlyingDBNameFromRange(theRange As Excel.Range) As String
         Dim nm As Excel.Name
@@ -238,7 +252,7 @@ Last:
     End Function
 
     ''' <summary>check if multiple (hidden, containing DBtarget or DBsource) DB Function names exist in theRange</summary>
-    ''' <param name="theRange"></param>
+    ''' <param name="theRange">given range</param>
     ''' <returns>True if multiple names exist</returns>
     Public Function checkMultipleDBRangeNames(theRange As Excel.Range) As Boolean
         Dim nm As Excel.Name

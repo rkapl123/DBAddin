@@ -43,7 +43,7 @@ Partial Class AboutBox
         Me.OKButton = New System.Windows.Forms.Button()
         Me.EventLevels = New System.Windows.Forms.ComboBox()
         Me.CheckForUpdates = New System.Windows.Forms.Button()
-        Me.disableAddin = New System.Windows.Forms.Button()
+        Me.fixLegacyFunc = New System.Windows.Forms.Button()
         Me.ToolTip1 = New System.Windows.Forms.ToolTip(Me.components)
         Me.BackgroundWorker1 = New System.ComponentModel.BackgroundWorker()
         Me.TableLayoutPanel.SuspendLayout()
@@ -67,7 +67,7 @@ Partial Class AboutBox
         Me.TableLayoutPanel.Controls.Add(Me.OKButton, 4, 5)
         Me.TableLayoutPanel.Controls.Add(Me.EventLevels, 3, 5)
         Me.TableLayoutPanel.Controls.Add(Me.CheckForUpdates, 1, 5)
-        Me.TableLayoutPanel.Controls.Add(Me.disableAddin, 2, 5)
+        Me.TableLayoutPanel.Controls.Add(Me.fixLegacyFunc, 2, 5)
         Me.TableLayoutPanel.Dock = System.Windows.Forms.DockStyle.Fill
         Me.TableLayoutPanel.Location = New System.Drawing.Point(9, 9)
         Me.TableLayoutPanel.Name = "TableLayoutPanel"
@@ -169,9 +169,9 @@ Partial Class AboutBox
         '
         Me.OKButton.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.OKButton.DialogResult = System.Windows.Forms.DialogResult.OK
-        Me.OKButton.Location = New System.Drawing.Point(429, 225)
+        Me.OKButton.Location = New System.Drawing.Point(443, 225)
         Me.OKButton.Name = "OKButton"
-        Me.OKButton.Size = New System.Drawing.Size(68, 23)
+        Me.OKButton.Size = New System.Drawing.Size(54, 23)
         Me.OKButton.TabIndex = 4
         Me.OKButton.Text = "OK"
         '
@@ -179,9 +179,9 @@ Partial Class AboutBox
         '
         Me.EventLevels.FormattingEnabled = True
         Me.EventLevels.Items.AddRange(New Object() {"Off", "Critical", "Error", "Warning", "Information", "Verbose", "All"})
-        Me.EventLevels.Location = New System.Drawing.Point(326, 225)
+        Me.EventLevels.Location = New System.Drawing.Point(317, 225)
         Me.EventLevels.Name = "EventLevels"
-        Me.EventLevels.Size = New System.Drawing.Size(97, 21)
+        Me.EventLevels.Size = New System.Drawing.Size(120, 21)
         Me.EventLevels.TabIndex = 3
         Me.ToolTip1.SetToolTip(Me.EventLevels, "Enter the maximumLog Level to be displayed from now on (existing log entries will" &
         " still be displayed)")
@@ -190,22 +190,21 @@ Partial Class AboutBox
         '
         Me.CheckForUpdates.Location = New System.Drawing.Point(137, 225)
         Me.CheckForUpdates.Name = "CheckForUpdates"
-        Me.CheckForUpdates.Size = New System.Drawing.Size(93, 21)
+        Me.CheckForUpdates.Size = New System.Drawing.Size(77, 21)
         Me.CheckForUpdates.TabIndex = 1
         Me.CheckForUpdates.Text = "get Update"
         Me.ToolTip1.SetToolTip(Me.CheckForUpdates, "get update of DB-Addin from github or local distribution folder")
         Me.CheckForUpdates.UseVisualStyleBackColor = True
         '
-        'disableAddin
+        'fixLegacyFunc
         '
-        Me.disableAddin.Location = New System.Drawing.Point(236, 225)
-        Me.disableAddin.Name = "disableAddin"
-        Me.disableAddin.Size = New System.Drawing.Size(84, 21)
-        Me.disableAddin.TabIndex = 2
-        Me.disableAddin.Text = "disable Addin"
-        Me.ToolTip1.SetToolTip(Me.disableAddin, "disable this Addin (uninstall and reactivate old DB Addin), needs restart of Exce" &
-        "l to reactivate the old VB6 Addin")
-        Me.disableAddin.UseVisualStyleBackColor = True
+        Me.fixLegacyFunc.Location = New System.Drawing.Point(220, 225)
+        Me.fixLegacyFunc.Name = "fixLegacyFunc"
+        Me.fixLegacyFunc.Size = New System.Drawing.Size(91, 21)
+        Me.fixLegacyFunc.TabIndex = 2
+        Me.fixLegacyFunc.Text = "fix legacy funcs"
+        Me.ToolTip1.SetToolTip(Me.fixLegacyFunc, "click to fix legacy functions from old VB6 DBAddin")
+        Me.fixLegacyFunc.UseVisualStyleBackColor = True
         '
         'BackgroundWorker1
         '
@@ -235,6 +234,6 @@ Partial Class AboutBox
     Friend WithEvents EventLevels As Windows.Forms.ComboBox
     Friend WithEvents ToolTip1 As Windows.Forms.ToolTip
     Friend WithEvents CheckForUpdates As Windows.Forms.Button
-    Friend WithEvents disableAddin As Windows.Forms.Button
+    Friend WithEvents fixLegacyFunc As Windows.Forms.Button
     Friend WithEvents BackgroundWorker1 As ComponentModel.BackgroundWorker
 End Class

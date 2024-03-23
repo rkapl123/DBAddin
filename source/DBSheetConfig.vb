@@ -7,15 +7,15 @@ Imports Microsoft.Office.Interop
 '''<summary>Helper module for easier manipulation of DBSheet definition</summary> 
 Public Module DBSheetConfig
     ''' <summary>the current cell where the DBSheet Definition is inserted at</summary>
-    Dim curCell As Excel.Range
+    Public curCell As Excel.Range
     ''' <summary>the list object of the main query for the db mapper</summary>
-    Dim createdListObject As Excel.ListObject
+    Public createdListObject As Excel.ListObject
     ''' <summary>the lookups list of the DBSheet definition (xml element with query, name, etc.)</summary>
     Dim lookupsList() As String
     ''' <summary>the complete db-sheet configuration (XML)</summary>
     Dim curConfig As String
     ''' <summary>the added and hidden worksheet with lookups inside</summary>
-    Dim lookupWS As Excel.Worksheet
+    Public lookupWS As Excel.Worksheet
     ''' <summary>the database name</summary>
     Dim databaseName As String
     ''' <summary>the Database table name of the DBSheet</summary>

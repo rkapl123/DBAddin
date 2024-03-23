@@ -26,7 +26,7 @@
 									<xs:element type="xs:string" name="execOnSave" minOccurs="0"/>
 									<xs:element type="xs:string" name="askBeforeExecute" minOccurs="0"/>
 									<xs:element type="xs:string" name="confirmText" minOccurs="0"/>
-                  <xs:element type="xs:string" name="parametrizedAction" minOccurs="0"/>
+                  <xs:element type="xs:string" name="parametrized" minOccurs="0"/>
                   <xs:element type="xs:string" name="paramEnclosing" minOccurs="0"/>
                   <xs:element type="xs:string" name="convertAsString" minOccurs="0"/>
                   <xs:element type="xs:string" name="convertAsDate" minOccurs="0"/>

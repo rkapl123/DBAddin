@@ -551,4 +551,17 @@ done:
         DBModifs.insertRow()
     End Sub
 
+    Protected Overrides Sub Finalize()
+        MyBase.Finalize()
+        If Not IsNothing(cb1) Then Marshal.ReleaseComObject(cb1)
+        If Not IsNothing(cb2) Then Marshal.ReleaseComObject(cb2)
+        If Not IsNothing(cb3) Then Marshal.ReleaseComObject(cb3)
+        If Not IsNothing(cb4) Then Marshal.ReleaseComObject(cb4)
+        If Not IsNothing(cb5) Then Marshal.ReleaseComObject(cb5)
+        If Not IsNothing(cb6) Then Marshal.ReleaseComObject(cb6)
+        If Not IsNothing(cb7) Then Marshal.ReleaseComObject(cb7)
+        If Not IsNothing(cb8) Then Marshal.ReleaseComObject(cb8)
+        If Not IsNothing(cb9) Then Marshal.ReleaseComObject(cb9)
+        If Not IsNothing(cb0) Then Marshal.ReleaseComObject(cb0)
+    End Sub
 End Class

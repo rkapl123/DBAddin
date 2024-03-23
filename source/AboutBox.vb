@@ -1,4 +1,5 @@
 ﻿Imports ExcelDna.Integration
+Imports Microsoft.Office.Interop
 Imports System.ComponentModel
 Imports System.Diagnostics
 Imports System.IO
@@ -240,23 +241,18 @@ Public NotInheritable Class AboutBox
         End If
     End Sub
 
-    Private Sub DisableAddin_Click(sender As Object, e As EventArgs) Handles disableAddin.Click
-        Try
-            ExcelDnaUtil.Application.AddIns("DBAddin.Functions").Installed = True
-        Catch ex As Exception
-            UserMsg("Legacy DB-Addin not available in Excel-Addins, can't reactivate it, so disabling this Add-in not possible !")
-            Exit Sub
-        End Try
-        ' first reactivate legacy Addin
-        My.Computer.Registry.SetValue("HKEY_CURRENT_USER\Software\Microsoft\Office\Excel\Addins\DBAddin.Connection", "LoadBehavior", 3)
-        UserMsg("Please restart Excel to make changes effective...", "Disable DBAddin and re-enable Legacy DBAddin", MsgBoxStyle.Exclamation)
-        Try : ExcelDnaUtil.Application.AddIns("OebfaFuncs").Installed = False : Catch ex As Exception : End Try
-        disableAddinAfterwards = True
-        Me.Close()
-    End Sub
-
     Private Function ValidationCallbackHandler() As Boolean
         Return True
     End Function
 
+    Private Sub fixLegacyFunc_Click(sender As Object, e As EventArgs) Handles fixLegacyFunc.Click
+        Dim Wb As Excel.Workbook
+        Try
+            Wb = ExcelDnaUtil.Application.ActiveWorkbook
+        Catch ex As Exception
+            UserMsg("Exception getting the active workbook: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references), can't repair legacy functions.")
+            Exit Sub
+        End Try
+        repairLegacyFunctions(Wb, True)
+    End Sub
 End Class
