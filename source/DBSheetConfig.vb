@@ -21,8 +21,8 @@ Public Module DBSheetConfig
     ''' <summary>the Database table name of the DBSheet</summary>
     Dim tableName As String
     ''' <summary>counter to know how many cells we filled for the db-mapper query 
-    ''' (at least 2: dbsetquery function and query string, if additional where clause exists, 
-    ''' add one for where clause, then one for each parameter)
+    ''' (at least 2: dbsetquery function and query string, if an additional where clause exists, 
+    ''' add one for this where clause and then one for each parameter)
     ''' </summary>
     Dim addedCells As Integer
     ''' <summary>these three need to be global, so that finishDBMapperCreation also knows about them</summary>
@@ -35,7 +35,7 @@ Public Module DBSheetConfig
     Public existingName As String
 
 
-    ''' <summary>create lookups (with dblistfetch) and a dbsetquery that acts as a list-object for a CUD DB Mapper</summary>
+    ''' <summary>create a DBSheet by creating lookups (with dblistfetch) and a dbsetquery that acts as a list-object for a CUD DBMapper. Called by clickAssignDBSheet (Ribbon) and assignDBSheet_Click (DBSheetCreateForm)</summary>
     Public Sub createDBSheet(Optional dbsheetDefPath As String = "")
         If ExcelDnaUtil.Application.ActiveWorkbook.Windows(1).WindowState = Excel.XlWindowState.xlMinimized Then
             UserMsg("No assignment possible when active workbook is minimized!", "DBSheet Creation Error")
@@ -121,7 +121,9 @@ Public Module DBSheetConfig
                     lookupWS = ExcelDnaUtil.Application.ActiveWorkbook.Worksheets.Add()
                     lookupWS.Name = "DBSheetLookups"
                 Else
-                    If QuestionMsg("Existing DBSheetLookups sheet detected, should all lookup definitions be removed (if definitions with existing names are added, this might lead to errors)?", MsgBoxStyle.YesNo) = MsgBoxResult.Yes Then
+                    Dim answer As MsgBoxResult = QuestionMsg("Existing DBSheetLookups sheet detected, should all lookup definitions be removed (if definitions with existing names but different meanings are added, this might lead to errors)?", MsgBoxStyle.YesNoCancel)
+                    If answer = MsgBoxResult.Cancel Then Exit Sub
+                    If answer = MsgBoxResult.Yes Then
                         ExcelDnaUtil.Application.Worksheets("DBSheetLookups").Cells.Clear
                         For Each LookupDef As String In lookupsList
                             Dim lookupRangeName As String = tableName + Replace(getEntry("name", LookupDef, 1), specialNonNullableChar, "") + "Lookup"
@@ -220,19 +222,25 @@ Public Module DBSheetConfig
             queryStr = Replace(queryStr, selectPart, selectPartModif)
             ' then create the DBSetQuery assigning the (yet to be filled) query to the above list-object
             ' add DBSetQuery with queryStr as Basis for the final DBMapper
-            ' first create a ListObject, but only if it doesn't exist already (to allow recreating DBSheets)
+            ' if DBMapper already exists remove everything to allow recreating DBSheets
             If existingName <> "" Then
-                ' get the existing list-object
                 Try
-                    createdListObject = curCell.Offset(0, 1).ListObject
+                    If curCell.Column = 1 And curCell.Row = 1 Then curCell.EntireColumn.ColumnWidth = 10 ' reset minimized column, otherwise list object looks stupid.
+                    curCell.Offset(0, 1).ListObject.Delete()
+                    ExcelDnaUtil.Application.ActiveWindow.FreezePanes = False ' remove the freeze-pane, it will be applied later again.
+                    ExcelDnaUtil.Application.ActiveWorkbook.Names(existingName).Delete
+                    Dim theCustomXmlParts As Object = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
+                    ' remove old node of DBMapper in definitions
+                    If Not IsNothing(theCustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:DBMapper[@Name='" + Replace(existingName, "DBMapper", "") + "']")) Then theCustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:DBMapper[@Name='" + Replace(existingName, "DBMapper", "") + "']").Delete
                 Catch ex As Exception
-                    UserMsg("Error getting existing list-object for DBSheet for table " + tableName + ": " + ex.Message, "DBSheet Creation Error")
+                    UserMsg("Error deleting existing list-object for DBSheet for table " + tableName + ": " + ex.Message, "DBSheet Creation Error")
                     Exit Sub
                 End Try
-            Else
-                createdListObject = createListObject(curCell)
-                If createdListObject Is Nothing Then Exit Sub
             End If
+            ' create a ListObject
+            createdListObject = createListObject(curCell)
+            If createdListObject Is Nothing Then Exit Sub
+
             With curCell
                 ' add the query as text
                 Try
@@ -257,12 +265,9 @@ Public Module DBSheetConfig
             End With
             ' finally add the DBSetQuery for the main DB Mapper, only taking the query without the where clause (because we can't prefill the where parameters, 
             ' the user has to do that before extending the query definition to the where clause as well)
-            If existingName <> "" Then
-                createdListObject.QueryTable.PreserveColumnInfo = False
-            Else
-                createFunctionsInCells(curCell, {"RC", "=DBSetQuery(R[1]C,"""",RC[1])"})
-            End If
-            ' finish creation in async called function (need to have the results from the above createFunctionsInCells/invocations)
+            ' only create DBSetQuery if a completely new DBSheet is created, when overwriting an existing don't do this as it triggers a unwanted premature recalculation.
+            If existingName = "" Then createFunctionsInCells(curCell, {"RC", "=DBSetQuery(R[1]C,"""",RC[1])"})
+            ' finish creation in async called sub (need to have the results from the above createFunctionsInCells/invocations)
             ExcelAsyncUtil.QueueAsMacro(Sub()
                                             finishDBMapperCreation()
                                         End Sub)
@@ -271,20 +276,6 @@ Public Module DBSheetConfig
 
     ''' <summary>after creating lookups and setting the dbsetquery finish the list-object area with reverse lookups and drop-downs</summary>
     Private Sub finishDBMapperCreation()
-        If existingName <> "" Then
-            ' if there was an already an existing dbsheet, remove the Range name, the DBMapper definition and finally the validations
-            ExcelDnaUtil.Application.ActiveWindow.FreezePanes = False ' remove the freeze-pane, it will be applied later again.
-            ExcelDnaUtil.Application.ActiveWorkbook.Names(existingName).Delete
-            Dim curColumnCount As Integer = getEntryList("columns", "field", "", curConfig).Length()
-            curColumnCount = createdListObject.ListColumns.Count - curColumnCount
-            For i As Integer = 1 To curColumnCount
-                createdListObject.ListColumns(createdListObject.ListColumns.Count).Delete()
-            Next
-            Dim theCustomXmlParts As Object = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
-            ' remove old node of DBMapper in definitions
-            If Not IsNothing(theCustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:DBMapper[@Name='" + Replace(existingName, "DBMapper", "") + "']")) Then theCustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:DBMapper[@Name='" + Replace(existingName, "DBMapper", "") + "']").Delete
-            createdListObject.Range.Validation.Delete()
-        End If
 
         ' store lookup columns (<>LU) to be ignored in DBMapper
         Dim queryErrorPos As Integer = InStr(curCell.Value.ToString(), "Error")
@@ -296,12 +287,12 @@ Public Module DBSheetConfig
         ' name the worksheet to tableName, if defined in the settings
         If fetchSettingBool("DBSheetAutoName", "False") Then
             Try
-                curCell.Parent.Name = Left(tableName, 31)
+                curCell.Parent.Name = Left(tableName, 31) ' prevent errors due to long names
             Catch ex As Exception
                 UserMsg("DBSheet setting worksheet name to '" + Left(tableName, 31) + "', error:" + ex.Message, "DBSheet Creation Error")
             End Try
         End If
-        ' some visual aid for DBSheets
+        ' for "full" DBSheets, minimize first column as much as possible
         If curCell.Column = 1 And curCell.Row = 1 Then curCell.EntireColumn.ColumnWidth = 0.4
         Dim ignoreColumns As String = ""
         Try
@@ -319,7 +310,7 @@ Public Module DBSheetConfig
                     End If
 
                     ' ..... create dropdown (validation) for lookup column
-                    ' a workaround with getting the local formula is necessary as Formula1 in Validation.Add doesn't accept English formulas
+                    ' workaround by setting formula in a temporary cell to get the local language formula. This is necessary as Formula1 in Validation.Add doesn't accept English formulas
                     curCell.Offset(2 + addedCells, 0).Formula = "=OFFSET(" + lookupRangeName + ",0,0,,1)"
                     ' necessary as Excel>=2016 introduces the @operator automatically in formulas referring to list objects, referring to just that value in the same row. which is undesired here..
                     Dim localOffsetFormula As String = Replace(curCell.Offset(2 + addedCells, 0).FormulaLocal.ToString(), "@", "")
@@ -339,15 +330,13 @@ Public Module DBSheetConfig
                     Try
                         ' if nothing was fetched, there is no DataBodyRange, so add validation to the second row of the column range...
                         If IsNothing(lookupColumn.DataBodyRange) Then
-                            lookupColumn.Range.Cells(2, 1).Validation.Delete ' remove existing validations, just in case it exists, otherwise add would throw exception... 
+                            lookupColumn.Range.Cells(2, 1).Validation.Delete() ' remove existing validations, just in case it exists, otherwise add would throw exception... 
                             lookupColumn.Range.Cells(2, 1).Validation.Add(
-                                Type:=Excel.XlDVType.xlValidateList, AlertStyle:=Excel.XlDVAlertStyle.xlValidAlertStop, Operator:=Excel.XlFormatConditionOperator.xlEqual,
-                                Formula1:=localOffsetFormula)
+                                Type:=Excel.XlDVType.xlValidateList, AlertStyle:=Excel.XlDVAlertStyle.xlValidAlertStop, Operator:=Excel.XlFormatConditionOperator.xlEqual, Formula1:=localOffsetFormula)
                         Else
                             lookupColumn.DataBodyRange.Validation.Delete()   ' remove existing validations, just in case it exists, otherwise add would throw exception... 
                             lookupColumn.DataBodyRange.Validation.Add(
-                                Type:=Excel.XlDVType.xlValidateList, AlertStyle:=Excel.XlDVAlertStyle.xlValidAlertStop, Operator:=Excel.XlFormatConditionOperator.xlEqual,
-                                Formula1:=localOffsetFormula)
+                                Type:=Excel.XlDVType.xlValidateList, AlertStyle:=Excel.XlDVAlertStyle.xlValidAlertStop, Operator:=Excel.XlFormatConditionOperator.xlEqual, Formula1:=localOffsetFormula)
                         End If
                     Catch ex As Exception
                         UserMsg("Error in adding validation formula " + localOffsetFormula + " to column " + lookupColumn.Name + ": " + ex.Message, "DBSheet Creation Error")

@@ -530,10 +530,10 @@ Public Module Functions
             GoTo err
         End Try
         DBModifs.preventChangeWhileFetching = False
-        ExcelDnaUtil.Application.Calculation = calcMode
+        setCalcModeBack(calcMode)
         Exit Sub
 err:
-        ExcelDnaUtil.Application.Calculation = calcMode
+        setCalcModeBack(calcMode)
         LogWarn(errMsg + " caller: " + callID)
         If StatusCollection.ContainsKey(callID) Then StatusCollection(callID).statusMsg = errMsg
         DBModifs.preventChangeWhileFetching = False
@@ -608,12 +608,12 @@ err:
             errMsg = ex.Message + " in query: " + Query
             GoTo err
         End Try
-        ExcelDnaUtil.Application.Calculation = calcMode
+        setCalcModeBack(calcMode)
         ' trigger recalculation to return message to calling function
         Try : caller.Formula += " " : Catch ex As Exception : End Try
         Exit Sub
 err:
-        ExcelDnaUtil.Application.Calculation = calcMode
+        setCalcModeBack(calcMode)
         LogWarn(errMsg + " caller: " + callID)
         If StatusCollection.ContainsKey(callID) Then StatusCollection(callID).statusMsg = errMsg
         ' trigger recalculation to return error message to calling function
@@ -654,7 +654,14 @@ err:
         Try : ExcelDnaUtil.Application.Cursor = Excel.XlMousePointer.xlDefault : Catch ex As Exception : End Try
         Try : ExcelDnaUtil.Application.StatusBar = False : Catch ex As Exception : End Try
         ' coming from refresh, this might be off for dirtying "foreign" data targets (as we're on a different sheet than the calling function) 
-        Try : ExcelDnaUtil.Application.Calculation = calcMode : Catch ex As Exception : End Try
+        setCalcModeBack(calcMode)
+    End Sub
+
+    Private Sub setCalcModeBack(calcMode As Excel.XlCalculation)
+        Try : ExcelDnaUtil.Application.Calculation = calcMode
+        Catch ex As Exception
+            UserMsg("Error when setting back calculation mode to " + IIf(calcMode = -4135, "manual", IIf(calcMode = -4105, "automatic", IIf(calcMode = 2, "semiautomatic", "unknown: " + calcMode.ToString()))) + ", it is recommended to refresh the DB function to get valid results!", MsgBoxStyle.Exclamation)
+        End Try
     End Sub
 
     ''' <summary>
@@ -803,7 +810,7 @@ err:
 
             Dim startRow, startCol As Integer
             Try
-                ' don't use targetRange here as it doesn't change during calculations that shift its address. The names do, however.
+                ' don't use targetRange here as it doesn't change during calculations that shift their address. The names do, however.
                 startRow = targetSH.Parent.Names(targetExtent).RefersToRange.Row
                 startCol = targetSH.Parent.Names(targetExtent).RefersToRange.Column
             Catch ex As Exception
@@ -1217,7 +1224,7 @@ err:    LogWarn(errMsg + ", caller: " + callID)
             errMsg = "Error getting parent worksheet from targetCells" + ex.Message
             GoTo err
         End Try
-        ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual
+        Try : ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual : Catch ex As Exception : End Try
         ' this works around the data validation input bug and being called when COM Model is not ready
         ' when selecting a value from a list of a validated field or being invoked from a hyperlink (e.g. word), excel won't react to
         ' Application.Calculation changes, so just leave here...

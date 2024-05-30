@@ -319,6 +319,7 @@ Public Class DBSheetCreateForm
                 UserMsg("Exception in DBSheetCols_CellValueChanged: " + ex.Message)
             End Try
         End If
+        assignDBSheet.Enabled = False
         DBSheetCols.AutoResizeColumns()
         FormDisabled = False
     End Sub
@@ -375,12 +376,14 @@ Public Class DBSheetCreateForm
                 DirectCast(DBSheetCols.Rows(selRowIndex).Cells("fkey"), DataGridViewComboBoxCell).DataSource = forColsList
                 DirectCast(DBSheetCols.Rows(selRowIndex).Cells("flookup"), DataGridViewComboBoxCell).DataSource = forColsList
             End If
+            assignDBSheet.Enabled = False
             FormDisabled = False
             ' Delete key sets column values to empty
         ElseIf e.KeyCode = Keys.Delete Then
             If selRowIndex >= 0 Then
                 ' avoid setting tick-boxes and type column to empty...
                 If selColIndex <> 0 And Not (selColIndex >= 4 And selColIndex <= 6) Then DBSheetCols.Rows(selRowIndex).Cells().Item(selColIndex).Value = ""
+                assignDBSheet.Enabled = False
             End If
             ' shortcut for move up
         ElseIf e.KeyCode = Keys.Up And DBSheetCols.SelectedRows.Count > 0 Then
@@ -477,6 +480,7 @@ Public Class DBSheetCreateForm
         Catch ex As System.Exception
             UserMsg("Exception in moveRow: " + ex.Message)
         End Try
+        assignDBSheet.Enabled = False
         FormDisabled = False
     End Sub
     ''' <summary>(re)generates the lookup query for active row/cell</summary>
@@ -484,6 +488,7 @@ Public Class DBSheetCreateForm
     ''' <param name="e"></param>
     Private Sub RegenerateThisLookupQuery_Click(sender As Object, e As EventArgs) Handles RegenerateThisLookupQuery.Click
         regenLookupForRow(selRowIndex)
+        assignDBSheet.Enabled = False
         DBSheetCols.AutoResizeColumns()
     End Sub
 
@@ -523,6 +528,7 @@ Public Class DBSheetCreateForm
                 If retval = MsgBoxResult.Yes Then DBSheetCols.Rows(i).Cells("lookup").Value = ""
             End If
         Next
+        assignDBSheet.Enabled = False
         DBSheetCols.AutoResizeColumns()
     End Sub
 
@@ -611,7 +617,7 @@ Public Class DBSheetCreateForm
             End Try
             tableSchemaReader.Close()
             FormDisabled = False
-            ' after changing the column no more change to table allowed !!
+            ' after changing the columns no more change to table allowed !!
             TableEditable(False)
         Catch ex As System.Exception
             UserMsg("Exception in addAllFields_Click: " + ex.Message)
@@ -932,6 +938,7 @@ Public Class DBSheetCreateForm
                 .Filter = "XML files (*.xml)|*.xml",
                 .RestoreDirectory = True
             }
+            Dim loadOK As Boolean = True
             Dim result As DialogResult = openFileDialog1.ShowDialog()
             If result = Windows.Forms.DialogResult.OK Then
                 ' remember path for possible storing in DBSheetParams
@@ -967,13 +974,15 @@ Public Class DBSheetCreateForm
                     newRow.outer = DBSheetConfig.getEntry("outer", DBSheetColumnDef) <> ""
                     newRow.primkey = DBSheetConfig.getEntry("primkey", DBSheetColumnDef) <> ""
                     If Not TableDataTypes.ContainsKey(newRow.name) Then
-                        UserMsg("couldn't find type information for field " + newRow.name + " in database (maybe wrong non null-able information for field in definition) !", "DBSheet Definition Error")
-                        Exit Sub
-                    End If
-                    newRow.type = TableDataTypes(newRow.name)
-                    If newRow.type = "" Then
-                        UserMsg("empty type information for field " + newRow.name + " in database !", "DBSheet Definition Error")
-                        Exit Sub
+                        UserMsg("couldn't retrieve information for field " + newRow.name + " in database (maybe wrong non null-able information for field in definition) !", "DBSheet Definition Error")
+                        loadOK = False
+                        Continue For
+                    Else
+                        newRow.type = TableDataTypes(newRow.name)
+                        If newRow.type = "" Then
+                            UserMsg("empty type information for field " + newRow.name + " in database !", "DBSheet Definition Error")
+                            loadOK = False
+                        End If
                     End If
                     Dim sortMode As String = DBSheetConfig.getEntry("sort", DBSheetColumnDef)
                     ' legacy naming: Ascending/Descending
@@ -997,7 +1006,7 @@ Public Class DBSheetCreateForm
                 DBSheetColsEditable(True)
                 saveEnabled(True)
                 setLinkLabel(currentFilepath)
-                assignDBSheet.Enabled = True
+                If loadOK Then assignDBSheet.Enabled = True
             End If
         Catch ex As System.Exception
             UserMsg("Exception in loadDefs_Click: " + ex.Message)
@@ -1035,7 +1044,8 @@ Public Class DBSheetCreateForm
                 }
                 Dim result As DialogResult = saveFileDialog1.ShowDialog()
                 If result = Windows.Forms.DialogResult.OK Then
-                    setLinkLabel(saveFileDialog1.FileName)
+                    currentFilepath = saveFileDialog1.FileName
+                    setLinkLabel(currentFilepath)
                 Else
                     Exit Sub
                 End If
@@ -1049,13 +1059,14 @@ Public Class DBSheetCreateForm
         End Try
     End Sub
 
+    Private linklabelToolTip As System.Windows.Forms.ToolTip
     ''' <summary>sets current definition file path hyperlink label. Displayed is only the filename, full path is stored in tag and visible in tooltip</summary>
-    ''' <param name="currentFilepath">definition file path</param>
-    Private Sub setLinkLabel(currentFilepath As String)
-        CurrentFileLinkLabel.Text = Strings.Mid(currentFilepath, InStrRev(currentFilepath, "\") + 1)
-        CurrentFileLinkLabel.Tag = currentFilepath
-        Dim ToolTip As System.Windows.Forms.ToolTip = New System.Windows.Forms.ToolTip()
-        ToolTip.SetToolTip(CurrentFileLinkLabel, currentFilepath)
+    ''' <param name="filepath">definition file path</param>
+    Private Sub setLinkLabel(filepath As String)
+        CurrentFileLinkLabel.Text = Strings.Mid(filepath, InStrRev(filepath, "\") + 1)
+        CurrentFileLinkLabel.Tag = filepath
+        If IsNothing(linklabelToolTip) Then linklabelToolTip = New System.Windows.Forms.ToolTip()
+        linklabelToolTip.SetToolTip(CurrentFileLinkLabel, filepath)
     End Sub
 
     ''' <summary>creates xml DBsheet parameter string from the data entered in theDBSheetCreateForm</summary>
@@ -1180,6 +1191,14 @@ Public Class DBSheetCreateForm
             quotedReplace += subresult + IIf(i < UBound(teststr), "'", "")
         Next
     End Function
+
+    Private Sub Query_TextChanged(sender As Object, e As EventArgs) Handles Query.TextChanged
+        assignDBSheet.Enabled = False
+    End Sub
+
+    Private Sub WhereClause_TextChanged(sender As Object, e As EventArgs) Handles WhereClause.TextChanged
+        assignDBSheet.Enabled = False
+    End Sub
 
 #End Region
 End Class
