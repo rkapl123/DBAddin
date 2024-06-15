@@ -1,13 +1,10 @@
 Imports System.Data
-Imports System.Data.Common
 Imports System.Data.Odbc
 Imports System.Data.SqlClient
 Imports System.Data.OleDb
 Imports ExcelDna.Integration
 Imports Microsoft.Office.Interop
 Imports System.Collections.Generic
-Imports System.Runtime.InteropServices
-Imports System.Linq
 
 
 ''' <summary>Provides a data structure for transporting information back from the calculation action procedure to the calling function resp. the AfterCalculate event procedure</summary>
@@ -601,7 +598,9 @@ err:
             targetWB.Queries(queryName).Formula = Query
             ' refresh all connections where the query is used
             For Each wbConn As Excel.WorkbookConnection In targetWB.Connections
-                If InStr(LCase(wbConn.OLEDBConnection.Connection), "location=" + LCase(queryName)) > 0 Then wbConn.Refresh()
+                Dim connectionInfo As String = ""
+                Try : connectionInfo = wbConn.OLEDBConnection.Connection : Catch ex As Exception : End Try
+                If InStr(LCase(connectionInfo), "location=" + LCase(queryName)) > 0 Then wbConn.Refresh()
             Next
             StatusCollection(callID).statusMsg = "set and refreshed " + queryName
         Catch ex As Exception
@@ -1363,41 +1362,6 @@ err:    LogWarn(errMsg + ", caller: " + callID)
         finishAction(calcMode, callID, "Error")
         ' recalculate to trigger return of error messages to calling function
         Try : caller.Formula += " " : Catch ex As Exception : End Try
-    End Sub
-
-    ''' <summary>remove all names from Range Target except the passed name (theName) and store them into list storedNames</summary>
-    ''' <param name="Target"></param>
-    ''' <param name="theName"></param>
-    ''' <returns>the removed names as a string list for restoring them later (see restoreRangeNames)</returns>
-    Private Function removeRangeNames(Target As Excel.Range, theName As String) As String()
-        Dim storedNames() As String = {}
-        Dim nextName As String
-
-        Dim i As Integer = 0
-        On Error Resume Next
-        nextName = Target.Name.Name
-        Do
-            If Err.Number = 0 And nextName <> theName Then
-                ReDim Preserve storedNames(i)
-                storedNames(i) = nextName
-                i += 1
-            End If
-            Target.Name.Delete
-            nextName = Target.Name.Name
-        Loop Until Err.Number <> 0
-        Err.Clear()
-        removeRangeNames = storedNames
-    End Function
-
-    ''' <summary>restore the passed storedNames into Range Target</summary>
-    ''' <param name="Target"></param>
-    ''' <param name="storedNames"></param>
-    Private Sub restoreRangeNames(Target As Excel.Range, storedNames() As String)
-        If UBound(storedNames) > 0 Then
-            For Each theName As String In storedNames
-                If theName.Length > 0 Then Target.Name = theName
-            Next
-        End If
     End Sub
 
     ''' <summary>Get the current selected Environment for DB Functions</summary>

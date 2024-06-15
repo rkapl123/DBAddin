@@ -1,6 +1,6 @@
 ﻿Imports System.Data
 Imports System.Windows.Forms
-Imports System.ComponentModel
+Imports System.ComponentModel ' for BackgroundWorker callback handling
 
 ''' <summary>User-form for ad-hoc SQL execution</summary>
 Public Class AdHocSQL

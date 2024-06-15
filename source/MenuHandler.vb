@@ -777,11 +777,11 @@ Public Class MenuHandler
             Dim wbQueries As Object = Nothing
             Try : wbQueries = ExcelDnaUtil.Application.ActiveWorkbook.Queries
             Catch ex As Exception
-                LogWarn("Error getting power queries: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
+                UserMsg("Error getting power queries: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
                 Exit Sub
             End Try
             If IsNothing(wbQueries) Or wbQueries.Count = 0 Then
-                LogWarn("No power queries available...")
+                UserMsg("No power queries available...", "DBAddin getting power queries", MsgBoxStyle.Exclamation)
                 Exit Sub
             End If
             ctMenuStrip2 = New Windows.Forms.ContextMenuStrip()
@@ -800,7 +800,7 @@ Public Class MenuHandler
     Private Sub ctMenuStrip2_Click(sender As Object, e As EventArgs)
         Dim actWb As Excel.Workbook = Nothing
         Try : actWb = ExcelDnaUtil.Application.ActiveWorkbook : Catch ex As Exception
-            LogWarn("Exception when trying to get the active workbook: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
+            UserMsg("Exception when trying to get the active workbook: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
         End Try
         ' restore previously stored query with Ctrl..
         If My.Computer.Keyboard.CtrlKeyDown Then
