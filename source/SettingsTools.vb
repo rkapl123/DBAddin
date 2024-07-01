@@ -21,7 +21,7 @@ Public Module SettingsTools
     Private UserSettingsPath As String
 
     ''' <summary>exception proof fetching of integer settings</summary>
-    ''' <param name="Key">registry key to take value from</param>
+    ''' <param name="Key">settings key to take value from</param>
     ''' <param name="defaultValue">Value that is taken if Key was not found</param>
     ''' <returns>the setting value</returns>
     Public Function fetchSettingInt(Key As String, defaultValue As String) As Integer
@@ -32,7 +32,7 @@ Public Module SettingsTools
     End Function
 
     ''' <summary>exception proof fetching of boolean settings</summary>    
-    ''' <param name="Key">registry key to take value from</param>
+    ''' <param name="Key">settings key to take value from</param>
     ''' <param name="defaultValue">Value that is taken if Key was not found</param>
     ''' <returns>the setting value</returns>
     Public Function fetchSettingBool(Key As String, defaultValue As String) As Boolean
@@ -43,7 +43,7 @@ Public Module SettingsTools
     End Function
 
     ''' <summary>encapsulates setting fetching (currently ConfigurationManager from DBAddin.xll.config), use only for strings. For Integer and Boolean use fetchSettingInt and fetchSettingBool</summary>
-    ''' <param name="Key">registry key to take value from</param>
+    ''' <param name="Key">settings key to take value from</param>
     ''' <param name="defaultValue">Value that is taken if Key was not found</param>
     ''' <returns>the setting value</returns>
     Public Function fetchSetting(Key As String, defaultValue As String) As String

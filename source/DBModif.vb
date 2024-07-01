@@ -1290,7 +1290,7 @@ Public Class DBAction : Inherits DBModif
             paramRanges.Add(checkAndReturnRange(paramRange))
         Next
 
-        ' then walk through the parameter ranges and convert the values, putting each set of parameters from one range into parameters which are accumulated in paramtersList
+        ' then walk through the parameter ranges and convert the values, putting each set of parameters from one range into parameters which are accumulated in parameterList
         ' parameterAddress/parameterAddressList is used for better error handling messages later on.
         Dim refCount As Integer = 0
         Dim convAsString() As String = Split(convertAsString, ",")
@@ -1309,7 +1309,7 @@ Public Class DBAction : Inherits DBModif
             ' walk through all cells of the parameter range, converting cell values and storing for later transposing
             For Each paramCell As Excel.Range In paramRange
                 Try
-                    If IsNothing(paramCell.Value) Or IsXLCVErr(paramCell.Value) Then
+                    If IsNothing(paramCell.Value) Or IsXLCVErr(paramCell.Value) Or Len(paramCell.Value) = 0 Then
                         parameters.Add("NULL")
                     ElseIf IsNumeric(paramCell.Value) Then
                         If stringConversion Then
@@ -1333,7 +1333,7 @@ Public Class DBAction : Inherits DBModif
             If maxCellCount = 0 Then
                 maxCellCount = cellCount
             ElseIf maxCellCount <> cellCount Then
-                Throw New Exception("Size (" + cellCount.ToString() + ") of parameter range " + refCount.ToString() + " not the same as the one before (" + maxCellCount.ToString() + "), all ranges need to be the same size")
+                Throw New Exception("Length (" + cellCount.ToString() + ") of parameter range " + refCount.ToString() + " not the same as the previous parameter range (" + maxCellCount.ToString() + "), all ranges need to be the same size")
             End If
             parameterList.Add(parameters)
             parameterAddressList.Add(parameterAddress)
@@ -1351,11 +1351,14 @@ Public Class DBAction : Inherits DBModif
             Next
             ' leave early if needed
             If Not continueIfRowEmpty And Not rowFilled Then Exit Function
-            Try
-                executeTemplateSQL += executeSQL(rowSQL)
-            Catch ex As Exception
-                Throw New Exception(ex.Message + " occurred in " + parameterAddresses + vbCrLf + rowSQL)
-            End Try
+            ' only execute if any field in row is filled
+            If rowFilled Then
+                Try
+                    executeTemplateSQL += executeSQL(rowSQL)
+                Catch ex As Exception
+                    Throw New Exception(ex.Message + " occurred in " + parameterAddresses + vbCrLf + rowSQL)
+                End Try
+            End If
         Next
     End Function
 

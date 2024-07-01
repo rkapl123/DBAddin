@@ -60,9 +60,9 @@ The clickable Hyperlink shows the range address of the data range, a named offse
 *   Hyperlink: click on it to highlight/select the DB Action range.
 *   parametrized: If checked, brings parameters into the template paramString by replacing the placeholders (enclosed by ! if not overriden in paramEnclosing) with the values in the corresponding paramRanges. 
 *   Parameter Range Names: string of named ranges (if necessary qualified with sheet name!range_name) to be used as parameters that are replaced into the template string, where the order of the parameter range determines which placeholder is being replaced
-*   continue if row empty: if all values in the given Ranges are empty for one row, continue concatenation with all values being NULL, else finish at this row (excluding it), defaults to false
-*   Cols num params string: comma separated locations of numerical parameters that should always be converted as strings
-*   Cols num params date: comma separated locations of numerical parameters that should always be converted as date values (using the default DBDate formating)
+*   continue if row empty:  if all values in the given Ranges are empty (or errors) for a row, continue by skipping the row (otherwise processing stops at this row), defaults to false
+*   Cols num params date: comma separated locations of numerical parameters that should be converted as date values (using the default DBDate formating), if a cell value can be evaluated as numeric.
+*   Cols num params string: comma separated locations of numerical parameters that should be converted as strings, if a cell value can be evaluated as numeric.
 
 Example for parametrization: DB Action cell contains `INSERT INTO Test (Col1,Col2,Col3,Col4) VALUES(!1!,!2!,!3!,!4!)`; Cols num params string: `1`; Cols num params date: `3`; Parameter Range Names: `paramC1,paramD1,paramE1,paramF1`
 

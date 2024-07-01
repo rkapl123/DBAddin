@@ -5,6 +5,7 @@ Imports System.Data
 Imports System.Data.Odbc
 Imports System.IO
 Imports System.Windows.Forms
+Imports System.Security.AccessControl
 
 ''' <summary>Form for defining/creating DBSheet definitions</summary>
 Public Class DBSheetCreateForm
@@ -958,13 +959,14 @@ Public Class DBSheetCreateForm
                 Dim theTable As String = If(InStr(DBSheetConfig.getEntry("table", DBSheetParams), Database.Text + ".") > 0, DBSheetConfig.getEntry("table", DBSheetParams), Database.Text + fetchSetting("ownerQualifier" + env.ToString(), "") + DBSheetConfig.getEntry("table", DBSheetParams))
                 Table.SelectedIndex = Table.Items.IndexOf(theTable)
                 If Table.SelectedIndex = -1 Then
-                    UserMsg("couldn't find table " + theTable + " defined in definitions file in database " + Database.Text + "!", "DBSheet Definition Error")
+                    UserMsg("couldn't find table " + theTable + " defined in definitions file in database " + Database.Text + " in current environment (" + myDBConnHelper.DBenv + ") !", "DBSheet Definition Error")
                     FormDisabled = False
                     Exit Sub
                 End If
                 DirectCast(DBSheetCols.Columns("name"), DataGridViewComboBoxColumn).DataSource = getColumns()
                 Dim columnslist As Object = DBSheetConfig.getEntryList("columns", "field", "", DBSheetParams)
                 Dim theDBSheetDefTable = New DBSheetDefTable
+                Dim fieldInfoMsg As String = ""
                 For Each DBSheetColumnDef As String In columnslist
                     Dim newRow As DBSheetDefRow = theDBSheetDefTable.GetNewRow()
                     newRow.name = DBSheetConfig.getEntry("name", DBSheetColumnDef)
@@ -973,10 +975,29 @@ Public Class DBSheetCreateForm
                     newRow.flookup = DBSheetConfig.getEntry("flookup", DBSheetColumnDef)
                     newRow.outer = DBSheetConfig.getEntry("outer", DBSheetColumnDef) <> ""
                     newRow.primkey = DBSheetConfig.getEntry("primkey", DBSheetColumnDef) <> ""
+                    Dim noInfoForField As Boolean = False
                     If Not TableDataTypes.ContainsKey(newRow.name) Then
-                        UserMsg("couldn't retrieve information for field " + newRow.name + " in database (maybe wrong non null-able information for field in definition) !", "DBSheet Definition Error")
+                        ' try to back up from changed non nullable info
+                        If newRow.name.Substring(0, 1) = specialNonNullableChar Then
+                            newRow.name = newRow.name.Substring(1)
+                            If Not TableDataTypes.ContainsKey(newRow.name) Then
+                                noInfoForField = True
+                            Else
+                                fieldInfoMsg += "Field " + specialNonNullableChar + newRow.name + " was wrong being non-nullable." + vbCrLf
+                            End If
+                        Else
+                            newRow.name = specialNonNullableChar + newRow.name
+                            If Not TableDataTypes.ContainsKey(newRow.name) Then
+                                noInfoForField = True
+                            Else
+                                fieldInfoMsg += "Field " + newRow.name.Substring(1) + " was wrong being nullable." + vbCrLf
+                            End If
+                        End If
+                    End If
+                    If noInfoForField Then
+                        UserMsg("couldn't retrieve information for field " + newRow.name + " in database !", "DBSheet Definition Error")
                         loadOK = False
-                        Continue For
+                        newRow.type = ""
                     Else
                         newRow.type = TableDataTypes(newRow.name)
                         If newRow.type = "" Then
@@ -1006,6 +1027,8 @@ Public Class DBSheetCreateForm
                 DBSheetColsEditable(True)
                 saveEnabled(True)
                 setLinkLabel(currentFilepath)
+                ' pass info about wrong fields
+                If fieldInfoMsg <> "" Then UserMsg(fieldInfoMsg, "DBSheet Definition Problem", MsgBoxStyle.Exclamation)
                 If loadOK Then assignDBSheet.Enabled = True
             End If
         Catch ex As System.Exception
@@ -1027,32 +1050,47 @@ Public Class DBSheetCreateForm
         saveDefinitionsToFile(True)
     End Sub
 
-    Private currentFilepath As String
+    Private currentFilepath As String = ""
 
     ''' <summary>saves the definitions currently stored in theDBSheetCreateForm to newly selected file (saveAs = True) or to the file already stored in setting "dsdPath"</summary>
     ''' <param name="saveAs"></param>
     Private Sub saveDefinitionsToFile(ByRef saveAs As Boolean)
         Try
             If saveAs Or currentFilepath = "" Then
-                Dim tableName As String = If(InStrRev(Table.Text, ".") > 0, Strings.Mid(Table.Text, InStrRev(Table.Text, ".") + 1), Table.Text)
-                Dim saveFileDialog1 As New SaveFileDialog With {
-                    .Title = "Save DBSheet Definition",
-                    .FileName = tableName + ".xml",
-                    .InitialDirectory = fetchSetting("DBSheetDefinitions" + myDBConnHelper.DBenv, ""),
-                    .Filter = "XML files (*.xml)|*.xml",
-                    .RestoreDirectory = True
-                }
-                Dim result As DialogResult = saveFileDialog1.ShowDialog()
-                If result = Windows.Forms.DialogResult.OK Then
-                    currentFilepath = saveFileDialog1.FileName
-                    setLinkLabel(currentFilepath)
-                Else
-                    Exit Sub
-                End If
+                Dim invalidPath As Boolean = True
+                ' loop until a valid path with write access is chosen (or cancel exits sub)
+                While invalidPath
+                    Dim tableName As String = If(InStrRev(Table.Text, ".") > 0, Strings.Mid(Table.Text, InStrRev(Table.Text, ".") + 1), Table.Text)
+                    Dim saveFileDialog1 As New SaveFileDialog With {
+                        .Title = "Save DBSheet Definition",
+                        .FileName = tableName + ".xml",
+                        .InitialDirectory = fetchSetting("lastDBsheetCreatePath", fetchSetting("DBSheetDefinitions" + myDBConnHelper.DBenv, "")),
+                        .Filter = "XML files (*.xml)|*.xml",
+                        .RestoreDirectory = True
+                    }
+                    Dim result As DialogResult = saveFileDialog1.ShowDialog()
+                    If result = Windows.Forms.DialogResult.OK Then
+                        currentFilepath = saveFileDialog1.FileName
+                        Try
+                            FileSystem.FileOpen(1, currentFilepath, OpenMode.Output)
+                            FileSystem.PrintLine(1, xmlDbsheetConfig())
+                        Catch ex As Exception
+                            UserMsg("Can't save to folder " + currentFilepath + ", please choose another!")
+                            Continue While
+                        End Try
+                        FileSystem.FileClose(1)
+                        setUserSetting("lastDBsheetCreatePath", Strings.Left(currentFilepath, InStrRev(currentFilepath, "\") - 1))
+                        setLinkLabel(currentFilepath)
+                        invalidPath = False
+                    Else
+                        Exit Sub
+                    End If
+                End While
+            Else
+                FileSystem.FileOpen(1, currentFilepath, OpenMode.Output)
+                FileSystem.PrintLine(1, xmlDbsheetConfig())
+                FileSystem.FileClose(1)
             End If
-            FileSystem.FileOpen(1, currentFilepath, OpenMode.Output)
-            FileSystem.PrintLine(1, xmlDbsheetConfig())
-            FileSystem.FileClose(1)
             assignDBSheet.Enabled = True
         Catch ex As System.Exception
             UserMsg("Exception in saveDefinitionsToFile: " + ex.Message)
@@ -1109,6 +1147,7 @@ Public Class DBSheetCreateForm
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub CurrentFileLinkLabel_Click(sender As Object, e As EventArgs) Handles CurrentFileLinkLabel.Click
+        ' CurrentFileLinkLabel.Tag contains the path to the current file
         Diagnostics.Process.Start(CurrentFileLinkLabel.Tag)
     End Sub
 #End Region

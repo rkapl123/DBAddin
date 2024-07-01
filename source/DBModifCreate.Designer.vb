@@ -344,9 +344,9 @@ Partial Class DBModifCreate
         Me.continueIfRowEmpty.Size = New System.Drawing.Size(126, 17)
         Me.continueIfRowEmpty.TabIndex = 16
         Me.continueIfRowEmpty.Text = "continue if row empty"
-        Me.ToolTip1.SetToolTip(Me.continueIfRowEmpty, "only for parametrized DBAction: if all values in the given Ranges are empty for o" &
-        "ne row, continue concatenation with all values being NULL, else finish at this r" &
-        "ow (excluding it)")
+        Me.ToolTip1.SetToolTip(Me.continueIfRowEmpty, "only for parametrized DBAction: if all values in the given Ranges are empty (or e" &
+        "rrors) for a row, continue by skipping the row (otherwise processing stops at th" &
+        "is row)")
         Me.continueIfRowEmpty.UseVisualStyleBackColor = True
         '
         'paramRangesStr
@@ -370,21 +370,22 @@ Partial Class DBModifCreate
         '
         'convertAsString
         '
-        Me.convertAsString.Location = New System.Drawing.Point(167, 371)
+        Me.convertAsString.Location = New System.Drawing.Point(167, 397)
         Me.convertAsString.Name = "convertAsString"
         Me.convertAsString.Size = New System.Drawing.Size(297, 20)
-        Me.convertAsString.TabIndex = 19
-        Me.ToolTip1.SetToolTip(Me.convertAsString, "column number of numerical parameters that should always explicitly be converted " &
-        "to strings")
+        Me.convertAsString.TabIndex = 20
+        Me.ToolTip1.SetToolTip(Me.convertAsString, "comma separated locations of numerical parameters that should be converted as str" &
+        "ings, if a cell value can be evaluated as numeric.")
         '
         'convertAsDate
         '
-        Me.convertAsDate.Location = New System.Drawing.Point(167, 397)
+        Me.convertAsDate.Location = New System.Drawing.Point(167, 371)
         Me.convertAsDate.Name = "convertAsDate"
         Me.convertAsDate.Size = New System.Drawing.Size(297, 20)
-        Me.convertAsDate.TabIndex = 20
-        Me.ToolTip1.SetToolTip(Me.convertAsDate, "column number of numerical parameters that should always explicitly be converted " &
-        "to Dates (using default date format from DefaultDBDateFormatting)")
+        Me.convertAsDate.TabIndex = 19
+        Me.ToolTip1.SetToolTip(Me.convertAsDate, "comma separated locations of numerical parameters that should be converted as dat" &
+        "e values (using the default DBDate formating), if a cell value can be evaluated " &
+        "as numeric")
         '
         'EnvironmentLabel
         '

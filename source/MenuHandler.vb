@@ -556,7 +556,7 @@ Public Class MenuHandler
         Return Not fetchSettingBool("DontChangeEnvironment", "False")
     End Function
 
-    ''' <summary>Choose environment (configured in registry with ConstConnString(N), ConfigStoreFolder(N))</summary>
+    ''' <summary>Choose environment (configured in settings with ConstConnString(N), ConfigStoreFolder(N))</summary>
     ''' <param name="control"></param>
     Public Sub selectEnvironment(control As CustomUI.IRibbonControl, id As String, index As Integer)
         selectedEnvironment = index
