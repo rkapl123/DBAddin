@@ -1,11 +1,9 @@
-Imports System.Data
-Imports System.Data.Odbc
-Imports System.Data.SqlClient
-Imports System.Data.OleDb
 Imports ExcelDna.Integration
 Imports Microsoft.Office.Interop
 Imports System.Collections.Generic
-
+Imports System.Data.Odbc
+Imports System.Data.OleDb
+Imports System.Data.SqlClient
 
 ''' <summary>Provides a data structure for transporting information back from the calculation action procedure to the calling function resp. the AfterCalculate event procedure</summary>
 Public Class ContainedStatusMsg
@@ -517,7 +515,7 @@ Public Module Functions
                 theListObject.Range.Name = targetExtent
                 theListObject.Range.Parent.Parent.Names(targetExtent).Visible = False
                 ' if refreshed range is a DBMapper and it is in the current workbook, resize it, but ONLY if it the DBMapper is the same area as the old range
-                DBModifs.resizeDBMapperRange(theListObject.Range, oldRange)
+                resizeDBMapperRange(theListObject.Range, oldRange)
             Else         ' neither PivotTable or ListObject could be found in TargetCell
                 errMsg = "No PivotTable or ListObject with external data connection could be found in TargetRange " + targetRange.Address
                 GoTo err
@@ -909,7 +907,8 @@ err:
             With theTargetQueryTable
                 ' now fill in the data from the query
                 Try
-                    .Connection = ConnString
+                    ' provide additional encryption information to connection string if required
+                    .Connection = ConnString + IIf(InStr(ConnString.ToLower(), "encrypt=yes") > 0, ";Use Encryption for Data=True", "")
                 Catch ex As Exception
                     errMsg = IIf(targetQueryTableExist, "Probably the connection was deleted for the query table (you can reset this by removing the query definition of the external data range): ", "Error in setting connection string for QueryTable: ") + ex.Message + " in query: " + Query
                     GoTo err
@@ -1055,7 +1054,7 @@ err:
                     totalTargetRange.Name = targetRangeName
                 End If
                 ' if refreshed range is a DBMapper and it is in the current workbook, resize it
-                DBModifs.resizeDBMapperRange(totalTargetRange, oldTotalTargetRange)
+                resizeDBMapperRange(totalTargetRange, oldTotalTargetRange)
             Catch ex As Exception
                 errMsg = "Error in (re)assigning data target name: " + ex.Message + " (maybe known issue with 'cell like' sheet names, e.g. 'C701 country' ?), query: " + Query
                 GoTo err
@@ -1258,7 +1257,7 @@ err:    LogWarn(errMsg + ", caller: " + callID)
                 conn = New OleDbConnection(ConnString)
             Else
                 ' try with odbc
-                conn = New Odbc.OdbcConnection(ConnString)
+                conn = New OdbcConnection(ConnString)
             End If
         Catch ex As Exception
             errMsg = "Error creating new connection: " + ex.Message + " for connection string: " + ConnString
@@ -1268,7 +1267,7 @@ err:    LogWarn(errMsg + ", caller: " + callID)
             errMsg = "Error opening connection: " + ex.Message + " for connection string: " + ConnString
             GoTo err
         End Try
-        Dim sqlCommand As Common.DbCommand
+        Dim sqlCommand As System.Data.Common.DbCommand
         Try
             If TypeName(conn) = "SqlConnection" Then
                 sqlCommand = New SqlCommand(Query, conn)
@@ -1281,7 +1280,7 @@ err:    LogWarn(errMsg + ", caller: " + callID)
             errMsg = "Error creating new sqlCommand: " + ex.Message + " for Query: " + Query
             GoTo err
         End Try
-        Dim recordset As Common.DbDataReader : Dim recordsetHasRows As Boolean : Dim returnedRows As Long = 0
+        Dim recordset As System.Data.Common.DbDataReader : Dim recordsetHasRows As Boolean : Dim returnedRows As Long = 0
         Try
             recordset = sqlCommand.ExecuteReader()
             recordsetHasRows = recordset.Read()

@@ -367,7 +367,7 @@ Last:
                         Dim DBTargetListObject As Excel.ListObject = Nothing
                         Dim DBSheetName As String = ""
                         Try : DBTargetListObject = ExcelDnaUtil.Application.Range(underlyingName).ListObject : Catch ex As Exception : End Try
-                        Try : DBSheetName = Left(DBModifs.getDBModifNameFromRange(DBTargetListObject.Range), 8) : Catch ex As Exception : End Try
+                        Try : DBSheetName = Left(getDBModifNameFromRange(DBTargetListObject.Range), 8) : Catch ex As Exception : End Try
                         If Not IsNothing(DBTargetListObject) AndAlso DBSheetName = "DBMapper" Then
                             ' walk through all columns
                             For Each listcol As Excel.ListColumn In DBTargetListObject.ListColumns

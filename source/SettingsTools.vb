@@ -360,7 +360,7 @@ Public Module SettingsTools
                 UserMsg(collectedErrors, "DBfunction check Error")
             End If
             ' last check any possible DB Modifier Definitions for validity
-            DBModifs.getDBModifDefinitions(True)
+            getDBModifDefinitions(True)
         End If
     End Sub
 

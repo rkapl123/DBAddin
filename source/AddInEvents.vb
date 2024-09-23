@@ -8,6 +8,20 @@ Imports System.Diagnostics
 Imports System.Runtime.InteropServices
 Imports System.Collections.Generic
 
+Public Module CheckInstance
+    Public Sub checkHiddenExcelInstance()
+        Try
+            ' check for multiple excel instances
+            If Process.GetProcessesByName("Excel").Length > 1 Then
+                For Each procinstance As Process In Process.GetProcessesByName("Excel")
+                    If procinstance.MainWindowTitle = "" Then
+                        UserMsg("Another hidden excel instance detected (PID: " + procinstance.Id + "), this may cause problems with querying DB Data")
+                    End If
+                Next
+            End If
+        Catch ex As Exception : End Try
+    End Sub
+End Module
 
 ''' <summary>AddIn Connection class, also handling Events from Excel (Open, Close, Activate)</summary>
 <ComVisible(True)>
@@ -78,6 +92,7 @@ Public Class AddInEvents
         ' after getting the default environment (should exist), set the Const Connection String again to avoid problems in generating DB ListObjects
         ConstConnString = fetchSetting("ConstConnString" + env(), "")
         ConfigStoreFolder = fetchSetting("ConfigStoreFolder" + env(), "")
+        checkHiddenExcelInstance()
     End Sub
 
     ''' <summary>AutoClose cleans up after finishing addin</summary>
@@ -283,7 +298,7 @@ done:
                 DBModifDefColl = New Dictionary(Of String, Dictionary(Of String, DBModif))
             End If
             LogInfo("getting DBModif Definitions on Workbook Activate")
-            DBModifs.getDBModifDefinitions()
+            getDBModifDefinitions()
             ' unfortunately, Excel doesn't fire SheetActivate when opening workbooks, so do that here...
             LogInfo("assign command button click handlers on Workbook Activate")
             assignHandler(Wb.ActiveSheet)
@@ -348,7 +363,7 @@ done:
             Dim DBModifName As String = getDBModifNameFromRange(targetRange)
         End If
         If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown Then
-            DBModifs.createDBModif(DBModifType, targetDefName:=cbName)
+            createDBModif(DBModifType, targetDefName:=cbName)
         Else
             DBModifDefColl(DBModifType).Item(cbName).doDBModif()
         End If
@@ -434,7 +449,7 @@ done:
     Private Sub Application_SheetChange(Sh As Object, Target As Range) Handles Application.SheetChange
         ' avoid entering into insert/update check resp. doCUDMarks if not list-object (data table), whole column modified, no DBMapper present and prevention while fetching (on refresh) being set
         If Not IsNothing(Target.ListObject) AndAlso Not Target.Rows.Count = Sh.Rows.Count AndAlso DBModifDefColl.ContainsKey("DBMapper") AndAlso Not DBModifs.preventChangeWhileFetching Then
-            Dim targetName As String = DBModifs.getDBModifNameFromRange(Target)
+            Dim targetName As String = getDBModifNameFromRange(Target)
             If Left(targetName, 8) = "DBMapper" Then
                 DirectCast(DBModifDefColl("DBMapper").Item(targetName), DBMapper).insertCUDMarks(Target)
             End If
@@ -541,14 +556,14 @@ done:
     ''' <param name="Ctrl"></param>
     ''' <param name="CancelDefault"></param>
     Private Sub mDeleteButton_Click(Ctrl As Microsoft.Office.Core.CommandBarButton, ByRef CancelDefault As Boolean) Handles mDeleteButton.Click
-        DBModifs.deleteRow()
+        deleteRow()
     End Sub
 
     ''' <summary>dynamic context menu item insert: insert row in CUD Style DBMappers</summary>
     ''' <param name="Ctrl"></param>
     ''' <param name="CancelDefault"></param>
     Private Sub mInsertButton_Click(Ctrl As Microsoft.Office.Core.CommandBarButton, ByRef CancelDefault As Boolean) Handles mInsertButton.Click
-        DBModifs.insertRow()
+        insertRow()
     End Sub
 
     Protected Overrides Sub Finalize()

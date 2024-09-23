@@ -6,6 +6,10 @@ Imports System.Runtime.InteropServices
 Imports Microsoft.Office.Core
 Imports System.Collections
 Imports System.Data
+Imports System.Data.Common
+Imports System.Data.Odbc
+Imports System.Data.OleDb
+Imports System.Data.SqlClient
 Imports System.Text
 Imports System.Linq
 
@@ -678,24 +682,24 @@ exitSub:
         End If
 
         ' set up data adapter and data set for checking DBMapper columns
-        Dim da As Common.DbDataAdapter = Nothing
+        Dim da As DbDataAdapter = Nothing
         Dim dscheck As New DataSet()
         ExcelDnaUtil.Application.StatusBar = "initialising the Data Adapter"
         Try
             If TypeName(idbcnn) = "SqlConnection" Then
                 ' decent behaviour for SQL Server
-                Using comm As New SqlClient.SqlCommand("SET ARITHABORT ON", idbcnn, DBModifs.trans)
+                Using comm As New SqlCommand("SET ARITHABORT ON", idbcnn, DBModifs.trans)
                     comm.ExecuteNonQuery()
                 End Using
-                da = New SqlClient.SqlDataAdapter(New SqlClient.SqlCommand("select * from " + tableName, idbcnn, DBModifs.trans)) With {
+                da = New SqlDataAdapter(New SqlCommand("select * from " + tableName, idbcnn, DBModifs.trans)) With {
                     .UpdateBatchSize = 20
                 }
             ElseIf TypeName(idbcnn) = "OleDbConnection" Then
-                da = New OleDb.OleDbDataAdapter(New OleDb.OleDbCommand("select * from " + tableName, idbcnn, DBModifs.trans)) With {
+                da = New OleDbDataAdapter(New OleDbCommand("select * from " + tableName, idbcnn, DBModifs.trans)) With {
                     .UpdateBatchSize = 20
                 }
             Else
-                da = New Odbc.OdbcDataAdapter(New Odbc.OdbcCommand("select * from " + tableName, idbcnn, DBModifs.trans))
+                da = New OdbcDataAdapter(New OdbcCommand("select * from " + tableName, idbcnn, DBModifs.trans))
             End If
             da.SelectCommand.CommandTimeout = CmdTimeout
         Catch ex As Exception
@@ -710,7 +714,7 @@ exitSub:
         End Try
 
         ' get the DataTypeName from the database if it exists, so we have a more accurate type information for the parameterized commands (select/insert/update/delete)
-        Dim schemaReader As Common.DbDataReader = Nothing
+        Dim schemaReader As DbDataReader = Nothing
         Dim schemaDataTypeCollection As New Collection
         Try
             schemaReader = da.SelectCommand.ExecuteReader()
@@ -812,13 +816,13 @@ exitSub:
 
             ' for avoidFill mode (no uploading of whole table) set up parameters for parameterized query from primary keys
             If avoidFill Then
-                Dim param As Common.DbParameter
+                Dim param As DbParameter
                 If TypeName(idbcnn) = "SqlConnection" Then
-                    param = DirectCast(da.SelectCommand, SqlClient.SqlCommand).CreateParameter()
+                    param = DirectCast(da.SelectCommand, SqlCommand).CreateParameter()
                 ElseIf TypeName(idbcnn) = "OleDbConnection" Then
-                    param = DirectCast(da.SelectCommand, OleDb.OleDbCommand).CreateParameter()
+                    param = DirectCast(da.SelectCommand, OleDbCommand).CreateParameter()
                 Else
-                    param = DirectCast(da.SelectCommand, Odbc.OdbcCommand).CreateParameter()
+                    param = DirectCast(da.SelectCommand, OdbcCommand).CreateParameter()
                 End If
                 With param
                     .ParameterName = "@" + primKeyColumnsStr(i)
@@ -1092,11 +1096,11 @@ nextRow:
                 ExcelDnaUtil.Application.StatusBar = "executing stored procedure " + executeAdditionalProc
                 Dim storedProcCmd As IDbCommand
                 If TypeName(idbcnn) = "SqlConnection" Then
-                    storedProcCmd = New SqlClient.SqlCommand(executeAdditionalProc, idbcnn, trans)
+                    storedProcCmd = New SqlCommand(executeAdditionalProc, idbcnn, trans)
                 ElseIf TypeName(idbcnn) = "OleDbConnection" Then
-                    storedProcCmd = New OleDb.OleDbCommand(executeAdditionalProc, idbcnn, trans)
+                    storedProcCmd = New OleDbCommand(executeAdditionalProc, idbcnn, trans)
                 Else
-                    storedProcCmd = New Odbc.OdbcCommand(executeAdditionalProc, idbcnn, trans)
+                    storedProcCmd = New OdbcCommand(executeAdditionalProc, idbcnn, trans)
                 End If
                 storedProcCmd.CommandText = executeAdditionalProc
                 result = storedProcCmd.ExecuteNonQuery()
@@ -1126,13 +1130,42 @@ cleanup:
                     If calledByDBSeq = "" Then
                         Dim retval As MsgBoxResult
                         ' only ask when DBModifier not done on Workbook save, in this case refresh automatically...
-                        If Not WbIsSaving Then retval = QuestionMsg(theMessage:="Refresh Data Range of DB Mapper '" + dbmodifName + "' ?", questionTitle:="Refresh DB Mapper")
-                        If WbIsSaving Or retval = vbOK Then
-                            doDBRefresh(Replace(DBFunctionSrcExtent, "DBFtarget", "DBFsource"))
+                        If Not WbIsSaving Then retval = QuestionMsg(theMessage:="Refresh Data Range of DB Mapper '" + dbmodifName + "' and the DBSheetLookups?", questionTitle:="Refresh DB Mapper and Lookups")
+                        If WbIsSaving Or retval = vbOK Or retval = vbNo Then
                             ' clear CUD marks after completion is done with doDBRefresh/DBSetQueryAction/resizeDBMapperRange
+                            doDBRefresh(Replace(DBFunctionSrcExtent, "DBFtarget", "DBFsource"))
+                            ' also refresh lookups
+                            Dim lookupDefs As String() = {}
+                            Try
+                                For Each nm As Excel.Name In ExcelDnaUtil.Application.ActiveWorkbook.Names
+                                    Dim rng As Excel.Range = Nothing
+                                    Try : rng = nm.RefersToRange : Catch ex As Exception : End Try
+                                    If rng IsNot Nothing Then
+
+                                        If InStr(nm.Name, "DBFsource") > 0 Then
+                                            Dim WbkSepPos As Integer = InStr(nm.Name, "!")
+                                            If InStr(nm.RefersTo, "DBSheetLookups!") > 0 Then
+                                                ReDim Preserve lookupDefs(lookupDefs.Length)
+                                                If WbkSepPos > 1 Then
+                                                    lookupDefs(lookupDefs.Length - 1) = Mid(nm.Name, WbkSepPos + 1)
+                                                Else
+                                                    lookupDefs(lookupDefs.Length - 1) = nm.Name
+                                                End If
+                                            End If
+                                        End If
+                                    End If
+                                Next
+                            Catch ex As Exception
+                                UserMsg("Exception: " + ex.Message, "get underlying DBFName from Range")
+                            End Try
+                            If lookupDefs.Length() > 0 Then
+                                For Each DBFsourceName As String In lookupDefs
+                                    doDBRefresh(DBFsourceName)
+                                Next
+                            End If
                         End If
                     Else
-                        LogWarn("no refresh took place for DBMapper " + dbmodifName)
+                        LogWarn("no refresh took place for DBMapper " + dbmodifName + " because called by DBSequence " + calledByDBSeq)
                     End If
                 End If
             End If
@@ -1267,11 +1300,11 @@ Public Class DBAction : Inherits DBModif
     Private Function executeSQL(executeText As String) As Integer
         Dim DmlCmd As IDbCommand
         If TypeName(idbcnn) = "SqlConnection" Then
-            DmlCmd = New SqlClient.SqlCommand(executeText, idbcnn, trans)
+            DmlCmd = New SqlCommand(executeText, idbcnn, trans)
         ElseIf TypeName(idbcnn) = "OleDbConnection" Then
-            DmlCmd = New OleDb.OleDbCommand(executeText, idbcnn, trans)
+            DmlCmd = New OleDbCommand(executeText, idbcnn, trans)
         Else
-            DmlCmd = New Odbc.OdbcCommand(executeText, idbcnn, trans)
+            DmlCmd = New OdbcCommand(executeText, idbcnn, trans)
         End If
         DmlCmd.CommandTimeout = CmdTimeout
         DmlCmd.CommandType = CommandType.Text
@@ -1504,7 +1537,7 @@ Public Module DBModifs
     ''' <summary>used to work around the fact that when started by Application.Run, Formulas are sometimes returned as local</summary>
     Public listSepLocal As String = ExcelDnaUtil.Application.International(Excel.XlApplicationInternational.xlListSeparator)
     ''' <summary>common transaction, needed for DBSequence and all other DB Modifiers</summary>
-    Public trans As Common.DbTransaction = Nothing
+    Public trans As DbTransaction = Nothing
 
     ''' <summary>cast .NET data type to ADO.NET DbType</summary>
     ''' <param name="t">given .NET data type</param>
@@ -1574,16 +1607,16 @@ Public Module DBModifs
                 theConnString = Replace(theConnString, fetchSetting("ConnStringSearch" + env.ToString(), "provider=SQLOLEDB"), fetchSetting("ConnStringReplace" + env.ToString(), "driver=SQL SERVER"))
                 ' remove "ODBC;"
                 theConnString = Right(theConnString, theConnString.Length - 5)
-                idbcnn = New Odbc.OdbcConnection(theConnString)
+                idbcnn = New OdbcConnection(theConnString)
             ElseIf InStr(theConnString.ToLower, "provider=sqloledb") Or InStr(theConnString.ToLower, "driver=sql server") Then
                 ' remove provider=SQLOLEDB; (or whatever is in ConnStringSearch<>) for sql server as this is not allowed for ado.net (e.g. from a connection string for MS Query/Office)
                 theConnString = Replace(theConnString, fetchSetting("ConnStringSearch" + env.ToString(), "provider=SQLOLEDB") + ";", "")
-                idbcnn = New SqlClient.SqlConnection(theConnString)
+                idbcnn = New SqlConnection(theConnString)
             ElseIf InStr(theConnString.ToLower, "oledb") Then
-                idbcnn = New OleDb.OleDbConnection(theConnString)
+                idbcnn = New OleDbConnection(theConnString)
             Else
                 ' try with odbc
-                idbcnn = New Odbc.OdbcConnection(theConnString)
+                idbcnn = New OdbcConnection(theConnString)
             End If
         Catch ex As Exception
             UserMsg("Error creating connection object: " + ex.Message + ", connection string: " + theConnString, "Open Connection Error")
@@ -2193,19 +2226,19 @@ Public Class CustomCommandBuilder
 
     ''' <summary>Creates Insert command with support for Auto-increment (Identity) fields</summary>
     ''' <returns>Command for inserting</returns>
-    Public Overridable Function InsertCommand() As Common.DbCommand
+    Public Overridable Function InsertCommand() As DbCommand
         Throw New NotImplementedException()
     End Function
 
     ''' <summary>Creates Delete command</summary>
     ''' <returns>Command for deleting</returns>
-    Public Overridable Function DeleteCommand() As Common.DbCommand
+    Public Overridable Function DeleteCommand() As DbCommand
         Throw New NotImplementedException()
     End Function
 
     ''' <summary>Creates Update command</summary>
     ''' <returns>Command for updating</returns>
-    Public Overridable Function UpdateCommand() As Common.DbCommand
+    Public Overridable Function UpdateCommand() As DbCommand
         Throw New NotImplementedException()
     End Function
 
@@ -2223,10 +2256,10 @@ End Class
 Public Class CustomSqlCommandBuilder
     Inherits CustomCommandBuilder
 
-    Private ReadOnly connection As SqlClient.SqlConnection
+    Private ReadOnly connection As SqlConnection
     Private ReadOnly schemaDataTypeCollection As Collection
 
-    Public Sub New(dataTable As DataTable, connection As SqlClient.SqlConnection, allColumns As DataColumn(), schemaDataTypeCollection As Collection)
+    Public Sub New(dataTable As DataTable, connection As SqlConnection, allColumns As DataColumn(), schemaDataTypeCollection As Collection)
         MyBase.New(dataTable, allColumns)
         Me.connection = connection
         Me.schemaDataTypeCollection = schemaDataTypeCollection
@@ -2234,8 +2267,8 @@ Public Class CustomSqlCommandBuilder
 
     ''' <summary>Creates Insert command with support for Auto-increment (Identity) fields</summary>
     ''' <returns>SqlCommand for inserting</returns>
-    Public Overrides Function InsertCommand() As Common.DbCommand
-        Dim command As SqlClient.SqlCommand = GetTextCommand("")
+    Public Overrides Function InsertCommand() As DbCommand
+        Dim command As SqlCommand = GetTextCommand("")
         Dim intoString As New StringBuilder()
         Dim valuesString As New StringBuilder()
         Dim autoincrementColumns As ArrayList = AutoincrementKeyColumns()
@@ -2269,8 +2302,8 @@ Public Class CustomSqlCommandBuilder
 
     ''' <summary>Creates Delete command</summary>
     ''' <returns>SqlCommand for deleting</returns>
-    Public Overrides Function DeleteCommand() As Common.DbCommand
-        Dim command As SqlClient.SqlCommand = GetTextCommand("")
+    Public Overrides Function DeleteCommand() As DbCommand
+        Dim command As SqlCommand = GetTextCommand("")
         Dim whereString As New StringBuilder()
         For Each column As DataColumn In dataTable.PrimaryKey
             If (whereString.Length > 0) Then
@@ -2286,8 +2319,8 @@ Public Class CustomSqlCommandBuilder
 
     ''' <summary>Creates Update command</summary>
     ''' <returns>SqlCommand for updating</returns>
-    Public Overrides Function UpdateCommand() As Common.DbCommand
-        Dim command As SqlClient.SqlCommand = GetTextCommand("")
+    Public Overrides Function UpdateCommand() As DbCommand
+        Dim command As SqlCommand = GetTextCommand("")
         Dim setString As New StringBuilder()
         Dim whereString As New StringBuilder()
 
@@ -2313,8 +2346,8 @@ Public Class CustomSqlCommandBuilder
         Return command
     End Function
 
-    Private Function CreateOldParam(column As DataColumn) As SqlClient.SqlParameter
-        Dim sqlParam As New SqlClient.SqlParameter()
+    Private Function CreateOldParam(column As DataColumn) As SqlParameter
+        Dim sqlParam As New SqlParameter()
         Dim columnName As String = column.ColumnName
         sqlParam.ParameterName = "@old" + columnName
         sqlParam.SourceColumn = columnName
@@ -2323,8 +2356,8 @@ Public Class CustomSqlCommandBuilder
         Return sqlParam
     End Function
 
-    Private Function CreateParam(column As DataColumn) As SqlClient.SqlParameter
-        Dim sqlParam As New SqlClient.SqlParameter()
+    Private Function CreateParam(column As DataColumn) As SqlParameter
+        Dim sqlParam As New SqlParameter()
         Dim columnName As String = column.ColumnName
         sqlParam.ParameterName = "@" + columnName
         sqlParam.SourceColumn = columnName
@@ -2332,8 +2365,8 @@ Public Class CustomSqlCommandBuilder
         Return sqlParam
     End Function
 
-    Private Function GetTextCommand(text As String) As SqlClient.SqlCommand
-        Dim command As New SqlClient.SqlCommand With {
+    Private Function GetTextCommand(text As String) As SqlCommand
+        Dim command As New SqlCommand With {
             .CommandType = CommandType.Text,
             .CommandText = text,
             .Connection = connection
@@ -2350,10 +2383,10 @@ End Class
 Public Class CustomOdbcCommandBuilder
     Inherits CustomCommandBuilder
 
-    Private ReadOnly connection As Odbc.OdbcConnection
+    Private ReadOnly connection As OdbcConnection
     Private ReadOnly schemaDataTypeCollection As Collection
 
-    Public Sub New(dataTable As DataTable, connection As Odbc.OdbcConnection, allColumns As DataColumn(), schemaDataTypeCollection As Collection)
+    Public Sub New(dataTable As DataTable, connection As OdbcConnection, allColumns As DataColumn(), schemaDataTypeCollection As Collection)
         MyBase.New(dataTable, allColumns)
         Me.connection = connection
         Me.schemaDataTypeCollection = schemaDataTypeCollection
@@ -2361,8 +2394,8 @@ Public Class CustomOdbcCommandBuilder
 
     ''' <summary>Creates Insert command with support for Auto-increment (Identity) fields</summary>
     ''' <returns>OdbcCommand for inserting</returns>
-    Public Overrides Function InsertCommand() As Common.DbCommand
-        Dim command As Odbc.OdbcCommand = GetTextCommand("")
+    Public Overrides Function InsertCommand() As DbCommand
+        Dim command As OdbcCommand = GetTextCommand("")
         Dim intoString As New StringBuilder()
         Dim valuesString As New StringBuilder()
         Dim autoincrementColumns As ArrayList = AutoincrementKeyColumns()
@@ -2396,8 +2429,8 @@ Public Class CustomOdbcCommandBuilder
 
     ''' <summary>Creates Delete command</summary>
     ''' <returns>OdbcCommand for deleting</returns>
-    Public Overrides Function DeleteCommand() As Common.DbCommand
-        Dim command As Odbc.OdbcCommand = GetTextCommand("")
+    Public Overrides Function DeleteCommand() As DbCommand
+        Dim command As OdbcCommand = GetTextCommand("")
         Dim whereString As New StringBuilder()
         For Each column As DataColumn In dataTable.PrimaryKey
             If (whereString.Length > 0) Then
@@ -2413,8 +2446,8 @@ Public Class CustomOdbcCommandBuilder
 
     ''' <summary>Creates Update command</summary>
     ''' <returns>OdbcCommand for updating</returns>
-    Public Overrides Function UpdateCommand() As Common.DbCommand
-        Dim command As Odbc.OdbcCommand = GetTextCommand("")
+    Public Overrides Function UpdateCommand() As DbCommand
+        Dim command As OdbcCommand = GetTextCommand("")
         Dim setString As New StringBuilder()
         Dim whereString As New StringBuilder()
 
@@ -2440,8 +2473,8 @@ Public Class CustomOdbcCommandBuilder
         Return command
     End Function
 
-    Private Function CreateOldParam(column As DataColumn) As Odbc.OdbcParameter
-        Dim sqlParam As New Odbc.OdbcParameter()
+    Private Function CreateOldParam(column As DataColumn) As OdbcParameter
+        Dim sqlParam As New OdbcParameter()
         Dim columnName As String = column.ColumnName
         sqlParam.ParameterName = "@old" + columnName
         sqlParam.SourceColumn = columnName
@@ -2450,8 +2483,8 @@ Public Class CustomOdbcCommandBuilder
         Return sqlParam
     End Function
 
-    Private Function CreateParam(column As DataColumn) As Odbc.OdbcParameter
-        Dim sqlParam As New Odbc.OdbcParameter()
+    Private Function CreateParam(column As DataColumn) As OdbcParameter
+        Dim sqlParam As New OdbcParameter()
         Dim columnName As String = column.ColumnName
         sqlParam.ParameterName = "@" + columnName
         sqlParam.SourceColumn = columnName
@@ -2459,8 +2492,8 @@ Public Class CustomOdbcCommandBuilder
         Return sqlParam
     End Function
 
-    Private Function GetTextCommand(text As String) As Odbc.OdbcCommand
-        Dim command As New Odbc.OdbcCommand With {
+    Private Function GetTextCommand(text As String) As OdbcCommand
+        Dim command As New OdbcCommand With {
             .CommandType = CommandType.Text,
             .CommandText = text,
             .Connection = connection
@@ -2476,10 +2509,10 @@ End Class
 Public Class CustomOleDbCommandBuilder
     Inherits CustomCommandBuilder
 
-    Private ReadOnly connection As OleDb.OleDbConnection
+    Private ReadOnly connection As OleDbConnection
     Private ReadOnly schemaDataTypeCollection As Collection
 
-    Public Sub New(dataTable As DataTable, connection As OleDb.OleDbConnection, allColumns As DataColumn(), schemaDataTypeCollection As Collection)
+    Public Sub New(dataTable As DataTable, connection As OleDbConnection, allColumns As DataColumn(), schemaDataTypeCollection As Collection)
         MyBase.New(dataTable, allColumns)
         Me.connection = connection
         Me.schemaDataTypeCollection = schemaDataTypeCollection
@@ -2487,8 +2520,8 @@ Public Class CustomOleDbCommandBuilder
 
     ''' <summary>Creates Insert command with support for Auto-increment (Identity) fields</summary>
     ''' <returns>OleDbCommand for inserting</returns>
-    Public Overrides Function InsertCommand() As Common.DbCommand
-        Dim command As OleDb.OleDbCommand = GetTextCommand("")
+    Public Overrides Function InsertCommand() As DbCommand
+        Dim command As OleDbCommand = GetTextCommand("")
         Dim intoString As New StringBuilder()
         Dim valuesString As New StringBuilder()
         Dim autoincrementColumns As ArrayList = AutoincrementKeyColumns()
@@ -2522,8 +2555,8 @@ Public Class CustomOleDbCommandBuilder
 
     ''' <summary>Creates Delete command</summary>
     ''' <returns>OleDbCommand for deleting</returns>
-    Public Overrides Function DeleteCommand() As Common.DbCommand
-        Dim command As OleDb.OleDbCommand = GetTextCommand("")
+    Public Overrides Function DeleteCommand() As DbCommand
+        Dim command As OleDbCommand = GetTextCommand("")
         Dim whereString As New StringBuilder()
         For Each column As DataColumn In dataTable.PrimaryKey
             If (whereString.Length > 0) Then
@@ -2539,8 +2572,8 @@ Public Class CustomOleDbCommandBuilder
 
     ''' <summary>Creates Update command</summary>
     ''' <returns>OleDbCommand for updating</returns>
-    Public Overrides Function UpdateCommand() As Common.DbCommand
-        Dim command As OleDb.OleDbCommand = GetTextCommand("")
+    Public Overrides Function UpdateCommand() As DbCommand
+        Dim command As OleDbCommand = GetTextCommand("")
         Dim setString As New StringBuilder()
         Dim whereString As New StringBuilder()
 
@@ -2566,8 +2599,8 @@ Public Class CustomOleDbCommandBuilder
         Return command
     End Function
 
-    Private Function CreateOldParam(column As DataColumn) As OleDb.OleDbParameter
-        Dim sqlParam As New OleDb.OleDbParameter()
+    Private Function CreateOldParam(column As DataColumn) As OleDbParameter
+        Dim sqlParam As New OleDbParameter()
         Dim columnName As String = column.ColumnName
         sqlParam.ParameterName = "@old" + columnName
         sqlParam.SourceColumn = columnName
@@ -2576,8 +2609,8 @@ Public Class CustomOleDbCommandBuilder
         Return sqlParam
     End Function
 
-    Private Function CreateParam(column As DataColumn) As OleDb.OleDbParameter
-        Dim sqlParam As New OleDb.OleDbParameter()
+    Private Function CreateParam(column As DataColumn) As OleDbParameter
+        Dim sqlParam As New OleDbParameter()
         Dim columnName As String = column.ColumnName
         sqlParam.ParameterName = "@" + columnName
         sqlParam.SourceColumn = columnName
@@ -2585,8 +2618,8 @@ Public Class CustomOleDbCommandBuilder
         Return sqlParam
     End Function
 
-    Private Function GetTextCommand(text As String) As OleDb.OleDbCommand
-        Dim command As New OleDb.OleDbCommand With {
+    Private Function GetTextCommand(text As String) As OleDbCommand
+        Dim command As New OleDbCommand With {
             .CommandType = CommandType.Text,
             .CommandText = text,
             .Connection = connection

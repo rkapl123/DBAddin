@@ -440,7 +440,7 @@ Public Module DBSheetConfig
         dbModifNode.AppendChildNode("IgnoreDataErrors", NamespaceURI:="DBModifDef", NodeValue:="False")
 
         'get new definitions into ribbon right now...
-        DBModifs.getDBModifDefinitions()
+        getDBModifDefinitions()
 
         ' format non null-able fields specially, this needs to be after DB Mapper has been initialized (theme colors!)
         Dim existingHeaderColour As Integer = createdListObject.TableStyle.TableStyleElements(Excel.XlTableStyleElementType.xlHeaderRow).Interior.Color

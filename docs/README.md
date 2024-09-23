@@ -54,7 +54,7 @@ This can be done by modifying DBAddin.xll.config or the referred DBAddinUser.con
 
 Explanation:
 *   `ConfigName`**N**: freely definable name for your environment (e.g. Production or your database instance)
-*   `ConstConnString`**N**: the standard connection string used to connect to the database. Set `ODBC;` in front to specify ODBC connection strings explicitly.
+*   `ConstConnString`**N**: the standard connection string used to connect to the database. Set `ODBC;` in front to specify ODBC connection strings explicitly. Pay attention to the Packet Size parameter when Encrypt=yes (for ADO connections)!
 *   `ConfigStoreFolder`**N**: all config files (*.xcl) under this folder are shown in a hierarchical manner in "load config"
 *   `ConnStringSearch`**N**: part to be searched for replacement within the standard connection string in DBModifiers and DBRowFetch.
 *   `ConnStringReplace`**N**: replacement for above
@@ -232,6 +232,10 @@ Several connection strings for "DBFuncsTest.xls" are placed to the right of the 
 Following topics are still to be done:
 
 * Utilizing optimistic concurrency for DBSheets (similar to the old Addin, but with ADO.NET support)
+
+### Known Issues
+
+* With Encryption (Encrypt=yes) there is a limit for the Packet Size parameter in the connection string, currently this seems to be 16387. Any value above leads to transport layer errors in ADO.NET: Error executing sqlCommand: Error when receiving Results from the Server. (provider: TCP Provider, error: 0 - The Network name is missing.)
 
 ### History (from the very beginning)
 

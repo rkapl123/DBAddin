@@ -5,7 +5,6 @@ Imports System.Data
 Imports System.Data.Odbc
 Imports System.IO
 Imports System.Windows.Forms
-Imports System.Security.AccessControl
 
 ''' <summary>Form for defining/creating DBSheet definitions</summary>
 Public Class DBSheetCreateForm

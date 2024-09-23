@@ -215,16 +215,18 @@ Public Class DBModifCreate
     Private Sub DBModifCreate_Shown(sender As Object, e As EventArgs) Handles Me.Shown
         If Me.Tag = "DBAction" Then
             ' add all visible names to context menu on paramRangesStr text box, first workbook level names
-            Dim submenu As ToolStripMenuItem = New ToolStripMenuItem
-            submenu.Text = ExcelDnaUtil.Application.ActiveWorkbook.Name
+            Dim submenu As ToolStripMenuItem = New ToolStripMenuItem With {
+                .Text = ExcelDnaUtil.Application.ActiveWorkbook.Name
+            }
             For Each aName As Excel.Name In ExcelDnaUtil.Application.ActiveWorkbook.Names()
                 If aName.Visible And InStr(aName.Name, "!") = 0 Then submenu.DropDownItems.Add(aName.Name, Nothing, AddressOf paramRangesContextMenuHandler)
             Next
             If submenu.DropDownItems.Count > 0 Then paramRangeMenu.Items.Add(submenu)
             ' then for each worksheet the worksheet level names
             For Each ws As Excel.Worksheet In ExcelDnaUtil.Application.ActiveWorkbook.Worksheets()
-                submenu = New ToolStripMenuItem
-                submenu.Text = ws.Name
+                submenu = New ToolStripMenuItem With {
+                    .Text = ws.Name
+                }
                 For Each aName As Excel.Name In ws.Names()
                     If aName.Visible Then submenu.DropDownItems.Add(aName.Name, Nothing, AddressOf paramRangesContextMenuHandler)
                 Next

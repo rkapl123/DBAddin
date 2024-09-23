@@ -1,9 +1,9 @@
-﻿Imports System.Xml
-Imports System.Windows.Forms
-Imports ExcelDna.Integration
+﻿Imports ExcelDna.Integration
 Imports Microsoft.Office.Core
-Imports System.IO
 Imports System.Diagnostics
+Imports System.IO
+Imports System.Windows.Forms
+Imports System.Xml
 
 ''' <summary>Dialog used to display and edit the CustomXMLPart utilized for storing the DBModif definitions, and the three parts of DBAddin settings (Addin level, user and central)</summary>
 Public Class EditDBModifDef

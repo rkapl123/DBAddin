@@ -5,7 +5,6 @@ Imports System.Configuration
 Imports System.Collections.Specialized
 Imports System.Collections.Generic
 
-
 ''' <summary>handles all Menu related aspects (context menu for building/refreshing, "DBAddin"/"Load Config" tree menu for retrieving stored configuration files, etc.)</summary>
 <ComVisible(True)>
 Public Class MenuHandler
@@ -455,7 +454,7 @@ Public Class MenuHandler
             ' check if any DBModifier exist below root node, only if at least one is defined, open dialog
             If CustomXmlParts(1).SelectNodes("/ns0:root/*").Count > 0 Then
                 Dim theEditDBModifDefDlg As New EditDBModifDef()
-                If theEditDBModifDefDlg.ShowDialog() = System.Windows.Forms.DialogResult.OK Then DBModifs.getDBModifDefinitions()
+                If theEditDBModifDefDlg.ShowDialog() = System.Windows.Forms.DialogResult.OK Then getDBModifDefinitions()
                 Exit Sub
             End If
         End If
@@ -725,6 +724,7 @@ Public Class MenuHandler
     ''' <param name="control"></param>
     Public Sub clickcheckpurgetoolbutton(control As CustomUI.IRibbonControl)
         checkpurgeNames()
+        checkHiddenExcelInstance()
     End Sub
 
     ''' <summary>show the trace log</summary>
@@ -747,7 +747,7 @@ Public Class MenuHandler
     ''' <param name="control"></param>
     Public Sub clickCreateButton(control As CustomUI.IRibbonControl)
         ' check for existing DBMapper or DBAction definition and allow exit
-        Dim activeCellDBModifName As String = DBModifs.getDBModifNameFromRange(ExcelDnaUtil.Application.ActiveCell)
+        Dim activeCellDBModifName As String = getDBModifNameFromRange(ExcelDnaUtil.Application.ActiveCell)
         Dim activeCellDBModifType As String = Left(activeCellDBModifName, 8)
         If (activeCellDBModifType = "DBMapper" Or activeCellDBModifType = "DBAction") And activeCellDBModifType <> control.Tag And control.Tag <> "DBSeqnce" Then
             UserMsg("Active Cell already contains definition for a " + activeCellDBModifType + ", inserting " + IIf(control.Tag = "DBSetQueryPivot" Or control.Tag = "DBSetQueryListObject", "DBSetQuery", control.Tag) + " here will cause trouble !", "Inserting not allowed")
@@ -769,9 +769,9 @@ Public Class MenuHandler
             createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBSetQuery("""","""",RC[1])"})
         ElseIf control.Tag = "DBMapper" Or control.Tag = "DBAction" Or control.Tag = "DBSeqnce" Then
             If activeCellDBModifType = control.Tag Then  ' edit existing definition
-                DBModifs.createDBModif(control.Tag, targetDefName:=activeCellDBModifName)
+                createDBModif(control.Tag, targetDefName:=activeCellDBModifName)
             Else                                         ' create new definition
-                DBModifs.createDBModif(control.Tag)
+                createDBModif(control.Tag)
             End If
         ElseIf control.Tag = "DBSetPowerQuery" Then
             Dim wbQueries As Object = Nothing
