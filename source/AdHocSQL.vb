@@ -106,6 +106,7 @@ Public Class AdHocSQL
         Dim PrevSelDB As String = Me.Database.Text
         fillDatabasesAndSetDropDown()
         ' reset previously set database
+        If PrevSelDB = "" Then Exit Sub
         If Me.Database.Items.IndexOf(PrevSelDB) = -1 Then
             UserMsg("Previously selected database '" + PrevSelDB + "' doesn't exist in this environment !", "AdHoc SQL Command")
         End If
@@ -309,6 +310,13 @@ Public Class AdHocSQL
     ''' <param name="e"></param>
     Private Sub AdHocSQL_KeyUp(sender As Object, e As KeyEventArgs) Handles Me.KeyUp
         If e.KeyCode = Keys.Escape Then finishForm(DialogResult.Cancel)
+    End Sub
+
+    ''' <summary>For non displayable data (blobs, etc.) that raise an exception, write out the exception in the datagrid cell tooltip instead of lots of popups</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub AdHocSQLQueryResult_DataError(sender As Object, e As DataGridViewDataErrorEventArgs) Handles AdHocSQLQueryResult.DataError
+        sender.CurrentRow.Cells(e.ColumnIndex).TooltipText = "Data raised exception: " + e.Exception.Message + " (" + e.Context.ToString() + ")"
     End Sub
 
 End Class

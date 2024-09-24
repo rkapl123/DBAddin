@@ -1138,7 +1138,7 @@ err:    LogWarn(errMsg + ", caller: " + callID)
     Public Function DBRowFetch(<ExcelArgument(Description:="query for getting data")> Query As Object,
                                <ExcelArgument(Description:="connection string defining DB, user, etc...")> ConnString As Object,
                                <ExcelArgument(Description:="Range to put the data into", AllowReference:=True)> ParamArray targetArray() As Object) As String
-        Dim tempArray() As Excel.Range = Nothing ' final target array that is passed to makeCalcMsgContainer (after removing header flag)
+        Dim finalTargetArray() As Excel.Range = Nothing ' final target array that is passed to makeCalcMsgContainer (after removing header flag)
         Dim callID As String = ""
         Dim HeaderInfo As Boolean
         Dim EnvPrefix As String = ""
@@ -1160,12 +1160,12 @@ err:    LogWarn(errMsg + ", caller: " + callID)
             If TypeName(targetArray(0)) = "Boolean" Or TypeName(targetArray(0)) = "String" Then
                 HeaderInfo = convertToBool(targetArray(0))
                 For i As Integer = 1 To UBound(targetArray)
-                    ReDim Preserve tempArray(i - 1)
+                    ReDim Preserve finalTargetArray(i - 1)
                     If IsNothing(ToRange(targetArray(i))) Then
                         DBRowFetch = EnvPrefix + ", Part " + i.ToString() + " of Target is not a valid Range !"
                         Exit Function
                     End If
-                    tempArray(i - 1) = ToRange(targetArray(i))
+                    finalTargetArray(i - 1) = ToRange(targetArray(i))
                 Next
             ElseIf TypeName(targetArray(0)) = "ExcelEmpty" Or TypeName(targetArray(0)) = "ExcelError" Or TypeName(targetArray(0)) = "ExcelMissing" Then
                 ' return appropriate error message...
@@ -1173,12 +1173,12 @@ err:    LogWarn(errMsg + ", caller: " + callID)
                 Exit Function
             Else
                 For i = 0 To UBound(targetArray)
-                    ReDim Preserve tempArray(i)
+                    ReDim Preserve finalTargetArray(i)
                     If IsNothing(ToRange(targetArray(i))) Then
                         DBRowFetch = EnvPrefix + ", Part " + (i + 1).ToString() + " of Target is not a valid Range !"
                         Exit Function
                     End If
-                    tempArray(i) = ToRange(targetArray(i))
+                    finalTargetArray(i) = ToRange(targetArray(i))
                 Next
             End If
             ' check query, also converts query to string (if it is a range)
@@ -1195,7 +1195,7 @@ err:    LogWarn(errMsg + ", caller: " + callID)
                 StatusCollection.Add(callID, statusCont)
                 StatusCollection(callID).statusMsg = "" ' need this to prevent object not set errors in checkCache
                 ExcelAsyncUtil.QueueAsMacro(Sub()
-                                                DBRowFetchAction(callID, CStr(Query), caller, tempArray, CStr(ConnString), HeaderInfo)
+                                                DBRowFetchAction(callID, CStr(Query), caller, finalTargetArray, CStr(ConnString), HeaderInfo)
                                             End Sub)
             End If
         Catch ex As Exception
@@ -1293,64 +1293,69 @@ err:    LogWarn(errMsg + ", caller: " + callID)
         DBModifs.preventChangeWhileFetching = True
         If Not recordsetHasRows Then StatusCollection(callID).statusMsg = "Warning: No Data returned in query: " + Query
 
-        ' if "heading range" is present then orientation of first range (header) defines layout of data: if "heading range" is column then data is returned column-wise, else row by row.
-        ' if there is just one block of data then it is assumed that there are usually more rows than columns and orientation is set by row/column size
-        Dim fillByRows As Boolean = IIf(UBound(targetCells) > 0, targetCells(0).Rows.Count < targetCells(0).Columns.Count, targetCells(0).Rows.Count > targetCells(0).Columns.Count)
-        ' put values (single record) from Recordset into targetCells
-        Dim fieldIter As Integer = 0 ' iterating through recordset fields
-        Dim rangeIter As Integer = 0 ' iterating through passed ranges
-        Dim headerFilled As Boolean = Not HeaderInfo    ' if we don't need headers the assume they are filled already....
         Dim totalFieldsDisplayed As Long = 0 ' needed to calculate displayedRows
-        Dim refCollector As Excel.Range = targetCells(0) ' needed to put together passed ranges to give dbftarget name to them
-        Do
-            Dim targetSlices As Excel.Range
-            If fillByRows Then
-                targetSlices = targetCells(rangeIter).Rows
-            Else
-                targetSlices = targetCells(rangeIter).Columns
-            End If
-            For Each targetSlice As Excel.Range In targetSlices
-                Dim aborted As Boolean = XlCall.Excel(XlCall.xlAbort) ' for long running actions, allow interruption
-                If aborted Then
-                    errMsg = "data fetching interrupted by user !"
-                    GoTo err
+        Try
+            ' if "heading range" is present then orientation of first range (header) defines layout of data: if "heading range" is column then data is returned column-wise, else row by row.
+            ' if there is just one block of data then it is assumed that there are usually more rows than columns and orientation is set by row/column size
+            Dim fillByRows As Boolean = IIf(UBound(targetCells) > 0, targetCells(0).Rows.Count < targetCells(0).Columns.Count, targetCells(0).Rows.Count > targetCells(0).Columns.Count)
+            ' put values (single record) from Recordset into targetCells
+            Dim fieldIter As Integer = 0 ' iterating through recordset fields
+            Dim rangeIter As Integer = 0 ' iterating through passed ranges
+            Dim headerFilled As Boolean = Not HeaderInfo    ' if we don't need headers the assume they are filled already....
+            Dim refCollector As Excel.Range = targetCells(0) ' needed to put together passed ranges to give dbftarget name to them
+            Do
+                Dim targetSlices As Excel.Range
+                If fillByRows Then
+                    targetSlices = targetCells(rangeIter).Rows
+                Else
+                    targetSlices = targetCells(rangeIter).Columns
                 End If
-                For Each theCell As Excel.Range In targetSlice.Cells
-                    If Not recordsetHasRows Then
-                        theCell.Value = ""
-                    Else
-                        If Not headerFilled Then
-                            theCell.Value = recordset.GetName(fieldIter)
-                        Else
-                            Try : theCell.Value = recordset.GetValue(fieldIter) : Catch ex As Exception
-                                errMsg += "Field '" + recordset.GetName(fieldIter) + "' caused following error: '" + Err.Description + "'" ' don't break operation, just collect message
-                            End Try
-                            totalFieldsDisplayed += 1
-                        End If
-                        If fieldIter = recordset.FieldCount - 1 Then
-                            ' reached end of fields, get next data row
-                            If headerFilled Then
-                                recordsetHasRows = recordset.Read()
-                                If recordsetHasRows Then returnedRows += 1
-                            Else
-                                headerFilled = True
-                            End If
-                            fieldIter = -1 ' reset field iterator
-                        End If
+                For Each targetSlice As Excel.Range In targetSlices
+                    Dim aborted As Boolean = XlCall.Excel(XlCall.xlAbort) ' for long running actions, allow interruption
+                    If aborted Then
+                        errMsg = "data fetching interrupted by user !"
+                        GoTo err
                     End If
-                    fieldIter += 1
+                    For Each theCell As Excel.Range In targetSlice.Cells
+                        If Not recordsetHasRows Then
+                            theCell.Value = ""
+                        Else
+                            If Not headerFilled Then
+                                theCell.Value = recordset.GetName(fieldIter)
+                            Else
+                                Try : theCell.Value = recordset.GetValue(fieldIter) : Catch ex As Exception
+                                    errMsg += "Field '" + recordset.GetName(fieldIter) + "' caused following error: '" + Err.Description + "'" ' don't break operation, just collect message
+                                End Try
+                                totalFieldsDisplayed += 1
+                            End If
+                            If fieldIter = recordset.FieldCount - 1 Then
+                                ' reached end of fields, get next data row
+                                If headerFilled Then
+                                    recordsetHasRows = recordset.Read()
+                                    If recordsetHasRows Then returnedRows += 1
+                                Else
+                                    headerFilled = True
+                                End If
+                                fieldIter = -1 ' reset field iterator
+                            End If
+                        End If
+                        fieldIter += 1
+                    Next
                 Next
-            Next
-            rangeIter += 1
-            If Not rangeIter > UBound(targetCells) Then refCollector = ExcelDnaUtil.Application.Union(refCollector, targetCells(rangeIter))
-        Loop Until rangeIter > UBound(targetCells)
-        ' get rest of records for returned status message
-        While recordset.Read()
-            returnedRows += 1
-        End While
-        ' delete the name to have a "clean" name area (otherwise visible = false setting wont work for dataTargetRange)
-        refCollector.Name = targetExtent
-        refCollector.Parent.Parent.Names(targetExtent).Visible = False
+                rangeIter += 1
+                If Not rangeIter > UBound(targetCells) Then refCollector = ExcelDnaUtil.Application.Union(refCollector, targetCells(rangeIter))
+            Loop Until rangeIter > UBound(targetCells)
+            ' get rest of records for returned status message
+            While recordset.Read()
+                returnedRows += 1
+            End While
+            ' delete the name to have a "clean" name area (otherwise visible = false setting wont work for dataTargetRange)
+            refCollector.Name = targetExtent
+            refCollector.Parent.Parent.Names(targetExtent).Visible = False
+        Catch ex As Exception
+            errMsg = "Error in filling target range: " + ex.Message + ", query: " + Query
+            GoTo err
+        End Try
 
         If StatusCollection(callID).statusMsg.Length = 0 Then StatusCollection(callID).statusMsg = "Displayed " + Math.Ceiling(totalFieldsDisplayed / recordset.FieldCount).ToString() + " of " + returnedRows.ToString() + " record" + If(returnedRows > 1 Or returnedRows = 0, "s", "") + " from: " + Query + IIf(errMsg <> "", ";Errors: " + errMsg, "")
         finishAction(calcMode, callID)
