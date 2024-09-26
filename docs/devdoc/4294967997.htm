@@ -1,31 +1,9 @@
-<html><head><title>buildFileSepMenuCtrl(String, ref XElement, String, String, String, Int32, Int32)</title><link href="styles/default.css" type="text/css" rel="stylesheet" /></head><body><div class="header"> </div><br class="clear" /><div class="navigation"><ul><li><a href="index.htm">Documentation</a></li></ul><ul><li><a class="" href="4294967296-DBaddin.htm">DBaddin</a><ul><li><a class="" href="4294967981.htm">ConfigFiles</a><ul><li><a class="" href="4294967981-Methods.htm">Methods</a><ul><li><a class="current" href="4294967997.htm">buildFileSepMenuCtrl</a><ul /></li></ul></li></ul></li></ul></li></ul></div><div class="content"><h1>buildFileSepMenuCtrl(String, ref XElement, String, String, String, Int32, Int32) Method</h1><div class="summary">parses Substrings (filenames in special Folders) contained in nameParts (recursively) of passed xcl config file-path (fullPathName) and adds them to currentBar and sub-menus (recursively)</div><div class="details"><span class="namespace"><em>Namespace:</em> <a href="4294967296-DBaddin.htm">DBaddin</a></span><span class="assembly"><em>Assembly:</em> DBaddin in (DBaddin.dll)
+<html><head><title>createConfigTreeMenu()</title><link href="styles/default.css" type="text/css" rel="stylesheet" /></head><body><div class="header"> </div><br class="clear" /><div class="navigation"><ul><li><a href="index.htm">Documentation</a></li></ul><ul><li><a class="" href="4294967296-DBaddin.htm">DBaddin</a><ul><li><a class="" href="4294967986.htm">ConfigFiles</a><ul><li><a class="" href="4294967986-Methods.htm">Methods</a><ul><li><a class="current" href="4294967997.htm">createConfigTreeMenu</a><ul /></li></ul></li></ul></li></ul></li></ul></div><div class="content"><h1>createConfigTreeMenu() Method</h1><div class="summary">creates the Config tree menu by reading the menu elements from the config store folder files/sub-folders</div><div class="details"><span class="namespace"><em>Namespace:</em> <a href="4294967296-DBaddin.htm">DBaddin</a></span><span class="assembly"><em>Assembly:</em> DBaddin in (DBaddin.dll)
 								</span></div>
         <div class="syntax">
             <h2>Syntax</h2>
-            <pre><span class="keyword">private</span> <span class="keyword">static</span> XElement buildFileSepMenuCtrl(
-	<span class="keyword">string</span> nameParts,
-	<span class="keyword">ref</span> XElement currentBar,
-	<span class="keyword">string</span> fullPathName,
-	<span class="keyword">string</span> newRootName,
-	<span class="keyword">string</span> Folderpath,
-	<span class="keyword">int</span> MenuFolderDepth,
-	<span class="keyword">int</span> specialFolderMaxDepth
-	)</pre>
+            <pre><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> createConfigTreeMenu()</pre>
         </div>
-    <div class="parameters"><h3>Parameters</h3><dl><dt>nameParts</dt><dd><div>
-				Type:
-				String</div><div>tokenized string (separated by space)</div></dd><dt>currentBar</dt><dd><div>
-				Type:
-				XElement</div><div>current menu element, where sub-menus and buttons are added</div></dd><dt>fullPathName</dt><dd><div>
-				Type:
-				String</div><div>full path name to xcl config file</div></dd><dt>newRootName</dt><dd><div>
-				Type:
-				String</div><div>the new root name for the menu, used avoid multiple placement of buttons in sub-menus</div></dd><dt>Folderpath</dt><dd><div>
-				Type:
-				String</div><div>Path of enclosing Folder(s)</div></dd><dt>MenuFolderDepth</dt><dd><div>
-				Type:
-				Int32</div><div>required for keeping maxMenuDepth limit</div></dd><dt>specialFolderMaxDepth</dt><dd><div>
-				Type:
-				Int32</div><div></div></dd></dl></div><div class="return"><h3>Returns</h3><div class="item">XElement</div><div class="returns">new bar as Xelement (for containment)</div></div></div><div class="footer">
+    </div><div class="footer">
 			Produced by the <a href="https://livedocumenter.barryjones.me.uk/">Live Documenter</a>.
 		</div></body></html>

@@ -246,6 +246,7 @@ Public Module SettingsTools
             UserMsg("Exception when trying to get the active workbook names for purging names: " + ex.Message + ", this might be either due to errors in the VBA-IDE (missing references) or due to opening this workbook from an MS-Office hyperlink, starting up Excel (timing issue). Switch to another workbook and back to fix.")
             Exit Sub
         End Try
+        Dim NamesWithErrors As List(Of Excel.Name) = New List(Of Excel.Name)
         If IsNothing(actWbNames) Then Exit Sub
         ' with Ctrl unhide all DB names and show Name Manager...
         If My.Computer.Keyboard.CtrlKeyDown And Not My.Computer.Keyboard.ShiftKeyDown Then
@@ -319,9 +320,11 @@ Public Module SettingsTools
                     If DBname.Name Like "*DBFtargetF*" Then replaceName = "DBFtargetF"
                     Try : checkExists = NamesList.Item(Replace(DBname.Name, replaceName, "DBFsource")) : Catch ex As Exception : End Try
                     If IsNothing(checkExists) Then
+                        NamesWithErrors.Add(DBname)
                         collectedErrors += DBname.Name + "' doesn't have a corresponding DBFsource name" + vbCrLf
                     End If
                     If InStr(DBname.RefersTo, "#REF!") > 0 Then
+                        NamesWithErrors.Add(DBname)
                         collectedErrors += DBname.Name + "' contains #REF!" + vbCrLf
                     End If
                     Dim checkRange As Excel.Range
@@ -344,9 +347,11 @@ Public Module SettingsTools
                 If DBname.Name Like "*DBFsource*" Then
                     Try : checkExists = NamesList.Item(Replace(DBname.Name, "DBFsource", "DBFtarget")) : Catch ex As Exception : End Try
                     If IsNothing(checkExists) Then
+                        NamesWithErrors.Add(DBname)
                         collectedErrors += DBname.Name + "' doesn't have a corresponding DBFtarget name" + vbCrLf
                     End If
                     If InStr(DBname.RefersTo, "#REF!") > 0 Then
+                        NamesWithErrors.Add(DBname)
                         collectedErrors += DBname.Name + "' contains #REF!" + vbCrLf
                     End If
                     If DBname.Visible Then
@@ -355,13 +360,70 @@ Public Module SettingsTools
                 End If
             Next
             If collectedErrors = "" Then
-                UserMsg("No Problems detected.", "DBfunction check Error", MsgBoxStyle.Information)
+                UserMsg("No DBfunction name problems detected.", "DBfunction check Error", MsgBoxStyle.Information)
             Else
-                UserMsg(collectedErrors, "DBfunction check Error")
+                If QuestionMsg(collectedErrors + vbCrLf + "Should names with #REF! errors and not having a corresponding source/target name be removed?",, "DBfunction check Error") = MsgBoxResult.Ok Then
+                    For Each DBname As Excel.Name In NamesWithErrors
+                        Try : DBname.Delete() : Catch ex As Exception : End Try
+                    Next
+                End If
             End If
+            ' also provide possibility to fix orphaned DBFunctions
+            fixOrphanedDBFunctions(ExcelDnaUtil.Application.ActiveWorkbook)
             ' last check any possible DB Modifier Definitions for validity
             getDBModifDefinitions(True)
         End If
+    End Sub
+
+    ''' <summary>fix orphaned DB Functions by replacing function names with themselves, triggering recalculation</summary>
+    ''' <param name="actWB"></param>
+    Sub fixOrphanedDBFunctions(actWB As Excel.Workbook)
+        Dim xlcalcmode As Long = ExcelDnaUtil.Application.Calculation
+
+        DBModifs.preventChangeWhileFetching = True ' WorksheetFunction.CountIf triggers Change event with target in argument 1, so make sure this doesn't trigger anything inside DBAddin)
+        Try
+            ' count nonempty cells in workbook for time estimate...
+            Dim cellcount As Long = 0
+            For Each ws In actWB.Worksheets
+                cellcount += ExcelDnaUtil.Application.WorksheetFunction.CountIf(ws.Range("1:" + ws.Rows.Count.ToString()), "<>")
+            Next
+
+            Dim timeEstInSec As Double = cellcount / 3500000
+            Dim retval As MsgBoxResult
+            retval = QuestionMsg("Try to fix possibly orphaned DBAddin functions (Save workbook afterwards to persist)? Estimated time for fix: " + timeEstInSec.ToString("0.0") + " sec.", MsgBoxStyle.OkCancel, "Orphaned DBAddin functions fix")
+            If retval = MsgBoxResult.Ok Then
+                Dim replaceSheets As String = ""
+                ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual ' avoid recalculations during replace action
+                ExcelDnaUtil.Application.DisplayAlerts = False ' avoid warnings for sheets where no DBAddin functions were found
+                ' replace function names in each sheet, triggering recalculation
+                For Each ws In actWB.Worksheets
+                    ExcelDnaUtil.Application.StatusBar = "Replacing possibly orphaned DB functions in active workbook, sheet '" + ws.Name + "'."
+                    If Not IsNothing(ws.Cells.Find(What:="=DBListfetch(", LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, MatchCase:=False, SearchFormat:=False)) Then
+                        ws.Cells.Replace(What:="=DBListfetch(", Replacement:="=DBListFetch(", LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, MatchCase:=False, SearchFormat:=False, ReplaceFormat:=False)
+                        replaceSheets += "DBListfetch in: " + ws.Name + ","
+                    End If
+                    If Not IsNothing(ws.Cells.Find(What:="=DBRowfetch(", LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, MatchCase:=False, SearchFormat:=False)) Then
+                        ws.Cells.Replace(What:="=DBRowfetch(", Replacement:="=DBRowFetch(", LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, MatchCase:=False, SearchFormat:=False, ReplaceFormat:=False)
+                        replaceSheets += "DBRowfetch in: " + ws.Name + ","
+                    End If
+                    If Not IsNothing(ws.Cells.Find(What:="=DBSetquery(", LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, MatchCase:=False, SearchFormat:=False)) Then
+                        ws.Cells.Replace(What:="=DBSetquery(", Replacement:="=DBSetQuery(", LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, MatchCase:=False, SearchFormat:=False, ReplaceFormat:=False)
+                        replaceSheets += "DBSetquery in: " + ws.Name + ","
+                    End If
+                Next
+                ExcelDnaUtil.Application.Calculation = xlcalcmode
+                ' reset the cell find dialog....
+                ExcelDnaUtil.Application.ActiveSheet.Cells.Find(What:="", After:=ExcelDnaUtil.Application.ActiveSheet.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
+                ExcelDnaUtil.Application.DisplayAlerts = True
+                ExcelDnaUtil.Application.StatusBar = False
+                If replaceSheets.Length > 0 Then
+                    UserMsg("Fixed possibly orphaned DB functions in active workbook from sheets: " + Left(replaceSheets, replaceSheets.Length - 1), "Orphaned DBAddin functions fix", MsgBoxStyle.Exclamation)
+                End If
+            End If
+        Catch ex As Exception
+            UserMsg("Exception occurred: " + ex.Message, "Orphaned DBAddin functions fix")
+        End Try
+        DBModifs.preventChangeWhileFetching = False
     End Sub
 
 End Module

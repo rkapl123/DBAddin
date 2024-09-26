@@ -1395,7 +1395,7 @@ err:    LogWarn(errMsg + ", caller: " + callID)
                 Dim keywordstart As Integer = InStr(1, UCase(theConnString), UCase(keyword.ToString()))
                 If keywordstart > 0 Then
                     keywordstart += Len(keyword.ToString())
-                    DBAddinSetting = Mid$(theConnString, keywordstart, InStr(keywordstart, theConnString, ";") - keywordstart)
+                    DBAddinSetting = Mid$(theConnString, keywordstart, IIf(InStr(keywordstart, theConnString, ";") = 0, Len(theConnString) + 1, InStr(keywordstart, theConnString, ";")) - keywordstart)
                 Else
                     DBAddinSetting = keyword.ToString() + " was not found in connection string of current environment: " + theConnString
                 End If
