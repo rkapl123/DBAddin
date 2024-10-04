@@ -72,7 +72,7 @@ Public MustInherit Class DBModif
         getTargetRangeAddress = ""
         Dim actWbNames As Excel.Names
         Try : actWbNames = ExcelDnaUtil.Application.ActiveWorkbook.Names : Catch ex As Exception
-            LogWarn("Exception when trying to get the active workbook names: " + ex.Message + ", this might be either due to errors in the VBA-IDE (missing references) or due to opening this workbook from an MS-Office hyperlink, starting up Excel (timing issue). Switch to another workbook and back to fix.")
+            LogWarn("Exception when trying to get the active workbook names for getting Target Range Address: " + ex.Message + ", this might be either due to errors in the VBA-IDE (missing references) or due to opening this workbook from an MS-Office hyperlink, starting up Excel (timing issue). Switch to another workbook and back to fix.")
             Exit Function
         End Try
         If TypeName(Me) <> "DBSeqnce" Then
@@ -430,17 +430,19 @@ Public Class DBMapper : Inherits DBModif
             AutoIncFlag = Convert.ToBoolean(getParamFromXML(definitionXML, "AutoIncFlag", "Boolean"))
             avoidFill = Convert.ToBoolean(getParamFromXML(definitionXML, "avoidFill", "Boolean"))
             preventColResize = Convert.ToBoolean(getParamFromXML(definitionXML, "preventColResize", "Boolean"))
-            If TargetRange.ListObject IsNot Nothing Then
+            Dim DBmapperListObj As Excel.ListObject = Nothing
+            Try : DBmapperListObj = TargetRange.ListObject : Catch ex As Exception : End Try
+            If DBmapperListObj IsNot Nothing Then
                 ' special gray table style for CUDFlags DBMapper
                 If CUDFlags Then
-                    TargetRange.ListObject.TableStyle = fetchSetting("DBMapperCUDFlagStyle", "TableStyleLight11")
+                    DBmapperListObj.TableStyle = fetchSetting("DBMapperCUDFlagStyle", "TableStyleLight11")
                     ' otherwise blue
                 Else
-                    TargetRange.ListObject.TableStyle = fetchSetting("DBMapperStandardStyle", "TableStyleLight9")
+                    DBmapperListObj.TableStyle = fetchSetting("DBMapperStandardStyle", "TableStyleLight9")
                 End If
             End If
             ' allow CUDFlags only on DBMappers with underlying List-objects that were created with a query
-            If CUDFlags And (TargetRange.ListObject Is Nothing OrElse TargetRange.ListObject.SourceType <> Excel.XlListObjectSourceType.xlSrcQuery) Then
+            If CUDFlags And (DBmapperListObj Is Nothing OrElse DBmapperListObj.SourceType <> Excel.XlListObjectSourceType.xlSrcQuery) Then
                 CUDFlags = False
                 definitionXML.SelectSingleNode("ns0:CUDFlags").Delete()
                 definitionXML.AppendChildNode("CUDFlags", NamespaceURI:="DBModifDef", NodeValue:="False")
@@ -499,7 +501,7 @@ Public Class DBMapper : Inherits DBModif
             If retval = vbCancel Then Exit Sub
         End If
         If changedRangeRows > fetchSettingInt("maxRowCountCUD", "10000") Then
-            If Not QuestionMsg("A large range was changed (" + changedRangeRows.ToString() + " > maxRowCountCUD:" + fetchSetting("maxRowCountCUD", "10000") + "), this will probably lead to CUD flag setting taking very long. Continue?",, "Set CUD Flags for DB Mapper") Then Exit Sub
+            If Not QuestionMsg("A large range was changed (" + changedRangeRows.ToString() + " > maxRowCountCUD:" + fetchSetting("maxRowCountCUD", "10000") + "), this will probably lead to CUD flag setting taking very long. Continue?",, "Set CUD Flags for DB Mapper") = MsgBoxResult.Ok Then Exit Sub
         End If
         If changedRange.Parent.ProtectContents Then
             UserMsg("Worksheet " + changedRange.Parent.Name + " is content protected, can't set CUD Flags !", "Set CUD Flags for DB Mapper")
@@ -510,12 +512,15 @@ Public Class DBMapper : Inherits DBModif
         ' DBMapper ranges relative to start of TargetRange and respecting a header row, so CUDMarkRow = changedRange.Row - TargetRange.Row + 1 ...
         Try
             If deleteFlag Then
+                Dim countRow As Integer = 1
                 ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = False ' to prevent automatic creation of new column
                 For Each changedRow As Excel.Range In changedRange.Rows
                     Dim CUDMarkRow As Integer = changedRow.Row - TargetRange.Row + 1
                     If TargetRange.Cells(CUDMarkRow, targetRangeColumns + 1).Value IsNot Nothing Then Continue For
                     TargetRange.Cells(CUDMarkRow, targetRangeColumns + 1).Value = "d"
                     TargetRange.Rows(CUDMarkRow).Font.Strikethrough = True
+                    ExcelDnaUtil.Application.Statusbar = "Delete mark for row " + countRow.ToString() + "/" + changedRangeRows.ToString()
+                    countRow += 1
                 Next
                 ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = True
             Else
@@ -574,7 +579,7 @@ Public Class DBMapper : Inherits DBModif
                         TargetRange.Cells(CUDMarkRow, targetRangeColumns + 1).Value = "i"
                     End If
                     ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = True
-                    ExcelDnaUtil.Application.Statusbar = "Create/Update/Delete mark for row " + countRow.ToString() + "/" + changedRangeRows.ToString()
+                    ExcelDnaUtil.Application.Statusbar = "Create/Update mark for row " + countRow.ToString() + "/" + changedRangeRows.ToString()
                     countRow += 1
                 Next
             End If
@@ -590,7 +595,7 @@ exitSub:
     Public Sub extendDataRange()
         Dim actWbNames As Excel.Names
         Try : actWbNames = ExcelDnaUtil.Application.ActiveWorkbook.Names : Catch ex As Exception
-            UserMsg("Exception when trying to get the active workbook names: " + ex.Message + ", this might be either due to errors in the VBA-IDE (missing references) or due to opening this workbook from an MS-Office hyperlink, starting up Excel (timing issue). Switch to another workbook and back to fix.")
+            UserMsg("Exception when trying to get the active workbook names for extending DBMapper Range: " + ex.Message + ", this might be either due to errors in the VBA-IDE (missing references) or due to opening this workbook from an MS-Office hyperlink, starting up Excel (timing issue). Switch to another workbook and back to fix.")
             Exit Sub
         End Try
         ' only extend like this if no CUD Flags or AutoIncFlag present (may have non existing first (primary) columns -> auto identity columns !)
@@ -1672,10 +1677,14 @@ Public Module DBModifs
     ''' <param name="createdDBModifType"></param>
     ''' <param name="targetDefName"></param>
     Public Sub createDBModif(createdDBModifType As String, Optional targetDefName As String = "")
-
-        If IsNothing(ExcelDnaUtil.Application.ActiveWorkbook) Then Exit Sub
+        Dim actWb As Excel.Workbook = Nothing
+        Try : actWb = ExcelDnaUtil.Application.ActiveWorkbook : Catch ex As Exception
+            UserMsg("Exception when trying to get the active workbook for creating DB Modifier: " + ex.Message + ", this might be either due to errors in the VBA-IDE (missing references) or due to opening this workbook from an MS-Office hyperlink, starting up Excel (timing issue). Switch to another workbook and back to fix.")
+            Exit Sub
+        End Try
+        If IsNothing(actWb) Then Exit Sub
         Dim actWbNames As Excel.Names = Nothing
-        Try : actWbNames = ExcelDnaUtil.Application.ActiveWorkbook.Names : Catch ex As Exception
+        Try : actWbNames = actWb.Names : Catch ex As Exception
             UserMsg("Exception when trying to get the active workbook names for creating DB Modifier: " + ex.Message + ", this might be either due to errors in the VBA-IDE (missing references) or due to opening this workbook from an MS-Office hyperlink, starting up Excel (timing issue). Switch to another workbook and back to fix.")
             Exit Sub
         End Try
@@ -1795,7 +1804,7 @@ Public Module DBModifs
 
                 ' then add DBRefresh items for allowing refreshing DBFunctions (DBListFetch and DBSetQuery) during a Sequence
                 Dim searchCell As Excel.Range
-                For Each ws As Excel.Worksheet In ExcelDnaUtil.Application.ActiveWorkbook.Worksheets
+                For Each ws As Excel.Worksheet In actWb.Worksheets
                     ExcelDnaUtil.Application.Statusbar = "Looking for DBFunctions in " + ws.Name + " for adding possibility to DB Sequence"
                     For Each theFunc As String In {"DBListFetch(", "DBSetQuery(", "DBRowFetch("}
                         searchCell = ws.Cells.Find(What:=theFunc, After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
@@ -1878,11 +1887,11 @@ Public Module DBModifs
                 End If
             End If
 
-            Dim CustomXmlParts As Object = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
+            Dim CustomXmlParts As Object = actWb.CustomXMLParts.SelectByNamespace("DBModifDef")
             If CustomXmlParts.Count = 0 Then
                 ' in case no CustomXmlPart in Namespace DBModifDef exists in the workbook, add one
-                ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.Add("<root xmlns=""DBModifDef""></root>")
-                CustomXmlParts = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
+                actWb.CustomXMLParts.Add("<root xmlns=""DBModifDef""></root>")
+                CustomXmlParts = actWb.CustomXMLParts.SelectByNamespace("DBModifDef")
             End If
 
             ' remove old node in case of renaming DBModifier
@@ -1935,7 +1944,7 @@ Public Module DBModifs
             ' any features added directly to DBModif definition in XML need to be re-added now
             If existingDBModif IsNot Nothing Then existingDBModif.addHiddenFeatureDefs(dbModifNode)
             ' refresh mapper definitions to reflect changes immediately...
-            getDBModifDefinitions()
+            getDBModifDefinitions(actWb)
             ' extend Data-range for new DBMappers immediately after definition...
             If createdDBModifType = "DBMapper" Then
                 DirectCast(DBModifDefColl("DBMapper").Item(createdDBModifType + .DBModifName.Text), DBMapper).extendDataRange()
@@ -1986,19 +1995,20 @@ Public Module DBModifs
     End Function
 
     ''' <summary>gets defined names for DBModifier (DBMapper/DBAction/DBSeqnce) invocation in the current workbook and updates Ribbon with it</summary>
-    Public Sub getDBModifDefinitions(Optional onlyCheck As Boolean = False)
-        Dim actWbNames As Excel.Names
-        Try : actWbNames = ExcelDnaUtil.Application.ActiveWorkbook.Names : Catch ex As Exception
-            UserMsg("Exception when trying to get the active workbook names for getting DBModifier definitions: " + ex.Message + ", this might be either due to errors in the VBA-IDE (missing references) or due to opening this workbook from an MS-Office hyperlink, starting up Excel (timing issue). Switch to another workbook and back to fix.")
-            Exit Sub
-        End Try
-        If IsNothing(ExcelDnaUtil.Application.ActiveWorkbook) Then Exit Sub
+    Public Sub getDBModifDefinitions(actWb As Excel.Workbook, Optional onlyCheck As Boolean = False)
+
         ' load DBModifier definitions (objects) into Global collection DBModifDefColl
-        LogInfo("reading DBModifier Definitions for Workbook: " + ExcelDnaUtil.Application.ActiveWorkbook.Name)
+        LogInfo("reading DBModifier Definitions for Workbook: " + actWb.Name)
         Try
             DBModifDefColl.Clear()
-            Dim CustomXmlParts As Object = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
+            Dim CustomXmlParts As Object = actWb.CustomXMLParts.SelectByNamespace("DBModifDef")
             If CustomXmlParts.Count = 1 Then
+                Dim actWbNames As Excel.Names
+                Try : actWbNames = actWb.Names : Catch ex As Exception
+                    UserMsg("Exception when trying to get the active workbook names for getting DBModifier definitions: " + ex.Message + ", this might be either due to errors in the VBA-IDE (missing references) or due to opening this workbook from an MS-Office hyperlink, starting up Excel (timing issue). Switch to another workbook and back to fix.")
+                    Exit Sub
+                End Try
+
                 ' read DBModifier definitions from CustomXMLParts
                 For Each customXMLNodeDef As CustomXMLNode In CustomXmlParts(1).SelectSingleNode("/ns0:root").ChildNodes
                     Dim DBModiftype As String = Left(customXMLNodeDef.BaseName, 8)

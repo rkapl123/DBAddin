@@ -379,7 +379,7 @@ Public Module DBSheetConfig
         ' set DBMapper Range-name
         Dim NamesList As Excel.Names
         Try : NamesList = ExcelDnaUtil.Application.ActiveWorkbook.Names : Catch ex As Exception
-            LogWarn("Exception when trying to get the active workbook names: " + ex.Message + ", this might be either due to errors in the VBA-IDE (missing references) or due to opening this workbook from an MS-Office hyperlink, starting up Excel (timing issue). Switch to another workbook and back to fix.")
+            LogWarn("Exception when trying to get the active workbook names for checking if new DBMapper Range name exists: " + ex.Message + ", this might be either due to errors in the VBA-IDE (missing references) or due to opening this workbook from an MS-Office hyperlink, starting up Excel (timing issue). Switch to another workbook and back to fix.")
             Exit Sub
         End Try
         Dim alreadyExists As Boolean = True
@@ -440,7 +440,7 @@ Public Module DBSheetConfig
         dbModifNode.AppendChildNode("IgnoreDataErrors", NamespaceURI:="DBModifDef", NodeValue:="False")
 
         'get new definitions into ribbon right now...
-        getDBModifDefinitions()
+        getDBModifDefinitions(ExcelDnaUtil.Application.ActiveWorkbook)
 
         ' format non null-able fields specially, this needs to be after DB Mapper has been initialized (theme colors!)
         Dim existingHeaderColour As Integer = createdListObject.TableStyle.TableStyleElements(Excel.XlTableStyleElementType.xlHeaderRow).Interior.Color

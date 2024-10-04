@@ -362,7 +362,7 @@ Public Class MenuHandler
     Public Function getCPropsImage(control As CustomUI.IRibbonControl) As String
         Dim actWb As Excel.Workbook
         Try : actWb = ExcelDnaUtil.Application.ActiveWorkbook : Catch ex As Exception
-            LogWarn("Exception when trying to get the active workbook: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
+            LogWarn("Exception when trying to get the active workbook for displaying DBFskip status: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
             Return "AcceptTask"
         End Try
         If getCustPropertyBool("DBFskip", actWb) Then
@@ -383,14 +383,14 @@ Public Class MenuHandler
         End If
     End Function
 
-    ''' <summary>display state of design-mode in screen-tip of dialogBox launcher</summary>
+    ''' <summary>display DBAddin custom properties/values in screen-tip of dialogBox launcher</summary>
     ''' <param name="control"></param>
-    ''' <returns>screen-tip and the state of design-mode</returns>
+    ''' <returns>screen-tip with the DBAddin custom properties/values</returns>
     Public Function getToggleCPropsScreentip(control As CustomUI.IRibbonControl) As String
         getToggleCPropsScreentip = ""
         Dim actWb As Excel.Workbook = Nothing
         Try : actWb = ExcelDnaUtil.Application.ActiveWorkbook : Catch ex As Exception
-            getToggleCPropsScreentip = "Exception when trying to get the active workbook: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)"
+            getToggleCPropsScreentip = "Exception when trying to get the active workbook for displaying DBAddin custom properties/values: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)"
         End Try
         If actWb IsNot Nothing Then
             Try
@@ -401,7 +401,7 @@ Public Class MenuHandler
                     End If
                 Next
             Catch ex As Exception
-                getToggleCPropsScreentip += "exception when collecting doc-properties: " + ex.Message
+                getToggleCPropsScreentip += "exception when collecting DBAddin doc-properties: " + ex.Message
             End Try
         End If
     End Function
@@ -411,7 +411,7 @@ Public Class MenuHandler
     Public Sub showCProps(control As CustomUI.IRibbonControl)
         Dim actWb As Excel.Workbook = Nothing
         Try : actWb = ExcelDnaUtil.Application.ActiveWorkbook : Catch ex As Exception
-            UserMsg("Exception when trying to get the active workbook for showing custom properties: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
+            UserMsg("Exception when trying to get the active workbook for showing custom properties dialog: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
         End Try
         If actWb IsNot Nothing Then
             Try
@@ -454,7 +454,7 @@ Public Class MenuHandler
             ' check if any DBModifier exist below root node, only if at least one is defined, open dialog
             If CustomXmlParts(1).SelectNodes("/ns0:root/*").Count > 0 Then
                 Dim theEditDBModifDefDlg As New EditDBModifDef()
-                If theEditDBModifDefDlg.ShowDialog() = System.Windows.Forms.DialogResult.OK Then getDBModifDefinitions()
+                If theEditDBModifDefDlg.ShowDialog() = System.Windows.Forms.DialogResult.OK Then getDBModifDefinitions(actWb)
                 Exit Sub
             End If
         End If
@@ -800,7 +800,7 @@ Public Class MenuHandler
     Private Sub ctMenuStrip2_Click(sender As Object, e As EventArgs)
         Dim actWb As Excel.Workbook = Nothing
         Try : actWb = ExcelDnaUtil.Application.ActiveWorkbook : Catch ex As Exception
-            UserMsg("Exception when trying to get the active workbook: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
+            UserMsg("Exception when trying to get the active workbook for power query selection: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
         End Try
         ' restore previously stored query with Ctrl..
         If My.Computer.Keyboard.CtrlKeyDown Then
@@ -829,7 +829,7 @@ Public Class MenuHandler
     Public Sub clickAssignDBSheet(control As CustomUI.IRibbonControl)
         Dim actWb As Excel.Workbook = Nothing
         Try : actWb = ExcelDnaUtil.Application.ActiveWorkbook : Catch ex As Exception
-            LogWarn("Exception when trying to get the active workbook: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
+            LogWarn("Exception when trying to get the active workbook for assigning DBSheet: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
         End Try
         If actWb IsNot Nothing Then
             DBSheetConfig.createDBSheet()

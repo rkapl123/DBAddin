@@ -298,7 +298,7 @@ done:
                 DBModifDefColl = New Dictionary(Of String, Dictionary(Of String, DBModif))
             End If
             LogInfo("getting DBModif Definitions on Workbook Activate")
-            getDBModifDefinitions()
+            getDBModifDefinitions(Wb)
             ' unfortunately, Excel doesn't fire SheetActivate when opening workbooks, so do that here...
             LogInfo("assign command button click handlers on Workbook Activate")
             assignHandler(Wb.ActiveSheet)
@@ -375,39 +375,43 @@ done:
         cb1 = Nothing : cb2 = Nothing : cb3 = Nothing : cb4 = Nothing : cb5 = Nothing : cb6 = Nothing : cb7 = Nothing : cb8 = Nothing : cb9 = Nothing : cb0 = Nothing
         assignHandler = True
         Dim collShpNames As String = ""
-        For Each shp As Excel.Shape In Sh.Shapes
-            ' Associate click-handler with all click events of the CommandButtons.
-            Dim ctrlName As String
-            Try : ctrlName = Sh.OLEObjects(shp.Name).Object.Name : Catch ex As Exception : ctrlName = "" : End Try
-            If Left(ctrlName, 8) = "DBMapper" Or Left(ctrlName, 8) = "DBAction" Or Left(ctrlName, 8) = "DBSeqnce" Then
-                collShpNames += IIf(collShpNames <> "", ",", "") + shp.Name
-                If cb1 Is Nothing Then
-                    cb1 = Sh.OLEObjects(shp.Name).Object
-                ElseIf cb2 Is Nothing Then
-                    cb2 = Sh.OLEObjects(shp.Name).Object
-                ElseIf cb3 Is Nothing Then
-                    cb3 = Sh.OLEObjects(shp.Name).Object
-                ElseIf cb4 Is Nothing Then
-                    cb4 = Sh.OLEObjects(shp.Name).Object
-                ElseIf cb5 Is Nothing Then
-                    cb5 = Sh.OLEObjects(shp.Name).Object
-                ElseIf cb6 Is Nothing Then
-                    cb6 = Sh.OLEObjects(shp.Name).Object
-                ElseIf cb7 Is Nothing Then
-                    cb7 = Sh.OLEObjects(shp.Name).Object
-                ElseIf cb8 Is Nothing Then
-                    cb8 = Sh.OLEObjects(shp.Name).Object
-                ElseIf cb9 Is Nothing Then
-                    cb9 = Sh.OLEObjects(shp.Name).Object
-                ElseIf cb0 Is Nothing Then
-                    cb0 = Sh.OLEObjects(shp.Name).Object
-                Else
-                    UserMsg("Only max. of 10 DBModifier Buttons are allowed on a Worksheet, currently in use: " + collShpNames + " !")
-                    assignHandler = False
-                    Exit For
+        Try
+            For Each shp As Excel.Shape In Sh.Shapes
+                ' Associate click-handler with all click events of the CommandButtons.
+                Dim ctrlName As String
+                Try : ctrlName = Sh.OLEObjects(shp.Name).Object.Name : Catch ex As Exception : ctrlName = "" : End Try
+                If Left(ctrlName, 8) = "DBMapper" Or Left(ctrlName, 8) = "DBAction" Or Left(ctrlName, 8) = "DBSeqnce" Then
+                    collShpNames += IIf(collShpNames <> "", ",", "") + shp.Name
+                    If cb1 Is Nothing Then
+                        cb1 = Sh.OLEObjects(shp.Name).Object
+                    ElseIf cb2 Is Nothing Then
+                        cb2 = Sh.OLEObjects(shp.Name).Object
+                    ElseIf cb3 Is Nothing Then
+                        cb3 = Sh.OLEObjects(shp.Name).Object
+                    ElseIf cb4 Is Nothing Then
+                        cb4 = Sh.OLEObjects(shp.Name).Object
+                    ElseIf cb5 Is Nothing Then
+                        cb5 = Sh.OLEObjects(shp.Name).Object
+                    ElseIf cb6 Is Nothing Then
+                        cb6 = Sh.OLEObjects(shp.Name).Object
+                    ElseIf cb7 Is Nothing Then
+                        cb7 = Sh.OLEObjects(shp.Name).Object
+                    ElseIf cb8 Is Nothing Then
+                        cb8 = Sh.OLEObjects(shp.Name).Object
+                    ElseIf cb9 Is Nothing Then
+                        cb9 = Sh.OLEObjects(shp.Name).Object
+                    ElseIf cb0 Is Nothing Then
+                        cb0 = Sh.OLEObjects(shp.Name).Object
+                    Else
+                        UserMsg("Only max. of 10 DBModifier Buttons are allowed on a Worksheet, currently in use: " + collShpNames + " !")
+                        assignHandler = False
+                        Exit For
+                    End If
                 End If
-            End If
-        Next
+            Next
+        Catch ex As Exception
+            LogWarn("assignHandler exception occurred: " + ex.Message)
+        End Try
     End Function
 
     ''' <summary>assign command buttons anew with each change of sheets</summary>

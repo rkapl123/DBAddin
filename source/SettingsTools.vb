@@ -182,7 +182,7 @@ Public Module SettingsTools
 
         Try : WbNames = actWB.Names
         Catch ex As Exception
-            LogWarn("Exception when trying to get Workbook names: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
+            LogWarn("Exception when trying to get Workbook names for repairing legacy functions: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
             Exit Sub
         End Try
         If actWB Is Nothing Then
@@ -241,8 +241,14 @@ Public Module SettingsTools
 
     ''' <summary>maintenance procedure to check/purge names used for db-functions from workbook, or unhide DB names</summary>
     Public Sub checkpurgeNames()
+        Dim actWb As Excel.Workbook = Nothing
+        Try : actWb = ExcelDnaUtil.Application.ActiveWorkbook.Names : Catch ex As Exception
+            UserMsg("Exception when trying to get the active workbook for purging names: " + ex.Message + ", this might be either due to errors in the VBA-IDE (missing references) or due to opening this workbook from an MS-Office hyperlink, starting up Excel (timing issue). Switch to another workbook and back to fix.")
+            Exit Sub
+        End Try
+        If IsNothing(actWb) Then Exit Sub
         Dim actWbNames As Excel.Names = Nothing
-        Try : actWbNames = ExcelDnaUtil.Application.ActiveWorkbook.Names : Catch ex As Exception
+        Try : actWbNames = actWb.Names : Catch ex As Exception
             UserMsg("Exception when trying to get the active workbook names for purging names: " + ex.Message + ", this might be either due to errors in the VBA-IDE (missing references) or due to opening this workbook from an MS-Office hyperlink, starting up Excel (timing issue). Switch to another workbook and back to fix.")
             Exit Sub
         End Try
@@ -270,7 +276,7 @@ Public Module SettingsTools
             Try
                 If retval = vbYes Then
                     Dim curWs As Excel.Worksheet = ExcelDnaUtil.Application.ActiveSheet
-                    For Each ws As Excel.Worksheet In ExcelDnaUtil.Application.ActiveWorkbook.Worksheets
+                    For Each ws As Excel.Worksheet In actWb.Worksheets
                         ws.Activate()
                         For Each DBname As Excel.Name In ws.Names
                             ' external data names
@@ -371,7 +377,7 @@ Public Module SettingsTools
             ' also provide possibility to fix orphaned DBFunctions
             fixOrphanedDBFunctions(ExcelDnaUtil.Application.ActiveWorkbook)
             ' last check any possible DB Modifier Definitions for validity
-            getDBModifDefinitions(True)
+            getDBModifDefinitions(actWb, True)
         End If
     End Sub
 
