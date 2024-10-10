@@ -550,8 +550,8 @@ Public Class DBMapper : Inherits DBModif
                         End If
                     Else
                         ' probably deleted with Ctrl & -, warn user...
-                        UserMsg("Whole row modified, maybe you deleted a row with Ctrl & -. The row is not deleted in the database (use Ctrl-Shift-D), you can continue editing/saving or refresh the DB-Sheet with Ctrl-Shift-R (recommended).", "Set CUD Flags for DB Mapper", MsgBoxStyle.Exclamation)
-                        GoTo exitSub
+                        Dim retval As MsgBoxResult = QuestionMsg("A whole row was modified, in case you deleted a row with Ctrl & -, the row will not deleted in the database (use Ctrl-Shift-D instead, click cancel and refresh the DB-Sheet with Ctrl-Shift-R now)." + vbCrLf + "If you inserted a row, confirm the insertion by continuing now.",, "Set CUD Flags for DB Mapper", MsgBoxStyle.Exclamation)
+                        If retval = MsgBoxResult.Cancel Then GoTo exitSub
                     End If
                 End If
 
@@ -1162,6 +1162,7 @@ cleanup:
                                 Next
                             Catch ex As Exception
                                 UserMsg("Exception: " + ex.Message, "get underlying DBFName from Range")
+                                lookupDefs = {}
                             End Try
                             If lookupDefs.Length() > 0 Then
                                 For Each DBFsourceName As String In lookupDefs
@@ -1192,7 +1193,7 @@ cleanup:
                 TargetRange.Cells(rowNum, colNum).Select
             End If
         End If
-        Dim retval As MsgBoxResult = QuestionMsg(message, MsgBoxStyle.OkCancel, "DBMapper Error", MsgBoxStyle.Critical)
+        Dim retval As MsgBoxResult = QuestionMsg(message + ", continue with storing or cancel?", MsgBoxStyle.OkCancel, "DBMapper Error", MsgBoxStyle.Critical)
         If retval = vbCancel Then Return False
         Return True
     End Function

@@ -20,31 +20,35 @@ Public Module Logging
     ''' <param name="eEventType">event type: info, warning, error</param>
     ''' <param name="caller">reflection based caller information: module.method</param>
     Private Sub WriteToLog(Message As String, eEventType As TraceEventType, caller As String)
-        ' collect errors and warnings for returning messages in executeDBModif
-        If eEventType = TraceEventType.Error Or eEventType = TraceEventType.Warning Then nonInteractiveErrMsgs += caller + ":" + Message + vbCrLf
+        Try
+            ' collect errors and warnings for returning messages in executeDBModif
+            If eEventType = TraceEventType.Error Or eEventType = TraceEventType.Warning Then nonInteractiveErrMsgs += caller + ":" + Message + vbCrLf
 
-        Dim timestamp As Int32 = DateAndTime.Now().Month * 100000000 + DateAndTime.Now().Day * 1000000 + DateAndTime.Now().Hour * 10000 + DateAndTime.Now().Minute * 100 + DateAndTime.Now().Second
-        If nonInteractive Then
-            theLogDisplaySource.TraceEvent(TraceEventType.Information, timestamp, "Non-interactive: {0}: {1}", caller, Message)
-            theLogFileSource.TraceEvent(TraceEventType.Information, timestamp, "Non-interactive: {0}: {1}", caller, Message)
-        Else
-            Select Case eEventType
-                Case TraceEventType.Information
-                    theLogDisplaySource.TraceEvent(TraceEventType.Information, timestamp, "{0}: {1}", caller, Message)
-                    theLogFileSource.TraceEvent(TraceEventType.Information, timestamp, "{0}: {1}", caller, Message)
-                Case TraceEventType.Warning
-                    theLogDisplaySource.TraceEvent(TraceEventType.Warning, timestamp, "{0}: {1}", caller, Message)
-                    theLogFileSource.TraceEvent(TraceEventType.Warning, timestamp, "{0}: {1}", caller, Message)
-                    WarningIssued = True
-                    ' at Addin Start ribbon has not been loaded so avoid call to it here..
-                    If theRibbon IsNot Nothing Then theRibbon.InvalidateControl("showLog")
-                Case TraceEventType.Error
-                    theLogDisplaySource.TraceEvent(TraceEventType.Error, timestamp, "{0}: {1}", caller, Message)
-                    theLogFileSource.TraceEvent(TraceEventType.Error, timestamp, "{0}: {1}", caller, Message)
-                    WarningIssued = True
-                    If theRibbon IsNot Nothing Then theRibbon.InvalidateControl("showLog")
-            End Select
-        End If
+            Dim timestamp As Int32 = DateAndTime.Now().Month * 100000000 + DateAndTime.Now().Day * 1000000 + DateAndTime.Now().Hour * 10000 + DateAndTime.Now().Minute * 100 + DateAndTime.Now().Second
+            If nonInteractive Then
+                theLogDisplaySource.TraceEvent(TraceEventType.Information, timestamp, "Non-interactive: {0}: {1}", caller, Message)
+                theLogFileSource.TraceEvent(TraceEventType.Information, timestamp, "Non-interactive: {0}: {1}", caller, Message)
+            Else
+                Select Case eEventType
+                    Case TraceEventType.Information
+                        theLogDisplaySource.TraceEvent(TraceEventType.Information, timestamp, "{0}: {1}", caller, Message)
+                        theLogFileSource.TraceEvent(TraceEventType.Information, timestamp, "{0}: {1}", caller, Message)
+                    Case TraceEventType.Warning
+                        theLogDisplaySource.TraceEvent(TraceEventType.Warning, timestamp, "{0}: {1}", caller, Message)
+                        theLogFileSource.TraceEvent(TraceEventType.Warning, timestamp, "{0}: {1}", caller, Message)
+                        WarningIssued = True
+                        ' at Addin Start ribbon has not been loaded so avoid call to it here..
+                        If theRibbon IsNot Nothing Then theRibbon.InvalidateControl("showLog")
+                    Case TraceEventType.Error
+                        theLogDisplaySource.TraceEvent(TraceEventType.Error, timestamp, "{0}: {1}", caller, Message)
+                        theLogFileSource.TraceEvent(TraceEventType.Error, timestamp, "{0}: {1}", caller, Message)
+                        WarningIssued = True
+                        If theRibbon IsNot Nothing Then theRibbon.InvalidateControl("showLog")
+                End Select
+            End If
+        Catch ex As Exception
+
+        End Try
     End Sub
 
     ''' <summary>Logs error messages</summary>
