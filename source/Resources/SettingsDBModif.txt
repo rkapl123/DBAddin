@@ -5,20 +5,21 @@ confirmText
 continueIfRowEmpty
 convertAsDate
 convertAsString
-database
 CUDFlags
+database
+deleteBeforeMapperInsert
 env
 execOnSave
 executeAdditionalProc
-database
 ignoreColumns
 IgnoreDataErrors
 insertIfMissing
-parametrized
+onlyRefreshTheseDBSheetLookups
 paramEnclosing
+parametrized
 paramRangesStr
-primKeysStr
 preventColResize
+primKeysStr
 seqStep
 tableName
 									

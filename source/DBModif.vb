@@ -178,8 +178,8 @@ Public MustInherit Class DBModif
         openDatabase = openIdbConnection(setEnv, database)
     End Function
 
-    ''' <summary>refresh a DB Function (currently only DBListFetch and DBSetQuery) by invoking its respective DB*Action procedure
-    ''' additionally prepare the inputs to the DB*Action procedure as a UDF cannot be invoked from VB code</summary>
+    ''' <summary>refresh a DB Function (DBListFetch, DBRowFetch and DBSetQuery) by invoking its respective DB*Action procedure (the UDFs cannot be directly invoked from VB.NET code)
+    ''' additionally preparing the inputs to the DB*Action procedure by extracting them from the DB Functions parameters</summary>
     ''' <param name="srcExtent">the unique hidden name of the DB Function cell (DBFsource(GUID))</param>
     ''' <param name="executedDBMappers">in a DB Sequence, this parameter notifies of DBMappers that were executed before to allow avoidance of refreshing changes</param>
     ''' <param name="modifiedDBMappers">in a DB Sequence, this parameter notifies of a DBMapper that had changes, necessary to avoid deadlocks</param>
@@ -399,6 +399,10 @@ Public Class DBMapper : Inherits DBModif
     Private ReadOnly avoidFill As Boolean = False
     ''' <summary>flag to prevent automatic resizing of columns</summary>
     Private ReadOnly preventColResize As Boolean = False
+    ''' <summary>if set, delete table before inserting the contents of DBMapper</summary>
+    Private ReadOnly deleteBeforeMapperInsert As Boolean = False
+    ''' <summary>contains cells in DBSheetLookups with lookups that should only be refreshed after DB modification was done. If empty, all lookups are refreshed for that DB Modifier/Sheet</summary>
+    Private ReadOnly onlyRefreshTheseDBSheetLookups As String
 
     ''' <summary>constructor with definition XML</summary>
     ''' <param name="definitionXML"></param>
@@ -428,8 +432,12 @@ Public Class DBMapper : Inherits DBModif
             IgnoreDataErrors = Convert.ToBoolean(getParamFromXML(definitionXML, "IgnoreDataErrors", "Boolean"))
             CUDFlags = Convert.ToBoolean(getParamFromXML(definitionXML, "CUDFlags", "Boolean"))
             AutoIncFlag = Convert.ToBoolean(getParamFromXML(definitionXML, "AutoIncFlag", "Boolean"))
+            ' from here on, all properties are set only in XML...
             avoidFill = Convert.ToBoolean(getParamFromXML(definitionXML, "avoidFill", "Boolean"))
             preventColResize = Convert.ToBoolean(getParamFromXML(definitionXML, "preventColResize", "Boolean"))
+            deleteBeforeMapperInsert = Convert.ToBoolean(getParamFromXML(definitionXML, "deleteBeforeMapperInsert", "Boolean"))
+            onlyRefreshTheseDBSheetLookups = getParamFromXML(definitionXML, "onlyRefreshTheseDBSheetLookups")
+            ' set table styles for DBMappers having a listobject underneath
             Dim DBmapperListObj As Excel.ListObject = Nothing
             Try : DBmapperListObj = TargetRange.ListObject : Catch ex As Exception : End Try
             If DBmapperListObj IsNot Nothing Then
@@ -444,6 +452,7 @@ Public Class DBMapper : Inherits DBModif
             ' allow CUDFlags only on DBMappers with underlying List-objects that were created with a query
             If CUDFlags And (DBmapperListObj Is Nothing OrElse DBmapperListObj.SourceType <> Excel.XlListObjectSourceType.xlSrcQuery) Then
                 CUDFlags = False
+                ' remove and reset CUDFlags setting in the definitions
                 definitionXML.SelectSingleNode("ns0:CUDFlags").Delete()
                 definitionXML.AppendChildNode("CUDFlags", NamespaceURI:="DBModifDef", NodeValue:="False")
                 Throw New Exception("CUDFlags only supported for DBMappers on ListObjects (created with DBSetQueryListObject)!")
@@ -657,6 +666,9 @@ exitSub:
     Public Overrides Sub addHiddenFeatureDefs(definitionXML As CustomXMLNode)
         MyBase.addHiddenFeatureDefs(definitionXML)
         definitionXML.AppendChildNode("avoidFill", NamespaceURI:="DBModifDef", NodeValue:=avoidFill.ToString())
+        definitionXML.AppendChildNode("preventColResize", NamespaceURI:="DBModifDef", NodeValue:=preventColResize.ToString())
+        definitionXML.AppendChildNode("deleteBeforeMapperInsert", NamespaceURI:="DBModifDef", NodeValue:=deleteBeforeMapperInsert.ToString())
+        definitionXML.AppendChildNode("onlyRefreshTheseDBSheetLookups", NamespaceURI:="DBModifDef", NodeValue:=onlyRefreshTheseDBSheetLookups)
     End Sub
 
     ''' <summary>execute the modifications for the DB Mapper by storing the data modifications in the DBMapper range to the database</summary>
@@ -684,6 +696,23 @@ exitSub:
         If Not TransactionOpen Then
             ExcelDnaUtil.Application.StatusBar = "opening database connection for " + database
             If Not openDatabase() Then Exit Sub
+        End If
+
+        If deleteBeforeMapperInsert Then
+            Try
+                Dim DmlCmd As IDbCommand = idbcnn.CreateCommand()
+                If Not TransactionOpen Then DBModifs.trans = idbcnn.BeginTransaction()
+                With DmlCmd
+                    .Transaction = DBModifs.trans
+                    .CommandText = "delete from " + tableName
+                    .CommandTimeout = CmdTimeout
+                    .CommandType = CommandType.Text
+                    .ExecuteNonQuery()
+                End With
+            Catch ex As Exception
+                notifyUserOfDataError("Error when deleting all data in " + tableName + ": " + ex.Message, 1)
+                GoTo cleanup
+            End Try
         End If
 
         ' set up data adapter and data set for checking DBMapper columns
@@ -957,9 +986,10 @@ exitSub:
                     End Try
                 End If
 
-                ' get the record for updating, however avoid finding record with empty primary key value if auto-increment is given...
+                ' get the record for updating, however avoid finding record with empty primary key value if auto-increment is given
+                ' also avoid finding if no data should be in the table (deleteBeforeMapperInsert)
                 Dim foundRow As DataRow = Nothing
-                If Not AutoIncrement Then
+                If Not AutoIncrement And Not deleteBeforeMapperInsert Then
                     Try
                         foundRow = ds.Tables(0).Rows.Find(primKeyValues)
                     Catch ex As Exception
@@ -971,7 +1001,7 @@ exitSub:
                 Dim insertRecord As Boolean = False
                 ' If we have an auto-incrementing primary key (empty primary key value !) or didn't find a record with the given primary key (rst.EOF) ...
                 If AutoIncrement OrElse IsNothing(foundRow) Then
-                    If insertIfMissing Or rowCUDFlag = "i" Then
+                    If insertIfMissing Or rowCUDFlag = "i" Or deleteBeforeMapperInsert Then
                         insertRecord = True
                         ' ... add a new record if insertIfMissing flag is set Or CUD Flag insert is given
                         foundRow = ds.Tables(0).NewRow()
@@ -1118,14 +1148,21 @@ nextRow:
         End If
 cleanup:
         ExcelDnaUtil.Application.StatusBar = False
+        If deleteBeforeMapperInsert And Not TransactionOpen Then
+            If hadError Then
+                DBModifs.trans.Rollback()
+            Else
+                DBModifs.trans.Commit()
+            End If
+        End If
         ' close connection to return it to the pool (automatically closes recordset objects, so no need for checkrst.Close() or rst.Close())...
         If calledByDBSeq = "" Then idbcnn.Close()
-        ' DBSheet (CUDFlags), ask for refresh after DB Modification was done
+        ' ask for refresh/clear CUD marks (only DBSheet) after DB Modification was done
         If changesDone Then
             Dim DBFunctionSrcExtent = getUnderlyingDBNameFromRange(TargetRange)
             If DBFunctionSrcExtent <> "" Then
                 If CUDFlags Then
-                    ' also resetCUDFlags for CUDFlags DBMapper that do not ask before execute and were called by a DBSequence
+                    ' also resetCUDFlags for CUDFlags DBMapper (DBSheet) that do not ask before execute and were called by a DBSequence
                     Try
                         ' reset CUDFlags before refresh to avoid problems with reduced TargetRange due to deletions!
                         Me.resetCUDFlags()
@@ -1137,7 +1174,7 @@ cleanup:
                         ' only ask when DBModifier not done on Workbook save, in this case refresh automatically...
                         If Not WbIsSaving Then retval = QuestionMsg(theMessage:="Refresh Data Range of DB Mapper '" + dbmodifName + "' and the DBSheetLookups?", questionTitle:="Refresh DB Mapper and Lookups")
                         If WbIsSaving Or retval = vbOK Or retval = vbNo Then
-                            ' clear CUD marks after completion is done with doDBRefresh/DBSetQueryAction/resizeDBMapperRange
+                            ' refresh underlying DB Function 
                             doDBRefresh(Replace(DBFunctionSrcExtent, "DBFtarget", "DBFsource"))
                             ' also refresh lookups
                             Dim lookupDefs As String() = {}
@@ -1146,10 +1183,10 @@ cleanup:
                                     Dim rng As Excel.Range = Nothing
                                     Try : rng = nm.RefersToRange : Catch ex As Exception : End Try
                                     If rng IsNot Nothing Then
-
                                         If InStr(nm.Name, "DBFsource") > 0 Then
                                             Dim WbkSepPos As Integer = InStr(nm.Name, "!")
-                                            If InStr(nm.RefersTo, "DBSheetLookups!") > 0 Then
+                                            ' only for DB source names on DBSheetLookups lookup sheet and onlyRefreshTheseDBSheetLookups matching their address / onlyRefreshTheseDBSheetLookups being empty (all lookups are refreshed)
+                                            If InStr(nm.RefersTo, "DBSheetLookups!") > 0 And (onlyRefreshTheseDBSheetLookups = "" Or InStr(onlyRefreshTheseDBSheetLookups, "," + Replace(rng.Address, "$", "")) > 0) Then
                                                 ReDim Preserve lookupDefs(lookupDefs.Length)
                                                 If WbkSepPos > 1 Then
                                                     lookupDefs(lookupDefs.Length - 1) = Mid(nm.Name, WbkSepPos + 1)
@@ -1295,8 +1332,11 @@ Public Class DBAction : Inherits DBModif
             ExcelDnaUtil.Application.StatusBar = False
             Exit Sub
         End Try
+        Dim message As String = "DBAction " + paramTargetName + " executed, affected records: " + result.ToString() + IIf(result = 0, ". As no records were affected, you might check whether you need to set the <continue if row empty> flag in case there should be some data affected", "")
         If Not WbIsSaving And calledByDBSeq = "" Then
-            UserMsg("DBAction " + paramTargetName + " executed, affected records: " + result.ToString(), "DBAction executed", MsgBoxStyle.Information)
+            UserMsg(message, "DBAction executed", MsgBoxStyle.Information)
+        Else
+            LogInfo(message)
         End If
         ExcelDnaUtil.Application.StatusBar = False
         ' close connection to return it to the pool...

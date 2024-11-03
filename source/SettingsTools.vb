@@ -341,9 +341,9 @@ Public Module SettingsTools
                         If InStr(DBname.RefersTo, "OFFSET(") > 0 Then
                             collectedErrors += "Offset formula that '" + DBname.Name + "' refers to, did not return a valid range" + vbCrLf
                         ElseIf InStr(DBname.RefersTo, "#REF!") > 0 Then
-                            ' do nothing, already collected...
+                            ' RefersToRange thows exception, but do nothing as already collected above ...
                         Else
-                            collectedErrors += DBname.Name + "' RefersToRange resulted in Exception " + ex.Message + vbCrLf
+                            collectedErrors += DBname.Name + "' checkRange = DBname.RefersToRange resulted in unexpected Exception " + ex.Message + vbCrLf
                         End If
                     End Try
                     If DBname.Visible Then
@@ -360,6 +360,10 @@ Public Module SettingsTools
                         NamesWithErrors.Add(DBname)
                         collectedErrors += DBname.Name + "' contains #REF!" + vbCrLf
                     End If
+                    If DBname.RefersTo = "" Then
+                        NamesWithErrors.Add(DBname)
+                        collectedErrors += DBname.Name + "' is empty" + vbCrLf
+                    End If
                     If DBname.Visible Then
                         collectedErrors += DBname.Name + "' is visible" + vbCrLf
                     End If
@@ -368,7 +372,7 @@ Public Module SettingsTools
             If collectedErrors = "" Then
                 UserMsg("No DBfunction name problems detected.", "DBfunction check Error", MsgBoxStyle.Information)
             Else
-                If QuestionMsg(collectedErrors + vbCrLf + "Should names with #REF! errors and not having a corresponding source/target name be removed?",, "DBfunction check Error") = MsgBoxResult.Ok Then
+                If QuestionMsg(collectedErrors + vbCrLf + "Should names containing #REF! errors, DBFsource names being empty or all names not having a corresponding source/target name be removed?",, "DBfunction check Error") = MsgBoxResult.Ok Then
                     For Each DBname As Excel.Name In NamesWithErrors
                         Try : DBname.Delete() : Catch ex As Exception : End Try
                     Next

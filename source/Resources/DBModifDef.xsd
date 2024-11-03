@@ -69,7 +69,9 @@
 									<xs:element type="xs:string" name="confirmText" minOccurs="0"/>
 									<xs:element type="xs:string" name="avoidFill" minOccurs="0"/>
                   <xs:element type="xs:string" name="preventColResize" minOccurs="0"/>
-								</xs:choice>
+                  <xs:element type="xs:string" name="deleteBeforeMapperInsert" minOccurs="0"/>
+                  <xs:element type="xs:string" name="onlyRefreshTheseDBSheetLookups" minOccurs="0"/>
+                </xs:choice>
 							</xs:sequence>
 							<xs:attribute name="Name" type="xs:string"/>
 						</xs:complexType>

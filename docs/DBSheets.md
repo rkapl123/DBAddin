@@ -37,7 +37,7 @@ This Workbook uses the pubs database for MSSQL, (available for download [from Mi
 
 DBSheets consist of an Excel data table containing the table data, the header and - if any foreign lookup fields are present - the lookup resolutions for those foreign lookups in usually hidden columns.  
 
-Additionally, if there are lookups, there is also a hidden sheet containing the lookup keys and values.
+Additionally, if there are lookups, there is also a hidden sheet named "DBSheetLookups" containing the lookup keys and values (potentially coming from a database query using DBListFetch functions).
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBSheetInAction.PNG)
 
@@ -45,7 +45,7 @@ The header row and the primary key column(s), which are located leftmost, should
 
 Non null-able columns have a darker pattern than null-able columns, this is however only effected once at creation/assigning the DBSheet. If column definitions change, you have to reflect this in the DBSheet Definition and recreate the DBSheet again (see [Finishing DBSheet definition creation](#finishing-dbsheet-definition-creation)).
 
-Lookup columns are restricted with excel's cell validation, including a drop-down of allowed values.
+Lookup columns are restricted with excels cell validation, including a drop-down of allowed values.
 
 Data is changed simply by editing existing data in cells, this marks the row(s) to be changed at the rightmost end of the data table as (i)nserted, (u)pdated or (d)eleted.
 
@@ -56,6 +56,8 @@ Empty rows can be created within the existing data area by using context menu "i
 Deleting is done using context menu "delete row" or pressing Ctl-Sh-D in the row to be deleted. This marks the row(s) to be deleted.
 
 To make the editions permanent, save the workbook (save button or Ctl-s). After a potential warning message (as set in the DBMapper), the current DBSheet is stored to the database, producing warnings/errors as the database (or triggers) checks for validity.
+
+After a DBSheet was saved, all lookups being placed in the hidden sheet "DBSheetLookups" are refreshed to ensure that any changes done in the DBSheet are also reflected in the lookups. If this is too general and takes too much time, the refreshing can be restricted to only those addresses that make sense (i.e. contain the table that was modified with the DBSheet). This setting is done with the (hidden setting) "onlyRefreshTheseDBSheetLookups", which contains a list of addresses of DBListfetch function cells in the DBSheetLookups sheet that exclusively should be refreshed after the corresponding DBSheet was saved. If empty, all lookups are refreshed when the DBSheet was saved. Always provide a comma BEFORE the cell address ! E.g. `<onlyRefreshTheseDBSheetLookups>,A1,C1</onlyRefreshTheseDBSheetLookups>` prevents refreshing DBListfetch lookup queries in cells A1 and C1 on the hidden sheet "DBSheetLookups". To prevent any lookup refresh, just put anything there that doesn't resolve to a cell-address containing a DBListfetch lookup query.
 
 ### DBSheet definition file
 
@@ -181,7 +183,7 @@ A word of warning on lookups in operational DBSheets: As it is possible to modif
 
 #### Settings
 
-Following Settings in DBAddin.xll.config or the referred DBAddinCentral.config or DBaddinUser.config affect the behavior of DBSheet definitions:
+Following Settings in DBAddin.xll.config or the referred DBAddinCentral.config or DBaddinUser.config affect the behaviour of DBSheet definitions:
 ```xml
     <add key="ConfigName3" value="MSSQL"/>
     <add key="ConstConnString3" value="provider=SQLOLEDB;Server=Lenovo-PC;Trusted_Connection=Yes;Database=pubs;Packet Size=32767"/>
@@ -207,7 +209,7 @@ Explanation:
 *   `DBidentifierCCS`**N**: used to identify the database within DBSheetConnString.
 *   `DBSheetDefinitions`**N**: path to the stored DBSheetdefinitions (default directory of assign DBsheet definitions and load/save DBSheet Definitions).
 *   `dbGetAll`**N**: command for retrieving all databases/schemas from the database can be entered (for (MS) SQL server this is "`sp_helpdb`" for Oracle its "`select user-name from sys.all_users`".
-*   `dbGetAllFieldName`**N**: If the result of above command has more than one column (like in sqlserver), you have to give the fieldname where the databases can be retrieved from.
+*   `dbGetAllFieldName`**N**: If the result of above command has more than one column (like in sql-server), you have to give the fieldname where the databases can be retrieved from.
 *   `ownerQualifier`**N**: default owner qualifier for table when loading DBSheet definitions, if table name is not fully qualified (legacy DBSheet definitions).
 *   `connIDPrefixDBtype`: Legacy definitions from the old DBAddin can be loaded as well, the Database is retrieved from the entry `connID`, this might be prefixed (e.g. by MSSQL), which can be removed by this setting.
 

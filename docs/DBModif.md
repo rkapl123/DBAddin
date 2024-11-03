@@ -3,7 +3,7 @@
 DBModifications can be used to
 * save Excel Range data to database table(s): DBMapper
 * modify DB Data using Data Manipulation SQL (update, delete, etc.): DBAction
-* and creating sequences of these activites: DBSequence.
+* and creating sequences of these activities: DBSequence.
 
 The target data referred to by DBMapper and DBAction (data is the DML SQL statement(s)) is specified by special Range names, any other definitions (environment, target database, etc.) is stored in a custom property of the workbook having the same name as the target range.
 
@@ -34,7 +34,7 @@ The DBModifier creation/editing is shown below (examples already filled, when ac
 *   C/U/D Flags: special mode used for row-by-row editing (inserting, updating and deleting rows). Only edited rows will be done when executing. Deleting rows is node with the special context menu item "delete Row" (or pressing Ctrl-Shift-D).
 *   Ignore data errors: replace excel errors like #VALUE! with null on updating/inserting. Otherwise an error message is passed and execution is skipped for that row.
 *   Auto Increment: Allow empty primary column values (only for a single primary key!) in use with tables that have the IsAutoIncrement property set for this primary column (typically because of an identity specification for that column in the Database).
-*   Create CB: create a commandbutton for the DB Sequence in the current Worksheet.
+*   Create CB: create a command-button for the DB Sequence in the current Worksheet.
 *   Hyperlink: click on it to highlight/select the DB Mapper area.
 
 You can always edit these parameters by selecting a cell in the DB Mapper area and invoking the context menu again.
@@ -56,12 +56,12 @@ The clickable Hyperlink shows the range address of the data range, a named offse
 *   Exec on Save: Should the DBAction be executed when the workbook is being saved?
 *   Ask for execution: Before execution of the DBAction, ask for confirmation. A custom text can be given in the CustomXML definition element confirmText (see below).
 *   The actual DBAction to be done is defined in a range that is named like the DBAction definition (the hyperlink takes you there). This range can be dynamically computed as all ranges in excel.
-*   Create CB: create a commandbutton for the DB Sequence in the current Worksheet.
+*   Create CB: create a command-button for the DB Sequence in the current Worksheet.
 *   Hyperlink: click on it to highlight/select the DB Action range.
-*   parametrized: If checked, brings parameters into the template paramString by replacing the placeholders (enclosed by ! if not overriden in paramEnclosing) with the values in the corresponding paramRanges. 
+*   parametrized: If checked, brings parameters into the template paramString by replacing the placeholders (enclosed by ! if not overridden in paramEnclosing) with the values in the corresponding paramRanges. 
 *   Parameter Range Names: string of named ranges (if necessary qualified with sheet name!range_name) to be used as parameters that are replaced into the template string, where the order of the parameter range determines which placeholder is being replaced
 *   continue if row empty:  if all values in the given Ranges are empty (or errors) for a row, continue by skipping the row (otherwise processing stops at this row), defaults to false
-*   Cols num params date: comma separated locations of numerical parameters that should be converted as date values (using the default DBDate formating), if a cell value can be evaluated as numeric.
+*   Cols num params date: comma separated locations of numerical parameters that should be converted as date values (using the default DBDate formatting), if a cell value can be evaluated as numeric.
 *   Cols num params string: comma separated locations of numerical parameters that should be converted as strings, if a cell value can be evaluated as numeric.
 
 Example for parametrization: DB Action cell contains `INSERT INTO Test (Col1,Col2,Col3,Col4) VALUES(!1!,!2!,!3!,!4!)`; Cols num params string: `1`; Cols num params date: `3`; Parameter Range Names: `paramC1,paramD1,paramE1,paramF1`
@@ -78,12 +78,12 @@ You can always edit these parameters by selecting a cell in the range of the DB 
 *   DBSequence Name: Enter the name for the selected Range that will be used to identify the DBSequence in the "Execute DBModifier" Group dropdowns. If no name is given here, then UnnamedDBAction will be used to identify it.
 *   Exec on Save: Should the DBSequence be executed when the workbook is being saved?
 *   Ask for execution: Before execution of the DBSequence, ask for confirmation. A custom text can be given in the CustomXML definition element confirmText (see below).
-*   Sequence Step Datagrid: here the available DBMappers, DBActions and DBFunctions (DBListfetch/DBRowFetch/DBSetQuery) can be added that are then executed in Sequence. If you are executing all sequence steps in the same environment, its possible to run the sequence in a transaction context by placing DBBegin at the top and DBCommitRollback at the bottom of the sequence.
+*   Sequence Step Data-grid: here the available DBMappers, DBActions and DBFunctions (DBListfetch/DBRowFetch/DBSetQuery) can be added that are then executed in Sequence. If you are executing all sequence steps in the same environment, its possible to run the sequence in a transaction context by placing DBBegin at the top and DBCommitRollback at the bottom of the sequence.
 *   move the sequence steps up and down by selecting a row and using the context menu (right mouse button).
-*   Create CB: create a commandbutton for the DB Sequence in the current Worksheet.
+*   Create CB: create a command-button for the DB Sequence in the current Worksheet.
 
 As DB Sequences have no Range with data/definitions, invoking the context menu always creates new DB Sequences. You can edit existing DB Sequences
-by Ctrl-Shift clicking the Execute DBModifier Groups dropdown menus or by Ctrl-Shift clicking the created commandbuttons.
+by Ctrl-Shift clicking the Execute DBModifier Groups dropdown menus or by Ctrl-Shift clicking the created command-buttons.
 
 ## Edit DBModifier Definitions  
 
@@ -98,14 +98,14 @@ The DBModifiers can be executed either
 ... using the Execute DBModifier Groups dropdown menus..  
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/ConfigMenu.PNG)
 
-... or using commandbuttons that were generated with the creation dialogs (the name of the control box has to be the same as the DBModifier definition/DBModifier Range)..  
+... or using command-buttons that were generated with the creation dialogs (the name of the control box has to be the same as the DBModifier definition/DBModifier Range)..  
 
 ... or be done on saving the Workbook.  
 
 ... or by issuing the VBA command `result = Application.Run("executeDBModif", <DBModifierName>, <headlessFlag>)`, where `<DBModifierName>` is the Name of the DB Modifier including the type (so `DBMapperemployee` or `DBActionpublishersDelete`) and `<headlessFlag>` is a boolean flag indicating whether any user-interaction (as controllable by the Addin) should be avoided, all errors are returned in the `result` of the call.
 
 You can edit the DBModifiers either by Ctrl-Shift clicking the Execute DBModifier Groups dropdown menus..  
-.. or by Ctrl-Shift clicking the created commandbuttons.  
+.. or by Ctrl-Shift clicking the created command-buttons.  
 .. or by using the Insert/Edit DBFunc/DBModif context menu within a DBMapper or DBAction range.  
 
 ## Additional settings ("hidden" as they are not available in creation dialogs)
@@ -115,6 +115,7 @@ Following Settings of DBModifiers can only be edited in the Edit DBModifier Defi
 *  `confirmText` (all DB Modifiers, String): an alternative text displayed in the confirmation of DB Modifiers.
 *  `avoidFill` (only DBMappers, Boolean): prevent filling of whole table during execution of DB Mappers, this is useful for very large tables that are incrementally filled and would take unnecessary long time to start the DB Mapper. If set to true then each record is searched independently by going to the database. If the records to be stored are not too many, then this is more efficient than loading a very large table.
 *  `preventColResize` (only DBMappers, Boolean): prevent automatic resizing of DB Mappers columns to include new ones, this is useful if header columns can be added accidentally and thus lead to errors.
+*  `onlyRefreshTheseDBSheetLookups` (only DBMappers, String): contains a list of addresses of DBListfetch function cells in the DBSheetLookups sheet that exclusively should be refreshed after the corresponding DBSheet was saved. If empty, all lookups are refreshed when the DBSheet was saved. Always provide a comma BEFORE the cell address !
 
 ## Settings
 
@@ -136,7 +137,7 @@ Explanation:
 
 *   `CmdTimeout`: the default timeout for a command to execute.
 *   `CnnTimeout`: the default timeout for connecting.
-*   `DefaultEnvironment`: default selected environment on startup.
+*   `DefaultEnvironment`: default selected environment on start-up.
 *   `DontChangeEnvironment`: prevent changing the environment selector (Non-Production environments might confuse some people).
 *   `DBMapperCUDFlagStyle`: Style for setting Excel data tables when having CUD Flags set on DBMappers (to find the correct name for this enter `? ActiveCell.ListObject.TableStyle` in the VBE direct window having selected a cell in the desirably formatted data table).
 *   `DBMapperStandardStyle`: Style for setting Excel data tables when not having CUD Flags set on DBMappers.
