@@ -17,7 +17,7 @@ Public Module SettingsTools
     Public CmdTimeout As Integer
     ''' <summary>default formatting style used in DBDate</summary>
     Public DefaultDBDateFormatting As Integer
-    ''' <summary>The path where the User specific settings (overrides) can be found</summary>
+    ''' <summary>The path where the User specific settings (overrides of standard/global settings) can be found (hardcoded to path of xll)</summary>
     Private UserSettingsPath As String
 
     ''' <summary>exception proof fetching of integer settings</summary>

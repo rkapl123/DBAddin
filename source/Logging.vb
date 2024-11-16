@@ -29,20 +29,12 @@ Public Module Logging
                 theLogDisplaySource.TraceEvent(TraceEventType.Information, timestamp, "Non-interactive: {0}: {1}", caller, Message)
                 theLogFileSource.TraceEvent(TraceEventType.Information, timestamp, "Non-interactive: {0}: {1}", caller, Message)
             Else
+                theLogDisplaySource.TraceEvent(eEventType, timestamp, "{0}: {1}", caller, Message)
+                theLogFileSource.TraceEvent(eEventType, timestamp, "{0}: {1}", caller, Message)
                 Select Case eEventType
-                    Case TraceEventType.Information
-                        theLogDisplaySource.TraceEvent(TraceEventType.Information, timestamp, "{0}: {1}", caller, Message)
-                        theLogFileSource.TraceEvent(TraceEventType.Information, timestamp, "{0}: {1}", caller, Message)
-                    Case TraceEventType.Warning
-                        theLogDisplaySource.TraceEvent(TraceEventType.Warning, timestamp, "{0}: {1}", caller, Message)
-                        theLogFileSource.TraceEvent(TraceEventType.Warning, timestamp, "{0}: {1}", caller, Message)
+                    Case TraceEventType.Warning, TraceEventType.Error
                         WarningIssued = True
                         ' at Addin Start ribbon has not been loaded so avoid call to it here..
-                        If theRibbon IsNot Nothing Then theRibbon.InvalidateControl("showLog")
-                    Case TraceEventType.Error
-                        theLogDisplaySource.TraceEvent(TraceEventType.Error, timestamp, "{0}: {1}", caller, Message)
-                        theLogFileSource.TraceEvent(TraceEventType.Error, timestamp, "{0}: {1}", caller, Message)
-                        WarningIssued = True
                         If theRibbon IsNot Nothing Then theRibbon.InvalidateControl("showLog")
                 End Select
             End If

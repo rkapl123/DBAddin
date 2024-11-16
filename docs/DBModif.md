@@ -102,11 +102,29 @@ The DBModifiers can be executed either
 
 ... or be done on saving the Workbook.  
 
-... or by issuing the VBA command `result = Application.Run("executeDBModif", <DBModifierName>, <headlessFlag>)`, where `<DBModifierName>` is the Name of the DB Modifier including the type (so `DBMapperemployee` or `DBActionpublishersDelete`) and `<headlessFlag>` is a boolean flag indicating whether any user-interaction (as controllable by the Addin) should be avoided, all errors are returned in the `result` of the call.
+... or by issuing the VBA command `result = Application.Run("executeDBModif", <DBModifierName>, <headlessFlag>)`, where `<DBModifierName>` is the name of the DB Modifier including the type (so `DBMapperemployee` or `DBActionpublishersDelete`) and `<headlessFlag>` is a boolean flag indicating whether any user-interaction (as controllable by the Addin) should be avoided, all errors collected in `nonInteractiveErrMsgs` and returned in the `result` of the call.
 
 You can edit the DBModifiers either by Ctrl-Shift clicking the Execute DBModifier Groups dropdown menus..  
 .. or by Ctrl-Shift clicking the created command-buttons.  
 .. or by using the Insert/Edit DBFunc/DBModif context menu within a DBMapper or DBAction range.  
+
+## Additional macro functions available for setting/accessing settings
+
+By issuing the VBA command `Application.Run("setExecutionParam", Param, Value)`, where `Param` is the name of the parameter and `Value` is the value it should be set to, following settings can be set via VBA:
+*  headLess: sets nonInteractive to True or False
+*  selectedEnvironment: sets SettingsTools.selectedEnvironment to the value passed (zero based environment: 0 is the first, 1 the second, etc.)
+*  ConstConnString: sets SettingsTools.ConstConnString to the value passed
+*  CnnTimeout: sets SettingsTools.CnnTimeout to the value passed
+*  CmdTimeout: sets SettingsTools.CmdTimeout to the value passed
+
+By issuing the VBA command `result = Application.Run("getExecutionParam", Param)`, where `Param` is the name of the parameter the current settings of the following parameters are returned:
+*  selectedEnvironment: returns SettingsTools.selectedEnvironment (zero based environment: 0 is the first, 1 the second, etc.)
+*  env() : returns the selected environment (1 is the first, 2 the second, etc.)
+*  ConstConnString: returns SettingsTools.ConstConnString
+*  CnnTimeout: returns SettingsTools.CnnTimeout
+*  CmdTimeout: returns SettingsTools.CmdTimeout
+*  nonInteractiveErrMsgs: returns the currently collected error messages
+*  and any other key from the available DBAddin settings (in DBAddin.xll.config, DBAddinCentral.config or DBaddinUser.config)
 
 ## Additional settings ("hidden" as they are not available in creation dialogs)
 

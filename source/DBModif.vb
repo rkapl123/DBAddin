@@ -437,7 +437,7 @@ Public Class DBMapper : Inherits DBModif
             preventColResize = Convert.ToBoolean(getParamFromXML(definitionXML, "preventColResize", "Boolean"))
             deleteBeforeMapperInsert = Convert.ToBoolean(getParamFromXML(definitionXML, "deleteBeforeMapperInsert", "Boolean"))
             onlyRefreshTheseDBSheetLookups = getParamFromXML(definitionXML, "onlyRefreshTheseDBSheetLookups")
-            ' set table styles for DBMappers having a listobject underneath
+            ' set table styles for DBMappers having a list-object underneath
             Dim DBmapperListObj As Excel.ListObject = Nothing
             Try : DBmapperListObj = TargetRange.ListObject : Catch ex As Exception : End Try
             If DBmapperListObj IsNot Nothing Then
@@ -2240,6 +2240,55 @@ EndOuterLoop:
         Else
             nonInteractive = False
             Return "No valid type (" + DBModiftype + ") in passed DB Modifier '" + DBModifName + "', DB Modifier name must start with 'DBSeqnce', 'DBMapper' Or 'DBAction' !"
+        End If
+    End Function
+
+    ''' <summary>set given execution parameter, used for VBA call by Application.Run</summary>
+    ''' <param name="Param">execution parameter, like "selectedEnvironment" (zero based here!) or "CnnTimeout"</param>
+    ''' <param name="Value">execution parameter value</param>
+    <ExcelCommand(Name:="setExecutionParam")>
+    Public Sub setExecutionParam(Param As String, Value As Object)
+        Try
+            If Param = "headLess" Then
+                nonInteractive = Value
+                nonInteractiveErrMsgs = "" ' reset non-interactive messages
+            ElseIf Param = "selectedEnvironment" Then
+                SettingsTools.selectedEnvironment = Value
+                theRibbon.Invalidate()
+            ElseIf Param = "ConstConnString" Then
+                SettingsTools.ConstConnString = Value
+            ElseIf Param = "CnnTimeout" Then
+                SettingsTools.CnnTimeout = Value
+            ElseIf Param = "CmdTimeout" Then
+                SettingsTools.CmdTimeout = Value
+            Else
+                UserMsg("parameter " + Param + " not supported by setExecutionParams")
+                Exit Sub
+            End If
+        Catch ex As Exception
+            UserMsg("setting parameter " + Param + " with value " + CStr(Value) + " resulted in error " + ex.Message)
+        End Try
+    End Sub
+
+    ''' <summary>get given execution parameter or setting parameter found by fetchSetting, used for VBA call by Application.Run</summary>
+    ''' <param name="Param">execution parameter, like "selectedEnvironment" (zero based here!), "env()" or "CnnTimeout"</param>
+    ''' <returns>execution or setting parameter value</returns>
+    <ExcelCommand(Name:="getExecutionParam")>
+    Public Function getExecutionParam(Param As String) As Object
+        If Param = "selectedEnvironment" Then
+            Return SettingsTools.selectedEnvironment
+        ElseIf Param = "env()" Then
+            Return SettingsTools.env()
+        ElseIf Param = "ConstConnString" Then
+            Return SettingsTools.ConstConnString
+        ElseIf Param = "CnnTimeout" Then
+            Return SettingsTools.CnnTimeout
+        ElseIf Param = "CmdTimeout" Then
+            Return SettingsTools.CmdTimeout
+        ElseIf Param = "nonInteractiveErrMsgs" Then
+            Return nonInteractiveErrMsgs
+        Else
+            Return fetchSetting(Param, "parameter " + Param + " neither supported by getExecutionParam nor found with fetchSetting(Param)")
         End If
     End Function
 
