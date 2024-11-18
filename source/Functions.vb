@@ -865,7 +865,7 @@ err:
             If autoformat Then
                 For i As Integer = 0 To oldCols
                     ReDim Preserve NumFormat(i)
-                    NumFormat(i) = targetSH.Cells(startRow + If(HeaderInfo, 1, 0), startCol + i).NumberFormat
+                    NumFormat(i) = targetSH.Cells(startRow + If(HeaderInfo, 1, 0), startCol + i).NumberFormatLocal
                 Next
             End If
             ' now for the calculated data area
@@ -873,7 +873,8 @@ err:
                 For i = 0 To formulaRange.Columns.Count - 1
                     If autoformat Then
                         ReDim Preserve NumFormatF(i)
-                        NumFormatF(i) = formulaSH.Cells(formulaStart, formulaRange.Column + i).NumberFormat
+                        ' why NumberFormatLocal? Because NumberFormat is not working consistently. https://www.add-in-express.com/forum/read.php?FID=5&TID=8333
+                        NumFormatF(i) = formulaSH.Cells(formulaStart, formulaRange.Column + i).NumberFormatLocal
                     End If
                     ' also preserve the formulas for potential restoring after refresh (in case of extendArea = 1 (Excel.XlCellInsertionMode.xlInsertDeleteCells) excel shifts down the target range, resulting in formula modification)
                     ReDim Preserve FormulasF(i)
@@ -1080,12 +1081,12 @@ err:
             Try
                 If autoformat And NumFormat IsNot Nothing Then
                     For i = 0 To UBound(NumFormat)
-                        newTargetRange.Columns(i + 1).NumberFormat = NumFormat(i)
+                        newTargetRange.Columns(i + 1).NumberFormatLocal = NumFormat(i)
                     Next
                     ' also restore for formula(filled) range
                     If formulaRange IsNot Nothing And NumFormatF IsNot Nothing And formulaFilledRange IsNot Nothing Then
                         For i = 0 To UBound(NumFormatF)
-                            formulaFilledRange.Columns(i + 1).NumberFormat = NumFormatF(i)
+                            formulaFilledRange.Columns(i + 1).NumberFormatLocal = NumFormatF(i)
                         Next
                     End If
                 End If

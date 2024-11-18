@@ -34,11 +34,17 @@ Public MustInherit Class DBModif
     Protected confirmText As String = ""
 
     Public Sub New(definitionXML As CustomXMLNode)
-        If definitionXML.Attributes.Count > 0 Then
-            dbmodifName = definitionXML.BaseName + definitionXML.Attributes(1).Text
-        Else
-            dbmodifName = definitionXML.BaseName
-        End If
+        ' allow empty definition for DBModifDummy
+        If TypeName(Me) = "DBModifDummy" Then Exit Sub
+        Try
+            If definitionXML.Attributes.Count > 0 Then
+                dbmodifName = definitionXML.BaseName + definitionXML.Attributes(1).Text
+            Else
+                dbmodifName = definitionXML.BaseName
+            End If
+        Catch ex As Exception
+            UserMsg("error in creating DBmodifier " + TypeName(Me) + " with passed definitionXML: " + ex.Message)
+        End Try
         execOnSave = Convert.ToBoolean(getParamFromXML(definitionXML, "execOnSave", "Boolean"))
         askBeforeExecute = Convert.ToBoolean(getParamFromXML(definitionXML, "askBeforeExecute", "Boolean"))
         confirmText = getParamFromXML(definitionXML, "confirmText")
@@ -207,6 +213,7 @@ Public MustInherit Class DBModif
             UserMsg("Didn't find target of DBRefresh using targetExtent " + targetExtent + "!", "Refresh of DB Functions")
             Exit Function
         End Try
+
         If target.Parent.ProtectContents Then
             UserMsg("Worksheet " + target.Parent.Name + " is content protected, can't refresh DB Function !")
             Exit Function
@@ -221,6 +228,7 @@ Public MustInherit Class DBModif
             Exit Function
         End If
         Dim DBMapperUnderlyingF As String = getDBModifNameFromRange(formulaRange)
+
         ' allow for avoidance of overwriting users changes with CUDFlags after a data error occurred
         If hadError Then
             If executedDBMappers.ContainsKey(DBMapperUnderlying) Then
@@ -233,6 +241,7 @@ Public MustInherit Class DBModif
             UserMsg("Transaction affecting the target area is still open, refreshing it would result in a deadlock on the database table. Skipping refresh, consider placing refresh outside of transaction.", "Refresh of DB Functions in DB Sequence")
             Exit Function
         End If
+
         ' reset query cache, so we really get new data !
         Dim callID As String
         Try
@@ -1569,6 +1578,17 @@ Public Class DBSeqnce : Inherits DBModif
 
 End Class
 
+Public Class DBModifDummy : Inherits DBModif
+
+    Public Sub New()
+        MyBase.New(Nothing)
+    End Sub
+
+    Public Sub executeRefresh(srcExtent)
+        doDBRefresh(srcExtent:=srcExtent)
+    End Sub
+
+End Class
 
 ''' <summary>global helper functions for DBModifiers</summary>
 Public Module DBModifs
@@ -2236,11 +2256,25 @@ EndOuterLoop:
             End Try
             nonInteractive = False
             If hadError Then Return nonInteractiveErrMsgs
-            Return "" ' no error, no message
+        ElseIf DBModiftype = "Refresh " Then
+            ' DBModifName for DBfunction refresh is "Refresh Sheetname!Address" where Sheetname!Address is a cell containing the DBfunction 
+            Dim RangeParts() As String = Split(Mid(DBModifName, 9), "!")
+            If RangeParts.Count = 2 And RangeParts(0) <> "" And RangeParts(1) <> "" Then
+                Dim SheetName = Replace(RangeParts(0), "'", "") ' for sheetnames with blanks surrounding quotations are needed, remove them here
+                Dim Address = RangeParts(1)
+                Dim srcExtent As String = ""
+                Try : srcExtent = getUnderlyingDBNameFromRange(ExcelDnaUtil.Application.Worksheets(SheetName).Range(Address)) : Catch ex As Exception : End Try
+                If srcExtent = "" Then Return "No valid address found in " + DBModifName + " (Sheetname: " + SheetName + ", Address: " + Address + ")"
+                Dim aDBModifier As DBModifDummy = New DBModifDummy()
+                aDBModifier.executeRefresh(srcExtent)
+            Else
+                Return "No Worksheet/Address could be parsed from " + DBModifName
+            End If
         Else
             nonInteractive = False
             Return "No valid type (" + DBModiftype + ") in passed DB Modifier '" + DBModifName + "', DB Modifier name must start with 'DBSeqnce', 'DBMapper' Or 'DBAction' !"
         End If
+        Return "" ' no error, no message
     End Function
 
     ''' <summary>set given execution parameter, used for VBA call by Application.Run</summary>
@@ -2254,13 +2288,16 @@ EndOuterLoop:
                 nonInteractiveErrMsgs = "" ' reset non-interactive messages
             ElseIf Param = "selectedEnvironment" Then
                 SettingsTools.selectedEnvironment = Value
-                theRibbon.Invalidate()
+                theRibbon.InvalidateControl("envDropDown")
             ElseIf Param = "ConstConnString" Then
                 SettingsTools.ConstConnString = Value
             ElseIf Param = "CnnTimeout" Then
                 SettingsTools.CnnTimeout = Value
             ElseIf Param = "CmdTimeout" Then
                 SettingsTools.CmdTimeout = Value
+            ElseIf Param = "preventRefreshFlag" Then
+                Functions.preventRefreshFlag = Value
+                theRibbon.InvalidateControl("preventRefresh")
             Else
                 UserMsg("parameter " + Param + " not supported by setExecutionParams")
                 Exit Sub
@@ -2285,8 +2322,8 @@ EndOuterLoop:
             Return SettingsTools.CnnTimeout
         ElseIf Param = "CmdTimeout" Then
             Return SettingsTools.CmdTimeout
-        ElseIf Param = "nonInteractiveErrMsgs" Then
-            Return nonInteractiveErrMsgs
+        ElseIf Param = "preventRefreshFlag" Then
+            Return Functions.preventRefreshFlag
         Else
             Return fetchSetting(Param, "parameter " + Param + " neither supported by getExecutionParam nor found with fetchSetting(Param)")
         End If

@@ -64,6 +64,7 @@ Public Class MenuHandler
             "</buttonGroup>" +
             "<buttonGroup id='buttonGroup1'>" +
                 "<button id='showLog' label='Log' screentip='shows Database Addins Diagnostic Display' getImage='getLogsImage' onAction='clickShowLog'/>" +
+                "<button id='preventRefresh' label='DBFunc Refresh' onAction='showTogglePreventRefresh' getImage='getTogglePreventRefreshImage' getScreentip='getTogglePreventRefreshScreentip' />" +
             "</buttonGroup>" +
             "<dialogBoxLauncher><button id='dialog' label='About DBAddin' onAction='showAbout' screentip='Show Aboutbox with help, version information, update check/download and project homepage' getSupertip='getSuperTipInfo'/></dialogBoxLauncher>" +
         "</group>"
@@ -471,6 +472,29 @@ Public Class MenuHandler
     Private Sub ctMenuStrip_Click(sender As Object, e As EventArgs)
         createDBModif(Replace(Replace(sender.ToString(), "a ", ""), "DBSequence", "DBSeqnce"))
     End Sub
+
+    ''' <summary>toggle PreventRefresh button</summary>
+    ''' <param name="control"></param>
+    Sub showTogglePreventRefresh(control As CustomUI.IRibbonControl)
+        Functions.preventRefreshFlag = Not Functions.preventRefreshFlag
+        ' update state of preventRefreshFlag in screen-tip
+        theRibbon.InvalidateControl(control.Id)
+    End Sub
+
+    ''' <summary>display state of PreventRefresh in screen-tip of button</summary>
+    ''' <param name="control"></param>
+    ''' <returns>screen-tip and the state of PreventRefresh</returns>
+    Public Function getTogglePreventRefreshScreentip(control As CustomUI.IRibbonControl) As String
+        Return "Refreshing of DB Functions is currently " + IIf(Functions.preventRefreshFlag, "blocked", "enabled")
+    End Function
+
+    ''' <summary>display state of PreventRefresh in icon of button</summary>
+    ''' <param name="control"></param>
+    ''' <returns>screen-tip and the state of PreventRefresh</returns>
+    Public Function getTogglePreventRefreshImage(control As CustomUI.IRibbonControl) As String
+        Return IIf(Functions.preventRefreshFlag, "CalculateFull", "Calculator")
+    End Function
+
 
     ''' <summary>toggle design mode button</summary>
     ''' <param name="control"></param>

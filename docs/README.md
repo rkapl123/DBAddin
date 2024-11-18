@@ -135,11 +135,11 @@ Explanation:
 
 To change the settings, use the drop-down "settings" where you can modify the DBAddin.xll.config and the referred DBAddinCentral.config including XML validation. If you have multiple same named entries in your settings files, the last one is taken as the active setting. The settings dialog has a drop-down at its bottom providing all the available settings to be selected. On selection, the chosen setting is added to the bottom of the current open config. For `+  env` settings, an input box will provide the possibility to set the number to be used instead of `+ env`. There are other specific settings available for use with [DB Functions](DBFuncs.md), [DB Modifications](DBModif.md) and [DB Sheets](DBSheets.md), see there for more details.
 
-### Environment, About Box, Settings, Log and fix legacy functions
+### Environment, About Box, Settings, Log and setting DB Functions refresh prevention
 
 The environment drop-down selector on top of the DBAddin settings Group allows to choose the environments defined with the `ConfigName`**N** settings (and the associated data). If this drop-down is disabled, you can enable it by setting `DontChangeEnvironment``to `false`.
 
-#### About Box and updates
+#### About Box, Updates and "fix legacy functions"
 The About Box can be reached by clicking the small dialogBox Launcher in the right bottom corner of the DB Addin settings group of the DBAddin Ribbon:
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/AboutBox.PNG)  
@@ -150,11 +150,6 @@ You can get updates from here, in case there are new versions, this is shown wit
 
 There is a possibility to set the future log events displayed (the starting value is set in the config file). You can also fix functions from the legacy DBAddin (VB6) using the "fix legacy funcs" button in case you decided to skip the possibility offered on opening a Workbook.
 
-#### Log
-To see the Log, there is a separate Button in the settings group of the DBAddin ribbon that also indicates the existence of warning log entries with a red exclamation mark.
-
-![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/ConfigMenu.PNG)  
-
 #### Settings
 In the DBAddin settings Group, there is a drop-down "settings", where you can modify the DBAddin.xll.config and the referred DBAddinUser.config and DBAddinCentral.config including XML validation.
 At the bottom of all settings dialogs, there is a drop-down showing the available settings. Those settings that are environment-dependent (`ConfigName`**N**) are automatically displayed with the current selected environment number after the name. If you select the setting, it will be added at the bottom of all settings, you can cut/paste it anywhere you want. If the setting is already existing, an error message is displayed and the existing setting is highlighted. Any XML validation errors display the location with a row and column number, however these refer to the flat version of the text (without any word-wrap).
@@ -162,6 +157,14 @@ At the bottom of all settings dialogs, there is a drop-down showing the availabl
 #### Custom workbook properties
 Right besides the settings drop-down, there is a shortcut button to the Workbook properties (being the standard dialog Advanced Properties, accessible via File/Info) that allows you to change custom properties settings for DBAddin.
 A green check on that button shows that the custom property DBFskip is not set to true for this workbook, therefore DB functions are always refreshed on opening the workbook.
+
+#### Log
+To see the Log, there is a separate Button in the settings group of the DBAddin ribbon that also indicates the existence of warning log entries with a red exclamation mark.
+
+#### DB Functions refresh prevention
+To prevent DB Functions from refreshing, there is a toggle button in the settings group of the DBAddin ribbon. When activating it, no DB Function in any open Workbook will refresh (neither on recalculation nor when explicitly doing "refresh"). This setting is always set to disabled/refresh DB Functions when restarting the Addin/Excel.
+
+![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/ConfigMenu.PNG)  
 
 ### Tools
 Besides the hierarchical menu "DBConfigs" (see [DBFuncs User-doc](DBFuncs.md)) and the DBSheet Configuration (see [DBSheets](DBSheets.md)) there are other tools in the DB Addin Tools group:

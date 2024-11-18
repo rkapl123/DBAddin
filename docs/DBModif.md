@@ -116,6 +116,7 @@ By issuing the VBA command `Application.Run("setExecutionParam", Param, Value)`,
 *  ConstConnString: sets SettingsTools.ConstConnString to the value passed
 *  CnnTimeout: sets SettingsTools.CnnTimeout to the value passed
 *  CmdTimeout: sets SettingsTools.CmdTimeout to the value passed
+*  preventRefreshFlag: sets Functions.preventRefreshFlag to the value passed (True: prevents refreshing of all DB Functions, False: enables refreshing again. Also see DB Functions refresh prevention in [Main DBAddin Doc](README.md))
 
 By issuing the VBA command `result = Application.Run("getExecutionParam", Param)`, where `Param` is the name of the parameter the current settings of the following parameters are returned:
 *  selectedEnvironment: returns SettingsTools.selectedEnvironment (zero based environment: 0 is the first, 1 the second, etc.)
@@ -123,6 +124,7 @@ By issuing the VBA command `result = Application.Run("getExecutionParam", Param)
 *  ConstConnString: returns SettingsTools.ConstConnString
 *  CnnTimeout: returns SettingsTools.CnnTimeout
 *  CmdTimeout: returns SettingsTools.CmdTimeout
+*  preventRefreshFlag: returns Functions.preventRefreshFlag
 *  nonInteractiveErrMsgs: returns the currently collected error messages
 *  and any other key from the available DBAddin settings (in DBAddin.xll.config, DBAddinCentral.config or DBaddinUser.config)
 
