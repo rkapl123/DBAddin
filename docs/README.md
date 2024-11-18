@@ -135,7 +135,9 @@ Explanation:
 
 To change the settings, use the drop-down "settings" where you can modify the DBAddin.xll.config and the referred DBAddinCentral.config including XML validation. If you have multiple same named entries in your settings files, the last one is taken as the active setting. The settings dialog has a drop-down at its bottom providing all the available settings to be selected. On selection, the chosen setting is added to the bottom of the current open config. For `+  env` settings, an input box will provide the possibility to set the number to be used instead of `+ env`. There are other specific settings available for use with [DB Functions](DBFuncs.md), [DB Modifications](DBModif.md) and [DB Sheets](DBSheets.md), see there for more details.
 
-### Environment, About Box, Settings, Log and setting DB Functions refresh prevention
+### Ribbon Menu: Environment, About Box, Settings, Log and setting DB Functions refresh prevention
+
+![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/ConfigMenu.PNG)  
 
 The environment drop-down selector on top of the DBAddin settings Group allows to choose the environments defined with the `ConfigName`**N** settings (and the associated data). If this drop-down is disabled, you can enable it by setting `DontChangeEnvironment``to `false`.
 
@@ -163,8 +165,6 @@ To see the Log, there is a separate Button in the settings group of the DBAddin 
 
 #### DB Functions refresh prevention
 To prevent DB Functions from refreshing, there is a toggle button in the settings group of the DBAddin ribbon. When activating it, no DB Function in any open Workbook will refresh (neither on recalculation nor when explicitly doing "refresh"). This setting is always set to disabled/refresh DB Functions when restarting the Addin/Excel.
-
-![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/ConfigMenu.PNG)  
 
 ### Tools
 Besides the hierarchical menu "DBConfigs" (see [DBFuncs User-doc](DBFuncs.md)) and the DBSheet Configuration (see [DBSheets](DBSheets.md)) there are other tools in the DB Addin Tools group:
