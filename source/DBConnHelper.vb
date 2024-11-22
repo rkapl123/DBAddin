@@ -24,17 +24,17 @@ Public Class DBConnHelper
         DBenv = passedEnv
         setConnectionString()
         dbGetAllStr = fetchSetting("dbGetAll" + DBenv, "NONEXISTENT")
-        If dbGetAllStr = "NONEXISTENT" Then
+        If dbGetAllStr = "NONEXISTENT" Or dbGetAllStr = "" Then
             UserMsg("No dbGetAllStr given for environment: " + DBenv + ", please correct and rerun.", "DBSheet Definition Error")
             Exit Sub
         End If
         DBGetAllFieldName = fetchSetting("dbGetAllFieldName" + DBenv, "NONEXISTENT")
-        If DBGetAllFieldName = "NONEXISTENT" Then
+        If DBGetAllFieldName = "NONEXISTENT" Or DBGetAllFieldName = "" Then
             UserMsg("No DBGetAllFieldName given for environment: " + DBenv + ", please correct and rerun.", "DBSheet Definition Error")
             Exit Sub
         End If
         dbidentifier = fetchSetting("DBidentifierCCS" + DBenv, "NONEXISTENT")
-        If dbidentifier = "NONEXISTENT" Then
+        If dbidentifier = "NONEXISTENT" Or dbidentifier = "" Then
             UserMsg("No DB identifier given for environment: " + DBenv + ", please correct and rerun.", "DBSheet Definition Error")
             Exit Sub
         End If
@@ -123,10 +123,10 @@ Public Class DBConnHelper
     Private Sub setConnectionString()
         ' do we have a separate dbsheet connection string?
         dbsheetConnString = fetchSetting("DBSheetConnString" + DBenv, "NONEXISTENT")
-        If dbsheetConnString = "NONEXISTENT" Then
+        If dbsheetConnString = "NONEXISTENT" Or dbsheetConnString = "" Then
             ' no, try normal connection string 
             dbsheetConnString = fetchSetting("ConstConnString" + DBenv, "NONEXISTENT")
-            If dbsheetConnString = "NONEXISTENT" Then
+            If dbsheetConnString = "NONEXISTENT" Or dbsheetConnString = "" Then
                 ' actually this cannot happen....
                 UserMsg("No connection string given for environment: " + DBenv + ", please correct and rerun.", "DBSheet Definition Error")
                 Exit Sub

@@ -23,11 +23,6 @@ Public Class DBSheetCreateForm
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub DBSheetCreateForm_Shown(sender As Object, e As EventArgs) Handles Me.Shown
-        ' get settings for DBSheet definition editing
-        myDBConnHelper = New DBConnHelper(env())
-        tblPlaceHolder = fetchSetting("tblPlaceHolder" + env(), "!T!")
-        specialNonNullableChar = fetchSetting("specialNonNullableChar" + env(), "*")
-        Lenvironment.Text = "Environment: " + fetchSetting("ConfigName" + env(), "")
 
         ' set up columns for DBSheetCols grid-view
         Dim nameCB As New DataGridViewComboBoxColumn With {
@@ -92,6 +87,18 @@ Public Class DBSheetCreateForm
                 }
         DBSheetCols.AutoGenerateColumns = False
         DBSheetCols.Columns.AddRange(nameCB, ftableCB, fkeyCB, flookupCB, outerCB, primkeyCB, typeTB, sortCB, lookupTB)
+        finalizeSetup()
+    End Sub
+
+    Private Sub finalizeSetup()
+        ' get settings for DBSheet definition editing
+        myDBConnHelper = New DBConnHelper(env())
+        tblPlaceHolder = fetchSetting("tblPlaceHolder" + env(), "!T!")
+        specialNonNullableChar = fetchSetting("specialNonNullableChar" + env(), "*")
+        FormDisabled = True
+        Me.Environment.DataSource = environdefs
+        Me.Environment.Text = environdefs(env(True))
+        FormDisabled = False
         DBSheetColsEditable(False)
 
         ' if we have a Password to enter (dbPwdSpec contained in dbsheetConnString and no password entered yet), just display explanation text in title bar and let user enter password... 
@@ -101,6 +108,7 @@ Public Class DBSheetCreateForm
             assignDBSheet.Enabled = False
             ' password-less connection string, reset password and disable...
             If InStr(myDBConnHelper.dbsheetConnString, myDBConnHelper.dbPwdSpec) = 0 Or myDBConnHelper.dbPwdSpec = "" Then
+                If InStr(myDBConnHelper.dbsheetConnString, myDBConnHelper.dbPwdSpec) = 0 Then UserMsg("The DB specific password string (" + myDBConnHelper.dbPwdSpec + ") is not contained in connection string:" + myDBConnHelper.dbsheetConnString + ", therefore no password entry is possible")
                 Password.Enabled = False
                 existingPwd = ""
             Else ' set to stored existing password
@@ -110,6 +118,7 @@ Public Class DBSheetCreateForm
             ' initialize with empty DBSheet definitions is done by above call, changing Database.SelectedIndex (Database_SelectedIndexChanged)
         End If
     End Sub
+
 
     Private Sub resetDBSheetCreateForm()
         Me.Text = "DB Sheet creation: Please enter required Password into Field Pwd to access schema information"
@@ -1142,23 +1151,26 @@ Public Class DBSheetCreateForm
         End Try
     End Function
 
-    ''' <summary>current file link clicked: open possibility</summary>
+    ''' <summary>current file link clicked: open file using default editor</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
-    Private Sub CurrentFileLinkLabel_Click(sender As Object, e As EventArgs) Handles CurrentFileLinkLabel.Click
+    Private Sub CurrentFileLinkLabel_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs) Handles CurrentFileLinkLabel.LinkClicked
         ' CurrentFileLinkLabel.Tag contains the path to the current file
         Diagnostics.Process.Start(CurrentFileLinkLabel.Tag)
     End Sub
+
 #End Region
 
 #Region "GUI Helper functions"
-    ''' <summary>Table/Database/Password change possible</summary>
+    ''' <summary>Environment/Table/Database/Password change possible</summary>
     ''' <param name="choice">possible True, not possible False</param>
     Private Sub TableEditable(choice As Boolean)
         Database.Enabled = choice
         LDatabase.Enabled = choice
         Table.Enabled = choice
         LTable.Enabled = choice
+        Environment.Enabled = choice
+        Lenvironment.Enabled = choice
     End Sub
 
     ''' <summary>if DBSheetCols Definitions should be editable, enable relevant controls</summary>
@@ -1236,6 +1248,13 @@ Public Class DBSheetCreateForm
 
     Private Sub WhereClause_TextChanged(sender As Object, e As EventArgs) Handles WhereClause.TextChanged
         assignDBSheet.Enabled = False
+    End Sub
+
+    Private Sub Environment_SelectedIndexChanged(sender As Object, e As EventArgs) Handles Environment.SelectedIndexChanged
+        If FormDisabled Then Exit Sub
+        SettingsTools.selectedEnvironment = Me.Environment.SelectedIndex
+        theRibbon.InvalidateControl("envDropDown")
+        finalizeSetup()
     End Sub
 
 #End Region

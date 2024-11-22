@@ -61,6 +61,7 @@ Partial Class DBSheetCreateForm
         Me.CurrentFileLinkLabel = New System.Windows.Forms.LinkLabel()
         Me.Lenvironment = New System.Windows.Forms.Label()
         Me.DBSheetColsForDatabases = New System.Windows.Forms.ContextMenuStrip(Me.components)
+        Me.Environment = New System.Windows.Forms.ComboBox()
         CType(Me.DBSheetCols, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.DBSheetColsMoveMenu.SuspendLayout()
         Me.DBSheetColsLookupMenu.SuspendLayout()
@@ -237,7 +238,7 @@ Partial Class DBSheetCreateForm
         Me.Password.Location = New System.Drawing.Point(708, 10)
         Me.Password.Name = "Password"
         Me.Password.PasswordChar = Global.Microsoft.VisualBasic.ChrW(42)
-        Me.Password.Size = New System.Drawing.Size(120, 20)
+        Me.Password.Size = New System.Drawing.Size(134, 20)
         Me.Password.TabIndex = 0
         Me.ToolTipMain.SetToolTip(Me.Password, "enter the password for the user required to access schema information (given in D" &
         "BSheetConnString)")
@@ -410,7 +411,7 @@ Partial Class DBSheetCreateForm
         Me.CurrentFileLinkLabel.MaximumSize = New System.Drawing.Size(430, 18)
         Me.CurrentFileLinkLabel.Name = "CurrentFileLinkLabel"
         Me.CurrentFileLinkLabel.Size = New System.Drawing.Size(417, 18)
-        Me.CurrentFileLinkLabel.TabIndex = 101
+        Me.CurrentFileLinkLabel.TabIndex = 100
         '
         'Lenvironment
         '
@@ -431,6 +432,17 @@ Partial Class DBSheetCreateForm
         Me.DBSheetColsForDatabases.Name = "DBSheetColsContextMenu"
         Me.DBSheetColsForDatabases.Size = New System.Drawing.Size(61, 4)
         '
+        'Environment
+        '
+        Me.Environment.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
+        Me.Environment.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
+        Me.Environment.FormattingEnabled = True
+        Me.Environment.Location = New System.Drawing.Point(752, 41)
+        Me.Environment.Name = "Environment"
+        Me.Environment.Size = New System.Drawing.Size(90, 21)
+        Me.Environment.TabIndex = 1
+        Me.ToolTipMain.SetToolTip(Me.Environment, "Environment, can be used to switch environment taken from Ribbon Menu")
+        '
         'DBSheetCreateForm
         '
         Me.AllowDrop = True
@@ -438,6 +450,7 @@ Partial Class DBSheetCreateForm
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.BackColor = System.Drawing.SystemColors.Control
         Me.ClientSize = New System.Drawing.Size(1113, 544)
+        Me.Controls.Add(Me.Environment)
         Me.Controls.Add(Me.Lenvironment)
         Me.Controls.Add(Me.assignDBSheet)
         Me.Controls.Add(Me.CurrentFileLinkLabel)
@@ -493,5 +506,6 @@ Partial Class DBSheetCreateForm
     Public WithEvents Lenvironment As Windows.Forms.Label
     Friend WithEvents DBSheetColsForDatabases As Windows.Forms.ContextMenuStrip
     Friend WithEvents assignDBSheet As Windows.Forms.Button
+    Friend WithEvents Environment As Windows.Forms.ComboBox
 #End Region
 End Class
