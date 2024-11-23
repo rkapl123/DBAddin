@@ -83,7 +83,7 @@ The DBSheet definition file contains following information in XML format:
 You start either entering a password for the connection string (if needed) or immediately selecting a database for your DBSheet. The connection information are placed in the same central settings file
  (referenced by DBAddin.xll.config file attribute, in the example called "DBAddinCentral.config") as the other DBAddin connections. 
 This settings file can be placed on a network drive to be available for all DBSheets users. You can also use the settings editor in the DBAddin ribbon to edit this file.
-The environment is passed from the DB-Addins environment setting as seen in the ribbon. The environment can be changed also in the DBSheet definition dialog, which then is also reflected back to the DB-Addin environment.
+The environment is passed from the DB-Addin's environment setting as seen in the ribbon. The environment can be changed also in the DBSheet definition dialog, which then is also reflected back to the DB-Addin environment.
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBSheetsDefBlank.PNG)
 
