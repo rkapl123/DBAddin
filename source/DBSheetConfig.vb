@@ -111,6 +111,16 @@ Public Module DBSheetConfig
                 ' whereClause inserted below queryStr
                 addedCells += 1
             End If
+
+            ' when doing any changes to existing db-sheets setting calc to manual is needed to avoid triggering unwanted recalculations
+            Dim calcMode As Long = ExcelDnaUtil.Application.Calculation
+            Try
+                ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual
+            Catch ex As Exception
+                UserMsg("The Calculation mode can't be set, maybe you are in the formula/cell editor?", "Create Function In Cell")
+                Exit Sub
+            End Try
+
             ' get lookup fields in complete columns definitions
             lookupsList = getEntryList("columns", "field", "lookup", curConfig, True)
             Dim selectPart As String = Left(queryStr, InStr(queryStr, "FROM ") - 1)
@@ -232,6 +242,11 @@ Public Module DBSheetConfig
                     Dim theCustomXmlParts As Object = ExcelDnaUtil.Application.ActiveWorkbook.CustomXMLParts.SelectByNamespace("DBModifDef")
                     ' remove old node of DBMapper in definitions
                     If Not IsNothing(theCustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:DBMapper[@Name='" + Replace(existingName, "DBMapper", "") + "']")) Then theCustomXmlParts(1).SelectSingleNode("/ns0:root/ns0:DBMapper[@Name='" + Replace(existingName, "DBMapper", "") + "']").Delete
+
+                    ' just in case the same definition was added again, remove query cache to force re-fetching 
+                    ' get the callID of the underlying name of the target (key of the queryCache and StatusCollection)
+                    Dim callID As String = "[" + curCell.Parent.Parent.Name + "]" + curCell.Parent.Name + "!" + curCell.Address
+                    If queryCache.ContainsKey(callID) Then queryCache.Remove(callID)
                 Catch ex As Exception
                     UserMsg("Error deleting existing list-object for DBSheet for table " + tableName + ": " + ex.Message, "DBSheet Creation Error")
                     Exit Sub
@@ -265,8 +280,10 @@ Public Module DBSheetConfig
             End With
             ' finally add the DBSetQuery for the main DB Mapper, only taking the query without the where clause (because we can't prefill the where parameters, 
             ' the user has to do that before extending the query definition to the where clause as well)
-            ' only create DBSetQuery if a completely new DBSheet is created, when overwriting an existing don't do this as it triggers a unwanted premature recalculation.
-            If existingName = "" Then createFunctionsInCells(curCell, {"RC", "=DBSetQuery(R[1]C,"""",RC[1])"})
+            ' also set calc to automatic back to trigger recalculation after leaving with QueueAsMacro
+
+            createFunctionsInCells(curCell, {"RC", "=DBSetQuery(R[1]C,"""",RC[1])"})
+            ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationAutomatic
             ' finish creation in async called sub (need to have the results from the above createFunctionsInCells/invocations)
             ExcelAsyncUtil.QueueAsMacro(Sub()
                                             finishDBMapperCreation()

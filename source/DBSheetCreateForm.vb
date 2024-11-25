@@ -100,6 +100,7 @@ Public Class DBSheetCreateForm
         Me.Environment.Text = environdefs(env(True))
         FormDisabled = False
         DBSheetColsEditable(False)
+        EnvironEditable(True)
 
         ' if we have a Password to enter (dbPwdSpec contained in dbsheetConnString and no password entered yet), just display explanation text in title bar and let user enter password... 
         If InStr(myDBConnHelper.dbsheetConnString, myDBConnHelper.dbPwdSpec) > 0 And myDBConnHelper.dbPwdSpec <> "" And existingPwd = "" Then
@@ -269,10 +270,11 @@ Public Class DBSheetCreateForm
     Private Sub DBSheetCols_CellValueChanged(ByVal sender As Object, ByVal e As DataGridViewCellEventArgs) Handles DBSheetCols.CellValueChanged
         If FormDisabled Then Exit Sub
         FormDisabled = True
+        ' lock environment, table and database choice to not let user accidentally clear DBSheet definitions
+        TableEditable(False)
+        EnvironEditable(False)
         Dim selIndex As Integer = e.RowIndex
         If e.ColumnIndex = 0 Then     ' field name column 
-            ' lock table and database choice to not let user accidentally clear DBSheet definitions
-            TableEditable(False)
             ' fill empty lists for fkey and flookup combo-boxes (resetting) ..
             DirectCast(DBSheetCols.Rows(selIndex).Cells("fkey"), DataGridViewComboBoxCell).DataSource = New List(Of String)({""})
             DirectCast(DBSheetCols.Rows(selIndex).Cells("flookup"), DataGridViewComboBoxCell).DataSource = New List(Of String)({""})
@@ -628,6 +630,7 @@ Public Class DBSheetCreateForm
             FormDisabled = False
             ' after changing the columns no more change to table allowed !!
             TableEditable(False)
+            EnvironEditable(False)
         Catch ex As System.Exception
             UserMsg("Exception in addAllFields_Click: " + ex.Message)
         End Try
@@ -641,6 +644,7 @@ Public Class DBSheetCreateForm
         DBSheetCols.DataSource = Nothing
         DBSheetCols.Rows.Clear()
         TableEditable(True)
+        EnvironEditable(True)
         FormDisabled = True
         Table.SelectedIndex = -1
         Query.Text = ""
@@ -985,20 +989,20 @@ Public Class DBSheetCreateForm
                     newRow.primkey = DBSheetConfig.getEntry("primkey", DBSheetColumnDef) <> ""
                     Dim noInfoForField As Boolean = False
                     If Not TableDataTypes.ContainsKey(newRow.name) Then
-                        ' try to back up from changed non nullable info
+                        ' try to back up from changed non null-able info
                         If newRow.name.Substring(0, 1) = specialNonNullableChar Then
                             newRow.name = newRow.name.Substring(1)
                             If Not TableDataTypes.ContainsKey(newRow.name) Then
                                 noInfoForField = True
                             Else
-                                fieldInfoMsg += "Field " + specialNonNullableChar + newRow.name + " was wrong being non-nullable." + vbCrLf
+                                fieldInfoMsg += "Field " + specialNonNullableChar + newRow.name + " was wrong being non-null-able." + vbCrLf
                             End If
                         Else
                             newRow.name = specialNonNullableChar + newRow.name
                             If Not TableDataTypes.ContainsKey(newRow.name) Then
                                 noInfoForField = True
                             Else
-                                fieldInfoMsg += "Field " + newRow.name.Substring(1) + " was wrong being nullable." + vbCrLf
+                                fieldInfoMsg += "Field " + newRow.name.Substring(1) + " was wrong being null-able." + vbCrLf
                             End If
                         End If
                     End If
@@ -1032,6 +1036,7 @@ Public Class DBSheetCreateForm
                 Query.Text = DBSheetConfig.getEntry("query", DBSheetParams)
                 WhereClause.Text = DBSheetConfig.getEntry("whereClause", DBSheetParams)
                 TableEditable(False)
+                EnvironEditable(False)
                 DBSheetColsEditable(True)
                 saveEnabled(True)
                 setLinkLabel(currentFilepath)
@@ -1106,7 +1111,7 @@ Public Class DBSheetCreateForm
     End Sub
 
     Private linklabelToolTip As System.Windows.Forms.ToolTip
-    ''' <summary>sets current definition file path hyperlink label. Displayed is only the filename, full path is stored in tag and visible in tooltip</summary>
+    ''' <summary>sets current definition file path hyperlink label. Displayed is only the filename, full path is stored in tag and visible in tool-tip</summary>
     ''' <param name="filepath">definition file path</param>
     Private Sub setLinkLabel(filepath As String)
         CurrentFileLinkLabel.Text = Strings.Mid(filepath, InStrRev(filepath, "\") + 1)
@@ -1162,17 +1167,21 @@ Public Class DBSheetCreateForm
 #End Region
 
 #Region "GUI Helper functions"
-    ''' <summary>Environment/Table/Database/Password change possible</summary>
+    ''' <summary>Table/Database/Password change possible</summary>
     ''' <param name="choice">possible True, not possible False</param>
     Private Sub TableEditable(choice As Boolean)
         Database.Enabled = choice
         LDatabase.Enabled = choice
         Table.Enabled = choice
         LTable.Enabled = choice
+    End Sub
+
+    ''' <summary>Environment change possible</summary>
+    ''' <param name="choice">possible True, not possible False</param>
+    Private Sub EnvironEditable(choice As Boolean)
         Environment.Enabled = choice
         Lenvironment.Enabled = choice
     End Sub
-
     ''' <summary>if DBSheetCols Definitions should be editable, enable relevant controls</summary>
     ''' <param name="choice">editable True, not editable False</param>
     Private Sub DBSheetColsEditable(choice As Boolean)

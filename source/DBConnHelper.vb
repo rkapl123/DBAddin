@@ -13,7 +13,7 @@ Public Class DBConnHelper
     Public dbGetAllStr As String
     ''' <summary>field-name where databases are returned by dbGetAllStr</summary>
     Public DBGetAllFieldName As String
-    ''' <summary>the DB connection for the dbsheet definition activities</summary>
+    ''' <summary>the DB connection for the dbsheet definition/AdHocSQL activities</summary>
     Public dbshcnn As DbConnection
     ''' <summary>identifier needed to put password into connection string (e.g PWD=)</summary>
     Public dbPwdSpec As String
@@ -92,7 +92,7 @@ Public Class DBConnHelper
                 dbsheetConnString = Replace(dbsheetConnString, fetchSetting("ConnStringSearch" + env(), "provider=SQLOLEDB"), fetchSetting("ConnStringReplace" + env(), "driver=SQL SERVER"))
                 ' remove "ODBC;"
                 dbsheetConnString = Right(dbsheetConnString, dbsheetConnString.Length - 5)
-                conn = New OdbcConnection(dbsheetConnString)
+                dbshcnn = New OdbcConnection(dbsheetConnString)
             ElseIf Not usedForDBSheetCreate And (InStr(dbsheetConnString.ToLower, "provider=sqloledb") Or InStr(dbsheetConnString.ToLower, "driver=sql server")) Then
                 ' ADO.NET doesn't like provider= and driver= 
                 If fetchSubstr(dbsheetConnString, "provider=", ";", True) <> "" Then
@@ -108,6 +108,8 @@ Public Class DBConnHelper
                 ' for DBSheetCreate dialog always use ODBC as performance is not important there but rather vendor compatibility...
                 ' change to ODBC driver setting
                 dbsheetConnString = Replace(dbsheetConnString, fetchSetting("ConnStringSearch" + env(), "provider=SQLOLEDB"), fetchSetting("ConnStringReplace" + env(), "driver=SQL SERVER"))
+                ' remove beginning "ODBC;" in case of sql server connection strings
+                If InStr(LCase(dbsheetConnString), "driver=sql server") > 0 And Left(dbsheetConnString.ToUpper, 5) = "ODBC;" Then dbsheetConnString = Right(dbsheetConnString, dbsheetConnString.Length - 5)
                 dbshcnn = New OdbcConnection(dbsheetConnString)
             End If
             dbshcnn.Open()

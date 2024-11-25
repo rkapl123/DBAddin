@@ -103,6 +103,8 @@ Public Class AdHocSQL
         ' reset connection, recreate DB Connection helper and refill database dropdown
         myDBConnHelper.dbshcnn = Nothing
         myDBConnHelper = New DBConnHelper((Me.EnvSwitch.SelectedIndex + 1).ToString())
+        SettingsTools.selectedEnvironment = Me.EnvSwitch.SelectedIndex
+        theRibbon.InvalidateControl("envDropDown")
         Dim PrevSelDB As String = Me.Database.Text
         fillDatabasesAndSetDropDown()
         ' reset previously set database
@@ -312,7 +314,7 @@ Public Class AdHocSQL
         If e.KeyCode = Keys.Escape Then finishForm(DialogResult.Cancel)
     End Sub
 
-    ''' <summary>For non displayable data (blobs, etc.) that raise an exception, write out the exception in the datagrid cell tooltip instead of lots of popups</summary>
+    ''' <summary>For non displayable data (blobs, etc.) that raise an exception, write out the exception in the data-grid cell tool-tip instead of lots of pop-ups</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub AdHocSQLQueryResult_DataError(sender As Object, e As DataGridViewDataErrorEventArgs) Handles AdHocSQLQueryResult.DataError

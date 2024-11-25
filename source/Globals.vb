@@ -401,7 +401,7 @@ Last:
                 ExcelDnaUtil.Application.CalculateFull()
             End If
         Catch ex As Exception
-            UserMsg("Exception: " + ex.Message + ", " + Wb.Path + "\" + Wb.Name + IIf(calledOnWBOpen, " (calculation property errors can occur for workbooks being opened through MS-office-hyperlinks)", ""), "refresh DBFunctions")
+            UserMsg("Exception: " + ex.Message + ", " + Wb.Path + "\" + Wb.Name + IIf(calledOnWBOpen, " (calculation property errors can occur for workbooks being opened through MS-office hyper-links)", ""), "refresh DBFunctions")
         End Try
         ' after all db function cells have been "dirtied" set calculation mode to automatic again (if it was automatic)
         If calcModeSet Then ExcelDnaUtil.Application.Calculation = calcMode
