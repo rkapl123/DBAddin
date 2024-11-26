@@ -6,6 +6,7 @@ AvoidUpdateLinks_Refresh
 AvoidUpdateListObjects_Refresh
 AvoidUpdatePivotTables_Refresh
 AvoidUpdateQueryTables_Refresh
+closingQuote + env
 CmdTimeout
 CnnTimeout
 ConfigName + env
@@ -45,6 +46,7 @@ maxNumberMassChange
 maxRowCountCUD
 maxTriesForRevisionFind
 ownerQualifier + env
+openingQuote + env
 pivotTableCmdTextToSet + env
 repairLegacyFunctionsAutoOpen
 shortCutRefreshData
