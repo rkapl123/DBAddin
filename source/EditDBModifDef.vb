@@ -219,9 +219,11 @@ Public Class EditDBModifDef
         If Me.DBFskip.Visible Then
             ' duplicate "</root>" at the end ...
             Me.EditBox.Text = Me.EditBox.Text + vbCrLf + Me.EditBox.Lines(Me.EditBox.Lines.Length - 1)
-            ' ... and replace the last line with the new setting
+            ' replace the but-last line with the third last
             lines = Me.EditBox.Lines
-            lines(Me.EditBox.Lines.Length - 1) = "    <" + settingKey + "></" + settingKey + ">"
+            lines(Me.EditBox.Lines.Length - 2) = lines(Me.EditBox.Lines.Length - 3)
+            ' ... and replace the third last line with the new setting
+            lines(Me.EditBox.Lines.Length - 3) = "    <" + settingKey + "></" + settingKey + ">"
         Else
             Me.EditBox.SelectAll()
             Me.EditBox.SelectionBackColor = Me.EditBox.BackColor

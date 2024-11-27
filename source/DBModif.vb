@@ -686,6 +686,10 @@ exitSub:
     ''' <param name="TransactionOpen">flag whether a transaction is open during the DB Sequence</param>
     Public Overrides Sub doDBModif(Optional WbIsSaving As Boolean = False, Optional calledByDBSeq As String = "", Optional TransactionOpen As Boolean = False)
         changesDone = False
+        If (CUDFlags And primKeysCount = 0) Then
+            UserMsg("CUD Flags are incompatible with primKeysCount = 0, exiting DBModification", "DBMapper Error")
+            Exit Sub
+        End If
         ' ask for saving only if a) is not done on WorkbookSave b) is set to ask and c) is not called by a DBSequence (asks already for saving) and d) is in interactive mode
         If Not WbIsSaving And askBeforeExecute And calledByDBSeq = "" And Not nonInteractive Then
             If Not confirmExecution() = MsgBoxResult.Yes Then Exit Sub
@@ -707,13 +711,17 @@ exitSub:
             If Not openDatabase() Then Exit Sub
         End If
 
+        ' openingQuote and closingQuote are needed to quote columns containing blanks
+        Dim openingQuote As String = fetchSetting("openingQuote" + env.ToString(), "")
+        Dim closingQuote As String = fetchSetting("closingQuote" + env.ToString(), "")
+
         If deleteBeforeMapperInsert Then
             Try
                 Dim DmlCmd As IDbCommand = idbcnn.CreateCommand()
                 If Not TransactionOpen Then DBModifs.trans = idbcnn.BeginTransaction()
                 With DmlCmd
                     .Transaction = DBModifs.trans
-                    .CommandText = "delete from " + tableName
+                    .CommandText = "delete from " + openingQuote + tableName + closingQuote
                     .CommandTimeout = CmdTimeout
                     .CommandType = CommandType.Text
                     .ExecuteNonQuery()
@@ -734,15 +742,15 @@ exitSub:
                 Using comm As New SqlCommand("SET ARITHABORT ON", idbcnn, DBModifs.trans)
                     comm.ExecuteNonQuery()
                 End Using
-                da = New SqlDataAdapter(New SqlCommand("select * from " + tableName, idbcnn, DBModifs.trans)) With {
+                da = New SqlDataAdapter(New SqlCommand("select * from " + openingQuote + tableName + closingQuote, idbcnn, DBModifs.trans)) With {
                     .UpdateBatchSize = 20
                 }
             ElseIf TypeName(idbcnn) = "OleDbConnection" Then
-                da = New OleDbDataAdapter(New OleDbCommand("select * from " + tableName, idbcnn, DBModifs.trans)) With {
+                da = New OleDbDataAdapter(New OleDbCommand("select * from " + openingQuote + tableName + closingQuote, idbcnn, DBModifs.trans)) With {
                     .UpdateBatchSize = 20
                 }
             Else
-                da = New OdbcDataAdapter(New OdbcCommand("select * from " + tableName, idbcnn, DBModifs.trans))
+                da = New OdbcDataAdapter(New OdbcCommand("select * from " + openingQuote + tableName + closingQuote, idbcnn, DBModifs.trans))
             End If
             da.SelectCommand.CommandTimeout = CmdTimeout
         Catch ex As Exception
@@ -776,6 +784,7 @@ exitSub:
 
         ' first check if all column names (except ignored) of DBMapper Range exist in table and collect field-names
         Dim allColumnsStr(TargetRange.Columns.Count - 1) As String
+        Dim allColumnsStrUnQuoted(TargetRange.Columns.Count - 1) As String
         Dim colNum As Integer = 1
         Dim fieldColNum As Integer = 0
         Do
@@ -791,20 +800,23 @@ exitSub:
                 Else
                     ' only add if field was not already added by the LU correction below!
                     If Not allColumnsStr.Contains(fieldname) Then
-                        allColumnsStr(fieldColNum) = fieldname
+                        allColumnsStr(fieldColNum) = Replace(fieldname, "]", "]]") ' only character that needs to be quoted for quoting with brackets to work
+                        allColumnsStrUnQuoted(fieldColNum) = fieldname
                         fieldColNum += 1
                     End If
                 End If
             ElseIf Strings.Right(fieldname.ToUpper(), 2) = "LU" And dscheck.Tables(0).Columns.Contains(Left(fieldname, Len(fieldname) - 2)) Then
                 ' if ignored and the column is a lookup then add the column without LU to preserve the order of columns !!!
                 fieldname = Left(fieldname, Len(fieldname) - 2) ' correct the LU to real field-name
-                allColumnsStr(fieldColNum) = fieldname
+                allColumnsStr(fieldColNum) = Replace(fieldname, "]", "]]")
+                allColumnsStrUnQuoted(fieldColNum) = fieldname
                 fieldColNum += 1
             End If
             colNum += 1
         Loop Until colNum > TargetRange.Columns.Count
         ' keep only those that were filled...
         ReDim Preserve allColumnsStr(fieldColNum - 1)
+        ReDim Preserve allColumnsStrUnQuoted(fieldColNum - 1)
 
         ' before setting the commands for the adapter, we need to have the primary key information, or update/delete command builder will fail...
         Dim primKeyColumnsStr(primKeysCount - 1) As String
@@ -829,16 +841,15 @@ exitSub:
                 GoTo cleanup
             End If
             primKeyColumnsStr(i - 1) = primKey
-            primKeyCompound += primKey + " = @" + primKey + IIf(i = primKeysCount, "", " AND ")
+            primKeyCompound += openingQuote + Replace(primKey, "]", "]]") + closingQuote + " = @" + CorrectChars(primKey) + IIf(i = primKeysCount, "", " AND ")
         Next
 
         ' the actual dataset
         Dim ds As New DataSet()
-        ' openingQuote and closingQuote are needed to quote columns containing blanks
-        Dim openingQuote As String = fetchSetting("openingQuote" + env.ToString(), "")
-        Dim closingQuote As String = fetchSetting("closingQuote" + env.ToString(), "")
+
+        Dim BaseSelect As String = "SELECT " + openingQuote + String.Join(closingQuote + "," + openingQuote, allColumnsStr) + closingQuote + " FROM " + openingQuote + tableName + closingQuote
         ' replace the select command to avoid columns that are default filled but non null-able (will produce errors if not assigned to new row)
-        da.SelectCommand.CommandText = "SELECT " + openingQuote + String.Join(closingQuote + "," + openingQuote, allColumnsStr) + closingQuote + " FROM " + tableName
+        da.SelectCommand.CommandText = BaseSelect
         ' fill schema again to reflect the changed columns
         Try
             da.FillSchema(ds, SchemaType.Source, tableName)
@@ -847,13 +858,13 @@ exitSub:
             GoTo cleanup
         End Try
 
-        ' for avoidFill mode (no uploading of whole table) replace select with parameterized query (parameters are added below)
-        If avoidFill Then da.SelectCommand.CommandText = "SELECT " + openingQuote + String.Join(closingQuote + "," + openingQuote, allColumnsStr) + closingQuote + " FROM " + tableName + primKeyCompound
-
-        Dim allColumns(UBound(allColumnsStr)) As DataColumn
-        For i As Integer = 0 To UBound(allColumnsStr)
-            allColumns(i) = ds.Tables(0).Columns(allColumnsStr(i))
+        Dim allColumns(UBound(allColumnsStrUnQuoted)) As DataColumn
+        For i As Integer = 0 To UBound(allColumnsStrUnQuoted)
+            allColumns(i) = ds.Tables(0).Columns(allColumnsStrUnQuoted(i))
         Next
+
+        ' for avoidFill mode (no uploading of whole table) amend select with parameter clause (parameters are added below)
+        If avoidFill Then da.SelectCommand.CommandText = BaseSelect + primKeyCompound
 
         ' assign primary key columns from DBMapper table, as there might be none defined on the table
         Dim primKeyColumns(primKeysCount - 1) As DataColumn
@@ -871,7 +882,7 @@ exitSub:
                     param = DirectCast(da.SelectCommand, OdbcCommand).CreateParameter()
                 End If
                 With param
-                    .ParameterName = "@" + Replace(primKeyColumnsStr(i), " ", "SPACE")
+                    .ParameterName = "@" + CorrectChars(primKeyColumnsStr(i))
                     .SourceColumn = primKeyColumnsStr(i)
                     .DbType = TypeToDbType(ds.Tables(0).Columns(i).DataType(), primKeyColumnsStr(i), schemaDataTypeCollection)
                 End With
@@ -936,9 +947,10 @@ exitSub:
         Dim rowNum As Long = 2
         ' walk through all rows in DBMapper Target-range to store in data set
         Dim finishLoop As Boolean
+        Dim totalCount As Long = TargetRange.Columns.Count
         Do
             ' if CUDFlags are set, only insert/update/delete if CUDFlags column (right to DBMapper range) is filled...
-            Dim rowCUDFlag As String = TargetRange.Cells(rowNum, TargetRange.Columns.Count + 1).Value
+            Dim rowCUDFlag As String = TargetRange.Cells(rowNum, totalCount + 1).Value
             If Not CUDFlags Or (CUDFlags And rowCUDFlag <> "") Then
                 Dim AutoIncrement As Boolean = False
                 Dim primKeyValues(primKeysCount - 1) As Object
@@ -969,7 +981,7 @@ exitSub:
                     ' empty primary keys are valid if primary key has auto-increment property defined, so pass DBNull Value here to avoid exception in finding record below (record is not found of course)...
                     primKeyValues(i - 1) = IIf(IsNothing(primKeyValue) OrElse primKeyValue.ToString() = "", DBNull.Value, primKeyValue)
                     If avoidFill Then
-                        da.SelectCommand.Parameters.Item("@" + Replace(primKey, " ", "SPACE")).Value = primKeyValues(i - 1)
+                        da.SelectCommand.Parameters.Item("@" + CorrectChars(primKey)).Value = primKeyValues(i - 1)
                     End If
                     Dim checkAutoIncrement As Boolean = ds.Tables(0).Columns(primKey).AutoIncrement
                     If Not checkAutoIncrement And Len(primKeyValue) = 0 Then
@@ -1001,7 +1013,7 @@ exitSub:
                 ' get the record for updating, however avoid finding record with empty primary key value if auto-increment is given
                 ' also avoid finding if no data should be in the table (deleteBeforeMapperInsert)
                 Dim foundRow As DataRow = Nothing
-                If Not AutoIncrement And Not deleteBeforeMapperInsert Then
+                If Not AutoIncrement And Not deleteBeforeMapperInsert And primKeysCount <> 0 Then
                     Try
                         foundRow = ds.Tables(0).Rows.Find(primKeyValues)
                     Catch ex As Exception
@@ -1013,9 +1025,9 @@ exitSub:
                 Dim insertRecord As Boolean = False
                 ' If we have an auto-incrementing primary key (empty primary key value !) or didn't find a record with the given primary key (rst.EOF) ...
                 If AutoIncrement OrElse IsNothing(foundRow) Then
-                    If insertIfMissing Or rowCUDFlag = "i" Or deleteBeforeMapperInsert Then
+                    If insertIfMissing Or rowCUDFlag = "i" Or deleteBeforeMapperInsert Or primKeysCount = 0 Then
                         insertRecord = True
-                        ' ... add a new record if insertIfMissing flag is set Or CUD Flag insert is given
+                        ' ... add a new record if insertIfMissing flag is set Or CUD Flag insert or no primKey is given
                         foundRow = ds.Tables(0).NewRow()
                         For i As Integer = 1 To primKeysCount
                             Dim primKey As String = TargetRange.Cells(1, i).Value.ToString()
@@ -1046,7 +1058,7 @@ exitSub:
                         If Not notifyUserOfDataError("Did Not find record with primary keys '" + primKeyValueStr + "', insertIfMissing = " + insertIfMissing.ToString() + " in sheet " + TargetRange.Parent.Name + ", row " + rowNum.ToString(), rowNum) Then GoTo cleanup
                         GoTo nextRow
                     End If
-                    ExcelDnaUtil.Application.StatusBar = Left("Inserting " + IIf(AutoIncrement, "new auto-incremented key", primKeyValueStr) + " into " + tableName, 255)
+                    ExcelDnaUtil.Application.StatusBar = Left("Inserting " + IIf(AutoIncrement, "new auto-incremented key", primKeyValueStr) + " into " + tableName + ", " + CStr(rowNum) + "/" + CStr(totalCount), 255)
                 End If
                 ' fill non primary key fields to prepare record for insert or update
                 If Not CUDFlags Or (CUDFlags And (rowCUDFlag = "i" Or rowCUDFlag = "u")) Then
@@ -1091,8 +1103,8 @@ exitSub:
                             End Try
                         End If
                         colNum += 1
-                    Loop Until colNum > TargetRange.Columns.Count
-                    ExcelDnaUtil.Application.StatusBar = Left("Filled fields for " + primKeyValueStr + " in " + tableName, 255)
+                    Loop Until colNum > totalCount
+                    'ExcelDnaUtil.Application.StatusBar = Left("Filled fields for " + primKeyValueStr + " in " + tableName, 255)
                     If insertRecord Then
                         Try
                             ds.Tables(0).Rows.Add(foundRow)
@@ -2165,6 +2177,39 @@ EndOuterLoop:
         End Try
     End Sub
 
+    Public Function CorrectChars(fieldname As String) As String
+        'quote needed for blank / + = ; , < > [ ] * " # ( ) ~ - ! { } % ^ ' & .  \ ` ´
+        CorrectChars = Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(fieldname,
+        " ", "1"),
+        "/", "2"),
+        "+", "3"),
+        "=", "4"),
+        ";", "5"),
+        ",", "6"),
+        "<", "7"),
+        ">", "8"),
+        "[", "9"),
+        "]", "10"),
+        "*", "11"),
+        """", "12"),
+        "#", "13"),
+        "(", "14"),
+        ")", "15"),
+        "~", "16"),
+        "-", "17"),
+        "!", "18"),
+        "{", "19"),
+        "}", "20"),
+        "%", "21"),
+        "^", "22"),
+        "'", "23"),
+        "&", "24"),
+        ".", "25"),
+        "\", "26"),
+        "`", "27"),
+        "´", "28")
+    End Function
+
     ''' <summary>gets DB Modification Name (DBMapper or DBAction) from theRange</summary>
     ''' <param name="theRange"></param>
     ''' <returns>the retrieved name as a string (not name object !)</returns>
@@ -2422,14 +2467,14 @@ Public Class CustomSqlCommandBuilder
                     intoString.Append(", ")
                     valuesString.Append(", ")
                 End If
-                intoString.Append(Me.openingQuote).Append(column.ColumnName).Append(Me.closingQuote)
-                valuesString.Append("@").Append(Replace(column.ColumnName, " ", "SPACE"))
+                intoString.Append(Me.openingQuote).Append(Replace(column.ColumnName, "]", "]]")).Append(Me.closingQuote)
+                valuesString.Append("@").Append(CorrectChars(column.ColumnName))
                 command.Parameters.Add(CreateParam(column))
             End If
         Next
         Dim commandText As String = "INSERT INTO " + TableName() + "(" + intoString.ToString() + ") VALUES (" + valuesString.ToString() + "); "
         If autoincrementColumns.Count > 0 Then
-            commandText += "SELECT SCOPE_IDENTITY() AS " + Me.openingQuote + DirectCast(autoincrementColumns(0), DataColumn).ColumnName() + Me.closingQuote
+            commandText += "SELECT SCOPE_IDENTITY() AS " + Me.openingQuote + Replace(DirectCast(autoincrementColumns(0), DataColumn).ColumnName(), "]", "]]") + Me.closingQuote
         End If
         command.CommandText = commandText
         Return command
@@ -2453,7 +2498,7 @@ Public Class CustomSqlCommandBuilder
             If (whereString.Length > 0) Then
                 whereString.Append(" AND ")
             End If
-            whereString.Append(Me.openingQuote).Append(column.ColumnName).Append(Me.closingQuote).Append(" = @").Append(Replace(column.ColumnName, " ", "SPACE"))
+            whereString.Append(Me.openingQuote).Append(Replace(column.ColumnName, "]", "]]")).Append(Me.closingQuote).Append(" = @").Append(CorrectChars(column.ColumnName))
             command.Parameters.Add(CreateParam(column))
         Next
         Dim commandText As String = "DELETE FROM " + TableName() + " WHERE " + whereString.ToString()
@@ -2475,13 +2520,13 @@ Public Class CustomSqlCommandBuilder
                 If (whereString.Length > 0) Then
                     whereString.Append(" AND ")
                 End If
-                whereString.Append(Me.openingQuote).Append(column.ColumnName).Append(Me.closingQuote).Append("= @old").Append(Replace(column.ColumnName, " ", "SPACE"))
+                whereString.Append(Me.openingQuote).Append(Replace(column.ColumnName, "]", "]]")).Append(Me.closingQuote).Append("= @old").Append(CorrectChars(column.ColumnName))
             Else
                 ' other fields go into set part
                 If (setString.Length > 0) Then
                     setString.Append(", ")
                 End If
-                setString.Append(Me.openingQuote).Append(column.ColumnName).Append(Me.closingQuote).Append(" = @").Append(Replace(column.ColumnName, " ", "SPACE"))
+                setString.Append(Me.openingQuote).Append(Replace(column.ColumnName, "]", "]]")).Append(Me.closingQuote).Append(" = @").Append(CorrectChars(column.ColumnName))
             End If
             command.Parameters.Add(CreateParam(column))
             command.Parameters.Add(CreateOldParam(column))
@@ -2494,7 +2539,7 @@ Public Class CustomSqlCommandBuilder
     Private Function CreateOldParam(column As DataColumn) As SqlParameter
         Dim sqlParam As New SqlParameter()
         Dim columnName As String = column.ColumnName
-        sqlParam.ParameterName = "@old" + Replace(columnName, " ", "SPACE")
+        sqlParam.ParameterName = "@old" + CorrectChars(columnName)
         sqlParam.SourceColumn = columnName
         sqlParam.SourceVersion = DataRowVersion.Original
         sqlParam.DbType = TypeToDbType(column.DataType(), columnName, schemaDataTypeCollection)
@@ -2504,7 +2549,7 @@ Public Class CustomSqlCommandBuilder
     Private Function CreateParam(column As DataColumn) As SqlParameter
         Dim sqlParam As New SqlParameter()
         Dim columnName As String = column.ColumnName
-        sqlParam.ParameterName = "@" + Replace(columnName, " ", "SPACE")
+        sqlParam.ParameterName = "@" + CorrectChars(columnName)
         sqlParam.SourceColumn = columnName
         sqlParam.DbType = TypeToDbType(column.DataType(), columnName, schemaDataTypeCollection)
         Return sqlParam
@@ -2550,14 +2595,14 @@ Public Class CustomOdbcCommandBuilder
                     intoString.Append(", ")
                     valuesString.Append(", ")
                 End If
-                intoString.Append(Me.openingQuote).Append(column.ColumnName).Append(Me.closingQuote)
-                valuesString.Append("@").Append(Replace(column.ColumnName, " ", "SPACE"))
+                intoString.Append(Me.openingQuote).Append(Replace(column.ColumnName, "]", "]]")).Append(Me.closingQuote)
+                valuesString.Append("@").Append(CorrectChars(column.ColumnName))
                 command.Parameters.Add(CreateParam(column))
             End If
         Next
         Dim commandText As String = "INSERT INTO " + TableName() + "(" + intoString.ToString() + ") VALUES (" + valuesString.ToString() + "); "
         If autoincrementColumns.Count > 0 Then
-            commandText += "SELECT SCOPE_IDENTITY() AS " + Me.openingQuote + DirectCast(autoincrementColumns(0), DataColumn).ColumnName() + Me.closingQuote
+            commandText += "SELECT SCOPE_IDENTITY() AS " + Me.openingQuote + Replace(DirectCast(autoincrementColumns(0), DataColumn).ColumnName(), "]", "]]") + Me.closingQuote
         End If
         command.CommandText = commandText
         Return command
@@ -2581,7 +2626,7 @@ Public Class CustomOdbcCommandBuilder
             If (whereString.Length > 0) Then
                 whereString.Append(" AND ")
             End If
-            whereString.Append(Me.openingQuote).Append(column.ColumnName).Append(Me.closingQuote).Append(" = @").Append(Replace(column.ColumnName, " ", "SPACE"))
+            whereString.Append(Me.openingQuote).Append(Replace(column.ColumnName, "]", "]]")).Append(Me.closingQuote).Append(" = @").Append(CorrectChars(column.ColumnName))
             command.Parameters.Add(CreateParam(column))
         Next
         Dim commandText As String = "DELETE FROM " + TableName() + " WHERE " + whereString.ToString()
@@ -2603,13 +2648,13 @@ Public Class CustomOdbcCommandBuilder
                 If (whereString.Length > 0) Then
                     whereString.Append(" AND ")
                 End If
-                whereString.Append(Me.openingQuote).Append(column.ColumnName).Append(Me.closingQuote).Append("= @old").Append(Replace(column.ColumnName, " ", "SPACE"))
+                whereString.Append(Me.openingQuote).Append(Replace(column.ColumnName, "]", "]]")).Append(Me.closingQuote).Append("= @old").Append(CorrectChars(column.ColumnName))
             Else
                 ' other fields go into set part
                 If (setString.Length > 0) Then
                     setString.Append(", ")
                 End If
-                setString.Append(Me.openingQuote).Append(column.ColumnName).Append(Me.closingQuote).Append(" = @").Append(Replace(column.ColumnName, " ", "SPACE"))
+                setString.Append(Me.openingQuote).Append(Replace(column.ColumnName, "]", "]]")).Append(Me.closingQuote).Append(" = @").Append(CorrectChars(column.ColumnName))
             End If
             command.Parameters.Add(CreateParam(column))
             command.Parameters.Add(CreateOldParam(column))
@@ -2622,7 +2667,7 @@ Public Class CustomOdbcCommandBuilder
     Private Function CreateOldParam(column As DataColumn) As OdbcParameter
         Dim sqlParam As New OdbcParameter()
         Dim columnName As String = column.ColumnName
-        sqlParam.ParameterName = "@old" + Replace(columnName, " ", "SPACE")
+        sqlParam.ParameterName = "@old" + CorrectChars(columnName)
         sqlParam.SourceColumn = columnName
         sqlParam.SourceVersion = DataRowVersion.Original
         sqlParam.DbType = TypeToDbType(column.DataType(), columnName, schemaDataTypeCollection)
@@ -2632,7 +2677,7 @@ Public Class CustomOdbcCommandBuilder
     Private Function CreateParam(column As DataColumn) As OdbcParameter
         Dim sqlParam As New OdbcParameter()
         Dim columnName As String = column.ColumnName
-        sqlParam.ParameterName = "@" + Replace(columnName, " ", "SPACE")
+        sqlParam.ParameterName = "@" + CorrectChars(columnName)
         sqlParam.SourceColumn = columnName
         sqlParam.DbType = TypeToDbType(column.DataType(), columnName, schemaDataTypeCollection)
         Return sqlParam
@@ -2677,14 +2722,14 @@ Public Class CustomOleDbCommandBuilder
                     intoString.Append(", ")
                     valuesString.Append(", ")
                 End If
-                intoString.Append(Me.openingQuote).Append(column.ColumnName).Append(Me.closingQuote)
-                valuesString.Append("@").Append(Replace(column.ColumnName, " ", "SPACE"))
+                intoString.Append(Me.openingQuote).Append(Replace(column.ColumnName, "]", "]]")).Append(Me.closingQuote)
+                valuesString.Append("@").Append(CorrectChars(column.ColumnName))
                 command.Parameters.Add(CreateParam(column))
             End If
         Next
         Dim commandText As String = "INSERT INTO " + TableName() + "(" + intoString.ToString() + ") VALUES (" + valuesString.ToString() + "); "
         If autoincrementColumns.Count > 0 Then
-            commandText += "SELECT SCOPE_IDENTITY() AS " + Me.openingQuote + DirectCast(autoincrementColumns(0), DataColumn).ColumnName() + Me.closingQuote
+            commandText += "SELECT SCOPE_IDENTITY() AS " + Me.openingQuote + Replace(DirectCast(autoincrementColumns(0), DataColumn).ColumnName(), "]", "]]") + Me.closingQuote
         End If
         command.CommandText = commandText
         Return command
@@ -2708,7 +2753,7 @@ Public Class CustomOleDbCommandBuilder
             If (whereString.Length > 0) Then
                 whereString.Append(" AND ")
             End If
-            whereString.Append(Me.openingQuote).Append(column.ColumnName).Append(Me.closingQuote).Append(" = @").Append(Replace(column.ColumnName, " ", "SPACE"))
+            whereString.Append(Me.openingQuote).Append(Replace(column.ColumnName, "]", "]]")).Append(Me.closingQuote).Append(" = @").Append(CorrectChars(column.ColumnName))
             command.Parameters.Add(CreateParam(column))
         Next
         Dim commandText As String = "DELETE FROM " + TableName() + " WHERE " + whereString.ToString()
@@ -2730,13 +2775,13 @@ Public Class CustomOleDbCommandBuilder
                 If (whereString.Length > 0) Then
                     whereString.Append(" AND ")
                 End If
-                whereString.Append(Me.openingQuote).Append(column.ColumnName).Append(Me.closingQuote).Append("= @old").Append(Replace(column.ColumnName, " ", "SPACE"))
+                whereString.Append(Me.openingQuote).Append(Replace(column.ColumnName, "]", "]]")).Append(Me.closingQuote).Append("= @old").Append(CorrectChars(column.ColumnName))
             Else
                 ' other fields go into set part
                 If (setString.Length > 0) Then
                     setString.Append(", ")
                 End If
-                setString.Append(Me.openingQuote).Append(column.ColumnName).Append(Me.closingQuote).Append(" = @").Append(Replace(column.ColumnName, " ", "SPACE"))
+                setString.Append(Me.openingQuote).Append(Replace(column.ColumnName, "]", "]]")).Append(Me.closingQuote).Append(" = @").Append(CorrectChars(column.ColumnName))
             End If
             command.Parameters.Add(CreateParam(column))
             command.Parameters.Add(CreateOldParam(column))
@@ -2749,7 +2794,7 @@ Public Class CustomOleDbCommandBuilder
     Private Function CreateOldParam(column As DataColumn) As OleDbParameter
         Dim sqlParam As New OleDbParameter()
         Dim columnName As String = column.ColumnName
-        sqlParam.ParameterName = "@old" + Replace(columnName, " ", "SPACE")
+        sqlParam.ParameterName = "@old" + CorrectChars(columnName)
         sqlParam.SourceColumn = columnName
         sqlParam.SourceVersion = DataRowVersion.Original
         sqlParam.DbType = TypeToDbType(column.DataType(), columnName, schemaDataTypeCollection)
@@ -2759,7 +2804,7 @@ Public Class CustomOleDbCommandBuilder
     Private Function CreateParam(column As DataColumn) As OleDbParameter
         Dim sqlParam As New OleDbParameter()
         Dim columnName As String = column.ColumnName
-        sqlParam.ParameterName = "@" + Replace(columnName, " ", "SPACE")
+        sqlParam.ParameterName = "@" + CorrectChars(columnName)
         sqlParam.SourceColumn = columnName
         sqlParam.DbType = TypeToDbType(column.DataType(), columnName, schemaDataTypeCollection)
         Return sqlParam

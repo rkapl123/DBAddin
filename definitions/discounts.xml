@@ -1,0 +1,16 @@
+<DBsheetConfig>
+<connID>pubs</connID>
+<table>pubs.dbo.discounts</table>
+<query>SELECT T1.discounttype, T1.stor_id, T1.lowqty, T1.highqty, T1.discount
+FROM pubs.dbo.discounts T1
+</query>
+<whereClause></whereClause>
+<primcols>1</primcols>
+<columns>
+<field><name>*discounttype</name><primkey>True</primkey></field>
+<field><name>stor_id</name></field>
+<field><name>lowqty</name></field>
+<field><name>highqty</name></field>
+<field><name>*discount</name></field>
+</columns>
+</DBsheetConfig>

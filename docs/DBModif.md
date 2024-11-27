@@ -22,11 +22,11 @@ The DBModifier creation/editing is shown below (examples already filled, when ac
 
 *   DBMapper Name: Enter the name for the selected Range (containing the Data including header fields) that will be used to identify the DBMap in the "Execute DBModifier" Group dropdowns. If no name is given here, then UnnamedDBMapper will be used to identify it.
 *   Tablename: Database Table, where Data is to be stored.
-*   Primary keys count: amount of columns from the left to be used as primary keys for updating table data.
+*   Primary keys count: amount of columns from the left to be used as primary keys for updating table data. Enter 0 here for special "insert-only" Mappers (all entries are added to a table that doesn't need to have primary columns), recommended to be used with deleteBeforeMapperInsert (removes all content of the table before inserting)
 *   Database: Database to store DBMaps Data into.
 *   Ignore Columns: comma separated list of column numbers to be ignored (e.g. helper columns or irrelevant columns).
 *   Additional Stored Procedure: additional stored procedure to be executed after saving.
-*   Insert If Missing: if set, then insert row into table if the primary key is missing there. Default = False (only update).
+*   Insert If Missing: if set, then insert row into table if the primary key is missing there. Default = False (only update, an error is thrown if the record couldn't be found).
 *   Store DBMap on Save: should DBMap also be saved on Excel Workbook Saving? (default no). If multiple DBModifiers (DB Mappers and DB Actions, DB Sequences are not bound to a worksheet) are defined to be stored/executed on save, then the DBModifiers being on the active worksheet are done first (without any specific order), then those on the other worksheets are done (also without any specific order).
 *   Environment: The Environment, where connection id should be taken from (if not existing, take from selected Environment in DB Addin General Settings Group).
 *   Exec on Save: Should the DBMap be executed when the workbook is being saved?
@@ -126,7 +126,7 @@ By issuing the VBA command `result = Application.Run("getExecutionParam", Param)
 *  CmdTimeout: returns SettingsTools.CmdTimeout
 *  preventRefreshFlag: returns Functions.preventRefreshFlag
 *  nonInteractiveErrMsgs: returns the currently collected error messages
-*  and any other key from the available DBAddin settings (in DBAddin.xll.config, DBAddinCentral.config or DBaddinUser.config)
+*  ... and any other key being set in the DBAddin settings (DBAddin.xll.config, DBAddinCentral.config or DBaddinUser.config)
 
 ## Additional settings ("hidden" as they are not available in creation dialogs)
 
@@ -134,8 +134,9 @@ Following Settings of DBModifiers can only be edited in the Edit DBModifier Defi
 
 *  `confirmText` (all DB Modifiers, String): an alternative text displayed in the confirmation of DB Modifiers.
 *  `avoidFill` (only DBMappers, Boolean): prevent filling of whole table during execution of DB Mappers, this is useful for very large tables that are incrementally filled and would take unnecessary long time to start the DB Mapper. If set to true then each record is searched independently by going to the database. If the records to be stored are not too many, then this is more efficient than loading a very large table.
-*  `preventColResize` (only DBMappers, Boolean): prevent automatic resizing of DB Mappers columns to include new ones, this is useful if header columns can be added accidentally and thus lead to errors.
+*  `deleteBeforeMapperInsert` (only DBMappers, Boolean): removes all content of the table before inserting the contents again.
 *  `onlyRefreshTheseDBSheetLookups` (only DBMappers, String): contains a list of addresses of DBListfetch function cells in the DBSheetLookups sheet that exclusively should be refreshed after the corresponding DBSheet was saved. If empty, all lookups are refreshed when the DBSheet was saved. Always provide a comma BEFORE the cell address !
+*  `preventColResize` (only DBMappers, Boolean): prevent automatic resizing of DB Mappers columns to include new ones, this is useful if header columns can be added accidentally and thus lead to errors.
 
 ## Settings
 
