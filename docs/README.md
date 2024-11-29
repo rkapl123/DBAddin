@@ -49,6 +49,9 @@ This can be done by modifying DBAddin.xll.config or the referred DBAddinUser.con
     <add key="DBSheetConnString3" value="DRIVER=SQL SERVER;Server=Lenovo-PC;UID=sa;PWD=;Database=pubs;"/>
     <add key="DBSheetDefinitions3" value="C:\dev\DBAddin.NET\definitions"/>
     <add key="ownerQualifier3" value=".dbo."/>
+    <add key="openingQuote3" value="["/>
+    <add key="closingQuote3" value="]"/>
+    <add key="closingQuoteReplacement3" value="]]"/>
 </appSettings>
 ```
 
@@ -65,6 +68,9 @@ Explanation:
 *   `DBSheetConnString`**N**: the connection string used to connect to the database for DBSheet definitions. If this is not set the standard connection string `ConstConnString`**N** is used.
 *   `DBSheetDefinitions`**N**: path to the stored DBSheetdefinitions (default directory of assign DBsheet definitions and load/save DBSheet Definitions)
 *   `ownerQualifier`**N**: default owner qualifier for table when loading DBSheet definitions, if table name is not fully qualified (legacy DBSheet definitions)
+*   `openingQuote`**N**: opening quote for quoting not allowed characters in names (like blanks, dash, etc.)
+*   `closingQuote`**N**: closing quote for quoting not allowed characters in names (like blanks, dash, etc.), can be same as opening quote
+*   `closingQuoteReplacement`**N**: replacement for quoting the closing quote inside quoted fields (e.g. `]]` for sql servers closing quote `]`)
 
 ### Other Settings
 

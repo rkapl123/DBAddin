@@ -45,11 +45,11 @@ Public NotInheritable Class AboutBox
     Dim doUpdate As Boolean = False
     Const AddinName = "DBAddin-"
     Const updateFilenameZip = "downloadedVersion.zip"
-    Dim localUpdateFolder As String = fetchSetting("localUpdateFolder", "")
-    Dim localUpdateMessage As String = fetchSetting("localUpdateMessage", "A new version is available in the local update folder, quit Excel and open explorer to start deployAddin.cmd ?")
-    Dim updatesMajorVersion As String = fetchSetting("updatesMajorVersion", "1.0.0.")
-    Dim updatesDownloadFolder As String = fetchSetting("updatesDownloadFolder", "C:\temp\")
-    Dim updatesUrlBase As String = fetchSetting("updatesUrlBase", "https://github.com/rkapl123/DBAddin/archive/refs/tags/")
+    ReadOnly localUpdateFolder As String = fetchSetting("localUpdateFolder", "")
+    ReadOnly localUpdateMessage As String = fetchSetting("localUpdateMessage", "A new version is available in the local update folder, quit Excel and open explorer to start deployAddin.cmd ?")
+    ReadOnly updatesMajorVersion As String = fetchSetting("updatesMajorVersion", "1.0.0.")
+    ReadOnly updatesDownloadFolder As String = fetchSetting("updatesDownloadFolder", "C:\temp\")
+    ReadOnly updatesUrlBase As String = fetchSetting("updatesUrlBase", "https://github.com/rkapl123/DBAddin/archive/refs/tags/")
     Dim response As Net.HttpWebResponse = Nothing
     Dim urlFile As String = ""
     ' check for zip file of next higher revision

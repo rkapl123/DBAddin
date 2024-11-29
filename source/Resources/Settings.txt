@@ -7,6 +7,7 @@ AvoidUpdateListObjects_Refresh
 AvoidUpdatePivotTables_Refresh
 AvoidUpdateQueryTables_Refresh
 closingQuote + env
+closingQuoteReplacement + env
 CmdTimeout
 CnnTimeout
 ConfigName + env

@@ -215,7 +215,7 @@ Public Class DBModifCreate
     Private Sub DBModifCreate_Shown(sender As Object, e As EventArgs) Handles Me.Shown
         If Me.Tag = "DBAction" Then
             ' add all visible names to context menu on paramRangesStr text box, first workbook level names
-            Dim submenu As ToolStripMenuItem = New ToolStripMenuItem With {
+            Dim submenu As New ToolStripMenuItem With {
                 .Text = ExcelDnaUtil.Application.ActiveWorkbook.Name
             }
             For Each aName As Excel.Name In ExcelDnaUtil.Application.ActiveWorkbook.Names()
