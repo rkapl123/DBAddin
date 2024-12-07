@@ -376,7 +376,7 @@ To be able to link the documentation to the config entries, which are retrieved 
 
 #### Refreshing the config tree
 
-To save time when starting up DBAddin/Excel, refreshing the config tree is only done when you open the Config Menu and click "refresh DB Config Tree".  
+To save time when starting up DBAddin/Excel, refreshing the config tree is only done when you open the Config Menu and click "refresh DB Config Tree" (this also refreshes the documentation as described above).  
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBConfigsRefresh.PNG)
 
 ### Create DB Functions
