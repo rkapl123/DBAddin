@@ -370,9 +370,9 @@ Result:
 |pubs|employee|employees table|
 |NULL|employee|emp_id: employee id|
 |NULL|employee|fname: firstname of employee|
-...
+|...|...|...|
 
-To be able to link the documentation to the config entries, which are retrieved from the filesystem, another setting is needed that indicates the first character in the `specialConfigStoreFolders` as discussed in [Creating configurations](creating_configurations): `<add key="charBeforeDBnameConfigDoc" value="_" />`.
+To be able to link the documentation to the config entries, which are retrieved from the filesystem, another setting is needed that indicates the first character in the `specialConfigStoreFolders` as discussed in [Creating configurations](#creating-configurations): `<add key="charBeforeDBnameConfigDoc" value="_" />`.
 
 #### Refreshing the config tree
 
