@@ -298,7 +298,7 @@ done:
                 DBModifDefColl = New Dictionary(Of String, Dictionary(Of String, DBModif))
             End If
             LogInfo("getting DBModif Definitions on Workbook Activate")
-            getDBModifDefinitions(Wb)
+            getDBModifDefinitions(Wb) ' this also invalidates the ribbon to reflect any DB Modifier changes there
             ' unfortunately, Excel doesn't fire SheetActivate when opening workbooks, so do that here...
             LogInfo("assign command button click handlers on Workbook Activate")
             assignHandler(Wb.ActiveSheet)

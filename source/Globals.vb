@@ -514,9 +514,14 @@ Last:
             UserMsg("The Calculation mode can't be set, maybe you are in the formula/cell editor?", "Create Function In Cell")
             Exit Sub
         End Try
+        If Functions.preventRefreshFlag Or (Functions.preventRefreshFlagColl.ContainsKey(ExcelDnaUtil.Application.ActiveWorkbook.Name) AndAlso Functions.preventRefreshFlagColl(ExcelDnaUtil.Application.ActiveWorkbook.Name)) Then
+            UserMsg("preventRefresh is currently set, this affects creation of DB Functions, therefore disabling it now", "Create Function In Cell")
+            Functions.preventRefreshFlag = False
+            If Functions.preventRefreshFlagColl.ContainsKey(ExcelDnaUtil.Application.ActiveWorkbook.Name) Then Functions.preventRefreshFlagColl(ExcelDnaUtil.Application.ActiveWorkbook.Name) = False
+            theRibbon.InvalidateControl("preventRefresh")
+        End If
 
         Dim i As Long
-
         ' for each defined cell address and content pair
         For i = 0 To UBound(ItemLineDef) Step 2
             cellToBeStoredAddress = ItemLineDef(i)

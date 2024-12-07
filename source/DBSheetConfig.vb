@@ -4,7 +4,7 @@ Imports ExcelDna.Integration
 Imports Microsoft.Office.Core
 Imports Microsoft.Office.Interop
 
-'''<summary>Helper module for easier manipulation of DBSheet definition</summary> 
+'''<summary>Helper module for creation of DBSheets and DBSheet definition manipulation helpers</summary> 
 Public Module DBSheetConfig
     ''' <summary>the current cell where the DBSheet Definition is inserted at</summary>
     Public curCell As Excel.Range
@@ -181,7 +181,7 @@ Public Module DBSheetConfig
                             End If
                         Next
                         If foundDelim = 0 Then
-                            UserMsg("Error in changing lookupName '" + lookupName + "' to '" + lookupName + "LU' in select statement of DBSheet query, it has to begin with blank and end with ',' blank or CrLf !", "DBSheet Creation Error")
+                            UserMsg("Error in preparing lookupName '" + lookupName + "' (conversion to '" + lookupName + "LU') in select statement of DBSheet query:" + vbCrLf + selectPart + vbCrLf + "The fieldname part always has to begin with blank and end with ',' or a newline (CrLf)!", "DBSheet Creation Error")
                             lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
                             Exit Sub
                         End If

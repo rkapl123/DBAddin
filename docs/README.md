@@ -6,7 +6,7 @@ First, DBAddin provides DB Functions (see [DBFuncs User-doc](DBFuncs.md)), which
 
 Next, methods for working with database data ([DBModifications](DBModif.md): DBMapper, DBAction and DBSequences) are included. This also includes a row entry oriented way to modify data in so called DBSheets (see [DBSheets](DBSheets.md)).
 
-DBAddin.NET is the successor to the VB6 based Office Database Addin, see also the [slide-show](https://rkapl123.github.io/dbaddinslides/) for a quick overview.
+DBAddin.NET is the successor to the VB6 based Office Database Add-in, see also the [slide-show](https://rkapl123.github.io/dbaddinslides/) for a quick overview.
 
 ### Installation
 
@@ -17,7 +17,7 @@ DBAddin.NET is the successor to the VB6 based Office Database Addin, see also th
 If any of these are missing, please install them yourself before starting DBAddin.
 
 Download the latest zip package in [https://github.com/rkapl123/DBAddin/tags](https://github.com/rkapl123/DBAddin/tags), unzip to any location and run deployAddin.cmd in the folder Distribution.
-This copies DBAddin.xll, DBAddin.xll.config, DBAddinUser.config and DBAddinCentral.config to your %appdata%\Microsoft\AddIns folder and starts Excel for activating DBAddin (adding it to the registered Addins).
+This copies DBAddin.xll, DBAddin.xll.config, DBAddinUser.config and DBAddinCentral.config to your %appdata%\Microsoft\AddIns folder and starts Excel for activating DB Add-in (adding it to the registered Add-ins).
 
 ### Settings
 
@@ -52,6 +52,7 @@ This can be done by modifying DBAddin.xll.config or the referred DBAddinUser.con
     <add key="openingQuote3" value="["/>
     <add key="closingQuote3" value="]"/>
     <add key="closingQuoteReplacement3" value="]]"/>
+    <add key="ConfigDocQuery3" value="SELECT databasename,case when objecttype='T' then objectname else parenttable end, case when objecttype='F' then objectname + ': ' else '' end + documentation FROM dbdocumentation ORDER BY case when objecttype='T' then objectname+'1' else parenttable+'2' end, objectname"/>
 </appSettings>
 ```
 
@@ -62,7 +63,7 @@ Explanation:
 *   `ConnStringSearch`**N**: part to be searched for replacement within the standard connection string in DBModifiers and DBRowFetch.
 *   `ConnStringReplace`**N**: replacement for above
 *   `dbGetAll`**N**: command for retrieving all databases/schemas from the database can be entered (for MS SQL server this is "`sp_helpdb`" for Oracle its "`select username from sys.all_users`".
-*   `dbGetAllFieldName`**N**: If the result of above command has more than one column (like in sqlserver), you have to give the field name where the databases can be retrieved from.
+*   `dbGetAllFieldName`**N**: If the result of above command has more than one column (like in sql server), you have to give the field name where the databases can be retrieved from.
 *   `DBidentifierCCS`**N**: used to identify the database within the standard connection string or within DBSheetConnString
 *   `dbPwdSpec`**N**: Password entry specifier within DBSheetConnString
 *   `DBSheetConnString`**N**: the connection string used to connect to the database for DBSheet definitions. If this is not set the standard connection string `ConstConnString`**N** is used.
@@ -71,12 +72,14 @@ Explanation:
 *   `openingQuote`**N**: opening quote for quoting not allowed characters in names (like blanks, dash, etc.)
 *   `closingQuote`**N**: closing quote for quoting not allowed characters in names (like blanks, dash, etc.), can be same as opening quote
 *   `closingQuoteReplacement`**N**: replacement for quoting the closing quote inside quoted fields (e.g. `]]` for sql servers closing quote `]`)
+*   `ConfigDocQuery`**N**: query that retrieves documentation for database objects, see also [Viewing Database documentation with configurations](DBFuncs.md). This setting can also be given without an environment.
 
 ### Other Settings
 
 Other (general) settings possible in DBAddin.xll.config (or DBAddinCentral.config/DBAddinUser.config):
 
 ```xml
+    <add key="charBeforeDBnameConfigDoc" value="_" />
     <add key="CmdTimeout" value="30" />
     <add key="CnnTimeout" value="15" />
     <add key="ConfigSelect" value="SELECT TOP 10 * FROM !Table!" />
@@ -110,6 +113,7 @@ Other (general) settings possible in DBAddin.xll.config (or DBAddinCentral.confi
 ```
 
 Explanation:
+*   `charBeforeDBnameConfigDoc`: setting that indicates the first character in the `specialConfigStoreFolders`, this is needed for documentation of config entries fetched from folder set in `ConfigStoreFolder`**N** which is provided by ConfigDocQuery, see also [Viewing Database documentation with configurations](DBFuncs.md)
 *   `CmdTimeout`: the default timeout for a command to execute.
 *   `CnnTimeout`: the default timeout for connecting.
 *   `ConfigSelect`**Postfix**: Use this template instead of standard config (currently `SELECT TOP 10000 * FROM <Table>`) when inserting cell configurations. The respective Table is being replaced into `!Table!`. Add **Postfix** to make different choices, the preferred choice is given in next setting.
@@ -118,23 +122,23 @@ Explanation:
 *   `DBMapperCUDFlagStyle`: Style for setting Excel data tables when having CUD Flags set on DBMappers.
 *   `DBMapperStandardStyle`: Style for setting Excel data tables when not having CUD Flags set on DBMappers.
 *   `DBSheetAutoname`: When inserting DBSheet Definitions, automatically name Worksheet to the table name, if this is set.
-*   `DebugAddin`: activate Info messages to debug addin.
+*   `DebugAddin`: activate Info messages to debug add-in.
 *   `DefaultDBDateFormatting`: default formatting choice for DBDate.
-*   `DefaultEnvironment`: default selected environment on startup.
+*   `DefaultEnvironment`: default selected environment on start-up.
 *   `disableSettingsDisplay`: enter a name here for settings that should not be available for viewing/editing to the user (`addin`: DBAddin.xll.config, `central`: DBAddinCentral.config, `user`: DBAddinUser.config).
 *   `DMLStatementsAllowed`: Allows DML Statements in the Ad-hoc SQL Query Tool.
 *   `DontChangeEnvironment`: prevent changing the environment selector (Non-Production environments might confuse some people or lead to errors).
 *   `ExcelVersionForPivot`: The default Version when creating DBSetQuery enabled pivot tables (see [DBFuncs User-doc](DBFuncs.md), 0=2000, 1=2002, 2=2003, 3=2007, 4=2010, 5=2013, 6=2016, 7=2019).
 *   `legacyFunctionMsg`: Alternative Message for replacing legacy functions (different language).
 *   `LocalHelp`: the path to local help files down-loadable [here](doc.zip). To include it, extract the package into the respective folder and assign the file accordingly.
-*   `localUpdateFolder`: For updating the DB-Addin Version, you can provide an alternative folder, where the deploy script and the files are maintained for other users.
+*   `localUpdateFolder`: For updating the DB Add-in Version, you can provide an alternative folder, where the deploy script and the files are maintained for other users.
 *   `localUpdateMessage`: For the alternative folder update, you can also provide an alternative message to display.
 *   `maxNumberMassChange`: Threshold of Number of changes in CUDFlag DBMappers to issue a warning.
-*   `repairLegacyFunctionsAutoOpen`: Set this to False if legacy DB Addin functions should not be checked/repaired on auto open of workbooks.
-*   `shortCutRefreshData`: Set this to override the default value of the refreshData context button and avoid conflicts with other addins. For syntax see [https://msdn.microsoft.com/en-us/library/office/ff197461.aspx](https://msdn.microsoft.com/en-us/library/office/ff197461.aspx).
-*   `shortCutJumpButton`: Set this to override the default value of the jump to DBFunc/target context button and avoid conflicts with other addins.
-*   `shortCutDeleteRow`: Set this to override the default value of the delete Row context button and avoid conflicts with other addins.
-*   `shortCutInsertRow`: Set this to override the default value of the insert Row context button and avoid conflicts with other addins.
+*   `repairLegacyFunctionsAutoOpen`: Set this to False if legacy DB Add-in functions should not be checked/repaired on auto open of workbooks.
+*   `shortCutRefreshData`: Set this to override the default value of the refreshData context button and avoid conflicts with other add-ins. For syntax see [https://msdn.microsoft.com/en-us/library/office/ff197461.aspx](https://msdn.microsoft.com/en-us/library/office/ff197461.aspx).
+*   `shortCutJumpButton`: Set this to override the default value of the jump to DBFunc/target context button and avoid conflicts with other add-ins.
+*   `shortCutDeleteRow`: Set this to override the default value of the delete Row context button and avoid conflicts with other add-ins.
+*   `shortCutInsertRow`: Set this to override the default value of the insert Row context button and avoid conflicts with other add-ins.
 *   `updatesDownloadFolder`: You can specify a different download folder here instead of `C:\temp\`.
 *   `updatesMajorVersion`: Usually the versions are numbered 1.0.0.x, in case this is different, the Major Version can be overridden here.
 *   `updatesUrlBase`: Here, the URL base for the update zip packages can be overridden.
@@ -170,14 +174,14 @@ A green check on that button shows that the custom property DBFskip is not set t
 To see the Log, there is a separate Button in the settings group of the DBAddin ribbon that also indicates the existence of warning log entries with a red exclamation mark.
 
 #### DB Functions refresh prevention
-To prevent DB Functions from refreshing, there is a toggle button in the settings group of the DBAddin ribbon. When activating it, no DB Function in any open Workbook will refresh (neither on recalculation nor when explicitly doing "refresh"). This setting is always set to disabled/refresh DB Functions when restarting the Addin/Excel.
+To prevent DB Functions from refreshing, there is a toggle button in the settings group of the DBAddin ribbon. When activating it, no DB Function in any open Workbook will refresh (neither on recalculation nor when explicitly doing "refresh"). This setting is always set to disabled/refresh DB Functions when restarting the Add-in/Excel.
 
 ### Tools
-Besides the hierarchical menu "DBConfigs" (see [DBFuncs User-doc](DBFuncs.md)) and the DBSheet Configuration (see [DBSheets](DBSheets.md)) there are other tools in the DB Addin Tools group:
+Besides the hierarchical menu "DBConfigs" (see [DBFuncs User-doc](DBFuncs.md)) and the DBSheet Configuration (see [DBSheets](DBSheets.md)) there are other tools in the DB Add-in Tools group:
 
 #### Purge
 The DBListFetch's and DBRowFetch's target areas' extents are stored in hidden named ranges assigned both to the calling function cell (DBFsource(Key)) and the target (DBFtarget(Key)). These hidden names are used to keep track of the previous content to prevent overwriting, clearing old values, etc.
-Sometimes during copying and pasting of DB Functions, these names can get mixed up, leading to strange results or a defect of the "jump" function. In these cases, there is a check/purge tool in the DB Addin tools group, which may be used to "purge" these hidden named ranges in case of any strange behaviour due to multiple name assignments to the same area. This purging can be achieved by holding the Shift button while clicking check/purge. If the check/purge button is clicked while pressing the Ctrl Button, the hidden names used for the DB functions are unhidden and the Name manager is displayed.
+Sometimes during copying and pasting of DB Functions, these names can get mixed up, leading to strange results or a defect of the "jump" function. In these cases, there is a check/purge tool in the DB Add-in tools group, which may be used to "purge" these hidden named ranges in case of any strange behaviour due to multiple name assignments to the same area. This purging can be achieved by holding the Shift button while clicking check/purge. If the check/purge button is clicked while pressing the Ctrl Button, the hidden names used for the DB functions are unhidden and the Name manager is displayed.
 In case only the check/purge button is clicked, all problematic names (having #REF! errors, not having a source/target area available, etc.) are listed and a repair of these problems is offered. After this another check/repair for "orphaned" DB Functions that haven't got any DBFsource names on their cells is offered.
 
 #### Buttons
@@ -192,7 +196,7 @@ Select Statements (beginning with `select`) are executed immediately, empty stat
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/AdHocSQL_DML.PNG)  
 
-For safety reasons, the DML commands an blocked until an additional setting `<add key="DMLStatementsAllowed" value="True" />` is being set. This is indicated by an error message:
+For safety reasons, the DML commands are blocked until an additional setting `<add key="DMLStatementsAllowed" value="True" />` is being set. This is indicated by an error message:
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/AdHocSQL_DML_forbidden.PNG)  
 
@@ -219,7 +223,7 @@ Issued commands are stored in the drop-down and persisted in the user settings a
 If you want to remove them, open the User-Settings as described in [Settings](#settings) and remove all unwanted entries starting with `key="AdhocSQLcmd.."`
 Also the chosen environment and the database context is stored along with each command (subsequent changes to the environment and database are stored without prompting), the transfer type is stored apart from that.
 
-If the general DB-Addin environment is different from the stored environment of the command, a warning/question is displayed that allows to reset the environment to the general environment.
+If the general DB Add-in environment is different from the stored environment of the command, a warning/question is displayed that allows to reset the environment to the general environment.
 If this is done, any changes to the environment and the database are not stored after closing the AdHocSQL Tool.
 
 ### Building
@@ -249,7 +253,7 @@ Following topics are still to be done:
 
 ### History (from the very beginning)
 
-* 2006: First versions of DBFuncs and DBSheets implemented as xla Addins.
+* 2006: First versions of DBFuncs and DBSheets implemented as xla Add-ins.
 * 31/01/2007: Published as a [Codeproject article](https://www.codeproject.com/Articles/17464/Excel-addin-for-Database-Querying-by-User-Defined)
 * 02/11/2007: Changed implementation to VB 6.0 and made this available at [sourceforge](https://sourceforge.net/projects/dbaddin/)
 * 01/04/2019 - 24/11/2020: Changed implementation to ExcelDNA based and moved to Github.

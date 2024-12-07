@@ -2,7 +2,7 @@ Imports ExcelDna.Integration
 Imports System.IO ' for getting config files for menu
 Imports System.Linq ' to enhance arrays with useful methods (count, orderby)
 Imports System.Xml.Linq ' XNamespace and XElement for constructing the ConfigMenuXML
-
+Imports System.Collections.Generic 'ConfigDocCollection
 
 '''<summary>procedures used for loading config files (containing DBFunctions and general sheet content) and building the config menu</summary>
 Public Module ConfigFiles
@@ -25,6 +25,8 @@ Public Module ConfigFiles
     Private specialConfigFoldersTempColl As Collection
     ''' <summary>for correct display of menu</summary>
     Private ReadOnly xnspace As XNamespace = "http://schemas.microsoft.com/office/2009/07/customui"
+    ''' <summary>Documentation Collection for Config Objects (to be displayed with Ctrl or Shift)</summary>
+    Public ConfigDocCollection As Dictionary(Of String, String)
 
     ''' <summary>loads config from file given in theFileName</summary>
     ''' <param name="theFileName">the File name of the config file</param>
@@ -136,6 +138,11 @@ Public Module ConfigFiles
     Public Sub createConfigTreeMenu()
         Dim currentBar, button As XElement
 
+        ' also get the documentation that was provided in setting ConfigDocQuery into ConfigDocCollection (used in config menu when clicking entry + Ctrl/Shift)
+        Dim ConfigDocQuery As String = fetchSetting("ConfigDocQuery" + env(), fetchSetting("ConfigDocQuery", ""))
+        If ConfigDocQuery <> "" Then ConfigDocCollection = getConfigDocCollection(ConfigDocQuery)
+
+        ' get the .xcl config files from the folders beneath ConfigStoreFolder
         If Not Directory.Exists(ConfigStoreFolder) Then
             UserMsg("No predefined config store folder '" + ConfigStoreFolder + "' found, please correct setting and refresh!")
             ConfigMenuXML = "<menu xmlns='" + xnspace.ToString() + "'><button id='refreshDBConfig' label='refresh DBConfig Tree' imageMso='Refresh' onAction='refreshDBConfigTree'/></menu>"
@@ -227,7 +234,7 @@ Public Module ConfigFiles
                         newBar = New XElement(xnspace + "button")
                         menuID += 1
                         newBar.SetAttributeValue("id", "m" + menuID.ToString())
-                        newBar.SetAttributeValue("screentip", "click to insert DBListFetch for " + Left$(fileList(i).Name, Len(fileList(i).Name) - 4) + " in active cell")
+                        newBar.SetAttributeValue("screentip", "click to insert DBListFetch for " + Left$(fileList(i).Name, Len(fileList(i).Name) - 4) + " in active cell. Ctrl or Shift + click to display documentation for config if existing.")
                         newBar.SetAttributeValue("tag", rootPath + "\" + fileList(i).Name)
                         newBar.SetAttributeValue("label", Folderpath + Left$(fileList(i).Name, Len(fileList(i).Name) - 4))
                         newBar.SetAttributeValue("onAction", "getConfig")
@@ -280,7 +287,7 @@ Public Module ConfigFiles
                 newBar = New XElement(xnspace + "button")
                 menuID += 1
                 newBar.SetAttributeValue("id", "m" + menuID.ToString())
-                newBar.SetAttributeValue("screentip", "click to insert DBListFetch for " + Left$(entryName, Len(entryName) - 4) + " in active cell")
+                newBar.SetAttributeValue("screentip", "click to insert DBListFetch for " + Left$(entryName, Len(entryName) - 4) + " in active cell. Ctrl or Shift + click to display documentation for config if existing.")
                 newBar.SetAttributeValue("label", Left$(entryName, Len(entryName) - 4))
                 newBar.SetAttributeValue("tag", fullPathName)
                 newBar.SetAttributeValue("onAction", "getConfig")

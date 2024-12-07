@@ -6,10 +6,12 @@ AvoidUpdateLinks_Refresh
 AvoidUpdateListObjects_Refresh
 AvoidUpdatePivotTables_Refresh
 AvoidUpdateQueryTables_Refresh
+charBeforeDBnameConfigDoc
 closingQuote + env
 closingQuoteReplacement + env
 CmdTimeout
 CnnTimeout
+ConfigDocQuery + env
 ConfigName + env
 ConfigSelect
 ConfigSelect + ConfigSelectPreference

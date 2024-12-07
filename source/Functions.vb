@@ -26,16 +26,29 @@ Public Module Functions
     Public queryCache As Dictionary(Of String, String)
     ''' <summary>avoid entering dblistfetch/dbrowfetch functions during clearing of list-fetch areas (before saving)</summary>
     Public dontCalcWhileClearing As Boolean
-    ''' <summary>avoid refreshing of DB Functions</summary>
+    ''' <summary>globally avoid refreshing of DB Functions</summary>
     Public preventRefreshFlag As Boolean
+    ''' <summary>avoid refreshing of DB Functions on Workbook level (has precedence on global preventRefreshFlag)</summary>
+    Public preventRefreshFlagColl As New Dictionary(Of String, Boolean)
 
     ''' <summary>set preventing of refreshing DB Functions</summary>
     ''' <param name="setPreventRefresh">set preventRefreshFlag to this value</param>
     ''' <returns>whether the preventRefresh flag was changed</returns>
     <ExcelFunction(Description:="set preventing of refreshing DB Functions")>
-    Public Function preventRefresh(<ExcelArgument(Description:="set to TRUE to prevent refresh, FALSE to enable again")> setPreventRefresh As Boolean) As String
-        preventRefreshFlag = setPreventRefresh
-        Return "preventRefreshFlag was set to " + preventRefreshFlag.ToString() + IIf(preventRefreshFlag, ", DB Functions will not refresh on any change or refresh context menu", ", DB Functions refresh again")
+    Public Function preventRefresh(<ExcelArgument(Description:="set to TRUE to prevent refresh, FALSE to enable again")> setPreventRefresh As Boolean, <ExcelArgument(Description:="set to TRUE to prevent/enable only for this Workbook")> Optional onlyForThisWB As Boolean = True) As String
+        If onlyForThisWB Then
+            If preventRefreshFlagColl.ContainsKey(ExcelDnaUtil.Application.ActiveWorkbook.Name) Then
+                preventRefreshFlagColl(ExcelDnaUtil.Application.ActiveWorkbook.Name) = setPreventRefresh
+            Else
+                preventRefreshFlagColl.Add(ExcelDnaUtil.Application.ActiveWorkbook.Name, setPreventRefresh)
+            End If
+        Else
+            If preventRefreshFlagColl.ContainsKey(ExcelDnaUtil.Application.ActiveWorkbook.Name) Then preventRefreshFlagColl.Remove(ExcelDnaUtil.Application.ActiveWorkbook.Name)
+            preventRefreshFlag = setPreventRefresh
+        End If
+        theRibbon.InvalidateControl("preventRefresh")
+        Dim toWhichExtent As String = IIf(onlyForThisWB, "for " + ExcelDnaUtil.Application.ActiveWorkbook.Name, "globally ")
+        Return "preventRefresh was set " + toWhichExtent + " to " + setPreventRefresh.ToString() + IIf(setPreventRefresh, ", DB Functions will " + toWhichExtent + " not refresh on any change or refresh context menu", ", DB Functions will refresh again " + toWhichExtent)
     End Function
 
     ''' <summary>Create database compliant date, time or datetime string from excel date type value</summary>
@@ -337,7 +350,7 @@ Public Module Functions
         Dim caller As Excel.Range = Nothing
         Dim EnvPrefix As String = ""
         If ExcelDnaUtil.IsInFunctionWizard() Then Return "invoked from function wizard..."
-        If preventRefreshFlag Then Return "preventRefresh set, no DB Function refreshing..."
+        If checkPreventRefreshFlag() Then Return "preventRefresh set, DB Function not refreshing..."
         Try
             DBSetQuery = checkQueryAndTarget(Query, targetRange)
             If DBSetQuery.Length > 0 Then Exit Function
@@ -547,7 +560,7 @@ err:
         Dim caller As Excel.Range
         Dim EnvPrefix As String = ""
         If ExcelDnaUtil.IsInFunctionWizard() Then Return "invoked from function wizard..."
-        If preventRefreshFlag Then Return "preventRefresh set, no DB Function refreshing..."
+        If checkPreventRefreshFlag() Then Return "preventRefresh set, DB Function not refreshing..."
         Try
             caller = ToRange(XlCall.Excel(XlCall.xlfCaller))
             ' calcContainers are identified by workbook name + Sheet name + function caller cell Address
@@ -654,12 +667,24 @@ err:
         setCalcModeBack(calcMode)
     End Sub
 
+    ''' <summary>set calculation mode back to calcMode</summary>
+    ''' <param name="calcMode">calculation mode</param>
     Private Sub setCalcModeBack(calcMode As Excel.XlCalculation)
         Try : ExcelDnaUtil.Application.Calculation = calcMode
         Catch ex As Exception
             UserMsg("Error when setting back calculation mode to " + IIf(calcMode = -4135, "manual", IIf(calcMode = -4105, "automatic", IIf(calcMode = 2, "semiautomatic", "unknown: " + calcMode.ToString()))) + " (calculation property errors can occur for workbooks being opened through MS-office hyper-links), it is recommended to refresh the DB function to get valid results!",, MsgBoxStyle.Exclamation)
         End Try
     End Sub
+
+    ''' <summary>check the preventRefreshFlag, either global or workbook level</summary>
+    ''' <returns>true if set, workbook has precedence</returns>
+    Private Function checkPreventRefreshFlag() As Boolean
+        If preventRefreshFlagColl.ContainsKey(ExcelDnaUtil.Application.ActiveWorkbook.Name) Then
+            Return preventRefreshFlagColl(ExcelDnaUtil.Application.ActiveWorkbook.Name)
+        Else
+            Return preventRefreshFlag
+        End If
+    End Function
 
     ''' <summary>
     ''' Fetches a list of data defined by query into TargetRange.
@@ -689,7 +714,7 @@ err:
         Dim callID As String = ""
         Dim EnvPrefix As String = ""
         If ExcelDnaUtil.IsInFunctionWizard() Then Return "invoked from function wizard..."
-        If preventRefreshFlag Then Return "preventRefresh set, no DB Function refreshing..."
+        If checkPreventRefreshFlag() Then Return "preventRefresh set, DB Function not refreshing..."
         Try
             DBListFetch = checkQueryAndTarget(Query, targetRange)
             If DBListFetch.Length > 0 Then Exit Function
@@ -1144,7 +1169,7 @@ err:    LogWarn(errMsg + ", caller: " + callID)
         Dim HeaderInfo As Boolean
         Dim EnvPrefix As String = ""
         If ExcelDnaUtil.IsInFunctionWizard() Then Return "invoked from function wizard..."
-        If preventRefreshFlag Then Return "preventRefresh set, no DB Function refreshing..."
+        If checkPreventRefreshFlag() Then Return "preventRefresh set, DB Function not refreshing..."
         Try
             DBRowFetch = checkQueryAndTarget(Query, targetArray)
             If DBRowFetch.Length > 0 Then Exit Function
@@ -1368,6 +1393,99 @@ err:    LogWarn(errMsg + ", caller: " + callID)
         ' recalculate to trigger return of error messages to calling function
         Try : caller.Formula += " " : Catch ex As Exception : End Try
     End Sub
+
+    ''' <summary>gets the documentation dictionary for the config dropdown (used by ConfigFiles.createConfigTreeMenu()). This is the basis for the documentation provided when clicking the config entries with Ctrl or Shift</summary>
+    ''' <param name="ConfigDocQuery">query against current active environment for retrieving the data for the documentation. This query needs to return three fields for each table/view/field object: 1. database of the object (only really needed for tables/views), 2. table/view name (for fields this is the parent table/view) and 3. the documentation for the object. All this has to be ordered by table/view name, with the table/view object being first</param>
+    ''' <returns>a dictionary of table/view keys and their associated collected documentation of the table/view and its fields. This is being collected by assuming the ordered way the query returns the data (see above)</returns>
+    Public Function getConfigDocCollection(ConfigDocQuery As String) As Dictionary(Of String, String)
+        getConfigDocCollection = New Dictionary(Of String, String)
+
+        ' first get the connection as usual
+        Dim ConnString As String = fetchSetting("ConstConnString" + env(), "")
+        Try
+            If Left(ConnString.ToUpper, 5) = "ODBC;" Then
+                ' change to ODBC driver setting, if SQLOLEDB
+                ConnString = Replace(ConnString, fetchSetting("ConnStringSearch" + env(), "provider=SQLOLEDB"), fetchSetting("ConnStringReplace" + env(), "driver=SQL SERVER"))
+                ' remove "ODBC;"
+                ConnString = Right(ConnString, ConnString.Length - 5)
+                conn = New OdbcConnection(ConnString)
+            ElseIf InStr(ConnString.ToLower, "provider=sqloledb") Or InStr(ConnString.ToLower, "driver=sql server") Then
+                ' remove provider=SQLOLEDB; (or whatever is in ConnStringSearch<>) for sql server as this is not allowed for ado.net (e.g. from a connection string for MS Query/Office)
+                ConnString = Replace(ConnString, fetchSetting("ConnStringSearch" + env(), "provider=SQLOLEDB") + ";", "")
+                conn = New SqlConnection(ConnString)
+            ElseIf InStr(ConnString.ToLower, "oledb") Then
+                conn = New OleDbConnection(ConnString)
+            Else
+                ' try with odbc
+                conn = New OdbcConnection(ConnString)
+            End If
+        Catch ex As Exception
+            UserMsg("Error creating new connection: " + ex.Message + " for connection string: " + ConnString)
+            GoTo err
+        End Try
+        Try : conn.Open() : Catch ex As Exception
+            UserMsg("Error opening connection: " + ex.Message + " for connection string: " + ConnString)
+            GoTo err
+        End Try
+        Dim sqlCommand As System.Data.Common.DbCommand
+        Try
+            If TypeName(conn) = "SqlConnection" Then
+                sqlCommand = New SqlCommand(ConfigDocQuery, conn)
+            ElseIf TypeName(conn) = "OleDbConnection" Then
+                sqlCommand = New OleDbCommand(ConfigDocQuery, conn)
+            Else
+                sqlCommand = New OdbcCommand(ConfigDocQuery, conn)
+            End If
+        Catch ex As Exception
+            UserMsg("Error creating new sqlCommand: " + ex.Message + " for ConfigDocQuery: " + vbCrLf + ConfigDocQuery)
+            GoTo err
+        End Try
+        Dim recordset As System.Data.Common.DbDataReader
+        Try
+            recordset = sqlCommand.ExecuteReader()
+        Catch ex As Exception
+            UserMsg("Error executing sqlCommand: " + ex.Message + " for ConfigDocQuery: " + vbCrLf + ConfigDocQuery)
+            GoTo err
+        End Try
+
+        ' character before DBname, Path of config files is assumed to be folder\sub-folder\sub-folder-etc\<charBeforeDBnameConfigDoc><DBName>\<Tablename>.xcl
+        Dim charBeforeDBnameConfigDoc As String = fetchSetting("charBeforeDBnameConfigDoc", ".")
+
+        ' then collect the documentation from the ConfigDocQuery into getConfigDocCollection
+        Try
+            Dim DBName As String = ""
+            Dim currTableName As String = ""
+            Dim ConfigDoc As String = ""
+            While recordset.Read()
+                If recordset.IsDBNull(1) Then
+                    UserMsg("Error in filling ConfigDoc: got empty table/view object name, query: " + vbCrLf + ConfigDocQuery)
+                    GoTo err
+                End If
+                If currTableName <> recordset.GetValue(1) Then
+                    If currTableName = "" Then DBName = If(recordset.IsDBNull(0), "", recordset.GetValue(0))
+                    If currTableName <> "" Then
+                        getConfigDocCollection.Add(charBeforeDBnameConfigDoc + DBName + "\" + currTableName + ".xcl", ConfigDoc)
+                        If recordset.IsDBNull(0) Then
+                            UserMsg("Error in filling ConfigDoc: got empty database name for new table/view object '" + recordset.GetValue(1) + "', query: " + vbCrLf + ConfigDocQuery)
+                            GoTo err
+                        Else
+                            DBName = recordset.GetValue(0)
+                        End If
+                    End If
+                    currTableName = recordset.GetValue(1)
+                    ConfigDoc = If(recordset.IsDBNull(2), "", recordset.GetValue(2) + vbCrLf)
+                Else
+                    ConfigDoc += If(recordset.IsDBNull(2), "", recordset.GetValue(2) + vbCrLf)
+                End If
+            End While
+            getConfigDocCollection.Add(charBeforeDBnameConfigDoc + DBName + "\" + currTableName + ".xcl", ConfigDoc)
+        Catch ex As Exception
+            UserMsg("Error in filling ConfigDoc: " + ex.Message + ", query: " + vbCrLf + ConfigDocQuery)
+            GoTo err
+        End Try
+err:
+        conn.Close()
+    End Function
 
     ''' <summary>Get the current selected Environment for DB Functions</summary>
     ''' <returns>ConfigName of environment</returns>

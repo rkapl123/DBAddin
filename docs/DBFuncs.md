@@ -28,6 +28,7 @@ Additionally, following helper functions are available:
 *   `DBinClause`, building an SQL "in" clause from an open ended parameter list given in the argument.
 *   `DBString`, building a quoted string from an open ended parameter list given in the argument. This can also be used to easily build wild-cards into the String.
 *   `PQString`, building a powerquery compliant string from an open ended parameter list given in the argument. This can also be used to easily build wild-cards into the String.
+*   `preventRefresh`, setting either the prevention of DB Function refreshing globally or just for the current workbook.
 
 An additional cell context menu is available:
 
@@ -256,7 +257,7 @@ This builds a Powerquery compliant string (quoted using double quotes) from the 
 
 When E1 contains "test", this results in "a test".
 
-### Modifications of DBFunc Behavior
+### Modifications of DBFunc Behaviour
 
 There are some options to modify  
 
@@ -286,7 +287,7 @@ Example: The boolean custom property "DBFCATable1!A1" would clear everything fro
 To prevent storing of everything (incl. formats) for all DBFunctions create a boolean Custom Property "DBFCA*" set to "Yes".  
 
 
-#### Global Connection Definition and Query Builder with MSQuery
+#### Global Connection Definition
 
 There are two possibilities of connection strings: ODBC or OLEDB. ODBC hast the advantage to seamlessly work with MS-Query, native OLEDB is said to be faster and more reliable (there is also a generic OLEDB over ODBC by Microsoft, which emulates OLEDB if you have just a native ODBC driver available).
 
@@ -300,7 +301,7 @@ The layout of these files is a pairwise, tab separated instruction where to fill
 
 #### Creating configurations
 
-There is a helping script ("createTableViewConfigs.vbs") to create a DBListFetch with a "select TOP 10000 * from ..." for all tables and views in a given database (In order for that script to work, the ADO driver has to support the "OpenSchema" method of the connection object). The working of that script is quite simple: It takes the name of the folder it is located in, derives from that the database name by excluding the first character and opens the schema information of that database to retrieve all view and table names from that. These names are used to build the config files (XCL).  
+There is a helping script ("createTableViewConfigs.vbs") to create a DBListFetch with a standard query `SELECT TOP 10000 * FROM <Table/View>` for all tables and views in a given database (In order for that script to work, the ADO driver has to support the "OpenSchema" method of the connection object). The working of that script is quite simple: It takes the name of the folder it is located in, derives from that the database name by excluding the first character and opens the schema information of that database to retrieve all view and table names from that. These names are used to build the config files (extension .xcl).  
 
 Other users can simply look up those config files with the hierarchical menu "DBConfigs", which is showing all config files under the ConfigStoreFolder (set in the global settings). Using folders, you can build categorizations of any depth here.  
 
@@ -333,7 +334,45 @@ Cells in other worksheets are also filled, these are also taking the reference r
 
 There are no checks (except for Excels sheet boundaries), especially concerning overwriting any cells !  
 
-If the setting `ConfigSelect` (or any other ConfigSelect, see [Other Settings](https://rkapl123.github.io/DBAddin#other-settings) is found in the settings, then the query template given there (e.g. `SELECT TOP 10 * FROM !Table!`) is used instead of the standard config (currently `SELECT TOP 10000 * FROM <Table>`) when inserting cell configurations. The respective Table is being replaced into `!Table!`.
+If the setting `ConfigSelect` (or any other ConfigSelect, see [Other Settings](https://rkapl123.github.io/DBAddin#other-settings) is found in the settings, then the query template given there (e.g. `SELECT TOP 10 * FROM !Table!`) is used instead of the standard config (currently `SELECT TOP 10000 * FROM <Table/View>`) when inserting cell configurations. The respective Table/View is being replaced into `!Table!`.
+
+#### Viewing Database documentation with configurations
+
+If the setting `ConfigDocQuery` is being filled with a query that retrieves documentation for database objects in the below described way, then clicking the entries in the config dropdown with Ctrl or Shift provide the documentation of the tables/views. `ConfigDocQuery` can be given either per environment or globally (without an environment).
+
+ConfigDocQuery is a query against the currently active environment for retrieving the data for the documentation. This query needs to return three fields for each table/view/field object: 
+1. database of the object (only really needed for tables/views), 
+2. table/view name (for fields this is the parent table/view) and 
+3. the documentation for the object.
+
+The data has to be ordered by table/view name, with the table/view objects in the first place.
+
+Following query is an example how this can be retrieved from a very minimalistic demo table `dbdocumentation` for the pubs database (the creation script is provided [here](dbdocumentation.sql)):  
+`SELECT databasename,case when objecttype='T' then objectname else parenttable end, case when objecttype='F' then objectname + ': ' else '' end + documentation FROM dbdocumentation ORDER BY case when objecttype='T' then objectname+'1' else parenttable+'2' end, objectname`
+
+Result:
+
+|database|table/view name|documentation|
+|---|---|---|
+|pubs|authors|table authors contains the book authors|
+|NULL|authors|au_fname: firstname of authors|
+|NULL|authors|au_id: id of author|
+|NULL|authors|au_lname: lastname of author|
+|NULL|authors|city: city of author|
+|NULL|authors|contract: flag for contract|
+|NULL|authors|phone: phone of author|
+|NULL|authors|state: state of author|
+|NULL|authors|zip: zip code of author|
+|pubs|discounts|discounts per store|
+|NULL|discounts|discount: amount of discount|
+|NULL|discounts|discounttype: type of discount|
+|NULL|discounts|stor_id: reference to store|
+|pubs|employee|employees table|
+|NULL|employee|emp_id: employee id|
+|NULL|employee|fname: firstname of employee|
+...
+
+To be able to link the documentation to the config entries, which are retrieved from the filesystem, another setting is needed that indicates the first character in the `specialConfigStoreFolders` as discussed in [Creating configurations](creating_configurations): `<add key="charBeforeDBnameConfigDoc" value="_" />`.
 
 #### Refreshing the config tree
 
@@ -365,7 +404,7 @@ In case the modifications resulted in a parsing error, you can enter the power-q
 
 ### Settings
 
-Following Settings in DBAddin.xll.config or the referred DBAddinCentral.config or DBaddinUser.config affect the behavior of DB functions:
+Following Settings in DBAddin.xll.config or the referred DBAddinCentral.config or DBaddinUser.config affect the behaviour of DB functions:
 ```xml
     <add key="CnnTimeout" value="15" />
     <add key="DefaultEnvironment" value="3" />
@@ -380,9 +419,9 @@ Following Settings in DBAddin.xll.config or the referred DBAddinCentral.config o
 Explanation:
 
 *   `CnnTimeout`: the default timeout for connecting
-*   `DefaultEnvironment`: default selected environment on startup
+*   `DefaultEnvironment`: default selected environment on start-up
 *   `DontChangeEnvironment`: prevent changing the environment selector (Non-Production environments might confuse some people)
-*   `DebugAddin`: activate Info messages to debug addin
+*   `DebugAddin`: activate Info messages to debug add-in
 *   `AvoidUpdateQueryTables_Refresh`: avoid refreshing query tables during refresh all
 *   `AvoidUpdatePivotTables_Refresh`: avoid refreshing pivot tables during refresh all
 *   `AvoidUpdateListObjects_Refresh`: avoid refreshing list objects during refresh all
@@ -397,7 +436,7 @@ Explanation:
 	*   Special care has to be taken for VBA Code that triggers DB Functions due to changes in cells. In this case, sometimes modifications of sheet contents are not available when expected (right after the modifying code was executed) and thus result in application errors. A possible workaround for this is to set Application.Calculation = xlCalculationManual before making any cell changes.
 
 * DBListFetch:
-	*   no Headers and extendArea = 1: Don't place the output of DBlistFetch functions that a) depend on the same inputs and b) have no headers and c) use extendArea = 1 (cell extension). The calculation sequence leads to unpredictable behavior with potential data loss
+	*   no Headers and extendArea = 1: Don't place the output of DBlistFetch functions that a) depend on the same inputs and b) have no headers and c) use extendArea = 1 (cell extension). The calculation sequence leads to unpredictable behaviour with potential data loss
 	*   Worksheets with names like Cell references (Letter + number + blank + something else, eg. 'C701 Country') lead to a fundamental error with the names used for the data target. Avoid using those sheet names in conjunction with DBListFetch, i.e. do not use a blank between the 'cell reference' and the rest (eg. 'C701Country' instead of 'C701 Country').
 	*   GUID Columns are not displayed when using the SQL Server OLEDB driver. To work around this, a different connection string using ODBC can be used. To set this in a connection string see [Connection String Special ODBC Settings](#connection-string-special-odbc-settings)
 

@@ -476,7 +476,17 @@ Public Class MenuHandler
     ''' <summary>toggle PreventRefresh button</summary>
     ''' <param name="control"></param>
     Sub showTogglePreventRefresh(control As CustomUI.IRibbonControl)
-        Functions.preventRefreshFlag = Not Functions.preventRefreshFlag
+        If My.Computer.Keyboard.CtrlKeyDown Then
+            If preventRefreshFlagColl.ContainsKey(ExcelDnaUtil.Application.ActiveWorkbook.Name) Then
+                Functions.preventRefreshFlagColl(ExcelDnaUtil.Application.ActiveWorkbook.Name) = Not Functions.preventRefreshFlagColl(ExcelDnaUtil.Application.ActiveWorkbook.Name)
+            Else
+                Functions.preventRefreshFlagColl.Add(ExcelDnaUtil.Application.ActiveWorkbook.Name, True)
+            End If
+        ElseIf My.Computer.Keyboard.ShiftKeyDown Then
+            If preventRefreshFlagColl.ContainsKey(ExcelDnaUtil.Application.ActiveWorkbook.Name) Then Functions.preventRefreshFlagColl.Remove(ExcelDnaUtil.Application.ActiveWorkbook.Name)
+        ElseIf Not preventRefreshFlagColl.ContainsKey(ExcelDnaUtil.Application.ActiveWorkbook.Name) Then
+            Functions.preventRefreshFlag = Not Functions.preventRefreshFlag
+        End If
         ' update state of preventRefreshFlag in screen-tip
         theRibbon.InvalidateControl(control.Id)
     End Sub
@@ -485,16 +495,33 @@ Public Class MenuHandler
     ''' <param name="control"></param>
     ''' <returns>screen-tip and the state of PreventRefresh</returns>
     Public Function getTogglePreventRefreshScreentip(control As CustomUI.IRibbonControl) As String
-        Return "Refreshing of DB Functions is currently " + IIf(Functions.preventRefreshFlag, "blocked", "enabled")
+        Dim preventStatus, onlyForThisWB As Boolean
+        getStatusAndExtent(preventStatus, onlyForThisWB)
+        Dim toWhichExtent As String = IIf(onlyForThisWB, "for workbook '" + ExcelDnaUtil.Application.ActiveWorkbook.Name + "'", "globally")
+        Return "Refreshing of DB Functions is currently " + IIf(preventStatus, "blocked ", "enabled ") + toWhichExtent + ", click to set/reset preventRefresh globally, Ctrl+click to set/reset preventRefresh on workbook, Shift+click to remove preventRefresh setting on Workbook"
     End Function
 
     ''' <summary>display state of PreventRefresh in icon of button</summary>
     ''' <param name="control"></param>
     ''' <returns>screen-tip and the state of PreventRefresh</returns>
     Public Function getTogglePreventRefreshImage(control As CustomUI.IRibbonControl) As String
-        Return IIf(Functions.preventRefreshFlag, "CalculateFull", "Calculator")
+        Dim preventStatus, onlyForThisWB As Boolean
+        getStatusAndExtent(preventStatus, onlyForThisWB)
+        Return IIf(preventStatus, IIf(onlyForThisWB, "SheetDelete", "CalculateFull"), IIf(onlyForThisWB, "CalculateSheet", "Calculator"))
     End Function
 
+    Private Sub getStatusAndExtent(ByRef preventStatus As Boolean, ByRef onlyForThisWB As Boolean)
+        If preventRefreshFlagColl.ContainsKey(ExcelDnaUtil.Application.ActiveWorkbook.Name) Then
+            preventStatus = Functions.preventRefreshFlagColl(ExcelDnaUtil.Application.ActiveWorkbook.Name)
+            onlyForThisWB = True
+        ElseIf preventRefreshFlagColl.Count > 0 Then
+            preventStatus = False
+            onlyForThisWB = True
+        Else
+            preventStatus = Functions.preventRefreshFlag
+            onlyForThisWB = False
+        End If
+    End Sub
 
     ''' <summary>toggle design mode button</summary>
     ''' <param name="control"></param>
@@ -649,10 +676,17 @@ Public Class MenuHandler
         Return ConfigFiles.ConfigMenuXML
     End Function
 
-    ''' <summary>load config if config tree menu end-button has been activated (path to config xcl file is in control.Tag)</summary>
+    ''' <summary>load config if config tree menu end-button has been activated (path to config xcl file is in control.Tag), also provides access to documentation if provided in setting ConfigDocQuery</summary>
     ''' <param name="control"></param>
     Public Sub getConfig(control As CustomUI.IRibbonControl)
-        ConfigFiles.loadConfig(control.Tag)
+        If My.Computer.Keyboard.CtrlKeyDown Or My.Computer.Keyboard.ShiftKeyDown Then
+            Dim ConfigDocKey = Mid(control.Tag, InStrRev(control.Tag, "\", InStrRev(control.Tag, "\") - 1) + 1)
+            Dim DocMessage As String = "No Documentation for Config Object"
+            If Not IsNothing(ConfigDocCollection) AndAlso ConfigDocCollection.ContainsKey(ConfigDocKey) Then DocMessage = ConfigDocCollection(ConfigDocKey)
+            UserMsg(DocMessage, "DBAddin: Documentation for Config Object", 0)
+        Else
+            ConfigFiles.loadConfig(control.Tag)
+        End If
     End Sub
 
     ''' <summary>set the name of the DBModifType dropdown to the sheet name (for the WB dropdown this is the WB name)</summary>
