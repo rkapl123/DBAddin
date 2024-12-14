@@ -1473,9 +1473,9 @@ err:    LogWarn(errMsg + ", caller: " + callID)
                         End If
                     End If
                     currTableName = recordset.GetValue(1)
-                    ConfigDoc = If(recordset.IsDBNull(2), "", recordset.GetValue(2) + vbCrLf)
+                    ConfigDoc = If(recordset.IsDBNull(2), "", recordset.GetValue(2))
                 Else
-                    ConfigDoc += If(recordset.IsDBNull(2), "", recordset.GetValue(2) + vbCrLf)
+                    ConfigDoc += If(recordset.IsDBNull(2), "", recordset.GetValue(2))
                 End If
             End While
             getConfigDocCollection.Add(charBeforeDBnameConfigDoc + DBName + "\" + currTableName + ".xcl", ConfigDoc)

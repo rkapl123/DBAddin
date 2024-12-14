@@ -17,7 +17,7 @@ DBAddin.NET is the successor to the VB6 based Office Database Add-in, see also t
 If any of these are missing, please install them yourself before starting DBAddin.
 
 Download the latest zip package in [https://github.com/rkapl123/DBAddin/tags](https://github.com/rkapl123/DBAddin/tags), unzip to any location and run deployAddin.cmd in the folder Distribution.
-This copies DBAddin.xll, DBAddin.xll.config, DBAddinUser.config and DBAddinCentral.config to your %appdata%\Microsoft\AddIns folder and starts Excel for activating DB Add-in (adding it to the registered Add-ins).
+This copies DBAddin.xll, DBAddin.xll.config, DBAddinUser.config and DBAddinCentral.config to your %appdata%\Microsoft\AddIns folder and tries to register in HKEY_CURRENT_USER\Software\Microsoft\Office\<OfficeVersion>.0\Excel\Options\OPEN to activate DB Add-in (if this is not successful you have to register it yourself in the Add-ins).
 
 ### Settings
 

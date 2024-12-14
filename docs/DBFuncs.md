@@ -338,38 +338,38 @@ If the setting `ConfigSelect` (or any other ConfigSelect, see [Other Settings](h
 
 #### Viewing Database documentation with configurations
 
-If the setting `ConfigDocQuery` is being filled with a query that retrieves documentation for database objects in the below described way, then clicking the entries in the config dropdown with Ctrl or Shift provide the documentation of the tables/views. `ConfigDocQuery` can be given either per environment or globally (without an environment).
+If the setting `ConfigDocQuery` is being filled with a query that retrieves documentation for database objects in the below described way, then clicking the entries in the config dropdown with Ctrl or Shift provides the documentation of the tables/views. `ConfigDocQuery` can be given either per environment or globally (without an environment).
 
-ConfigDocQuery is a query against the currently active environment for retrieving the data for the documentation. This query needs to return three fields for each table/view/field object: 
+ConfigDocQuery is a query against the currently active environment for retrieving the documentation data. This query needs to return three fields for each table/view/procedure/function/field object: 
 1. database of the object (only really needed for tables/views), 
-2. table/view name (for fields this is the parent table/view) and 
+2. table/view/procedure/function name (for fields this is their parent object) and 
 3. the documentation for the object.
 
-The data has to be ordered by table/view name, with the table/view objects in the first place.
+The data has to be ordered by object name, with the table/view/procedure/function objects coming first (before their fields), the documentation built by simply aggregating the documentation text for one table/view/procedure/function object with the documentation texts of its fields (no CR/LF, this needs to be provided by the query).
 
 Following query is an example how this can be retrieved from a very minimalistic demo table `dbdocumentation` for the pubs database (the creation script is provided [here](dbdocumentation.sql)):  
-`SELECT databasename,case when objecttype='T' then objectname else parenttable end, case when objecttype='F' then objectname + ': ' else '' end + documentation FROM dbdocumentation ORDER BY case when objecttype='T' then objectname+'1' else parenttable+'2' end, objectname`
+`SELECT databasename,case when objecttype='T' then objectname else parenttable end, case when objecttype='F' then objectname + ': ' + documentation + CHAR(10) else objectname + ': ' + documentation + CHAR(10) + CHAR(10) end FROM dbdocumentation ORDER BY case when objecttype='T' then objectname+'1' else parenttable+'2' end, objectname`
 
 Result:
 
 |database|table/view name|documentation|
 |---|---|---|
-|pubs|authors|table authors contains the book authors|
-|NULL|authors|au_fname: firstname of authors|
-|NULL|authors|au_id: id of author|
-|NULL|authors|au_lname: lastname of author|
-|NULL|authors|city: city of author|
-|NULL|authors|contract: flag for contract|
-|NULL|authors|phone: phone of author|
-|NULL|authors|state: state of author|
-|NULL|authors|zip: zip code of author|
-|pubs|discounts|discounts per store|
-|NULL|discounts|discount: amount of discount|
-|NULL|discounts|discounttype: type of discount|
-|NULL|discounts|stor_id: reference to store|
-|pubs|employee|employees table|
-|NULL|employee|emp_id: employee id|
-|NULL|employee|fname: firstname of employee|
+|pubs|authors|authors: table authors contains the book authors + CHAR(10) + CHAR(10)|
+|NULL|authors|au_fname: firstname of authors + CHAR(10)|
+|NULL|authors|au_id: id of author + CHAR(10)|
+|NULL|authors|au_lname: lastname of author + CHAR(10)|
+|NULL|authors|city: city of author + CHAR(10)|
+|NULL|authors|contract: flag for contract + CHAR(10)|
+|NULL|authors|phone: phone of author + CHAR(10)|
+|NULL|authors|state: state of author + CHAR(10)|
+|NULL|authors|zip: zip code of author + CHAR(10)|
+|pubs|discounts|discounts: discounts per store + CHAR(10) + CHAR(10)|
+|NULL|discounts|discount: amount of discount + CHAR(10)|
+|NULL|discounts|discounttype: type of discount + CHAR(10)|
+|NULL|discounts|stor_id: reference to store + CHAR(10)|
+|pubs|employee|employee: employees table + CHAR(10) + CHAR(10)|
+|NULL|employee|emp_id: employee id + CHAR(10)|
+|NULL|employee|fname: firstname of employee + CHAR(10)|
 |...|...|...|
 
 To be able to link the documentation to the config entries, which are retrieved from the filesystem, another setting is needed that indicates the first character in the `specialConfigStoreFolders` as discussed in [Creating configurations](#creating-configurations): `<add key="charBeforeDBnameConfigDoc" value="_" />`.

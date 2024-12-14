@@ -680,10 +680,15 @@ Public Class MenuHandler
     ''' <param name="control"></param>
     Public Sub getConfig(control As CustomUI.IRibbonControl)
         If My.Computer.Keyboard.CtrlKeyDown Or My.Computer.Keyboard.ShiftKeyDown Then
+            ' Key: charBeforeDBnameConfigDoc + DBName + "\" + TableName + ".xcl", control.Tag is full path to xcl config file
+            ' so prune control.Tag starting with last folder (being charBeforeDBnameConfigDoc + DBName)
             Dim ConfigDocKey = Mid(control.Tag, InStrRev(control.Tag, "\", InStrRev(control.Tag, "\") - 1) + 1)
-            Dim DocMessage As String = "No Documentation for Config Object"
+            Dim DocMessage As String = "No Documentation for Config Object " + ConfigDocKey
             If Not IsNothing(ConfigDocCollection) AndAlso ConfigDocCollection.ContainsKey(ConfigDocKey) Then DocMessage = ConfigDocCollection(ConfigDocKey)
-            UserMsg(DocMessage, "DBAddin: Documentation for Config Object", 0)
+            With New DBDocumentation()
+                .DBDocTextBox.Text = DocMessage
+                .Show()
+            End With
         Else
             ConfigFiles.loadConfig(control.Tag)
         End If
