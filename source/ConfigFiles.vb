@@ -49,35 +49,35 @@ Public Module ConfigFiles
         If ExcelDnaUtil.Application.ActiveWorkbook Is Nothing Then ExcelDnaUtil.Application.Workbooks.Add
 
         ' open file for reading
+        Dim fileReader As System.IO.StreamReader = Nothing
         Try
-            Dim fileReader As System.IO.StreamReader = My.Computer.FileSystem.OpenTextFileReader(theFileName, Text.Encoding.Default)
-            Do
-                ItemLine = fileReader.ReadLine()
-                ' ConfigArray: Configs are tab separated pairs of <RC location vbTab function formula> vbTab <...> vbTab...
-                Dim ConfigArray As String() = Split(ItemLine, vbTab)
-                ' if there is a ConfigSelect setting use it to replace the query with the template, replacing the contained table with the FROM <table>...
-                ' also regard the possibility to have a preference for a specific ConfigSelect(1, 2, or any other postfix being available in settings)
-                Dim ConfigSelect As String = fetchSetting("ConfigSelect" + fetchSetting("ConfigSelectPreference", ""), "")
-                If ConfigSelect = "" Then ConfigSelect = fetchSetting("ConfigSelect", "") ' if nothing found under given ConfigSelectPreference, fall back to standard ConfigSelect
-                ' replace query in function formula in second part of pairs with ConfigSelect template. 
-                ' This works only for templates with actual query string as first argument (not having reference(s) to cell(s) with query string(s))
-                ' also only works for single pair config templates
-                If ConfigSelect <> "" And ConfigArray.Count() = 2 Then
-                    If Left(UCase(ExcelDnaUtil.Application.ActiveCell.Formula), Len(srchdFunc) + 2) = "=DBLISTFETCH(" Then
-                        ConfigArray(1) = replaceConfigSelectInFormula(ConfigArray(1), ConfigSelect)
-                    End If
+            fileReader = My.Computer.FileSystem.OpenTextFileReader(theFileName, Text.Encoding.Default)
+            ItemLine = fileReader.ReadToEnd() ' ignore newlines, only important is tab separator...
+            If ItemLine.Substring(ItemLine.Length - 2, 2) = vbCrLf Then ItemLine = ItemLine.Substring(0, ItemLine.Length - 2) ' remove last newline, this produces problems...
+            ' ConfigArray: Configs are tab separated pairs of <RC location vbTab function formula> vbTab <...> vbTab...
+            Dim ConfigArray As String() = Split(ItemLine, vbTab)
+            ' if there is a ConfigSelect setting use it to replace the query with the template, replacing the contained table with the FROM <table>...
+            ' also regard the possibility to have a preference for a specific ConfigSelect(1, 2, or any other postfix being available in settings)
+            Dim ConfigSelect As String = fetchSetting("ConfigSelect" + fetchSetting("ConfigSelectPreference", ""), "")
+            If ConfigSelect = "" Then ConfigSelect = fetchSetting("ConfigSelect", "") ' if nothing found under given ConfigSelectPreference, fall back to standard ConfigSelect
+            ' replace query in function formula in second part of pairs with ConfigSelect template. 
+            ' This works only for templates with actual query string as first argument (not having reference(s) to cell(s) with query string(s))
+            ' also only works for single pair config templates
+            If ConfigSelect <> "" And ConfigArray.Count() = 2 Then
+                If Left(UCase(ExcelDnaUtil.Application.ActiveCell.Formula), Len(srchdFunc) + 2) = "=DBLISTFETCH(" Then
+                    ConfigArray(1) = replaceConfigSelectInFormula(ConfigArray(1), ConfigSelect)
                 End If
-                ' for existing dbfunction replace query-string in existing formula of active cell, only works for single pair config templates
-                If srchdFunc <> "" And ConfigArray.Count() = 2 Then
-                    ExcelDnaUtil.Application.ActiveCell.Formula = replaceQueryInFormula(ConfigArray(1), srchdFunc, ExcelDnaUtil.Application.ActiveCell.Formula.ToString())
-                Else ' for other cells simply insert the ConfigArray
-                    createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, ConfigArray)
-                End If
-            Loop Until fileReader.EndOfStream
-            fileReader.Close()
+            End If
+            ' for existing dbfunction replace query-string in existing formula of active cell, only works for single pair config templates
+            If srchdFunc <> "" And ConfigArray.Count() = 2 Then
+                ExcelDnaUtil.Application.ActiveCell.Formula = replaceQueryInFormula(ConfigArray(1), srchdFunc, ExcelDnaUtil.Application.ActiveCell.Formula.ToString())
+            Else ' for other cells simply insert the ConfigArray
+                createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, ConfigArray)
+            End If
         Catch ex As Exception
             UserMsg("Error (" + ex.Message + ") during filling items from config file '" + theFileName + "' in ConfigFiles.loadConfig")
         End Try
+        Try : fileReader.Close() : Catch ex As Exception : End Try
     End Sub
 
     ''' <summary>replace query given in theQueryFormula with template query in ConfigSelect</summary>
@@ -335,15 +335,15 @@ Public Module ConfigFiles
                 If i > 1 Then
                     ' character before current character
                     Dim pre As Integer = Asc(Mid$(theString, i - 1, 1))
-                    ' underscore also separates camel-case, except preceded by $, - or another underscore
+                    ' underscore also separates camel-case, except preceded by $, -, . or another underscore
                     If charAsc = 95 Then
-                        If Not (pre = 36 Or pre = 45 Or pre = 95) _
+                        If Not (pre = 36 Or pre = 45 Or pre = 46 Or pre = 95) _
                             Then stringParts += " "
                     End If
                     ' Uppercase characters separate unless they are preceded by other uppercase characters 
                     ' also numbers can precede: And Not (pre >= 48 And pre <= 57) _
                     If (charAsc >= 65 And charAsc <= 90) Then
-                        If Not (pre >= 65 And pre <= 90) And Not (pre = 36 Or pre = 45 Or pre = 95) Then stringParts += " "
+                        If Not (pre >= 65 And pre <= 90) And Not (pre = 36 Or pre = 45 Or pre = 46 Or pre = 95) Then stringParts += " "
                     End If
                 End If
                 stringParts += aChar

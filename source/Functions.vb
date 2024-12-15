@@ -1454,31 +1454,48 @@ err:    LogWarn(errMsg + ", caller: " + callID)
         ' then collect the documentation from the ConfigDocQuery into getConfigDocCollection
         Try
             Dim DBName As String = ""
-            Dim currTableName As String = ""
+            Dim ObjectName As String = ""
+            Dim Documentation As String = ""
+            Dim currDBName As String = ""
+            Dim currObjectName As String = ""
             Dim ConfigDoc As String = ""
             While recordset.Read()
+                'DBname1	ObjName1	DescDBname1ObjName1 (no fields)
+                'DBname2	ObjName1	DescDBname2ObjName1
+                'NULL       ObjName2	DescDBname2ObjName1Field1
+                'DBname3	ObjName3	DescObjName3
+                'NULL       ObjName3	DescObjName3Field1
+                '...
+                DBName = If(recordset.IsDBNull(0), "", recordset.GetValue(0))
+                Documentation = If(recordset.IsDBNull(2), "", recordset.GetValue(2))
                 If recordset.IsDBNull(1) Then
                     UserMsg("Error in filling ConfigDoc: got empty table/view object name, query: " + vbCrLf + ConfigDocQuery)
                     GoTo err
+                Else
+                    ObjectName = recordset.GetValue(1)
                 End If
-                If currTableName <> recordset.GetValue(1) Then
-                    If currTableName = "" Then DBName = If(recordset.IsDBNull(0), "", recordset.GetValue(0))
-                    If currTableName <> "" Then
-                        getConfigDocCollection.Add(charBeforeDBnameConfigDoc + DBName + "\" + currTableName + ".xcl", ConfigDoc)
-                        If recordset.IsDBNull(0) Then
-                            UserMsg("Error in filling ConfigDoc: got empty database name for new table/view object '" + recordset.GetValue(1) + "', query: " + vbCrLf + ConfigDocQuery)
+                ' check for table/view/proc/function object change, also regard DBname change
+                If currObjectName <> ObjectName Or (currDBName <> DBName And DBName <> "") Then
+                    ' first Object: only fill DBName
+                    If currObjectName = "" Then
+                        currDBName = DBName
+                    Else
+                        ' afterwards (object name change)
+                        getConfigDocCollection.Add(charBeforeDBnameConfigDoc + currDBName + "\" + currObjectName + ".xcl", ConfigDoc)
+                        If DBName = "" Then
+                            UserMsg("Error in filling ConfigDoc: got empty database name for new table/view/proc/function object '" + ObjectName + "', query: " + vbCrLf + ConfigDocQuery)
                             GoTo err
                         Else
-                            DBName = recordset.GetValue(0)
+                            currDBName = DBName
                         End If
                     End If
-                    currTableName = recordset.GetValue(1)
-                    ConfigDoc = If(recordset.IsDBNull(2), "", recordset.GetValue(2))
+                    currObjectName = ObjectName
+                    ConfigDoc = Documentation
                 Else
-                    ConfigDoc += If(recordset.IsDBNull(2), "", recordset.GetValue(2))
+                    ConfigDoc += Documentation
                 End If
             End While
-            getConfigDocCollection.Add(charBeforeDBnameConfigDoc + DBName + "\" + currTableName + ".xcl", ConfigDoc)
+            getConfigDocCollection.Add(charBeforeDBnameConfigDoc + currDBName + "\" + currObjectName + ".xcl", ConfigDoc)
         Catch ex As Exception
             UserMsg("Error in filling ConfigDoc: " + ex.Message + ", query: " + vbCrLf + ConfigDocQuery)
             GoTo err

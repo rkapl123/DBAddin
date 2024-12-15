@@ -553,7 +553,7 @@ Last:
                     If Left$(cellToBeStoredContent, 1) = "=" Then
                         TargetCell.FormulaR1C1 = cellToBeStoredContent
                     Else
-                        TargetCell.Value = cellToBeStoredContent
+                        TargetCell.Value = Left(cellToBeStoredContent, 32767)
                     End If
                 Catch ex As Exception
                     UserMsg("Error in setting Cell: " + ex.Message, "Create functions in cells")
