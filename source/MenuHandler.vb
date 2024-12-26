@@ -236,7 +236,7 @@ Public Class MenuHandler
     Public Sub showDBAdHocSQL(control As CustomUI.IRibbonControl, selectedSQLText As String)
         Dim queryString As String = ""
 
-        Dim theAdHocSQLDlg As New AdHocSQL(selectedSQLText, AdHocSQLStrings.IndexOf(selectedSQLText))
+        theAdHocSQLDlg = New AdHocSQL(selectedSQLText, AdHocSQLStrings.IndexOf(selectedSQLText))
         Dim dialogResult As Windows.Forms.DialogResult = theAdHocSQLDlg.ShowDialog()
         ' reflect potential change in environment...
         theRibbon.InvalidateControl("envDropDown")
@@ -680,15 +680,7 @@ Public Class MenuHandler
     ''' <param name="control"></param>
     Public Sub getConfig(control As CustomUI.IRibbonControl)
         If My.Computer.Keyboard.CtrlKeyDown Or My.Computer.Keyboard.ShiftKeyDown Then
-            ' Key: charBeforeDBnameConfigDoc + DBName + "\" + TableName + ".xcl", control.Tag is full path to xcl config file
-            ' so prune control.Tag starting with last folder (being charBeforeDBnameConfigDoc + DBName)
-            Dim ConfigDocKey = Mid(control.Tag, InStrRev(control.Tag, "\", InStrRev(control.Tag, "\") - 1) + 1)
-            Dim DocMessage As String = "No Documentation for Config Object " + ConfigDocKey
-            If Not IsNothing(ConfigDocCollection) AndAlso ConfigDocCollection.ContainsKey(ConfigDocKey) Then DocMessage = ConfigDocCollection(ConfigDocKey)
-            With New DBDocumentation()
-                .DBDocTextBox.Text = DocMessage
-                .Show()
-            End With
+            ConfigFiles.showTheDocs(control.Tag)
         Else
             ConfigFiles.loadConfig(control.Tag)
         End If
@@ -908,6 +900,9 @@ End Class
 Public Module MenuHandlerGlobals
     ''' <summary>reference object for the ribbon</summary>
     Public theRibbon As CustomUI.IRibbonUI
+    ''' <summary>This needs to be public accessible for click handler to pass results into SQLText control</summary>
+    Public theAdHocSQLDlg As AdHocSQL
+
 
     ''' <summary>refresh DB Functions (and - if called from outside any db function area - all other external data ranges)</summary>
     <ExcelCommand(Name:="refreshData")>

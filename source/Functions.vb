@@ -672,7 +672,7 @@ err:
     Private Sub setCalcModeBack(calcMode As Excel.XlCalculation)
         Try : ExcelDnaUtil.Application.Calculation = calcMode
         Catch ex As Exception
-            UserMsg("Error when setting back calculation mode to " + IIf(calcMode = -4135, "manual", IIf(calcMode = -4105, "automatic", IIf(calcMode = 2, "semiautomatic", "unknown: " + calcMode.ToString()))) + " (calculation property errors can occur for workbooks being opened through MS-office hyper-links), it is recommended to refresh the DB function to get valid results!",, MsgBoxStyle.Exclamation)
+            UserMsg("Error when setting back calculation mode to " + IIf(calcMode = -4135, "manual", IIf(calcMode = -4105, "automatic", IIf(calcMode = 2, "semiautomatic", "unknown: " + calcMode.ToString()))) + " (calculation property errors can occur for workbooks being opened as 'hidden' or through MS-office hyper-links), it is recommended to refresh the DB function to get valid results!",, MsgBoxStyle.Exclamation)
         End Try
     End Sub
 

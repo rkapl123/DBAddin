@@ -3,6 +3,7 @@ Imports System.IO ' for getting config files for menu
 Imports System.Linq ' to enhance arrays with useful methods (count, orderby)
 Imports System.Xml.Linq ' XNamespace and XElement for constructing the ConfigMenuXML
 Imports System.Collections.Generic 'ConfigDocCollection
+Imports System.Windows.Forms
 
 '''<summary>procedures used for loading config files (containing DBFunctions and general sheet content) and building the config menu</summary>
 Public Module ConfigFiles
@@ -23,17 +24,20 @@ Public Module ConfigFiles
     Public specialFolderMaxDepth As Integer
     ''' <summary>store found sub-menus in this collection</summary>
     Private specialConfigFoldersTempColl As Collection
+    Private Structure MenuClassStruct
+        Dim ribbonmenu As XElement
+        Dim contextmenu As ToolStripMenuItem
+    End Structure
     ''' <summary>for correct display of menu</summary>
     Private ReadOnly xnspace As XNamespace = "http://schemas.microsoft.com/office/2009/07/customui"
     ''' <summary>Documentation Collection for Config Objects (to be displayed with Ctrl or Shift)</summary>
     Public ConfigDocCollection As Dictionary(Of String, String)
+    ''' <summary>Context menu for AdHocSQL Form, built in parallel with ribbon config menu</summary>
+    Public ConfigContextMenu As ContextMenuStrip
 
     ''' <summary>loads config from file given in theFileName</summary>
     ''' <param name="theFileName">the File name of the config file</param>
     Public Sub loadConfig(theFileName As String)
-        Dim ItemLine As String
-        Dim retval As Integer
-
         Dim srchdFunc As String = ""
         ' check whether there is any existing db function other than DBListFetch inside active cell
         For Each srchdFunc In {"DBSETQUERY", "DBROWFETCH"}
@@ -44,18 +48,14 @@ Public Module ConfigFiles
             End If
         Next
 
-        retval = QuestionMsg("Inserting contents configured in " + theFileName, MsgBoxStyle.OkCancel, "DBAddin: Inserting Configuration...", MsgBoxStyle.Information)
+        Dim retval As Integer = QuestionMsg("Inserting contents configured in " + theFileName, MsgBoxStyle.OkCancel, "DBAddin: Inserting Configuration...", MsgBoxStyle.Information)
         If retval = vbCancel Then Exit Sub
         If ExcelDnaUtil.Application.ActiveWorkbook Is Nothing Then ExcelDnaUtil.Application.Workbooks.Add
 
-        ' open file for reading
-        Dim fileReader As System.IO.StreamReader = Nothing
+        ' get config file content and put into active cell
         Try
-            fileReader = My.Computer.FileSystem.OpenTextFileReader(theFileName, Text.Encoding.Default)
-            ItemLine = fileReader.ReadToEnd() ' ignore newlines, only important is tab separator...
-            If ItemLine.Substring(ItemLine.Length - 2, 2) = vbCrLf Then ItemLine = ItemLine.Substring(0, ItemLine.Length - 2) ' remove last newline, this produces problems...
             ' ConfigArray: Configs are tab separated pairs of <RC location vbTab function formula> vbTab <...> vbTab...
-            Dim ConfigArray As String() = Split(ItemLine, vbTab)
+            Dim ConfigArray As String() = Split(getFileContent(theFileName), vbTab)
             ' if there is a ConfigSelect setting use it to replace the query with the template, replacing the contained table with the FROM <table>...
             ' also regard the possibility to have a preference for a specific ConfigSelect(1, 2, or any other postfix being available in settings)
             Dim ConfigSelect As String = fetchSetting("ConfigSelect" + fetchSetting("ConfigSelectPreference", ""), "")
@@ -77,8 +77,19 @@ Public Module ConfigFiles
         Catch ex As Exception
             UserMsg("Error (" + ex.Message + ") during filling items from config file '" + theFileName + "' in ConfigFiles.loadConfig")
         End Try
-        Try : fileReader.Close() : Catch ex As Exception : End Try
     End Sub
+
+    ''' <summary>read content of xcl file</summary>
+    ''' <param name="theFileName">xcl file name</param>
+    ''' <returns>content of xcl file</returns>
+    Function getFileContent(theFileName As String) As String
+        ' open file for reading
+        Dim fileReader As System.IO.StreamReader = Nothing
+        fileReader = My.Computer.FileSystem.OpenTextFileReader(theFileName, Text.Encoding.Default)
+        getFileContent = fileReader.ReadToEnd() ' ignore newlines, only important is tab separator...
+        If getFileContent.Substring(getFileContent.Length - 2, 2) = vbCrLf Then getFileContent = getFileContent.Substring(0, getFileContent.Length - 2) ' remove last newline, this produces problems...
+        fileReader.Close()
+    End Function
 
     ''' <summary>replace query given in theQueryFormula with template query in ConfigSelect</summary>
     ''' <param name="dbFunctionFormula"></param>
@@ -134,14 +145,16 @@ Public Module ConfigFiles
         End If
     End Function
 
-    ''' <summary>creates the Config tree menu by reading the menu elements from the config store folder files/sub-folders</summary>
+    ''' <summary>creates the ribbon config tree menu and the context menu for the AdHocSQL Dialog by reading the menu elements from the config store folder files/sub-folders</summary>
     Public Sub createConfigTreeMenu()
         Dim currentBar, button As XElement
+        Dim currentStrip As New ToolStripMenuItem
 
         ' also get the documentation that was provided in setting ConfigDocQuery into ConfigDocCollection (used in config menu when clicking entry + Ctrl/Shift)
         Dim ConfigDocQuery As String = fetchSetting("ConfigDocQuery" + env(), fetchSetting("ConfigDocQuery", ""))
         If ConfigDocQuery <> "" Then ConfigDocCollection = getConfigDocCollection(ConfigDocQuery)
 
+        ConfigContextMenu = New ContextMenuStrip
         ' get the .xcl config files from the folders beneath ConfigStoreFolder
         If Not Directory.Exists(ConfigStoreFolder) Then
             UserMsg("No predefined config store folder '" + ConfigStoreFolder + "' found, please correct setting and refresh!")
@@ -159,7 +172,7 @@ Public Module ConfigFiles
             ' collect all config files recursively, creating sub-menus for the structure (see readAllFiles) and buttons for the final config files.
             specialConfigFoldersTempColl = New Collection
             menuID = 0
-            readAllFiles(ConfigStoreFolder, currentBar)
+            readAllFiles(ConfigStoreFolder, currentBar, currentStrip)
             specialConfigFoldersTempColl = Nothing
             ExcelDnaUtil.Application.StatusBar = ""
             currentBar.SetAttributeValue("xmlns", xnspace)
@@ -169,16 +182,23 @@ Public Module ConfigFiles
                 UserMsg("Too many entries in " + ConfigStoreFolder + ", can't display them in a ribbon menu ..")
                 ConfigMenuXML = "<menu xmlns='" + xnspace.ToString() + "'><button id='refreshDBConfig' label='refresh DBConfig Tree' imageMso='Refresh' onAction='refreshDBConfigTree'/></menu>"
             End If
+            Dim addedContextMenu As ToolStripMenuItem()
+            ReDim addedContextMenu(currentStrip.DropDownItems.Count - 1)
+            currentStrip.DropDownItems.CopyTo(addedContextMenu, 0)
+            ConfigContextMenu.Items.AddRange(addedContextMenu)
         End If
     End Sub
 
-    ''' <summary>reads all files contained in rootPath and its sub-folders (recursively) and adds them to the DBConfig menu (sub)structure (recursively). For folders contained in specialConfigStoreFolders, apply further structuring by splitting names on camel-case or specialConfigStoreSeparator</summary>
+    ''' <summary>reads all files contained in rootPath and its sub-folders (recursively) and adds them recursively to the DBConfig menu ribbon structure and the context menu for the AdHocSQL Dialog simultaneously. For folders contained in specialConfigStoreFolders, apply further structuring by splitting names on camel-case or specialConfigStoreSeparator</summary>
     ''' <param name="rootPath">root folder to be searched for config files</param>
     ''' <param name="currentBar">current menu element, where sub-menus and buttons are added</param>
+    ''' <param name="currentStrip">current context menu tool-strip element, where sub-menus and buttons are added</param>
     ''' <param name="Folderpath">for sub menus path of current folder is passed (recursively)</param>
-    Private Sub readAllFiles(rootPath As String, ByRef currentBar As XElement, Optional Folderpath As String = vbNullString)
+    Private Sub readAllFiles(rootPath As String, ByRef currentBar As XElement, ByRef currentStrip As ToolStripMenuItem, Optional Folderpath As String = vbNullString)
         Try
             Dim newBar As XElement = Nothing
+            Dim newStrip As ToolStripMenuItem = Nothing
+
             Static MenuFolderDepth As Integer = 1 ' needed to not exceed max. menu depth (currently 5)
 
             ' read all leaf node entries (files) and sort them by name to create action menus
@@ -210,15 +230,16 @@ Public Module ConfigFiles
                             If InStr(1, nextEntry, thisEntry) > 0 Then
                                 ' first process NEXT alphabetically ordered entry, returning nextLevel as new command bar element (menu or button)
                                 nameParts = stringParts(IIf(firstCharLevel, firstCharNextEntry + " ", "") + nextEntry, specialConfigStoreSeparator)
-                                Dim nextLevel As XElement = buildFileSepMenuCtrl(nameParts, currentBar, rootPath + "\" + fileList(i + 1).Name, spclFolder, Folderpath, MenuFolderDepth, specialFolderMaxDepth)
+                                Dim nextLevel As MenuClassStruct = Nothing
+                                buildFileSepMenuCtrl(nameParts, currentBar, currentStrip, rootPath + "\" + fileList(i + 1).Name, spclFolder, Folderpath, MenuFolderDepth, specialFolderMaxDepth, nextLevel)
                                 ' only if a menu was created...
-                                If Right(nextLevel.Name.ToString(), 4) = "menu" Then
+                                If Right(nextLevel.ribbonmenu.Name.ToString(), 4) = "menu" Then
                                     ' ... process THIS entry and insert in to nextLevel
                                     nameParts = stringParts(IIf(firstCharLevel, firstCharThisEntry + " ", "") + thisEntry, specialConfigStoreSeparator)
-                                    buildFileSepMenuCtrl(nameParts, nextLevel, rootPath + "\" + fileList(i).Name, spclFolder, Folderpath, MenuFolderDepth, specialFolderMaxDepth)
+                                    buildFileSepMenuCtrl(nameParts, nextLevel.ribbonmenu, nextLevel.contextmenu, rootPath + "\" + fileList(i).Name, spclFolder, Folderpath, MenuFolderDepth, specialFolderMaxDepth, Nothing)
                                 Else
                                     ' otherwise insert THIS entry in the same level (currentBar)
-                                    buildFileSepMenuCtrl(nameParts, currentBar, rootPath + "\" + fileList(i).Name, spclFolder, Folderpath, MenuFolderDepth, specialFolderMaxDepth)
+                                    buildFileSepMenuCtrl(nameParts, currentBar, currentStrip, rootPath + "\" + fileList(i).Name, spclFolder, Folderpath, MenuFolderDepth, specialFolderMaxDepth, Nothing)
                                 End If
                                 ' skip this and next one
                                 i += 2
@@ -226,7 +247,7 @@ Public Module ConfigFiles
                             End If
                         End If
                         nameParts = stringParts(IIf(firstCharLevel, Left$(fileList(i).Name, 1) + " ", "") + Left$(fileList(i).Name, Len(fileList(i).Name) - 4), specialConfigStoreSeparator)
-                        buildFileSepMenuCtrl(nameParts, currentBar, rootPath + "\" + fileList(i).Name, spclFolder, Folderpath, MenuFolderDepth, specialFolderMaxDepth)
+                        buildFileSepMenuCtrl(nameParts, currentBar, currentStrip, rootPath + "\" + fileList(i).Name, spclFolder, Folderpath, MenuFolderDepth, specialFolderMaxDepth, Nothing)
                     Next
                     ' normal case or max menu depth branch: just follow the path and enter all entries as buttons
                 Else
@@ -239,6 +260,12 @@ Public Module ConfigFiles
                         newBar.SetAttributeValue("label", Folderpath + Left$(fileList(i).Name, Len(fileList(i).Name) - 4))
                         newBar.SetAttributeValue("onAction", "getConfig")
                         currentBar.Add(newBar)
+                        Dim eventHandler As New System.EventHandler(AddressOf contextMenuClickEventHandler)
+                        newStrip = New ToolStripMenuItem(text:=Folderpath + Left$(fileList(i).Name, Len(fileList(i).Name) - 4), image:=Nothing, onClick:=eventHandler) With {
+                            .Tag = rootPath + "\" + fileList(i).Name,
+                            .ToolTipText = "click to insert configured select statement for " + Left$(fileList(i).Name, Len(fileList(i).Name) - 4) + ". Ctrl or Shift + click to display documentation for config if existing."
+                        }
+                        currentStrip.DropDownItems.Add(newStrip)
                     Next
                 End If
             End If
@@ -256,12 +283,16 @@ Public Module ConfigFiles
                     newBar.SetAttributeValue("id", "m" + menuID.ToString())
                     newBar.SetAttributeValue("label", DirList(i).Name)
                     currentBar.Add(newBar)
+                    newStrip = New ToolStripMenuItem With {
+                            .Text = DirList(i).Name
+                        }
+                    currentStrip.DropDownItems.Add(newStrip)
                     MenuFolderDepth += 1
-                    readAllFiles(rootPath + "\" + DirList(i).Name, newBar, Folderpath + DirList(i).Name + "\")
+                    readAllFiles(rootPath + "\" + DirList(i).Name, newBar, newStrip, Folderpath + DirList(i).Name + "\")
                     MenuFolderDepth -= 1
                 Else
                     newBar = currentBar
-                    readAllFiles(rootPath + "\" + DirList(i).Name, newBar, Folderpath + DirList(i).Name + "\")
+                    readAllFiles(rootPath + "\" + DirList(i).Name, newBar, newStrip, Folderpath + DirList(i).Name + "\")
                 End If
             Next
         Catch ex As Exception
@@ -269,18 +300,62 @@ Public Module ConfigFiles
         End Try
     End Sub
 
-    ''' <summary>parses Substrings (filenames in special Folders) contained in nameParts (recursively) of passed xcl config file-path (fullPathName) and adds them to currentBar and sub-menus (recursively)</summary>
+    ''' <summary>the event-handler for the context menu entries of the AdHocSQL context menu</summary>
+    ''' <param name="sender">the tool-strip menu item that sent the event</param>
+    ''' <param name="e"></param>
+    Public Sub contextMenuClickEventHandler(sender As Object, e As Object)
+        If My.Computer.Keyboard.CtrlKeyDown Or My.Computer.Keyboard.ShiftKeyDown Then
+            showTheDocs(sender.Tag)
+        Else
+            ' get the file content defined in sender.Tag (absolute path of xcl definition file)
+            ' ConfigArray: Configs are tab separated pairs of <RC location vbTab function formula> vbTab <...> vbTab...
+            Dim ConfigArray As String() = Split(getFileContent(sender.Tag), vbTab)
+            ' fetch query out of DBListFetch definition
+            Dim functionParts As String() = functionSplit(ConfigArray(1), ",", """", "DBListFetch", "(", ")")
+            If functionParts IsNot Nothing Then
+                ' either put query into SQLText content if empty
+                If theAdHocSQLDlg.SQLText.Text.Length = 0 Then
+                    theAdHocSQLDlg.SQLText.Text = functionParts(0).Substring(1, functionParts(0).Length - 2)
+                Else
+                    ' or attach extracted table (after FROM part) to existing content, if a FROM part is available
+                    Dim startPosOfTable As Integer = functionParts(0).IndexOf("FROM")
+                    If startPosOfTable >= 0 Then
+                        theAdHocSQLDlg.SQLText.AppendText(functionParts(0).Substring(startPosOfTable + 5, functionParts(0).Length - 1 - (startPosOfTable + 5)))
+                    Else
+                        UserMsg("No FROM part in configuration found, cannot extract table to append to query")
+                    End If
+                End If
+            End If
+        End If
+    End Sub
+
+    ''' <summary>shows the Documentation associated with the menu entry having TagString</summary>
+    ''' <param name="TagString">control.Tag or sender.Tag from menu entry</param>
+    Public Sub showTheDocs(TagString As String)
+        ' Key: charBeforeDBnameConfigDoc + DBName + "\" + TableName + ".xcl", control.Tag is full path to xcl config file
+        ' so prune control.Tag starting with last folder (being charBeforeDBnameConfigDoc + DBName)
+        Dim ConfigDocKey = Mid(TagString, InStrRev(TagString, "\", InStrRev(TagString, "\") - 1) + 1)
+        Dim DocMessage As String = "No Documentation for Config Object " + ConfigDocKey
+        If Not IsNothing(ConfigDocCollection) AndAlso ConfigDocCollection.ContainsKey(ConfigDocKey) Then DocMessage = ConfigDocCollection(ConfigDocKey)
+        With New DBDocumentation()
+            .DBDocTextBox.Text = DocMessage
+            .Show()
+        End With
+    End Sub
+
+    ''' <summary>parses Substrings (filenames in special Folders) contained in nameParts (recursively) of passed xcl config file-path (fullPathName) and adds them to currentBar/currentStrip and sub-menus (recursively)</summary>
     ''' <param name="nameParts">tokenized string (separated by space)</param>
     ''' <param name="currentBar">current menu element, where sub-menus and buttons are added</param>
+    ''' <param name="currentStrip">current context menu tool-strip element, where sub-menus and buttons are added</param>
     ''' <param name="fullPathName">full path name to xcl config file</param>
     ''' <param name="newRootName">the new root name for the menu, used avoid multiple placement of buttons in sub-menus</param>
     ''' <param name="Folderpath">Path of enclosing Folder(s)</param>
     ''' <param name="MenuFolderDepth">required for keeping maxMenuDepth limit</param>
-    ''' <returns>new bar as Xelement (for containment)</returns>
-    Private Function buildFileSepMenuCtrl(nameParts As String, ByRef currentBar As XElement, fullPathName As String, newRootName As String, Folderpath As String, MenuFolderDepth As Integer, specialFolderMaxDepth As Integer) As XElement
+    ''' <param name="returnedBar">returned combined container (MenuClassStruct) of Xelement/ribbon bar and ToolStripMenuItem/context menu item for containment in next menu entry (see readAllFiles)</param>
+    Private Sub buildFileSepMenuCtrl(nameParts As String, ByRef currentBar As XElement, currentStrip As ToolStripMenuItem, fullPathName As String, newRootName As String, Folderpath As String, MenuFolderDepth As Integer, specialFolderMaxDepth As Integer, ByRef returnedBar As MenuClassStruct)
         Static MenuDepth As Integer = 0
         Try
-            Dim newBar As XElement
+            Dim newMenuClass As New MenuClassStruct : Dim newBar As XElement : Dim newStrip As ToolStripMenuItem
             ' end node: add callable entry (= button)
             If InStr(1, nameParts, " ") = 0 Or MenuDepth >= specialFolderMaxDepth Or MenuDepth + MenuFolderDepth >= maxMenuDepth Then
                 Dim entryName As String = Mid$(fullPathName, InStrRev(fullPathName, "\") + 1)
@@ -292,30 +367,47 @@ Public Module ConfigFiles
                 newBar.SetAttributeValue("tag", fullPathName)
                 newBar.SetAttributeValue("onAction", "getConfig")
                 currentBar.Add(newBar)
-                buildFileSepMenuCtrl = newBar
+                Dim eventHandler As New System.EventHandler(AddressOf contextMenuClickEventHandler)
+                newStrip = New ToolStripMenuItem(text:=Left$(entryName, Len(entryName) - 4), image:=Nothing, onClick:=eventHandler) With {
+                            .Tag = fullPathName,
+                            .ToolTipText = "click to insert configured select statement for " + Left$(entryName, Len(entryName) - 4) + ". Ctrl or Shift + click to display documentation for config if existing."
+                        }
+                currentStrip.DropDownItems.Add(newStrip)
+                newMenuClass.ribbonmenu = newBar
+                newMenuClass.contextmenu = newStrip
+                returnedBar = newMenuClass
             Else  ' branch node: add new menu, recursively descend
                 Dim newName As String = Left$(nameParts, InStr(1, nameParts, " ") - 1)
                 ' prefix already exists: put new sub-menu below already existing prefix
                 If specialConfigFoldersTempColl.Contains(newRootName + newName) Then
-                    newBar = specialConfigFoldersTempColl(newRootName + newName)
+                    newBar = specialConfigFoldersTempColl(newRootName + newName).ribbonmenu
+                    newStrip = specialConfigFoldersTempColl(newRootName + newName).contextmenu
+                    newMenuClass.ribbonmenu = newBar
+                    newMenuClass.contextmenu = newStrip
                 Else
                     newBar = New XElement(xnspace + "menu")
                     menuID += 1
                     newBar.SetAttributeValue("id", "m" + menuID.ToString())
                     newBar.SetAttributeValue("label", newName)
-                    specialConfigFoldersTempColl.Add(newBar, newRootName + newName)
                     currentBar.Add(newBar)
+                    newStrip = New ToolStripMenuItem With {
+                        .Text = newName
+                    }
+                    currentStrip.DropDownItems.Add(newStrip)
+                    newMenuClass.ribbonmenu = newBar
+                    newMenuClass.contextmenu = newStrip
+                    specialConfigFoldersTempColl.Add(newMenuClass, newRootName + newName)
                 End If
                 MenuDepth += 1
-                buildFileSepMenuCtrl(Mid$(nameParts, InStr(1, nameParts, " ") + 1), newBar, fullPathName, newRootName + newName, Folderpath, MenuFolderDepth, specialFolderMaxDepth)
+                buildFileSepMenuCtrl(Mid$(nameParts, InStr(1, nameParts, " ") + 1), newBar, newStrip, fullPathName, newRootName + newName, Folderpath, MenuFolderDepth, specialFolderMaxDepth, Nothing)
                 MenuDepth -= 1
-                buildFileSepMenuCtrl = newBar
+                returnedBar = newMenuClass
             End If
         Catch ex As Exception
             UserMsg("Error (" + ex.Message + ") in MenuHandler.buildFileSepMenuCtrl")
-            buildFileSepMenuCtrl = Nothing
+            returnedBar = Nothing
         End Try
-    End Function
+    End Sub
 
     ''' <summary>returns string in space separated parts (tokenize String following CamelCase switch or when given specialConfigStoreSeparator occurs)</summary>
     ''' <param name="theString">string to be tokenized</param>

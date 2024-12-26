@@ -192,7 +192,9 @@ Another tool is the entry of quick (ad hoc) SQL Commands in the combo box below 
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/AdHocSQL.PNG)  
 
-Select Statements (beginning with `select`) are executed immediately, empty statements (using a space character in the combo-box) don't execute anything, and everything else is regarded as a DML command and is only executed after confirmation:
+The tool has an upper part for entering SQL and a lower part for displaying the results. Using the right mouse button context menu, the same configuration of the "Cell Config deployment" (see [DBFuncs User-doc](DBFuncs.md)) is utilized to display a hierarchical menu to insert the configured select statements from the cell config deployment. Also the documentation can be shown here in the same way as with "Viewing Database documentation with configurations".
+
+When entering select statements (beginning with `select`) in the combo box, these are executed immediately, empty statements (using only blanks character in the combo-box) don't do anything, and everything else is regarded as a DML command and is only executed after confirmation:
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/AdHocSQL_DML.PNG)  
 

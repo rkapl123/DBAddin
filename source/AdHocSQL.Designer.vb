@@ -1,9 +1,9 @@
-﻿<Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()> _
+﻿<Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class AdHocSQL
     Inherits System.Windows.Forms.Form
 
     'Form overrides dispose to clean up the component list.
-    <System.Diagnostics.DebuggerNonUserCode()> _
+    <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(ByVal disposing As Boolean)
         Try
             If disposing AndAlso components IsNot Nothing Then
@@ -20,7 +20,7 @@ Partial Class AdHocSQL
     'NOTE: The following procedure is required by the Windows Form Designer
     'It can be modified using the Windows Form Designer.  
     'Do not modify it using the code editor.
-    <System.Diagnostics.DebuggerStepThrough()> _
+    <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         Me.components = New System.ComponentModel.Container()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(AdHocSQL))
@@ -39,6 +39,7 @@ Partial Class AdHocSQL
         Me.LEnv1 = New System.Windows.Forms.Label()
         Me.SplitContainer1 = New System.Windows.Forms.SplitContainer()
         Me.SQLText = New System.Windows.Forms.RichTextBox()
+        Me.ConfigMenuStrip = New System.Windows.Forms.ContextMenuStrip(Me.components)
         CType(Me.AdHocSQLQueryResult, System.ComponentModel.ISupportInitialize).BeginInit()
         CType(Me.SplitContainer1, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SplitContainer1.Panel1.SuspendLayout()
@@ -208,6 +209,11 @@ Partial Class AdHocSQL
         Me.SQLText.TabIndex = 1
         Me.SQLText.Text = ""
         '
+        'ConfigMenuStrip
+        '
+        Me.ConfigMenuStrip.Name = "ConfigMenuStrip"
+        Me.ConfigMenuStrip.Size = New System.Drawing.Size(181, 26)
+        '
         'AdHocSQL
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
@@ -252,4 +258,5 @@ Partial Class AdHocSQL
     Public WithEvents LEnv1 As Windows.Forms.Label
     Friend WithEvents SplitContainer1 As Windows.Forms.SplitContainer
     Friend WithEvents SQLText As Windows.Forms.RichTextBox
+    Friend WithEvents ConfigMenuStrip As Windows.Forms.ContextMenuStrip
 End Class

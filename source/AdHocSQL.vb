@@ -17,6 +17,7 @@ Public Class AdHocSQL
     Public Sub New(SQLString As String, AdHocSQLStringsIndex As Integer)
         ' This call is required by the designer.
         InitializeComponent()
+        createConfigTreeMenu()
         Me.SQLText.Text = SQLString
         Me.TransferType.Items.Clear()
         For Each TransType As String In {"Cell", "ListFetch", "RowFetch", "ListObject", "Pivot"}
@@ -321,4 +322,10 @@ Public Class AdHocSQL
         sender.CurrentRow.Cells(e.ColumnIndex).TooltipText = "Data raised exception: " + e.Exception.Message + " (" + e.Context.ToString() + ")"
     End Sub
 
+    Private Sub SQLText_MouseDown(sender As Object, e As MouseEventArgs) Handles SQLText.MouseDown
+        If e.Button = Windows.Forms.MouseButtons.Right Then
+            Me.ConfigMenuStrip = ConfigFiles.ConfigContextMenu
+            Me.ConfigMenuStrip.Show(DirectCast(sender, RichTextBox).PointToScreen(e.Location))
+        End If
+    End Sub
 End Class
