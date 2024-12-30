@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<project xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <files>
+    <file>../source/DBaddin.sln</file>
+  </files>
+  <RemovedAssemblies />
+  <filters>
+    <filter>Private</filter>
+    <filter>Protected</filter>
+    <filter>InternalProtected</filter>
+  </filters>
+  <configuration>Release</configuration>
+  <language>VisualBasic</language>
+</project>

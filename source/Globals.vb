@@ -337,7 +337,7 @@ Last:
             LogWarn("ExcelDnaUtil.Application.Calculation = Error, " + Wb.Path + "\" + Wb.Name + " (hidden workbooks produce calculation errors...)")
             Exit Sub
         End If
-        DBModifs.preventChangeWhileFetching = True
+        DBModifHelper.preventChangeWhileFetching = True
         Dim calcMode As Long = ExcelDnaUtil.Application.Calculation
         Dim calcModeSet As Boolean = False
         Try
@@ -375,13 +375,13 @@ Last:
                                 ' check for formula and store it
                                 Try : colFormula = listcol.DataBodyRange.Cells(1, 1).Formula : Catch ex As Exception : End Try
                                 If Left(colFormula, 1) = "=" Then
-                                    DBModifs.preventChangeWhileFetching = True
+                                    DBModifHelper.preventChangeWhileFetching = True
                                     ' delete whole column
                                     listcol.DataBodyRange.Clear()
                                     ' re-insert the formula, this repairs the auto-filling functionality
                                     listcol.DataBodyRange.Formula = colFormula
                                     DBTargetListObject.QueryTable.PreserveColumnInfo = True ' if there is a lookup formula, always set this as it is required to fill it in automatically
-                                    DBModifs.preventChangeWhileFetching = False
+                                    DBModifHelper.preventChangeWhileFetching = False
                                 End If
                             Next
                         End If
@@ -405,7 +405,7 @@ Last:
         End Try
         ' after all db function cells have been "dirtied" set calculation mode to automatic again (if it was automatic)
         If calcModeSet Then ExcelDnaUtil.Application.Calculation = calcMode
-        DBModifs.preventChangeWhileFetching = False
+        DBModifHelper.preventChangeWhileFetching = False
     End Sub
 
     ''' <summary>"OnTime" event function to "escape" current (main) thread: event procedure to re-fetch DB functions results after triggering a recalculation inside Application.WorkbookBeforeSave</summary>
@@ -470,13 +470,19 @@ Last:
         Dim altConnString = fetchSetting("AltConnString" + env(), "")
         ' for standard connection strings only OLEDB drivers seem to work with pivot tables...
         If altConnString = "" Then altConnString = "OLEDB;" + ConstConnString
-        Dim ExcelVersionForPivot As Excel.XlPivotTableVersionList = fetchSettingInt("ExcelVersionForPivot", "8")
-        Try
-            ' don't use TargetCell.Parent.Parent.PivotCaches().Add(Excel.XlPivotTableSourceType.xlExternal) as we can't set the Version there...
-            pivotcache = ExcelDnaUtil.Application.ActiveWorkbook.PivotCaches.Create(SourceType:=Excel.XlPivotTableSourceType.xlExternal, Version:=ExcelVersionForPivot)
-        Catch ex As Exception
-            UserMsg("Exception creating pivot cache: " + ex.Message + ", if the reason was 'wrong parameter', change setting ExcelVersionForPivot to a lower/correct value (see help)", "Create Pivot Table")
-        End Try
+        Dim ExcelVersionForPivot As Integer = -1 : Dim versionTooHigh As Boolean = False
+        Do
+            ExcelVersionForPivot += 1
+            Try
+                ' don't use TargetCell.Parent.Parent.PivotCaches().Add(Excel.XlPivotTableSourceType.xlExternal) as we can't set the Version there...
+                Dim dummy As Excel.PivotCache = ExcelDnaUtil.Application.ActiveWorkbook.PivotCaches.Create(SourceType:=Excel.XlPivotTableSourceType.xlExternal, Version:=ExcelVersionForPivot)
+            Catch ex As Exception
+                versionTooHigh = True
+            End Try
+        Loop Until versionTooHigh
+        ExcelVersionForPivot -= 1
+        pivotcache = ExcelDnaUtil.Application.ActiveWorkbook.PivotCaches.Create(SourceType:=Excel.XlPivotTableSourceType.xlExternal, Version:=ExcelVersionForPivot)
+        'LogInfo("created pivot cache with version: " + CStr(ExcelVersionForPivot))
         Try
             pivotcache.Connection = altConnString
             pivotcache.MaintainConnection = False
@@ -702,4 +708,16 @@ Last:
         End If
     End Function
 
+    ''' <summary>check for multiple excel instances</summary>
+    Public Sub checkHiddenExcelInstance()
+        Try
+            If Diagnostics.Process.GetProcessesByName("Excel").Length > 1 Then
+                For Each procinstance As Diagnostics.Process In Diagnostics.Process.GetProcessesByName("Excel")
+                    If procinstance.MainWindowTitle = "" Then
+                        UserMsg("Another hidden excel instance detected (PID: " + procinstance.Id + "), this may cause problems with querying DB Data")
+                    End If
+                Next
+            End If
+        Catch ex As Exception : End Try
+    End Sub
 End Module

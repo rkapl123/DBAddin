@@ -4,24 +4,9 @@ Imports Microsoft.Office.Interop
 Imports Microsoft.Office.Interop.Excel ' for event procedures...
 Imports Microsoft.Office.Core
 Imports Microsoft.Vbe.Interop
-Imports System.Diagnostics
 Imports System.Runtime.InteropServices
 Imports System.Collections.Generic
 
-Public Module CheckInstance
-    Public Sub checkHiddenExcelInstance()
-        Try
-            ' check for multiple excel instances
-            If Process.GetProcessesByName("Excel").Length > 1 Then
-                For Each procinstance As Process In Process.GetProcessesByName("Excel")
-                    If procinstance.MainWindowTitle = "" Then
-                        UserMsg("Another hidden excel instance detected (PID: " + procinstance.Id + "), this may cause problems with querying DB Data")
-                    End If
-                Next
-            End If
-        Catch ex As Exception : End Try
-    End Sub
-End Module
 
 ''' <summary>AddIn Connection class, also handling Events from Excel (Open, Close, Activate)</summary>
 <ComVisible(True)>
@@ -63,9 +48,9 @@ Public Class AddInEvents
             End If
         Catch ex As Exception : End Try
         ' for finding out what happened attach internal trace to ExcelDNA LogDisplay
-        theLogDisplaySource = New TraceSource("ExcelDna.Integration")
+        theLogDisplaySource = New Diagnostics.TraceSource("ExcelDna.Integration")
         ' and also define a LogSource for DBAddin itself for writing text log messages
-        theLogFileSource = New TraceSource("DBAddin")
+        theLogFileSource = New Diagnostics.TraceSource("DBAddin")
 
         ' IntelliSense needed for DB- and supporting functions
         ExcelDna.IntelliSense.IntelliSenseServer.Install()
@@ -292,7 +277,7 @@ done:
     ''' <param name="Wb"></param>
     Private Sub Application_WorkbookActivate(Wb As Excel.Workbook) Handles Application.WorkbookActivate
         ' avoid when being activated by DBFuncsAction
-        If Not DBModifs.preventChangeWhileFetching And Not Wb.IsAddin Then
+        If Not DBModifHelper.preventChangeWhileFetching And Not Wb.IsAddin Then
             ' in case AutoOpen hasn't been triggered (e.g. when Excel was started via Internet Explorer)...
             If DBModifDefColl Is Nothing Then
                 DBModifDefColl = New Dictionary(Of String, Dictionary(Of String, DBModif))
@@ -343,7 +328,7 @@ done:
     ''' <param name="cbName">name of command button, defines whether a DBModification is invoked (starts with DBMapper/DBAction/DBSeqnce)</param>
     Private Shared Sub cbClick(cbName As String)
         ' reset non interactive messages (used for VBA invocations) and hadError for interactive invocations
-        nonInteractiveErrMsgs = "" : DBModifs.hadError = False
+        nonInteractiveErrMsgs = "" : DBModifHelper.hadError = False
         Dim DBModifType As String = Left(cbName, 8)
         If DBModifType <> "DBSeqnce" Then
             Dim targetRange As Excel.Range
@@ -418,7 +403,7 @@ done:
     ''' <param name="Sh"></param>
     Private Sub Application_SheetActivate(Sh As Object) Handles Application.SheetActivate
         ' avoid when being activated by DBFuncsAction 
-        If Not DBModifs.preventChangeWhileFetching Then
+        If Not DBModifHelper.preventChangeWhileFetching Then
             ' only when needed assign button handler for this sheet ...
             If Not IsNothing(DBModifDefColl) AndAlso DBModifDefColl.Count > 0 Then assignHandler(Sh)
         End If
@@ -426,7 +411,7 @@ done:
 
     Private WbIsClosing As Boolean = False
 
-    ''' <summary>Clean up after closing workbook, only set flag here, actual cleanup is only done if workbook is really closed (in WB_Deactivate event)</summary>
+    ''' <summary>Clean up after closing workbook, only set flag here, the actual cleanup is only done if workbook is really closed (in WB_Deactivate event)</summary>
     ''' <param name="Wb"></param>
     ''' <param name="Cancel"></param>
     Private Sub Application_WorkbookBeforeClose(Wb As Workbook, ByRef Cancel As Boolean) Handles Application.WorkbookBeforeClose
@@ -437,6 +422,7 @@ done:
     ''' <param name="Wb"></param>
     Private Sub Application_WorkbookDeactivate(Wb As Workbook) Handles Application.WorkbookDeactivate
         Try
+            If WbIsClosing AndAlso preventRefreshFlagColl.ContainsKey(Wb.Name) Then preventRefreshFlagColl.Remove(Wb.Name)
             If WbIsClosing AndAlso Not IsNothing(DBModifDefColl) AndAlso DBModifDefColl.Count > 0 Then
                 DBModifDefColl.Clear()
                 theRibbon.Invalidate()
@@ -452,7 +438,7 @@ done:
     ''' <param name="Target"></param>
     Private Sub Application_SheetChange(Sh As Object, Target As Range) Handles Application.SheetChange
         ' avoid entering into insert/update check resp. doCUDMarks if not list-object (data table), whole column modified, no DBMapper present and prevention while fetching (on refresh) being set
-        If Not IsNothing(Target.ListObject) AndAlso Not Target.Rows.Count = Sh.Rows.Count AndAlso DBModifDefColl.ContainsKey("DBMapper") AndAlso Not DBModifs.preventChangeWhileFetching Then
+        If Not IsNothing(Target.ListObject) AndAlso Not Target.Rows.Count = Sh.Rows.Count AndAlso DBModifDefColl.ContainsKey("DBMapper") AndAlso Not DBModifHelper.preventChangeWhileFetching Then
             Dim targetName As String = getDBModifNameFromRange(Target)
             If Left(targetName, 8) = "DBMapper" Then
                 DirectCast(DBModifDefColl("DBMapper").Item(targetName), DBMapper).insertCUDMarks(Target)

@@ -1,9 +1,10 @@
 Imports ExcelDna.Integration
-Imports System.Runtime.InteropServices
 Imports Microsoft.Office.Interop
 Imports System.Configuration
 Imports System.Collections.Specialized
 Imports System.Collections.Generic
+Imports System.Runtime.InteropServices
+
 
 ''' <summary>handles all Menu related aspects (context menu for building/refreshing, "DBAddin"/"Load Config" tree menu for retrieving stored configuration files, etc.)</summary>
 <ComVisible(True)>
@@ -741,7 +742,7 @@ Public Class MenuHandler
             UserMsg("Exception when trying to get the active workbook for DB Modifier activation: " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
         End Try
         ' reset non-interactive messages (used for VBA invocations) and hadError for interactive invocations
-        nonInteractiveErrMsgs = "" : DBModifs.hadError = False
+        nonInteractiveErrMsgs = "" : DBModifHelper.hadError = False
         Dim nodeName As String = Right(control.Id, Len(control.Id) - 1)
         If Not ExcelDnaUtil.Application.CommandBars.GetEnabledMso("FileNewDefault") Then
             UserMsg("Cannot execute DB Modifier while cell editing active !", "DB Modifier execution", MsgBoxStyle.Exclamation)

@@ -13,6 +13,7 @@ Public Class ContainedStatusMsg
     Public formulaRange As Excel.Range
 End Class
 
+
 ''' <summary>Contains the public callable DB functions and helper functions</summary>
 Public Module Functions
     ' Global objects/variables for DBFuncs
@@ -437,7 +438,7 @@ Public Module Functions
 
         Dim connType As String = ""
         Dim bgQuery As Boolean
-        DBModifs.preventChangeWhileFetching = True
+        DBModifHelper.preventChangeWhileFetching = True
         Try
             Dim thePivotCache As Excel.PivotCache = Nothing
             Dim theQueryTable As Excel.QueryTable = Nothing
@@ -537,14 +538,14 @@ Public Module Functions
             errMsg = ex.Message + " in query: " + Query
             GoTo err
         End Try
-        DBModifs.preventChangeWhileFetching = False
+        DBModifHelper.preventChangeWhileFetching = False
         setCalcModeBack(calcMode)
         Exit Sub
 err:
         setCalcModeBack(calcMode)
         LogWarn(errMsg + " caller: " + callID)
         If StatusCollection.ContainsKey(callID) Then StatusCollection(callID).statusMsg = errMsg
-        DBModifs.preventChangeWhileFetching = False
+        DBModifHelper.preventChangeWhileFetching = False
         ' trigger recalculation to return error message to calling function
         Try : caller.Formula += " " : Catch ex As Exception : End Try
     End Sub
@@ -659,7 +660,7 @@ err:
     ''' <param name="additionalLogInfo">for logging purpose</param>
     Private Sub finishAction(calcMode As Excel.XlCalculation, callID As String, Optional additionalLogInfo As String = "")
         LogInfo("callID: " + callID + If(additionalLogInfo <> "", ", additionalInfo: " + additionalLogInfo, ""))
-        DBModifs.preventChangeWhileFetching = False
+        DBModifHelper.preventChangeWhileFetching = False
         ' To return cursor to normal
         Try : ExcelDnaUtil.Application.Cursor = Excel.XlMousePointer.xlDefault : Catch ex As Exception : End Try
         Try : ExcelDnaUtil.Application.StatusBar = False : Catch ex As Exception : End Try
@@ -857,7 +858,7 @@ err:
                 If targetSH Is formulaSH And formulaRange.Column = startCol + oldCols Then additionalFormulaColumns = formulaRange.Columns.Count
             End If
 
-            DBModifs.preventChangeWhileFetching = True
+            DBModifHelper.preventChangeWhileFetching = True
             ' used for resizing potential DBMapper under DBListfetch TargetRange
             Dim oldTotalTargetRange As Excel.Range = Nothing
             Try : oldTotalTargetRange = targetSH.Range(targetSH.Cells(startRow, startCol), targetSH.Cells(startRow + oldRows - 1, startCol + oldCols + additionalFormulaColumns - 1)) : Catch ex As Exception : End Try
@@ -1316,7 +1317,7 @@ err:    LogWarn(errMsg + ", caller: " + callID)
             GoTo err
         End Try
 
-        DBModifs.preventChangeWhileFetching = True
+        DBModifHelper.preventChangeWhileFetching = True
         If Not recordsetHasRows Then StatusCollection(callID).statusMsg = "Warning: No Data returned in query: " + Query
 
         Dim totalFieldsDisplayed As Long = 0 ' needed to calculate displayedRows

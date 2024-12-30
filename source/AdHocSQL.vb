@@ -1,15 +1,16 @@
-﻿Imports System.Data
+﻿Imports System.ComponentModel ' for BackgroundWorker callback handling
+Imports System.Data
 Imports System.Windows.Forms
-Imports System.ComponentModel ' for BackgroundWorker callback handling
+
 
 ''' <summary>User-form for ad-hoc SQL execution</summary>
 Public Class AdHocSQL
     ''' <summary>common connection settings factored in helper class</summary>
     Private myDBConnHelper As DBConnHelper
     ''' <summary>stored environment to reset after change</summary>
-    Private storedUserSetEnv As String = ""
+    Private ReadOnly storedUserSetEnv As String = ""
     ''' <summary>stored database to reset after change</summary>
-    Private userSetDB As String = ""
+    Private ReadOnly userSetDB As String = ""
 
     ''' <summary>create new AdHocSQL dialog</summary>
     ''' <param name="SQLString"></param>
@@ -322,6 +323,9 @@ Public Class AdHocSQL
         sender.CurrentRow.Cells(e.ColumnIndex).TooltipText = "Data raised exception: " + e.Exception.Message + " (" + e.Context.ToString() + ")"
     End Sub
 
+    ''' <summary>show context menu for SQLText, displaying config menu as a MenuStrip</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
     Private Sub SQLText_MouseDown(sender As Object, e As MouseEventArgs) Handles SQLText.MouseDown
         If e.Button = Windows.Forms.MouseButtons.Right Then
             Me.ConfigMenuStrip = ConfigFiles.ConfigContextMenu

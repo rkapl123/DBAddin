@@ -257,6 +257,13 @@ This builds a Powerquery compliant string (quoted using double quotes) from the 
 
 When E1 contains "test", this results in "a test".
 
+#### preventRefresh
+
+<pre lang="vb">preventRefresh(setPreventRefresh, onlyForThisWB (optional))</pre>
+
+sets preventRefresh flag globally or just for the current workbook (if onlyForThisWB is set), similar to clicking the ribbon toggle button "refresh prevention". This setting is not persisted with the workbook!
+
+
 ### Modifications of DBFunc Behaviour
 
 There are some options to modify  

@@ -1,5 +1,6 @@
 ﻿Imports System.Windows.Forms
 
+''' <summary>Simple Popup Window for displaying Database documentation</summary>
 Public Class DBDocumentation
     Private Sub CancelBtn_Click(sender As Object, e As EventArgs) Handles CancelBtn.Click
         Me.Close()

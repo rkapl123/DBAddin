@@ -24,6 +24,7 @@ Public Module ConfigFiles
     Public specialFolderMaxDepth As Integer
     ''' <summary>store found sub-menus in this collection</summary>
     Private specialConfigFoldersTempColl As Collection
+    ''' <summary>collection structure for the two menu types, one in ribbon (Xelement) and MenuStrip (ToolStripMenuItem, used in AdHocSQL/SQLText context menu)</summary>
     Private Structure MenuClassStruct
         Dim ribbonmenu As XElement
         Dim contextmenu As ToolStripMenuItem
@@ -147,8 +148,9 @@ Public Module ConfigFiles
 
     ''' <summary>creates the ribbon config tree menu and the context menu for the AdHocSQL Dialog by reading the menu elements from the config store folder files/sub-folders</summary>
     Public Sub createConfigTreeMenu()
-        Dim currentBar, button As XElement
-        Dim currentStrip As New ToolStripMenuItem
+        ' collecting menu items in 
+        Dim currentBar As XElement ' for ribbon 
+        Dim currentStrip As New ToolStripMenuItem ' for context menu in AdHocSQL/SQLText
 
         ' also get the documentation that was provided in setting ConfigDocQuery into ConfigDocCollection (used in config menu when clicking entry + Ctrl/Shift)
         Dim ConfigDocQuery As String = fetchSetting("ConfigDocQuery" + env(), fetchSetting("ConfigDocQuery", ""))
@@ -162,8 +164,8 @@ Public Module ConfigFiles
         Else
             ' top level menu
             currentBar = New XElement(xnspace + "menu")
-            ' add refresh button to top level
-            button = New XElement(xnspace + "button")
+            ' add refresh button to top level only for ribbon menu
+            Dim button As New XElement(xnspace + "button")
             button.SetAttributeValue("id", "refreshConfig")
             button.SetAttributeValue("label", "refresh DBConfig Tree")
             button.SetAttributeValue("imageMso", "Refresh")
@@ -176,12 +178,13 @@ Public Module ConfigFiles
             specialConfigFoldersTempColl = Nothing
             ExcelDnaUtil.Application.StatusBar = ""
             currentBar.SetAttributeValue("xmlns", xnspace)
-            ' avoid exception in ribbon...
+            ' avoid exception in ribbon by respecting the entry limit...
             ConfigMenuXML = currentBar.ToString()
             If ConfigMenuXML.Length > maxSizeRibbonMenu Then
                 UserMsg("Too many entries in " + ConfigStoreFolder + ", can't display them in a ribbon menu ..")
                 ConfigMenuXML = "<menu xmlns='" + xnspace.ToString() + "'><button id='refreshDBConfig' label='refresh DBConfig Tree' imageMso='Refresh' onAction='refreshDBConfigTree'/></menu>"
             End If
+            ' add all collected ToolStripMenuItem of currentStrip to top-level menu, copying needed because AddRange removes items from original collection
             Dim addedContextMenu As ToolStripMenuItem()
             ReDim addedContextMenu(currentStrip.DropDownItems.Count - 1)
             currentStrip.DropDownItems.CopyTo(addedContextMenu, 0)
@@ -252,6 +255,7 @@ Public Module ConfigFiles
                     ' normal case or max menu depth branch: just follow the path and enter all entries as buttons
                 Else
                     For i = 0 To UBound(fileList)
+                        ' add ribbon menu leaf element
                         newBar = New XElement(xnspace + "button")
                         menuID += 1
                         newBar.SetAttributeValue("id", "m" + menuID.ToString())
@@ -260,6 +264,7 @@ Public Module ConfigFiles
                         newBar.SetAttributeValue("label", Folderpath + Left$(fileList(i).Name, Len(fileList(i).Name) - 4))
                         newBar.SetAttributeValue("onAction", "getConfig")
                         currentBar.Add(newBar)
+                        ' add context menu strip leaf element (including event handler)
                         Dim eventHandler As New System.EventHandler(AddressOf contextMenuClickEventHandler)
                         newStrip = New ToolStripMenuItem(text:=Folderpath + Left$(fileList(i).Name, Len(fileList(i).Name) - 4), image:=Nothing, onClick:=eventHandler) With {
                             .Tag = rootPath + "\" + fileList(i).Name,
@@ -278,11 +283,13 @@ Public Module ConfigFiles
                 ExcelDnaUtil.Application.StatusBar = "Filling DBConfigs Menu: " + rootPath + "\" + DirList(i).Name
                 ' only add new menu element if below max. menu depth for ribbons
                 If MenuFolderDepth < maxMenuDepth Then
+                    ' add ribbon menu element
                     newBar = New XElement(xnspace + "menu")
                     menuID += 1
                     newBar.SetAttributeValue("id", "m" + menuID.ToString())
                     newBar.SetAttributeValue("label", DirList(i).Name)
                     currentBar.Add(newBar)
+                    ' add context menu strip element (no event handler needed)
                     newStrip = New ToolStripMenuItem With {
                             .Text = DirList(i).Name
                         }
@@ -292,6 +299,7 @@ Public Module ConfigFiles
                     MenuFolderDepth -= 1
                 Else
                     newBar = currentBar
+                    newStrip = currentStrip
                     readAllFiles(rootPath + "\" + DirList(i).Name, newBar, newStrip, Folderpath + DirList(i).Name + "\")
                 End If
             Next
@@ -300,7 +308,7 @@ Public Module ConfigFiles
         End Try
     End Sub
 
-    ''' <summary>the event-handler for the context menu entries of the AdHocSQL context menu</summary>
+    ''' <summary>the event-handler for the context menu entries of the AdHocSQL context menu, used either to show the documentation for the entries or to insert the queries defined in the xcl files</summary>
     ''' <param name="sender">the tool-strip menu item that sent the event</param>
     ''' <param name="e"></param>
     Public Sub contextMenuClickEventHandler(sender As Object, e As Object)
@@ -310,12 +318,12 @@ Public Module ConfigFiles
             ' get the file content defined in sender.Tag (absolute path of xcl definition file)
             ' ConfigArray: Configs are tab separated pairs of <RC location vbTab function formula> vbTab <...> vbTab...
             Dim ConfigArray As String() = Split(getFileContent(sender.Tag), vbTab)
-            ' fetch query out of DBListFetch definition
+            ' fetch query from DBListFetch definition (includes quotes at beginning/end)
             Dim functionParts As String() = functionSplit(ConfigArray(1), ",", """", "DBListFetch", "(", ")")
             If functionParts IsNot Nothing Then
                 ' either put query into SQLText content if empty
                 If theAdHocSQLDlg.SQLText.Text.Length = 0 Then
-                    theAdHocSQLDlg.SQLText.Text = functionParts(0).Substring(1, functionParts(0).Length - 2)
+                    theAdHocSQLDlg.SQLText.Text = functionParts(0).Substring(1, functionParts(0).Length - 2) ' remove quotes at beginning/end
                 Else
                     ' or attach extracted table (after FROM part) to existing content, if a FROM part is available
                     Dim startPosOfTable As Integer = functionParts(0).IndexOf("FROM")
@@ -359,6 +367,7 @@ Public Module ConfigFiles
             ' end node: add callable entry (= button)
             If InStr(1, nameParts, " ") = 0 Or MenuDepth >= specialFolderMaxDepth Or MenuDepth + MenuFolderDepth >= maxMenuDepth Then
                 Dim entryName As String = Mid$(fullPathName, InStrRev(fullPathName, "\") + 1)
+                ' add ribbon menu leaf element
                 newBar = New XElement(xnspace + "button")
                 menuID += 1
                 newBar.SetAttributeValue("id", "m" + menuID.ToString())
@@ -367,6 +376,7 @@ Public Module ConfigFiles
                 newBar.SetAttributeValue("tag", fullPathName)
                 newBar.SetAttributeValue("onAction", "getConfig")
                 currentBar.Add(newBar)
+                ' add context menu strip leaf element (including event handler)
                 Dim eventHandler As New System.EventHandler(AddressOf contextMenuClickEventHandler)
                 newStrip = New ToolStripMenuItem(text:=Left$(entryName, Len(entryName) - 4), image:=Nothing, onClick:=eventHandler) With {
                             .Tag = fullPathName,
@@ -385,11 +395,13 @@ Public Module ConfigFiles
                     newMenuClass.ribbonmenu = newBar
                     newMenuClass.contextmenu = newStrip
                 Else
+                    ' add ribbon menu element
                     newBar = New XElement(xnspace + "menu")
                     menuID += 1
                     newBar.SetAttributeValue("id", "m" + menuID.ToString())
                     newBar.SetAttributeValue("label", newName)
                     currentBar.Add(newBar)
+                    ' add context menu strip element (no event handler needed)
                     newStrip = New ToolStripMenuItem With {
                         .Text = newName
                     }

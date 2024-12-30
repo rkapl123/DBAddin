@@ -17,7 +17,7 @@ Public Module SettingsTools
     Public CmdTimeout As Integer
     ''' <summary>default formatting style used in DBDate</summary>
     Public DefaultDBDateFormatting As Integer
-    ''' <summary>The path where the User specific settings (overrides of standard/global settings) can be found (hardcoded to path of xll)</summary>
+    ''' <summary>The path where the User specific settings (overrides of standard/global settings) can be found (hard-coded to path of xll)</summary>
     Private UserSettingsPath As String
 
     ''' <summary>exception proof fetching of integer settings</summary>
@@ -190,7 +190,7 @@ Public Module SettingsTools
             LogWarn("no active workbook available !")
             Exit Sub
         End If
-        DBModifs.preventChangeWhileFetching = True ' WorksheetFunction.CountIf triggers Change event with target in argument 1, so make sure this doesn't trigger anything inside DBAddin)
+        DBModifHelper.preventChangeWhileFetching = True ' WorksheetFunction.CountIf triggers Change event with target in argument 1, so make sure this doesn't trigger anything inside DBAddin)
         Try
             ' count nonempty cells in workbook for time estimate...
             Dim cellcount As Long = 0
@@ -236,7 +236,7 @@ Public Module SettingsTools
         Catch ex As Exception
             UserMsg("Exception occurred: " + ex.Message, "Legacy DBAddin functions")
         End Try
-        DBModifs.preventChangeWhileFetching = False
+        DBModifHelper.preventChangeWhileFetching = False
     End Sub
 
     ''' <summary>maintenance procedure to check/purge names used for db-functions from workbook, or unhide DB names</summary>
@@ -252,7 +252,7 @@ Public Module SettingsTools
             UserMsg("Exception when trying to get the active workbook names for purging names: " + ex.Message + ", this might be either due to errors in the VBA-IDE (missing references) or due to opening this workbook from an MS-Office hyperlink, starting up Excel (timing issue).")
             Exit Sub
         End Try
-        Dim NamesWithErrors As List(Of Excel.Name) = New List(Of Excel.Name)
+        Dim NamesWithErrors As New List(Of Excel.Name)
         If IsNothing(actWbNames) Then Exit Sub
         ' with Ctrl unhide all DB names and show Name Manager...
         If My.Computer.Keyboard.CtrlKeyDown And Not My.Computer.Keyboard.ShiftKeyDown Then
@@ -341,7 +341,7 @@ Public Module SettingsTools
                         If InStr(DBname.RefersTo, "OFFSET(") > 0 Then
                             collectedErrors += "Offset formula that '" + DBname.Name + "' refers to, did not return a valid range" + vbCrLf
                         ElseIf InStr(DBname.RefersTo, "#REF!") > 0 Then
-                            ' RefersToRange thows exception, but do nothing as already collected above ...
+                            ' RefersToRange throws exception, but do nothing as already collected above ...
                         Else
                             collectedErrors += DBname.Name + "' checkRange = DBname.RefersToRange resulted in unexpected Exception " + ex.Message + vbCrLf
                         End If
@@ -390,7 +390,7 @@ Public Module SettingsTools
     Sub fixOrphanedDBFunctions(actWB As Excel.Workbook)
         Dim xlcalcmode As Long = ExcelDnaUtil.Application.Calculation
 
-        DBModifs.preventChangeWhileFetching = True ' WorksheetFunction.CountIf triggers Change event with target in argument 1, so make sure this doesn't trigger anything inside DBAddin)
+        DBModifHelper.preventChangeWhileFetching = True ' WorksheetFunction.CountIf triggers Change event with target in argument 1, so make sure this doesn't trigger anything inside DBAddin)
         Try
             ' count nonempty cells in workbook for time estimate...
             Dim cellcount As Long = 0
@@ -433,7 +433,7 @@ Public Module SettingsTools
         Catch ex As Exception
             UserMsg("Exception occurred: " + ex.Message, "Orphaned DBAddin functions fix")
         End Try
-        DBModifs.preventChangeWhileFetching = False
+        DBModifHelper.preventChangeWhileFetching = False
     End Sub
 
 End Module

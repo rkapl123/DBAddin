@@ -124,6 +124,7 @@
     <Compile Include="DBDocumentation.vb">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="DBModifHelper.vb" />
     <Compile Include="DBSheetConfig.vb" />
     <Compile Include="DBSheetCreateForm.designer.vb">
       <DependentUpon>DBSheetCreateForm.vb</DependentUpon>

@@ -22,17 +22,3 @@ preventColResize
 primKeysStr
 seqStep
 tableName
-									
-									
-									
-									
-									
-									
-									
-									
-									
-									
-									
-									
-									
-                  

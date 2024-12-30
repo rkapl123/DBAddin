@@ -1,6 +1,6 @@
-AdHocSQLTransferType
 AdHocSQLcmdDB + AdHocSQLStringsIndex
 AdHocSQLcmdEnv + AdHocSQLStringsIndex
+AdHocSQLTransferType
 AltConnString + env
 AvoidUpdateLinks_Refresh
 AvoidUpdateListObjects_Refresh
@@ -17,10 +17,10 @@ ConfigSelect
 ConfigSelect + ConfigSelectPreference
 ConfigSelectPreference
 ConfigStoreFolder + env
+connIDPrefixDBtype
 ConnStringReplace + env
 ConnStringSearch + env
 ConstConnString + env
-connIDPrefixDBtype
 dbGetAll + env
 dbGetAllFieldName + env
 DBidentifierCCS + env
@@ -36,26 +36,23 @@ DefaultEnvironment
 disableSettingsDisplay
 DMLStatementsAllowed
 DontChangeEnvironment
-ExcelVersionForPivot
-LocalHelp
 lastDBsheetAssignPath
 lastDBsheetCreatePath
 legacyFunctionMsg
+LocalHelp
 localUpdateFolder
 localUpdateMessage
-maxCellCount
-maxCellCountIgnore
 maxNumberMassChange
 maxRowCountCUD
 maxTriesForRevisionFind
-ownerQualifier + env
 openingQuote + env
+ownerQualifier + env
 pivotTableCmdTextToSet + env
 repairLegacyFunctionsAutoOpen
-shortCutRefreshData
-shortCutJumpButton
 shortCutDeleteRow
 shortCutInsertRow
+shortCutJumpButton
+shortCutRefreshData
 specialConfigStoreFolders
 specialNonNullableChar + env
 tblPlaceHolder + env
