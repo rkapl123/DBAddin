@@ -11,10 +11,12 @@ Public Class AdHocSQL
     Private ReadOnly storedUserSetEnv As String = ""
     ''' <summary>stored database to reset after change</summary>
     Private ReadOnly userSetDB As String = ""
+    ''' <summary>needed to avoid escape key pressed in DBDocumentation from propagating to main AdHocSQL dialog (and closing this dialog therefore)</summary>
+    Public propagatedFromDoc As Boolean = False
 
     ''' <summary>create new AdHocSQL dialog</summary>
-    ''' <param name="SQLString"></param>
-    ''' <param name="AdHocSQLStringsIndex"></param>
+    ''' <param name="SQLString">SQL string passed from combo-box</param>
+    ''' <param name="AdHocSQLStringsIndex">index of SQLstring in combo-box needed to get the environment for this string</param>
     Public Sub New(SQLString As String, AdHocSQLStringsIndex As Integer)
         ' This call is required by the designer.
         InitializeComponent()
@@ -136,6 +138,7 @@ Public Class AdHocSQL
         executeSQL()
     End Sub
 
+    ''' <summary>after confirmation for non select statements (DML), execute the SQL by running the BackgroundWorker1</summary>
     Private Sub executeSQL()
         If Not BackgroundWorker1.IsBusy Then
             ' only select commands are executed immediately, others are asked for (with default button being cancel)
@@ -155,8 +158,11 @@ Public Class AdHocSQL
     End Sub
 
     ' variables needed for passing data between background worker and main thread
+    ''' <summary>the command object for executing the AdHocSQL command text</summary>
     Private SqlCmd As IDbCommand
+    ''' <summary>used to pass non row results between BackgroundWorker1_DoWork and BackgroundWorker1_RunWorkerCompleted</summary>
     Private nonRowResult As String
+    ''' <summary>the resulting data table object loaded by BackgroundWorker1_DoWork and displayed in BackgroundWorker1_RunWorkerCompleted</summary>
     Private dt As DataTable
 
     ''' <summary>start sql command and load data into data table in the background (to show progress and have cancellation control)</summary>
@@ -227,6 +233,7 @@ Public Class AdHocSQL
         Timer1.Stop()
     End Sub
 
+    ''' <summary>fetch elapsed time in Timer to show after completion</summary>
     Private elapsedTime As DateTime
 
     ''' <summary>show progress during BackgroundWorker1 execution</summary>
@@ -309,13 +316,6 @@ Public Class AdHocSQL
         End If
     End Sub
 
-    ''' <summary>needed together with KeyPreview=True on form to simulate ESC canceling the form and catching this successfully (preventing closing when canceling an ongoing sql-command)</summary>
-    ''' <param name="sender"></param>
-    ''' <param name="e"></param>
-    Private Sub AdHocSQL_KeyUp(sender As Object, e As KeyEventArgs) Handles Me.KeyUp
-        If e.KeyCode = Keys.Escape Then finishForm(DialogResult.Cancel)
-    End Sub
-
     ''' <summary>For non displayable data (blobs, etc.) that raise an exception, write out the exception in the data-grid cell tool-tip instead of lots of pop-ups</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
@@ -331,5 +331,13 @@ Public Class AdHocSQL
             Me.ConfigMenuStrip = ConfigFiles.ConfigContextMenu
             Me.ConfigMenuStrip.Show(DirectCast(sender, RichTextBox).PointToScreen(e.Location))
         End If
+    End Sub
+
+    ''' <summary>needed together with KeyPreview=True on form to simulate ESC canceling the form and catching this successfully (preventing closing when canceling an ongoing sql-command)</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub AdHocSQL_KeyUp(sender As Object, e As KeyEventArgs) Handles Me.KeyUp
+        If e.KeyCode = Keys.Escape And Not propagatedFromDoc Then finishForm(DialogResult.Cancel)
+        propagatedFromDoc = False
     End Sub
 End Class

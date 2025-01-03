@@ -787,12 +787,14 @@ EndOuterLoop:
 End Module
 
 
-''' <summary>Dummy DBModif Class for executeRefresh during externally callable executeDBModif procedure</summary>
+''' <summary>Dummy DBModif Class for executeRefresh during externally callable executeDBModif procedure. No data, just executeRefresh(srcExtent) procedure to refresh DBMappers</summary>
 Public Class DBModifDummy : Inherits DBModif
     Public Sub New()
         MyBase.New(Nothing)
     End Sub
 
+    ''' <summary>to refresh DB Modifiers from VBA Macros (externally callable executeDBModif procedure), the DBMappers underlying DB function (DBlistfetch or DBSetQuery) can be called using its srcExtent</summary>
+    ''' <param name="srcExtent">DBFsource....</param>
     Public Sub executeRefresh(srcExtent)
         doDBRefresh(srcExtent:=srcExtent)
     End Sub

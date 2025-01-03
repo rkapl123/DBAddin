@@ -27,4 +27,5 @@ if "%source%"=="bin\Release" (
 	rem copy /Y DBaddinCentral.config "..\Distribution\DBaddinCentral.config"
 	rem copy /Y DBAddinUser.config "..\Distribution\DBaddinUser.config"
 )
+cscript replaceXMLdocFaults.vbs
 pause

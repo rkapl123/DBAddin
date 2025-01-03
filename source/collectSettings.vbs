@@ -1,4 +1,4 @@
-' develop support script to collect all settings from fetchSetting calls within DBAddni codebase
+' develop support script to collect all settings from fetchSetting calls within DBAddin codebase
 ' results are put into resource file Settings.txt which is used for the insert dropdown in EditDBModifDef (user/global settings).
 Set fso = CreateObject("Scripting.FileSystemObject")
 Dim obj_datadict

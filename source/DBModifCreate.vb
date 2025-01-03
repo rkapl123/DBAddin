@@ -193,21 +193,14 @@ Public Class DBModifCreate
         DBSeqenceDataGrid.Rows(selIndex + 1).Cells(0).Selected = True
     End Sub
 
-    Private selRowIndex As Integer
-    Private selColIndex As Integer
-
-
     ''' <summary>prepare context menus to be displayed after right mouse click</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub DBSeqenceDataGrid_CellMouseDown(sender As Object, e As DataGridViewCellMouseEventArgs) Handles DBSeqenceDataGrid.CellMouseDown
-        selRowIndex = e.RowIndex
-        selColIndex = e.ColumnIndex
         If e.Button = System.Windows.Forms.MouseButtons.Right Then
             DBSeqenceDataGrid.ContextMenuStrip = MoveMenu
         End If
     End Sub
-
 
     ''' <summary>Shown Event to display Data Errors when adding DBSequence Grid elements</summary>
     ''' <param name="sender"></param>

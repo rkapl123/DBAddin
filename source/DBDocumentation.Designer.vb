@@ -1,9 +1,9 @@
-﻿<Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()> _
+﻿<Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class DBDocumentation
     Inherits System.Windows.Forms.Form
 
     'Das Formular überschreibt den Löschvorgang, um die Komponentenliste zu bereinigen.
-    <System.Diagnostics.DebuggerNonUserCode()> _
+    <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(ByVal disposing As Boolean)
         Try
             If disposing AndAlso components IsNot Nothing Then
@@ -20,11 +20,9 @@ Partial Class DBDocumentation
     'Hinweis: Die folgende Prozedur ist für den Windows Form-Designer erforderlich.
     'Das Bearbeiten ist mit dem Windows Form-Designer möglich.  
     'Das Bearbeiten mit dem Code-Editor ist nicht möglich.
-    <System.Diagnostics.DebuggerStepThrough()> _
+    <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         Me.DBDocTextBox = New System.Windows.Forms.RichTextBox()
-        Me.CancelBtn = New System.Windows.Forms.Button()
-        Me.OKBtn = New System.Windows.Forms.Button()
         Me.SuspendLayout()
         '
         'DBDocTextBox
@@ -40,34 +38,11 @@ Partial Class DBDocumentation
         Me.DBDocTextBox.TabStop = False
         Me.DBDocTextBox.Text = ""
         '
-        'CancelBtn
-        '
-        Me.CancelBtn.DialogResult = System.Windows.Forms.DialogResult.Cancel
-        Me.CancelBtn.Location = New System.Drawing.Point(12, 270)
-        Me.CancelBtn.Name = "CancelBtn"
-        Me.CancelBtn.Size = New System.Drawing.Size(0, 0)
-        Me.CancelBtn.TabIndex = 0
-        Me.CancelBtn.Text = "OKCancel"
-        Me.CancelBtn.UseVisualStyleBackColor = True
-        '
-        'OKBtn
-        '
-        Me.OKBtn.DialogResult = System.Windows.Forms.DialogResult.OK
-        Me.OKBtn.Location = New System.Drawing.Point(18, 269)
-        Me.OKBtn.Name = "OKBtn"
-        Me.OKBtn.Size = New System.Drawing.Size(0, 0)
-        Me.OKBtn.TabIndex = 2
-        Me.OKBtn.Text = "OK"
-        Me.OKBtn.UseVisualStyleBackColor = True
-        '
         'DBDocumentation
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.CancelButton = Me.CancelBtn
         Me.ClientSize = New System.Drawing.Size(402, 275)
-        Me.Controls.Add(Me.OKBtn)
-        Me.Controls.Add(Me.CancelBtn)
         Me.Controls.Add(Me.DBDocTextBox)
         Me.Name = "DBDocumentation"
         Me.Text = "DBAddin: Documentation for Config Object"
@@ -76,6 +51,4 @@ Partial Class DBDocumentation
     End Sub
 
     Friend WithEvents DBDocTextBox As Windows.Forms.RichTextBox
-    Friend WithEvents CancelBtn As Windows.Forms.Button
-    Friend WithEvents OKBtn As Windows.Forms.Button
 End Class

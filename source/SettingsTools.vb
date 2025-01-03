@@ -105,7 +105,14 @@ Public Module SettingsTools
         Return (selectedEnvironment + IIf(baseZero, 0, 1)).ToString()
     End Function
 
-    Public refreshDataKey, jumpButtonKey, deleteRowKey, insertRowKey As String
+    ''' <summary>the configurable shortcut for the refresh data key (default ^R)</summary>
+    Public refreshDataKey As String
+    ''' <summary>the configurable shortcut for the jump button key (default ^J)</summary>
+    Public jumpButtonKey As String
+    ''' <summary>the configurable shortcut for the delete row key (default ^D)</summary>
+    Public deleteRowKey As String
+    ''' <summary>the configurable shortcut for the insert row key (default ^I)</summary>
+    Public insertRowKey As String
     ''' <summary>initializes global configuration variables</summary>
     Public Sub initSettings()
         Try

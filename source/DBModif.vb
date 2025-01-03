@@ -32,6 +32,8 @@ Public MustInherit Class DBModif
     ''' <summary>Text displayed for confirmation before doing dbModif instead of standard text</summary>
     Protected confirmText As String = ""
 
+    ''' <summary>constructor with definition XML</summary>
+    ''' <param name="definitionXML"></param>
     Public Sub New(definitionXML As CustomXMLNode)
         ' allow empty definition for DBModifDummy
         If TypeName(Me) = "DBModifDummy" Then Exit Sub
@@ -48,6 +50,8 @@ Public MustInherit Class DBModif
         askBeforeExecute = Convert.ToBoolean(getParamFromXML(definitionXML, "askBeforeExecute", "Boolean"))
         confirmText = getParamFromXML(definitionXML, "confirmText")
     End Sub
+
+    ''' <summary>used to release com objects</summary>
     Protected Overrides Sub Finalize()
         MyBase.Finalize()
         If Not IsNothing(TargetRange) Then Marshal.ReleaseComObject(TargetRange)
@@ -114,7 +118,7 @@ Public MustInherit Class DBModif
     End Function
 
     ''' <summary>gets the name for this DBModifier</summary>
-    ''' <returns></returns>
+    ''' <returns>the name of the DBModifier</returns>
     Public Function getName() As String
         Return dbmodifName
     End Function
@@ -412,7 +416,7 @@ Public Class DBMapper : Inherits DBModif
     ''' <summary>contains cells in DBSheetLookups with lookups that should only be refreshed after DB modification was done. If empty, all lookups are refreshed for that DB Modifier/Sheet</summary>
     Private ReadOnly onlyRefreshTheseDBSheetLookups As String
 
-    ''' <summary>constructor with definition XML</summary>
+    ''' <summary>constructor with definition XML and the target range for the DBMapper</summary>
     ''' <param name="definitionXML"></param>
     ''' <param name="paramTarget"></param>
     Public Sub New(definitionXML As CustomXMLNode, paramTarget As Excel.Range)
@@ -484,6 +488,8 @@ Public Class DBMapper : Inherits DBModif
         End If
     End Function
 
+    ''' <summary>pass back whether changes were done by the DB Modif object (needed to prevent deadlocks/warn user due to refreshing the underlying area)</summary>
+    ''' <returns>true if changes done</returns>
     Public Function hadChanges() As Boolean
         Return changesDone
     End Function
@@ -1307,7 +1313,7 @@ Public Class DBAction : Inherits DBModif
     ''' <summary>only for parametrized DBAction: string of named ranges to be used as parameters that are replaced into the template string, where the order of the parameter range determines which placeholder is being replaced</summary>
     Private ReadOnly paramRangesStr As String = ""
 
-    ''' <summary>normal constructor with definition xml</summary>
+    ''' <summary>constructor with definition XML and the target range for the cells containing the DBAction</summary>
     ''' <param name="definitionXML"></param>
     ''' <param name="paramTarget"></param>
     Public Sub New(definitionXML As CustomXMLNode, paramTarget As Excel.Range)
@@ -1336,6 +1342,10 @@ Public Class DBAction : Inherits DBModif
         End Try
     End Sub
 
+    ''' <summary>do the modification defined in DBAction</summary>
+    ''' <param name="WbIsSaving">for asking for confirmation and exiting</param>
+    ''' <param name="calledByDBSeq">if inside a sequence (defined by the name in this parameter), no User message is displayed and the connection is not closed</param>
+    ''' <param name="TransactionOpen">if a transaction is open, no database connection needs to be opened</param>
     Public Overrides Sub doDBModif(Optional WbIsSaving As Boolean = False, Optional calledByDBSeq As String = "", Optional TransactionOpen As Boolean = False)
         ' ask for saving only if a) is not done on WorkbookSave b) is set to ask and c) is not called by a DBSequence (asks already for saving) and d) is in interactive mode
         If Not WbIsSaving And askBeforeExecute And calledByDBSeq = "" And Not nonInteractive Then
@@ -1377,6 +1387,9 @@ Public Class DBAction : Inherits DBModif
         If calledByDBSeq = "" Then idbcnn.Close()
     End Sub
 
+    ''' <summary>execute the SQL text given in executeText</summary>
+    ''' <param name="executeText">the sql code to be executed</param>
+    ''' <returns>the number of rows affected by the sql code</returns>
     Private Function executeSQL(executeText As String) As Integer
         Dim DmlCmd As IDbCommand
         If TypeName(idbcnn) = "SqlConnection" Then
@@ -1500,7 +1513,7 @@ Public Class DBSeqnce : Inherits DBModif
     ''' <summary>sequence of DB Mappers, DB Actions and DB Refreshes being executed in this sequence</summary>
     Private ReadOnly sequenceParams() As String = {}
 
-    ''' <summary>normal constructor with definition xml</summary>
+    ''' <summary>constructor with definition XML</summary>
     ''' <param name="definitionXML"></param>
     Public Sub New(definitionXML As CustomXMLNode)
         MyBase.New(definitionXML)
@@ -1609,7 +1622,9 @@ End Class
 ''' Copyright by Dejan_Grujic 2004. http://www.cogin.com
 ''' </summary>
 Public Class CustomCommandBuilder
+    ''' <summary>the data table to get all the schema information from</summary>
     Protected ReadOnly dataTable As DataTable
+    ''' <summary>array of all column information (DataColumn) in the data table</summary>
     Protected ReadOnly allColumns As DataColumn()
 
     Public Sub New(dataTable As DataTable, allColumns As DataColumn())
@@ -1660,7 +1675,9 @@ End Class
 Public Class CustomSqlCommandBuilder
     Inherits CustomCommandBuilder
 
+    ''' <summary>the driver specific connection needed to get the driver specific command in GetTextCommand</summary>
     Private ReadOnly connection As SqlConnection
+    ''' <summary>collection for casting .NET data type to ADO.NET DbType in DBModifHelper.TypeToDbType</summary>
     Private ReadOnly schemaDataTypeCollection As Collection
 
     Public Sub New(dataTable As DataTable, connection As SqlConnection, allColumns As DataColumn(), schemaDataTypeCollection As Collection)
@@ -1767,7 +1784,7 @@ Public Class CustomSqlCommandBuilder
         Return sqlParam
     End Function
 
-    ''' <summary>build a specific command to be used for the Insert, Update and Delete builders</summary>
+    ''' <summary>build a specific Sql command to be used for the Insert, Update and Delete builders</summary>
     ''' <param name="text">command text, not used here</param>
     ''' <returns>specific command</returns>
     Private Function GetTextCommand(text As String) As SqlCommand
@@ -1786,7 +1803,9 @@ End Class
 Public Class CustomOdbcCommandBuilder
     Inherits CustomCommandBuilder
 
+    ''' <summary>the driver specific connection needed to get the driver specific command in GetTextCommand</summary>
     Private ReadOnly connection As OdbcConnection
+    ''' <summary>collection for casting .NET data type to ADO.NET DbType in DBModifHelper.TypeToDbType</summary>
     Private ReadOnly schemaDataTypeCollection As Collection
 
     Public Sub New(dataTable As DataTable, connection As OdbcConnection, allColumns As DataColumn(), schemaDataTypeCollection As Collection)
@@ -1893,7 +1912,7 @@ Public Class CustomOdbcCommandBuilder
         Return sqlParam
     End Function
 
-    ''' <summary>build a specific command to be used for the Insert, Update and Delete builders</summary>
+    ''' <summary>build a specific Odbc command to be used for the Insert, Update and Delete builders</summary>
     ''' <param name="text">command text, not used here</param>
     ''' <returns>specific command</returns>
     Private Function GetTextCommand(text As String) As OdbcCommand
@@ -1911,7 +1930,9 @@ End Class
 Public Class CustomOleDbCommandBuilder
     Inherits CustomCommandBuilder
 
+    ''' <summary>the driver specific connection needed to get the driver specific command in GetTextCommand</summary>
     Private ReadOnly connection As OleDbConnection
+    ''' <summary>collection for casting .NET data type to ADO.NET DbType in DBModifHelper.TypeToDbType</summary>
     Private ReadOnly schemaDataTypeCollection As Collection
 
     Public Sub New(dataTable As DataTable, connection As OleDbConnection, allColumns As DataColumn(), schemaDataTypeCollection As Collection)
@@ -2018,7 +2039,7 @@ Public Class CustomOleDbCommandBuilder
         Return sqlParam
     End Function
 
-    ''' <summary>build a specific command to be used for the Insert, Update and Delete builders</summary>
+    ''' <summary>build a specific OleDb command to be used for the Insert, Update and Delete builders</summary>
     ''' <param name="text">command text, not used here</param>
     ''' <returns>specific command</returns>
     Private Function GetTextCommand(text As String) As OleDbCommand

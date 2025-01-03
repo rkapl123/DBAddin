@@ -16,7 +16,7 @@ Public Class AddInEvents
     ''' <summary>the application object needed for excel event handling (most of this class is dedicated to that)</summary>
     WithEvents Application As Excel.Application
     ''' <summary>CommandButton that can be inserted on a worksheet (name property being the same as the respective target range (for DBMapper/DBAction) or DBSeqnce Name)</summary>
-    Shared WithEvents cb1 As Forms.CommandButton
+    Public Shared WithEvents cb1 As Forms.CommandButton
     ''' <summary>CommandButton that can be inserted on a worksheet (name property being the same as the respective target range (for DBMapper/DBAction) or DBSeqnce Name)</summary>
     Shared WithEvents cb2 As Forms.CommandButton
     ''' <summary>CommandButton that can be inserted on a worksheet (name property being the same as the respective target range (for DBMapper/DBAction) or DBSeqnce Name)</summary>
@@ -35,6 +35,10 @@ Public Class AddInEvents
     Shared WithEvents cb9 As Forms.CommandButton
     ''' <summary>CommandButton that can be inserted on a worksheet (name property being the same as the respective target range (for DBMapper/DBAction) or DBSeqnce Name)</summary>
     Shared WithEvents cb0 As Forms.CommandButton
+    ''' <summary>context menu insert button</summary>
+    Private WithEvents mInsertButton As Microsoft.Office.Core.CommandBarButton
+    ''' <summary>context menu delete button</summary>
+    Private WithEvents mDeleteButton As Microsoft.Office.Core.CommandBarButton
 
     ''' <summary>connect to Excel when opening Addin</summary>
     Public Sub AutoOpen() Implements IExcelAddIn.AutoOpen
@@ -292,34 +296,43 @@ done:
     End Sub
 
 
-    ''' <summary>specific click handlers for the five definable command buttons</summary>
+    ''' <summary>specific click handler for the 1st definable command button</summary>
     Private Shared Sub cb1_Click() Handles cb1.Click
         cbClick(cb1.Name)
     End Sub
+    ''' <summary>specific click handler for the 2nd definable command button</summary>
     Private Shared Sub cb2_Click() Handles cb2.Click
         cbClick(cb2.Name)
     End Sub
+    ''' <summary>specific click handler for the 3rd definable command button</summary>
     Private Shared Sub cb3_Click() Handles cb3.Click
         cbClick(cb3.Name)
     End Sub
+    ''' <summary>specific click handler for the 4th definable command button</summary>
     Private Shared Sub cb4_Click() Handles cb4.Click
         cbClick(cb4.Name)
     End Sub
+    ''' <summary>specific click handler for the 5th definable command button</summary>
     Private Shared Sub cb5_Click() Handles cb5.Click
         cbClick(cb5.Name)
     End Sub
+    ''' <summary>specific click handler for the 6th definable command button</summary>
     Private Shared Sub cb6_Click() Handles cb6.Click
         cbClick(cb6.Name)
     End Sub
+    ''' <summary>specific click handler for the 7th definable command button</summary>
     Private Shared Sub cb7_Click() Handles cb7.Click
         cbClick(cb7.Name)
     End Sub
+    ''' <summary>specific click handler for the 8th definable command button</summary>
     Private Shared Sub cb8_Click() Handles cb8.Click
         cbClick(cb8.Name)
     End Sub
+    ''' <summary>specific click handler for the 9th definable command button</summary>
     Private Shared Sub cb9_Click() Handles cb9.Click
         cbClick(cb9.Name)
     End Sub
+    ''' <summary>specific click handler for the 10th definable command button</summary>
     Private Shared Sub cb0_Click() Handles cb0.Click
         cbClick(cb0.Name)
     End Sub
@@ -409,6 +422,7 @@ done:
         End If
     End Sub
 
+    ''' <summary>Flag for sharing closing state between Application_WorkbookBeforeClose and Application_WorkbookDeactivate (true for actually closed workbooks)</summary>
     Private WbIsClosing As Boolean = False
 
     ''' <summary>Clean up after closing workbook, only set flag here, the actual cleanup is only done if workbook is really closed (in WB_Deactivate event)</summary>
@@ -471,9 +485,6 @@ done:
             Next
         Catch ex As Exception : End Try
     End Sub
-
-    Private WithEvents mInsertButton As Microsoft.Office.Core.CommandBarButton
-    Private WithEvents mDeleteButton As Microsoft.Office.Core.CommandBarButton
 
     ''' <summary>Additionally to statically defined context menu in Ribbon this is needed to handle the dynamically displayed CUD DBMapper context menu entries (insert/delete)</summary>
     ''' <param name="Sh"></param>
@@ -556,6 +567,7 @@ done:
         insertRow()
     End Sub
 
+    ''' <summary>used for releasing com objects</summary>
     Protected Overrides Sub Finalize()
         MyBase.Finalize()
         If Not IsNothing(cb1) Then Marshal.ReleaseComObject(cb1)

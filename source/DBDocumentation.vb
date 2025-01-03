@@ -2,15 +2,22 @@
 
 ''' <summary>Simple Popup Window for displaying Database documentation</summary>
 Public Class DBDocumentation
-    Private Sub CancelBtn_Click(sender As Object, e As EventArgs) Handles CancelBtn.Click
-        Me.Close()
-    End Sub
-
-    Private Sub OKBtn_Click(sender As Object, e As EventArgs) Handles OKBtn.Click
-        Me.Close()
-    End Sub
-
+    ''' <summary>for handling the "Enter" and "Escape" key press</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
     Private Sub DBDocTextBox_KeyDown(sender As Object, e As KeyEventArgs) Handles DBDocTextBox.KeyDown
-        If e.KeyCode = Keys.Enter Then Me.Close()
+        If e.KeyCode = Keys.Enter Or e.KeyCode = Keys.Escape Then
+            Try : theAdHocSQLDlg.propagatedFromDoc = True : Catch ex As Exception : End Try ' needed to not propagate escape key to AdHocSql form
+            Me.Close()
+        End If
+    End Sub
+    ''' <summary>for handling the "Enter" and "Escape" key press</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub DBDocumentation_KeyDown(sender As Object, e As KeyEventArgs) Handles Me.KeyDown
+        If e.KeyCode = Keys.Enter Or e.KeyCode = Keys.Escape Then
+            Try : theAdHocSQLDlg.propagatedFromDoc = True : Catch ex As Exception : End Try ' needed to not propagate escape key to AdHocSql form
+            Me.Close()
+        End If
     End Sub
 End Class

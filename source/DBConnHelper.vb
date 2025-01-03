@@ -41,6 +41,9 @@ Public Class DBConnHelper
         dbPwdSpec = fetchSetting("dbPwdSpec" + DBenv, "")
     End Sub
 
+    ''' <summary>get the specific command object for commandText (SqlCommand, OleDbCommand or OdbcCommand), depending on type of connection</summary>
+    ''' <param name="commandText">the command text</param>
+    ''' <returns>the command object</returns>
     Public Function getCommand(commandText As String) As System.Data.Common.DbCommand
         If TypeName(dbshcnn) = "SqlConnection" Then
             getCommand = New SqlCommand(commandText, dbshcnn)

@@ -43,17 +43,27 @@ Public NotInheritable Class AboutBox
 
     ''' <summary>only display result of check (false) or actually perform the update and download new version (true)</summary>
     Dim doUpdate As Boolean = False
+    ''' <summary>Addin name abstracted for easier reusing code</summary>
     Const AddinName = "DBAddin-"
+    ''' <summary>package filename abstracted for easier reusing code</summary>
     Const updateFilenameZip = "downloadedVersion.zip"
+    ''' <summary>local update folder from settings</summary>
     ReadOnly localUpdateFolder As String = fetchSetting("localUpdateFolder", "")
+    ''' <summary>local update message from settings</summary>
     ReadOnly localUpdateMessage As String = fetchSetting("localUpdateMessage", "A new version is available in the local update folder, quit Excel and open explorer to start deployAddin.cmd ?")
+    ''' <summary>updates major version from settings</summary>
     ReadOnly updatesMajorVersion As String = fetchSetting("updatesMajorVersion", "1.0.0.")
+    ''' <summary>updates download folder from settings</summary>
     ReadOnly updatesDownloadFolder As String = fetchSetting("updatesDownloadFolder", "C:\temp\")
+    ''' <summary>updates url base from settings</summary>
     ReadOnly updatesUrlBase As String = fetchSetting("updatesUrlBase", "https://github.com/rkapl123/DBAddin/archive/refs/tags/")
+    ''' <summary>global response for reusing between version search and getting update package</summary>
     Dim response As Net.HttpWebResponse = Nothing
+    ''' <summary>url of file for reusing between version search and getting update package</summary>
     Dim urlFile As String = ""
-    ' check for zip file of next higher revision
+    ''' <summary>curRevision contains checked version of zip file of next higher revision</summary>
     Dim curRevision As Integer
+    ''' <summary>if any version was found</summary>
     Dim foundARevision As Boolean = False
 
     ''' <summary>checks for updates of DB-Addin, asks for download and downloads them</summary>
@@ -68,8 +78,7 @@ Public NotInheritable Class AboutBox
             Exit Sub
         End Try
 
-        ' always accept url certificate as valid
-        Net.ServicePointManager.ServerCertificateValidationCallback = AddressOf ValidationCallbackHandler
+        Net.ServicePointManager.ServerCertificateValidationCallback = AddressOf ValidationCallbackHandler ' always accept url certificate as valid
         Dim revisionNotFoundTries As Integer = 0
         Dim triedRevision As Integer = curRevision
         Do
@@ -94,6 +103,7 @@ Public NotInheritable Class AboutBox
         Loop Until revisionNotFoundTries = fetchSettingInt("maxTriesForRevisionFind", "10")
     End Sub
 
+    ''' <summary>asynchronously called when BackgroundWorker1_DoWork is finished</summary>
     Private Sub BackgroundWorker1_RunWorkerCompleted(sender As Object, e As RunWorkerCompletedEventArgs) Handles BackgroundWorker1.RunWorkerCompleted
         ' get out if no newer version found
         If curRevision = My.Application.Info.Version.Revision Then
@@ -234,6 +244,9 @@ Public NotInheritable Class AboutBox
         theLogFileSource.Listeners("FileLogger").Filter = theEventTypeFilter
     End Sub
 
+    ''' <summary>check for updates button, starts updating demand (without searching, this was searched on opening form and is in curRevision)</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
     Private Sub CheckForUpdates_Click(sender As Object, e As EventArgs) Handles CheckForUpdates.Click
         If Not BackgroundWorker1.IsBusy Then
             doUpdate = True
@@ -241,10 +254,15 @@ Public NotInheritable Class AboutBox
         End If
     End Sub
 
+    ''' <summary>required for ServerCertificateValidationCallback of ServicePointManager in getting updates for DB-Addin</summary>
+    ''' <returns>true, always accept url certificate as valid</returns>
     Private Function ValidationCallbackHandler() As Boolean
         Return True
     End Function
 
+    ''' <summary>fix legacy functions button, calls repair function</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
     Private Sub fixLegacyFunc_Click(sender As Object, e As EventArgs) Handles fixLegacyFunc.Click
         Dim Wb As Excel.Workbook
         Try

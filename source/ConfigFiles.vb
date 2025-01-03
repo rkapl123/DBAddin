@@ -26,7 +26,9 @@ Public Module ConfigFiles
     Private specialConfigFoldersTempColl As Collection
     ''' <summary>collection structure for the two menu types, one in ribbon (Xelement) and MenuStrip (ToolStripMenuItem, used in AdHocSQL/SQLText context menu)</summary>
     Private Structure MenuClassStruct
+        ''' <summary>the xelement for the ribbon</summary>
         Dim ribbonmenu As XElement
+        ''' <summary>the tool strip menu for the MenuStrip context menu</summary>
         Dim contextmenu As ToolStripMenuItem
     End Structure
     ''' <summary>for correct display of menu</summary>

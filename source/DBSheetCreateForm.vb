@@ -90,6 +90,7 @@ Public Class DBSheetCreateForm
         finalizeSetup()
     End Sub
 
+    ''' <summary>factored out parts of setup for reuse in Environment_SelectedIndexChanged (after the environment is changed, need to reconnect and load all schema information)</summary>
     Private Sub finalizeSetup()
         ' get settings for DBSheet definition editing
         myDBConnHelper = New DBConnHelper(env())
@@ -104,6 +105,7 @@ Public Class DBSheetCreateForm
 
         ' if we have a Password to enter (dbPwdSpec contained in dbsheetConnString and no password entered yet), just display explanation text in title bar and let user enter password... 
         If InStr(myDBConnHelper.dbsheetConnString, myDBConnHelper.dbPwdSpec) > 0 And myDBConnHelper.dbPwdSpec <> "" And existingPwd = "" Then
+            Me.Text = "DB Sheet creation: Please enter required Password into Field Pwd to access schema information"
             resetDBSheetCreateForm()
         Else ' otherwise jump in immediately
             assignDBSheet.Enabled = False
@@ -120,9 +122,8 @@ Public Class DBSheetCreateForm
         End If
     End Sub
 
-
+    ''' <summary>reset the DBSheet Create form after 1) an error (change environment to get out) or 2) to let user enter password (Password_Leave with setPasswordAndInit afterwards)</summary>
     Private Sub resetDBSheetCreateForm()
-        Me.Text = "DB Sheet creation: Please enter required Password into Field Pwd to access schema information"
         TableEditable(False)
         saveEnabled(False)
         DBSheetColsEditable(False)
@@ -140,7 +141,9 @@ Public Class DBSheetCreateForm
         If e.KeyChar = Microsoft.VisualBasic.ChrW(Keys.Return) And FormLocalPwd <> Password.Text Then setPasswordAndInit()
     End Sub
 
+    ''' <summary>temporary storage for password to check if changed</summary>
     Private FormLocalPwd As String = ""
+
     ''' <summary>entering Password box to remember local changed password</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
@@ -342,7 +345,9 @@ Public Class DBSheetCreateForm
         DBSheetCols.ContextMenuStrip = Nothing
     End Sub
 
+    ''' <summary>store row index on key press/CellMouseDown to share with displayContextMenus, DBSheetColsForDatabases_ItemClicked, moveRow and RegenerateThisLookupQuery_Click</summary>
     Private selRowIndex As Integer
+    ''' <summary>store column index on key press/CellMouseDown to share with displayContextMenus</summary>
     Private selColIndex As Integer
 
     ''' <summary>catch key presses: Shift F10 or menu key to get the context menu, Ctrl-C/Ctrl-V for copy/pasting foreign lookup info, DEL for clearing cells</summary>
@@ -435,10 +440,11 @@ Public Class DBSheetCreateForm
         End If
     End Sub
 
+    ''' <summary>connect to the selected foreign database and get the tables into the ftable cell (!), the rest of the column still has the foreign tables of the main database.</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
     Private Sub DBSheetColsForDatabases_ItemClicked(sender As Object, e As ToolStripItemClickedEventArgs) Handles DBSheetColsForDatabases.ItemClicked
-        ' connect to the selected foreign database...
         Try : myDBConnHelper.openConnection(e.ClickedItem.Text, usedForDBSheetCreate:=True) : Catch ex As Exception : UserMsg(ex.Message) : Exit Sub : End Try
-        ' ... and get the tables into the ftable cell (!), the rest of the column still has the foreign tables of the main database...
         DirectCast(DBSheetCols.Rows(selRowIndex).Cells("ftable"), DataGridViewComboBoxCell).DataSource = getforeignTables()
         ' revert back to main database
         Try : myDBConnHelper.openConnection(Database.Text, usedForDBSheetCreate:=True) : Catch ex As Exception : UserMsg(ex.Message) : Exit Sub : End Try
@@ -494,6 +500,7 @@ Public Class DBSheetCreateForm
         assignDBSheet.Enabled = False
         FormDisabled = False
     End Sub
+
     ''' <summary>(re)generates the lookup query for active row/cell</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
@@ -658,6 +665,7 @@ Public Class DBSheetCreateForm
         FormDisabled = False
     End Sub
 
+    ''' <summary>mapping of column names (including null-able flag before) to their types (including size and precision)</summary>
     Private TableDataTypes As Dictionary(Of String, String)
 
     ''' <summary>gets the types of currently selected table including size, precision and scale into DataTypes</summary>
@@ -1063,6 +1071,7 @@ Public Class DBSheetCreateForm
         saveDefinitionsToFile(True)
     End Sub
 
+    ''' <summary>the currently set file path of the DBSheet definition file</summary>
     Private currentFilepath As String = ""
 
     ''' <summary>saves the definitions currently stored in theDBSheetCreateForm to newly selected file (saveAs = True) or to the file already stored in setting "dsdPath"</summary>
@@ -1110,7 +1119,9 @@ Public Class DBSheetCreateForm
         End Try
     End Sub
 
+    ''' <summary>used to display the full path of the DBSheet definition filename</summary>
     Private linklabelToolTip As System.Windows.Forms.ToolTip
+
     ''' <summary>sets current definition file path hyperlink label. Displayed is only the filename, full path is stored in tag and visible in tool-tip</summary>
     ''' <param name="filepath">definition file path</param>
     Private Sub setLinkLabel(filepath As String)
@@ -1251,14 +1262,23 @@ Public Class DBSheetCreateForm
         Next
     End Function
 
+    ''' <summary>block assignment possibility of DBSheet after query has been changed (needs to be saved first)</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
     Private Sub Query_TextChanged(sender As Object, e As EventArgs) Handles Query.TextChanged
         assignDBSheet.Enabled = False
     End Sub
 
+    ''' <summary>block assignment possibility of DBSheet after query has been changed (needs to be saved first)</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
     Private Sub WhereClause_TextChanged(sender As Object, e As EventArgs) Handles WhereClause.TextChanged
         assignDBSheet.Enabled = False
     End Sub
 
+    ''' <summary>set selected environment (global) to set environment, reflect in ribbon and "restart" DBSheetCreateForm to get necessary information</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
     Private Sub Environment_SelectedIndexChanged(sender As Object, e As EventArgs) Handles Environment.SelectedIndexChanged
         If FormDisabled Then Exit Sub
         SettingsTools.selectedEnvironment = Me.Environment.SelectedIndex
@@ -1273,6 +1293,9 @@ End Class
 ''' <summary>DataTable Class for filling DBSheetCols DataGridView</summary>
 Public Class DBSheetDefTable : Inherits DataTable
 
+    ''' <summary>returns one selected item from the DBSheetDefRow item collection</summary>
+    ''' <param name="idx">selected index</param>
+    ''' <returns>the selected DBSheetDefRow</returns>
     Default Public ReadOnly Property Item(ByVal idx As Integer) As DBSheetDefRow
         Get
             Return CType(Rows(idx), DBSheetDefRow)
@@ -1291,23 +1314,34 @@ Public Class DBSheetDefTable : Inherits DataTable
         Columns.Add(New DataColumn("lookup", GetType(String)))
     End Sub
 
+    ''' <summary>stub for adding a row</summary>
+    ''' <param name="row"></param>
     Public Sub Add(ByVal row As DBSheetDefRow)
         Rows.Add(row)
     End Sub
 
+    ''' <summary>stub for removing a row</summary>
+    ''' <param name="row"></param>
     Public Sub Remove(ByVal row As DBSheetDefRow)
         Rows.Remove(row)
     End Sub
 
+    ''' <summary>get a new row for DBSheetDefRow type</summary>
+    ''' <returns>the new row</returns>
     Public Function GetNewRow() As DBSheetDefRow
         Dim row As DBSheetDefRow = CType(NewRow(), DBSheetDefRow)
         Return row
     End Function
 
+    ''' <summary>get the allowed type for a row (= DBSheetDefRow)</summary>
+    ''' <returns></returns>
     Protected Overrides Function GetRowType() As Type
         Return GetType(DBSheetDefRow)
     End Function
 
+    ''' <summary>override to get a new row from the DataRowBuilder</summary>
+    ''' <param name="builder"></param>
+    ''' <returns>the new row</returns>
     Protected Overrides Function NewRowFromBuilder(ByVal builder As DataRowBuilder) As DataRow
         Return New DBSheetDefRow(builder)
     End Function
@@ -1316,6 +1350,8 @@ End Class
 
 ''' <summary>DataRow Class for DBSheetDefTable</summary>
 Public Class DBSheetDefRow : Inherits DataRow
+    ''' <summary>accessor for the name property</summary>
+    ''' <returns></returns>
     Public Property name As String
         Get
             Return CStr(MyBase.Item("name"))
@@ -1324,6 +1360,8 @@ Public Class DBSheetDefRow : Inherits DataRow
             MyBase.Item("name") = value
         End Set
     End Property
+    ''' <summary>accessor for the ftable property</summary>
+    ''' <returns></returns>
     Public Property ftable As String
         Get
             Return CStr(MyBase.Item("ftable"))
@@ -1332,6 +1370,8 @@ Public Class DBSheetDefRow : Inherits DataRow
             MyBase.Item("ftable") = value
         End Set
     End Property
+    ''' <summary>accessor for the name property</summary>
+    ''' <returns></returns>
     Public Property fkey As String
         Get
             Return CStr(MyBase.Item("fkey"))
@@ -1340,6 +1380,8 @@ Public Class DBSheetDefRow : Inherits DataRow
             MyBase.Item("fkey") = value
         End Set
     End Property
+    ''' <summary>accessor for the flookup property</summary>
+    ''' <returns></returns>
     Public Property flookup As String
         Get
             Return CStr(MyBase.Item("flookup"))
@@ -1348,6 +1390,8 @@ Public Class DBSheetDefRow : Inherits DataRow
             MyBase.Item("flookup") = value
         End Set
     End Property
+    ''' <summary>accessor for the outer property</summary>
+    ''' <returns></returns>
     Public Property outer As Boolean
         Get
             Return CBool(MyBase.Item("outer"))
@@ -1356,6 +1400,8 @@ Public Class DBSheetDefRow : Inherits DataRow
             MyBase.Item("outer") = value
         End Set
     End Property
+    ''' <summary>accessor for the primkey property</summary>
+    ''' <returns></returns>
     Public Property primkey As Boolean
         Get
             Return CBool(MyBase.Item("primkey"))
@@ -1364,6 +1410,8 @@ Public Class DBSheetDefRow : Inherits DataRow
             MyBase.Item("primkey") = value
         End Set
     End Property
+    ''' <summary>accessor for the type property</summary>
+    ''' <returns></returns>
     Public Property type As String
         Get
             Return CStr(MyBase.Item("type"))
@@ -1372,6 +1420,8 @@ Public Class DBSheetDefRow : Inherits DataRow
             MyBase.Item("type") = value
         End Set
     End Property
+    ''' <summary>accessor for the sort property</summary>
+    ''' <returns></returns>
     Public Property sort As String
         Get
             Return CStr(MyBase.Item("sort"))
@@ -1380,6 +1430,8 @@ Public Class DBSheetDefRow : Inherits DataRow
             MyBase.Item("sort") = value
         End Set
     End Property
+    ''' <summary>accessor for the lookup property</summary>
+    ''' <returns></returns>
     Public Property lookup As String
         Get
             Return CStr(MyBase.Item("lookup"))
@@ -1388,6 +1440,8 @@ Public Class DBSheetDefRow : Inherits DataRow
             MyBase.Item("lookup") = value
         End Set
     End Property
+    ''' <summary>constructor for a DBSheetDefRow</summary>
+    ''' <param name="builder"></param>
     Friend Sub New(ByVal builder As DataRowBuilder)
         MyBase.New(builder)
         name = ""

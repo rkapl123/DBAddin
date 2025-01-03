@@ -49,7 +49,7 @@ Public Module Functions
         End If
         theRibbon.InvalidateControl("preventRefresh")
         Dim toWhichExtent As String = IIf(onlyForThisWB, "for " + ExcelDnaUtil.Application.ActiveWorkbook.Name, "globally ")
-        Return "preventRefresh was set " + toWhichExtent + " to " + setPreventRefresh.ToString() + IIf(setPreventRefresh, ", DB Functions will " + toWhichExtent + " not refresh on any change or refresh context menu", ", DB Functions will refresh again " + toWhichExtent)
+        Return "preventRefresh was set " + toWhichExtent + " to " + setPreventRefresh.ToString() + IIf(setPreventRefresh, ", DB Functions will not refresh " + toWhichExtent + " on any change or using the refresh context menu", ", DB Functions will refresh again " + toWhichExtent)
     End Function
 
     ''' <summary>Create database compliant date, time or datetime string from excel date type value</summary>
@@ -586,7 +586,9 @@ err:
         End Try
     End Function
 
+    ''' <summary>during rewriting the query as a sequence of cells, avoid refreshing of power query with this flag</summary>
     Public avoidRequeryDuringEdit As Boolean = False
+    ''' <summary>for power queries the previously set query is being stored here to retrieve it back in case the new set query fails (excel doesn't allow to enter the power query editor in this case)</summary>
     Public queryBackupColl As New Dictionary(Of String, String)
 
     ''' <summary>set Query parameters (query text and connection string) of Query List or pivot table (incl. chart)</summary>

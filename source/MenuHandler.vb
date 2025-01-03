@@ -223,7 +223,9 @@ Public Class MenuHandler
         End Try
     End Sub
 
+    ''' <summary>the collection of all the configured/stored AdHocSQL Strings</summary>
     Private AdHocSQLStrings As Collections.Generic.List(Of String)
+    ''' <summary>the index of the currently selected AdHocSQL String</summary>
     Private selectedAdHocSQLIndex As Integer
 
     ''' <summary>dialogBoxLauncher of DBAddin settings group: activate ad-hoc SQL query dialog</summary>
@@ -331,6 +333,9 @@ Public Class MenuHandler
         theRibbon.InvalidateControl("DBAdhocSQL")
     End Sub
 
+    ''' <summary>get the text for the currently selected AdHocSQL string from the AdHocSQLStrings collection</summary>
+    ''' <param name="control"></param>
+    ''' <returns></returns>
     Public Function GetAdhocSQLText(control As CustomUI.IRibbonControl)
         If AdHocSQLStrings.Count > 0 And selectedAdHocSQLIndex >= 0 Then
             Return AdHocSQLStrings(selectedAdHocSQLIndex)
@@ -339,10 +344,17 @@ Public Class MenuHandler
         End If
     End Function
 
+    ''' <summary>get the total item count for the AdHocSQLStrings collection</summary>
+    ''' <param name="control"></param>
+    ''' <returns></returns>
     Public Function GetAdhocSQLItemCount(control As CustomUI.IRibbonControl) As Integer
         Return AdHocSQLStrings.Count
     End Function
 
+    ''' <summary>get the labels for the AdHocSQL combo-box</summary>
+    ''' <param name="control"></param>
+    ''' <param name="index"></param>
+    ''' <returns></returns>
     Public Function GetAdhocSQLItemLabel(control As CustomUI.IRibbonControl, index As Integer) As String
         If AdHocSQLStrings.Count > 0 Then
             Return AdHocSQLStrings(index)
@@ -440,6 +452,7 @@ Public Class MenuHandler
         End Try
     End Function
 
+    ''' <summary>menu strip for DB Modifier Definitions dialogBoxLauncher</summary>
     Private WithEvents ctMenuStrip As Windows.Forms.ContextMenuStrip
 
     ''' <summary>show DBModif definitions edit box</summary>
@@ -470,6 +483,9 @@ Public Class MenuHandler
         ctMenuStrip.Show(ptLowerLeft)
     End Sub
 
+    ''' <summary>called after selecting DBMapper/DBAction/DBSequence from the dialogBoxLauncher</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
     Private Sub ctMenuStrip_Click(sender As Object, e As EventArgs)
         createDBModif(Replace(Replace(sender.ToString(), "a ", ""), "DBSequence", "DBSeqnce"))
     End Sub
@@ -511,6 +527,9 @@ Public Class MenuHandler
         Return IIf(preventStatus, IIf(onlyForThisWB, "SheetDelete", "CalculateFull"), IIf(onlyForThisWB, "CalculateSheet", "Calculator"))
     End Function
 
+    ''' <summary>common fetching function for getting the Status and the extent of the preventRefresh flag</summary>
+    ''' <param name="preventStatus">returns the currently set prevention status</param>
+    ''' <param name="onlyForThisWB">returns the currently set flag if only for this Workbook</param>
     Private Sub getStatusAndExtent(ByRef preventStatus As Boolean, ByRef onlyForThisWB As Boolean)
         If preventRefreshFlagColl.ContainsKey(ExcelDnaUtil.Application.ActiveWorkbook.Name) Then
             preventStatus = Functions.preventRefreshFlagColl(ExcelDnaUtil.Application.ActiveWorkbook.Name)
@@ -850,9 +869,12 @@ Public Class MenuHandler
         End If
     End Sub
 
+    ''' <summary>menu strip for displaying available power queries in current workbook</summary>
     Private WithEvents ctMenuStrip2 As Windows.Forms.ContextMenuStrip
-    Dim curCell As Excel.Range
-    Dim i As Integer
+
+    ''' <summary>called after selecting a power-query for insert DBSetPowerQuery</summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
     Private Sub ctMenuStrip2_Click(sender As Object, e As EventArgs)
         Dim actWb As Excel.Workbook = Nothing
         Try : actWb = ExcelDnaUtil.Application.ActiveWorkbook : Catch ex As Exception
@@ -865,18 +887,18 @@ Public Class MenuHandler
             Exit Sub
         End If
         Dim theFormulaStr As String() = actWb.Queries(sender.ToString()).Formula.ToString().Split(vbCrLf)
-        i = 1
-        curCell = ExcelDnaUtil.Application.ActiveCell
+        Dim i As Integer = 1
+        Dim currentCell As Excel.Range = ExcelDnaUtil.Application.ActiveCell
         Functions.avoidRequeryDuringEdit = True
         For Each formulaPart As String In theFormulaStr
-            If curCell.Offset(i, 0).Value <> "" Then
-                curCell.Offset(i, 0).Select()
+            If currentCell.Offset(i, 0).Value <> "" Then
+                currentCell.Offset(i, 0).Select()
                 If QuestionMsg("Cell not empty (would be overwritten), continue?") <> MsgBoxResult.Ok Then Exit Sub
             End If
-            curCell.Offset(i, 0).Value = formulaPart.Replace(vbLf, "")
+            currentCell.Offset(i, 0).Value = formulaPart.Replace(vbLf, "")
             i += 1
         Next
-        createFunctionsInCells(curCell, {"RC", "=DBSetPowerQuery(R[1]C:R[" + (i - 1).ToString() + "]C,""" + sender.ToString() + """)"})
+        createFunctionsInCells(currentCell, {"RC", "=DBSetPowerQuery(R[1]C:R[" + (i - 1).ToString() + "]C,""" + sender.ToString() + """)"})
         Functions.avoidRequeryDuringEdit = False
     End Sub
 
