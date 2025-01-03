@@ -1,9 +1,22 @@
-<html><head><title>createConfigTreeMenu()</title><link href="styles/default.css" type="text/css" rel="stylesheet" /></head><body><div class="header"> </div><br class="clear" /><div class="navigation"><ul><li><a href="index.htm">Documentation</a></li></ul><ul><li><a class="" href="4294967296-DBaddin.htm">DBaddin</a><ul><li><a class="" href="4294967988.htm">ConfigFiles</a><ul><li><a class="" href="4294967988-Methods.htm">Methods</a><ul><li><a class="current" href="4294967999.htm">createConfigTreeMenu</a><ul /></li></ul></li></ul></li></ul></li></ul></div><div class="content"><h1>createConfigTreeMenu() Method</h1><div class="summary">creates the Config tree menu by reading the menu elements from the config store folder files/sub-folders</div><div class="details"><span class="namespace"><em>Namespace:</em> <a href="4294967296-DBaddin.htm">DBaddin</a></span><span class="assembly"><em>Assembly:</em> DBaddin in (DBaddin.dll)
+<html><head><title>readAllFiles(String, ref XElement, ref ToolStripMenuItem, String)</title><link href="styles/default.css" type="text/css" rel="stylesheet" /></head><body><div class="header"> </div><br class="clear" /><div class="navigation"><ul><li><a href="index.htm">Documentation</a></li></ul><ul><li><a class="" href="4294967296-DBaddin.htm">DBaddin</a><ul><li><a class="" href="4294967985.htm">ConfigFiles</a><ul><li><a class="" href="4294967985-Methods.htm">Methods</a><ul><li><a class="current" href="4294967999.htm">readAllFiles</a><ul /></li></ul></li></ul></li></ul></li></ul></div><div class="content"><h1>readAllFiles(String, ref XElement, ref ToolStripMenuItem, String) Method</h1><div class="summary">reads all files contained in rootPath and its sub-folders (recursively) and adds them recursively to the DBConfig menu ribbon structure and the context menu for the AdHocSQL Dialog simultaneously. For folders contained in specialConfigStoreFolders, apply further structuring by splitting names on camel-case or specialConfigStoreSeparator</div><div class="details"><span class="namespace"><em>Namespace:</em> <a href="4294967296-DBaddin.htm">DBaddin</a></span><span class="assembly"><em>Assembly:</em> DBaddin in (DBaddin.dll)
 								</span></div>
         <div class="syntax">
             <h2>Syntax</h2>
-            <pre><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> createConfigTreeMenu()</pre>
+            <pre><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> readAllFiles(
+	<span class="keyword">string</span> rootPath,
+	<span class="keyword">ref</span> XElement currentBar,
+	<span class="keyword">ref</span> ToolStripMenuItem currentStrip,
+	<span class="keyword">string</span> Folderpath
+	)</pre>
         </div>
-    </div><div class="footer">
+    <div class="parameters"><h3>Parameters</h3><dl><dt>rootPath</dt><dd><div>
+				Type:
+				String</div><div>root folder to be searched for config files</div></dd><dt>currentBar</dt><dd><div>
+				Type:
+				XElement</div><div>current menu element, where sub-menus and buttons are added</div></dd><dt>currentStrip</dt><dd><div>
+				Type:
+				ToolStripMenuItem</div><div>current context menu tool-strip element, where sub-menus and buttons are added</div></dd><dt>Folderpath</dt><dd><div>
+				Type:
+				String</div><div>for sub menus path of current folder is passed (recursively)</div></dd></dl></div></div><div class="footer">
 			Produced by the <a href="https://livedocumenter.barryjones.me.uk/">Live Documenter</a>.
 		</div></body></html>

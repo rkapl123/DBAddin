@@ -63,148 +63,54 @@ Namespace My.Resources
                 resourceCulture = value
             End Set
         End Property
-        
+
         '''<summary>
-        '''  Looks up a localized string similar to &lt;xs:schema attributeFormDefault=&quot;unqualified&quot; elementFormDefault=&quot;qualified&quot; xmlns:xs=&quot;http://www.w3.org/2001/XMLSchema&quot;&gt;
-        '''  &lt;xs:element name=&quot;appSettings&quot;&gt;
-        '''    &lt;xs:complexType&gt;
-        '''      &lt;xs:sequence&gt;
-        '''        &lt;xs:element name=&quot;add&quot; maxOccurs=&quot;unbounded&quot; minOccurs=&quot;0&quot;&gt;
-        '''          &lt;xs:complexType&gt;
-        '''            &lt;xs:simpleContent&gt;
-        '''              &lt;xs:extension base=&quot;xs:string&quot;&gt;
-        '''                &lt;xs:attribute type=&quot;xs:string&quot; name=&quot;key&quot; use=&quot;required&quot;/&gt;
-        '''                &lt;xs:attribute type=&quot;xs:string&quot; name=&quot;value&quot; [rest of string was truncated]&quot;;.
+        '''  Looks up a localized string from a DB addin central section (key/value pairs)
         '''</summary>
         Public Shared ReadOnly Property DBAddinCentral() As String
             Get
                 Return ResourceManager.GetString("DBAddinCentral", resourceCulture)
             End Get
         End Property
-        
+
         '''<summary>
-        '''  Looks up a localized string similar to &lt;xs:schema attributeFormDefault=&quot;unqualified&quot; elementFormDefault=&quot;qualified&quot; xmlns:xs=&quot;http://www.w3.org/2001/XMLSchema&quot;&gt;
-        '''  &lt;xs:element name=&quot;UserSettings&quot;&gt;
-        '''    &lt;xs:complexType&gt;
-        '''      &lt;xs:sequence&gt;
-        '''        &lt;xs:element name=&quot;add&quot; maxOccurs=&quot;unbounded&quot; minOccurs=&quot;0&quot;&gt;
-        '''          &lt;xs:complexType&gt;
-        '''            &lt;xs:simpleContent&gt;
-        '''              &lt;xs:extension base=&quot;xs:string&quot;&gt;
-        '''                &lt;xs:attribute type=&quot;xs:string&quot; name=&quot;key&quot; use=&quot;required&quot;/&gt;
-        '''                &lt;xs:attribute type=&quot;xs:string&quot; name=&quot;value [rest of string was truncated]&quot;;.
+        '''  Looks up a localized string from a DB addin user section (key/value pairs)
         '''</summary>
         Public Shared ReadOnly Property DBAddinUser() As String
             Get
                 Return ResourceManager.GetString("DBAddinUser", resourceCulture)
             End Get
         End Property
-        
+
         '''<summary>
-        '''  Looks up a localized string similar to &lt;xs:schema attributeFormDefault=&quot;unqualified&quot; elementFormDefault=&quot;qualified&quot; xmlns:xs=&quot;http://www.w3.org/2001/XMLSchema&quot;&gt;
-        '''	&lt;xs:element name=&quot;root&quot;&gt;
-        '''		&lt;xs:complexType&gt;
-        '''			&lt;xs:sequence&gt;
-        '''				&lt;xs:choice maxOccurs=&quot;unbounded&quot; minOccurs=&quot;1&quot;&gt;
-        '''					&lt;xs:element type=&quot;xs:string&quot; name=&quot;altDBImpl&quot; minOccurs=&quot;0&quot;/&gt;
-        '''					&lt;xs:element name=&quot;DBAction&quot;&gt;
-        '''						&lt;xs:complexType&gt;
-        '''							&lt;xs:sequence&gt;
-        '''								&lt;xs:choice maxOccurs=&quot;unbounded&quot; minOccurs=&quot;1&quot;&gt;
-        '''									&lt;xs:element name=&quot;env&quot; minOccurs=&quot;0&quot;&gt;
-        '''										&lt;xs:simpleType&gt;
-        '''		 [rest of string was truncated]&quot;;.
+        '''  Looks up a localized string from a DB Modifier definition conforming to the schema
         '''</summary>
         Public Shared ReadOnly Property DBModifDef() As String
             Get
                 Return ResourceManager.GetString("DBModifDef", resourceCulture)
             End Get
         End Property
-        
+
         '''<summary>
-        '''  Looks up a localized string similar to &lt;?xml version=&quot;1.0&quot; encoding=&quot;us-ascii&quot;?&gt;
-        '''&lt;xs:schema xmlns:xs=&quot;http://www.w3.org/2001/XMLSchema&quot; xmlns:vs=&quot;http://schemas.microsoft.com/Visual-Studio-Intellisense&quot; elementFormDefault=&quot;qualified&quot; attributeFormDefault=&quot;unqualified&quot; vs:helpNamespace=&quot;http://schemas.microsoft.com/.NetConfiguration/v2.0&quot;&gt;
-        '''    &lt;xs:element name=&quot;configuration&quot;&gt;
-        '''        &lt;xs:complexType&gt;
-        '''            &lt;xs:choice minOccurs=&quot;0&quot; maxOccurs=&quot;unbounded&quot;&gt;
-        '''                &lt;xs:any namespace=&quot;##any&quot; processContents=&quot;lax&quot; /&gt;
-        '''            &lt;/ [rest of string was truncated]&quot;;.
+        '''  Looks up a localized string from a .net20 config setting
         '''</summary>
         Public Shared ReadOnly Property DotNetConfig20() As String
             Get
                 Return ResourceManager.GetString("DotNetConfig20", resourceCulture)
             End Get
         End Property
-        
+
         '''<summary>
-        '''  Looks up a localized string similar to AdHocSQLTransferType
-        '''AdHocSQLcmdDB + AdHocSQLStringsIndex
-        '''AdHocSQLcmdEnv + AdHocSQLStringsIndex
-        '''AltConnString + env
-        '''AvoidUpdateLinks_Refresh
-        '''AvoidUpdateListObjects_Refresh
-        '''AvoidUpdatePivotTables_Refresh
-        '''AvoidUpdateQueryTables_Refresh
-        '''CmdTimeout
-        '''CnnTimeout
-        '''ConfigName + env
-        '''ConfigSelect
-        '''ConfigSelect + ConfigSelectPreference
-        '''ConfigSelectPreference
-        '''ConfigStoreFolder + env
-        '''ConnStringReplace + env
-        '''ConnStringSearch + env
-        '''ConstConnString + env
-        '''connIDPrefixDBtype
-        '''dbGetAll + env
-        '''dbGetAllFieldName + env
-        '''DBidentifierCC [rest of string was truncated]&quot;;.
+        '''  Looks up a localized string for general settings
         '''</summary>
         Public Shared ReadOnly Property Settings() As String
             Get
                 Return ResourceManager.GetString("Settings", resourceCulture)
             End Get
         End Property
-        
+
         '''<summary>
-        '''  Looks up a localized string similar to askBeforeExecute
-        '''AutoIncFlag
-        '''avoidFill
-        '''confirmText
-        '''continueIfRowEmpty
-        '''convertAsDate
-        '''convertAsString
-        '''database
-        '''CUDFlags
-        '''env
-        '''execOnSave
-        '''executeAdditionalProc
-        '''database
-        '''ignoreColumns
-        '''IgnoreDataErrors
-        '''insertIfMissing
-        '''parametrizedAction
-        '''paramEnclosing
-        '''paramRangesStr
-        '''primKeysStr
-        '''preventColResize
-        '''seqStep
-        '''tableName
-        '''									
-        '''									
-        '''									
-        '''									
-        '''									
-        '''									
-        '''									
-        '''									
-        '''									
-        '''									
-        '''									
-        '''									
-        '''									
-        '''                  
-        '''.
+        '''  Looks up a localized string for DBModif settings
         '''</summary>
         Public Shared ReadOnly Property SettingsDBModif() As String
             Get
