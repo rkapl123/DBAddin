@@ -38,7 +38,7 @@ Partial Class EditDBModifDef
         'OKBtn
         '
         Me.OKBtn.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.OKBtn.Location = New System.Drawing.Point(536, 381)
+        Me.OKBtn.Location = New System.Drawing.Point(536, 427)
         Me.OKBtn.Name = "OKBtn"
         Me.OKBtn.Size = New System.Drawing.Size(55, 23)
         Me.OKBtn.TabIndex = 5
@@ -50,7 +50,7 @@ Partial Class EditDBModifDef
         '
         Me.CancelBtn.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.CancelBtn.DialogResult = System.Windows.Forms.DialogResult.Cancel
-        Me.CancelBtn.Location = New System.Drawing.Point(597, 381)
+        Me.CancelBtn.Location = New System.Drawing.Point(597, 427)
         Me.CancelBtn.Name = "CancelBtn"
         Me.CancelBtn.Size = New System.Drawing.Size(55, 23)
         Me.CancelBtn.TabIndex = 0
@@ -62,7 +62,7 @@ Partial Class EditDBModifDef
         '
         Me.PosIndex.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
         Me.PosIndex.AutoSize = True
-        Me.PosIndex.Location = New System.Drawing.Point(12, 381)
+        Me.PosIndex.Location = New System.Drawing.Point(14, 400)
         Me.PosIndex.Name = "PosIndex"
         Me.PosIndex.Size = New System.Drawing.Size(0, 13)
         Me.PosIndex.TabIndex = 3
@@ -74,7 +74,7 @@ Partial Class EditDBModifDef
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.EditBox.Location = New System.Drawing.Point(12, 12)
         Me.EditBox.Name = "EditBox"
-        Me.EditBox.Size = New System.Drawing.Size(640, 363)
+        Me.EditBox.Size = New System.Drawing.Size(640, 385)
         Me.EditBox.TabIndex = 1
         Me.EditBox.Text = ""
         Me.ToolTip1.SetToolTip(Me.EditBox, "Edit the DB Modifier Definition CustomXML here.")
@@ -83,7 +83,7 @@ Partial Class EditDBModifDef
         '
         Me.doDBMOnSave.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.doDBMOnSave.AutoSize = True
-        Me.doDBMOnSave.Location = New System.Drawing.Point(382, 385)
+        Me.doDBMOnSave.Location = New System.Drawing.Point(384, 404)
         Me.doDBMOnSave.Name = "doDBMOnSave"
         Me.doDBMOnSave.Size = New System.Drawing.Size(139, 17)
         Me.doDBMOnSave.TabIndex = 3
@@ -96,7 +96,7 @@ Partial Class EditDBModifDef
         '
         Me.DBFskip.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.DBFskip.AutoSize = True
-        Me.DBFskip.Location = New System.Drawing.Point(219, 385)
+        Me.DBFskip.Location = New System.Drawing.Point(221, 404)
         Me.DBFskip.Name = "DBFskip"
         Me.DBFskip.Size = New System.Drawing.Size(157, 17)
         Me.DBFskip.TabIndex = 2
@@ -110,10 +110,10 @@ Partial Class EditDBModifDef
         Me.availSettingsLB.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.availSettingsLB.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
         Me.availSettingsLB.FormattingEnabled = True
-        Me.availSettingsLB.Location = New System.Drawing.Point(107, 408)
+        Me.availSettingsLB.Location = New System.Drawing.Point(116, 428)
         Me.availSettingsLB.MaxDropDownItems = 30
         Me.availSettingsLB.Name = "availSettingsLB"
-        Me.availSettingsLB.Size = New System.Drawing.Size(323, 21)
+        Me.availSettingsLB.Size = New System.Drawing.Size(407, 21)
         Me.availSettingsLB.TabIndex = 5
         Me.ToolTip1.SetToolTip(Me.availSettingsLB, "Select available Setting to insert into above configuration file")
         '
@@ -121,7 +121,7 @@ Partial Class EditDBModifDef
         '
         Me.availSettLbl.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.availSettLbl.AutoSize = True
-        Me.availSettLbl.Location = New System.Drawing.Point(5, 411)
+        Me.availSettLbl.Location = New System.Drawing.Point(14, 431)
         Me.availSettLbl.Name = "availSettLbl"
         Me.availSettLbl.Size = New System.Drawing.Size(96, 13)
         Me.availSettLbl.TabIndex = 0
@@ -132,7 +132,7 @@ Partial Class EditDBModifDef
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.CancelButton = Me.CancelBtn
-        Me.ClientSize = New System.Drawing.Size(664, 464)
+        Me.ClientSize = New System.Drawing.Size(664, 457)
         Me.ControlBox = False
         Me.Controls.Add(Me.availSettLbl)
         Me.Controls.Add(Me.DBFskip)

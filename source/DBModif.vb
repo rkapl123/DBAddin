@@ -1160,8 +1160,30 @@ nextRow:
             da.Update(ds.Tables(0))
             changesDone = True
         Catch ex As Exception
-            Dim exMessage As String = ex.Message
-            If Not notifyUserOfDataError("Row Update Error, Table: " + tableName + ", Error: " + exMessage + " in sheet " + TargetRange.Parent.Name, rowNum) Then GoTo cleanup
+            Dim exMessage As String = ex.Message : Dim explain As String = "" : Dim cmdtext As String
+            ' create explanation for error: show parameters used by replacing all cmd texts with their last value
+            Try
+                cmdtext = da.InsertCommand.CommandText
+                For Each param As DbParameter In da.InsertCommand.Parameters
+                    cmdtext = cmdtext.Replace(param.ParameterName, param.Value.ToString())
+                Next
+            Catch ex2 As Exception : cmdtext = "" : End Try
+            explain = IIf(cmdtext <> "", vbCrLf + vbCrLf + cmdtext, "")
+            Try
+                cmdtext = da.UpdateCommand.CommandText
+                For Each param As DbParameter In da.UpdateCommand.Parameters
+                    cmdtext = cmdtext.Replace(param.ParameterName, param.Value.ToString())
+                Next
+            Catch ex2 As Exception : cmdtext = "" : End Try
+            explain += IIf(cmdtext <> "", vbCrLf + vbCrLf + cmdtext, "")
+            Try
+                cmdtext = da.DeleteCommand.CommandText
+                For Each param As DbParameter In da.DeleteCommand.Parameters
+                    cmdtext = cmdtext.Replace(param.ParameterName, param.Value.ToString())
+                Next
+            Catch ex2 As Exception : cmdtext = "" : End Try
+            explain += IIf(cmdtext <> "", vbCrLf + vbCrLf + cmdtext, "")
+            If Not notifyUserOfDataError("Row Update Error in sheet " + TargetRange.Parent.Name + ": " + exMessage + vbCrLf + vbCrLf + "Following statement(s) might be the cause: " + explain + vbCrLf + vbCrLf) Then GoTo cleanup
         End Try
 
         ' any additional stored procedures to execute?
@@ -1257,17 +1279,21 @@ cleanup:
 
     ''' <summary>notification of error for user including selection of error cell</summary>
     ''' <param name="message">error message</param>
-    ''' <param name="rowNum">error cell row</param>
-    ''' <param name="colNum">error cell column</param>
+    ''' <param name="rowNum">error cell row (optional, if not given then everything is selected)</param>
+    ''' <param name="colNum">error cell column (optional, if not given then whole row is selected)</param>
     ''' <returns></returns>
-    Private Function notifyUserOfDataError(message As String, rowNum As Long, Optional colNum As Integer = -1) As Boolean
+    Private Function notifyUserOfDataError(message As String, Optional rowNum As Long = -1, Optional colNum As Integer = -1) As Boolean
         hadError = True
         If Not nonInteractive Then
             TargetRange.Parent.Activate
-            If colNum = -1 Then
-                TargetRange.Rows(rowNum).Select
+            If rowNum = -1 Then
+                TargetRange.Select()
             Else
-                TargetRange.Cells(rowNum, colNum).Select
+                If colNum = -1 Then
+                    TargetRange.Rows(rowNum).Select()
+                Else
+                    TargetRange.Cells(rowNum, colNum).Select()
+                End If
             End If
         End If
         Dim retval As MsgBoxResult = QuestionMsg(message + ", continue with storing or cancel?", MsgBoxStyle.OkCancel, "DBMapper Error", MsgBoxStyle.Critical)

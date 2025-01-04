@@ -98,8 +98,8 @@ Partial Class DBModifCreate
         Me.CreateCB.TabIndex = 1
         Me.CreateCB.TabStop = False
         Me.CreateCB.Text = "Create CB"
-        Me.ToolTip1.SetToolTip(Me.CreateCB, "Create a Commandbutton for the DB Modifier Definition (max. 5 Buttons possible pe" &
-        "r Workbook)")
+        Me.ToolTip1.SetToolTip(Me.CreateCB, "Create a Commandbutton for the DB Modifier Definition (max. 10 Buttons possible p" &
+        "er Workbook)")
         '
         'DBModifName
         '
