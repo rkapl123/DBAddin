@@ -39,7 +39,8 @@
 			</ul>
 			<h3 id="db-modifiers">DB Modifiers</h3>
 			<ul>
-			<li>DBModif.vb - DBModif Class: Abstraction of a DB Modification Object and descendant concrete classes DBMapper, DBAction or DBSeqnce; also contains global helper functions for DBModifiers and an abstract helper class CustomCommandBuilder for building Insert/Update/Delete Statements for DBMapper having concrete implementations in CustomSqlCommandBuilder, CustomOleDbCommandBuilder and CustomOdbcCommandBuilder.</li>
+			<li>DBModif.vb - DBModif Class: Abstraction of a DB Modification Object and descendant concrete classes DBMapper, DBAction or DBSeqnce; contains an abstract helper class CustomCommandBuilder for building Insert/Update/Delete Statements for DBMapper having concrete implementations in CustomSqlCommandBuilder, CustomOleDbCommandBuilder and CustomOdbcCommandBuilder.</li>
+			<li>DBModifHelper.vb - global helper functions for DBModifiers</li>
 			<li>DBModifCreate.vb  - Dialog for creating DB Modifier configurations</li>
 			<li>EditDBModifDef.vb  - Dialog used to display and edit the CustomXMLPart utilized for storing the DBModif definitions, reused to also show DBAddin settings</li>
 			</ul>
@@ -49,30 +50,21 @@
 			<li>DBSheetCreateForm.vb  - Form for defining/creating DBSheet definitions</li>
 			<li>DBConnHelper.vb - connection helper class (Connection configuration data) used for DBSheetCreateForm.vb and AdHocSQL.vb</li>
 			</ul>
+			<h3 id="addin-gui-modules">Addin GUI modules</h3>
+			<ul>
+			<li>MenuHandler.vb - the ExcelRibbon derived MenuHandler class takes care of all Ribbon Menu related aspects, including display of the &quot;Load Config&quot; tree menu for retrieving stored configuration files and the cell context menu for building/refreshing. The contained MenuHandlerGlobals module contains the global variables theRibbon and theAdHocSQLDlg and the public procedures refreshData and jumpButton</li>
+			<li>AboutBox.vb - About box: used to provide information about version/buildtime and links for local help and project homepage</li>
+			<li>AdHocSQL.vb - Issuing adhoc SQL Commands from a dialog box</li>
+			<li>DBDocumentation.vb - simple popup dialog for displaying DB Documentation</li>
+			</ul>
 			<h3 id="addin-global-code">Addin global code</h3>
 			<ul>
-			<li>Globals.vb - Global variables and functions for DB Addin</li>
-			<li>MenuHandler.vb - handles all Menu related aspects (context menu for building/refreshing, &quot;DBAddin&quot;/&quot;Load Config&quot; tree menu for retrieving stored configuration files, etc.)</li>
-			<li>AboutBox.vb - About box: used to provide information about version/buildtime and links for local help and project homepage</li>
 			<li>AddInEvents.vb - AddIn Connection class, also handling Events from Excel (Open, Close, Activate)</li>
-			<li>AdHocSQL.vb - Issuing adhoc SQL Commands from a dialog box</li>
+			<li>Globals.vb - Global variables and functions for DB Addin</li>
+			<li>Logging.vb - logging and message related functions</li>
 			</ul>
 
-			<h2>Namespaces</h2>
-			<table>
-				<thead>
-					<tr>
-						<th>Name</th>
-						<th>Description</th>
-					</tr>
-				</thead>
-				<tr>
-					<td>
-						<a href="4294967296-DBaddin.htm">DBaddin</a>
-					</td>
-					<td/>
-				</tr>
-			</table>
+			<h2><a href="https://rkapl123.github.io/DBAddin">Back to DBaddin</a></h2>
 		</div>
 		<div class="footer">
 			Produced by the <a href="https://livedocumenter.barryjones.me.uk/">Live Documenter</a>.
