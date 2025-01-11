@@ -1,13 +1,13 @@
 ﻿Imports ExcelDna.Integration
-Imports System.Windows.Forms
-Imports System.Collections.Generic
+Imports Microsoft.Office.Core
 Imports Microsoft.Office.Interop
+Imports System.Collections.Generic
 Imports System.Data
 Imports System.Data.Common
 Imports System.Data.Odbc
 Imports System.Data.OleDb
 Imports System.Data.SqlClient
-Imports Microsoft.Office.Core
+Imports System.Windows.Forms
 
 
 ''' <summary>global helper functions for DBModifiers</summary>
@@ -784,18 +784,19 @@ EndOuterLoop:
             insertTarget.ListObject.ListRows.Add(insertRow)
         End If
     End Sub
+
+    ''' <summary>get the range from a worksheet name in the given sheet</summary>
+    ''' <param name="theName">string name of range name</param>
+    ''' <param name="theWs">given sheet</param>
+    ''' <returns></returns>
+    Public Function getRangeFromNameInSheet(ByRef theName As String, theWs As Excel.Worksheet) As Excel.Range
+        For Each aName As Excel.Name In theWs.Names()
+            If aName.Name = theWs.Name + "!" + theName Then
+                getRangeFromNameInSheet = aName.RefersToRange
+                Exit Function
+            End If
+        Next
+        getRangeFromNameInSheet = Nothing
+    End Function
+
 End Module
-
-
-''' <summary>Dummy DBModif Class for executeRefresh during externally callable executeDBModif procedure. No data, just executeRefresh(srcExtent) procedure to refresh DBMappers</summary>
-Public Class DBModifDummy : Inherits DBModif
-    Public Sub New()
-        MyBase.New(Nothing)
-    End Sub
-
-    ''' <summary>to refresh DB Modifiers from VBA Macros (externally callable executeDBModif procedure), the DBMappers underlying DB function (DBlistfetch or DBSetQuery) can be called using its srcExtent</summary>
-    ''' <param name="srcExtent">DBFsource....</param>
-    Public Sub executeRefresh(srcExtent)
-        doDBRefresh(srcExtent:=srcExtent)
-    End Sub
-End Class

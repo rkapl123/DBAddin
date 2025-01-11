@@ -1,0 +1,13 @@
+<html><head><title>getConfigDocCollection(String)</title><link href="styles/default.css" type="text/css" rel="stylesheet" /></head><body><div class="header"> </div><br class="clear" /><div class="navigation"><ul><li><a href="index.htm">Documentation</a></li></ul><ul><li><a class="" href="4294967296-DBaddin.htm">DBaddin</a><ul><li><a class="" href="4294969021.htm">Functions</a><ul><li><a class="" href="4294969021-Methods.htm">Methods</a><ul><li><a class="current" href="4294969126.htm">getConfigDocCollection</a><ul /></li></ul></li></ul></li></ul></li></ul></div><div class="content"><h1>getConfigDocCollection(String) Method</h1><div class="summary">gets the documentation dictionary for the config dropdown (used by ConfigFiles.createConfigTreeMenu()). This is the basis for the documentation provided when clicking the config entries with Ctrl or Shift</div><div class="details"><span class="namespace"><em>Namespace:</em> <a href="4294967296-DBaddin.htm">DBaddin</a></span><span class="assembly"><em>Assembly:</em> DBaddin in (DBaddin.dll)
+								</span></div>
+        <div class="syntax">
+            <h2>Syntax</h2>
+            <pre><span class="keyword">public</span> <span class="keyword">static</span> Dictionary&lt;<span class="keyword">string</span>, <span class="keyword">string</span>&gt; getConfigDocCollection(
+	<span class="keyword">string</span> ConfigDocQuery
+	)</pre>
+        </div>
+    <div class="parameters"><h3>Parameters</h3><dl><dt>ConfigDocQuery</dt><dd><div>
+				Type:
+				String</div><div>query against current active environment for retrieving the data for the documentation. This query needs to return three fields for each table/view/field object: 1. database of the object (only really needed for tables/views), 2. table/view name (for fields this is the parent table/view) and 3. the documentation for the object. All this has to be ordered by table/view name, with the table/view object being first</div></dd></dl></div><div class="return"><h3>Returns</h3><div class="item">Dictionary&lt;,&gt;</div><div class="returns">a dictionary of table/view keys and their associated collected documentation of the table/view and its fields. This is being collected by assuming the ordered way the query returns the data (see above)</div></div></div><div class="footer">
+			Produced by the <a href="https://livedocumenter.barryjones.me.uk/">Live Documenter</a>.
+		</div></body></html>

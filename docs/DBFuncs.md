@@ -11,7 +11,7 @@ There are four ways to query data with DBAddin:
 3.  Setting an existing Power-Query to a defined query using `DBSetPowerQuery`:  
     This sets the query of the target Power-query Object.
 
-All these functions insert the queried data outside their calling cell context, which means that the target ranges can be put anywhere in the workbook (even outside of the workbook).
+All these functions insert the queried data outside their calling cell context, which means that the target ranges can be put anywhere in the workbook (even outside of the workbook). Also common to all functions is a "query cache strategy" (DB functions only execute if either the query or the connection string has changed or if there is an explicit refresh using the below mentioned cell context menu).
 
 Additionally, following helper functions are available:
 
@@ -35,10 +35,8 @@ An additional cell context menu is available:
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/ContextMenu.PNG)  
 
 It provides:
-*   A "jump" feature that allows to move the focus from the DB function's cell to the data area and from the data area back to the DB function's cell (useful in complex workbooks with lots of remote (not on same-sheet) target ranges)
 *   Refreshing the currently selected DB function or its data area. If no DB function or a corresponding data area is selected, then all DB Functions are refreshed. Additionally, all built-in query tables, pivot tables, list objects and links to external workbooks are refreshed here as well. Any of these additional refreshes can be avoided by setting `AvoidUpdate<type>_Refresh` to `True`, where `type` is either `QueryTables`, `PivotTables`, `ListObjects`, or `Links`.
-*   If the ALT-Key is pressed while right-clicking in an DB function target area the underlying name(s) is/are displayed, if any have been provided.
-
+*   A "jump" feature that allows to move the focus from the DB function's cell to the data area and from the data area back to the DB function's cell (useful in complex workbooks with lots of remote (not on same-sheet) target ranges). If the Ctrl or Shift key is pressed while right-clicking the "jump" feature within the data area, all other underlying name(s) within the data is/are displayed, if existing.
 *   [Creation of DB Functions](#create-db-functions)  
 
 ### Using the Functions
@@ -335,11 +333,11 @@ You can decide for each sub-folder whether its contents should be hierarchically
 
 #### Inserting configurations
 
-If the user retrieves the relevant configuration, a warning is shown and then the configured cells are entered into the active workbook as defined in the config, relative to the current selection.  
+If the desired configuration is selected, a warning is shown and the configured cells are filled into the active workbook as defined in the config, relative to the current selection.  
 
 Cells in other worksheets are also filled, these are also taking the reference relative to the current selection. If the worksheet doesn't exist it is created.  
 
-There are no checks (except for Excels sheet boundaries), especially concerning overwriting any cells !  
+There are no checks performed on filling the cells (except for Excels sheet boundaries), especially concerning overwriting any cells !  
 
 If the setting `ConfigSelect` (or any other ConfigSelect, see [Other Settings](https://rkapl123.github.io/DBAddin#other-settings) is found in the settings, then the query template given there (e.g. `SELECT TOP 10 * FROM !Table!`) is used instead of the standard config (currently `SELECT TOP 10000 * FROM <Table/View>`) when inserting cell configurations. The respective Table/View is being replaced into `!Table!`.
 
@@ -441,6 +439,7 @@ Explanation:
 	*   Query composition: Composing Queries (as these sometimes tend to be quite long) can become challenging, especially when handling parameters coming from cells. There is a simple way to avoid lots of trouble by placing the parts of a query in different lines/cells and putting all these cells together as a range in the DB functions first argument (query).
 	*   When invoking an Excel Workbook from the command-line using CmdLogAddin (from a cmd script or the task scheduler), Excel may initialize the Add-in later than invoking the calculation of the DB function, which leads to an uninitialized host application object and therefore non-functional db functions (they all rely on the caller object of the Excel application to retrieve their calling cell's address). I'm still investigating into this.
 	*   Special care has to be taken for VBA Code that triggers DB Functions due to changes in cells. In this case, sometimes modifications of sheet contents are not available when expected (right after the modifying code was executed) and thus result in application errors. A possible workaround for this is to set Application.Calculation = xlCalculationManual before making any cell changes.
+	*   Unnecessary recalculations of DB functions are sometimes done even though the query cache strategy tries to avoid this (DB functions are only performed if either the query or the connection string changed). This can't be avoided especially when having active filters in target areas of DB functions as these filters make these areas "volatile", thus leading to enforced calculations.
 
 * DBListFetch:
 	*   no Headers and extendArea = 1: Don't place the output of DBlistFetch functions that a) depend on the same inputs and b) have no headers and c) use extendArea = 1 (cell extension). The calculation sequence leads to unpredictable behaviour with potential data loss

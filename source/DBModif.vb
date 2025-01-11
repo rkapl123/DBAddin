@@ -11,6 +11,10 @@ Imports System.Data.OleDb
 Imports System.Data.SqlClient
 Imports System.Linq
 Imports System.Text
+Imports Microsoft.VisualBasic.ApplicationServices
+
+
+#Region "DBModifs"
 
 ''' <summary>Abstraction of a DB Modification Object (concrete classes DBMapper, DBAction or DBSeqnce)</summary>
 Public MustInherit Class DBModif
@@ -621,34 +625,41 @@ exitSub:
             UserMsg("Exception when trying to get the active workbook names for extending DBMapper Range: " + ex.Message + ", this might be either due to errors in the VBA-IDE (missing references) or due to opening this workbook from an MS-Office hyperlink, starting up Excel (timing issue). Switch to another workbook and back to fix.")
             Exit Sub
         End Try
-        ' only extend like this if no CUD Flags or AutoIncFlag present (may have non existing first (primary) columns -> auto identity columns !)
-        If Not (CUDFlags Or AutoIncFlag) Then
-            If TargetRange.Cells(2, 1).Value Is Nothing Then Exit Sub ' only extend if there are multiple rows...
-            Dim rowCount As Integer = TargetRange.Cells(1, 1).End(Excel.XlDirection.xlDown).Row - TargetRange.Cells(1, 1).Row + 1
-            ' unfortunately the above method to find the column extent doesn't work with hidden columns, so count the filled cells directly...
-            Dim colCount As Integer = 1
-            While Not (TargetRange.Cells(1, colCount + 1).Value Is Nothing OrElse TargetRange.Cells(1, colCount + 1).Value.ToString() = "")
-                colCount += 1
-            End While
-            ' if we don't want columns to automatically extend then reset to original column count
-            If preventColResize Then colCount = TargetRange.Columns.Count
-            preventChangeWhileFetching = True
-            Try
-                ' only if the referral is to a real range (not an offset formula !)
-                If InStr(1, actWbNames.Item(paramTargetName).RefersTo, "=OFFSET(") = 0 Then
-                    actWbNames.Item(paramTargetName).RefersTo = actWbNames.Item(paramTargetName).RefersToRange.Resize(rowCount, colCount)
-                End If
-            Catch ex As Exception
-                Throw New Exception("Error when resizing name '" + paramTargetName + "' to DBMapper while extending DataRange: " + ex.Message)
-            Finally
-                preventChangeWhileFetching = False
-            End Try
-        End If
-        ' reassign extended area to TargetRange
         Try
-            TargetRange = TargetRange.Parent.Range(paramTargetName)
+            ' only extend like this if no CUD Flags or AutoIncFlag present (may have non existing first (primary) columns -> auto identity columns !)
+            If Not (CUDFlags Or AutoIncFlag) Then
+                If TargetRange.Cells(2, 1).Value Is Nothing Then Exit Sub ' only extend if there are multiple rows...
+                Dim rowCount As Integer = TargetRange.Cells(1, 1).End(Excel.XlDirection.xlDown).Row - TargetRange.Cells(1, 1).Row + 1
+                ' unfortunately the above method to find the column extent doesn't work with hidden columns, so count the filled cells directly...
+                Dim colCount As Integer = 1
+                ' if we don't want columns to automatically extend then take original column count
+                If preventColResize Then
+                    colCount = TargetRange.Columns.Count
+                Else
+                    While Not (TargetRange.Cells(1, colCount + 1).Value Is Nothing OrElse TargetRange.Cells(1, colCount + 1).Value.ToString() = "")
+                        colCount += 1
+                    End While
+                End If
+                preventChangeWhileFetching = True
+                Try
+                    ' only if the referral is to a real range (not an offset formula !)
+                    If InStr(1, actWbNames.Item(paramTargetName).RefersTo, "=OFFSET(") = 0 Then
+                        actWbNames.Item(paramTargetName).RefersTo = actWbNames.Item(paramTargetName).RefersToRange.Resize(rowCount, colCount)
+                    End If
+                Catch ex As Exception
+                    Throw New Exception("Error when resizing name '" + paramTargetName + "' to DBMapper while extending DataRange: " + ex.Message)
+                Finally
+                    preventChangeWhileFetching = False
+                End Try
+            End If
+            ' reassign extended area to TargetRange
+            Try
+                TargetRange = TargetRange.Parent.Range(paramTargetName)
+            Catch ex As Exception
+                Throw New Exception("Error when setting name '" + paramTargetName + "' to TargetRange while extending DataRange: " + ex.Message)
+            End Try
         Catch ex As Exception
-            Throw New Exception("Error when setting name '" + paramTargetName + "' to TargetRange while extending DataRange: " + ex.Message)
+            UserMsg(ex.Message)
         End Try
     End Sub
 
@@ -684,6 +695,7 @@ exitSub:
         definitionXML.AppendChildNode("deleteBeforeMapperInsert", NamespaceURI:="DBModifDef", NodeValue:=deleteBeforeMapperInsert.ToString())
         definitionXML.AppendChildNode("onlyRefreshTheseDBSheetLookups", NamespaceURI:="DBModifDef", NodeValue:=onlyRefreshTheseDBSheetLookups)
     End Sub
+
 
     ''' <summary>execute the modifications for the DB Mapper by storing the data modifications in the DBMapper range to the database</summary>
     ''' <param name="WbIsSaving">flag for being called during Workbook saving</param>
@@ -724,7 +736,11 @@ exitSub:
         If deleteBeforeMapperInsert Then
             Try
                 Dim DmlCmd As IDbCommand = idbcnn.CreateCommand()
-                If Not TransactionOpen Then DBModifHelper.trans = idbcnn.BeginTransaction()
+                ' for deleteBeforeMapperInsert outside of DBSequence still begin a transaction and reset hadError because both the deleting of the table and the new insert should be atomic
+                If Not TransactionOpen Then
+                    hadError = False
+                    DBModifHelper.trans = idbcnn.BeginTransaction()
+                End If
                 With DmlCmd
                     .Transaction = DBModifHelper.trans
                     .CommandText = "DELETE FROM " + openingQuote + String.Join(closingQuote + "." + openingQuote, Strings.Split(tableName, ".")) + closingQuote
@@ -751,14 +767,19 @@ exitSub:
                     comm.ExecuteNonQuery()
                 End Using
                 da = New SqlDataAdapter(New SqlCommand(SelectStmt, idbcnn, DBModifHelper.trans)) With {
-                    .UpdateBatchSize = 20
+                    .UpdateBatchSize = 20,
+                    .ContinueUpdateOnError = True ' this is needed to check the error rows after update and present them
                 }
             ElseIf TypeName(idbcnn) = "OleDbConnection" Then
                 da = New OleDbDataAdapter(New OleDbCommand(SelectStmt, idbcnn, DBModifHelper.trans)) With {
-                    .UpdateBatchSize = 20
+                    .UpdateBatchSize = 20,
+                    .ContinueUpdateOnError = True
                 }
             Else
-                da = New OdbcDataAdapter(New OdbcCommand(SelectStmt, idbcnn, DBModifHelper.trans))
+                da = New OdbcDataAdapter(New OdbcCommand(SelectStmt, idbcnn, DBModifHelper.trans)) With {
+                    .UpdateBatchSize = 20,
+                    .ContinueUpdateOnError = True
+                }
             End If
             da.SelectCommand.CommandTimeout = CmdTimeout
         Catch ex As Exception
@@ -1025,9 +1046,9 @@ exitSub:
                 End If
 
                 ' get the record for updating, however avoid finding record with empty primary key value if auto-increment is given
-                ' also avoid finding if no data should be in the table (deleteBeforeMapperInsert)
+                ' also avoid finding if no data should be in the table (deleteBeforeMapperInsert) and there is an explicit "i"nsert in a DBSheet
                 Dim foundRow As DataRow = Nothing
-                If Not AutoIncrement And Not deleteBeforeMapperInsert And primKeysCount <> 0 Then
+                If Not AutoIncrement And Not deleteBeforeMapperInsert And primKeysCount <> 0 And rowCUDFlag <> "i" Then
                     Try
                         foundRow = ds.Tables(0).Rows.Find(primKeyValues)
                     Catch ex As Exception
@@ -1156,35 +1177,26 @@ nextRow:
 
         ' now update the changes in the DB
         ExcelDnaUtil.Application.StatusBar = Left("Applying modifications (inserts/updates/deletes) in Database for " + tableName, 255)
-        Try
-            da.Update(ds.Tables(0))
+        ' no capture of exception here as 1) the adapters were created with ContinueUpdateOnError=true and 2) the table is checked for errors after the update
+        ' in this way the actual rows where the database error occured can be retrieved/presented to the user
+        da.Update(ds.Tables(0))
+        If ds.Tables(0).HasErrors Then
+            Dim errMessage As String = ""
+            Try
+                For Each row As DataRow In ds.Tables(0).GetErrors()
+                    errMessage += row.RowError + vbCrLf + vbCrLf
+                    Dim infoStr As String = ""
+                    For i As Integer = 0 To row.ItemArray.Count - 1
+                        infoStr += ds.Tables(0).Columns(i).ToString + ": " + row.ItemArray(i).ToString + vbCrLf
+                    Next
+                    errMessage += infoStr + vbCrLf
+                Next
+            Catch ex As Exception : errMessage += ", " + ex.Message : End Try
+            ' hadError = True ... don't need to set as it is set by notifyUserOfDataError
+            If Not notifyUserOfDataError("Update Error in sheet " + TargetRange.Parent.Name + ": " + vbCrLf + errMessage) Then GoTo cleanup
+        Else
             changesDone = True
-        Catch ex As Exception
-            Dim exMessage As String = ex.Message : Dim explain As String = "" : Dim cmdtext As String
-            ' create explanation for error: show parameters used by replacing all cmd texts with their last value
-            Try
-                cmdtext = da.InsertCommand.CommandText
-                For Each param As DbParameter In da.InsertCommand.Parameters
-                    cmdtext = cmdtext.Replace(param.ParameterName, param.Value.ToString())
-                Next
-            Catch ex2 As Exception : cmdtext = "" : End Try
-            explain = IIf(cmdtext <> "", vbCrLf + vbCrLf + cmdtext, "")
-            Try
-                cmdtext = da.UpdateCommand.CommandText
-                For Each param As DbParameter In da.UpdateCommand.Parameters
-                    cmdtext = cmdtext.Replace(param.ParameterName, param.Value.ToString())
-                Next
-            Catch ex2 As Exception : cmdtext = "" : End Try
-            explain += IIf(cmdtext <> "", vbCrLf + vbCrLf + cmdtext, "")
-            Try
-                cmdtext = da.DeleteCommand.CommandText
-                For Each param As DbParameter In da.DeleteCommand.Parameters
-                    cmdtext = cmdtext.Replace(param.ParameterName, param.Value.ToString())
-                Next
-            Catch ex2 As Exception : cmdtext = "" : End Try
-            explain += IIf(cmdtext <> "", vbCrLf + vbCrLf + cmdtext, "")
-            If Not notifyUserOfDataError("Row Update Error in sheet " + TargetRange.Parent.Name + ": " + exMessage + vbCrLf + vbCrLf + "Following statement(s) might be the cause: " + explain + vbCrLf + vbCrLf) Then GoTo cleanup
-        End Try
+        End If
 
         ' any additional stored procedures to execute?
         If executeAdditionalProc.Length > 0 Then
@@ -1642,6 +1654,23 @@ Public Class DBSeqnce : Inherits DBModif
 
 End Class
 
+''' <summary>Dummy DBModif Class for executeRefresh during externally callable executeDBModif procedure. No data, just executeRefresh(srcExtent) procedure to refresh DBMappers</summary>
+Public Class DBModifDummy : Inherits DBModif
+    Public Sub New()
+        MyBase.New(Nothing)
+    End Sub
+
+    ''' <summary>to refresh DB Modifiers from VBA Macros (externally callable executeDBModif procedure), the DBMappers underlying DB function (DBlistfetch or DBSetQuery) can be called using its srcExtent</summary>
+    ''' <param name="srcExtent">DBFsource....</param>
+    Public Sub executeRefresh(srcExtent)
+        doDBRefresh(srcExtent:=srcExtent)
+    End Sub
+End Class
+
+#End Region
+
+
+#Region "CustomCommandbuilders"
 
 ''' <summary>Custom Command builder base class for SQL Server, ODBC and OLE DB to avoid primary key problems with built-in ones
 ''' derived (transposed into VB.NET) from https://www.cogin.com/articles/CustomCommandBuilder.php
@@ -2078,3 +2107,5 @@ Public Class CustomOleDbCommandBuilder
     End Function
 
 End Class
+
+#End Region

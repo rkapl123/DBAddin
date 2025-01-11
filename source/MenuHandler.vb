@@ -4,6 +4,7 @@ Imports System.Configuration
 Imports System.Collections.Specialized
 Imports System.Collections.Generic
 Imports System.Runtime.InteropServices
+Imports System.Windows.Forms
 
 
 ''' <summary>handles all Menu related aspects (context menu for building/refreshing, "DBAddin"/"Load Config" tree menu for retrieving stored configuration files, etc.)</summary>
@@ -919,6 +920,7 @@ Public Class MenuHandler
 #Enable Warning IDE0060
 End Class
 
+
 ''' <summary>global ribbon variable and procedures for MenuHandler</summary>
 Public Module MenuHandlerGlobals
     ''' <summary>reference object for the ribbon</summary>
@@ -1037,6 +1039,32 @@ Public Module MenuHandlerGlobals
             UserMsg("Multiple hidden DB Function names in selected cell (making 'jump' ambiguous/impossible), please use purge names tool!", "DB-Addin Jump")
             Exit Sub
         End If
+        ' show underlying name(s) of dbfunc target areas
+        If My.Computer.Keyboard.CtrlKeyDown Or My.Computer.Keyboard.ShiftKeyDown Then
+            Dim nm As Excel.Name
+            Dim rng, testRng As Excel.Range
+            Dim underlyingDBName As String = getUnderlyingDBNameFromRange(ExcelDnaUtil.Application.ActiveCell)
+            Dim underlyingNameFromRange As String = ""
+            Try
+                testRng = Nothing
+                Try : testRng = ExcelDnaUtil.Application.Range(underlyingDBName) : Catch ex As Exception : End Try
+                For Each nm In ExcelDnaUtil.Application.ActiveWorkbook.Names
+                    rng = Nothing
+                    Try : rng = nm.RefersToRange : Catch ex As Exception : End Try
+                    If rng IsNot Nothing Then
+                        Dim testQryTblName As String = " " ' space cannot exist in a name, so this default will never be found
+                        Try : Dim testQryTbl As Excel.QueryTable = ExcelDnaUtil.Application.ActiveCell.QueryTable : testQryTblName = testQryTbl.Name : Catch ex As Exception : End Try
+                        If testRng IsNot Nothing AndAlso nm.Visible AndAlso InStr(nm.Name, "DBFtarget") = 0 AndAlso InStr(nm.Name, "DBFsource") = 0 AndAlso nm.Name <> "'" + rng.Parent.Name + "'!_FilterDatabase" AndAlso InStr(nm.Name, testQryTblName) = 0 AndAlso testRng.Cells(1, 1).Address = rng.Cells(1, 1).Address And testRng.Parent Is rng.Parent Then
+                            underlyingNameFromRange += nm.Name + ","
+                        End If
+                    End If
+                Next
+            Catch ex As Exception : End Try
+            If underlyingNameFromRange <> "" Then
+                UserMsg("Underlying name(s): " + Left(underlyingNameFromRange, Len(underlyingNameFromRange) - 1), "DBAddin Information", MsgBoxStyle.Information)
+            End If
+            Exit Sub
+        End If
         Dim underlyingName As String = getUnderlyingDBNameFromRange(ExcelDnaUtil.Application.ActiveCell)
         If underlyingName = "" Then Exit Sub
         If Left$(underlyingName, 10) = "DBFtargetF" Then
@@ -1053,5 +1081,59 @@ Public Module MenuHandlerGlobals
             UserMsg("Can't jump to target/source, corresponding workbook open? " + ex.Message, "DB-Addin Jump")
         End Try
     End Sub
+
+    ''' <summary>resets the caches for given workbook</summary>
+    ''' <param name="WBname"></param>
+    Public Sub resetCachesForWorkbook(WBname As String)
+        ' reset query cache for current workbook, so we really get new data !
+        Dim tempColl1 As New Dictionary(Of String, String)(queryCache) ' clone dictionary to be able to remove items...
+        For Each resetkey As String In tempColl1.Keys
+            If InStr(resetkey, "[" + WBname + "]") > 0 Then queryCache.Remove(resetkey)
+        Next
+        Dim tempColl2 As New Dictionary(Of String, ContainedStatusMsg)(StatusCollection)
+        For Each resetkey As String In tempColl2.Keys
+            If InStr(resetkey, "[" + WBname + "]") > 0 Then StatusCollection.Remove(resetkey)
+        Next
+    End Sub
+
+    ''' <summary>check for multiple excel instances</summary>
+    Public Sub checkHiddenExcelInstance()
+        Try
+            If Diagnostics.Process.GetProcessesByName("Excel").Length > 1 Then
+                For Each procinstance As Diagnostics.Process In Diagnostics.Process.GetProcessesByName("Excel")
+                    If procinstance.MainWindowTitle = "" Then
+                        UserMsg("Another hidden excel instance detected (PID: " + procinstance.Id + "), this may cause problems with querying DB Data")
+                    End If
+                Next
+            End If
+        Catch ex As Exception : End Try
+    End Sub
+
+    ''' <summary>check if multiple (hidden, containing DBtarget or DBsource) DB Function names exist in theRange</summary>
+    ''' <param name="theRange">given range</param>
+    ''' <returns>True if multiple names exist</returns>
+    Public Function checkMultipleDBRangeNames(theRange As Excel.Range) As Boolean
+        Dim nm As Excel.Name
+        Dim rng, testRng As Excel.Range
+        Dim foundNames As Integer = 0
+
+        checkMultipleDBRangeNames = False
+        Try
+            For Each nm In theRange.Parent.Parent.Names
+                rng = Nothing
+                Try : rng = nm.RefersToRange : Catch ex As Exception : End Try
+                If rng IsNot Nothing And Not (nm.Name Like "*ExterneDaten*" Or nm.Name Like "*_FilterDatabase") Then
+                    testRng = Nothing
+                    Try : testRng = ExcelDnaUtil.Application.Intersect(theRange, rng) : Catch ex As Exception : End Try
+                    If testRng IsNot Nothing And (InStr(1, nm.Name, "DBFtarget") >= 1 Or InStr(1, nm.Name, "DBFsource") >= 1) Then
+                        foundNames += 1
+                    End If
+                End If
+            Next
+            If foundNames > 1 Then checkMultipleDBRangeNames = True
+        Catch ex As Exception
+            UserMsg("Exception: " + ex.Message, "check Multiple DBRange Names")
+        End Try
+    End Function
 
 End Module

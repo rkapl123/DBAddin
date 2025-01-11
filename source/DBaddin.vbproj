@@ -172,6 +172,7 @@
       <DependentUpon>SchemaFiles.resx</DependentUpon>
     </Compile>
     <Compile Include="SettingsTools.vb" />
+    <Compile Include="SupportingTools.vb" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="DBaddin-AddIn.dna">

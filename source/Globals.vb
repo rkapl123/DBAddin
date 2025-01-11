@@ -206,20 +206,6 @@ Last:
         Next
     End Function
 
-    ''' <summary>get the range from a worksheet name in the given sheet</summary>
-    ''' <param name="theName">string name of range name</param>
-    ''' <param name="theWs">given sheet</param>
-    ''' <returns></returns>
-    Public Function getRangeFromNameInSheet(ByRef theName As String, theWs As Excel.Worksheet) As Excel.Range
-        For Each aName As Excel.Name In theWs.Names()
-            If aName.Name = theWs.Name + "!" + theName Then
-                getRangeFromNameInSheet = aName.RefersToRange
-                Exit Function
-            End If
-        Next
-        getRangeFromNameInSheet = Nothing
-    End Function
-
     ''' <summary>gets underlying DBtarget/DBsource Name from theRange</summary>
     ''' <param name="theRange">given range</param>
     ''' <returns>the retrieved name</returns>
@@ -248,33 +234,6 @@ Last:
             Next
         Catch ex As Exception
             UserMsg("Exception: " + ex.Message, "get underlying DBFName from Range")
-        End Try
-    End Function
-
-    ''' <summary>check if multiple (hidden, containing DBtarget or DBsource) DB Function names exist in theRange</summary>
-    ''' <param name="theRange">given range</param>
-    ''' <returns>True if multiple names exist</returns>
-    Public Function checkMultipleDBRangeNames(theRange As Excel.Range) As Boolean
-        Dim nm As Excel.Name
-        Dim rng, testRng As Excel.Range
-        Dim foundNames As Integer = 0
-
-        checkMultipleDBRangeNames = False
-        Try
-            For Each nm In theRange.Parent.Parent.Names
-                rng = Nothing
-                Try : rng = nm.RefersToRange : Catch ex As Exception : End Try
-                If rng IsNot Nothing And Not (nm.Name Like "*ExterneDaten*" Or nm.Name Like "*_FilterDatabase") Then
-                    testRng = Nothing
-                    Try : testRng = ExcelDnaUtil.Application.Intersect(theRange, rng) : Catch ex As Exception : End Try
-                    If testRng IsNot Nothing And (InStr(1, nm.Name, "DBFtarget") >= 1 Or InStr(1, nm.Name, "DBFsource") >= 1) Then
-                        foundNames += 1
-                    End If
-                End If
-            Next
-            If foundNames > 1 Then checkMultipleDBRangeNames = True
-        Catch ex As Exception
-            UserMsg("Exception: " + ex.Message, "check Multiple DBRange Names")
         End Try
     End Function
 
@@ -708,16 +667,4 @@ Last:
         End If
     End Function
 
-    ''' <summary>check for multiple excel instances</summary>
-    Public Sub checkHiddenExcelInstance()
-        Try
-            If Diagnostics.Process.GetProcessesByName("Excel").Length > 1 Then
-                For Each procinstance As Diagnostics.Process In Diagnostics.Process.GetProcessesByName("Excel")
-                    If procinstance.MainWindowTitle = "" Then
-                        UserMsg("Another hidden excel instance detected (PID: " + procinstance.Id + "), this may cause problems with querying DB Data")
-                    End If
-                Next
-            End If
-        Catch ex As Exception : End Try
-    End Sub
 End Module

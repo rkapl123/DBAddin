@@ -1,8 +1,8 @@
-Imports System.IO
-Imports System.Windows.Forms
 Imports ExcelDna.Integration
 Imports Microsoft.Office.Core
 Imports Microsoft.Office.Interop
+Imports System.IO
+Imports System.Windows.Forms
 
 '''<summary>Helper module for creation of DBSheets and DBSheet definition manipulation helpers</summary> 
 Public Module DBSheetConfig
