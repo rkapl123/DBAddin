@@ -11,11 +11,9 @@ Imports System.Data.OleDb
 Imports System.Data.SqlClient
 Imports System.Linq
 Imports System.Text
-Imports Microsoft.VisualBasic.ApplicationServices
 
 
 #Region "DBModifs"
-
 ''' <summary>Abstraction of a DB Modification Object (concrete classes DBMapper, DBAction or DBSeqnce)</summary>
 Public MustInherit Class DBModif
 
@@ -419,6 +417,8 @@ Public Class DBMapper : Inherits DBModif
     Private ReadOnly deleteBeforeMapperInsert As Boolean = False
     ''' <summary>contains cells in DBSheetLookups with lookups that should only be refreshed after DB modification was done. If empty, all lookups are refreshed for that DB Modifier/Sheet</summary>
     Private ReadOnly onlyRefreshTheseDBSheetLookups As String
+    ''' <summary>For DBSheets the previous length of the DBMapper area is needed to tell additions with Ctrl+ from deletions with Ctrl-</summary>
+    Public previousCUDLength As Integer
 
     ''' <summary>constructor with definition XML and the target range for the DBMapper</summary>
     ''' <param name="definitionXML"></param>
@@ -485,8 +485,7 @@ Public Class DBMapper : Inherits DBModif
             ' use TargetRange.ListObject.Range instead of TargetRange here because TargetRange is updated only after Saving/executing the DBMapper...
             Dim testRange As Excel.Range = TargetRange.ListObject.Range.Columns(TargetRange.ListObject.Range.Columns.Count).Offset(0, 1)
             ' check whether i/u/d column (one to the right of DBMapper range) is empty..
-            Dim existingCUDFlags As Integer = ExcelDnaUtil.Application.WorksheetFunction.CountIfs(testRange, "<>")
-            Return existingCUDFlags > 0
+            Return Not isEmptyArray(testRange)
         Else
             Return MyBase.DBModifSaveNeeded()
         End If
@@ -536,7 +535,7 @@ Public Class DBMapper : Inherits DBModif
         End If
 
         preventChangeWhileFetching = True
-        ' DBMapper ranges relative to start of TargetRange and respecting a header row, so CUDMarkRow = changedRange.Row - TargetRange.Row + 1 ...
+        ' All cells in DBMapper are relative to the start of TargetRange (incl a header row), so CUDMarkRow = changedRange.Row - TargetRange.Row + 1 ...
         Try
             If deleteFlag Then
                 Dim countRow As Integer = 1
@@ -553,21 +552,28 @@ Public Class DBMapper : Inherits DBModif
             Else
                 ' empty DBMapper: data was inserted in an empty or first row, check if other cells (not inserted) are empty set insert-flag
                 If changedRangeRows = 1 Then
-                    insertFlag = True
-                    For Each containedCell As Excel.Range In TargetRange.Rows(changedRange.Row - TargetRange.Row + 1).Cells
-                        ' check without newly inserted/updated cells (copy paste) 
-                        Dim possibleIntersection As Excel.Range = ExcelDnaUtil.Application.Intersect(containedCell, changedRange)
-                        ' check if whole row is empty (except for the changedRange), formulas do not count as filled (automatically filled for lookups or other things)..
-                        If containedCell.Value IsNot Nothing AndAlso possibleIntersection Is Nothing AndAlso Left(containedCell.Formula, 1) <> "=" Then
-                            insertFlag = False
-                            Exit For
-                        End If
-                    Next
+                    ' shows that row was deleted
+                    If previousCUDLength > TargetRange.Rows.Count Then
+                        Dim retval As MsgBoxResult = QuestionMsg("A whole row was deleted with Ctrl & -, the row will not be deleted in the database (use Ctrl-Shift-D instead, click cancel and refresh the DB-Sheet with Ctrl-Shift-R now)",, "Set CUD Flags for DB Mapper", MsgBoxStyle.Exclamation)
+                        If retval = MsgBoxResult.Cancel Then GoTo exitSub
+                        deleteFlag = True
+                    Else
+                        insertFlag = True
+                        For Each containedCell As Excel.Range In TargetRange.Rows(changedRange.Row - TargetRange.Row + 1).Cells
+                            ' check without newly inserted/updated cells (copy paste) 
+                            Dim possibleIntersection As Excel.Range = ExcelDnaUtil.Application.Intersect(containedCell, changedRange)
+                            ' check if whole row is empty (except for the changedRange), formulas do not count as filled (automatically filled for lookups or other things)..
+                            If containedCell.Value IsNot Nothing AndAlso possibleIntersection Is Nothing AndAlso Left(containedCell.Formula, 1) <> "=" Then
+                                insertFlag = False
+                                Exit For
+                            End If
+                        Next
+                    End If
                 End If
 
+                Dim CUDMarkRow As Integer = changedRange.Row - TargetRange.Row + 1
                 ' inside a list-object Ctrl & + and Ctrl & - add and remove a whole list-object range row, outside with selected row they add/remove a whole sheet row
-                If (changedRangeColumns = targetRangeColumns Or changedRangeColumns = sheetColumns) And changedRangeRows = 1 Then
-                    Dim CUDMarkRow As Integer = changedRange.Row - TargetRange.Row + 1
+                If (changedRangeColumns = targetRangeColumns Or changedRangeColumns = sheetColumns) And changedRangeRows = 1 And Not deleteFlag Then
                     ' if all cells (especially first) are empty (=inserting a row with Ctrl & +) add insert flag
                     If IsNothing(TargetRange.Cells(CUDMarkRow, 1).Value) Then
                         insertFlag = True
@@ -582,33 +588,46 @@ Public Class DBMapper : Inherits DBModif
                     End If
                 End If
 
-                Dim countRow As Integer = 1
-                For Each changedRow As Excel.Range In changedRange.Rows
-                    Dim CUDMarkRow As Integer = changedRow.Row - TargetRange.Row + 1
-                    ' change only if not already set. Do this here as it is faster then...
-                    If TargetRange.Cells(CUDMarkRow, targetRangeColumns + 1).Value IsNot Nothing Then Continue For
-                    ' repair automatic copying down of patterns (non null columns) from header row in List-objects done by Excel
-                    If CUDMarkRow = 2 Then
-                        With TargetRange.Rows(2).Interior
-                            .Pattern = Excel.XlPattern.xlPatternNone
-                            .TintAndShade = 0
-                            .PatternTintAndShade = 0
-                        End With
+                ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = False ' to prevent automatic creation of new column
+                If changedRangeRows = 1 And TargetRange.Cells(CUDMarkRow, targetRangeColumns + 1).Value = "" Then
+                    If Not deleteFlag Then
+                        ' check if row was added at the bottom set insert flag
+                        If CUDMarkRow > TargetRange.Cells(targetRangeRows, targetRangeColumns).Row Then insertFlag = True
+                        If insertFlag Then
+                            TargetRange.Cells(CUDMarkRow, targetRangeColumns + 1).Value = "i"
+                        Else
+                            TargetRange.Cells(CUDMarkRow, targetRangeColumns + 1).Value = "u"
+                            TargetRange.Rows(CUDMarkRow).Font.Italic = True
+                        End If
                     End If
-                    ' check if row was added at the bottom add insert flag
-                    If CUDMarkRow > TargetRange.Cells(targetRangeRows, targetRangeColumns).Row Then insertFlag = True
-                    ' insert only if explicitly required by insertFlag (after Row insertion, first an update flag will be written by the change event which is overwritten by an explicit call to insertCUDMarks)
-                    ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = False ' to prevent automatic creation of new column
-                    If Not insertFlag Then
-                        TargetRange.Cells(CUDMarkRow, targetRangeColumns + 1).Value = "u"
-                        TargetRange.Rows(CUDMarkRow).Font.Italic = True
-                    Else
-                        TargetRange.Cells(CUDMarkRow, targetRangeColumns + 1).Value = "i"
-                    End If
+                Else
+                    If changedRange.Row <= TargetRange.Row Then
+						' copy/paste above the DBMapper is nonsense.
+						Dim retval As MsgBoxResult = QuestionMsg("A data range was pasted above the data area of the DBSheet, this renders the DBSheet disfunctional. Immediately refresh the DBSheet to regain functionality",, "Set CUD Flags for DB Mapper", MsgBoxStyle.Exclamation)
+						GoTo exitSub
+					End If
+					' copy/paste of large ranges needs quicker setting of u/i, only do if no CUD flags already set (all CUD cells are empty)
+					' can't use ExcelDnaUtil.Application.WorksheetFunction.CountIfs(changedRange.Columns(targetRangeColumns + 1), "<>") = 0 here as it clears the flags as a side effect..
+					If isEmptyArray(changedRange.Columns(targetRangeColumns + 1).Value) Then
+						Dim nonintersecting As Excel.Range = getNonIntersectingRowsTarget(changedRange, TargetRange, TargetRange.Column + targetRangeColumns)
+						Dim intersecting As Excel.Range = ExcelDnaUtil.Application.Intersect(changedRange, TargetRange)
+						Dim intersectAndNonintersect As Excel.Range = Nothing
+						' check if nonintersect CUD Marks and intersect Marks overlap, if yes avoid setting intersect marks...
+						Try : intersectAndNonintersect = ExcelDnaUtil.Application.Intersect(nonintersecting, TargetRange.Range(ExcelDnaUtil.Application.Cells(intersecting.Row - TargetRange.Row + 1, targetRangeColumns + 1), ExcelDnaUtil.Application.Cells(intersecting.Row + intersecting.Rows.Count - TargetRange.Row, targetRangeColumns + 1))) : Catch ex As Exception : End Try
+						If Not IsNothing(intersecting) And IsNothing(intersectAndNonintersect) Then
+							TargetRange.Range(ExcelDnaUtil.Application.Cells(intersecting.Row - TargetRange.Row + 1, targetRangeColumns + 1), ExcelDnaUtil.Application.Cells(intersecting.Row + intersecting.Rows.Count - TargetRange.Row, targetRangeColumns + 1)).Value = "u"
+							TargetRange.Range(ExcelDnaUtil.Application.Cells(intersecting.Row - TargetRange.Row + 1, 1), ExcelDnaUtil.Application.Cells(intersecting.Row + intersecting.Rows.Count - TargetRange.Row, targetRangeColumns)).Font.Italic = True
+						End If
+						If Not IsNothing(nonintersecting) Then nonintersecting.Value = "i"
+					End If
+                    With TargetRange.Rows(2).Interior
+                        .Pattern = Excel.XlPattern.xlPatternNone
+                        .TintAndShade = 0
+                        .PatternTintAndShade = 0
+                    End With
                     ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = True
-                    ExcelDnaUtil.Application.Statusbar = "Create/Update mark for row " + countRow.ToString() + "/" + changedRangeRows.ToString()
-                    countRow += 1
-                Next
+                End If
+                previousCUDLength = TargetRange.Rows.Count
             End If
         Catch ex As Exception
             LogWarn("Exception in insertCUDMarks: " + ex.Message)
@@ -617,6 +636,47 @@ exitSub:
         preventChangeWhileFetching = False
         ExcelDnaUtil.Application.Statusbar = False
     End Sub
+
+    ''' <summary>checks whether passed array has only empty entries</summary>
+    ''' <param name="theArray"></param>
+    ''' <returns>true if empty, else false</returns>
+    Function isEmptyArray(theArray As Object) As Boolean
+        For Each theVal In theArray
+            If Not IsNothing(theVal) Then Return False
+        Next
+        Return True
+    End Function
+
+    ''' <summary>gets the non intersecting rows of two ranges as the single column range given in tgtcolumn</summary>
+    ''' <param name="range1">first range whose non-intersected rows should be returned</param>
+    ''' <param name="range2">second range whose non-intersected rows should be returned</param>
+    ''' <param name="tgtcolumn">column of the returned range</param>
+    ''' <returns></returns>
+    Function getNonIntersectingRowsTarget(range1 As Excel.Range, range2 As Excel.Range, tgtcolumn As Integer) As Excel.Range
+        If IsNothing(range1) Or IsNothing(range2) Then Return Nothing
+        With ExcelDnaUtil.Application
+            Dim theUnion As Excel.Range = .Union(range1, range2)
+            Dim theintersect As Excel.Range = .Intersect(range1, range2)
+            If IsNothing(theUnion) Then Return Nothing
+            If IsNothing(theintersect) Then
+                ' if no intersection, then non intersection is simply the changed range
+                Return .Range(.Cells(range1.Row, tgtcolumn), .Cells(range1.Row + range1.Rows.Count - 1, tgtcolumn))
+            Else
+                If (range1.Row + range1.Rows.Count < range2.Row + range2.Rows.Count) Then
+                    ' if changed area ends above the existing DBSheet and DBSheet was extended, then non intersection is simply the changed range
+                    If TargetRange.Rows.Count > previousCUDLength Then
+                        Return .Range(.Cells(range1.Row, tgtcolumn), .Cells(range1.Row + range1.Rows.Count - 1, tgtcolumn))
+                    Else
+                        ' if changed area ends above the existing DBSheet and DBSheet was not extended, then non intersection is nothing
+                        Return Nothing
+                    End If
+                Else
+                    ' return from last intersection row (exclusive) to lowest common cell
+                    Return .Range(.Cells(theintersect.Row + theintersect.Rows.Count, tgtcolumn), .Cells(theUnion.Row + theUnion.Rows.Count - 1, tgtcolumn))
+                End If
+            End If
+        End With
+    End Function
 
     ''' <summary>extend DataRange to "whole" DBMApper area (first row (header/field names) to the right and first column (first primary key) down)</summary>
     Public Sub extendDataRange()

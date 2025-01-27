@@ -155,6 +155,7 @@ Public Module DBModifHelper
                 Try
                     Dim extendedMapper As DBMapper = DBModifDefColl("DBMapper").Item(dbMapperRangeName)
                     extendedMapper.setTargetRange(theRange)
+                    extendedMapper.previousCUDLength = theRange.Rows.Count
                 Catch ex As Exception
                     Throw New Exception("Error passing new Range to the associated DBMapper object when extending '" + dbMapperRangeName + "' to DBListFetch/DBSetQuery target range: " + ex.Message)
                 End Try
@@ -444,7 +445,7 @@ Public Module DBModifHelper
 
     ''' <summary>check one param range input (name) and return the range if successful</summary>
     ''' <param name="paramRange">name of parameter range</param>
-    ''' <returns></returns>
+    ''' <returns>the range of the name</returns>
     Public Function checkAndReturnRange(paramRange As String) As Excel.Range
         Dim actWbNames As Excel.Names
         Try : actWbNames = ExcelDnaUtil.Application.ActiveWorkbook.Names : Catch ex As Exception
@@ -483,7 +484,9 @@ Public Module DBModifHelper
         End If
     End Function
 
-    ''' <summary>gets defined names for DBModifier (DBMapper/DBAction/DBSeqnce) invocation in the current workbook and updates Ribbon with it</summary>
+    ''' <summary>gets defined names for DBModifier (DBMapper/DBAction/DBSeqnce) invocation in the passed workbook and updates Ribbon with it</summary>
+    ''' <param name="actWb">the passed workbook</param>
+    ''' <param name="onlyCheck">only used for UserMsg dialogs (check vs. get)</param>
     Public Sub getDBModifDefinitions(actWb As Excel.Workbook, Optional onlyCheck As Boolean = False)
 
         ' load DBModifier definitions (objects) into Global collection DBModifDefColl

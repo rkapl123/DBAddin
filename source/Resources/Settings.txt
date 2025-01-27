@@ -58,3 +58,4 @@ specialNonNullableChar + env
 tblPlaceHolder + env
 updatesDownloadFolder
 updatesMajorVersion
+_testNewFeature

@@ -170,8 +170,8 @@ These lookup queries can either have one or two columns but only the **first col
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBSheetsDefLookupSelect.PNG)
 
 Also remember that lookups always check for uniqueness, so in case there are duplicate lines to be expected, an additional "distinct" clause will avoid the consequential error messages: 
-"`select distinct lookupCol, lookupCol from someTable…`" (this approach is not to be used with foreign key lookups, as the exact/correct id should always be found out. 
-Instead try to find a way to make the lookup values reflect their uniqueness, e.g. by concatenating/joining further identifiers, as in "`select lookupCol+additionalLookup, lookupID…`" )
+"`select distinct lookupCol, lookupCol from someTable...`" (this approach is not to be used with foreign key lookups, as the exact/correct id should always be found out. 
+Instead try to find a way to make the lookup values reflect their uniqueness, e.g. by concatenating/joining further identifiers, as in "`select lookupCol+additionalLookup, lookupID...`" )
 
 Even a lookup column without a lookup query is possible by just listing the possible values after the in the restriction separated by `||`, e.g.: `Yes||No||Maybe`:
 
@@ -185,7 +185,7 @@ A DBSheet is created in four steps:
 2.  Then the main query for retrieving the data to be edited is generated with "create DBSheet query". It can also be further customized, if needed.  
     However bear in mind that every change in the columns requires either an overwriting of the customizations and subsequent redoing them (cleaner) or constantly keeping the two synchronized. For customizing the data restriction part (Where Parameter Clause), a separate text input field can be used that allows the query to be regenerated without any intervening. Simply enter the restriction part (the Where clause without the "Where") and create the Query again. This additional Where clause is also used in the assignment step (4) to create restriction cells for parameters (specified with `?` in the Where clause).
 3.  Then the DBSheet Definition is stored with "save DBsheet def", which allows you to choose a filename (if it hasn't been already saved). The file choice dialog can always be accessed by clicking "save DBSheet def As...". With this, the information currently contained in the DBSheet columns, the DBsheet query and the Where Parameter Clause is stored in a DBSheet definition file (extension: xml)
-4.  Finally, the DBSheet definition is assigned to an Excel Worksheet with the button "assign DBSheet" or the drop-down menu-item "assign DBsheet definition" in the DBAddin Ribbon, creating a CUD enabled DBMapper with the active/chosen DBSheet definition in the currently active Excel Worksheet at the selected cell. Assignment also works on an already existing DBSheet DBMapper (or its associated DBSetQuery function cell), the DB Mapper is replaced then by the new definition.
+4.  Finally, the DBSheet definition is assigned to an Excel Worksheet with the button "assign DBSheet" or the drop-down menu-item "assign DBsheet definition" (which lets you choose a stored definition) in the DBAddin Ribbon, creating a CUD enabled DBMapper with the active/chosen DBSheet definition in the currently active Excel Worksheet at the selected cell. Assignment also works on an already existing DBSheet DBMapper (or its associated DBSetQuery function cell), the DB Mapper is replaced by the new definition then.
 
 Beware that additional where clauses need manual intervention to a) extend the `DBSetQuery` function's query argument (range) and b) fill the added restriction cells with meaningful values.
 
@@ -211,7 +211,7 @@ The lookup resolution function checks for the existence in the lookup key/value 
 A word of warning on lookups in operational DBSheets: As it is possible to modify the properties of the List-Table object and the "Preserve column sort/filter/layout" setting is essential for the automatic filling of formulas, 
 it should be taken into account when deselecting this setting that lookups won't be derived anymore for new rows. DB-Addin will re-add this setting for DBSheets with lookups on refresh however.
 
-#### Settings
+### Settings
 
 Following Settings in DBAddin.xll.config or the referred DBAddinCentral.config or DBaddinUser.config affect the behaviour of DBSheet definitions:
 ```xml
@@ -244,3 +244,8 @@ Explanation:
 *   `connIDPrefixDBtype`: Legacy definitions from the old DBAddin can be loaded as well, the Database is retrieved from the entry `connID`, this might be prefixed (e.g. by MSSQL), which can be removed by this setting.
 
 The entries DBisUserscheme and dbneedPwd are for Oracle databases where DBAddin has to switch to the scheme and therefore needs a password (Oracle has not been tested with the new DBAddin).
+
+### Known Issues / Limitations
+
+*  When editing DBsheets without Ctl-Sh-i and Ctl-Sh-d (rather using the "delete (Ctl-)/insert (Ctl+) whole row" of excel) only Ctl+ works "kind of" (it adds the correct "i" CUD Marks). Copy/Pasting also tries to produce the most sensible result.
+*  DBSheets with hidden lookup columns can't be copy/pasted to with having rows inserted, excel complains that there might be a violation of its borders. This can be circumvented by unhiding the lookup columns first and pasting afterwards.
