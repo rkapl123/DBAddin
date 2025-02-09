@@ -22,6 +22,7 @@ Partial Class DBDocumentation
     'Das Bearbeiten mit dem Code-Editor ist nicht möglich.
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
+        Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(DBDocumentation))
         Me.DBDocTextBox = New System.Windows.Forms.RichTextBox()
         Me.SuspendLayout()
         '
@@ -44,6 +45,7 @@ Partial Class DBDocumentation
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.ClientSize = New System.Drawing.Size(402, 275)
         Me.Controls.Add(Me.DBDocTextBox)
+        Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.Name = "DBDocumentation"
         Me.Text = "DBAddin: Documentation for Config Object"
         Me.ResumeLayout(False)

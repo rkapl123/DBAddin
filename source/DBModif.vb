@@ -11,6 +11,7 @@ Imports System.Data.OleDb
 Imports System.Data.SqlClient
 Imports System.Linq
 Imports System.Text
+Imports System.Windows.Forms
 
 
 #Region "DBModifs"
@@ -1243,19 +1244,34 @@ nextRow:
         ' in this way the actual rows where the database error occured can be retrieved/presented to the user
         da.Update(ds.Tables(0))
         If ds.Tables(0).HasErrors Then
-            Dim errMessage As String = ""
+            ' in case of errors fill a special datagrid with all error messages and the corresponding data that lead to the error
+            Dim DBMapperErrorDialog = New DBMapperErrors
+            DBMapperErrorDialog.ErrorDataGrid.AutoGenerateColumns = False
+            DBMapperErrorDialog.ErrorDataGrid.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllHeaders
+            DBMapperErrorDialog.ErrorDataGrid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCellsExceptHeader
+            DBMapperErrorDialog.ErrorDataGrid.RowHeadersWidth = 450
+            For i As Integer = 0 To ds.Tables(0).Columns.Count - 1
+                Dim colname As String = ds.Tables(0).Columns(i).ToString()
+                Dim colDesc As New DataGridViewTextBoxColumn With {
+                    .Name = colname,
+                    .HeaderText = colname
+                }
+                DBMapperErrorDialog.ErrorDataGrid.Columns.Add(colDesc)
+            Next
             Try
                 For Each row As DataRow In ds.Tables(0).GetErrors()
-                    errMessage += row.RowError + vbCrLf + vbCrLf
-                    Dim infoStr As String = ""
-                    For i As Integer = 0 To row.ItemArray.Count - 1
-                        infoStr += ds.Tables(0).Columns(i).ToString + ": " + row.ItemArray(i).ToString + vbCrLf
-                    Next
-                    errMessage += infoStr + vbCrLf
+                    Dim newRow = DBMapperErrorDialog.ErrorDataGrid.Rows.Add()
+                    With DBMapperErrorDialog.ErrorDataGrid
+                        .Rows(newRow).HeaderCell.Value = row.RowError.Replace(vbLf, "").Replace(vbCr, "")
+                        For i As Integer = 0 To row.ItemArray.Count - 1
+                            .Rows(newRow).Cells(i).Value = row.ItemArray(i).ToString()
+                        Next
+                    End With
                 Next
-            Catch ex As Exception : errMessage += ", " + ex.Message : End Try
-            ' hadError = True ... don't need to set as it is set by notifyUserOfDataError
-            If Not notifyUserOfDataError("Update Error in sheet " + TargetRange.Parent.Name + ": " + vbCrLf + errMessage) Then GoTo cleanup
+            Catch ex As Exception : End Try
+            DBMapperErrorDialog.ShowDialog()
+            hadError = True
+            GoTo cleanup
         Else
             changesDone = True
         End If

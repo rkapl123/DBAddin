@@ -124,6 +124,12 @@
     <Compile Include="DBDocumentation.vb">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="DBMapperErrors.Designer.vb">
+      <DependentUpon>DBMapperErrors.vb</DependentUpon>
+    </Compile>
+    <Compile Include="DBMapperErrors.vb">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="DBModifHelper.vb" />
     <Compile Include="DBSheetConfig.vb" />
     <Compile Include="DBSheetCreateForm.designer.vb">
@@ -210,6 +216,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="DBDocumentation.resx">
       <DependentUpon>DBDocumentation.vb</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="DBMapperErrors.resx">
+      <DependentUpon>DBMapperErrors.vb</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="DBModifCreate.resx">
       <DependentUpon>DBModifCreate.vb</DependentUpon>
