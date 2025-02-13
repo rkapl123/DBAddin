@@ -28,10 +28,10 @@ The DBModifier creation/editing is shown below (examples already filled, when ac
 *   Additional Stored Procedure: additional stored procedure to be executed after saving.
 *   Insert If Missing: if set, then insert row into table if the primary key is missing there. Default = False (only update, an error is thrown if the record couldn't be found).
 *   Store DBMap on Save: should DBMap also be saved on Excel Workbook Saving? (default no). If multiple DBModifiers (DB Mappers and DB Actions, DB Sequences are not bound to a worksheet) are defined to be stored/executed on save, then the DBModifiers being on the active worksheet are done first (without any specific order), then those on the other worksheets are done (also without any specific order).
-*   Environment: The Environment, where connection id should be taken from (if not existing, take from selected Environment in DB Addin General Settings Group).
+*   Environment: The Environment, where connection id should be taken from (if not existing, take from selected Environment in DB Add-in General Settings Group).
 *   Exec on Save: Should the DBMap be executed when the workbook is being saved?
 *   Ask for execution: Before execution of the DBMap, ask for confirmation. A custom text can be given in the CustomXML definition element confirmText (see below).
-*   C/U/D Flags: special mode used for row-by-row editing (inserting, updating and deleting rows). Only edited rows will be done when executing. Deleting rows is node with the special context menu item "delete Row" (or pressing Ctrl-Shift-D).
+*   C/U/D Flags: special mode used for row-by-row editing (inserting, updating and deleting rows). Only edited rows will be done when executing. Deleting rows is node with the special context menu item "delete Row" (or pressing Ctrl-Shift-D). This is utilized in particular for DBSheets, a specific usage of DBMappers.
 *   Ignore data errors: replace excel errors like #VALUE! with null on updating/inserting. Otherwise an error message is passed and execution is skipped for that row.
 *   Auto Increment: Allow empty primary column values (only for a single primary key!) in use with tables that have the IsAutoIncrement property set for this primary column (typically because of an identity specification for that column in the Database).
 *   Create CB: create a command-button for the DB Sequence in the current Worksheet (max. 10 buttons are possible per Workbook).
@@ -47,12 +47,15 @@ The range that is used for holding the data to be stored can be identified in th
 The clickable Hyperlink shows the range address of the data range, a named offset formula is displayed after the address:  
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DbMapperCreateOffsetFormula.PNG)  
 
+When storing data to the database, field specific restrictions (date type, length) are checked immediately by the .NET DataAdapter, everything else (all constraints, especially foreign keys) is checked on invoking update at the end of filling the DataAdapter. Any occurred errors are presented in a data grid:  
+![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DbMapperErrorDataGrid.PNG)  
+
 ### DB Actions are created/edited with following dialog:  
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DbActionCreate.PNG)  
 
 *   DBAction Name: Enter the name for the selected cell or range that will be used to identify the DBAction in the "Execute DBModifier" Group dropdowns. If no name is given here, then UnnamedDBAction will be used to identify it.
 *   Database: Database to do the DBAction in.
-*   Environment: The Environment, where connection id should be taken from (if not existing, take from selected Environment in DB Addin General Settings Group).
+*   Environment: The Environment, where connection id should be taken from (if not existing, take from selected Environment in DB Add-in General Settings Group).
 *   Exec on Save: Should the DBAction be executed when the workbook is being saved?
 *   Ask for execution: Before execution of the DBAction, ask for confirmation. A custom text can be given in the CustomXML definition element confirmText (see below).
 *   The actual DBAction to be done is defined in a range that is named like the DBAction definition (the hyperlink takes you there). This range can be dynamically computed as all ranges in excel.
@@ -66,8 +69,8 @@ The clickable Hyperlink shows the range address of the data range, a named offse
 
 Example for parametrization: DB Action cell contains `INSERT INTO Test (Col1,Col2,Col3,Col4) VALUES(!1!,!2!,!3!,!4!)`; Cols num params string: `1`; Cols num params date: `3`; Parameter Range Names: `paramC1,paramD1,paramE1,paramF1`
 
-Where cells in param range paramC1, paramD1, paramE1 and paramF1 contain the parameters being replaced into the template string. The first range is being replaced into `!1!`, the second in `!2!`, and so on. Parameter ranges are read row-wise from left to right (as usual) and need to have the same size.
-Assuming param range paramC1, paramD1 and paramE1 contain numbers, the parameters in paramC1 are replaced in the template as strings (surrounded by quotes), parameters in paramD1 are unquoted numbers and parameters in paramE1 are replaced in the template as date values (using the default DBDate formating).  
+Where cells in parameter range paramC1, paramD1, paramE1 and paramF1 contain the parameters being replaced into the template string. The first range is being replaced into `!1!`, the second in `!2!`, and so on. Parameter ranges are read row-wise from left to right (as usual) and need to have the same size.
+Assuming parameter range paramC1, paramD1 and paramE1 contain numbers, the parameters in paramC1 are replaced in the template as strings (surrounded by quotes), parameters in paramD1 are unquoted numbers and parameters in paramE1 are replaced in the template as date values (using the default DBDate formatting).  
 Date values (formatted as dates) are automatically recognized, there is no need to explicitly mark them with Cols num params date
 
 You can always edit these parameters by selecting a cell in the range of the DB Action area and invoking the context menu again.
@@ -102,7 +105,7 @@ The DBModifiers can be executed either
 
 ... or be done on saving the Workbook.  
 
-... or by issuing the VBA command `result = Application.Run("executeDBModif", <DBModifierName>, <headlessFlag>)`, where `<DBModifierName>` is the name of the DB Modifier including the type (so `DBMapperemployee` or `DBActionpublishersDelete`) and `<headlessFlag>` is a boolean flag indicating whether any user-interaction (as controllable by the Addin) should be avoided, all errors collected in `nonInteractiveErrMsgs` and returned in the `result` of the call.
+... or by issuing the VBA command `result = Application.Run("executeDBModif", <DBModifierName>, <headlessFlag>)`, where `<DBModifierName>` is the name of the DB Modifier including the type (so `DBMapperemployee` or `DBActionpublishersDelete`) and `<headlessFlag>` is a boolean flag indicating whether any user-interaction (as controllable by the Add-in) should be avoided, all errors collected in `nonInteractiveErrMsgs` and returned in the `result` of the call.
 
 You can edit the DBModifiers either by Ctrl-Shift clicking the Execute DBModifier Groups dropdown menus..  
 .. or by Ctrl-Shift clicking the created command-buttons.  
@@ -162,7 +165,7 @@ Explanation:
 *   `DontChangeEnvironment`: prevent changing the environment selector (Non-Production environments might confuse some people).
 *   `DBMapperCUDFlagStyle`: Style for setting Excel data tables when having CUD Flags set on DBMappers (to find the correct name for this enter `? ActiveCell.ListObject.TableStyle` in the VBE direct window having selected a cell in the desirably formatted data table).
 *   `DBMapperStandardStyle`: Style for setting Excel data tables when not having CUD Flags set on DBMappers.
-*   `DebugAddin`: activate Info messages to debug addin.
+*   `DebugAddin`: activate Info messages to debug add-in.
 *   `maxNumberMassChange`: Threshold of Number of changes in CUDFlag DBMappers to issue a warning.
 *   `connIDPrefixDBtype`: Sometimes, legacy DBSheet definitions have a Prefix, this is the prefix to remove.
 *   `DBSheetAutoname`: When inserting DBSheet Definitions, automatically name Worksheet to the table name, if this is set.

@@ -606,7 +606,7 @@ Public Class DBMapper : Inherits DBModif
                     ' copy/paste of large ranges needs quicker setting of u/i, only do if no CUD flags already set (all CUD cells are empty)
                     ' can't use ExcelDnaUtil.Application.WorksheetFunction.CountIfs(changedRange.Columns(targetRangeColumns + 1), "<>") = 0 here as it clears the flags as a side effect..
                     ' also only do if it was not invoked by deletions
-                    If isEmptyArray(changedRange.Columns(targetRangeColumns + 1).Value) Then
+                    If isEmptyArray(TargetRange.Range(ExcelDnaUtil.Application.Cells(changedRange.Row - 1, targetRangeColumns + 1), ExcelDnaUtil.Application.Cells(changedRange.Row + changedRange.Rows.Count - 2, targetRangeColumns + 1)).Value) Then
                         Dim nonintersecting As Excel.Range = getNonIntersectingRowsTarget(changedRange, TargetRange, TargetRange.Column + targetRangeColumns)
                         Dim intersecting As Excel.Range = ExcelDnaUtil.Application.Intersect(changedRange, TargetRange)
                         Dim intersectAndNonintersect As Excel.Range = Nothing
@@ -617,6 +617,8 @@ Public Class DBMapper : Inherits DBModif
                             TargetRange.Range(ExcelDnaUtil.Application.Cells(intersecting.Row - TargetRange.Row + 1, 1), ExcelDnaUtil.Application.Cells(intersecting.Row + intersecting.Rows.Count - TargetRange.Row, targetRangeColumns)).Font.Italic = True
                         End If
                         If Not IsNothing(nonintersecting) Then nonintersecting.Value = "i"
+                    Else
+                        LogWarn("A data range was pasted into an area of the DBSheet that already has CUD Flags set. Please do these modifications first or refresh from database.")
                     End If
                 End If
                 ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = True
