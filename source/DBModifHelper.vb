@@ -493,7 +493,13 @@ Public Module DBModifHelper
         LogInfo("reading DBModifier Definitions for Workbook: " + actWb.Name)
         Try
             DBModifDefColl.Clear()
-            Dim CustomXmlParts As Object = actWb.CustomXMLParts.SelectByNamespace("DBModifDef")
+            Dim CustomXmlParts As Object
+            Try : CustomXmlParts = actWb.CustomXMLParts.SelectByNamespace("DBModifDef")
+            Catch ex As Exception
+                LogWarn("Exception when selecting namespace 'DBModifDef' for CustomXMLParts in getDBModifDefinitions for Workbook " + actWb.Name + ": " + ex.Message)
+                Exit Sub
+            End Try
+
             If CustomXmlParts.Count = 1 Then
                 Dim actWbNames As Excel.Names
                 Try : actWbNames = actWb.Names : Catch ex As Exception
@@ -589,7 +595,7 @@ EndOuterLoop:
             End If
             theRibbon.Invalidate()
         Catch ex As Exception
-            UserMsg("Exception in getting DB Modifier Definitions: " + ex.Message, "DBModifier Definitions Error")
+            LogWarn("Exception in getting DB Modifier Definitions: " + ex.Message)
         End Try
     End Sub
 

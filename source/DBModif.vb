@@ -606,7 +606,7 @@ Public Class DBMapper : Inherits DBModif
                     ' copy/paste of large ranges needs quicker setting of u/i, only do if no CUD flags already set (all CUD cells are empty)
                     ' can't use ExcelDnaUtil.Application.WorksheetFunction.CountIfs(changedRange.Columns(targetRangeColumns + 1), "<>") = 0 here as it clears the flags as a side effect..
                     ' also only do if it was not invoked by deletions
-                    If isEmptyArray(TargetRange.Range(ExcelDnaUtil.Application.Cells(changedRange.Row - 1, targetRangeColumns + 1), ExcelDnaUtil.Application.Cells(changedRange.Row + changedRange.Rows.Count - 2, targetRangeColumns + 1)).Value) Then
+                    If isEmptyArray(TargetRange.Range(ExcelDnaUtil.Application.Cells(changedRange.Row, targetRangeColumns + 1), ExcelDnaUtil.Application.Cells(changedRange.Row + changedRange.Rows.Count - 1, targetRangeColumns + 1)).Value) Then
                         Dim nonintersecting As Excel.Range = getNonIntersectingRowsTarget(changedRange, TargetRange, TargetRange.Column + targetRangeColumns)
                         Dim intersecting As Excel.Range = ExcelDnaUtil.Application.Intersect(changedRange, TargetRange)
                         Dim intersectAndNonintersect As Excel.Range = Nothing

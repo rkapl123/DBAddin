@@ -1015,13 +1015,15 @@ Public Class DBSheetCreateForm
                         End If
                     End If
                     If noInfoForField Then
-                        UserMsg("couldn't retrieve information for field " + newRow.name + " in database !", "DBSheet Definition Error")
+                        UserMsg("couldn't retrieve information for field " + newRow.name + " in database, this field should be removed !", "DBSheet Definition Error")
                         loadOK = False
+                        newRow.RowError = "couldn't retrieve information for field " + newRow.name + " in database, this field should be removed !"
                         newRow.type = ""
                     Else
                         newRow.type = TableDataTypes(newRow.name)
                         If newRow.type = "" Then
                             UserMsg("empty type information for field " + newRow.name + " in database !", "DBSheet Definition Error")
+                            newRow.RowError = "empty type information for field " + newRow.name + " in database !"
                             loadOK = False
                         End If
                     End If
