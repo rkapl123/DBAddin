@@ -208,8 +208,7 @@ The lookup resolution function checks for the existence in the lookup key/value 
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBSheetsNotExistingLookup.PNG)
 
-A word of warning on lookups in operational DBSheets: As it is possible to modify the properties of the List-Table object and the "Preserve column sort/filter/layout" setting is essential for the automatic filling of formulas, 
-it should be taken into account when deselecting this setting that lookups won't be derived anymore for new rows. DB-Addin will re-add this setting for DBSheets with lookups on refresh however.
+A word of warning on lookups in operational DBSheets: As it is possible to modify the properties of the List-Table object and the "Preserve column sort/filter/layout" setting is essential for the automatic filling of formulas, it should be taken into account when deselecting this setting that lookups won't be derived anymore for new rows. DB-Addin will re-add this setting for DBSheets with lookups on refresh however.
 
 ### Settings
 

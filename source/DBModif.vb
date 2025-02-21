@@ -298,7 +298,7 @@ Public MustInherit Class DBModif
                     ShowRowNums = convertToBool(functionArgs(8))
                 End If
                 ' call action procedure directly as we can avoid the external context required in the UDF
-                DBListFetchAction(callID, getQuery(functionArgs(0), caller), caller, target, getConnString(functionArgs(1), caller, False), formulaRange, extendDataArea, HeaderInfo, AutoFit, autoformat, ShowRowNums, targetRangeName, formulaRangeName)
+                Functions.DBListFetchAction(callID, getQuery(functionArgs(0), caller), caller, target, getConnString(functionArgs(1), caller, False), formulaRange, extendDataArea, HeaderInfo, AutoFit, autoformat, ShowRowNums, targetRangeName, formulaRangeName)
             ElseIf UCase(Left(functionFormula, 11)) = "=DBSETQUERY" Then
                 LogInfo("Refresh DBSetQuery: " + callID)
                 Dim functionArgs = functionSplit(functionFormula, ",", """", "DBSetQuery", "(", ")")
@@ -1244,7 +1244,8 @@ nextRow:
         ExcelDnaUtil.Application.StatusBar = Left("Applying modifications (inserts/updates/deletes) in Database for " + tableName, 255)
         ' no capture of exception here as 1) the adapters were created with ContinueUpdateOnError=true and 2) the table is checked for errors after the update
         ' in this way the actual rows where the database error occured can be retrieved/presented to the user
-        da.Update(ds.Tables(0))
+        Dim affectedRows As Integer = da.Update(ds.Tables(0))
+        If affectedRows > 0 Then changesDone = True
         If ds.Tables(0).HasErrors Then
             ' in case of errors fill a special datagrid with all error messages and the corresponding data that lead to the error
             Dim DBMapperErrorDialog = New DBMapperErrors
@@ -1274,8 +1275,6 @@ nextRow:
             DBMapperErrorDialog.ShowDialog()
             hadError = True
             GoTo cleanup
-        Else
-            changesDone = True
         End If
 
         ' any additional stored procedures to execute?
@@ -1311,7 +1310,7 @@ cleanup:
         End If
         ' close connection to return it to the pool (automatically closes recordset objects, so no need for checkrst.Close() or rst.Close())...
         If calledByDBSeq = "" Then idbcnn.Close()
-        ' ask for refresh/clear CUD marks (only DBSheet) after DB Modification was done
+        ' refresh/clear CUD marks (only DBSheet) after DB Modification was done
         If changesDone Then
             Dim DBFunctionSrcExtent = getUnderlyingDBNameFromRange(TargetRange)
             If DBFunctionSrcExtent <> "" Then

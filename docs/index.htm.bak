@@ -52,6 +52,8 @@
 			</ul>
 			<h3 id="addin-gui-modules">Addin GUI modules</h3>
 			<ul>
+			<li>DBDocumentation.vb - Simple Popup Window for displaying Database documentation within config tree / AdHocSQL context tree menu</li>
+			<li>DBMapperErrors.vb - Datagrid window for displaying Errors after executing DBMappers</li>
 			<li>MenuHandler.vb - the ExcelRibbon derived MenuHandler class takes care of all Ribbon Menu related aspects, including display of the &quot;Load Config&quot; tree menu for retrieving stored configuration files and the cell context menu for building/refreshing. The contained MenuHandlerGlobals module contains the global variables theRibbon and theAdHocSQLDlg and the public procedures refreshData and jumpButton</li>
 			<li>AboutBox.vb - About box: used to provide information about version/buildtime and links for local help and project homepage</li>
 			<li>AdHocSQL.vb - Issuing adhoc SQL Commands from a dialog box</li>
@@ -62,6 +64,8 @@
 			<li>AddInEvents.vb - AddIn Connection class, also handling Events from Excel (Open, Close, Activate)</li>
 			<li>Globals.vb - Global variables and functions for DB Addin</li>
 			<li>Logging.vb - logging and message related functions</li>
+			<li>SupportingTools.vb - Tools: repairLegacyFunctions, checkpurgeNames and fixOrphanedDBFunctions</li>
+			<li>SettingsTools.vb - Global variables/functions for settings access</li>
 			</ul>
 
 			<h2><a href="https://rkapl123.github.io/DBAddin">Back to DBaddin</a></h2>
