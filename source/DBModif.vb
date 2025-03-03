@@ -171,7 +171,14 @@ Public MustInherit Class DBModif
     ''' <returns></returns>
     Public Function openDatabase(Optional DBSequenceEnv As String = "") As Boolean
         If TypeName(Me) = "DBSeqnce" Then Throw New NotImplementedException() ' DB Sequences have no database
-        Dim setEnv As Integer = getEnv()
+        openDatabase = openIdbConnection(derivedEnv(getEnv(), DBSequenceEnv), database)
+    End Function
+
+    ''' <summary>derive environment from either set environment (setEnv) or if not set (0) from selectedEnvironment. For Sequences take environment from DBSequenceEnv</summary>
+    ''' <param name="setEnv"></param>
+    ''' <param name="DBSequenceEnv"></param>
+    ''' <returns></returns>
+    Public Function derivedEnv(setEnv As Integer, Optional DBSequenceEnv As String = "") As Integer
         If DBSequenceEnv = "" Then
             ' if Environment is not existing (default environment = 0), take from selectedEnvironment
             If setEnv = 0 Then setEnv = selectedEnvironment + 1
@@ -187,7 +194,7 @@ Public MustInherit Class DBModif
                 End If
             End If
         End If
-        openDatabase = openIdbConnection(setEnv, database)
+        derivedEnv = setEnv
     End Function
 
     ''' <summary>refresh a DB Function (DBListFetch, DBRowFetch and DBSetQuery) by invoking its respective DB*Action procedure (the UDFs cannot be directly invoked from VB.NET code)
@@ -792,11 +799,11 @@ exitSub:
             ExcelDnaUtil.Application.StatusBar = "opening database connection for " + database
             If Not openDatabase() Then Exit Sub
         End If
-
+        Dim envStr As String = derivedEnv(env).ToString()
         ' openingQuote and closingQuote are needed to quote columns containing blanks and other not allowed characters
-        openingQuote = fetchSetting("openingQuote" + env.ToString(), "")
-        closingQuote = fetchSetting("closingQuote" + env.ToString(), "")
-        closingQuoteReplacement = fetchSetting("closingQuoteReplacement" + env.ToString(), "")
+        openingQuote = fetchSetting("openingQuote" + envStr, "")
+        closingQuote = fetchSetting("closingQuote" + envStr, "")
+        closingQuoteReplacement = fetchSetting("closingQuoteReplacement" + envStr, "")
 
         If deleteBeforeMapperInsert Then
             Try
@@ -1005,7 +1012,7 @@ exitSub:
                 If InStr(LCase(ex.Message()), "timeout") > 0 Or TypeOf ex Is System.OutOfMemoryException Then
                     notifyUserOfDataError("Timeout/OutOfMemoryException in retrieving Data for " + tableName + ": " + ex.Message + vbCrLf + vbCrLf + "You can usually resolve this problem by adding <avoidFill>True</avoidFill> to the DB Mappers definition!", 1)
                 Else
-                    notifyUserOfDataError("Error in retrieving Data for " + tableName + ": " + ex.Message + vbCrLf + "Following primary keys are defined (check whether enough): " + String.Join(Of DataColumn)(", ", primKeyColumns), 1)
+                    notifyUserOfDataError("Error in filling table data for " + tableName + ": " + ex.Message + vbCrLf + "Following primary keys are defined in the DBMapper (not necessarily in the DB, check whether enough): " + String.Join(Of DataColumn)(", ", primKeyColumns), 1)
                 End If
                 GoTo cleanup
             End Try
