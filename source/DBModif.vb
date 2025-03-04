@@ -594,14 +594,16 @@ Public Class DBMapper : Inherits DBModif
                 ' now set the CUD Markers
                 ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = False ' to prevent automatic creation of new column
                 ' ... for one row
-                If changedRangeRows = 1 And TargetRange.Cells(CUDMarkRow, targetRangeColumns + 1).Value = "" Then
-                    ' check if row was added at the bottom set insert flag
-                    If CUDMarkRow > TargetRange.Cells(targetRangeRows, targetRangeColumns).Row Then insertFlag = True
-                    If insertFlag Then
-                        TargetRange.Cells(CUDMarkRow, targetRangeColumns + 1).Value = "i"
-                    Else
-                        TargetRange.Cells(CUDMarkRow, targetRangeColumns + 1).Value = "u"
-                        TargetRange.Rows(CUDMarkRow).Font.Italic = True
+                If changedRangeRows = 1 Then
+                    If TargetRange.Cells(CUDMarkRow, targetRangeColumns + 1).Value = "" Then
+                        ' check if row was added at the bottom set insert flag
+                        If CUDMarkRow > TargetRange.Cells(targetRangeRows, targetRangeColumns).Row Then insertFlag = True
+                        If insertFlag Then
+                            TargetRange.Cells(CUDMarkRow, targetRangeColumns + 1).Value = "i"
+                        Else
+                            TargetRange.Cells(CUDMarkRow, targetRangeColumns + 1).Value = "u"
+                            TargetRange.Rows(CUDMarkRow).Font.Italic = True
+                        End If
                     End If
                 Else
                     ' ... for multiple rows
