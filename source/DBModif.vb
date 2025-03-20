@@ -777,6 +777,7 @@ exitSub:
     ''' <param name="TransactionOpen">flag whether a transaction is open during the DB Sequence</param>
     Public Overrides Sub doDBModif(Optional WbIsSaving As Boolean = False, Optional calledByDBSeq As String = "", Optional TransactionOpen As Boolean = False)
         changesDone = False
+
         If (CUDFlags And primKeysCount = 0) Then
             UserMsg("CUD Flags are incompatible with primKeysCount = 0, exiting DBModification", "DBMapper Error")
             Exit Sub
@@ -801,7 +802,7 @@ exitSub:
             ExcelDnaUtil.Application.StatusBar = "opening database connection for " + database
             If Not openDatabase() Then Exit Sub
         End If
-        Dim envStr As String = derivedEnv(env).ToString()
+        Dim envStr As String = derivedEnv(getEnv()).ToString()
         ' openingQuote and closingQuote are needed to quote columns containing blanks and other not allowed characters
         openingQuote = fetchSetting("openingQuote" + envStr, "")
         closingQuote = fetchSetting("closingQuote" + envStr, "")

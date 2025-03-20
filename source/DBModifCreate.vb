@@ -264,7 +264,7 @@ Public Class DBModifCreate
             cb = cbshp.Object
         Catch ex As Exception
             UserMsg("Can't create command button: " + ex.Message, "CommandButton create Error")
-            cbshp.Delete()
+            Try : cbshp.Delete() : Catch ex2 As Exception : End Try
             Exit Sub
         End Try
         Dim cbName As String = Me.Tag + Me.DBModifName.Text
