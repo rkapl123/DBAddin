@@ -43,6 +43,7 @@
 			<li>DBModifHelper.vb - global helper functions for DBModifiers</li>
 			<li>DBModifCreate.vb  - Dialog for creating DB Modifier configurations</li>
 			<li>EditDBModifDef.vb  - Dialog used to display and edit the CustomXMLPart utilized for storing the DBModif definitions, reused to also show DBAddin settings</li>
+			<li>ProgressForm.vb  - Dialog used to display progress on DB Modifiers</li>
 			</ul>
 			<h3 id="dbsheet-definition-creation-and-assignment">DBSheet definition creation and assignment</h3>
 			<ul>

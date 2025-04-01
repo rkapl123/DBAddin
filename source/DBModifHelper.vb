@@ -115,12 +115,13 @@ Public Module DBModifHelper
         Catch ex As Exception
             UserMsg("Error creating connection object: " + ex.Message + ", connection string: " + theConnString, "Open Connection Error")
             idbcnn = Nothing
-            ExcelDnaUtil.Application.StatusBar = False
             Exit Function
         End Try
 
+        Dim theProgressForm = New ProgressForm
+        theProgressForm.Show()
         LogInfo("open connection with " + theConnString)
-        ExcelDnaUtil.Application.StatusBar = "Trying " + CnnTimeout.ToString() + " sec. with connection string: " + theConnString
+        theProgressForm.ProgressLabel.Text = "Trying " + CnnTimeout.ToString() + " sec. with connection string: " + theConnString
         Try
             idbcnn.Open()
             openIdbConnection = True
@@ -128,7 +129,7 @@ Public Module DBModifHelper
             UserMsg("Error connecting to DB: " + ex.Message + ", connection string: " + theConnString, "Open Connection Error")
             idbcnn = Nothing
         End Try
-        ExcelDnaUtil.Application.StatusBar = False
+        theProgressForm.Close()
     End Function
 
     ''' <summary>in case there is a defined DBMapper underlying the DBListFetch/DBSetQuery target area then change the extent of it (oldRange) to the new area given in theRange</summary>
@@ -144,8 +145,8 @@ Public Module DBModifHelper
         If theRange.Parent.Parent Is ExcelDnaUtil.Application.ActiveWorkbook Then
             ' getDBModifNameFromRange gets any DBModifName (starting with DBMapper/DBAction...) intersecting theRange, so we can reassign it to the changed range with this...
             Dim dbMapperRangeName As String = getDBModifNameFromRange(theRange)
-            ' only allow resizing of dbMapperRange if it was EXACTLY matching the FORMER target range of the DB Function
-            If Left(dbMapperRangeName, 8) = "DBMapper" AndAlso oldRange.Address = actWbNames.Item(dbMapperRangeName).RefersToRange.Address Then
+            ' only allow resizing of dbMapperRange if it was EXACTLY matching the FORMER target range of the DB Function and doesn't refer to range using an offset formula.
+            If Left(dbMapperRangeName, 8) = "DBMapper" AndAlso oldRange.Address = actWbNames.Item(dbMapperRangeName).RefersToRange.Address AndAlso InStr(1, actWbNames.Item(dbMapperRangeName).RefersTo, "=OFFSET(") = 0 Then
                 ' (re)assign db mapper range name to the passed (changed) DBListFetch/DBSetQuery function target range
                 Try : theRange.Name = dbMapperRangeName
                 Catch ex As Exception
@@ -199,6 +200,10 @@ Public Module DBModifHelper
                 End Try
                 existingDBModif.setTargetRange(existingDefRange)
             End If
+            ' extend DBMappers to reflect new size
+            If createdDBModifType = "DBMapper" Then
+                DirectCast(existingDBModif, DBMapper).extendDataRange()
+            End If
         End If
 
         ' prepare DBModifier Create Dialog
@@ -217,11 +222,13 @@ Public Module DBModifHelper
                 .TablenameLabel.Hide()
                 .PrimaryKeysLabel.Hide()
                 .AdditionalStoredProcLabel.Hide()
+                .addCodeBeginLabel.Hide()
                 .IgnoreColumnsLabel.Hide()
                 .Tablename.Hide()
                 .PrimaryKeys.Hide()
                 .insertIfMissing.Hide()
                 .addStoredProc.Hide()
+                .addCodeBegin.Hide()
                 .IgnoreColumns.Hide()
                 .CUDflags.Hide()
                 .AutoIncFlag.Hide()
@@ -252,7 +259,8 @@ Public Module DBModifHelper
                 .TablenameLabel.Text = "Tablename:"
                 .PrimaryKeysLabel.Text = "Primary keys count:"
                 .IgnoreColumnsLabel.Text = "Ignore columns:"
-                .AdditionalStoredProcLabel.Text = "Additional stored procedure:"
+                .addCodeBeginLabel.Text = "Additional code at begin:"
+                .AdditionalStoredProcLabel.Text = "Additional code at end:"
                 .parametrized.Hide()
                 .paramRangesStr.Hide()
                 .paramEnclosing.Hide()
@@ -292,10 +300,12 @@ Public Module DBModifHelper
                     End If
                 Next
 
+                Dim theProgressForm = New ProgressForm
+                theProgressForm.Show()
                 ' then add DBRefresh items for allowing refreshing DBFunctions (DBListFetch and DBSetQuery) during a Sequence
                 Dim searchCell As Excel.Range
                 For Each ws As Excel.Worksheet In actWb.Worksheets
-                    ExcelDnaUtil.Application.Statusbar = "Looking for DBFunctions in " + ws.Name + " for adding possibility to DB Sequence"
+                    theProgressForm.ProgressLabel.Text = "Looking for DBFunctions in " + ws.Name + " for adding possibility to DB Sequence"
                     For Each theFunc As String In {"DBListFetch(", "DBSetQuery(", "DBRowFetch("}
                         searchCell = ws.Cells.Find(What:=theFunc, After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
                         Dim firstFoundAddress As String = ""
@@ -311,7 +321,7 @@ Public Module DBModifHelper
                     searchCell = Nothing
                     searchCell = ws.Cells.Find(What:="", After:=ws.Range("A1"), LookIn:=Excel.XlFindLookIn.xlFormulas, LookAt:=Excel.XlLookAt.xlPart, SearchOrder:=Excel.XlSearchOrder.xlByRows, SearchDirection:=Excel.XlSearchDirection.xlNext, MatchCase:=False)
                 Next
-                ExcelDnaUtil.Application.Statusbar = False
+                theProgressForm.Close()
                 ' at last add special items DBBeginTrans and DBCommitTrans for setting DB Transaction brackets
                 ds.Add("DBBegin:Begins DB Transaction")
                 ds.Add("DBCommitRollback:Commits or Rolls back DB Transaction")
@@ -405,6 +415,7 @@ Public Module DBModifHelper
                 dbModifNode.AppendChildNode("primKeysStr", NamespaceURI:="DBModifDef", NodeValue:= .PrimaryKeys.Text)
                 dbModifNode.AppendChildNode("insertIfMissing", NamespaceURI:="DBModifDef", NodeValue:= .insertIfMissing.Checked.ToString())
                 dbModifNode.AppendChildNode("executeAdditionalProc", NamespaceURI:="DBModifDef", NodeValue:= .addStoredProc.Text)
+                dbModifNode.AppendChildNode("executeAdditionalCodeBegin", NamespaceURI:="DBModifDef", NodeValue:= .addCodeBegin.Text)
                 dbModifNode.AppendChildNode("ignoreColumns", NamespaceURI:="DBModifDef", NodeValue:= .IgnoreColumns.Text)
                 dbModifNode.AppendChildNode("CUDFlags", NamespaceURI:="DBModifDef", NodeValue:= .CUDflags.Checked.ToString())
                 dbModifNode.AppendChildNode("AutoIncFlag", NamespaceURI:="DBModifDef", NodeValue:= .AutoIncFlag.Checked.ToString())

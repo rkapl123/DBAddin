@@ -25,10 +25,11 @@ The DBModifier creation/editing is shown below (examples already filled, when ac
 *   Primary keys count: amount of columns from the left to be used as primary keys for updating table data. Enter 0 here for special "insert-only" Mappers (all entries are added to a table that doesn't need to have primary columns), recommended to be used with deleteBeforeMapperInsert (removes all content of the table before inserting)
 *   Database: Database to store DBMaps Data into.
 *   Ignore Columns: comma separated list of column numbers to be ignored (e.g. helper columns or irrelevant columns).
-*   Additional Stored Procedure: additional stored procedure to be executed after saving.
+*   Additional Code at begin: additional code (e.g. stored procedure) to be executed before DBMapper execution.
+*   Additional Code at end: additional code (e.g. stored procedure) to be executed after DBMapper execution.
 *   Insert If Missing: if set, then insert row into table if the primary key is missing there. Default = False (only update, an error is thrown if the record couldn't be found).
 *   Store DBMap on Save: should DBMap also be saved on Excel Workbook Saving? (default no). If multiple DBModifiers (DB Mappers and DB Actions, DB Sequences are not bound to a worksheet) are defined to be stored/executed on save, then the DBModifiers being on the active worksheet are done first (without any specific order), then those on the other worksheets are done (also without any specific order).
-*   Environment: The Environment, where connection id should be taken from (if not existing, take from selected Environment in DB Add-in General Settings Group).
+*   Env: The Environment, where connection id should be taken from (if not existing, take from selected Environment in DB Add-in General Settings Group).
 *   Exec on Save: Should the DBMap be executed when the workbook is being saved?
 *   Ask for execution: Before execution of the DBMap, ask for confirmation. A custom text can be given in the CustomXML definition element confirmText (see below).
 *   C/U/D Flags: special mode used for row-by-row editing (inserting, updating and deleting rows). Only edited rows will be done when executing. Deleting rows is node with the special context menu item "delete Row" (or pressing Ctrl-Shift-D). This is utilized in particular for DBSheets, a specific usage of DBMappers.
@@ -55,17 +56,17 @@ When storing data to the database, field specific restrictions (date type, lengt
 
 *   DBAction Name: Enter the name for the selected cell or range that will be used to identify the DBAction in the "Execute DBModifier" Group dropdowns. If no name is given here, then UnnamedDBAction will be used to identify it.
 *   Database: Database to do the DBAction in.
-*   Environment: The Environment, where connection id should be taken from (if not existing, take from selected Environment in DB Add-in General Settings Group).
-*   Exec on Save: Should the DBAction be executed when the workbook is being saved?
-*   Ask for execution: Before execution of the DBAction, ask for confirmation. A custom text can be given in the CustomXML definition element confirmText (see below).
-*   The actual DBAction to be done is defined in a range that is named like the DBAction definition (the hyperlink takes you there). This range can be dynamically computed as all ranges in excel.
-*   Create CB: create a command-button for the DB Sequence in the current Worksheet (max. 10 buttons are possible per Workbook).
-*   Hyperlink: click on it to highlight/select the DB Action range.
-*   parametrized: If checked, brings parameters into the template paramString by replacing the placeholders (enclosed by ! if not overridden in paramEnclosing) with the values in the corresponding paramRanges. 
 *   Parameter Range Names: string of named ranges (if necessary qualified with sheet name!range_name) to be used as parameters that are replaced into the template string, where the order of the parameter range determines which placeholder is being replaced
-*   continue if row empty:  if all values in the given Ranges are empty (or errors) for a row, continue by skipping the row (otherwise processing stops at this row), defaults to false
 *   Cols num params date: comma separated locations of numerical parameters that should be converted as date values (using the default DBDate formatting), if a cell value can be evaluated as numeric.
 *   Cols num params string: comma separated locations of numerical parameters that should be converted as strings, if a cell value can be evaluated as numeric.
+*   Exec on Save: Should the DBAction be executed when the workbook is being saved?
+*   Ask for execution: Before execution of the DBAction, ask for confirmation. A custom text can be given in the CustomXML definition element confirmText (see below).
+*   Env: The Environment, where connection id should be taken from (if not existing, it is taken from selected Environment in DB Add-in General Settings Group).
+*   parametrized: If checked, brings parameters into the template paramString by replacing the placeholders (enclosed by ! if not overridden in paramEnclosing) with the values in the corresponding paramRanges. 
+*   continue if row empty:  if all values in the given Ranges are empty (or errors) for a row, continue by skipping the row (otherwise processing stops at this row), defaults to false
+*   The actual DBAction to be done is defined in a range that is named like the DBAction definition (the hyperlink takes you there). This range can be dynamically computed as all ranges in excel.
+*   Hyperlink: click on it to highlight/select the DB Action range.
+*   Create CB: create a command-button for the DB Sequence in the current Worksheet (max. 10 buttons are possible per Workbook).
 
 Example for parametrization: DB Action cell contains `INSERT INTO Test (Col1,Col2,Col3,Col4) VALUES(!1!,!2!,!3!,!4!)`; Cols num params string: `1`; Cols num params date: `3`; Parameter Range Names: `paramC1,paramD1,paramE1,paramF1`
 
@@ -140,6 +141,7 @@ Following Settings of DBModifiers can only be edited in the Edit DBModifier Defi
 *  `deleteBeforeMapperInsert` (only DBMappers, Boolean): removes all content of the table before inserting the contents again.
 *  `onlyRefreshTheseDBSheetLookups` (only DBMappers, String): contains a list of addresses of DBListfetch function cells in the DBSheetLookups sheet that exclusively should be refreshed after the corresponding DBSheet was saved. If empty, all lookups are refreshed when the DBSheet was saved. Always provide a comma BEFORE the cell address (e.g. `<onlyRefreshTheseDBSheetLookups>,Q1,S1</onlyRefreshTheseDBSheetLookups>` to prevent refreshing of all lookups (DBListfetch functions) in sheet DBSheetLookups, except those in cell Q1 and S1)!
 *  `preventColResize` (only DBMappers, Boolean): prevent automatic resizing of DB Mappers columns to include new ones, this is useful if header columns can be added accidentally and thus lead to errors.
+*  `preventAutoInc` (only DBMappers, Boolean): prevent autoincrement functionality for tables that have autoincrementing primary keys. To be used together with `set IDENTITY_INSERT <tablename> ON` in "Additional Code at begin".
 
 ## Settings
 

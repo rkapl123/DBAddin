@@ -26,13 +26,13 @@
 									<xs:element type="xs:string" name="execOnSave" minOccurs="0"/>
 									<xs:element type="xs:string" name="askBeforeExecute" minOccurs="0"/>
 									<xs:element type="xs:string" name="confirmText" minOccurs="0"/>
-                  <xs:element type="xs:string" name="parametrized" minOccurs="0"/>
-                  <xs:element type="xs:string" name="paramEnclosing" minOccurs="0"/>
-                  <xs:element type="xs:string" name="convertAsString" minOccurs="0"/>
-                  <xs:element type="xs:string" name="convertAsDate" minOccurs="0"/>
-                  <xs:element type="xs:string" name="continueIfRowEmpty" minOccurs="0"/>
-                  <xs:element type="xs:string" name="paramRangesStr" minOccurs="0"/>
-                </xs:choice>
+									<xs:element type="xs:string" name="parametrized" minOccurs="0"/>
+									<xs:element type="xs:string" name="paramEnclosing" minOccurs="0"/>
+									<xs:element type="xs:string" name="convertAsString" minOccurs="0"/>
+									<xs:element type="xs:string" name="convertAsDate" minOccurs="0"/>
+									<xs:element type="xs:string" name="continueIfRowEmpty" minOccurs="0"/>
+									<xs:element type="xs:string" name="paramRangesStr" minOccurs="0"/>
+								</xs:choice>
 							</xs:sequence>
 							<xs:attribute name="Name" type="xs:string"/>
 						</xs:complexType>
@@ -60,6 +60,7 @@
 									<xs:element type="xs:byte" name="primKeysStr"/>
 									<xs:element type="xs:string" name="insertIfMissing" minOccurs="0"/>
 									<xs:element type="xs:string" name="executeAdditionalProc" minOccurs="0"/>
+									<xs:element type="xs:string" name="executeAdditionalCodeBegin" minOccurs="0"/>
 									<xs:element type="xs:string" name="ignoreColumns" minOccurs="0"/>
 									<xs:element type="xs:string" name="CUDFlags" minOccurs="0"/>
 									<xs:element type="xs:string" name="AutoIncFlag" minOccurs="0"/>
@@ -68,10 +69,11 @@
 									<xs:element type="xs:string" name="IgnoreDataErrors" minOccurs="0"/>
 									<xs:element type="xs:string" name="confirmText" minOccurs="0"/>
 									<xs:element type="xs:string" name="avoidFill" minOccurs="0"/>
-                  <xs:element type="xs:string" name="preventColResize" minOccurs="0"/>
-                  <xs:element type="xs:string" name="deleteBeforeMapperInsert" minOccurs="0"/>
-                  <xs:element type="xs:string" name="onlyRefreshTheseDBSheetLookups" minOccurs="0"/>
-                </xs:choice>
+									<xs:element type="xs:string" name="preventColResize" minOccurs="0"/>
+									<xs:element type="xs:string" name="deleteBeforeMapperInsert" minOccurs="0"/>
+									<xs:element type="xs:string" name="onlyRefreshTheseDBSheetLookups" minOccurs="0"/>
+									<xs:element type="xs:string" name="preventAutoInc" minOccurs="0"/>
+								</xs:choice>
 							</xs:sequence>
 							<xs:attribute name="Name" type="xs:string"/>
 						</xs:complexType>

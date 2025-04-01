@@ -194,6 +194,7 @@ Public Class MenuHandler
         Return customUIXml
     End Function
 
+
     ''' <summary>initialize the AdhocSQL ribbon combo-box entries</summary>
     Private Sub initAdhocSQLconfig()
         Dim customSettings As NameValueCollection = Nothing

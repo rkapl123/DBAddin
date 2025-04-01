@@ -405,8 +405,12 @@ Public Class DBMapper : Inherits DBModif
     Private ReadOnly primKeysCount As Integer = 0
     ''' <summary>if set, then insert row into table if primary key is missing there. Default = False (only update)</summary>
     Private ReadOnly insertIfMissing As Boolean = False
+    ''' <summary>prevent setting autoincrement even when given in the database (for set IDENTITY_INSERT flag)</summary>
+    Private ReadOnly preventAutoInc As Boolean = False
     ''' <summary>additional stored procedure to be executed after saving</summary>
     Private ReadOnly executeAdditionalProc As String = ""
+    ''' <summary>additional stored procedure to be executed before saving</summary>
+    Private ReadOnly executeAdditionalCodeBegin As String = ""
     ''' <summary>columns to be ignored (helper columns)</summary>
     Private ReadOnly ignoreColumns As String = ""
     ''' <summary>respect C/U/D Flags (DBSheet functionality)</summary>
@@ -452,11 +456,13 @@ Public Class DBMapper : Inherits DBModif
             End Try
             insertIfMissing = Convert.ToBoolean(getParamFromXML(definitionXML, "insertIfMissing", "Boolean"))
             executeAdditionalProc = getParamFromXML(definitionXML, "executeAdditionalProc")
+            executeAdditionalCodeBegin = getParamFromXML(definitionXML, "executeAdditionalCodeBegin")
             ignoreColumns = getParamFromXML(definitionXML, "ignoreColumns")
             IgnoreDataErrors = Convert.ToBoolean(getParamFromXML(definitionXML, "IgnoreDataErrors", "Boolean"))
             CUDFlags = Convert.ToBoolean(getParamFromXML(definitionXML, "CUDFlags", "Boolean"))
             AutoIncFlag = Convert.ToBoolean(getParamFromXML(definitionXML, "AutoIncFlag", "Boolean"))
             ' from here on, all properties are set only in XML...
+            preventAutoInc = Convert.ToBoolean(getParamFromXML(definitionXML, "preventAutoInc", "Boolean"))
             avoidFill = Convert.ToBoolean(getParamFromXML(definitionXML, "avoidFill", "Boolean"))
             preventColResize = Convert.ToBoolean(getParamFromXML(definitionXML, "preventColResize", "Boolean"))
             deleteBeforeMapperInsert = Convert.ToBoolean(getParamFromXML(definitionXML, "deleteBeforeMapperInsert", "Boolean"))
@@ -543,7 +549,8 @@ Public Class DBMapper : Inherits DBModif
         End If
 
         preventChangeWhileFetching = True
-
+        Dim theProgressForm = New ProgressForm
+        theProgressForm.Show()
         Try
             ' Ctrl Shift - pressed: set delete flag and visual marker in selection
             If deleteFlag Then
@@ -554,7 +561,7 @@ Public Class DBMapper : Inherits DBModif
                     If TargetRange.Cells(CUDMarkRow, targetRangeColumns + 1).Value IsNot Nothing Then Continue For
                     TargetRange.Cells(CUDMarkRow, targetRangeColumns + 1).Value = "d"
                     TargetRange.Rows(CUDMarkRow).Font.Strikethrough = True
-                    ExcelDnaUtil.Application.Statusbar = "Delete mark for row " + countRow.ToString() + "/" + changedRangeRows.ToString()
+                    theProgressForm.ProgressLabel.Text = "Delete mark for row " + countRow.ToString() + "/" + changedRangeRows.ToString()
                     countRow += 1
                 Next
                 ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = True
@@ -643,7 +650,7 @@ Public Class DBMapper : Inherits DBModif
         End Try
 exitSub:
         preventChangeWhileFetching = False
-        ExcelDnaUtil.Application.Statusbar = False
+        theProgressForm.Close()
     End Sub
 
     ''' <summary>checks whether passed array has only empty entries</summary>
@@ -700,11 +707,17 @@ exitSub:
             Exit Sub
         End Try
         Try
-            ' only extend like this if no CUD Flags or AutoIncFlag present (may have non existing first (primary) columns -> auto identity columns !)
-            If Not (CUDFlags Or AutoIncFlag) Then
-                If TargetRange.Cells(2, 1).Value Is Nothing Then Exit Sub ' only extend if there are multiple rows...
-                Dim rowCount As Integer = TargetRange.Cells(1, 1).End(Excel.XlDirection.xlDown).Row - TargetRange.Cells(1, 1).Row + 1
-                ' unfortunately the above method to find the column extent doesn't work with hidden columns, so count the filled cells directly...
+            ' only extend if no CUD Flags present
+            If Not CUDFlags Then
+                ' first reflect potential externally resized target name
+                Me.setTargetRange(ExcelDnaUtil.Application.Range(paramTargetName))
+                Dim rowCount As Integer = TargetRange.Rows.Count
+                ' don't auto update rows if AutoIncFlag (Not being prevented!) exists, may have non existing first (primary) columns -> auto identity columns. preventAutoInc supersedes this and should have primary columns again
+                If Not (AutoIncFlag And Not preventAutoInc) Then
+                    If TargetRange.Cells(2, 1).Value Is Nothing Then Exit Sub ' only extend if there are multiple rows...
+                    rowCount = TargetRange.Cells(1, 1).End(Excel.XlDirection.xlDown).Row - TargetRange.Cells(1, 1).Row + 1
+                End If
+                ' unfortunately the above row method to find the column extent doesn't work with hidden columns, so count the filled cells directly...
                 Dim colCount As Integer = 1
                 ' if we don't want columns to automatically extend then take original column count
                 If preventColResize Then
@@ -768,6 +781,7 @@ exitSub:
         definitionXML.AppendChildNode("preventColResize", NamespaceURI:="DBModifDef", NodeValue:=preventColResize.ToString())
         definitionXML.AppendChildNode("deleteBeforeMapperInsert", NamespaceURI:="DBModifDef", NodeValue:=deleteBeforeMapperInsert.ToString())
         definitionXML.AppendChildNode("onlyRefreshTheseDBSheetLookups", NamespaceURI:="DBModifDef", NodeValue:=onlyRefreshTheseDBSheetLookups)
+        definitionXML.AppendChildNode("preventAutoInc", NamespaceURI:="DBModifDef", NodeValue:=preventAutoInc.ToString())
     End Sub
 
 
@@ -797,9 +811,11 @@ exitSub:
                 If retval = vbCancel Then Exit Sub
             End If
         End If
+        Dim theProgressForm = New ProgressForm
+        theProgressForm.Show()
         'now create/get a connection (dbcnn) for environment in case it was not already created by a step in the sequence before (transactions!)
         If Not TransactionOpen Then
-            ExcelDnaUtil.Application.StatusBar = "opening database connection for " + database
+            theProgressForm.ProgressLabel.Text = "opening database connection for " + database
             If Not openDatabase() Then Exit Sub
         End If
         Dim envStr As String = derivedEnv(getEnv()).ToString()
@@ -832,7 +848,8 @@ exitSub:
         ' set up data adapter and data set for checking DBMapper columns
         Dim da As DbDataAdapter = Nothing
         Dim dscheck As New DataSet()
-        ExcelDnaUtil.Application.StatusBar = "initialising the Data Adapter"
+        theProgressForm.ProgressLabel.Text = "initialising the Data Adapter"
+
         Try
             ' INSTANCE.DBNAME.dbo.tablename becomes [INSTANCE].[DBNAME].[dbo].[tablename]
             Dim SelectStmt As String = "SELECT * FROM " + openingQuote + String.Join(closingQuote + "." + openingQuote, Strings.Split(tableName, ".")) + closingQuote
@@ -841,16 +858,34 @@ exitSub:
                 Using comm As New SqlCommand("SET ARITHABORT ON", idbcnn, DBModifHelper.trans)
                     comm.ExecuteNonQuery()
                 End Using
+                If executeAdditionalCodeBegin <> "" Then
+                    theProgressForm.ProgressLabel.Text = "executing additional code at begin: " + executeAdditionalCodeBegin
+                    Using comm As New SqlCommand(executeAdditionalCodeBegin, idbcnn, DBModifHelper.trans)
+                        comm.ExecuteNonQuery()
+                    End Using
+                End If
                 da = New SqlDataAdapter(New SqlCommand(SelectStmt, idbcnn, DBModifHelper.trans)) With {
                     .UpdateBatchSize = 20,
                     .ContinueUpdateOnError = True ' this is needed to check the error rows after update and present them
                 }
             ElseIf TypeName(idbcnn) = "OleDbConnection" Then
+                If executeAdditionalCodeBegin <> "" Then
+                    theProgressForm.ProgressLabel.Text = "executing additional code at begin: " + executeAdditionalCodeBegin
+                    Using comm As New OleDbCommand(executeAdditionalCodeBegin, idbcnn, DBModifHelper.trans)
+                        comm.ExecuteNonQuery()
+                    End Using
+                End If
                 da = New OleDbDataAdapter(New OleDbCommand(SelectStmt, idbcnn, DBModifHelper.trans)) With {
                     .UpdateBatchSize = 20,
                     .ContinueUpdateOnError = True
                 }
             Else
+                If executeAdditionalCodeBegin <> "" Then
+                    theProgressForm.ProgressLabel.Text = "executing additional code at begin: " + executeAdditionalCodeBegin
+                    Using comm As New OdbcCommand(executeAdditionalCodeBegin, idbcnn, DBModifHelper.trans)
+                        comm.ExecuteNonQuery()
+                    End Using
+                End If
                 da = New OdbcDataAdapter(New OdbcCommand(SelectStmt, idbcnn, DBModifHelper.trans)) With {
                     .UpdateBatchSize = 20,
                     .ContinueUpdateOnError = True
@@ -861,7 +896,7 @@ exitSub:
             UserMsg("Error in initializing Data Adapter for " + tableName + ": " + ex.Message, "DBMapper Error")
         End Try
 
-        ExcelDnaUtil.Application.StatusBar = "retrieving the schema for " + tableName
+        theProgressForm.ProgressLabel.Text = "retrieving the schema for " + tableName
         Try
             da.FillSchema(dscheck, SchemaType.Source, tableName)
         Catch ex As Exception
@@ -1008,7 +1043,7 @@ exitSub:
         ds.Tables(0).BeginLoadData()
         ' fill the dataset in normal mode (needed to find records in memory)
         If Not avoidFill Then
-            ExcelDnaUtil.Application.StatusBar = "filling the table data into dataset"
+            theProgressForm.ProgressLabel.Text = "filling the table data into dataset"
             Try
                 da.Fill(ds.Tables(0))
             Catch ex As Exception
@@ -1024,11 +1059,11 @@ exitSub:
         Try
             Dim custCmdBuilder As CustomCommandBuilder
             If TypeName(idbcnn) = "SqlConnection" Then
-                custCmdBuilder = New CustomSqlCommandBuilder(ds.Tables(0), idbcnn, allColumns, schemaDataTypeCollection)
+                custCmdBuilder = New CustomSqlCommandBuilder(ds.Tables(0), idbcnn, allColumns, schemaDataTypeCollection, preventAutoInc)
             ElseIf TypeName(idbcnn) = "OleDbConnection" Then
-                custCmdBuilder = New CustomOleDbCommandBuilder(ds.Tables(0), idbcnn, allColumns, schemaDataTypeCollection)
+                custCmdBuilder = New CustomOleDbCommandBuilder(ds.Tables(0), idbcnn, allColumns, schemaDataTypeCollection, preventAutoInc)
             Else
-                custCmdBuilder = New CustomOdbcCommandBuilder(ds.Tables(0), idbcnn, allColumns, schemaDataTypeCollection)
+                custCmdBuilder = New CustomOdbcCommandBuilder(ds.Tables(0), idbcnn, allColumns, schemaDataTypeCollection, preventAutoInc)
             End If
             da.UpdateCommand = custCmdBuilder.UpdateCommand()
             da.UpdateCommand.CommandTimeout = CmdTimeout
@@ -1040,7 +1075,7 @@ exitSub:
             notifyUserOfDataError("Error in setting Insert/Update/Delete Commands for Data Adapter for " + tableName + ": " + ex.Message, 1)
             GoTo cleanup
         End Try
-        ExcelDnaUtil.Application.StatusBar = "Assigning transaction to CommandBuilders"
+        theProgressForm.ProgressLabel.Text = "Assigning transaction to CommandBuilders"
         Try
             da.UpdateCommand.UpdatedRowSource = UpdateRowSource.None
             da.UpdateCommand.Transaction = DBModifHelper.trans
@@ -1168,12 +1203,12 @@ exitSub:
                         If Not notifyUserOfDataError("Did Not find record with primary keys '" + primKeyValueStr + "', insertIfMissing = " + insertIfMissing.ToString() + " in sheet " + TargetRange.Parent.Name + ", row " + rowNum.ToString(), rowNum) Then GoTo cleanup
                         GoTo nextRow
                     End If
-                    ExcelDnaUtil.Application.StatusBar = Left("Inserting " + IIf(AutoIncrement, "new auto-incremented key", primKeyValueStr) + " into " + tableName + ", " + CStr(rowNum) + "/" + CStr(totalRowCount), 255)
+                    theProgressForm.ProgressLabel.Text = "Inserting record with " + IIf(AutoIncrement, "new auto-incremented key", "key(s): " + primKeyValueStr) + " into " + tableName + ", " + CStr(rowNum) + "/" + CStr(totalRowCount)
                 End If
                 ' fill non primary key fields to prepare record for insert or update
                 If Not CUDFlags Or (CUDFlags And (rowCUDFlag = "i" Or rowCUDFlag = "u")) Then
                     colNum = primKeysCount + 1
-                    Do
+                    While colNum <= totalColCount
                         Dim fieldname As String = TargetRange.Cells(1, colNum).Value
                         If InStr(1, LCase(ignoreColumns) + ",", LCase(fieldname) + ",") = 0 Then
                             Try
@@ -1201,7 +1236,8 @@ exitSub:
                                         Try
                                             foundRow(fieldname) = IIf(fieldval.ToString().Length = 0, DBNull.Value, fieldval)
                                         Catch ex As Exception
-                                            notifyUserOfDataError("Error: " + ex.Message + " in assigning value in sheet " + TargetRange.Parent.Name + ", row " + rowNum.ToString() + ", col " + colNum.ToString(), rowNum, colNum)
+                                            If Not notifyUserOfDataError("Error: " + ex.Message + " in assigning value in sheet " + TargetRange.Parent.Name + ", row " + rowNum.ToString() + ", col " + colNum.ToString(), rowNum, colNum) Then GoTo cleanup
+                                            GoTo nextRow
                                         End Try
                                     End If
                                 End If
@@ -1213,16 +1249,17 @@ exitSub:
                             End Try
                         End If
                         colNum += 1
-                    Loop Until colNum > totalColCount
+                    End While
 
                     If insertRecord Then
                         Try
                             ds.Tables(0).Rows.Add(foundRow)
                         Catch ex As Exception
                             If Not notifyUserOfDataError("Error inserting row " + rowNum.ToString() + " in sheet " + TargetRange.Parent.Name + ": " + ex.Message, rowNum) Then GoTo cleanup
+                            GoTo nextRow
                         End Try
                     Else
-                        ExcelDnaUtil.Application.StatusBar = Left("Updated fields for " + primKeyValueStr + " in " + tableName + ", " + CStr(rowNum) + "/" + CStr(totalRowCount), 255)
+                        theProgressForm.ProgressLabel.Text = "Updated fields for record with key(s) " + primKeyValueStr + " in " + tableName + ", " + CStr(rowNum) + "/" + CStr(totalRowCount)
                     End If
                 End If
 
@@ -1232,8 +1269,9 @@ exitSub:
                         foundRow.Delete()
                     Catch ex As Exception
                         If Not notifyUserOfDataError("Error deleting row " + rowNum.ToString() + " in sheet " + TargetRange.Parent.Name + ": " + ex.Message, rowNum) Then GoTo cleanup
+                        GoTo nextRow
                     End Try
-                    ExcelDnaUtil.Application.StatusBar = Left("Deleting " + primKeyValueStr + " in " + tableName + ", " + CStr(rowNum) + "/" + CStr(totalRowCount), 255)
+                    theProgressForm.ProgressLabel.Text = "Deleting record with key(s) " + primKeyValueStr + " in " + tableName + ", " + CStr(rowNum) + "/" + CStr(totalRowCount)
                 End If
 
 nextRow:
@@ -1251,7 +1289,7 @@ nextRow:
         Loop Until rowNum > TargetRange.Rows.Count Or finishLoop
 
         ' now update the changes in the DB
-        ExcelDnaUtil.Application.StatusBar = Left("Applying modifications (inserts/updates/deletes) in Database for " + tableName, 255)
+        theProgressForm.ProgressLabel.Text = "Applying modifications (inserts/updates/deletes) in Database for " + tableName
         ' no capture of exception here as 1) the adapters were created with ContinueUpdateOnError=true and 2) the table is checked for errors after the update
         ' in this way the actual rows where the database error occured can be retrieved/presented to the user
         Dim affectedRows As Integer = da.Update(ds.Tables(0))
@@ -1291,7 +1329,7 @@ nextRow:
         If executeAdditionalProc.Length > 0 Then
             Dim result As Integer
             Try
-                ExcelDnaUtil.Application.StatusBar = "executing stored procedure " + executeAdditionalProc
+                theProgressForm.ProgressLabel.Text = "executing additional code at end: " + executeAdditionalProc
                 Dim storedProcCmd As IDbCommand
                 If TypeName(idbcnn) = "SqlConnection" Then
                     storedProcCmd = New SqlCommand(executeAdditionalProc, idbcnn, trans)
@@ -1304,13 +1342,13 @@ nextRow:
                 result = storedProcCmd.ExecuteNonQuery()
             Catch ex As Exception
                 hadError = True
-                UserMsg("Error in executing additional stored procedure: " + ex.Message, "DBMapper Error")
+                UserMsg("Error in executing additional code at end: " + ex.Message, "DBMapper Error")
                 GoTo cleanup
             End Try
             LogInfo("executed " + executeAdditionalProc + ", affected rows: " + result.ToString())
         End If
 cleanup:
-        ExcelDnaUtil.Application.StatusBar = False
+        theProgressForm.Close()
         If deleteBeforeMapperInsert And Not TransactionOpen Then
             If hadError Then
                 DBModifHelper.trans.Rollback()
@@ -1398,8 +1436,11 @@ cleanup:
             End If
         End If
         Dim retval As MsgBoxResult = QuestionMsg(message + ", continue with storing or cancel?", MsgBoxStyle.OkCancel, "DBMapper Error", MsgBoxStyle.Critical)
-        If retval = vbCancel Then Return False
-        Return True
+        If retval = vbCancel Then
+            Return False
+        Else
+            Return True
+        End If
     End Function
 
     ''' <summary>set the fields in the DB Modifier Create Dialog with attributes of object</summary>
@@ -1414,6 +1455,7 @@ cleanup:
             .PrimaryKeys.Text = primKeysCount.ToString()
             .insertIfMissing.Checked = insertIfMissing
             .addStoredProc.Text = executeAdditionalProc
+            .addCodeBegin.Text = executeAdditionalCodeBegin
             .IgnoreColumns.Text = ignoreColumns
             .CUDflags.Checked = CUDFlags
             .AutoIncFlag.Checked = AutoIncFlag
@@ -1479,14 +1521,16 @@ Public Class DBAction : Inherits DBModif
             If Not confirmExecution() = MsgBoxResult.Yes Then Exit Sub
         End If
 
+        Dim theProgressForm = New ProgressForm
+        theProgressForm.Show()
         'now create/get a database specific connection (idbcnn) in case it was not already created by the sequence (transactions!)
         If Not TransactionOpen Then
+            theProgressForm.ProgressLabel.Text = "opening database connection for " + database
             If Not openDatabase() Then Exit Sub
         End If
-
         Dim result As Integer
         Try
-            ExcelDnaUtil.Application.StatusBar = "executing DBAction " + paramTargetName
+            theProgressForm.ProgressLabel.Text = "executing DBAction " + paramTargetName
 
             Dim executeText As String = ""
             For Each targetCell As Excel.Range In TargetRange
@@ -1500,7 +1544,7 @@ Public Class DBAction : Inherits DBModif
         Catch ex As Exception
             hadError = True
             UserMsg("Error in executing DB Action " + paramTargetName + ":" + vbCrLf + ex.Message, "DBAction Error")
-            ExcelDnaUtil.Application.StatusBar = False
+            theProgressForm.Close()
             Exit Sub
         End Try
         Dim message As String = "DBAction " + paramTargetName + " executed, affected records: " + result.ToString() + IIf(result = 0, ". As no records were affected, you might check whether you need to set the <continue if row empty> flag in case there should be some data affected", "")
@@ -1509,7 +1553,7 @@ Public Class DBAction : Inherits DBModif
         Else
             LogInfo(message)
         End If
-        ExcelDnaUtil.Application.StatusBar = False
+        theProgressForm.Close()
         ' close connection to return it to the pool...
         If calledByDBSeq = "" Then idbcnn.Close()
     End Sub
@@ -1770,21 +1814,26 @@ Public Class CustomCommandBuilder
     Protected ReadOnly dataTable As DataTable
     ''' <summary>array of all column information (DataColumn) in the data table</summary>
     Protected ReadOnly allColumns As DataColumn()
+    ''' <summary>Used to avoid creation of auto increment code (avoids SELECT SCOPE_IDENTITY())</summary>
+    Protected preventAutoInc As Boolean
 
-    Public Sub New(dataTable As DataTable, allColumns As DataColumn())
+    Public Sub New(dataTable As DataTable, allColumns As DataColumn(), preventAutoInc As Boolean)
         Me.dataTable = dataTable
         Me.allColumns = allColumns
+        Me.preventAutoInc = preventAutoInc
     End Sub
 
     ''' <summary>get auto increment columns</summary>
     ''' <returns>array of auto increment DataColumn entries</returns>
     Protected Function AutoincrementKeyColumns() As ArrayList
         AutoincrementKeyColumns = New ArrayList
-        For Each primaryKeyColumn As DataColumn In dataTable.PrimaryKey
-            If primaryKeyColumn.AutoIncrement Then
-                AutoincrementKeyColumns.Add(primaryKeyColumn)
-            End If
-        Next
+        If Not preventAutoInc Then
+            For Each primaryKeyColumn As DataColumn In dataTable.PrimaryKey
+                If primaryKeyColumn.AutoIncrement Then
+                    AutoincrementKeyColumns.Add(primaryKeyColumn)
+                End If
+            Next
+        End If
     End Function
 
     ''' <summary>Creates Insert command with support for Auto-increment (Identity) fields</summary>
@@ -1824,8 +1873,8 @@ Public Class CustomSqlCommandBuilder
     ''' <summary>collection for casting .NET data type to ADO.NET DbType in DBModifHelper.TypeToDbType</summary>
     Private ReadOnly schemaDataTypeCollection As Collection
 
-    Public Sub New(dataTable As DataTable, connection As SqlConnection, allColumns As DataColumn(), schemaDataTypeCollection As Collection)
-        MyBase.New(dataTable, allColumns)
+    Public Sub New(dataTable As DataTable, connection As SqlConnection, allColumns As DataColumn(), schemaDataTypeCollection As Collection, preventAutoInc As Boolean)
+        MyBase.New(dataTable, allColumns, preventAutoInc)
         Me.connection = connection
         Me.schemaDataTypeCollection = schemaDataTypeCollection
     End Sub
@@ -1952,8 +2001,8 @@ Public Class CustomOdbcCommandBuilder
     ''' <summary>collection for casting .NET data type to ADO.NET DbType in DBModifHelper.TypeToDbType</summary>
     Private ReadOnly schemaDataTypeCollection As Collection
 
-    Public Sub New(dataTable As DataTable, connection As OdbcConnection, allColumns As DataColumn(), schemaDataTypeCollection As Collection)
-        MyBase.New(dataTable, allColumns)
+    Public Sub New(dataTable As DataTable, connection As OdbcConnection, allColumns As DataColumn(), schemaDataTypeCollection As Collection, preventAutoInc As Boolean)
+        MyBase.New(dataTable, allColumns, preventAutoInc)
         Me.connection = connection
         Me.schemaDataTypeCollection = schemaDataTypeCollection
     End Sub
@@ -2079,8 +2128,8 @@ Public Class CustomOleDbCommandBuilder
     ''' <summary>collection for casting .NET data type to ADO.NET DbType in DBModifHelper.TypeToDbType</summary>
     Private ReadOnly schemaDataTypeCollection As Collection
 
-    Public Sub New(dataTable As DataTable, connection As OleDbConnection, allColumns As DataColumn(), schemaDataTypeCollection As Collection)
-        MyBase.New(dataTable, allColumns)
+    Public Sub New(dataTable As DataTable, connection As OleDbConnection, allColumns As DataColumn(), schemaDataTypeCollection As Collection, preventAutoInc As Boolean)
+        MyBase.New(dataTable, allColumns, preventAutoInc)
         Me.connection = connection
         Me.schemaDataTypeCollection = schemaDataTypeCollection
     End Sub

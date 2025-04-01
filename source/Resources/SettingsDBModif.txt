@@ -11,6 +11,7 @@ deleteBeforeMapperInsert
 env
 execOnSave
 executeAdditionalProc
+executeAdditionalCodeBegin
 ignoreColumns
 IgnoreDataErrors
 insertIfMissing
@@ -18,6 +19,7 @@ onlyRefreshTheseDBSheetLookups
 paramEnclosing
 parametrized
 paramRangesStr
+preventAutoInc
 preventColResize
 primKeysStr
 seqStep
