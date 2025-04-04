@@ -495,6 +495,16 @@ Public Module DBModifHelper
         End If
     End Function
 
+    ''' <summary>adds error message to both DBModifDefColl (for display in Ribbon menu) as well as log</summary>
+    ''' <param name="errmsg"></param>
+    Private Sub addErrorDBModifColl(errmsg As String)
+        ' ensure that Error message is the only item in DBModifDefColl
+        DBModifDefColl.Clear()
+        Dim defColl As Dictionary(Of String, DBModif) = New Dictionary(Of String, DBModif) From {{errmsg, Nothing}}
+        DBModifDefColl.Add("Error", defColl)
+        LogWarn(errmsg)
+    End Sub
+
     ''' <summary>gets defined names for DBModifier (DBMapper/DBAction/DBSeqnce) invocation in the passed workbook and updates Ribbon with it</summary>
     ''' <param name="actWb">the passed workbook</param>
     ''' <param name="onlyCheck">only used for UserMsg dialogs (check vs. get)</param>
@@ -507,14 +517,16 @@ Public Module DBModifHelper
             Dim CustomXmlParts As Object
             Try : CustomXmlParts = actWb.CustomXMLParts.SelectByNamespace("DBModifDef")
             Catch ex As Exception
-                LogWarn("Exception when selecting namespace 'DBModifDef' for CustomXMLParts in getDBModifDefinitions for Workbook " + actWb.Name + ": " + ex.Message)
+                addErrorDBModifColl("Exception when selecting namespace 'DBModifDef' for CustomXMLParts in getDBModifDefinitions for Workbook " + actWb.Name + ": " + ex.Message)
+                theRibbon.Invalidate()
                 Exit Sub
             End Try
 
             If CustomXmlParts.Count = 1 Then
                 Dim actWbNames As Excel.Names
                 Try : actWbNames = actWb.Names : Catch ex As Exception
-                    UserMsg("Exception when trying to get the active workbook names for getting DBModifier definitions: " + ex.Message + ", this might be either due to errors in the VBA-IDE (missing references) or due to opening this workbook from an MS-Office hyperlink, starting up Excel (timing issue). Switch to another workbook and back to fix.")
+                    addErrorDBModifColl("Exception when trying to get the active workbook names for getting DBModifier definitions: " + ex.Message + ", this might be either due to errors in the VBA-IDE (missing references) or due to opening this workbook from an MS-Office hyperlink, starting up Excel (timing issue). Switch to another workbook and back to fix.")
+                    theRibbon.Invalidate()
                     Exit Sub
                 End Try
 
@@ -536,8 +548,9 @@ Public Module DBModifHelper
                                 Dim rangenameName As String = Replace(rangename.Name, rangename.Parent.Name + "!", "")
                                 If rangenameName = nodeName Then
                                     If InStr(rangename.RefersTo, "#REF!") > 0 Then
-                                        UserMsg(DBModiftype + " definitions range " + rangename.Name + " contains #REF!", "DBModifier Definitions Error")
-                                        Exit For
+                                        UserMsg(DBModiftype + " definitions range " + rangename.Name + " contains #REF! error", "DBModifier Definitions Error")
+                                        ExcelDnaUtil.Application.Dialogs(Excel.XlBuiltInDialog.xlDialogNameManager).Show()
+                                        GoTo EndOuterLoop
                                     End If
                                     ' might fail if target name relates to an invalid (offset) formula ...
                                     Try
@@ -602,12 +615,13 @@ Public Module DBModifHelper
 EndOuterLoop:
                 Next
             ElseIf CustomXmlParts.Count > 1 Then
-                UserMsg("Multiple CustomXmlParts for DBModifDef existing!", IIf(onlyCheck, "check", "get") + " DBModif Definitions")
+                addErrorDBModifColl("Multiple CustomXmlParts for DBModifDef existing while " + IIf(onlyCheck, "checking", "getting") + " DBModif Definitions")
             End If
-            theRibbon.Invalidate()
         Catch ex As Exception
-            LogWarn("Exception in getting DB Modifier Definitions: " + ex.Message)
+            addErrorDBModifColl("Exception in getting DB Modifier Definitions: " + ex.Message)
         End Try
+        ' can't use theRibbon.InvalidateControl("DBModifGroup") here as this doesn't reflect in the dynamic DBModifier menu
+        theRibbon.Invalidate()
     End Sub
 
     ''' <summary>correct quotes in field name</summary>

@@ -1,9 +1,16 @@
-<html><head><title>maxMenuDepth</title><link href="styles/default.css" type="text/css" rel="stylesheet" /></head><body><div class="header"> </div><br class="clear" /><div class="navigation"><ul><li><a href="index.htm">Documentation</a></li></ul><ul><li><a class="" href="4294967296-DBaddin.htm">DBaddin</a><ul><li><a class="" href="4294967990.htm">ConfigFiles</a><ul><li><a class="" href="4294967990-Fields.htm">Fields</a><ul><li><a class="current" href="4294968029.htm">maxMenuDepth</a><ul /></li></ul></li></ul></li></ul></li></ul></div><div class="content"><h1>maxMenuDepth Constant</h1><div class="summary">fixed max Depth for Ribbon</div><div class="details"><span class="namespace"><em>Namespace:</em> <a href="4294967296-DBaddin.htm">DBaddin</a></span><span class="assembly"><em>Assembly:</em> DBaddin in (DBaddin.dll)
+<html><head><title>stringParts(String, String)</title><link href="styles/default.css" type="text/css" rel="stylesheet" /></head><body><div class="header"> </div><br class="clear" /><div class="navigation"><ul><li><a href="index.htm">Documentation</a></li></ul><ul><li><a class="" href="4294967296-DBaddin.htm">DBaddin</a><ul><li><a class="" href="4294967995.htm">ConfigFiles</a><ul><li><a class="" href="4294967995-Methods.htm">Methods</a><ul><li><a class="current" href="4294968029.htm">stringParts</a><ul /></li></ul></li></ul></li></ul></li></ul></div><div class="content"><h1>stringParts(String, String) Method</h1><div class="summary">returns string in space separated parts (tokenize String following CamelCase switch or when given specialConfigStoreSeparator occurs)</div><div class="details"><span class="namespace"><em>Namespace:</em> <a href="4294967296-DBaddin.htm">DBaddin</a></span><span class="assembly"><em>Assembly:</em> DBaddin in (DBaddin.dll)
 								</span></div>
         <div class="syntax">
             <h2>Syntax</h2>
-            <pre><span class="keyword">private</span> <span class="keyword">const</span> <span class="keyword">int</span> maxMenuDepth</pre>
+            <pre><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">string</span> stringParts(
+	<span class="keyword">string</span> theString,
+	<span class="keyword">string</span> specialConfigStoreSeparator
+	)</pre>
         </div>
-    </div><div class="footer">
+    <div class="parameters"><h3>Parameters</h3><dl><dt>theString</dt><dd><div>
+				Type:
+				String</div><div>string to be tokenized</div></dd><dt>specialConfigStoreSeparator</dt><dd><div>
+				Type:
+				String</div><div>if not empty, tokenize theString by this separator, else tokenize by camel case</div></dd></dl></div><div class="return"><h3>Returns</h3><div class="item">String</div><div class="returns"></div></div></div><div class="footer">
 			Produced by the <a href="https://livedocumenter.barryjones.me.uk/">Live Documenter</a>.
 		</div></body></html>

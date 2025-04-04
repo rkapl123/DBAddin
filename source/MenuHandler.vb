@@ -87,12 +87,12 @@ Public Class MenuHandler
             "<comboBox id='DBAdhocSQL' showLabel='false' sizeString='123456789012345678901234567' getText='GetAdhocSQLText' getItemCount='GetAdhocSQLItemCount' getItemLabel='GetAdhocSQLItemLabel' onChange='showDBAdHocSQL' screentip='enter Ad-hoc SQL statements to execute'/>" +
             "<dialogBoxLauncher><button id='AdHocSQL' label='AdHoc SQL Command' onAction='showDBAdHocSQLDBOX' screentip='Open AdHoc SQL Command Tool'/></dialogBoxLauncher>" +
         "</group>"
-        ' DBModif Group: maximum three DBModif types possible (depending on existence in current workbook): 
+        ' DBModif Group: maximum three DBModif types possible (depending on existence in current workbook) + Error to display that error happened during DB Modifier definition fetching: 
         customUIXml +=
         "<group id='DBModifGroup' label='Execute DBModifier'>"
-        For Each DBModifType As String In {"DBSeqnce", "DBMapper", "DBAction"}
+        For Each DBModifType As String In {"DBSeqnce", "DBMapper", "DBAction", "Error"}
             customUIXml += "<dynamicMenu id='" + DBModifType + "' " +
-                                                "size='large' getLabel='getDBModifTypeLabel' imageMso='ApplicationOptionsDialog' " +
+                                                "size='large' getLabel='getDBModifTypeLabel' getImage='getDBModifImage' " +
                                                 "getScreentip='getDBModifScreentip' getContent='getDBModifMenuContent' getVisible='getDBModifMenuVisible'/>"
         Next
         customUIXml += "<dialogBoxLauncher><button id='DBModifEdit' label='DBModif design' onAction='showDBModifEdit' screentip='Show/edit DBModif Definitions of current workbook'/></dialogBoxLauncher>" +
@@ -708,11 +708,11 @@ Public Class MenuHandler
         End If
     End Sub
 
-    ''' <summary>set the name of the DBModifType dropdown to the sheet name (for the WB dropdown this is the WB name)</summary>
+    ''' <summary>set the name of the DBModifType dropdown to the DBModifier Typename</summary>
     ''' <param name="control"></param>
     ''' <returns></returns>
     Public Function getDBModifTypeLabel(control As CustomUI.IRibbonControl) As String
-        getDBModifTypeLabel = If(control.Id = "DBSeqnce", "DBSequence", control.Id)
+        getDBModifTypeLabel = If(control.Id = "Error", "Error in DBModif Definitions", If(control.Id = "DBSeqnce", "DBSequence", control.Id))
     End Function
 
     ''' <summary>create the buttons in the DBModif dropdown menu</summary>
@@ -721,18 +721,23 @@ Public Class MenuHandler
     Public Function getDBModifMenuContent(control As CustomUI.IRibbonControl) As String
         Dim xmlString As String = "<menu xmlns='http://schemas.microsoft.com/office/2009/07/customui'>"
         Try
-            If Not DBModifDefColl.ContainsKey(control.Id) Then Return ""
-            Dim DBModifTypeName As String = IIf(control.Id = "DBSeqnce", "DBSequence", IIf(control.Id = "DBMapper", "DB Mapper", IIf(control.Id = "DBAction", "DB Action", "undefined DBModifTypeName")))
-            For Each nodeName As String In DBModifDefColl(control.Id).Keys
-                Dim descName As String = IIf(nodeName = control.Id, "Unnamed " + DBModifTypeName, Replace(nodeName, DBModifTypeName, ""))
-                Dim imageMsoStr As String = IIf(control.Id = "DBSeqnce", "ShowOnNewButton", IIf(control.Id = "DBMapper", "TableSave", IIf(control.Id = "DBAction", "TableIndexes", "undefined imageMso")))
-                Dim superTipStr As String = IIf(control.Id = "DBSeqnce", "executes " + DBModifTypeName + " defined in " + nodeName, IIf(control.Id = "DBMapper", "stores data defined in DBMapper (named " + nodeName + ") range on " + DBModifDefColl(control.Id).Item(nodeName).getTargetRangeAddress(), IIf(control.Id = "DBAction", "executes Action defined in DBAction (named " + nodeName + ") range on " + DBModifDefColl(control.Id).Item(nodeName).getTargetRangeAddress(), "undefined superTip")))
-                xmlString = xmlString + "<button id='_" + nodeName + "' label='do " + descName + "' imageMso='" + imageMsoStr + "' onAction='DBModifClick' tag='" + control.Id + "' screentip='do " + DBModifTypeName + ": " + descName + "' supertip='" + superTipStr + "' />"
-            Next
+            If DBModifDefColl.ContainsKey("Error") Then
+                Dim keylist As List(Of String) = New List(Of String)(DBModifDefColl("Error").Keys())
+                xmlString += "<button id='dummy' label='" + keylist(0) + "' />"
+            Else
+                If Not DBModifDefColl.ContainsKey(control.Id) Then Return ""
+                Dim DBModifTypeName As String = IIf(control.Id = "DBSeqnce", "DB Sequence", IIf(control.Id = "DBMapper", "DB Mapper", IIf(control.Id = "DBAction", "DB Action", "undefined DBModifTypeName")))
+                For Each nodeName As String In DBModifDefColl(control.Id).Keys
+                    Dim descName As String = IIf(nodeName = control.Id, "Unnamed " + DBModifTypeName, Replace(nodeName, DBModifTypeName, ""))
+                    Dim imageMsoStr As String = IIf(control.Id = "DBSeqnce", "ShowOnNewButton", IIf(control.Id = "DBMapper", "TableSave", IIf(control.Id = "DBAction", "TableIndexes", "undefined imageMso")))
+                    Dim superTipStr As String = IIf(control.Id = "DBSeqnce", "executes " + DBModifTypeName + " defined in " + nodeName, IIf(control.Id = "DBMapper", "stores data defined in DBMapper (named " + nodeName + ") range on " + DBModifDefColl(control.Id).Item(nodeName).getTargetRangeAddress(), IIf(control.Id = "DBAction", "executes Action defined in DBAction (named " + nodeName + ") range on " + DBModifDefColl(control.Id).Item(nodeName).getTargetRangeAddress(), "undefined superTip")))
+                    xmlString = xmlString + "<button id='_" + nodeName + "' label='do " + descName + "' imageMso='" + imageMsoStr + "' onAction='DBModifClick' tag='" + control.Id + "' screentip='do " + DBModifTypeName + ": " + descName + "' supertip='" + superTipStr + "' />"
+                Next
+            End If
             xmlString += "</menu>"
             Return xmlString
         Catch ex As Exception
-            UserMsg("Exception caught while building xml: " + ex.Message)
+            UserMsg("Exception caught while building " + control.Id + " submenu xml: " + ex.Message)
             Return ""
         End Try
     End Function
@@ -753,6 +758,17 @@ Public Class MenuHandler
         Catch ex As Exception
             Return False
         End Try
+    End Function
+
+    ''' <summary>display error icon for DBModif errors</summary>
+    ''' <param name="control"></param>
+    ''' <returns></returns>
+    Public Function getDBModifImage(control As CustomUI.IRibbonControl) As String
+        If control.Id = "Error" Then
+            Return "ReviewRejectChangeMenu"
+        Else
+            Return "ApplicationOptionsDialog"
+        End If
     End Function
 
     ''' <summary>DBModif button activated, do DB Mapper/DB Action/DB Sequence or define existing (CtrlKey pressed)...</summary>

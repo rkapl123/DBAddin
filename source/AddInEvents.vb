@@ -106,6 +106,13 @@ Public Class AddInEvents
             Dim askForEveryModifier As Boolean = False
             ' if overriding flag not given and Readonly is NOT recommended on this workbook and workbook IS NOT Readonly, ...
             If Not (Wb.ReadOnlyRecommended And Wb.ReadOnly) And Not doDBMOnSave Then
+                ' prevent action/editing in case of errors while DB Modifiers were added
+                If DBModifDefColl.ContainsKey("Error") Then
+                    Dim keylist As List(Of String) = New List(Of String)(DBModifDefColl("Error").Keys())
+                    UserMsg("DBModifier definitions not accessible due to error: " + vbCrLf + keylist(0))
+                    Exit Sub
+                End If
+
                 Dim TotalDBModifCount As Integer = 0
                 For Each DBmodifType As String In DBModifDefColl.Keys
                     For Each dbmapdefkey As String In DBModifDefColl(DBmodifType).Keys
@@ -262,7 +269,7 @@ done:
     ''' <param name="Wb"></param>
     Private Sub Application_WorkbookOpen(Wb As Excel.Workbook) Handles Application.WorkbookOpen
         If Not Wb.IsAddin Then
-            LogInfo("repair legacy functions for workbook: " + Wb.Name)
+            LogInfo("repair legacy functions for workbook on opening: " + Wb.Name)
             repairLegacyFunctions(Wb)
             Functions.preventRefreshFlag = False
             ' when opening, force recalculation of DB functions in workbook.
@@ -342,6 +349,12 @@ done:
     Private Shared Sub cbClick(cbName As String)
         ' reset non interactive messages (used for VBA invocations) and hadError for interactive invocations
         nonInteractiveErrMsgs = "" : DBModifHelper.hadError = False
+        ' prevent action/editing in case of errors while DB Modifiers were added
+        If DBModifDefColl.ContainsKey("Error") Then
+            Dim keylist As List(Of String) = New List(Of String)(DBModifDefColl("Error").Keys())
+            UserMsg("DBModifier definitions not accessible due to error: " + vbCrLf + keylist(0))
+            Exit Sub
+        End If
         Dim DBModifType As String = Left(cbName, 8)
         If DBModifType <> "DBSeqnce" Then
             Dim targetRange As Excel.Range
@@ -432,6 +445,7 @@ done:
     ''' <param name="Wb"></param>
     ''' <param name="Cancel"></param>
     Private Sub Application_WorkbookBeforeClose(Wb As Workbook, ByRef Cancel As Boolean) Handles Application.WorkbookBeforeClose
+        LogInfo("Workbook closing: " + Wb.Name)
         WbIsClosing = True
     End Sub
 
@@ -439,6 +453,7 @@ done:
     ''' <param name="Wb"></param>
     Private Sub Application_WorkbookDeactivate(Wb As Workbook) Handles Application.WorkbookDeactivate
         Try
+            LogInfo("Workbook Deactivating: " + Wb.Name)
             If WbIsClosing AndAlso preventRefreshFlagColl.ContainsKey(Wb.Name) Then preventRefreshFlagColl.Remove(Wb.Name)
             If WbIsClosing AndAlso Not IsNothing(DBModifDefColl) AndAlso DBModifDefColl.Count > 0 Then
                 DBModifDefColl.Clear()
@@ -468,6 +483,7 @@ done:
         Try
             Dim actWbNames As Excel.Names = ExcelDnaUtil.Application.ActiveWorkbook.Names
             For Each nm As Excel.Name In actWbNames
+                LogInfo("Application_AfterCalculate: " + nm.Name)
                 ' look only for formula target ranges
                 If Left$(nm.Name, 10) = "DBFtargetF" Then
                     ' get to the source cell to look up info in the StatusCollection
@@ -545,7 +561,9 @@ done:
 
     ''' <summary>used for releasing com objects</summary>
     Protected Overrides Sub Finalize()
+        LogInfo("Addin finalizing: Base finalize")
         MyBase.Finalize()
+        LogInfo("Addin finalizing: releasing com objects of control buttons")
         If Not IsNothing(cb1) Then Marshal.ReleaseComObject(cb1)
         If Not IsNothing(cb2) Then Marshal.ReleaseComObject(cb2)
         If Not IsNothing(cb3) Then Marshal.ReleaseComObject(cb3)

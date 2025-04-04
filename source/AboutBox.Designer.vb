@@ -46,17 +46,19 @@ Partial Class AboutBox
         Me.fixLegacyFunc = New System.Windows.Forms.Button()
         Me.ToolTip1 = New System.Windows.Forms.ToolTip(Me.components)
         Me.BackgroundWorker1 = New System.ComponentModel.BackgroundWorker()
+        Me.FilterLabel = New System.Windows.Forms.Label()
         Me.TableLayoutPanel.SuspendLayout()
         CType(Me.LogoPictureBox, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
         'TableLayoutPanel
         '
-        Me.TableLayoutPanel.ColumnCount = 5
+        Me.TableLayoutPanel.ColumnCount = 6
         Me.TableLayoutPanel.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle())
         Me.TableLayoutPanel.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle())
         Me.TableLayoutPanel.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle())
         Me.TableLayoutPanel.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle())
+        Me.TableLayoutPanel.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
         Me.TableLayoutPanel.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle())
         Me.TableLayoutPanel.Controls.Add(Me.LogoPictureBox, 0, 0)
         Me.TableLayoutPanel.Controls.Add(Me.LabelProductName, 1, 0)
@@ -64,10 +66,11 @@ Partial Class AboutBox
         Me.TableLayoutPanel.Controls.Add(Me.LabelCopyright, 1, 2)
         Me.TableLayoutPanel.Controls.Add(Me.LabelCompanyName, 1, 3)
         Me.TableLayoutPanel.Controls.Add(Me.TextBoxDescription, 1, 4)
-        Me.TableLayoutPanel.Controls.Add(Me.OKButton, 4, 5)
-        Me.TableLayoutPanel.Controls.Add(Me.EventLevels, 3, 5)
+        Me.TableLayoutPanel.Controls.Add(Me.OKButton, 5, 5)
         Me.TableLayoutPanel.Controls.Add(Me.CheckForUpdates, 1, 5)
         Me.TableLayoutPanel.Controls.Add(Me.fixLegacyFunc, 2, 5)
+        Me.TableLayoutPanel.Controls.Add(Me.EventLevels, 4, 5)
+        Me.TableLayoutPanel.Controls.Add(Me.FilterLabel, 3, 5)
         Me.TableLayoutPanel.Dock = System.Windows.Forms.DockStyle.Fill
         Me.TableLayoutPanel.Location = New System.Drawing.Point(9, 9)
         Me.TableLayoutPanel.Name = "TableLayoutPanel"
@@ -95,7 +98,7 @@ Partial Class AboutBox
         '
         'LabelProductName
         '
-        Me.TableLayoutPanel.SetColumnSpan(Me.LabelProductName, 4)
+        Me.TableLayoutPanel.SetColumnSpan(Me.LabelProductName, 5)
         Me.LabelProductName.Dock = System.Windows.Forms.DockStyle.Fill
         Me.LabelProductName.Font = New System.Drawing.Font("Microsoft Sans Serif", 8.25!, System.Drawing.FontStyle.Underline)
         Me.LabelProductName.ForeColor = System.Drawing.SystemColors.HotTrack
@@ -111,7 +114,7 @@ Partial Class AboutBox
         '
         'LabelVersion
         '
-        Me.TableLayoutPanel.SetColumnSpan(Me.LabelVersion, 4)
+        Me.TableLayoutPanel.SetColumnSpan(Me.LabelVersion, 5)
         Me.LabelVersion.Dock = System.Windows.Forms.DockStyle.Fill
         Me.LabelVersion.Location = New System.Drawing.Point(140, 26)
         Me.LabelVersion.Margin = New System.Windows.Forms.Padding(6, 0, 3, 0)
@@ -124,7 +127,7 @@ Partial Class AboutBox
         '
         'LabelCopyright
         '
-        Me.TableLayoutPanel.SetColumnSpan(Me.LabelCopyright, 4)
+        Me.TableLayoutPanel.SetColumnSpan(Me.LabelCopyright, 5)
         Me.LabelCopyright.Dock = System.Windows.Forms.DockStyle.Fill
         Me.LabelCopyright.Location = New System.Drawing.Point(140, 52)
         Me.LabelCopyright.Margin = New System.Windows.Forms.Padding(6, 0, 3, 0)
@@ -137,7 +140,7 @@ Partial Class AboutBox
         '
         'LabelCompanyName
         '
-        Me.TableLayoutPanel.SetColumnSpan(Me.LabelCompanyName, 4)
+        Me.TableLayoutPanel.SetColumnSpan(Me.LabelCompanyName, 5)
         Me.LabelCompanyName.Dock = System.Windows.Forms.DockStyle.Fill
         Me.LabelCompanyName.Font = New System.Drawing.Font("Microsoft Sans Serif", 8.25!, System.Drawing.FontStyle.Underline)
         Me.LabelCompanyName.ForeColor = System.Drawing.SystemColors.HotTrack
@@ -153,7 +156,7 @@ Partial Class AboutBox
         '
         'TextBoxDescription
         '
-        Me.TableLayoutPanel.SetColumnSpan(Me.TextBoxDescription, 4)
+        Me.TableLayoutPanel.SetColumnSpan(Me.TextBoxDescription, 5)
         Me.TextBoxDescription.Dock = System.Windows.Forms.DockStyle.Fill
         Me.TextBoxDescription.Location = New System.Drawing.Point(140, 107)
         Me.TextBoxDescription.Margin = New System.Windows.Forms.Padding(6, 3, 3, 3)
@@ -169,9 +172,9 @@ Partial Class AboutBox
         '
         Me.OKButton.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.OKButton.DialogResult = System.Windows.Forms.DialogResult.OK
-        Me.OKButton.Location = New System.Drawing.Point(443, 225)
+        Me.OKButton.Location = New System.Drawing.Point(449, 225)
         Me.OKButton.Name = "OKButton"
-        Me.OKButton.Size = New System.Drawing.Size(54, 23)
+        Me.OKButton.Size = New System.Drawing.Size(48, 23)
         Me.OKButton.TabIndex = 4
         Me.OKButton.Text = "OK"
         '
@@ -179,12 +182,13 @@ Partial Class AboutBox
         '
         Me.EventLevels.FormattingEnabled = True
         Me.EventLevels.Items.AddRange(New Object() {"Off", "Critical", "Error", "Warning", "Information", "Verbose", "All"})
-        Me.EventLevels.Location = New System.Drawing.Point(317, 225)
+        Me.EventLevels.Location = New System.Drawing.Point(351, 225)
         Me.EventLevels.Name = "EventLevels"
-        Me.EventLevels.Size = New System.Drawing.Size(120, 21)
+        Me.EventLevels.Size = New System.Drawing.Size(92, 21)
         Me.EventLevels.TabIndex = 3
         Me.ToolTip1.SetToolTip(Me.EventLevels, "Enter the maximumLog Level to be displayed from now on (existing log entries will" &
-        " still be displayed)")
+        " still be displayed). Attention: for getting Information level messages, also se" &
+        "t DebugAddin to true!")
         '
         'CheckForUpdates
         '
@@ -209,6 +213,17 @@ Partial Class AboutBox
         'BackgroundWorker1
         '
         '
+        'FilterLabel
+        '
+        Me.FilterLabel.Anchor = System.Windows.Forms.AnchorStyles.None
+        Me.FilterLabel.AutoSize = True
+        Me.FilterLabel.Location = New System.Drawing.Point(317, 230)
+        Me.FilterLabel.Name = "FilterLabel"
+        Me.FilterLabel.Size = New System.Drawing.Size(28, 13)
+        Me.FilterLabel.TabIndex = 0
+        Me.FilterLabel.Text = "Log:"
+        Me.ToolTip1.SetToolTip(Me.FilterLabel, "Attention: for getting Information level messages, also set DebugAddin to true!")
+        '
         'AboutBox
         '
         Me.AcceptButton = Me.OKButton
@@ -224,7 +239,7 @@ Partial Class AboutBox
         Me.Padding = New System.Windows.Forms.Padding(9)
         Me.ShowInTaskbar = False
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent
-        Me.Text = "AboutBox1"
+        Me.Text = "AboutBox"
         Me.TableLayoutPanel.ResumeLayout(False)
         Me.TableLayoutPanel.PerformLayout()
         CType(Me.LogoPictureBox, System.ComponentModel.ISupportInitialize).EndInit()
@@ -236,4 +251,5 @@ Partial Class AboutBox
     Friend WithEvents CheckForUpdates As Windows.Forms.Button
     Friend WithEvents fixLegacyFunc As Windows.Forms.Button
     Friend WithEvents BackgroundWorker1 As ComponentModel.BackgroundWorker
+    Friend WithEvents FilterLabel As Windows.Forms.Label
 End Class

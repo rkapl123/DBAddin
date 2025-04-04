@@ -1,22 +1,28 @@
-<html><head><title>balancedString(String, String, String, String)</title><link href="styles/default.css" type="text/css" rel="stylesheet" /></head><body><div class="header"> </div><br class="clear" /><div class="navigation"><ul><li><a href="index.htm">Documentation</a></li></ul><ul><li><a class="" href="4294967296-DBaddin.htm">DBaddin</a><ul><li><a class="" href="4294968731.htm">Globals</a><ul><li><a class="" href="4294968731-Methods.htm">Methods</a><ul><li><a class="current" href="4294968739.htm">balancedString</a><ul /></li></ul></li></ul></li></ul></li></ul></div><div class="content"><h1>balancedString(String, String, String, String) Method</h1><div class="summary">returns the minimal bracket balancing string contained in theString, opening bracket defined in openBracket, closing bracket defined in closeBracket disregarding quoted areas inside optionally given quote character/string</div><div class="details"><span class="namespace"><em>Namespace:</em> <a href="4294967296-DBaddin.htm">DBaddin</a></span><span class="assembly"><em>Assembly:</em> DBaddin in (DBaddin.dll)
+<html><head><title>functionSplit(String, String, String, String, String, String)</title><link href="styles/default.css" type="text/css" rel="stylesheet" /></head><body><div class="header"> </div><br class="clear" /><div class="navigation"><ul><li><a href="index.htm">Documentation</a></li></ul><ul><li><a class="" href="4294967296-DBaddin.htm">DBaddin</a><ul><li><a class="" href="4294968738.htm">Globals</a><ul><li><a class="" href="4294968738-Methods.htm">Methods</a><ul><li><a class="current" href="4294968739.htm">functionSplit</a><ul /></li></ul></li></ul></li></ul></li></ul></div><div class="content"><h1>functionSplit(String, String, String, String, String, String) Method</h1><div class="summary">splits theString into tokens delimited by delimiter, ignoring delimiters inside quotes and brackets</div><div class="details"><span class="namespace"><em>Namespace:</em> <a href="4294967296-DBaddin.htm">DBaddin</a></span><span class="assembly"><em>Assembly:</em> DBaddin in (DBaddin.dll)
 								</span></div>
         <div class="syntax">
             <h2>Syntax</h2>
-            <pre><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">string</span> balancedString(
+            <pre><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">object</span> functionSplit(
 	<span class="keyword">string</span> theString,
+	<span class="keyword">string</span> delimiter,
+	<span class="keyword">string</span> quote,
+	<span class="keyword">string</span> startStr,
 	<span class="keyword">string</span> openBracket,
-	<span class="keyword">string</span> closeBracket,
-	<span class="keyword">string</span> quote
+	<span class="keyword">string</span> closeBracket
 	)</pre>
         </div>
     <div class="parameters"><h3>Parameters</h3><dl><dt>theString</dt><dd><div>
 				Type:
-				String</div><div></div></dd><dt>openBracket</dt><dd><div>
+				String</div><div>string to be split into tokens, case insensitive !</div></dd><dt>delimiter</dt><dd><div>
 				Type:
-				String</div><div></div></dd><dt>closeBracket</dt><dd><div>
+				String</div><div>delimiter that string is to be split by</div></dd><dt>quote</dt><dd><div>
 				Type:
-				String</div><div></div></dd><dt>quote</dt><dd><div>
+				String</div><div>quote character where delimiters should be ignored inside</div></dd><dt>startStr</dt><dd><div>
 				Type:
-				String</div><div></div></dd></dl></div><div class="return"><h3>Returns</h3><div class="item">String</div><div class="returns">the balanced string</div></div></div><div class="footer">
+				String</div><div>part of theString where splitting should start after, case insensitive !</div></dd><dt>openBracket</dt><dd><div>
+				Type:
+				String</div><div>opening bracket character</div></dd><dt>closeBracket</dt><dd><div>
+				Type:
+				String</div><div>closing bracket character</div></dd></dl></div><div class="return"><h3>Returns</h3><div class="item">Object</div><div class="returns">the list of tokens</div></div><div class="remarks"><h2>Remarks</h2>theString is split starting from startStr up to the first balancing closing Bracket (as defined by openBracket and closeBracket) startStr, openBracket and closeBracket are case insensitive for comparing with theString. the tokens are not blank trimmed !!</div></div><div class="footer">
 			Produced by the <a href="https://livedocumenter.barryjones.me.uk/">Live Documenter</a>.
 		</div></body></html>
