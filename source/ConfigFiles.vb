@@ -320,21 +320,24 @@ Public Module ConfigFiles
             ' get the file content defined in sender.Tag (absolute path of xcl definition file)
             ' ConfigArray: Configs are tab separated pairs of <RC location vbTab function formula> vbTab <...> vbTab...
             Dim ConfigArray As String() = Split(getFileContent(sender.Tag), vbTab)
-            ' fetch query from DBListFetch definition (includes quotes at beginning/end)
-            Dim functionParts As String() = functionSplit(ConfigArray(1), ",", """", "DBListFetch", "(", ")")
-            If functionParts IsNot Nothing Then
+            If Left$(ConfigArray(1), 12) = "=DBListFetch" Then
+                ' for standard xcl entries written by helping script createTableViewConfigs.vbs, fetch query from DBListFetch definition (includes quotes at beginning/end)
+                Dim functionParts As String() = functionSplit(ConfigArray(1), ",", """", "DBListFetch", "(", ")")
                 ' either put query into SQLText content if empty
                 If theAdHocSQLDlg.SQLText.Text.Length = 0 Then
                     theAdHocSQLDlg.SQLText.Text = functionParts(0).Substring(1, functionParts(0).Length - 2) ' remove quotes at beginning/end
                 Else
-                    ' or attach extracted table (after FROM part) to existing content, if a FROM part is available
+                    ' or attach extracted table (after FROM part) to existing content, if a FROM part is available, else attach everything
                     Dim startPosOfTable As Integer = functionParts(0).IndexOf("FROM")
                     If startPosOfTable >= 0 Then
                         theAdHocSQLDlg.SQLText.AppendText(functionParts(0).Substring(startPosOfTable + 5, functionParts(0).Length - 1 - (startPosOfTable + 5)))
                     Else
-                        UserMsg("No FROM part in configuration found, cannot extract table to append to query")
+                        theAdHocSQLDlg.SQLText.AppendText(functionParts(0))
                     End If
                 End If
+            Else
+                ' just get content and append everything directly
+                theAdHocSQLDlg.SQLText.AppendText(ConfigArray(1))
             End If
         End If
     End Sub

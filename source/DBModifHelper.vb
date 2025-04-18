@@ -235,24 +235,30 @@ Public Module DBModifHelper
                 .IgnoreDataErrors.Hide()
             End If
             If createdDBModifType = "DBAction" Then
+                ' paramRangesStr in place of tablename (not needed here)
                 .paramRangesStr.Top = .Tablename.Top
-                .TablenameLabel.Show()
                 .TablenameLabel.Text = "Parameter Range Names:"
+                .TablenameLabel.Show()
                 .paramRangesStr.Left = .Tablename.Left
-                .paramEnclosing.Top = .PrimaryKeys.Top
-                .PrimaryKeysLabel.Show()
-                .PrimaryKeysLabel.Text = "Parameter enclosing char:"
-                .paramEnclosing.Left = .PrimaryKeys.Left
-                .convertAsDate.Top = .IgnoreColumns.Top
-                .IgnoreColumnsLabel.Text = "Cols num params date:"
+                ' paramEnclosing in place of IgnoreColumns (not needed here)
+                .paramEnclosing.Top = .IgnoreColumns.Top
+                .IgnoreColumnsLabel.Text = "Parameter enclosing char:"
                 .IgnoreColumnsLabel.Show()
-                .convertAsDate.Left = .IgnoreColumns.Left
+                .paramEnclosing.Left = .IgnoreColumns.Left
+                ' convertAsDate in place of addCodeBegin (not needed here)
+                .convertAsDate.Top = .addCodeBegin.Top
+                .addCodeBeginLabel.Text = "Cols num params date:"
+                .addCodeBeginLabel.Show()
+                .convertAsDate.Left = .addCodeBegin.Left
+                ' convertAsDate in place of addStoredProc (not needed here)
                 .convertAsString.Top = .addStoredProc.Top
-                .AdditionalStoredProcLabel.Show()
                 .AdditionalStoredProcLabel.Text = "Cols num params string:"
+                .AdditionalStoredProcLabel.Show()
                 .convertAsString.Left = .addStoredProc.Left
+                ' parametrized in place of CUDflags (not needed here)
                 .parametrized.Top = .CUDflags.Top
                 .parametrized.Left = .CUDflags.Left
+                ' continueIfRowEmpty in place of IgnoreDataErrors (not needed here)
                 .continueIfRowEmpty.Top = .IgnoreDataErrors.Top
                 .continueIfRowEmpty.Left = .IgnoreDataErrors.Left
             Else

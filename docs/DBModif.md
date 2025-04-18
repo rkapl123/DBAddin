@@ -24,7 +24,7 @@ The DBModifier creation/editing is shown below (examples already filled, when ac
 *   Tablename: Database Table, where Data is to be stored.
 *   Primary keys count: amount of columns from the left to be used as primary keys for updating table data. Enter 0 here for special "insert-only" Mappers (all entries are added to a table that doesn't need to have primary columns), recommended to be used with deleteBeforeMapperInsert (removes all content of the table before inserting)
 *   Database: Database to store DBMaps Data into.
-*   Ignore Columns: comma separated list of column numbers to be ignored (e.g. helper columns or irrelevant columns).
+*   Ignore Columns: comma separated list of field names to be ignored (e.g. helper columns or irrelevant columns).
 *   Additional Code at begin: additional code (e.g. stored procedure) to be executed before DBMapper execution.
 *   Additional Code at end: additional code (e.g. stored procedure) to be executed after DBMapper execution.
 *   Insert If Missing: if set, then insert row into table if the primary key is missing there. Default = False (only update, an error is thrown if the record couldn't be found).

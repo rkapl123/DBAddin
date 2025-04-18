@@ -357,9 +357,9 @@ Partial Class DBModifCreate
         Me.paramRangesStr.Name = "paramRangesStr"
         Me.paramRangesStr.Size = New System.Drawing.Size(297, 20)
         Me.paramRangesStr.TabIndex = 17
-        Me.ToolTip1.SetToolTip(Me.paramRangesStr, "parameter ranges, comma separated. Only workbook- and sheet names are possible. c" &
-        "ontext menu (right mouse) lists all available/visible names for easier inserting" &
-        "")
+        Me.ToolTip1.SetToolTip(Me.paramRangesStr, "parameter ranges, comma separated. Workbook- and sheet names are possible, sheet " &
+        "names need to be qualified. A context menu (right mouse) lists all available/vis" &
+        "ible names for easier inserting here")
         '
         'paramEnclosing
         '
@@ -376,8 +376,8 @@ Partial Class DBModifCreate
         Me.convertAsString.Name = "convertAsString"
         Me.convertAsString.Size = New System.Drawing.Size(297, 20)
         Me.convertAsString.TabIndex = 20
-        Me.ToolTip1.SetToolTip(Me.convertAsString, "comma separated locations of numerical parameters that should be converted as str" &
-        "ings, if a cell value can be evaluated as numeric.")
+        Me.ToolTip1.SetToolTip(Me.convertAsString, "comma separated locations of columns that should be converted as strings, even if" &
+        " a cell value might be evaluated as numeric.")
         '
         'convertAsDate
         '
@@ -385,9 +385,9 @@ Partial Class DBModifCreate
         Me.convertAsDate.Name = "convertAsDate"
         Me.convertAsDate.Size = New System.Drawing.Size(297, 20)
         Me.convertAsDate.TabIndex = 19
-        Me.ToolTip1.SetToolTip(Me.convertAsDate, "comma separated locations of numerical parameters that should be converted as dat" &
-        "e values (using the default DBDate formating), if a cell value can be evaluated " &
-        "as numeric")
+        Me.ToolTip1.SetToolTip(Me.convertAsDate, "comma separated locations of columns that should be converted as date values (usi" &
+        "ng the default DBDate formating), even if a cell value might be evaluated as num" &
+        "eric")
         '
         'addCodeBegin
         '

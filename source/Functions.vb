@@ -48,7 +48,7 @@ Public Module Functions
             preventRefreshFlag = setPreventRefresh
         End If
         theRibbon.InvalidateControl("preventRefresh")
-        Dim toWhichExtent As String = IIf(onlyForThisWB, "for " + ExcelDnaUtil.Application.ActiveWorkbook.Name, "globally ")
+        Dim toWhichExtent As String = IIf(onlyForThisWB, "for" + ExcelDnaUtil.Application.ActiveWorkbook.Name, "globally")
         Return "preventRefresh was set " + toWhichExtent + " to " + setPreventRefresh.ToString() + IIf(setPreventRefresh, ", DB Functions will not refresh " + toWhichExtent + " on any change or using the refresh context menu", ", DB Functions will refresh again " + toWhichExtent)
     End Function
 
@@ -681,7 +681,7 @@ err:
 
     ''' <summary>check the preventRefreshFlag, either global or workbook level</summary>
     ''' <returns>true if set, workbook has precedence</returns>
-    Private Function checkPreventRefreshFlag() As Boolean
+    Public Function checkPreventRefreshFlag() As Boolean
         If preventRefreshFlagColl.ContainsKey(ExcelDnaUtil.Application.ActiveWorkbook.Name) Then
             Return preventRefreshFlagColl(ExcelDnaUtil.Application.ActiveWorkbook.Name)
         Else

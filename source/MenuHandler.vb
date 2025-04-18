@@ -533,14 +533,10 @@ Public Class MenuHandler
     ''' <param name="preventStatus">returns the currently set prevention status</param>
     ''' <param name="onlyForThisWB">returns the currently set flag if only for this Workbook</param>
     Private Sub getStatusAndExtent(ByRef preventStatus As Boolean, ByRef onlyForThisWB As Boolean)
+        preventStatus = checkPreventRefreshFlag()
         If preventRefreshFlagColl.ContainsKey(ExcelDnaUtil.Application.ActiveWorkbook.Name) Then
-            preventStatus = Functions.preventRefreshFlagColl(ExcelDnaUtil.Application.ActiveWorkbook.Name)
-            onlyForThisWB = True
-        ElseIf preventRefreshFlagColl.Count > 0 Then
-            preventStatus = False
             onlyForThisWB = True
         Else
-            preventStatus = Functions.preventRefreshFlag
             onlyForThisWB = False
         End If
     End Sub
@@ -969,6 +965,10 @@ Public Module MenuHandlerGlobals
         End Try
         If ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual Then
             UserMsg("Calculation is set to manual, this prevents DB Functions from being recalculated. Please set calculation to automatic and retry", "DB-Addin Refresh")
+            Exit Sub
+        End If
+        If checkPreventRefreshFlag() Then
+            UserMsg("preventRefresh is set, therefore no refresh done!", "DB-Addin Refresh")
             Exit Sub
         End If
         Try
