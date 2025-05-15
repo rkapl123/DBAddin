@@ -467,6 +467,10 @@ Public Class DBMapper : Inherits DBModif
             preventColResize = Convert.ToBoolean(getParamFromXML(definitionXML, "preventColResize", "Boolean"))
             deleteBeforeMapperInsert = Convert.ToBoolean(getParamFromXML(definitionXML, "deleteBeforeMapperInsert", "Boolean"))
             onlyRefreshTheseDBSheetLookups = getParamFromXML(definitionXML, "onlyRefreshTheseDBSheetLookups")
+            ' get previousCUDLength from existing cached value, if existing
+            If previousCUDLengthColl.ContainsKey(TargetRange.Parent.Name + paramTargetName) Then
+                previousCUDLength = previousCUDLengthColl(TargetRange.Parent.Name + paramTargetName)
+            End If
             ' set table styles for DBMappers having a list-object underneath
             Dim DBmapperListObj As Excel.ListObject = Nothing
             Try : DBmapperListObj = TargetRange.ListObject : Catch ex As Exception : End Try
@@ -639,6 +643,7 @@ Public Class DBMapper : Inherits DBModif
                 End If
                 ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = True
                 previousCUDLength = TargetRange.Rows.Count
+                previousCUDLengthColl(TargetRange.Parent.Name + paramTargetName) = previousCUDLength
             End If
             With TargetRange.Rows(2).Interior
                 .Pattern = Excel.XlPattern.xlPatternNone

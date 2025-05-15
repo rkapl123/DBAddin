@@ -64,6 +64,7 @@ Public Class AddInEvents
         Functions.queryCache = New Dictionary(Of String, String)
         Functions.StatusCollection = New Dictionary(Of String, ContainedStatusMsg)
         DBModifDefColl = New Dictionary(Of String, Dictionary(Of String, DBModif))
+        previousCUDLengthColl = New Dictionary(Of String, Integer)
 
         ' initialize settings and get the default environment
         initSettings()
@@ -108,7 +109,7 @@ Public Class AddInEvents
             If Not (Wb.ReadOnlyRecommended And Wb.ReadOnly) And Not doDBMOnSave Then
                 ' prevent action/editing in case of errors while DB Modifiers were added
                 If DBModifDefColl.ContainsKey("Error") Then
-                    Dim keylist As List(Of String) = New List(Of String)(DBModifDefColl("Error").Keys())
+                    Dim keylist As New List(Of String)(DBModifDefColl("Error").Keys())
                     UserMsg("DBModifier definitions not accessible due to error: " + vbCrLf + keylist(0))
                     Exit Sub
                 End If
@@ -351,7 +352,7 @@ done:
         nonInteractiveErrMsgs = "" : DBModifHelper.hadError = False
         ' prevent action/editing in case of errors while DB Modifiers were added
         If DBModifDefColl.ContainsKey("Error") Then
-            Dim keylist As List(Of String) = New List(Of String)(DBModifDefColl("Error").Keys())
+            Dim keylist As New List(Of String)(DBModifDefColl("Error").Keys())
             UserMsg("DBModifier definitions not accessible due to error: " + vbCrLf + keylist(0))
             Exit Sub
         End If

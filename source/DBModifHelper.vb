@@ -14,6 +14,8 @@ Imports System.Windows.Forms
 Public Module DBModifHelper
     ''' <summary>DBModif definition collections of DBmodif types (key of top level dictionary) with values being collections of DBModifierNames (key of contained dictionaries) and DBModifiers (value of contained dictionaries))</summary>
     Public DBModifDefColl As Dictionary(Of String, Dictionary(Of String, DBModif))
+    ''' <summary>keep previousCUDLengths in a separate collection as DBModifDefColl is reset every time a workbook is switched. The previousCUDLength in the DBModifier objects is then taken from there. Keys are WorkbookNames + DBModifierNames</summary>
+    Public previousCUDLengthColl As Dictionary(Of String, Integer)
     ''' <summary>main db connection for DB modifiers</summary>
     Public idbcnn As System.Data.IDbConnection
     ''' <summary>avoid entering Application.SheetChange Event handler during listfetch/setquery</summary>
@@ -157,6 +159,7 @@ Public Module DBModifHelper
                     Dim extendedMapper As DBMapper = DBModifDefColl("DBMapper").Item(dbMapperRangeName)
                     extendedMapper.setTargetRange(theRange)
                     extendedMapper.previousCUDLength = theRange.Rows.Count
+                    previousCUDLengthColl(theRange.Parent.Name + dbMapperRangeName) = extendedMapper.previousCUDLength
                 Catch ex As Exception
                     Throw New Exception("Error passing new Range to the associated DBMapper object when extending '" + dbMapperRangeName + "' to DBListFetch/DBSetQuery target range: " + ex.Message)
                 End Try

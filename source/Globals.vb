@@ -423,7 +423,7 @@ Last:
     ''' <summary>create a pivot table object one cell below TargetCell and insert a dummy cmd sql definition for the pivot-cache external query</summary>>
     ''' <param name="TargetCell">the reference cell for the pivot table (will be the source cell for the DBSetQuery function)</param>
     Public Sub createPivotTable(TargetCell As Excel.Range)
-        Dim pivotcache As Excel.PivotCache = Nothing
+        Dim pivotcache As Excel.PivotCache
         Dim pivotTables As Excel.PivotTables
         ' if an alternate connection string is given for List-object, use this one...
         Dim altConnString = fetchSetting("AltConnString" + env(), "")

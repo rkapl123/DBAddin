@@ -1,25 +1,11 @@
-<html><head><title>CustomOdbcCommandBuilder(DataTable, OdbcConnection, DataColumn[], Collection, Boolean)</title><link href="styles/default.css" type="text/css" rel="stylesheet" /></head><body><div class="header"> </div><br class="clear" /><div class="navigation"><ul><li><a href="index.htm">Documentation</a></li></ul><ul><li><a class="" href="4294967296-DBaddin.htm">DBaddin</a><ul><li><a class="" href="4294969342.htm">CustomOdbcCommandBuilder</a><ul><li><a class="" href="4294969342-Constructors.htm">Constructors</a><ul><li><a class="current" href="4294969343.htm">CustomOdbcCommandBuilder</a><ul /></li></ul></li></ul></li></ul></li></ul></div><div class="content"><h1>CustomOdbcCommandBuilder(DataTable, OdbcConnection, DataColumn[], Collection, Boolean) </h1><div class="details"><span class="namespace"><em>Namespace:</em> <a href="4294967296-DBaddin.htm">DBaddin</a></span><span class="assembly"><em>Assembly:</em> DBaddin in (DBaddin.dll)
+<html><head><title>CustomOdbcCommandBuilder</title><link href="styles/default.css" type="text/css" rel="stylesheet" /></head><body><div class="header"> </div><br class="clear" /><div class="navigation"><ul><li><a href="index.htm">Documentation</a></li></ul><ul><li><a class="" href="4294967296-DBaddin.htm">DBaddin</a><ul><li><a class="current" href="4294969343.htm">CustomOdbcCommandBuilder</a><ul><li><a class="" href="4294969343-Constructors.htm">Constructors</a></li><li><a class="" href="4294969343-Fields.htm">Fields</a></li><li><a class="" href="4294969343-Methods.htm">Methods</a></li></ul></li></ul></li></ul></div><div class="content"><h1>CustomOdbcCommandBuilder Class</h1><div class="summary">Custom Command builder for ODBC class</div><div class="inheritance"><h2>Inheritance Hierarchy</h2><ul><li><span>System.Object</span><ul><li><span><a href="4294969312.htm">DBaddin.CustomCommandBuilder</a></span><ul><li><span class="current">DBaddin.CustomOdbcCommandBuilder</span></li></ul></li></ul></li></ul></div><div class="details"><span class="namespace"><em>Namespace:</em> <a href="4294967296-DBaddin.htm">DBaddin</a></span><span class="assembly"><em>Assembly:</em> DBaddin in (DBaddin.dll)
 								</span></div>
         <div class="syntax">
             <h2>Syntax</h2>
-            <pre><span class="keyword">public</span> CustomOdbcCommandBuilder(
-	DataTable dataTable,
-	OdbcConnection connection,
-	DataColumn[] allColumns,
-	Collection schemaDataTypeCollection,
-	<span class="keyword">bool</span> preventAutoInc
-	)</pre>
+            <pre><span class="keyword">public</span> <span class="keyword">class</span> CustomOdbcCommandBuilder : CustomCommandBuilder</pre>
         </div>
-    <div class="parameters"><h3>Parameters</h3><dl><dt>dataTable</dt><dd><div>
-				Type:
-				DataTable</div><div></div></dd><dt>connection</dt><dd><div>
-				Type:
-				OdbcConnection</div><div></div></dd><dt>allColumns</dt><dd><div>
-				Type:
-				DataColumn</div><div></div></dd><dt>schemaDataTypeCollection</dt><dd><div>
-				Type:
-				Collection</div><div></div></dd><dt>preventAutoInc</dt><dd><div>
-				Type:
-				Boolean</div><div></div></dd></dl></div></div><div class="footer">
+    <p>
+				The CustomOdbcCommandBuilder type exposes the following members.
+			</p><h2>Constructors</h2><table><thead><tr><th class="icon" /><th>Class</th><th>Summary</th></tr></thead><tbody><tr><td><img src="styles/images/vsobject_constructor.png" alt="public constructor" /></td><td><a href="4294969344.htm">CustomOdbcCommandBuilder(DataTable, OdbcConnection, DataColumn[], Collection, Boolean)</a></td><td /></tr></tbody></table><h2>Methods</h2><table><thead><tr><th class="icon" /><th>Name</th><th>Summary</th></tr></thead><tbody><tr><td><img src="styles/images/vsobject_method_private.png" alt="private method" /></td><td><a href="4294969353.htm">CreateOldParam(DataColumn)</a></td><td><div class="summary">build "old" (for where clause) OdbcParameter for DataColumn column</div></td></tr><tr><td><img src="styles/images/vsobject_method_private.png" alt="private method" /></td><td><a href="4294969355.htm">CreateParam(DataColumn)</a></td><td><div class="summary">build "new" (for set clause) OdbcParameter for DataColumn column</div></td></tr><tr><td><img src="styles/images/vsobject_method.png" alt="public method" /></td><td><a href="4294969351.htm">DeleteCommand()</a></td><td><div class="summary">Creates Delete command</div></td></tr><tr><td><img src="styles/images/vsobject_method_private.png" alt="private method" /></td><td><a href="4294969357.htm">GetTextCommand(String)</a></td><td><div class="summary">build a specific Odbc command to be used for the Insert, Update and Delete builders</div></td></tr><tr><td><img src="styles/images/vsobject_method.png" alt="public method" /></td><td><a href="4294969350.htm">InsertCommand()</a></td><td><div class="summary">Creates Insert command with support for Auto-increment (Identity) fields</div></td></tr><tr><td><img src="styles/images/vsobject_method.png" alt="public method" /></td><td><a href="4294969352.htm">UpdateCommand()</a></td><td><div class="summary">Creates Update command</div></td></tr></tbody></table><h2>Fields</h2><table><thead><tr><th class="icon" /><th>Name</th><th>Description</th></tr></thead><tbody><tr><td><img src="styles/images/vsobject_field_private.png" alt="private field" /></td><td><a href="4294969359.htm">connection</a></td><td><div class="summary">the driver specific connection needed to get the driver specific command in GetTextCommand</div></td></tr><tr><td><img src="styles/images/vsobject_field_private.png" alt="private field" /></td><td><a href="4294969360.htm">schemaDataTypeCollection</a></td><td><div class="summary">collection for casting .NET data type to ADO.NET DbType in DBModifHelper.TypeToDbType</div></td></tr></tbody></table></div><div class="footer">
 			Produced by the <a href="https://livedocumenter.barryjones.me.uk/">Live Documenter</a>.
 		</div></body></html>
