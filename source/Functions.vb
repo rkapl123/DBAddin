@@ -1070,6 +1070,15 @@ err:
             ' set the new hidden targetExtent name...
             Dim newTargetRange, totalTargetRange As Excel.Range
             Try
+                ' in case of edits by user the resulting query area may become misaligned with the original target range. check this, warn and repair:
+                If startRow <> resultingQueryRange.Row Then
+                    warning += ", resulting query range topmost row (" + CStr(resultingQueryRange.Row) + ") different from original startRow (" + CStr(startRow) + "), resetting original startRow."
+                    startRow = resultingQueryRange.Row
+                End If
+                If startCol <> resultingQueryRange.Column Then
+                    warning += ", resulting query range leftmost column (" + CStr(resultingQueryRange.Column) + ") different from original startCol (" + CStr(startCol) + "), resetting original startCol."
+                    startCol = resultingQueryRange.Column
+                End If
                 newTargetRange = targetSH.Range(targetSH.Cells(startRow, startCol), targetSH.Cells(startRow + qryRows - 1, startCol + qryCols - 1))
                 ' delete the name to have a "clean" name area (otherwise visible = false setting wont work for dataTargetRange)
                 newTargetRange.Name = targetExtent
@@ -1146,6 +1155,7 @@ err:
         End Try
         finishAction(calcMode, callID)
         If warning.Length > 0 Then
+            LogWarn("DBListfetch warnings" + warning + ", caller: " + callID)
             ' recalculate to trigger return of warning messages to calling function
             Try : caller.Formula += " " : Catch ex As Exception : End Try
         End If

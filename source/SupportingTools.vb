@@ -77,6 +77,8 @@ Public Module SupportingTools
     ''' <summary>maintenance procedure to check/purge names used for db-functions from workbook, or unhide DB names</summary>
     Public Sub checkpurgeNames()
         Dim actWb As Excel.Workbook = Nothing
+        ' also reset preventChangeWhileFetching in case it was left true.
+        DBModifHelper.preventChangeWhileFetching = False
         Try : actWb = ExcelDnaUtil.Application.ActiveWorkbook : Catch ex As Exception
             UserMsg("Exception when trying to get the active workbook for purging names: " + ex.Message + ", this might be either due to errors in the VBA-IDE (missing references) or due to opening this workbook from an MS-Office hyperlink, starting up Excel (timing issue).")
             Exit Sub

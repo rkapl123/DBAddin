@@ -349,9 +349,13 @@ Last:
                         ' remove query cache to force re-fetching
                         If queryCache.ContainsKey(callID) And Not calledOnWBOpen Then queryCache.Remove(callID)
                         ' trigger recalculation by changing formula of DB Function
-                        DBFuncCell.Formula += " "
+                        If DBFuncCell.HasFormula Then
+                            DBFuncCell.Formula += " "
+                        Else
+                            LogWarn("DB Function with callID (" + callID + ") of DB Function in Cell (" + DBFuncCell.Parent.Name + "!" + DBFuncCell.Address + ") is not a formula anymore, maybe it was commented out?")
+                        End If
                     Catch ex As Exception
-                        LogWarn("Exception when setting Formula or getting callID (" + callID + ") of DB Function in Cell (" + DBFuncCell.Parent.Name + "!" + DBFuncCell.Address + "): " + ex.Message + ", this might be due to errors in the VBA Macros (missing references)")
+                        LogWarn("Exception when setting Formula or getting callID (" + callID + ") of DB Function in Cell (" + DBFuncCell.Parent.Name + "!" + DBFuncCell.Address + "): " + ex.Message + ", this might be due to former errors in the VBA Macros (missing references)")
                     End Try
                 End If
             Next
@@ -360,7 +364,7 @@ Last:
                 ExcelDnaUtil.Application.CalculateFull()
             End If
         Catch ex As Exception
-            UserMsg("Exception: " + ex.Message + ", " + Wb.Path + "\" + Wb.Name + IIf(calledOnWBOpen, " (calculation property errors can occur for workbooks being opened as 'hidden' or through MS-office hyper-links)", ""), "refresh DBFunctions")
+            UserMsg("Exception: " + ex.Message + ", " + Wb.Path + "\" + Wb.Name + " (calculation property setting problems can occur for workbooks being opened as 'hidden' or through MS-office hyper-links).", "refresh DBFunctions")
         End Try
         ' after all db function cells have been "dirtied" set calculation mode to automatic again (if it was automatic)
         If calcModeSet Then ExcelDnaUtil.Application.Calculation = calcMode

@@ -3,7 +3,7 @@ Imports ExcelDna.Registration
 Imports Microsoft.Office.Interop
 Imports Microsoft.Office.Interop.Excel ' for event procedures...
 Imports Microsoft.Office.Core
-Imports Microsoft.Vbe.Interop
+Imports Microsoft.Vbe.Interop ' also need to add reference to Microsoft.Vbe.Interop.Forms, otherwise commandbuttons cb1 to cb0 won't work
 Imports System.Runtime.InteropServices
 Imports System.Collections.Generic
 
