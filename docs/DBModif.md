@@ -32,7 +32,7 @@ The DBModifier creation/editing is shown below (examples already filled, when ac
 *   Env: The Environment, where connection id should be taken from (if not existing, take from selected Environment in DB Add-in General Settings Group).
 *   Exec on Save: Should the DBMap be executed when the workbook is being saved?
 *   Ask for execution: Before execution of the DBMap, ask for confirmation. A custom text can be given in the CustomXML definition element confirmText (see below).
-*   C/U/D Flags: special mode used for row-by-row editing (inserting, updating and deleting rows). Only edited rows will be done when executing. Deleting rows is node with the special context menu item "delete Row" (or pressing Ctrl-Shift-D). This is utilized in particular for DBSheets, a specific usage of DBMappers.
+*   C/U/D Flags: special mode used for row-by-row editing (inserting, updating and deleting rows). Only edited rows will be done when executing. Deleting rows is done with the special context menu item "delete Row" (or pressing Ctrl-Shift-D). This mode is the basis for DBSheets, a specific usage of DBMappers.
 *   Ignore data errors: replace excel errors like #VALUE! with null on updating/inserting. Otherwise an error message is passed and execution is skipped for that row.
 *   Auto Increment: Allow empty primary column values (only for a single primary key!) in use with tables that have the IsAutoIncrement property set for this primary column (typically because of an identity specification for that column in the Database).
 *   Create CB: create a command-button for the DB Sequence in the current Worksheet (max. 10 buttons are possible per Workbook).
@@ -40,8 +40,8 @@ The DBModifier creation/editing is shown below (examples already filled, when ac
 
 You can always edit these parameters by selecting a cell in the DB Mapper area and invoking the context menu again.
 
-The range that is used for holding the data to be stored can be identified in three different ways:
-*   A plain address: Here the range is automatically extended by using the first column and the first row (header row), if no Auto Increment or C/U/D Flags are set. In this case empty primary column(s) are allowed so automatic extension won't work.
+The range underlying the name that is used for holding the data to be stored can be constructed in three different ways:
+*   A plain address: Here the range is automatically extended by using the first column and the first row (header row), if no Auto Increment or C/U/D Flags are set. In such a case, empty primary column(s) are allowed, so the automatic extension of rows is not done.
 *   A named offset formula (that is used to dynamically assign the data range).
 *   A data list object (especially in use for C/U/D Flags).
 
@@ -141,7 +141,7 @@ Following Settings of DBModifiers can only be edited in the Edit DBModifier Defi
 *  `deleteBeforeMapperInsert` (only DBMappers, Boolean): removes all content of the table before inserting the contents again.
 *  `onlyRefreshTheseDBSheetLookups` (only DBMappers, String): contains a list of addresses of DBListfetch function cells in the DBSheetLookups sheet that exclusively should be refreshed after the corresponding DBSheet was saved. If empty, all lookups are refreshed when the DBSheet was saved. Always provide a comma BEFORE the cell address (e.g. `<onlyRefreshTheseDBSheetLookups>,Q1,S1</onlyRefreshTheseDBSheetLookups>` to prevent refreshing of all lookups (DBListfetch functions) in sheet DBSheetLookups, except those in cell Q1 and S1)!
 *  `preventColResize` (only DBMappers, Boolean): prevent automatic resizing of DB Mappers columns to include new ones, this is useful if header columns can be added accidentally and thus lead to errors.
-*  `preventAutoInc` (only DBMappers, Boolean): prevent autoincrement functionality for tables that have autoincrementing primary keys. To be used together with `set IDENTITY_INSERT <tablename> ON` in "Additional Code at begin".
+*  `preventAutoInc` (only DBMappers, Boolean): prevent autoincrement functionality for tables that have autoincrementing primary keys. To be used together with `set IDENTITY_INSERT <tablename> ON` in "Additional Code at begin" in order to directly insert primary keys into an identity field.
 
 ## Settings
 
@@ -171,3 +171,4 @@ Explanation:
 *   `maxNumberMassChange`: Threshold of Number of changes in CUDFlag DBMappers to issue a warning.
 *   `connIDPrefixDBtype`: Sometimes, legacy DBSheet definitions have a Prefix, this is the prefix to remove.
 *   `DBSheetAutoname`: When inserting DBSheet Definitions, automatically name Worksheet to the table name, if this is set.
+
