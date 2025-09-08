@@ -45,6 +45,7 @@ localUpdateMessage
 maxNumberMassChange
 maxRowCountCUD
 maxTriesForRevisionFind
+listobjectCmdTextToSet + env
 openingQuote + env
 ownerQualifier + env
 pivotTableCmdTextToSet + env

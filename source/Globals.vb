@@ -317,7 +317,12 @@ Last:
                         LogWarn("Found former DB Function in Cell " + DBFuncCell.Parent.Name + "!" + DBFuncCell.Address + " that doesn't contain a DB Function anymore.")
                     Else
                         ' only if there are really DB Functions, set calculation to manual to prevent recalculation during "dirtying" the db functions
-                        ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual
+                        Try
+                            ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual
+                        Catch ex As Exception
+                            UserMsg("Error when trying to change calculation to manual: " + ex.Message + ".. This can occur " + vbCrLf + "1) when currently editing a cell (F2) or " + vbCrLf + "2) when workbooks are opened as 'hidden' (View/Window/Hide-Unhide) or" + vbCrLf + "3) when workbooks are opened using MS-office hyper-links (word, outlook, powerpoint)", "refresh DBFunctions")
+                            Exit Sub
+                        End Try
                         calcModeSet = True
                     End If
                     Try
@@ -364,7 +369,7 @@ Last:
                 ExcelDnaUtil.Application.CalculateFull()
             End If
         Catch ex As Exception
-            UserMsg("Exception: " + ex.Message + ", " + Wb.Path + "\" + Wb.Name + " (calculation property setting problems can occur for workbooks being opened as 'hidden' or through MS-office hyper-links).", "refresh DBFunctions")
+            UserMsg("Exception: " + ex.Message + ", " + Wb.Path + "\" + Wb.Name, "refresh DBFunctions")
         End Try
         ' after all db function cells have been "dirtied" set calculation mode to automatic again (if it was automatic)
         If calcModeSet Then ExcelDnaUtil.Application.Calculation = calcMode
@@ -402,7 +407,7 @@ Last:
             createdQueryTable = TargetCell.Parent.ListObjects.Add(SourceType:=Excel.XlListObjectSourceType.xlSrcQuery, Source:=altConnString, Destination:=TargetCell.Offset(0, 1)).QueryTable
             With createdQueryTable
                 .CommandType = Excel.XlCmdType.xlCmdSql
-                .CommandText = "select CURRENT_TIMESTAMP" ' this should be sufficient for all ansi sql compliant databases
+                .CommandText = fetchSetting("listobjectCmdTextToSet" + env(), "select CURRENT_TIMESTAMP") ' this should be sufficient for all ansi sql compliant databases
                 .RowNumbers = False
                 .FillAdjacentFormulas = False
                 .PreserveFormatting = True

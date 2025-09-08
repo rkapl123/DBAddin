@@ -130,10 +130,12 @@ Explanation:
 *   `DontChangeEnvironment`: prevent changing the environment selector (Non-Production environments might confuse some people or lead to errors).
 *   `ExcelVersionForPivot`: The default Version when creating DBSetQuery enabled pivot tables (see [DBFuncs User-doc](DBFuncs.md), 0=2000, 1=2002, 2=2003, 3=2007, 4=2010, 5=2013, 6=2016, 7=2019).
 *   `legacyFunctionMsg`: Alternative Message for replacing legacy functions (different language).
+*   `listobjectCmdTextToSet`: minimum command text for new database list objects that should be sufficient for the database engine. defaults to: "select CURRENT_TIMESTAMP"
 *   `LocalHelp`: the path to local help files down-loadable [here](doc.zip). To include it, extract the package into the respective folder and assign the file accordingly.
 *   `localUpdateFolder`: For updating the DB Add-in Version, you can provide an alternative folder, where the deploy script and the files are maintained for other users.
 *   `localUpdateMessage`: For the alternative folder update, you can also provide an alternative message to display.
 *   `maxNumberMassChange`: Threshold of Number of changes in CUDFlag DBMappers to issue a warning.
+*   `pivotTableCmdTextToSet`: minimum command text for new database pivot tables that should be sufficient for the database engine. defaults to: "select 1"
 *   `repairLegacyFunctionsAutoOpen`: Set this to False if legacy DB Add-in functions should not be checked/repaired on auto open of workbooks.
 *   `shortCutRefreshData`: Set this to override the default value of the refreshData context button and avoid conflicts with other add-ins. For syntax see [https://msdn.microsoft.com/en-us/library/office/ff197461.aspx](https://msdn.microsoft.com/en-us/library/office/ff197461.aspx).
 *   `shortCutJumpButton`: Set this to override the default value of the jump to DBFunc/target context button and avoid conflicts with other add-ins.

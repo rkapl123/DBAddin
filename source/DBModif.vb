@@ -553,7 +553,7 @@ Public Class DBMapper : Inherits DBModif
         End If
 
         preventChangeWhileFetching = True
-        Dim theProgressForm = New ProgressForm
+        Dim theProgressForm = createProgressForm()
         theProgressForm.Show()
         Try
             ' Ctrl Shift - pressed: set delete flag and visual marker in selection
@@ -816,12 +816,15 @@ exitSub:
                 If retval = vbCancel Then Exit Sub
             End If
         End If
-        Dim theProgressForm = New ProgressForm
+        Dim theProgressForm = createProgressForm()
         theProgressForm.Show()
         'now create/get a connection (dbcnn) for environment in case it was not already created by a step in the sequence before (transactions!)
         If Not TransactionOpen Then
             theProgressForm.ProgressLabel.Text = "opening database connection for " + database
-            If Not openDatabase() Then Exit Sub
+            If Not openDatabase() Then
+                theProgressForm.Close()
+                Exit Sub
+            End If
         End If
         Dim envStr As String = derivedEnv(getEnv()).ToString()
         ' openingQuote and closingQuote are needed to quote columns containing blanks and other not allowed characters
@@ -899,6 +902,7 @@ exitSub:
             da.SelectCommand.CommandTimeout = CmdTimeout
         Catch ex As Exception
             UserMsg("Error in initializing Data Adapter for " + tableName + ": " + ex.Message, "DBMapper Error")
+            GoTo cleanup
         End Try
 
         theProgressForm.ProgressLabel.Text = "retrieving the schema for " + tableName
@@ -906,6 +910,7 @@ exitSub:
             da.FillSchema(dscheck, SchemaType.Source, tableName)
         Catch ex As Exception
             UserMsg("Error in retrieving Schema for " + tableName + ": " + ex.Message, "DBMapper Error")
+            GoTo cleanup
         End Try
 
         ' get the DataTypeName from the database if it exists, so we have a more accurate type information for the parameterized commands (select/insert/update/delete)
@@ -1526,7 +1531,7 @@ Public Class DBAction : Inherits DBModif
             If Not confirmExecution() = MsgBoxResult.Yes Then Exit Sub
         End If
 
-        Dim theProgressForm = New ProgressForm
+        Dim theProgressForm = createProgressForm()
         theProgressForm.Show()
         'now create/get a database specific connection (idbcnn) in case it was not already created by the sequence (transactions!)
         If Not TransactionOpen Then
@@ -1807,6 +1812,21 @@ End Class
 
 #End Region
 
+''' <summary>GetWindowRect is used to match the location of the progress bar to the parent excel window</summary>
+Friend Class NativeMethods
+    Friend Declare Function GetWindowRect Lib "user32" Alias "GetWindowRect" (ByVal hWnd As IntPtr, ByRef lpRect As RECT) As Boolean
+End Class
+
+<StructLayout(LayoutKind.Sequential)>
+Friend Structure RECT
+    Public Left As Integer
+    Public Top As Integer
+    Public Right As Integer
+    Public Bottom As Integer
+    Public Overrides Function ToString() As String
+        Return String.Format("Left: {0}, Top: {1}, Right: {2}, Bottom{3}", Left, Top, Right, Bottom)
+    End Function
+End Structure
 
 #Region "CustomCommandbuilders"
 

@@ -38,8 +38,9 @@ Partial Class ProgressForm
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
+        Me.BackColor = System.Drawing.SystemColors.Info
         Me.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None
-        Me.ClientSize = New System.Drawing.Size(580, 23)
+        Me.ClientSize = New System.Drawing.Size(564, 0)
         Me.ControlBox = False
         Me.Controls.Add(Me.ProgressLabel)
         Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None
@@ -50,6 +51,7 @@ Partial Class ProgressForm
         Me.MinimumSize = New System.Drawing.Size(580, 23)
         Me.Name = "ProgressForm"
         Me.ShowIcon = False
+        Me.ShowInTaskbar = False
         Me.StartPosition = System.Windows.Forms.FormStartPosition.Manual
         Me.Text = "ProgressForm"
         Me.TopMost = True

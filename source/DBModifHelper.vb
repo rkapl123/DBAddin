@@ -842,4 +842,15 @@ EndOuterLoop:
         getRangeFromNameInSheet = Nothing
     End Function
 
+    ''' <summary>wrapper function to create the progress form in the topleft corner of excel app, replacing the unreliable application statusbar</summary>
+    ''' <returns>a new progress form</returns>
+    Friend Function createProgressForm() As ProgressForm
+        Dim myRect As RECT
+        NativeMethods.GetWindowRect(New IntPtr(CInt(ExcelDnaUtil.Application.Hwnd)), myRect)
+        Dim theProgressForm = New ProgressForm With {
+            .Location = New Drawing.Point(myRect.Left + 2, myRect.Top + 2)
+        }
+        Return theProgressForm
+    End Function
+
 End Module
