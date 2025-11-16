@@ -350,9 +350,10 @@ Public MustInherit Class DBModif
         Dim Query As Object
         Dim rangePart() As String = Split(funcArg, "!")
         If UBound(rangePart) = 1 Then
-            ' funcArg is already a reference to a parent sheet
+            ' funcArg is already a reference to a parent sheet (contained in the part before the "!")
             Query = ExcelDnaUtil.Application.Evaluate(funcArg)
-        Else
+        ElseIf UBound(rangePart) = 0 Then
+            ' no parent sheet name contained:
             ' avoid adding parent WS name if argument is a string (only plain range references need adding)
             If Left(funcArg, 1) = """" Then
                 Query = ExcelDnaUtil.Application.Evaluate(funcArg)
@@ -360,10 +361,19 @@ Public MustInherit Class DBModif
                 ' add parent name, otherwise evaluate will fail
                 Query = ExcelDnaUtil.Application.Evaluate("'" + caller.Parent.Name + "'!" + funcArg)
             End If
+        Else
+            ' this should never happen
+            Throw New Exception("getQuery (for fetching query from function parts) received funcArg with more than one ! separator: '" + funcArg + "'")
         End If
-        ' either funcArg is already a string (direct contained/chained in the function) or it is a reference to a range. 
-        ' In the latter case derive actual Query from range...
-        If TypeName(Query) = "Range" Then Query = Query.Value.ToString()
+        ' either funcArg is already a string (directly contained/chained within the function) or it is a reference to a range. 
+        ' In the latter case get actual Query from range that possibly could be multiple cells ...
+        If TypeName(Query) = "Range" Then
+            Dim totalquery As String = ""
+            For Each cell In Query
+                totalquery += cell.Value.ToString() + " "
+            Next
+            Query = totalquery
+        End If
         getQuery = Query
     End Function
 
