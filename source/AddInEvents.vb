@@ -6,6 +6,7 @@ Imports Microsoft.Office.Core
 Imports Microsoft.Vbe.Interop ' also need to add reference to Microsoft.Vbe.Interop.Forms, otherwise commandbuttons cb1 to cb0 won't work
 Imports System.Runtime.InteropServices
 Imports System.Collections.Generic
+Imports System.Xml.Linq
 
 
 ''' <summary>AddIn Connection class, also handling Events from Excel (Open, Close, Activate)</summary>
@@ -13,28 +14,13 @@ Imports System.Collections.Generic
 Public Class AddInEvents
     Implements IExcelAddIn
 
+    ''' <summary>collection of query refresh handlers for query objects inside list objects</summary>
+    Public colQueries As Collection
+    ''' <summary>collection of command button handlers for assigned DB modifiers</summary>
+    Public Shared colCommandButtons As Collection
+
     ''' <summary>the application object needed for excel event handling (most of this class is dedicated to that)</summary>
     WithEvents Application As Excel.Application
-    ''' <summary>CommandButton that can be inserted on a worksheet (name property being the same as the respective target range (for DBMapper/DBAction) or DBSeqnce Name)</summary>
-    Public Shared WithEvents cb1 As Forms.CommandButton
-    ''' <summary>CommandButton that can be inserted on a worksheet (name property being the same as the respective target range (for DBMapper/DBAction) or DBSeqnce Name)</summary>
-    Shared WithEvents cb2 As Forms.CommandButton
-    ''' <summary>CommandButton that can be inserted on a worksheet (name property being the same as the respective target range (for DBMapper/DBAction) or DBSeqnce Name)</summary>
-    Shared WithEvents cb3 As Forms.CommandButton
-    ''' <summary>CommandButton that can be inserted on a worksheet (name property being the same as the respective target range (for DBMapper/DBAction) or DBSeqnce Name)</summary>
-    Shared WithEvents cb4 As Forms.CommandButton
-    ''' <summary>CommandButton that can be inserted on a worksheet (name property being the same as the respective target range (for DBMapper/DBAction) or DBSeqnce Name)</summary>
-    Shared WithEvents cb5 As Forms.CommandButton
-    ''' <summary>CommandButton that can be inserted on a worksheet (name property being the same as the respective target range (for DBMapper/DBAction) or DBSeqnce Name)</summary>
-    Shared WithEvents cb6 As Forms.CommandButton
-    ''' <summary>CommandButton that can be inserted on a worksheet (name property being the same as the respective target range (for DBMapper/DBAction) or DBSeqnce Name)</summary>
-    Shared WithEvents cb7 As Forms.CommandButton
-    ''' <summary>CommandButton that can be inserted on a worksheet (name property being the same as the respective target range (for DBMapper/DBAction) or DBSeqnce Name)</summary>
-    Shared WithEvents cb8 As Forms.CommandButton
-    ''' <summary>CommandButton that can be inserted on a worksheet (name property being the same as the respective target range (for DBMapper/DBAction) or DBSeqnce Name)</summary>
-    Shared WithEvents cb9 As Forms.CommandButton
-    ''' <summary>CommandButton that can be inserted on a worksheet (name property being the same as the respective target range (for DBMapper/DBAction) or DBSeqnce Name)</summary>
-    Shared WithEvents cb0 As Forms.CommandButton
     ''' <summary>context menu insert button</summary>
     Private WithEvents mInsertButton As Microsoft.Office.Core.CommandBarButton
     ''' <summary>context menu delete button</summary>
@@ -297,145 +283,10 @@ done:
             LogInfo("getting DBModif Definitions on Workbook Activate")
             getDBModifDefinitions(Wb) ' this also invalidates the ribbon to reflect any DB Modifier changes there
             ' unfortunately, Excel doesn't fire SheetActivate when opening workbooks, so do that here...
-            LogInfo("assign command button click handlers on Workbook Activate")
-            assignHandler(Wb.ActiveSheet)
+            LogInfo("assign command button click and listobject query handlers on Workbook Activate")
+            InitializeQueryHandlers(Wb)
+            InitializeCBHandlers(Wb)
             LogInfo("finished actions on Workbook Activate")
-        End If
-    End Sub
-
-
-    ''' <summary>specific click handler for the 1st definable command button</summary>
-    Private Shared Sub cb1_Click() Handles cb1.Click
-        cbClick(cb1.Name)
-    End Sub
-    ''' <summary>specific click handler for the 2nd definable command button</summary>
-    Private Shared Sub cb2_Click() Handles cb2.Click
-        cbClick(cb2.Name)
-    End Sub
-    ''' <summary>specific click handler for the 3rd definable command button</summary>
-    Private Shared Sub cb3_Click() Handles cb3.Click
-        cbClick(cb3.Name)
-    End Sub
-    ''' <summary>specific click handler for the 4th definable command button</summary>
-    Private Shared Sub cb4_Click() Handles cb4.Click
-        cbClick(cb4.Name)
-    End Sub
-    ''' <summary>specific click handler for the 5th definable command button</summary>
-    Private Shared Sub cb5_Click() Handles cb5.Click
-        cbClick(cb5.Name)
-    End Sub
-    ''' <summary>specific click handler for the 6th definable command button</summary>
-    Private Shared Sub cb6_Click() Handles cb6.Click
-        cbClick(cb6.Name)
-    End Sub
-    ''' <summary>specific click handler for the 7th definable command button</summary>
-    Private Shared Sub cb7_Click() Handles cb7.Click
-        cbClick(cb7.Name)
-    End Sub
-    ''' <summary>specific click handler for the 8th definable command button</summary>
-    Private Shared Sub cb8_Click() Handles cb8.Click
-        cbClick(cb8.Name)
-    End Sub
-    ''' <summary>specific click handler for the 9th definable command button</summary>
-    Private Shared Sub cb9_Click() Handles cb9.Click
-        cbClick(cb9.Name)
-    End Sub
-    ''' <summary>specific click handler for the 10th definable command button</summary>
-    Private Shared Sub cb0_Click() Handles cb0.Click
-        cbClick(cb0.Name)
-    End Sub
-
-    ''' <summary>common click handler for all command buttons</summary>
-    ''' <param name="cbName">name of command button, defines whether a DBModification is invoked (starts with DBMapper/DBAction/DBSeqnce)</param>
-    Private Shared Sub cbClick(cbName As String)
-        ' reset non interactive messages (used for VBA invocations) and hadError for interactive invocations
-        nonInteractiveErrMsgs = "" : DBModifHelper.hadError = False
-        ' prevent action/editing in case of errors while DB Modifiers were added
-        If DBModifDefColl.ContainsKey("Error") Then
-            Dim keylist As New List(Of String)(DBModifDefColl("Error").Keys())
-            UserMsg("DBModifier definitions not accessible due to error: " + vbCrLf + keylist(0))
-            Exit Sub
-        End If
-        Dim DBModifType As String = Left(cbName, 8)
-        If DBModifType <> "DBSeqnce" Then
-            Dim targetRange As Excel.Range
-            Try
-                targetRange = ExcelDnaUtil.Application.ActiveWorkbook.Names.Item(cbName).RefersToRange
-            Catch ex As Exception
-                ' if target name relates to an invalid (offset) formula, referstorange fails  ...
-                If InStr(ExcelDnaUtil.Application.ActiveWorkbook.Names.Item(cbName).RefersTo, "OFFSET(") > 0 Then
-                    UserMsg("Offset formula that '" + cbName + "' refers to, did not return a valid range." + vbCrLf + "Please check the offset formula to return a valid range !", "DBModifier Definitions Error")
-                    ExcelDnaUtil.Application.Dialogs(Excel.XlBuiltInDialog.xlDialogNameManager).Show()
-                Else
-                    UserMsg("No underlying " + Left(cbName, 8) + " Range named " + cbName + " found, exiting without DBModification.")
-                    LogWarn("targetRange assignment failed: " + ex.Message)
-                End If
-                Exit Sub
-            End Try
-            Dim DBModifName As String = getDBModifNameFromRange(targetRange)
-        End If
-        If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown Then
-            createDBModif(DBModifType, targetDefName:=cbName)
-        Else
-            DBModifDefColl(DBModifType).Item(cbName).doDBModif()
-        End If
-    End Sub
-
-    ''' <summary>assign click handlers to command buttons in passed sheet Sh, maximum 10 buttons are supported</summary>
-    ''' <param name="Sh">sheet where command buttons are located</param>
-    Public Shared Function assignHandler(Sh As Object) As Boolean
-        cb1 = Nothing : cb2 = Nothing : cb3 = Nothing : cb4 = Nothing : cb5 = Nothing : cb6 = Nothing : cb7 = Nothing : cb8 = Nothing : cb9 = Nothing : cb0 = Nothing
-        assignHandler = True
-        Dim collShpNames As String = ""
-        Try
-            For Each shp As Excel.Shape In Sh.Shapes
-                ' only for OLE Control buttons...
-                If shp.Type = MsoShapeType.msoOLEControlObject Then
-                    ' Associate click-handler with all click events of the CommandButtons.
-                    Dim ctrlName As String
-                    Try : ctrlName = Sh.OLEObjects(shp.Name).Object.Name : Catch ex As Exception : ctrlName = "" : End Try
-                    If Left(ctrlName, 8) = "DBMapper" Or Left(ctrlName, 8) = "DBAction" Or Left(ctrlName, 8) = "DBSeqnce" Then
-                        collShpNames += IIf(collShpNames <> "", ",", "") + shp.Name
-                        If cb1 Is Nothing Then
-                            cb1 = Sh.OLEObjects(shp.Name).Object
-                        ElseIf cb2 Is Nothing Then
-                            cb2 = Sh.OLEObjects(shp.Name).Object
-                        ElseIf cb3 Is Nothing Then
-                            cb3 = Sh.OLEObjects(shp.Name).Object
-                        ElseIf cb4 Is Nothing Then
-                            cb4 = Sh.OLEObjects(shp.Name).Object
-                        ElseIf cb5 Is Nothing Then
-                            cb5 = Sh.OLEObjects(shp.Name).Object
-                        ElseIf cb6 Is Nothing Then
-                            cb6 = Sh.OLEObjects(shp.Name).Object
-                        ElseIf cb7 Is Nothing Then
-                            cb7 = Sh.OLEObjects(shp.Name).Object
-                        ElseIf cb8 Is Nothing Then
-                            cb8 = Sh.OLEObjects(shp.Name).Object
-                        ElseIf cb9 Is Nothing Then
-                            cb9 = Sh.OLEObjects(shp.Name).Object
-                        ElseIf cb0 Is Nothing Then
-                            cb0 = Sh.OLEObjects(shp.Name).Object
-                        Else
-                            UserMsg("Only max. of 10 DBModifier Buttons are allowed on a Worksheet, currently in use: " + collShpNames + " !")
-                            assignHandler = False
-                            Exit For
-                        End If
-                    End If
-                End If
-            Next
-        Catch ex As Exception
-            LogWarn("assignHandler exception occurred: " + ex.Message)
-        End Try
-    End Function
-
-    ''' <summary>assign command buttons anew with each change of sheets</summary>
-    ''' <param name="Sh"></param>
-    Private Sub Application_SheetActivate(Sh As Object) Handles Application.SheetActivate
-        ' avoid when being activated by DBFuncsAction 
-        If Not DBModifHelper.preventChangeWhileFetching Then
-            ' only when needed assign button handler for this sheet ...
-            If Not IsNothing(DBModifDefColl) AndAlso DBModifDefColl.Count > 0 Then assignHandler(Sh)
         End If
     End Sub
 
@@ -462,6 +313,7 @@ done:
                 ' reset query caches and status collections (returned error messages) to get new data later on reopening the workbook
                 resetCachesForWorkbook(Wb.Name)
             End If
+            cleanupHandlers()
         Catch ex As Exception : End Try
         WbIsClosing = False
     End Sub
@@ -565,15 +417,122 @@ done:
         LogInfo("Addin finalizing: Base finalize")
         MyBase.Finalize()
         LogInfo("Addin finalizing: releasing com objects of control buttons")
-        If Not IsNothing(cb1) Then Marshal.ReleaseComObject(cb1)
-        If Not IsNothing(cb2) Then Marshal.ReleaseComObject(cb2)
-        If Not IsNothing(cb3) Then Marshal.ReleaseComObject(cb3)
-        If Not IsNothing(cb4) Then Marshal.ReleaseComObject(cb4)
-        If Not IsNothing(cb5) Then Marshal.ReleaseComObject(cb5)
-        If Not IsNothing(cb6) Then Marshal.ReleaseComObject(cb6)
-        If Not IsNothing(cb7) Then Marshal.ReleaseComObject(cb7)
-        If Not IsNothing(cb8) Then Marshal.ReleaseComObject(cb8)
-        If Not IsNothing(cb9) Then Marshal.ReleaseComObject(cb9)
-        If Not IsNothing(cb0) Then Marshal.ReleaseComObject(cb0)
+        cleanupHandlers()
     End Sub
+
+    ''' <summary>assign click handlers to command buttons in passed workbook Wb</summary>
+    ''' <param name="wb">Workbook where command buttons are located</param>
+    Public Sub InitializeCBHandlers(wb As Object)
+        Dim cbCH As CommandbuttonClickHandler
+        colCommandButtons = New Collection
+
+        If Not IsNothing(DBModifDefColl) AndAlso DBModifDefColl.Count > 0 Then
+            Try
+                For Each ws As Worksheet In wb.Worksheets
+                    For Each shp As Excel.Shape In ws.Shapes
+                        ' only for OLE Control buttons...
+                        If shp.Type = MsoShapeType.msoOLEControlObject Then
+                            ' Associate click-event handler of a CommandButton if its name matches the DB modifiers name.
+                            Dim ctrlName As String
+                            Try : ctrlName = ws.OLEObjects(shp.Name).Object.Name : Catch ex As Exception : ctrlName = "" : End Try
+                            If Left(ctrlName, 8) = "DBMapper" Or Left(ctrlName, 8) = "DBAction" Or Left(ctrlName, 8) = "DBSeqnce" Then
+                                cbCH = New CommandbuttonClickHandler With {.cb = ws.OLEObjects(shp.Name).Object}
+                                colCommandButtons.Add(cbCH)
+                            End If
+                        End If
+                    Next
+                Next
+            Catch ex As Exception
+                LogWarn("InitializeCBHandlers exception occurred: " + ex.Message)
+            End Try
+        End If
+    End Sub
+
+    ''' <summary>initialize query handlers inside list objects for workbook wb, needed for catching refresh event to avoid sheetchange event execution</summary>
+    ''' <param name="wb"></param>
+    Private Sub InitializeQueryHandlers(wb As Workbook)
+        Dim qryRH As QueryRefreshHandler
+        colQueries = New Collection
+
+        For Each ws As Worksheet In wb.Worksheets
+            For Each lo As ListObject In ws.ListObjects
+                qryRH = New QueryRefreshHandler With {.qry = lo.QueryTable}
+                colQueries.Add(qryRH)
+            Next
+        Next
+    End Sub
+
+    ''' <summary>COM cleanup for query table objects and command buttons inside their handlers</summary>
+    Private Sub cleanupHandlers()
+        For Each qryRH As QueryRefreshHandler In colQueries
+            Marshal.ReleaseComObject(qryRH.qry)
+        Next
+        colQueries.Clear()
+        For Each cbCH As CommandbuttonClickHandler In colCommandButtons
+            Marshal.ReleaseComObject(cbCH.cb)
+        Next
+        colCommandButtons.Clear()
+    End Sub
+
+End Class
+
+''' <summary>Event handler class to catch refresh events on query tables inside list objects</summary>
+Class QueryRefreshHandler
+    ''' <summary>QueryTable that needs to be observed to avoid change registration</summary>
+    Public WithEvents qry As QueryTable
+
+    ''' <summary>open preventChangeWhileFetching bracket before refresh (avoid any sheet change event triggered activity for DBSheets)</summary>
+    ''' <param name="Cancel"></param>
+    Private Sub qry_BeforeRefresh(ByRef Cancel As Boolean) Handles qry.BeforeRefresh
+        DBModifHelper.preventChangeWhileFetching = True
+    End Sub
+
+    ''' <summary>close preventChangeWhileFetching bracket afterwards (enable sheet change event triggered activity again)</summary>
+    Private Sub qry_AfterRefresh(Success As Boolean) Handles qry.AfterRefresh
+        DBModifHelper.preventChangeWhileFetching = False
+    End Sub
+End Class
+
+''' <summary>Event handler class for click events on control buttons that are associated to DB modifiers</summary>
+Class CommandbuttonClickHandler
+    ''' <summary>CommandButton that can be inserted on a worksheet (name property being the same as the respective target range (for DBMapper/DBAction) or DBSeqnce Name)</summary>
+    Public WithEvents cb As Forms.CommandButton
+
+    ''' <summary>click handler for all command buttons that are associated to DB modifiers</summary>
+    Private Sub cb_Click() Handles cb.Click
+        ' name of command button, defines whether a DBModification is invoked (starts with DBMapper/DBAction/DBSeqnce)
+        Dim cbName As String = cb.Name
+        ' reset non interactive messages (used for VBA invocations) and hadError for interactive invocations
+        nonInteractiveErrMsgs = "" : DBModifHelper.hadError = False
+        ' prevent action/editing in case of errors while DB Modifiers were added
+        If DBModifDefColl.ContainsKey("Error") Then
+            Dim keylist As New List(Of String)(DBModifDefColl("Error").Keys())
+            UserMsg("DBModifier definitions not accessible due to error: " + vbCrLf + keylist(0))
+            Exit Sub
+        End If
+        Dim DBModifType As String = Left(cbName, 8)
+        If DBModifType <> "DBSeqnce" Then
+            Dim targetRange As Excel.Range
+            Try
+                targetRange = ExcelDnaUtil.Application.ActiveWorkbook.Names.Item(cbName).RefersToRange
+            Catch ex As Exception
+                ' if target name relates to an invalid (offset) formula, referstorange fails  ...
+                If InStr(ExcelDnaUtil.Application.ActiveWorkbook.Names.Item(cbName).RefersTo, "OFFSET(") > 0 Then
+                    UserMsg("Offset formula that '" + cbName + "' refers to, did not return a valid range." + vbCrLf + "Please check the offset formula to return a valid range !", "DBModifier Definitions Error")
+                    ExcelDnaUtil.Application.Dialogs(Excel.XlBuiltInDialog.xlDialogNameManager).Show()
+                Else
+                    UserMsg("No underlying " + Left(cbName, 8) + " Range named " + cbName + " found, exiting without DBModification.")
+                    LogWarn("targetRange assignment failed: " + ex.Message)
+                End If
+                Exit Sub
+            End Try
+            Dim DBModifName As String = getDBModifNameFromRange(targetRange)
+        End If
+        If My.Computer.Keyboard.CtrlKeyDown And My.Computer.Keyboard.ShiftKeyDown Then
+            createDBModif(DBModifType, targetDefName:=cbName)
+        Else
+            DBModifDefColl(DBModifType).Item(cbName).doDBModif()
+        End If
+    End Sub
+
 End Class

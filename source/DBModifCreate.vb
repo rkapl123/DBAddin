@@ -287,9 +287,12 @@ Public Class DBModifCreate
             Exit Sub
         End If
         ' fail to assign a handler? remove command-button (otherwise it gets hard to edit an existing DBModification with a different name).
-        If Not AddInEvents.assignHandler(ExcelDnaUtil.Application.ActiveSheet) Then
+        Try
+            AddInEvents.colCommandButtons.Add(New CommandbuttonClickHandler With {.cb = cb})
+        Catch ex As Exception
+            UserMsg("Error assigning DB modifier commandbutton '" + cbName + "': " + ex.Message, "CommandButton create Error")
             cbshp.Delete()
-        End If
+        End Try
     End Sub
 
     ''' <summary>trigger to enable/disable all parametrized settings</summary>

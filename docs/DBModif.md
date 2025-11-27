@@ -35,7 +35,7 @@ The DBModifier creation/editing is shown below (examples already filled, when ac
 *   C/U/D Flags: special mode used for row-by-row editing (inserting, updating and deleting rows). Only edited rows will be done when executing. Deleting rows is done with the special context menu item "delete Row" (or pressing Ctrl-Shift-D). This mode is the basis for DBSheets, a specific usage of DBMappers.
 *   Ignore data errors: replace excel errors like #VALUE! with null on updating/inserting. Otherwise an error message is passed and execution is skipped for that row.
 *   Auto Increment: Allow empty primary column values (only for a single primary key!) in use with tables that have the IsAutoIncrement property set for this primary column (typically because of an identity specification for that column in the Database).
-*   Create CB: create a command-button for the DB Sequence in the current Worksheet (max. 10 buttons are possible per Workbook).
+*   Create CB: create a command-button for the DB Sequence in the current Worksheet.
 *   Hyperlink: click on it to highlight/select the DB Mapper area.
 
 You can always edit these parameters by selecting a cell in the DB Mapper area and invoking the context menu again.
@@ -66,7 +66,7 @@ When storing data to the database, field specific restrictions (date type, lengt
 *   continue if row empty:  if all values in the given Ranges are empty (or errors) for a row, continue by skipping the row (otherwise processing stops at this row), defaults to false
 *   The actual DBAction to be done is defined in a range that is named like the DBAction definition (the hyperlink takes you there). This range can be dynamically computed as all ranges in excel.
 *   Hyperlink: click on it to highlight/select the DB Action range.
-*   Create CB: create a command-button for the DB Sequence in the current Worksheet (max. 10 buttons are possible per Workbook).
+*   Create CB: create a command-button for the DB Sequence in the current Worksheet.
 
 Example for parametrization: DB Action cell contains `INSERT INTO Test (Col1,Col2,Col3,Col4) VALUES(!1!,!2!,!3!,!4!)`; Cols num params string: `1`; Cols num params date: `3`; Parameter Range Names: `paramC1,paramD1,paramE1,paramF1`
 
@@ -84,7 +84,7 @@ You can always edit these parameters by selecting a cell in the range of the DB 
 *   Ask for execution: Before execution of the DBSequence, ask for confirmation. A custom text can be given in the CustomXML definition element confirmText (see below).
 *   Sequence Step Data-grid: here the available DBMappers, DBActions and DBFunctions (DBListfetch/DBRowFetch/DBSetQuery) can be added that are then executed in Sequence. If you are executing all sequence steps in the same environment, its possible to run the sequence in a transaction context by placing DBBegin at the top and DBCommitRollback at the bottom of the sequence.
 *   move the sequence steps up and down by selecting a row and using the context menu (right mouse button).
-*   Create CB: create a command-button for the DB Sequence in the current Worksheet (max. 10 buttons are possible per Workbook).
+*   Create CB: create a command-button for the DB Sequence in the current Worksheet.
 
 As DB Sequences have no Range with data/definitions, invoking the context menu always creates new DB Sequences. You can edit existing DB Sequences
 by Ctrl-Shift clicking the Execute DBModifier Groups dropdown menus or by Ctrl-Shift clicking the created command-buttons.

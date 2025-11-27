@@ -320,7 +320,7 @@ Last:
                         Try
                             ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual
                         Catch ex As Exception
-                            UserMsg("Error when trying to change calculation to manual: " + ex.Message + ".. This can occur " + vbCrLf + "1) when currently editing a cell (F2) or " + vbCrLf + "2) when workbooks are opened as 'hidden' (View/Window/Hide-Unhide) or" + vbCrLf + "3) when workbooks are opened using MS-office hyper-links (word, outlook, powerpoint)", "refresh DBFunctions")
+                            UserMsg("Error when trying to change calculation to manual: " + ex.Message + ". This can occur " + vbCrLf + "1) when currently editing a cell (F2) or " + vbCrLf + "2) when workbooks are opened as 'hidden' (View/Window/Hide-Unhide) or" + vbCrLf + "3) when workbooks are opened using MS-office hyper-links (word, outlook, powerpoint)", "refresh DBFunctions")
                             Exit Sub
                         End Try
                         calcModeSet = True
