@@ -281,9 +281,9 @@ Public Class DBModifCreate
             End If
             Exit Sub
         End Try
-        If Len(cbName) > 31 Then
+        If Len(cbName) > excelNameLengthLimit Then
             cbshp.Delete()
-            UserMsg("CommandButton code-names cannot be longer than 31 characters ! '" + cbName + "': ", "CommandButton create Error")
+            UserMsg("CommandButton code-names cannot be longer than " + CStr(excelNameLengthLimit) + " characters ! '" + cbName + "': ", "CommandButton create Error")
             Exit Sub
         End If
         ' fail to assign a handler? remove command-button (otherwise it gets hard to edit an existing DBModification with a different name).

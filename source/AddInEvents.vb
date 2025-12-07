@@ -3,7 +3,7 @@ Imports ExcelDna.Registration
 Imports Microsoft.Office.Interop
 Imports Microsoft.Office.Interop.Excel ' for event procedures...
 Imports Microsoft.Office.Core
-Imports Microsoft.Vbe.Interop ' also need to add reference to Microsoft.Vbe.Interop.Forms, otherwise commandbuttons cb1 to cb0 won't work
+Imports Microsoft.Vbe.Interop ' also need to add reference to Microsoft.Vbe.Interop.Forms, otherwise commandbuttons (collection colCommandButtons) don't work
 Imports System.Runtime.InteropServices
 Imports System.Collections.Generic
 Imports System.Xml.Linq
@@ -17,7 +17,7 @@ Public Class AddInEvents
     ''' <summary>collection of query refresh handlers for query objects inside list objects</summary>
     Public colQueries As Collection
     ''' <summary>collection of command button handlers for assigned DB modifiers</summary>
-    Public Shared colCommandButtons As Collection
+    Public Shared colCommandButtons As New Collection
 
     ''' <summary>the application object needed for excel event handling (most of this class is dedicated to that)</summary>
     WithEvents Application As Excel.Application
@@ -423,9 +423,6 @@ done:
     ''' <summary>assign click handlers to command buttons in passed workbook Wb</summary>
     ''' <param name="wb">Workbook where command buttons are located</param>
     Public Sub InitializeCBHandlers(wb As Object)
-        Dim cbCH As CommandbuttonClickHandler
-        colCommandButtons = New Collection
-
         If Not IsNothing(DBModifDefColl) AndAlso DBModifDefColl.Count > 0 Then
             Try
                 For Each ws As Worksheet In wb.Worksheets
@@ -435,9 +432,9 @@ done:
                             ' Associate click-event handler of a CommandButton if its name matches the DB modifiers name.
                             Dim ctrlName As String
                             Try : ctrlName = ws.OLEObjects(shp.Name).Object.Name : Catch ex As Exception : ctrlName = "" : End Try
-                            If Left(ctrlName, 8) = "DBMapper" Or Left(ctrlName, 8) = "DBAction" Or Left(ctrlName, 8) = "DBSeqnce" Then
-                                cbCH = New CommandbuttonClickHandler With {.cb = ws.OLEObjects(shp.Name).Object}
-                                colCommandButtons.Add(cbCH)
+                            If (Left(ctrlName, 8) = "DBMapper" Or Left(ctrlName, 8) = "DBAction" Or Left(ctrlName, 8) = "DBSeqnce") And Not colCommandButtons.Contains(wb.name + ws.Name + ctrlName) Then
+                                Dim cbCH As New CommandbuttonClickHandler With {.cb = ws.OLEObjects(shp.Name).Object}
+                                colCommandButtons.Add(cbCH, wb.name + ws.Name + ctrlName)
                             End If
                         End If
                     Next
@@ -465,11 +462,11 @@ done:
     ''' <summary>COM cleanup for query table objects and command buttons inside their handlers</summary>
     Private Sub cleanupHandlers()
         For Each qryRH As QueryRefreshHandler In colQueries
-            Marshal.ReleaseComObject(qryRH.qry)
+            Try : Marshal.ReleaseComObject(qryRH.qry) : Catch ex As Exception : End Try
         Next
         colQueries.Clear()
         For Each cbCH As CommandbuttonClickHandler In colCommandButtons
-            Marshal.ReleaseComObject(cbCH.cb)
+            Try : Marshal.ReleaseComObject(cbCH.cb) : Catch ex As Exception : End Try
         Next
         colCommandButtons.Clear()
     End Sub

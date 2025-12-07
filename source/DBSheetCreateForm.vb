@@ -470,10 +470,7 @@ Public Class DBSheetCreateForm
         Try
             ' avoid moving down of last row, DBSeqenceDataGrid.Rows.Count is 1 more than the actual inserted rows because of the "new" row, selIndex is 0 based. Also avoid moving up of first row
             If (selRowIndex = DBSheetCols.Rows.Count - 2 And direction = 1) Or (selRowIndex = 0 And direction = -1) Then Exit Sub
-            If Not DBSheetCols.Rows(selRowIndex + 1).Cells("primkey").Value And DBSheetCols.Rows(selRowIndex).Cells("primkey").Value Then
-                UserMsg("All primary keys have to be first and there is a NON-primary key column that would be shifted above this primary one !", "DBSheet Definition Error")
-                Exit Sub
-            End If
+            ' sanity checks for primary keys and unfinished editing in row that would be affected by moving
             If direction = -1 Then
                 If (DBSheetCols.DataSource.Rows.Count - 1 < selRowIndex) Then
                     UserMsg("Editing not finished in selected row (values not committed), cannot move up!", "DBSheet Definition Error")
@@ -481,6 +478,11 @@ Public Class DBSheetCreateForm
                 End If
                 If DBSheetCols.Rows(selRowIndex - 1).Cells("primkey").Value And Not DBSheetCols.Rows(selRowIndex).Cells("primkey").Value Then
                     UserMsg("All primary keys have to be first and there is a primary key column that would be shifted below this NON-primary one !", "DBSheet Definition Error")
+                    Exit Sub
+                End If
+            ElseIf direction = 1 Then
+                If Not DBSheetCols.Rows(selRowIndex + 1).Cells("primkey").Value And DBSheetCols.Rows(selRowIndex).Cells("primkey").Value Then
+                    UserMsg("All primary keys have to be first and there is a NON-primary key column that would be shifted above this primary one !", "DBSheet Definition Error")
                     Exit Sub
                 End If
             End If
@@ -933,6 +935,7 @@ Public Class DBSheetCreateForm
                 Preview.Name = "TESTSHEETQ"
                 testQuery.Text = "&remove Test-sheet"
             End If
+            Me.Activate()
             Exit Sub
         Catch ex As System.Exception
             UserMsg("Exception In testTheQuery: " + ex.Message)
@@ -1148,7 +1151,7 @@ Public Class DBSheetCreateForm
                         ' store everything false values and type (is always inferred from Database)
                         If Not (DBSheetCols.Columns(j).Name = "type" OrElse
                             (TypeName(DBSheetCols.Rows(i).Cells(j).Value) = "Boolean" AndAlso Not DBSheetCols.Rows(i).Cells(j).Value)) Then
-                            columnLine += DBSheetConfig.setEntry(DBSheetCols.Columns(j).Name, CStr(DBSheetCols.Rows(i).Cells(j).Value.ToString()))
+                            columnLine += setEntry(DBSheetCols.Columns(j).Name, CStr(DBSheetCols.Rows(i).Cells(j).Value.ToString()))
                         End If
                     End If
                 Next
@@ -1156,17 +1159,25 @@ Public Class DBSheetCreateForm
                 If DBSheetCols.Rows(i).Cells("primkey").Value Then primKeyCount += 1
             Next
             ' then create the parameters stored in named cells
-            namedParams += DBSheetConfig.setEntry("connID", Database.Text) + vbCrLf
-            namedParams += DBSheetConfig.setEntry("table", Table.Text) + vbCrLf
-            namedParams += DBSheetConfig.setEntry("query", Query.Text) + vbCrLf
-            namedParams += DBSheetConfig.setEntry("whereClause", WhereClause.Text) + vbCrLf
-            namedParams += DBSheetConfig.setEntry("primcols", primKeyCount.ToString())
+            namedParams += setEntry("connID", Database.Text) + vbCrLf
+            namedParams += setEntry("table", Table.Text) + vbCrLf
+            namedParams += setEntry("query", Query.Text) + vbCrLf
+            namedParams += setEntry("whereClause", WhereClause.Text) + vbCrLf
+            namedParams += setEntry("primcols", primKeyCount.ToString())
             ' finally put everything together:
             Return "<DBsheetConfig>" + vbCrLf + namedParams + vbCrLf + "<columns>" + columnsDef + vbCrLf + "</columns>" + vbCrLf + "</DBsheetConfig>"
         Catch ex As System.Exception
             UserMsg("Exception in xmlDbsheetConfig: " + ex.Message)
             Return ""
         End Try
+    End Function
+
+    ''' <summary>creates markup with setting value content in entryMarkup</summary>
+    ''' <param name="entryMarkup"></param>
+    ''' <param name="content"></param>
+    ''' <returns>the markup</returns>
+    Private Function setEntry(ByVal entryMarkup As String, ByVal content As String) As String
+        setEntry = "<" + entryMarkup + ">" + content + "</" + entryMarkup + ">"
     End Function
 
     ''' <summary>current file link clicked: open file using default editor</summary>

@@ -3,6 +3,8 @@ Imports Microsoft.Office.Interop
 
 ''' <summary>Global functions for DB Addin</summary>
 Public Module Globals
+    ''' <summary>maximum length of excel names</summary>
+    Public Const excelNameLengthLimit = 31
 
     ''' <summary>splits theString into tokens delimited by delimiter, ignoring delimiters inside quotes and brackets</summary>
     ''' <param name="theString">string to be split into tokens, case insensitive !</param>
