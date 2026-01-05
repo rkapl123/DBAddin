@@ -123,14 +123,8 @@
   <data name="Transfer.ToolTip" xml:space="preserve">
     <value>click (or press Shift+Return) to transfer SQL Command to active cell using selected type (Cell: put query directly into cell or replace in an existing DB function, ListFetch/RowFetch/(SetQuery)ListObject/(SetQuery)Pivot: Put query into respective DB Function)</value>
   </data>
-  <metadata name="Timer1.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>116, 17</value>
-  </metadata>
-  <metadata name="BackgroundWorker1.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>205, 17</value>
-  </metadata>
   <metadata name="ConfigMenuStrip.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>368, 17</value>
+    <value>104, 16</value>
   </metadata>
   <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="$this.Icon" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">

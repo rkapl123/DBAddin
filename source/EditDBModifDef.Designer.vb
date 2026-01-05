@@ -38,7 +38,7 @@ Partial Class EditDBModifDef
         'OKBtn
         '
         Me.OKBtn.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.OKBtn.Location = New System.Drawing.Point(536, 427)
+        Me.OKBtn.Location = New System.Drawing.Point(536, 428)
         Me.OKBtn.Name = "OKBtn"
         Me.OKBtn.Size = New System.Drawing.Size(55, 23)
         Me.OKBtn.TabIndex = 5
@@ -50,7 +50,7 @@ Partial Class EditDBModifDef
         '
         Me.CancelBtn.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.CancelBtn.DialogResult = System.Windows.Forms.DialogResult.Cancel
-        Me.CancelBtn.Location = New System.Drawing.Point(597, 427)
+        Me.CancelBtn.Location = New System.Drawing.Point(597, 428)
         Me.CancelBtn.Name = "CancelBtn"
         Me.CancelBtn.Size = New System.Drawing.Size(55, 23)
         Me.CancelBtn.TabIndex = 0
@@ -110,7 +110,7 @@ Partial Class EditDBModifDef
         Me.availSettingsLB.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.availSettingsLB.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
         Me.availSettingsLB.FormattingEnabled = True
-        Me.availSettingsLB.Location = New System.Drawing.Point(116, 428)
+        Me.availSettingsLB.Location = New System.Drawing.Point(123, 428)
         Me.availSettingsLB.MaxDropDownItems = 30
         Me.availSettingsLB.Name = "availSettingsLB"
         Me.availSettingsLB.Size = New System.Drawing.Size(407, 21)
@@ -132,7 +132,7 @@ Partial Class EditDBModifDef
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.CancelButton = Me.CancelBtn
-        Me.ClientSize = New System.Drawing.Size(664, 457)
+        Me.ClientSize = New System.Drawing.Size(664, 464)
         Me.ControlBox = False
         Me.Controls.Add(Me.availSettLbl)
         Me.Controls.Add(Me.DBFskip)

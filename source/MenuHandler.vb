@@ -24,29 +24,6 @@ Public Class MenuHandler
         'ExcelDna.IntelliSense.IntelliSenseServer.Uninstall()
     End Sub
 
-    ''' <summary>used to clean up com objects to avoid excel crashes on shutdown</summary>
-    ''' <param name="RemoveMode"></param>
-    ''' <param name="custom"></param>
-    Public Overrides Sub OnDisconnection(RemoveMode As ExcelDna.Integration.Extensibility.ext_DisconnectMode, ByRef custom As Array)
-        For Each aKey As String In Functions.StatusCollection.Keys
-            Dim clearRange As Excel.Range = Functions.StatusCollection(aKey).formulaRange
-            If Not IsNothing(clearRange) Then Marshal.ReleaseComObject(clearRange)
-        Next
-        For Each DBmodifType As String In DBModifDefColl.Keys
-            For Each dbmapdefkey As String In DBModifDefColl(DBmodifType).Keys
-                Dim clearRange As Excel.Range = DBModifDefColl(DBmodifType).Item(dbmapdefkey).getTargetRange()
-                If Not IsNothing(clearRange) Then Marshal.ReleaseComObject(clearRange)
-            Next
-        Next
-        If Not IsNothing(DBSheetConfig.curCell) Then Marshal.ReleaseComObject(DBSheetConfig.curCell)
-        If Not IsNothing(DBSheetConfig.createdListObject) Then Marshal.ReleaseComObject(DBSheetConfig.createdListObject)
-        If Not IsNothing(DBSheetConfig.lookupWS) Then Marshal.ReleaseComObject(DBSheetConfig.lookupWS)
-        Do
-            GC.Collect()
-            GC.WaitForPendingFinalizers()
-        Loop While (Marshal.AreComObjectsAvailableForCleanup())
-    End Sub
-
     ''' <summary>creates the Ribbon (only at startup). any changes to the ribbon can only be done via dynamic menus</summary>
     ''' <returns></returns>
     Public Overrides Function GetCustomUI(RibbonID As String) As String
@@ -333,6 +310,7 @@ Public Class MenuHandler
         setUserSetting("AdHocSQLTransferType", theAdHocSQLDlg.TransferType.Text)
         ' reflect changes in sql combo-box
         theRibbon.InvalidateControl("DBAdhocSQL")
+        theAdHocSQLDlg = Nothing
     End Sub
 
     ''' <summary>get the text for the currently selected AdHocSQL string from the AdHocSQLStrings collection</summary>
@@ -938,7 +916,7 @@ End Class
 Public Module MenuHandlerGlobals
     ''' <summary>reference object for the ribbon</summary>
     Public theRibbon As CustomUI.IRibbonUI
-    ''' <summary>This needs to be public accessible for click handler to pass results into SQLText control</summary>
+    ''' <summary>This needs to be public accessible for click handler (contextMenuClickEventHandler in ConfigFiles) to pass results into SQLText control and DBDocumentation to pass escape key propagatedFromDoc</summary> 
     Public theAdHocSQLDlg As AdHocSQL
 
 

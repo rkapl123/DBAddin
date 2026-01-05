@@ -1,5 +1,8 @@
-﻿Imports System.ComponentModel ' for BackgroundWorker callback handling
+﻿Imports System.Collections.Generic
 Imports System.Data
+Imports System.Data.Common
+Imports System.Threading
+Imports System.Threading.Tasks
 Imports System.Windows.Forms
 
 
@@ -13,6 +16,16 @@ Public Class AdHocSQL
     Private ReadOnly userSetDB As String = ""
     ''' <summary>needed to avoid escape key pressed in DBDocumentation from propagating to main AdHocSQL dialog (and closing this dialog therefore)</summary>
     Public propagatedFromDoc As Boolean = False
+    ''' <summary>for cancelling the asynchronous execution of the SQL command</summary>
+    Private cts As CancellationTokenSource
+    ''' <summary>fetch elapsed time in Timer to show after completion</summary>
+    Private elapsedTime As DateTime
+    ''' <summary>Timer for progress display</summary>
+    Public Timer As System.Timers.Timer
+    ''' <summary>for counting received rows during execution of query commands</summary>
+    Private rowsCount As Integer
+    ''' <summary></summary>
+    Private batchSize As Integer = 1000
 
     ''' <summary>create new AdHocSQL dialog</summary>
     ''' <param name="SQLString">SQL string passed from combo-box</param>
@@ -49,12 +62,12 @@ Public Class AdHocSQL
         Me.Database.SelectedIndex = Me.Database.Items.IndexOf(userSetDB)
     End Sub
 
-    ''' <summary>execution of ribbon entered command after dialog has been set up, otherwise GUI elements are not available</summary>
+    ''' <summary>execution of the selected ribbon dropdown command right after dialog has been set up, otherwise GUI elements are not available</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub AdHocSQL_Shown(sender As Object, e As EventArgs) Handles Me.Shown
         ' only if SQL command not empty and not consisting of spaces only...
-        If Strings.Replace(Me.SQLText.Text, " ", "") <> "" Then executeSQL()
+        If Strings.Replace(Me.SQLText.Text, " ", "") <> "" Then executeSQL().ConfigureAwait(False)
     End Sub
 
     ''' <summary>fill the Database dropdown</summary>
@@ -134,116 +147,158 @@ Public Class AdHocSQL
     ''' <summary>executing the SQL command and passing the results to the results pane</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
-    Private Sub Execute_Click(sender As Object, e As EventArgs) Handles Execute.Click
-        executeSQL()
+    Private Async Sub Execute_Click(sender As Object, e As EventArgs) Handles Execute.Click
+        Await executeSQL().ConfigureAwait(False)
     End Sub
 
-    ''' <summary>after confirmation for non select statements (DML), execute the SQL by running the BackgroundWorker1</summary>
-    Private Sub executeSQL()
-        If Not BackgroundWorker1.IsBusy Then
-            ' only select commands are executed immediately, others are asked for (with default button being cancel)
-            If InStr(Strings.LTrim(SQLText.Text.ToLower()), "select") <> 1 Then
-                If LCase(fetchSetting("DMLStatementsAllowed", "False")) <> "true" Then
-                    UserMsg("Non Select Statements (DML) are forbidden (DMLStatementsAllowed needs to be True) !", "AdHoc SQL Command")
-                    Exit Sub
-                End If
-                If QuestionMsg("Do you really want to execute the command ?",, "AdHoc SQL Command", MsgBoxStyle.Question + MsgBoxStyle.DefaultButton2) = vbCancel Then Exit Sub
+    ''' <summary>after confirmation for non select statements (DML), execute the command given in SQLText by running fill_dgv_Async</summary>
+    Private Async Function executeSQL() As Task
+        ' only select commands are executed immediately, others are asked for (with default button being cancel)
+        If InStr(Strings.LTrim(SQLText.Text.ToLower()), "insert ") > 1 Or InStr(Strings.LTrim(SQLText.Text.ToLower()), "update ") > 1 Or InStr(Strings.LTrim(SQLText.Text.ToLower()), "delete ") > 1 Then
+            If LCase(fetchSetting("DMLStatementsAllowed", "False")) <> "true" Then
+                UserMsg("Non Select Statements (DML) are forbidden (DMLStatementsAllowed needs to be True) !", "AdHoc SQL Command")
+                Exit Function
             End If
-            elapsedTime = New DateTime(0)
-            Timer1.Interval = 1000
-            Timer1.Enabled = True
-            Timer1.Start()
-            BackgroundWorker1.RunWorkerAsync()
+            If QuestionMsg("Do you really want to execute the command ?",, "AdHoc SQL Command", MsgBoxStyle.Question + MsgBoxStyle.DefaultButton2) = vbCancel Then Exit Function
         End If
-    End Sub
 
-    ' variables needed for passing data between background worker and main thread
-    ''' <summary>the command object for executing the AdHocSQL command text</summary>
-    Private SqlCmd As IDbCommand
-    ''' <summary>used to pass non row results between BackgroundWorker1_DoWork and BackgroundWorker1_RunWorkerCompleted</summary>
-    Private nonRowResult As String
-    ''' <summary>the resulting data table object loaded by BackgroundWorker1_DoWork and displayed in BackgroundWorker1_RunWorkerCompleted</summary>
-    Private dt As DataTable
+        elapsedTime = New DateTime(0)
+        Timer = New System.Timers.Timer(1000)
+        AddHandler Timer.Elapsed, AddressOf Timer_Tick
+        Timer.Enabled = True
+        Timer.Start()
 
-    ''' <summary>start sql command and load data into data table in the background (to show progress and have cancellation control)</summary>
-    ''' <param name="sender"></param>
-    ''' <param name="e"></param>
-    Private Sub BackgroundWorker1_DoWork(sender As Object, e As DoWorkEventArgs) Handles BackgroundWorker1.DoWork
-        Dim theResult As IDataReader
+        Execute.Enabled = False
+        CloseBtn.Text = "Cancel"
+        Me.RowsReturned.Text = ""
+        cts = New CancellationTokenSource()
+        Try
+            Await fill_dgv_Async(cts.Token).ConfigureAwait(False)
+            If cts.Token.IsCancellationRequested Then
+                Me.RowsReturned.Text = Me.RowsReturned.Text + " (cancelled)"
+            End If
+        Catch oce As OperationCanceledException
+            Me.RowsReturned.Text = Me.RowsReturned.Text + " (cancelled)"
+        Catch ex As Exception
+            Me.AdHocSQLQueryResult.Rows.Clear()
+            Me.AdHocSQLQueryResult.Columns.Clear()
+            Me.AdHocSQLQueryResult.Columns.Add("result", "command_result:")
+            If rowsCount = 0 And cts.Token.IsCancellationRequested Then
+                Me.AdHocSQLQueryResult.Rows.Add("DML execution cancelled.")
+            Else
+                Me.AdHocSQLQueryResult.Rows.Add("Error: " & ex.Message)
+            End If
+            Me.RowsReturned.Text = ""
+        End Try
+        cts.Dispose()
+        cts = Nothing
+
+        Timer.Stop()
+        Timer.Dispose()
+        Timer = Nothing
+        ' resize after all columns are available
+        AdHocSQLQueryResult.AutoResizeColumns(DataGridViewAutoSizeColumnMode.DisplayedCells)
+        Execute.Enabled = True
+        CloseBtn.Text = "Close"
+    End Function
+
+    ''' <summary>opens connection, creates command from SQLText and calls ExecuteReaderAsync to asynchronously fill the AdHocSQLQueryResult datagridview</summary>
+    ''' <param name="ct"></param>
+    ''' ''' <returns></returns>
+    Public Async Function fill_dgv_Async(ct As CancellationToken) As Task
+        Me.AdHocSQLQueryResult.BeginInvoke(Sub()
+                                               Me.AdHocSQLQueryResult.Rows.Clear()
+                                               Me.AdHocSQLQueryResult.Columns.Clear()
+                                           End Sub)
         Try
             myDBConnHelper.openConnection(Me.Database.Text)
         Catch ex As System.Exception
-            UserMsg("Exception in BackgroundWorker1_DoWork (opening Database connection): " + ex.Message)
+            UserMsg("Exception in fill_dgv_Async (opening Database connection): " + ex.Message)
         End Try
-
-        ' set up command
-        SqlCmd = myDBConnHelper.getCommand(SQLText.Text)
-        SqlCmd.CommandTimeout = CmdTimeout
+        Dim SqlCmd As DbCommand = myDBConnHelper.getCommand(SQLText.Text)
+        SqlCmd.CommandTimeout = 0 ' infinite timeout as the command can be cancelled anytime.
         SqlCmd.CommandType = CommandType.Text
-        ' execute command on DB Server
-        nonRowResult = ""
-        Try
-            theResult = SqlCmd.ExecuteReader()
-        Catch ex As Exception
-            ' interruption of SqlCmd leads to exception which is misleading...
-            nonRowResult = If(Not BackgroundWorker1.CancellationPending, ex.Message + " (" + elapsedTime.ToString("T") + ")", "Execution was interrupted..")
-            theResult = Nothing
-        End Try
-        ' get results (into data table)
-        If Not IsNothing(theResult) Then
-            ' for row returning results (select/stored procedures)
-            If theResult.FieldCount > 0 Then
-                dt = New DataTable()
-                Try
-                    dt.Load(theResult)
-                Catch ex As Exception
-                    ' interruption of SqlCmd leads to exception which is misleading...
-                    nonRowResult = If(Not BackgroundWorker1.CancellationPending, ex.Message + " (" + elapsedTime.ToString("T") + ")", "Execution was interrupted..")
-                End Try
+
+        rowsCount = 0
+        Using reader = Await SqlCmd.ExecuteReaderAsync(CommandBehavior.SequentialAccess Or CommandBehavior.CloseConnection, ct).ConfigureAwait(False)
+            If reader.FieldCount > 0 Then
+                Dim columnsCreated As Boolean = False
+                Dim batch As New List(Of Object())()
+                Dim statusText As String = ""
+                While Await reader.ReadAsync(ct).ConfigureAwait(False)
+                    If ct.IsCancellationRequested Then Exit While
+                    Dim vals(reader.FieldCount - 1) As Object
+                    reader.GetValues(vals)
+                    ' create column headers only once
+                    If Not columnsCreated Then
+                        columnsCreated = True
+                        Dim colNames(reader.FieldCount - 1) As String
+                        For i As Integer = 0 To reader.FieldCount - 1
+                            colNames(i) = reader.GetName(i)
+                        Next
+                        Dim namesCopy = CType(colNames.Clone(), String())
+                        Me.AdHocSQLQueryResult.BeginInvoke(Sub()
+                                                               For i As Integer = 0 To namesCopy.Length - 1
+                                                                   Me.AdHocSQLQueryResult.Columns.Add("c" & i.ToString(), namesCopy(i))
+                                                               Next
+                                                           End Sub)
+                    End If
+                    ' adding batches of data to the datagrid view
+                    batch.Add(CType(vals.Clone(), Object()))
+                    rowsCount += 1
+                    statusText = "returned rows: " + rowsCount.ToString("N0") + " (" + elapsedTime.ToString("T") + ")"
+                    If batch.Count >= batchSize Then
+                        Me.AdHocSQLQueryResult.BeginInvoke(New delegate_refresh(AddressOf refresh_dgv), batch)
+                        ' important to separately set RowsReturned.Text as in the AdHocSQLQueryResult.BeginInvoke it's blocking the UI
+                        Me.RowsReturned.Invoke(Sub()
+                                                   Me.RowsReturned.Text = statusText
+                                               End Sub)
+                        batch = New List(Of Object())()
+                    End If
+                End While
+                ' flush remainder
+                If batch.Count > 0 And Not ct.IsCancellationRequested Then
+                    Me.AdHocSQLQueryResult.BeginInvoke(New delegate_refresh(AddressOf refresh_dgv), batch)
+                    Me.RowsReturned.Invoke(Sub()
+                                               Me.RowsReturned.Text = statusText
+                                           End Sub)
+                End If
             Else
-                ' DML: insert/update/delete returns no rows, only records affected
-                nonRowResult = theResult.RecordsAffected.ToString() + " record(s) affected. (" + elapsedTime.ToString("T") + ")"
+                Me.AdHocSQLQueryResult.BeginInvoke(Sub()
+                                                       Me.AdHocSQLQueryResult.SuspendLayout()
+                                                       Me.AdHocSQLQueryResult.Columns.Add("result", "command_result:")
+                                                       Me.AdHocSQLQueryResult.Rows.Add(reader.RecordsAffected.ToString("N0") + " record(s) affected.")
+                                                       Me.AdHocSQLQueryResult.ResumeLayout()
+                                                   End Sub)
             End If
-            theResult.Close()
-        End If
+        End Using
+    End Function
+
+    Delegate Sub delegate_refresh(batch As List(Of Object()))
+
+    ''' <summary>refresh the datagrid view in the UI thread (using AdHocSQLQueryResult.BeginInvoke)</summary>
+    ''' <param name="batch">the list of Object arrays with the data passed from fill_dgv_Async thread</param>
+    Private Sub refresh_dgv(batch As List(Of Object()))
+        Me.AdHocSQLQueryResult.SuspendLayout()
+        For Each r As Object() In batch
+            Me.AdHocSQLQueryResult.Rows.Add(r)
+        Next
+        Me.AdHocSQLQueryResult.ResumeLayout()
     End Sub
 
-    ''' <summary>sql command finished, show results. All GUI related work needs to be done in the main thread</summary>
-    ''' <param name="sender"></param>
+    ''' <summary>to show progress during execution, add elapsedTime (accessed in fill_dgv_Async via Me.RowsReturned.Invoke)</summary>
+    ''' <param name="source"></param>
     ''' <param name="e"></param>
-    Private Sub BackgroundWorker1_RunWorkerCompleted(sender As Object, e As RunWorkerCompletedEventArgs) Handles BackgroundWorker1.RunWorkerCompleted
-        ' for non row returning results (DML/errors) show returned message
-        If nonRowResult <> "" Then
-            AdHocSQLQueryResult.DataSource = Nothing
-            AdHocSQLQueryResult.Columns.Clear()
-            AdHocSQLQueryResult.Columns.Add("result", "command_result:")
-            AdHocSQLQueryResult.Rows.Clear()
-            AdHocSQLQueryResult.Rows.Add(nonRowResult)
-            Me.RowsReturned.Text = ""
-        Else
-            ' row returning results: display row count and elapsed time and pass data table to data grid
-            Me.RowsReturned.Text = dt.Rows.Count.ToString() + " rows returned. (" + elapsedTime.ToString("T") + ")"
-            AdHocSQLQueryResult.Columns.Clear()
-            AdHocSQLQueryResult.AutoGenerateColumns = True
-            AdHocSQLQueryResult.DataSource = dt
-            AdHocSQLQueryResult.Refresh()
-        End If
-        AdHocSQLQueryResult.AutoResizeColumns(DataGridViewAutoSizeColumnMode.DisplayedCells)
-        Timer1.Enabled = False
-        Timer1.Stop()
-    End Sub
-
-    ''' <summary>fetch elapsed time in Timer to show after completion</summary>
-    Private elapsedTime As DateTime
-
-    ''' <summary>show progress during BackgroundWorker1 execution</summary>
-    ''' <param name="sender"></param>
-    ''' <param name="e"></param>
-    Private Sub Timer1_Tick(sender As Object, e As EventArgs) Handles Timer1.Tick
-        If BackgroundWorker1.CancellationPending Then Exit Sub
+    Sub Timer_Tick(source As Object, e As EventArgs)
         elapsedTime = elapsedTime.AddSeconds(1.0)
-        Me.RowsReturned.Text = "(" + elapsedTime.ToString("T") + ")"
+        ' in case of DML just show time progressing
+        If rowsCount = 0 Then
+            Me.RowsReturned.Invoke(Sub()
+                                       Me.RowsReturned.Text = "DML executing (" + elapsedTime.ToString("T") + ")"
+                                   End Sub)
+        End If
     End Sub
+
 
     ''' <summary>"Transfer": close dialog with OK result</summary>
     ''' <param name="sender"></param>
@@ -255,18 +310,18 @@ Public Class AdHocSQL
     ''' <summary>"Close": close dialog with Cancel result</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
-    Private Sub Close_Click(sender As Object, e As EventArgs) Handles CloseBtn.Click
+    Private Sub CloseBtn_Click(sender As Object, e As EventArgs) Handles CloseBtn.Click
         finishForm(DialogResult.Cancel)
     End Sub
 
-    ''' <summary>common procedure to close the form, regarding (canceling) a busy background worker = sqlcmd)</summary>
+    ''' <summary>common procedure to close the form, regarding (canceling) a running excution</summary>
     Private Sub finishForm(theDialogResult As DialogResult)
-        If BackgroundWorker1.IsBusy Then
-            If QuestionMsg("Cancel the running SQL Command ?",, "AdHoc SQL Command") = MsgBoxResult.Cancel Then Exit Sub
-            SqlCmd.Cancel()
-            BackgroundWorker1.CancelAsync()
-            If QuestionMsg("Also close the Ad-hoc SQL Command Tool now ?",, "AdHoc SQL Command") = MsgBoxResult.Cancel Then Exit Sub
+        ' Close button (esc) is used as Cancel button during execution
+        If theDialogResult = DialogResult.Cancel AndAlso cts IsNot Nothing Then
+            cts.Cancel()
+            Exit Sub
         End If
+
         ' get rid of leading and trailing blanks for dropdown and combo box presets
         Me.SQLText.Text = Strings.Trim(Me.SQLText.Text)
         ' if the user environment was changed to the currently selected (global) one, reset it here to the passed one...
@@ -275,6 +330,7 @@ Public Class AdHocSQL
             Me.Database.SelectedIndex = Me.Database.Items.IndexOf(userSetDB)
         End If
         Me.DialogResult = theDialogResult
+        myDBConnHelper = Nothing
         Me.Hide()
     End Sub
 
@@ -284,7 +340,7 @@ Public Class AdHocSQL
     Private Sub SQLText_KeyDown(sender As Object, e As KeyEventArgs) Handles SQLText.KeyDown
         If e.KeyCode = Keys.Return And e.Modifiers = Keys.Control Then
             e.SuppressKeyPress = True
-            executeSQL()
+            executeSQL().ConfigureAwait(False)
         ElseIf e.KeyCode = Keys.Return And e.Modifiers = Keys.Shift Then
             e.SuppressKeyPress = True
             finishForm(DialogResult.OK)
@@ -302,7 +358,7 @@ Public Class AdHocSQL
     Private Sub Database_KeyDown(sender As Object, e As KeyEventArgs) Handles Database.KeyDown
         If e.KeyCode = Keys.Return And e.Modifiers = Keys.Control Then
             e.SuppressKeyPress = True
-            executeSQL()
+            executeSQL().ConfigureAwait(False)
         End If
     End Sub
 
@@ -316,13 +372,6 @@ Public Class AdHocSQL
         End If
     End Sub
 
-    ''' <summary>For non displayable data (blobs, etc.) that raise an exception, write out the exception in the data-grid cell tool-tip instead of lots of pop-ups</summary>
-    ''' <param name="sender"></param>
-    ''' <param name="e"></param>
-    Private Sub AdHocSQLQueryResult_DataError(sender As Object, e As DataGridViewDataErrorEventArgs) Handles AdHocSQLQueryResult.DataError
-        sender.CurrentRow.Cells(e.ColumnIndex).TooltipText = "Data raised exception: " + e.Exception.Message + " (" + e.Context.ToString() + ")"
-    End Sub
-
     ''' <summary>show context menu for SQLText, displaying config menu as a MenuStrip</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
@@ -333,7 +382,9 @@ Public Class AdHocSQL
         End If
     End Sub
 
-    ''' <summary>needed together with KeyPreview=True on form to simulate ESC canceling the form and catching this successfully (preventing closing when canceling an ongoing sql-command)</summary>
+    ''' <summary>needed together with KeyPreview=True on form to simulate ESC canceling the form and catching this successfully
+    ''' (preventing closing when canceling an ongoing sql-command), also see DBDocumentation.vb
+    ''' </summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub AdHocSQL_KeyUp(sender As Object, e As KeyEventArgs) Handles Me.KeyUp

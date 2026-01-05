@@ -33,8 +33,6 @@ Partial Class AdHocSQL
         Me.CloseBtn = New System.Windows.Forms.Button()
         Me.EnvSwitch = New System.Windows.Forms.ComboBox()
         Me.RowsReturned = New System.Windows.Forms.Label()
-        Me.Timer1 = New System.Windows.Forms.Timer(Me.components)
-        Me.BackgroundWorker1 = New System.ComponentModel.BackgroundWorker()
         Me.TransferType = New System.Windows.Forms.ComboBox()
         Me.LEnv1 = New System.Windows.Forms.Label()
         Me.SplitContainer1 = New System.Windows.Forms.SplitContainer()
@@ -55,10 +53,12 @@ Partial Class AdHocSQL
         Me.AdHocSQLQueryResult.Anchor = CType((((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
             Or System.Windows.Forms.AnchorStyles.Left) _
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.AdHocSQLQueryResult.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize
+        Me.AdHocSQLQueryResult.CausesValidation = False
+        Me.AdHocSQLQueryResult.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.DisableResizing
         Me.AdHocSQLQueryResult.Location = New System.Drawing.Point(3, 3)
         Me.AdHocSQLQueryResult.Name = "AdHocSQLQueryResult"
         Me.AdHocSQLQueryResult.ReadOnly = True
+        Me.AdHocSQLQueryResult.RowHeadersWidthSizeMode = System.Windows.Forms.DataGridViewRowHeadersWidthSizeMode.DisableResizing
         Me.AdHocSQLQueryResult.ShowEditingIcon = False
         Me.AdHocSQLQueryResult.Size = New System.Drawing.Size(770, 314)
         Me.AdHocSQLQueryResult.TabIndex = 1
@@ -67,7 +67,7 @@ Partial Class AdHocSQL
         'Execute
         '
         Me.Execute.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.Execute.Location = New System.Drawing.Point(659, 448)
+        Me.Execute.Location = New System.Drawing.Point(659, 449)
         Me.Execute.Name = "Execute"
         Me.Execute.Size = New System.Drawing.Size(61, 23)
         Me.Execute.TabIndex = 6
@@ -82,7 +82,7 @@ Partial Class AdHocSQL
         Me.LDatabase.AutoSize = True
         Me.LDatabase.BackColor = System.Drawing.Color.Transparent
         Me.LDatabase.ForeColor = System.Drawing.SystemColors.ControlText
-        Me.LDatabase.Location = New System.Drawing.Point(135, 453)
+        Me.LDatabase.Location = New System.Drawing.Point(135, 454)
         Me.LDatabase.Name = "LDatabase"
         Me.LDatabase.RightToLeft = System.Windows.Forms.RightToLeft.No
         Me.LDatabase.Size = New System.Drawing.Size(25, 13)
@@ -96,7 +96,7 @@ Partial Class AdHocSQL
         Me.Database.BackColor = System.Drawing.SystemColors.Window
         Me.Database.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
         Me.Database.ForeColor = System.Drawing.SystemColors.WindowText
-        Me.Database.Location = New System.Drawing.Point(161, 450)
+        Me.Database.Location = New System.Drawing.Point(161, 449)
         Me.Database.Name = "Database"
         Me.Database.RightToLeft = System.Windows.Forms.RightToLeft.No
         Me.Database.Size = New System.Drawing.Size(115, 21)
@@ -118,7 +118,7 @@ Partial Class AdHocSQL
         'CloseBtn
         '
         Me.CloseBtn.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.CloseBtn.Location = New System.Drawing.Point(726, 448)
+        Me.CloseBtn.Location = New System.Drawing.Point(723, 449)
         Me.CloseBtn.Name = "CloseBtn"
         Me.CloseBtn.Size = New System.Drawing.Size(62, 23)
         Me.CloseBtn.TabIndex = 7
@@ -131,7 +131,7 @@ Partial Class AdHocSQL
         Me.EnvSwitch.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
         Me.EnvSwitch.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
         Me.EnvSwitch.FormattingEnabled = True
-        Me.EnvSwitch.Location = New System.Drawing.Point(42, 450)
+        Me.EnvSwitch.Location = New System.Drawing.Point(42, 449)
         Me.EnvSwitch.Name = "EnvSwitch"
         Me.EnvSwitch.Size = New System.Drawing.Size(87, 21)
         Me.EnvSwitch.TabIndex = 2
@@ -145,14 +145,6 @@ Partial Class AdHocSQL
         Me.RowsReturned.Name = "RowsReturned"
         Me.RowsReturned.Size = New System.Drawing.Size(0, 13)
         Me.RowsReturned.TabIndex = 104
-        '
-        'Timer1
-        '
-        Me.Timer1.Interval = 1000
-        '
-        'BackgroundWorker1
-        '
-        Me.BackgroundWorker1.WorkerSupportsCancellation = True
         '
         'TransferType
         '
@@ -171,7 +163,7 @@ Partial Class AdHocSQL
         Me.LEnv1.AutoSize = True
         Me.LEnv1.BackColor = System.Drawing.Color.Transparent
         Me.LEnv1.ForeColor = System.Drawing.SystemColors.ControlText
-        Me.LEnv1.Location = New System.Drawing.Point(12, 453)
+        Me.LEnv1.Location = New System.Drawing.Point(12, 454)
         Me.LEnv1.Name = "LEnv1"
         Me.LEnv1.RightToLeft = System.Windows.Forms.RightToLeft.No
         Me.LEnv1.Size = New System.Drawing.Size(29, 13)
@@ -251,8 +243,6 @@ Partial Class AdHocSQL
     Friend WithEvents ToolTip1 As Windows.Forms.ToolTip
     Friend WithEvents CloseBtn As Windows.Forms.Button
     Friend WithEvents RowsReturned As Windows.Forms.Label
-    Friend WithEvents Timer1 As Windows.Forms.Timer
-    Friend WithEvents BackgroundWorker1 As ComponentModel.BackgroundWorker
     Friend WithEvents TransferType As Windows.Forms.ComboBox
     Friend WithEvents EnvSwitch As Windows.Forms.ComboBox
     Public WithEvents LEnv1 As Windows.Forms.Label

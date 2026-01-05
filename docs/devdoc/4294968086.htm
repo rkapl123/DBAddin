@@ -1,9 +1,13 @@
-<html><head><title>openingQuote</title><link href="styles/default.css" type="text/css" rel="stylesheet" /></head><body><div class="header"> </div><br class="clear" /><div class="navigation"><ul><li><a href="index.htm">Documentation</a></li></ul><ul><li><a class="" href="4294967296-DBaddin.htm">DBaddin</a><ul><li><a class="" href="4294968035.htm">DBModifHelper</a><ul><li><a class="" href="4294968035-Fields.htm">Fields</a><ul><li><a class="current" href="4294968086.htm">openingQuote</a><ul /></li></ul></li></ul></li></ul></li></ul></div><div class="content"><h1>openingQuote Field</h1><div class="summary">opening quote, e.g. [ for SQL Server</div><div class="details"><span class="namespace"><em>Namespace:</em> <a href="4294967296-DBaddin.htm">DBaddin</a></span><span class="assembly"><em>Assembly:</em> DBaddin in (DBaddin.dll)
+<html><head><title>IsXLCVErr(Object)</title><link href="styles/default.css" type="text/css" rel="stylesheet" /></head><body><div class="header"> </div><br class="clear" /><div class="navigation"><ul><li><a href="index.htm">Documentation</a></li></ul><ul><li><a class="" href="4294967296-DBaddin.htm">DBaddin</a><ul><li><a class="" href="4294968060.htm">DBModifHelper</a><ul><li><a class="" href="4294968060-Methods.htm">Methods</a><ul><li><a class="current" href="4294968086.htm">IsXLCVErr</a><ul /></li></ul></li></ul></li></ul></li></ul></div><div class="content"><h1>IsXLCVErr(Object) Method</h1><div class="summary">To check for errors in passed range obj, makes use of the fact that Range.Value never passes Integer Values back except for Errors</div><div class="details"><span class="namespace"><em>Namespace:</em> <a href="4294967296-DBaddin.htm">DBaddin</a></span><span class="assembly"><em>Assembly:</em> DBaddin in (DBaddin.dll)
 								</span></div>
         <div class="syntax">
             <h2>Syntax</h2>
-            <pre><span class="keyword">public</span> <span class="keyword">string</span> openingQuote</pre>
+            <pre><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">bool</span> IsXLCVErr(
+	<span class="keyword">object</span> rangeval
+	)</pre>
         </div>
-    </div><div class="footer">
+    <div class="parameters"><h3>Parameters</h3><dl><dt>rangeval</dt><dd><div>
+				Type:
+				Object</div><div>Range.Value to be checked for errors</div></dd></dl></div><div class="return"><h3>Returns</h3><div class="item">Boolean</div><div class="returns">true if error</div></div><div class="remarks"><h2>Remarks</h2>https://xldennis.wordpress.com/2006/11/22/dealing-with-cverr-values-in-net-%E2%80%93-part-i-the-problem/ and https://xldennis.wordpress.com/2006/11/29/dealing-with-cverr-values-in-net-part-ii-solutions/</div></div><div class="footer">
 			Produced by the <a href="https://livedocumenter.barryjones.me.uk/">Live Documenter</a>.
 		</div></body></html>

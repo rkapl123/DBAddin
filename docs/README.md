@@ -94,7 +94,7 @@ Other (general) settings possible in DBAddin.xll.config (or DBAddinCentral.confi
     <add key="DefaultDBDateFormatting" value="0" />
     <add key="DefaultEnvironment" value="3" />
     <add key="disableSettingsDisplay" value="addin"/>
-    <add key="DMLStatementsAllowed" value="True" />
+    <add key="DMLStatementsAllowed" value="False" />
     <add key="DontChangeEnvironment" value="False" />
     <add key="ExcelVersionForPivot" value="7" />
     <add key="legacyFunctionMsg" value="True" />
@@ -102,7 +102,8 @@ Other (general) settings possible in DBAddin.xll.config (or DBAddinCentral.confi
     <add key="localUpdateFolder" value="" />
     <add key="localUpdateMessage" value="New version available in local update folder, start deployAddin.cmd to install it:" />
     <add key="maxNumberMassChange" value="10" />
-    <add key="repairLegacyFunctionsAutoOpen" value="True" />
+    <add key="NonUserModifiableSettings" value="False" />
+    <add key="repairLegacyFunctionsAutoOpen" value="False" />
     <add key="shortCutRefreshData" value="^R" />
     <add key="shortCutJumpButton" value="^J" />
     <add key="shortCutDeleteRow" value="^D" />
@@ -135,6 +136,7 @@ Explanation:
 *   `localUpdateFolder`: For updating the DB Add-in Version, you can provide an alternative folder, where the deploy script and the files are maintained for other users.
 *   `localUpdateMessage`: For the alternative folder update, you can also provide an alternative message to display.
 *   `maxNumberMassChange`: Threshold of Number of changes in CUDFlag DBMappers to issue a warning.
+*   `NonUserModifiableSettings`: (only functional in central settings) space separated list of settings that are not overridable by user settings (eg "DMLStatementsAllowed charBeforeDBnameConfigDoc ").
 *   `pivotTableCmdTextToSet`: minimum command text for new database pivot tables that should be sufficient for the database engine. defaults to: "select 1"
 *   `repairLegacyFunctionsAutoOpen`: Set this to False if legacy DB Add-in functions should not be checked/repaired on auto open of workbooks.
 *   `shortCutRefreshData`: Set this to override the default value of the refreshData context button and avoid conflicts with other add-ins. For syntax see [https://msdn.microsoft.com/en-us/library/office/ff197461.aspx](https://msdn.microsoft.com/en-us/library/office/ff197461.aspx).
@@ -144,6 +146,7 @@ Explanation:
 *   `updatesDownloadFolder`: You can specify a different download folder here instead of `C:\temp\`.
 *   `updatesMajorVersion`: Usually the versions are numbered 1.0.0.x, in case this is different, the Major Version can be overridden here.
 *   `updatesUrlBase`: Here, the URL base for the update zip packages can be overridden.
+*   `_testNewFeature`: used to switch on new features, usually only meaningful for new code in master branch.
 
 To change the settings, use the drop-down "settings" where you can modify the DBAddin.xll.config and the referred DBAddinCentral.config including XML validation. If you have multiple same named entries in your settings files, the last one is taken as the active setting. The settings dialog has a drop-down at its bottom providing all the available settings to be selected. On selection, the chosen setting is added to the bottom of the current open config. For `+  env` settings, an input box will provide the possibility to set the number to be used instead of `+ env`. There are other specific settings available for use with [DB Functions](DBFuncs.md), [DB Modifications](DBModif.md) and [DB Sheets](DBSheets.md), see there for more details.
 
@@ -196,7 +199,7 @@ Another tool is the entry of quick (ad hoc) SQL Commands in the combo box below 
 
 The tool has an upper part for entering SQL and a lower part for displaying the results. Using the right mouse button context menu, the same configuration of the "Cell Config deployment" (see [DBFuncs User-doc](DBFuncs.md)) is utilized to display a hierarchical menu to insert the configured select statements from the cell config deployment. Also the documentation can be shown here in the same way as with "Viewing Database documentation with configurations".
 
-When entering select statements (beginning with `select`) in the combo box, these are executed immediately, empty statements (using only blanks character in the combo-box) don't do anything, and everything else is regarded as a DML command and is only executed after confirmation:
+When entering select statements (beginning with `select`) in the combo box, these are executed immediately, empty statements (using only blanks character in the combo-box) don't do anything, and commands containing `insert`, `update` or `delete` are regarded as a DML command and will only be executed after confirmation:
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/AdHocSQL_DML.PNG)  
 
@@ -204,7 +207,7 @@ For safety reasons, the DML commands are blocked until an additional setting `<a
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/AdHocSQL_DML_forbidden.PNG)  
 
-Results are shown below the SQL Command text entry, for row returning commands, the rows returned are shown including the time it took to finish the command at the bottom of the dialog.
+Results are shown below the SQL Command text entry, for row returning commands, the rows returned are shown including the time it took to finish the command at the bottom of the dialog. The command timeout is set here to infinity to allow for long running commands, to cancel a long running statement, click `Cancel` or hit ESC during execution.
 In case of an error the exception from the database command is displayed, for DML commands the records affected are shown (again including the time it took to finish the command):
 
 ![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/AdHocSQL_DML_Result.PNG)  

@@ -16,7 +16,7 @@ Public Class AddInEvents
 
     ''' <summary>collection of query refresh handlers for query objects inside list objects</summary>
     Public colQueries As Collection
-    ''' <summary>collection of command button handlers for assigned DB modifiers</summary>
+    ''' <summary>collection of command button handlers for assigned DB modifiers, needs to be shared because DBModifCreate.CreateCB_Click accesses it</summary>
     Public Shared colCommandButtons As New Collection
 
     ''' <summary>the application object needed for excel event handling (most of this class is dedicated to that)</summary>
@@ -268,6 +268,8 @@ done:
                 LogInfo("refreshing DB functions for workbook: " + Wb.Name)
                 refreshDBFunctions(Wb, False, True)
             End If
+            InitializeQueryHandlers(Wb)
+            InitializeCBHandlers(Wb)
         End If
     End Sub
 
@@ -280,13 +282,7 @@ done:
             If DBModifDefColl Is Nothing Then
                 DBModifDefColl = New Dictionary(Of String, Dictionary(Of String, DBModif))
             End If
-            LogInfo("getting DBModif Definitions on Workbook Activate")
             getDBModifDefinitions(Wb) ' this also invalidates the ribbon to reflect any DB Modifier changes there
-            ' unfortunately, Excel doesn't fire SheetActivate when opening workbooks, so do that here...
-            LogInfo("assign command button click and listobject query handlers on Workbook Activate")
-            InitializeQueryHandlers(Wb)
-            InitializeCBHandlers(Wb)
-            LogInfo("finished actions on Workbook Activate")
         End If
     End Sub
 
@@ -313,7 +309,6 @@ done:
                 ' reset query caches and status collections (returned error messages) to get new data later on reopening the workbook
                 resetCachesForWorkbook(Wb.Name)
             End If
-            cleanupHandlers()
         Catch ex As Exception : End Try
         WbIsClosing = False
     End Sub
@@ -414,10 +409,38 @@ done:
 
     ''' <summary>used for releasing com objects</summary>
     Protected Overrides Sub Finalize()
-        LogInfo("Addin finalizing: Base finalize")
         MyBase.Finalize()
-        LogInfo("Addin finalizing: releasing com objects of control buttons")
-        cleanupHandlers()
+        If colQueries IsNot Nothing Then
+            For Each qryRH As QueryRefreshHandler In colQueries
+                Try : Marshal.ReleaseComObject(qryRH.qry) : Catch ex As Exception : End Try
+            Next
+        End If
+        If colCommandButtons IsNot Nothing Then
+            For Each cbCH As CommandbuttonClickHandler In colCommandButtons
+                Try : Marshal.ReleaseComObject(cbCH.cb) : Catch ex As Exception : End Try
+            Next
+        End If
+        For Each aKey As String In Functions.StatusCollection.Keys
+            If Functions.StatusCollection(aKey) IsNot Nothing Then
+                Try
+                    Dim clearRange As Excel.Range = Functions.StatusCollection(aKey).formulaRange
+                    If Not IsNothing(clearRange) Then Marshal.ReleaseComObject(clearRange)
+                Catch ex As Exception : End Try
+            End If
+        Next
+        If DBModifDefColl IsNot Nothing Then
+            For Each DBmodifType As String In DBModifDefColl.Keys
+                For Each dbmapdefkey As String In DBModifDefColl(DBmodifType).Keys
+                    If DBModifDefColl(DBmodifType).Item(dbmapdefkey) IsNot Nothing Then
+                        Dim clearRange As Excel.Range = DBModifDefColl(DBmodifType).Item(dbmapdefkey).getTargetRange()
+                        If Not IsNothing(clearRange) Then Try : Marshal.ReleaseComObject(clearRange) : Catch ex As Exception : End Try
+                    End If
+                Next
+            Next
+        End If
+        If Not IsNothing(DBSheetConfig.curCell) Then Try : Marshal.ReleaseComObject(DBSheetConfig.curCell) : Catch ex As Exception : End Try
+        If Not IsNothing(DBSheetConfig.createdListObject) Then Try : Marshal.ReleaseComObject(DBSheetConfig.createdListObject) : Catch ex As Exception : End Try
+        If Not IsNothing(DBSheetConfig.lookupWS) Then Try : Marshal.ReleaseComObject(DBSheetConfig.lookupWS) : Catch ex As Exception : End Try
     End Sub
 
     ''' <summary>assign click handlers to command buttons in passed workbook Wb</summary>
@@ -458,19 +481,6 @@ done:
             Next
         Next
     End Sub
-
-    ''' <summary>COM cleanup for query table objects and command buttons inside their handlers</summary>
-    Private Sub cleanupHandlers()
-        For Each qryRH As QueryRefreshHandler In colQueries
-            Try : Marshal.ReleaseComObject(qryRH.qry) : Catch ex As Exception : End Try
-        Next
-        colQueries.Clear()
-        For Each cbCH As CommandbuttonClickHandler In colCommandButtons
-            Try : Marshal.ReleaseComObject(cbCH.cb) : Catch ex As Exception : End Try
-        Next
-        colCommandButtons.Clear()
-    End Sub
-
 End Class
 
 ''' <summary>Event handler class to catch refresh events on query tables inside list objects</summary>

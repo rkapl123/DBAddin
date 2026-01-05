@@ -15,6 +15,8 @@ Public Module SettingsTools
     Public CmdTimeout As Integer
     ''' <summary>default formatting style used in DBDate</summary>
     Public DefaultDBDateFormatting As Integer
+    ''' <summary>space separated setting names that should not be overriden by user</summary>
+    Public NonUserModifiableSettings As String
     ''' <summary>The path where the User specific settings (overrides of standard/global settings) can be found (hard-coded to path of xll)</summary>
     Private UserSettingsPath As String
 
@@ -49,8 +51,8 @@ Public Module SettingsTools
         Dim AddinAppSettings As Collections.Specialized.NameValueCollection = Nothing
         Try : UserSettings = ConfigurationManager.GetSection("UserSettings") : Catch ex As Exception : LogWarn("Error reading UserSettings: " + ex.Message) : End Try
         Try : AddinAppSettings = ConfigurationManager.AppSettings : Catch ex As Exception : LogWarn("Error reading AppSettings: " + ex.Message) : End Try
-        ' user specific settings are in UserSettings section in separate file
-        If IsNothing(UserSettings) OrElse IsNothing(UserSettings(Key)) Then
+        ' user specific settings are in UserSettings section in separate file, use if set, hoewever only if not forbidden by NonUserModifiableSettings
+        If IsNothing(UserSettings) OrElse IsNothing(UserSettings(Key)) OrElse NonUserModifiableSettings.Contains(Key + " ") Then
             If Not IsNothing(AddinAppSettings) Then
                 fetchSetting = AddinAppSettings(Key)
             Else
@@ -114,6 +116,7 @@ Public Module SettingsTools
     ''' <summary>initializes global configuration variables</summary>
     Public Sub initSettings()
         Try
+            NonUserModifiableSettings = fetchSetting("NonUserModifiableSettings", "")
             DebugAddin = fetchSettingBool("DebugAddin", "False")
             ConstConnString = fetchSetting("ConstConnString" + env(), "")
             CnnTimeout = fetchSettingInt("CnnTimeout", "15")
