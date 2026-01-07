@@ -269,6 +269,11 @@ done:
                 refreshDBFunctions(Wb, False, True)
             End If
             InitializeQueryHandlers(Wb)
+            ' in case AutoOpen hasn't been triggered (e.g. when Excel was started via Internet Explorer)...
+            If DBModifDefColl Is Nothing Then
+                DBModifDefColl = New Dictionary(Of String, Dictionary(Of String, DBModif))
+            End If
+            getDBModifDefinitions(Wb) ' this also invalidates the ribbon to reflect any DB Modifier changes there
             InitializeCBHandlers(Wb)
         End If
     End Sub

@@ -6,7 +6,7 @@ Public Module Logging
     Public nonInteractive As Boolean = False
     ''' <summary>collect non interactive error messages here</summary>
     Public nonInteractiveErrMsgs As String
-    ''' <summary>set to true if warning was issued, this flag indicates that the log button should get an exclamation sign</summary>
+    ''' <summary>set to true if warning was issued, this flag indicates that the log button and the DB Addin tab label should get an exclamation sign</summary>
     Public WarningIssued As Boolean
     ''' <summary>the Text-file log source</summary>
     Public theLogFileSource As TraceSource
@@ -35,7 +35,10 @@ Public Module Logging
                     Case TraceEventType.Warning, TraceEventType.Error
                         WarningIssued = True
                         ' at Addin Start ribbon has not been loaded so avoid call to it here..
-                        If theRibbon IsNot Nothing Then theRibbon.InvalidateControl("showLog")
+                        If theRibbon IsNot Nothing Then
+                            theRibbon.InvalidateControl("showLog")
+                            theRibbon.InvalidateControl("DBaddinTab")
+                        End If
                 End Select
             End If
         Catch ex As Exception

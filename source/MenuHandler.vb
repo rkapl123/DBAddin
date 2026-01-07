@@ -4,7 +4,6 @@ Imports System.Configuration
 Imports System.Collections.Specialized
 Imports System.Collections.Generic
 Imports System.Runtime.InteropServices
-Imports System.Windows.Forms
 
 
 ''' <summary>handles all Menu related aspects (context menu for building/refreshing, "DBAddin"/"Load Config" tree menu for retrieving stored configuration files, etc.)</summary>
@@ -28,7 +27,7 @@ Public Class MenuHandler
     ''' <returns></returns>
     Public Overrides Function GetCustomUI(RibbonID As String) As String
         ' Ribbon definition XML
-        Dim customUIXml As String = "<customUI xmlns='http://schemas.microsoft.com/office/2009/07/customui' onLoad='ribbonLoaded'><ribbon><tabs><tab id='DBaddinTab' label='DB Addin'>"
+        Dim customUIXml As String = "<customUI xmlns='http://schemas.microsoft.com/office/2009/07/customui' onLoad='ribbonLoaded'><ribbon><tabs><tab id='DBaddinTab' getLabel='getTabLabel'>"
         ' DBAddin Group: environment choice, DBConfics selection tree, purge names tool button and dialogBoxLauncher for AboutBox
         customUIXml +=
         "<group id='DBAddinGroup' label='DBAddin settings'>" +
@@ -219,7 +218,7 @@ Public Class MenuHandler
         Dim queryString As String = ""
 
         theAdHocSQLDlg = New AdHocSQL(selectedSQLText, AdHocSQLStrings.IndexOf(selectedSQLText))
-        Dim dialogResult As Windows.Forms.DialogResult = theAdHocSQLDlg.ShowDialog()
+        Dim dialogResult As System.Windows.Forms.DialogResult = theAdHocSQLDlg.ShowDialog()
         ' reflect potential change in environment...
         theRibbon.InvalidateControl("envDropDown")
         If dialogResult = System.Windows.Forms.DialogResult.OK Then 'OK is set when "transfer" is clicked
@@ -433,7 +432,7 @@ Public Class MenuHandler
     End Function
 
     ''' <summary>menu strip for DB Modifier Definitions dialogBoxLauncher</summary>
-    Private WithEvents ctMenuStrip As Windows.Forms.ContextMenuStrip
+    Private WithEvents ctMenuStrip As System.Windows.Forms.ContextMenuStrip
 
     ''' <summary>show DBModif definitions edit box</summary>
     ''' <param name="control"></param>
@@ -454,7 +453,7 @@ Public Class MenuHandler
             End If
         End If
         ' no existing DB modifier definitions found, offer to create new ones...
-        ctMenuStrip = New Windows.Forms.ContextMenuStrip()
+        ctMenuStrip = New System.Windows.Forms.ContextMenuStrip()
         Dim ptLowerLeft As Drawing.Point = System.Windows.Forms.Cursor.Position
         ctMenuStrip.Items().Add("No DBModifier definitions exist in current workbook, do you want to add")
         ctMenuStrip.Items().Add("a DBMapper", convertFromMso("TableSave"), AddressOf ctMenuStrip_Click)
@@ -689,6 +688,13 @@ Public Class MenuHandler
         getDBModifTypeLabel = If(control.Id = "Error", "Error in DBModif Definitions", If(control.Id = "DBSeqnce", "DBSequence", control.Id))
     End Function
 
+    ''' <summary>set the name of the DB Addin tab to reflect errors</summary>
+    ''' <param name="control"></param>
+    ''' <returns></returns>
+    Public Function getTabLabel(control As CustomUI.IRibbonControl) As String
+        getTabLabel = If(WarningIssued, "DB Addin !!!Error!!!", "DB Addin")
+    End Function
+
     ''' <summary>create the buttons in the DBModif dropdown menu</summary>
     ''' <param name="control"></param>
     ''' <returns>the menu content xml</returns>
@@ -696,7 +702,7 @@ Public Class MenuHandler
         Dim xmlString As String = "<menu xmlns='http://schemas.microsoft.com/office/2009/07/customui'>"
         Try
             If DBModifDefColl.ContainsKey("Error") Then
-                Dim keylist As List(Of String) = New List(Of String)(DBModifDefColl("Error").Keys())
+                Dim keylist As New List(Of String)(DBModifDefColl("Error").Keys())
                 xmlString += "<button id='dummy' label='" + keylist(0) + "' />"
             Else
                 If Not DBModifDefColl.ContainsKey(control.Id) Then Return ""
@@ -801,6 +807,7 @@ Public Class MenuHandler
         ' reset warning flag
         WarningIssued = False
         theRibbon.InvalidateControl("showLog")
+        theRibbon.InvalidateControl("DBaddinTab")
     End Sub
 
     ''' <summary>ribbon menu button for DBSheet creation start</summary>
@@ -851,7 +858,7 @@ Public Class MenuHandler
                 UserMsg("No power queries available...", "DBAddin getting power queries", MsgBoxStyle.Exclamation)
                 Exit Sub
             End If
-            ctMenuStrip2 = New Windows.Forms.ContextMenuStrip()
+            ctMenuStrip2 = New System.Windows.Forms.ContextMenuStrip()
             Dim ptLowerLeft As Drawing.Point = System.Windows.Forms.Cursor.Position
             ctMenuStrip2.Items().Add("Select a power query below to be referenced by DBSetPowerQuery (hold Ctrl to restore the last query)").Enabled = False
             For Each qry As Object In wbQueries
@@ -862,7 +869,7 @@ Public Class MenuHandler
     End Sub
 
     ''' <summary>menu strip for displaying available power queries in current workbook</summary>
-    Private WithEvents ctMenuStrip2 As Windows.Forms.ContextMenuStrip
+    Private WithEvents ctMenuStrip2 As System.Windows.Forms.ContextMenuStrip
 
     ''' <summary>called after selecting a power-query for insert DBSetPowerQuery</summary>
     ''' <param name="sender"></param>
