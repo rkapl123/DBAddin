@@ -50,6 +50,7 @@ Partial Class AdHocSQL
         Me.AdHocSQLQueryResult.AllowUserToAddRows = False
         Me.AdHocSQLQueryResult.AllowUserToDeleteRows = False
         Me.AdHocSQLQueryResult.AllowUserToOrderColumns = True
+        Me.AdHocSQLQueryResult.AllowUserToResizeRows = False
         Me.AdHocSQLQueryResult.Anchor = CType((((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
             Or System.Windows.Forms.AnchorStyles.Left) _
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
@@ -204,7 +205,7 @@ Partial Class AdHocSQL
         'ConfigMenuStrip
         '
         Me.ConfigMenuStrip.Name = "ConfigMenuStrip"
-        Me.ConfigMenuStrip.Size = New System.Drawing.Size(181, 26)
+        Me.ConfigMenuStrip.Size = New System.Drawing.Size(61, 4)
         '
         'AdHocSQL
         '

@@ -196,8 +196,6 @@ Public Class AdHocSQL
         Timer.Stop()
         Timer.Dispose()
         Timer = Nothing
-        ' resize after all columns are available
-        AdHocSQLQueryResult.AutoResizeColumns(DataGridViewAutoSizeColumnMode.DisplayedCells)
         Execute.Enabled = True
         CloseBtn.Text = "Close"
     End Function
@@ -210,6 +208,7 @@ Public Class AdHocSQL
                                                Me.AdHocSQLQueryResult.Rows.Clear()
                                                Me.AdHocSQLQueryResult.Columns.Clear()
                                            End Sub)
+        rowsCount = 0
         Try
             myDBConnHelper.openConnection(Me.Database.Text)
         Catch ex As System.Exception
@@ -219,35 +218,33 @@ Public Class AdHocSQL
         SqlCmd.CommandTimeout = 0 ' infinite timeout as the command can be cancelled anytime.
         SqlCmd.CommandType = CommandType.Text
 
-        rowsCount = 0
         Using reader = Await SqlCmd.ExecuteReaderAsync(CommandBehavior.SequentialAccess Or CommandBehavior.CloseConnection, ct).ConfigureAwait(False)
             If reader.FieldCount > 0 Then
-                Dim columnsCreated As Boolean = False
+                ' first fill headers
+                Dim colNames(reader.FieldCount - 1) As String
+                For i As Integer = 0 To reader.FieldCount - 1
+                    colNames(i) = reader.GetName(i)
+                Next
+                Dim namesCopy = CType(colNames.Clone(), String())
+                Me.AdHocSQLQueryResult.BeginInvoke(Sub()
+                                                       For i As Integer = 0 To namesCopy.Length - 1
+                                                           Me.AdHocSQLQueryResult.Columns.Add("c" & i.ToString(), namesCopy(i))
+                                                       Next
+                                                   End Sub)
                 Dim batch As New List(Of Object())()
                 Dim statusText As String = ""
+                ' then fill rows
                 While Await reader.ReadAsync(ct).ConfigureAwait(False)
                     If ct.IsCancellationRequested Then Exit While
                     Dim vals(reader.FieldCount - 1) As Object
                     reader.GetValues(vals)
-                    ' create column headers only once
-                    If Not columnsCreated Then
-                        columnsCreated = True
-                        Dim colNames(reader.FieldCount - 1) As String
-                        For i As Integer = 0 To reader.FieldCount - 1
-                            colNames(i) = reader.GetName(i)
-                        Next
-                        Dim namesCopy = CType(colNames.Clone(), String())
-                        Me.AdHocSQLQueryResult.BeginInvoke(Sub()
-                                                               For i As Integer = 0 To namesCopy.Length - 1
-                                                                   Me.AdHocSQLQueryResult.Columns.Add("c" & i.ToString(), namesCopy(i))
-                                                               Next
-                                                           End Sub)
-                    End If
+                    If ct.IsCancellationRequested Then Exit While
                     ' adding batches of data to the datagrid view
                     batch.Add(CType(vals.Clone(), Object()))
                     rowsCount += 1
                     statusText = "returned rows: " + rowsCount.ToString("N0") + " (" + elapsedTime.ToString("T") + ")"
                     If batch.Count >= batchSize Then
+                        If ct.IsCancellationRequested Then Exit While
                         Me.AdHocSQLQueryResult.BeginInvoke(New delegate_refresh(AddressOf refresh_dgv), batch)
                         ' important to separately set RowsReturned.Text as in the AdHocSQLQueryResult.BeginInvoke it's blocking the UI
                         Me.RowsReturned.Invoke(Sub()
@@ -256,7 +253,7 @@ Public Class AdHocSQL
                         batch = New List(Of Object())()
                     End If
                 End While
-                ' flush remainder
+                ' after last batch, flush remainder
                 If batch.Count > 0 And Not ct.IsCancellationRequested Then
                     Me.AdHocSQLQueryResult.BeginInvoke(New delegate_refresh(AddressOf refresh_dgv), batch)
                     Me.RowsReturned.Invoke(Sub()
@@ -264,6 +261,7 @@ Public Class AdHocSQL
                                            End Sub)
                 End If
             Else
+                ' non column returning commands (eg DML) just add the records affected
                 Me.AdHocSQLQueryResult.BeginInvoke(Sub()
                                                        Me.AdHocSQLQueryResult.SuspendLayout()
                                                        Me.AdHocSQLQueryResult.Columns.Add("result", "command_result:")
@@ -272,6 +270,12 @@ Public Class AdHocSQL
                                                    End Sub)
             End If
         End Using
+        ' resize after all columns are available only up to 5000 rows (takes long!)
+        If rowsCount < 5000 Then
+            Me.AdHocSQLQueryResult.BeginInvoke(Sub()
+                                                   AdHocSQLQueryResult.AutoResizeColumns(DataGridViewAutoSizeColumnMode.AllCells)
+                                               End Sub)
+        End If
     End Function
 
     Delegate Sub delegate_refresh(batch As List(Of Object()))
@@ -319,6 +323,9 @@ Public Class AdHocSQL
         ' Close button (esc) is used as Cancel button during execution
         If theDialogResult = DialogResult.Cancel AndAlso cts IsNot Nothing Then
             cts.Cancel()
+            If rowsCount < 5000 Then
+                AdHocSQLQueryResult.AutoResizeColumns(DataGridViewAutoSizeColumnMode.AllCells)
+            End If
             Exit Sub
         End If
 
