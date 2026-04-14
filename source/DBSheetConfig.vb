@@ -185,10 +185,10 @@ Public Module DBSheetConfig
                 Dim lookupName As String = Replace(getEntry("name", LookupDef, 1), specialNonNullableChar, "")
                 Dim lookupRangeName As String = tableName + lookupName + "Lookup"
                 If existsName(lookupRangeName) Then
-                    ' overwrite existing lookup with warning...
+                    ' get existing lookup column and overwrite it
                     lookupCol = lookupWS.Range(lookupRangeName).Column
                 Else
-                    ' step to the right
+                    ' step one to the right of the last lookup
                     If Not IsNothing(lookupWS.Cells(1, lookupCol).Value) Then
                         If Not IsNothing(lookupWS.Cells(1, lookupCol + 1).Value) Then
                             lookupCol = lookupWS.Cells(1, lookupCol).End(Excel.XlDirection.xlToRight).Column + 1

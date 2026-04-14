@@ -154,9 +154,10 @@ Public Class AdHocSQL
     ''' <summary>after confirmation for non select statements (DML), execute the command given in SQLText by running fill_dgv_Async</summary>
     Private Async Function executeSQL() As Task
         ' only select commands are executed immediately, others are asked for (with default button being cancel)
-        If InStr(Strings.LTrim(SQLText.Text.ToLower()), "insert ") > 1 Or InStr(Strings.LTrim(SQLText.Text.ToLower()), "update ") > 1 Or InStr(Strings.LTrim(SQLText.Text.ToLower()), "delete ") > 1 Then
+        Dim checkDML As String = Strings.LTrim(SQLText.Text.ToLower().Replace(vbLf, "").Replace(vbCr, ""))
+        If InStr(checkDML, "insert ") = 1 Or InStr(checkDML, "update ") = 1 Or InStr(checkDML, "delete ") = 1 Then
             If LCase(fetchSetting("DMLStatementsAllowed", "False")) <> "true" Then
-                UserMsg("Non Select Statements (DML) are forbidden (DMLStatementsAllowed needs to be True) !", "AdHoc SQL Command")
+                UserMsg("Insert, Update and Delete Statements (DML) are forbidden (DMLStatementsAllowed needs to be True) !", "AdHoc SQL Command")
                 Exit Function
             End If
             If QuestionMsg("Do you really want to execute the command ?",, "AdHoc SQL Command", MsgBoxStyle.Question + MsgBoxStyle.DefaultButton2) = vbCancel Then Exit Function
@@ -174,31 +175,27 @@ Public Class AdHocSQL
         cts = New CancellationTokenSource()
         Try
             Await fill_dgv_Async(cts.Token).ConfigureAwait(False)
-            If cts.Token.IsCancellationRequested Then
+            If cts IsNot Nothing AndAlso cts.Token.IsCancellationRequested Then
                 Me.RowsReturned.Text = Me.RowsReturned.Text + " (cancelled)"
             End If
         Catch oce As OperationCanceledException
-            Me.RowsReturned.Text = Me.RowsReturned.Text + " (cancelled)"
+            Me.RowsReturned.Text = Me.RowsReturned.Text + " (OP cancelled)"
         Catch ex As Exception
-            Me.AdHocSQLQueryResult.Rows.Clear()
-            Me.AdHocSQLQueryResult.Columns.Clear()
-            Me.AdHocSQLQueryResult.Columns.Add("result", "command_result:")
-            If rowsCount = 0 And cts.Token.IsCancellationRequested Then
-                Me.AdHocSQLQueryResult.Rows.Add("DML execution cancelled.")
-            Else
-                Me.AdHocSQLQueryResult.Rows.Add("Error: " & ex.Message)
-            End If
-            Me.RowsReturned.Text = ""
+            Me.RowsReturned.Text = "Error: " & ex.Message
         End Try
-        cts.Dispose()
-        cts = Nothing
-
-        Timer.Stop()
-        Timer.Dispose()
-        Timer = Nothing
+        If cts IsNot Nothing Then
+            cts.Dispose()
+            cts = Nothing
+        End If
+        If Timer IsNot Nothing Then
+            Timer.Stop()
+            Timer.Dispose()
+            Timer = Nothing
+        End If
         Execute.Enabled = True
         CloseBtn.Text = "Close"
     End Function
+
 
     ''' <summary>opens connection, creates command from SQLText and calls ExecuteReaderAsync to asynchronously fill the AdHocSQLQueryResult datagridview</summary>
     ''' <param name="ct"></param>
@@ -214,63 +211,78 @@ Public Class AdHocSQL
         Catch ex As System.Exception
             UserMsg("Exception in fill_dgv_Async (opening Database connection): " + ex.Message)
         End Try
+
         Dim SqlCmd As DbCommand = myDBConnHelper.getCommand(SQLText.Text)
         SqlCmd.CommandTimeout = 0 ' infinite timeout as the command can be cancelled anytime.
         SqlCmd.CommandType = CommandType.Text
 
-        Using reader = Await SqlCmd.ExecuteReaderAsync(CommandBehavior.SequentialAccess Or CommandBehavior.CloseConnection, ct).ConfigureAwait(False)
-            If reader.FieldCount > 0 Then
-                ' first fill headers
-                Dim colNames(reader.FieldCount - 1) As String
-                For i As Integer = 0 To reader.FieldCount - 1
-                    colNames(i) = reader.GetName(i)
-                Next
-                Dim namesCopy = CType(colNames.Clone(), String())
-                Me.AdHocSQLQueryResult.BeginInvoke(Sub()
-                                                       For i As Integer = 0 To namesCopy.Length - 1
-                                                           Me.AdHocSQLQueryResult.Columns.Add("c" & i.ToString(), namesCopy(i))
-                                                       Next
+        Try
+            Using reader = Await SqlCmd.ExecuteReaderAsync(CommandBehavior.SequentialAccess Or CommandBehavior.CloseConnection, ct).ConfigureAwait(False)
+                If reader.FieldCount > 0 Then
+                    ' first fill headers
+                    Dim colNames(reader.FieldCount - 1) As String
+                    For i As Integer = 0 To reader.FieldCount - 1
+                        colNames(i) = reader.GetName(i)
+                    Next
+                    Dim namesCopy = CType(colNames.Clone(), String())
+                    Me.AdHocSQLQueryResult.BeginInvoke(Sub()
+                                                           For i As Integer = 0 To namesCopy.Length - 1
+                                                               Me.AdHocSQLQueryResult.Columns.Add("c" & i.ToString(), namesCopy(i))
+                                                           Next
+                                                       End Sub)
+                    Dim batch As New List(Of Object())()
+                    Dim statusText As String = ""
+                    ' then fill rows
+                    While Await reader.ReadAsync(ct).ConfigureAwait(False)
+                        If IsNothing(cts) OrElse ct.IsCancellationRequested Then Exit While
+                        Dim vals(reader.FieldCount - 1) As Object
+                        reader.GetValues(vals)
+                        ' adding batches of data to the datagrid view
+                        batch.Add(CType(vals.Clone(), Object()))
+                        rowsCount += 1
+                        statusText = "returned rows: " + rowsCount.ToString("N0") + " (" + elapsedTime.ToString("T") + ")"
+                        If batch.Count >= batchSize Then
+                            Me.AdHocSQLQueryResult.BeginInvoke(New delegate_refresh(AddressOf refresh_dgv), batch)
+                            ' important to separately set RowsReturned.Text as in the AdHocSQLQueryResult.BeginInvoke it's blocking the UI
+                            Me.RowsReturned.Invoke(Sub()
+                                                       Me.RowsReturned.Text = statusText
                                                    End Sub)
-                Dim batch As New List(Of Object())()
-                Dim statusText As String = ""
-                ' then fill rows
-                While Await reader.ReadAsync(ct).ConfigureAwait(False)
-                    If ct.IsCancellationRequested Then Exit While
-                    Dim vals(reader.FieldCount - 1) As Object
-                    reader.GetValues(vals)
-                    If ct.IsCancellationRequested Then Exit While
-                    ' adding batches of data to the datagrid view
-                    batch.Add(CType(vals.Clone(), Object()))
-                    rowsCount += 1
-                    statusText = "returned rows: " + rowsCount.ToString("N0") + " (" + elapsedTime.ToString("T") + ")"
-                    If batch.Count >= batchSize Then
-                        If ct.IsCancellationRequested Then Exit While
+                            batch = New List(Of Object())()
+                        End If
+                    End While
+                    ' after last batch, flush remainder
+                    If batch.Count > 0 And Not ct.IsCancellationRequested Then
                         Me.AdHocSQLQueryResult.BeginInvoke(New delegate_refresh(AddressOf refresh_dgv), batch)
-                        ' important to separately set RowsReturned.Text as in the AdHocSQLQueryResult.BeginInvoke it's blocking the UI
                         Me.RowsReturned.Invoke(Sub()
                                                    Me.RowsReturned.Text = statusText
                                                End Sub)
-                        batch = New List(Of Object())()
                     End If
-                End While
-                ' after last batch, flush remainder
-                If batch.Count > 0 And Not ct.IsCancellationRequested Then
-                    Me.AdHocSQLQueryResult.BeginInvoke(New delegate_refresh(AddressOf refresh_dgv), batch)
-                    Me.RowsReturned.Invoke(Sub()
-                                               Me.RowsReturned.Text = statusText
-                                           End Sub)
+                Else
+                    ' non column returning commands (eg DML) just add the records affected
+                    Me.AdHocSQLQueryResult.BeginInvoke(Sub()
+                                                           Me.AdHocSQLQueryResult.SuspendLayout()
+                                                           Me.AdHocSQLQueryResult.Columns.Add("result", "command_result:")
+                                                           Me.AdHocSQLQueryResult.Rows.Add(reader.RecordsAffected.ToString("N0") + " record(s) affected.")
+                                                           Me.AdHocSQLQueryResult.ResumeLayout()
+                                                       End Sub)
                 End If
-            Else
-                ' non column returning commands (eg DML) just add the records affected
-                Me.AdHocSQLQueryResult.BeginInvoke(Sub()
-                                                       Me.AdHocSQLQueryResult.SuspendLayout()
-                                                       Me.AdHocSQLQueryResult.Columns.Add("result", "command_result:")
-                                                       Me.AdHocSQLQueryResult.Rows.Add(reader.RecordsAffected.ToString("N0") + " record(s) affected.")
-                                                       Me.AdHocSQLQueryResult.ResumeLayout()
-                                                   End Sub)
-            End If
-        End Using
-        ' resize after all columns are available only up to 5000 rows (takes long!)
+            End Using
+            ' TODO: reader object doesn't return quickly after cancellation triggered
+        Catch ex As Exception
+            ' need to catch exceptions here because of asynchronous procedure...
+            Me.RowsReturned.Invoke(Sub()
+                                       If (IsNothing(cts) OrElse cts.Token.IsCancellationRequested) Then
+                                           If rowsCount = 0 Then
+                                               Me.RowsReturned.Text = "Execution cancelled."
+                                           Else
+                                               Me.RowsReturned.Text = Me.RowsReturned.Text + " (cancelled)."
+                                           End If
+                                       Else
+                                           Me.RowsReturned.Text = "Error: " & ex.Message
+                                       End If
+                                   End Sub)
+        End Try
+        ' resize after all columns are available. only done for up to 5000 rows (takes long!)
         If rowsCount < 5000 Then
             Me.AdHocSQLQueryResult.BeginInvoke(Sub()
                                                    AdHocSQLQueryResult.AutoResizeColumns(DataGridViewAutoSizeColumnMode.AllCells)
@@ -300,6 +312,17 @@ Public Class AdHocSQL
             Me.RowsReturned.Invoke(Sub()
                                        Me.RowsReturned.Text = "DML executing (" + elapsedTime.ToString("T") + ")"
                                    End Sub)
+        End If
+        If IsNothing(cts) OrElse cts.Token.IsCancellationRequested Then
+            Me.RowsReturned.Invoke(Sub()
+                                       Me.RowsReturned.Text = "Cancel pending (" + elapsedTime.ToString("T") + ", can be closed)"
+                                   End Sub)
+            ' workaround for long running cancel process: allow closing of AdHocSQL dialog
+            If Not IsNothing(cts) Then
+                cts.Dispose()
+                cts = Nothing
+            End If
+            CloseBtn.Text = "Close"
         End If
     End Sub
 
