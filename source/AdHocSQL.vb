@@ -215,7 +215,7 @@ Public Class AdHocSQL
         Dim SqlCmd As DbCommand = myDBConnHelper.getCommand(SQLText.Text)
         SqlCmd.CommandTimeout = 0 ' infinite timeout as the command can be cancelled anytime.
         SqlCmd.CommandType = CommandType.Text
-
+        Dim statusText As String = ""
         Try
             Using reader = Await SqlCmd.ExecuteReaderAsync(CommandBehavior.SequentialAccess Or CommandBehavior.CloseConnection, ct).ConfigureAwait(False)
                 If reader.FieldCount > 0 Then
@@ -231,7 +231,6 @@ Public Class AdHocSQL
                                                            Next
                                                        End Sub)
                     Dim batch As New List(Of Object())()
-                    Dim statusText As String = ""
                     ' then fill rows
                     While Await reader.ReadAsync(ct).ConfigureAwait(False)
                         If IsNothing(cts) OrElse ct.IsCancellationRequested Then Exit While
@@ -267,20 +266,22 @@ Public Class AdHocSQL
                                                        End Sub)
                 End If
             End Using
-            ' TODO: reader object doesn't return quickly after cancellation triggered
         Catch ex As Exception
             ' need to catch exceptions here because of asynchronous procedure...
-            Me.RowsReturned.Invoke(Sub()
-                                       If (IsNothing(cts) OrElse cts.Token.IsCancellationRequested) Then
-                                           If rowsCount = 0 Then
-                                               Me.RowsReturned.Text = "Execution cancelled."
-                                           Else
-                                               Me.RowsReturned.Text = Me.RowsReturned.Text + " (cancelled)."
-                                           End If
-                                       Else
-                                           Me.RowsReturned.Text = "Error: " & ex.Message
-                                       End If
-                                   End Sub)
+            Me.AdHocSQLQueryResult.BeginInvoke(Sub()
+                                                   Me.AdHocSQLQueryResult.SuspendLayout()
+                                                   Me.AdHocSQLQueryResult.Columns.Add("result", "command_result:")
+                                                   If (IsNothing(ct) OrElse ct.IsCancellationRequested) Then
+                                                       If rowsCount = 0 Then
+                                                           Me.AdHocSQLQueryResult.Rows.Add("Execution cancelled.")
+                                                       Else
+                                                           Me.AdHocSQLQueryResult.Rows.Add(statusText + " (cancelled).")
+                                                       End If
+                                                   Else
+                                                       Me.AdHocSQLQueryResult.Rows.Add("Error: " & ex.Message)
+                                                   End If
+                                                   Me.AdHocSQLQueryResult.ResumeLayout()
+                                               End Sub)
         End Try
         ' resize after all columns are available. only done for up to 5000 rows (takes long!)
         If rowsCount < 5000 Then

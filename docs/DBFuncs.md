@@ -22,7 +22,7 @@ Additionally, following helper functions are available:
 *   `concatCellsSepText` above Function using the Text property of the cells, therefore getting the displayed values.
 *   `currentWorkbook`, gets current Workbook path + filename or Workbook path only. This can be used in connection string construction of Excel Workbook Queries.
 *   `DBAddinEnvironment`, gets the current selected Environment (name) for DB Functions.
-*   `DBAddinSetting`, gets the settings as given in keyword  in the connection string of the currently selected Environment.
+*   `DBAddinSetting`, gets the settings as given in keyword in the connection string of the currently selected Environment.
 *   `DBDate`, building a quoted Date string (standard format YYYYMMDD, but other formats can be chosen) from the date value given in the argument.
 *   `PQDate`, building a powerquery compliant Date string from the date value given in the argument.
 *   `DBinClause`, building an SQL "in" clause from an open ended parameter list given in the argument.
@@ -188,7 +188,7 @@ DBAddinEnvironment gets the current selected Environment (name) for DB Functions
 
 <pre lang="vb">DBAddinSetting(keyword)</pre>
 
-DBAddinSetting gets the settings as given in keyword (e.g. SERVER=) in the connection string of the currently selected Environment for DB Functions. If no keyword is passed, then the whole connection string is returned in a warning message.
+DBAddinSetting gets the settings after the given keyword (e.g. SERVER= returns the server name) in the connection string of the currently selected Environment for DB Functions. If no keyword is passed, then the whole connection string is returned in a warning message. Essentially this function looks up the keyword in the connection string and returns the following text until the next semicolon.
 
 
 #### DBDate

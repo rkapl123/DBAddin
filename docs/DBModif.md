@@ -122,7 +122,7 @@ By issuing the VBA command `Application.Run("setExecutionParam", Param, Value)`,
 *  CmdTimeout: sets SettingsTools.CmdTimeout to the value passed
 *  preventRefreshFlag: sets Functions.preventRefreshFlag to the value passed (True: prevents refreshing of all DB Functions, False: enables refreshing again. Also see DB Functions refresh prevention in [Main DBAddin Doc](README.md))
 
-By issuing the VBA command `result = Application.Run("getExecutionParam", Param)`, where `Param` is the name of the parameter the current settings of the following parameters are returned:
+By issuing the VBA command `result = Application.Run("getExecutionParam", Param, [keyword])`, where `Param` is the name of the parameter and `keyword` is an optional key word in the connection string, the current settings of the following parameters are returned:
 *  selectedEnvironment: returns SettingsTools.selectedEnvironment (zero based environment: 0 is the first, 1 the second, etc.)
 *  env() : returns the selected environment (1 is the first, 2 the second, etc.)
 *  ConstConnString: returns SettingsTools.ConstConnString
@@ -131,6 +131,7 @@ By issuing the VBA command `result = Application.Run("getExecutionParam", Param)
 *  preventRefreshFlag: returns Functions.preventRefreshFlag
 *  nonInteractiveErrMsgs: returns the currently collected error messages
 *  ... and any other key being set in the DBAddin settings (DBAddin.xll.config, DBAddinCentral.config or DBaddinUser.config)
+*  if the optional parameter keyword is set, then the settings as given in keyword in the connection string of the currently selected Environment is returned, similar to the [DBAddinSetting function](DBFuncs.md)
 
 ## Additional settings ("hidden" as they are not available in creation dialogs)
 

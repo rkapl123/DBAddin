@@ -787,9 +787,19 @@ EndOuterLoop:
 
     ''' <summary>get given execution parameter or setting parameter found by fetchSetting, used for VBA call by Application.Run</summary>
     ''' <param name="Param">execution parameter, like "selectedEnvironment" (zero based here!), "env()" or "CnnTimeout"</param>
+    ''' <param name="ConnStrKeyword">optional keyword contained in Connection String (ConstConnString), if given, then the setting after this keyword is returned</param>
     ''' <returns>execution or setting parameter value</returns>
     <ExcelCommand(Name:="getExecutionParam")>
-    Public Function getExecutionParam(Param As String) As Object
+    Public Function getExecutionParam(Param As String, Optional ConnStrKeyword As String = "") As Object
+        If ConnStrKeyword <> "" Then
+            Dim keywordstart As Integer = InStr(1, UCase(SettingsTools.ConstConnString), UCase(ConnStrKeyword.ToString()))
+            If keywordstart > 0 Then
+                keywordstart += Len(ConnStrKeyword)
+                Return Mid$(SettingsTools.ConstConnString, keywordstart, IIf(InStr(keywordstart, SettingsTools.ConstConnString, ";") = 0, Len(SettingsTools.ConstConnString) + 1, InStr(keywordstart, SettingsTools.ConstConnString, ";")) - keywordstart)
+            Else
+                Return ConnStrKeyword + " was not found in connection string of current environment: " + SettingsTools.ConstConnString
+            End If
+        End If
         If Param = "selectedEnvironment" Then
             Return SettingsTools.selectedEnvironment
         ElseIf Param = "env()" Then
