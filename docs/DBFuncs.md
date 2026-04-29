@@ -48,7 +48,7 @@ It provides:
  HeaderInfo(optional), AutoFit(optional),   
  AutoFormat(optional), ShowRowNum(optional))</pre>
 
-![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBListFetch.PNG)  
+![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBListFetch.png)  
 
 The select statement for querying the values is given as a text string in parameter "Query". This text string can be a dynamic formula, i.e. parameters are easily given by concatenating the query together from other cells, e.g. `"select * from TestTable where TestID = "&A1`
 
