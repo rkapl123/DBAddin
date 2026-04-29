@@ -116,12 +116,11 @@ Public Module SettingsTools
     ''' <summary>initializes global configuration variables</summary>
     Public Sub initSettings()
         Try
+            initEnvDependentSettings()
             NonUserModifiableSettings = fetchSetting("NonUserModifiableSettings", "")
             DebugAddin = fetchSettingBool("DebugAddin", "False")
-            ConstConnString = fetchSetting("ConstConnString" + env(), "")
             CnnTimeout = fetchSettingInt("CnnTimeout", "15")
             CmdTimeout = fetchSettingInt("CmdTimeout", "60")
-            ConfigStoreFolder = fetchSetting("ConfigStoreFolder" + env(), "")
             specialConfigStoreFolders = Split(fetchSetting("specialConfigStoreFolders", ""), ":")
             DefaultDBDateFormatting = fetchSettingInt("DefaultDBDateFormatting", "0")
             ' load environments
@@ -161,6 +160,12 @@ Public Module SettingsTools
                 Exit For
             End If
         Next
+    End Sub
+
+    ''' <summary>seperately initialize environment dependent settings, also used by DBModifHelper.setExecutionParam</summary>
+    Public Sub initEnvDependentSettings()
+        ConstConnString = fetchSetting("ConstConnString" + env(), "")
+        ConfigFiles.ConfigStoreFolder = fetchSetting("ConfigStoreFolder" + env(), "")
     End Sub
 
 End Module

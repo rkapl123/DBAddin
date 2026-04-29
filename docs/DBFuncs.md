@@ -48,6 +48,8 @@ It provides:
  HeaderInfo(optional), AutoFit(optional),   
  AutoFormat(optional), ShowRowNum(optional))</pre>
 
+![image](https://raw.githubusercontent.com/rkapl123/DBAddin/master/docs/image/DBListFetch.PNG)  
+
 The select statement for querying the values is given as a text string in parameter "Query". This text string can be a dynamic formula, i.e. parameters are easily given by concatenating the query together from other cells, e.g. `"select * from TestTable where TestID = "&A1`
 
 The query parameter can also be a Range, which means that the Query itself is taken as a concatenation of all cells comprising that Range, separating the single cells with blanks. This is useful to avoid the problems associated with packing a large (parameterized) Query in one cell, leading to "Formula is too long" errors. German readers might be interested in [XLimits](http://www.xlam.ch/xlimits/xllimit4.htm), describing lots (if not all) the limits Excel faces.  

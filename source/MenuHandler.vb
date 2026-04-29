@@ -605,7 +605,7 @@ Public Class MenuHandler
     ''' <param name="control"></param>
     Public Sub selectEnvironment(control As CustomUI.IRibbonControl, id As String, index As Integer)
         selectedEnvironment = index
-        initSettings()
+        initEnvDependentSettings()
         ' provide a chance to reconnect when switching environment...
         conn = Nothing
         Dim actWb As Excel.Workbook = Nothing

@@ -758,15 +758,23 @@ EndOuterLoop:
     ''' <summary>set given execution parameter, used for VBA call by Application.Run</summary>
     ''' <param name="Param">execution parameter, like "selectedEnvironment" (zero based here!) or "CnnTimeout"</param>
     ''' <param name="Value">execution parameter value</param>
+    ''' <returns>True on success, False otherwise</returns>
     <ExcelCommand(Name:="setExecutionParam")>
-    Public Sub setExecutionParam(Param As String, Value As Object)
+    Public Function setExecutionParam(Param As String, Value As Object) As Boolean
         Try
             If Param = "headLess" Then
                 nonInteractive = Value
                 nonInteractiveErrMsgs = "" ' reset non-interactive messages
-            ElseIf Param = "selectedEnvironment" Then
-                SettingsTools.selectedEnvironment = Value
-                theRibbon.InvalidateControl("envDropDown")
+            ElseIf Param = "selectedEnvironment" Or Param = "env()" Then
+                If fetchSettingBool("DontChangeEnvironment", "False") Then
+                    UserMsg("DontChangeEnvironment is set, therefore changing the Environment is prevented !")
+                    Return False
+                Else
+                    SettingsTools.selectedEnvironment = Value - IIf(Param = "env()", 1, 0)
+                    theRibbon.InvalidateControl("envDropDown")
+                    ' change environment dependent settings
+                    initEnvDependentSettings()
+                End If
             ElseIf Param = "ConstConnString" Then
                 SettingsTools.ConstConnString = Value
             ElseIf Param = "CnnTimeout" Then
@@ -778,12 +786,14 @@ EndOuterLoop:
                 theRibbon.InvalidateControl("preventRefresh")
             Else
                 UserMsg("parameter " + Param + " not supported by setExecutionParams")
-                Exit Sub
+                Return False
             End If
         Catch ex As Exception
             UserMsg("setting parameter " + Param + " with value " + CStr(Value) + " resulted in error " + ex.Message)
+            Return False
         End Try
-    End Sub
+        Return True
+    End Function
 
     ''' <summary>get given execution parameter or setting parameter found by fetchSetting, used for VBA call by Application.Run</summary>
     ''' <param name="Param">execution parameter, like "selectedEnvironment" (zero based here!), "env()" or "CnnTimeout"</param>
