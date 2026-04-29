@@ -52,7 +52,7 @@ It provides:
 
 The select statement for querying the values is given as a text string in parameter "Query". This text string can be a dynamic formula, i.e. parameters are easily given by concatenating the query together from other cells, e.g. `"select * from TestTable where TestID = "&A1`
 
-The query parameter can also be a Range, which means that the Query itself is taken as a concatenation of all cells comprising that Range, separating the single cells with blanks. This is useful to avoid the problems associated with packing a large (parameterized) Query in one cell, leading to "Formula is too long" errors. German readers might be interested in [XLimits](http://www.xlam.ch/xlimits/xllimit4.htm), describing lots (if not all) the limits Excel faces.  
+The query parameter can also be a Range, which means that the Query itself is taken as a concatenation of all cells comprising that Range, separating the single cells with blanks. This is useful to avoid the problems associated with packing a large (parameterized) Query in one cell, leading to "Formula is too long" errors ([Limit of formulas is 8,192 characters](https://support.microsoft.com/en-us/office/excel-specifications-and-limits-1672b34d-7043-467e-8e27-269d656771c3).  
 
 The connection string is either given in the formula, or can be left out. The connection string is then taken from the standard configuration settings from the key `ConstConnString`**N** of the set environment **N**. You can also set this environment to a fixed one in the formula by passing **N** as the "connection string".
 
