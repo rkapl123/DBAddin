@@ -1,7 +1,6 @@
 Imports ExcelDna.Integration
 Imports Microsoft.Office.Core
 Imports Microsoft.Office.Interop
-Imports Microsoft.Office.Interop.Excel
 Imports System.Data
 Imports System.Data.Odbc
 Imports System.Data.OleDb
@@ -358,9 +357,12 @@ Public Module DBSheetConfig
         ' for "full" DBSheets, minimize first column as much as possible
         If curCell.Column = 1 And curCell.Row = 1 Then curCell.EntireColumn.ColumnWidth = 0.4
         Dim ignoreColumns As String = ""
+        Dim previousAutoFillFormulasInLists As Boolean = ExcelDnaUtil.Application.AutoCorrect.AutoFillFormulasInLists
         Try
             ' store lookup columns (<>LU) to be ignored in DBMapper
             If lookupsList IsNot Nothing Then
+                ' need to enforce to fill down helper column formulas
+                ExcelDnaUtil.Application.AutoCorrect.AutoFillFormulasInLists = True
                 For Each LookupDef As String In lookupsList
                     Dim lookupName As String = Replace(getEntry("name", LookupDef, 1), specialNonNullableChar, "")
                     Dim lookupRangeName As String = tableName + lookupName + "Lookup"
@@ -369,6 +371,7 @@ Public Module DBSheetConfig
                         Dim answr As MsgBoxResult = QuestionMsg("lookup area '" + lookupRangeName + "' contains no values (maybe an error), continue (Cancel aborts further DBSheet finishing)?", MsgBoxStyle.OkCancel, "DBSheet Creation Error", MsgBoxStyle.Critical)
                         If answr = vbCancel Then
                             lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
+                            ExcelDnaUtil.Application.AutoCorrect.AutoFillFormulasInLists = previousAutoFillFormulasInLists
                             Exit Sub
                         End If
                     End If
@@ -386,8 +389,9 @@ Public Module DBSheetConfig
                         finalLookupname = If(getEntry("fkey", LookupDef, 1) <> "", lookupName + "LU", lookupName)
                         lookupColumn = createdListObject.ListColumns(finalLookupname)
                     Catch ex As Exception
-                        UserMsg("lookup column " + finalLookupname + " not found in ListRange, aborting further DBSheet finishing.", "DBSheet Creation Error", MsgBoxStyle.Critical)
                         lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
+                        ExcelDnaUtil.Application.AutoCorrect.AutoFillFormulasInLists = previousAutoFillFormulasInLists
+                        UserMsg("lookup column " + finalLookupname + " not found in ListRange, aborting further DBSheet finishing.", "DBSheet Creation Error", MsgBoxStyle.Critical)
                         Exit Sub
                     End Try
                     ' add validation to look columns
@@ -403,8 +407,9 @@ Public Module DBSheetConfig
                                 Type:=Excel.XlDVType.xlValidateList, AlertStyle:=Excel.XlDVAlertStyle.xlValidAlertStop, Operator:=Excel.XlFormatConditionOperator.xlEqual, Formula1:=localOffsetFormula)
                         End If
                     Catch ex As Exception
-                        UserMsg("Error in adding validation formula " + localOffsetFormula + " to column " + lookupColumn.Name + ": " + ex.Message + ", aborting further DBSheet finishing.", "DBSheet Creation Error", MsgBoxStyle.Critical)
                         lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
+                        ExcelDnaUtil.Application.AutoCorrect.AutoFillFormulasInLists = previousAutoFillFormulasInLists
+                        UserMsg("Error in adding validation formula " + localOffsetFormula + " to column " + lookupColumn.Name + ": " + ex.Message + ", aborting further DBSheet finishing.", "DBSheet Creation Error", MsgBoxStyle.Critical)
                         Exit Sub
                     End Try
                     ' adding resolution formulas is only necessary for 2-column database lookups
@@ -420,6 +425,7 @@ Public Module DBSheetConfig
                             newCol.DataBodyRange.Formula = lookupFormula
                         Catch ex As Exception
                             lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
+                            ExcelDnaUtil.Application.AutoCorrect.AutoFillFormulasInLists = previousAutoFillFormulasInLists
                             UserMsg("Error in adding lookup formula " + lookupFormula + " to new column " + lookupName + ": " + ex.Message + ", aborting further DBSheet finishing.", "DBSheet Creation Error", MsgBoxStyle.Critical)
                             Exit Sub
                         End Try
@@ -431,11 +437,13 @@ Public Module DBSheetConfig
                     ' clean up our workaround target...
                     curCell.Offset(2 + addedCells, 0).Formula = ""
                 Next
+                ExcelDnaUtil.Application.AutoCorrect.AutoFillFormulasInLists = previousAutoFillFormulasInLists
                 If ignoreColumns.Length > 0 Then ignoreColumns = Left(ignoreColumns, ignoreColumns.Length - 1)
             End If
         Catch ex As Exception
-            UserMsg("Unexpected error in DBSheet Creation: " + ex.Message + ", aborting further DBSheet finishing.", "DBSheet Creation Error", MsgBoxStyle.Critical)
             If lookupWS IsNot Nothing Then lookupWS.Visible = Excel.XlSheetVisibility.xlSheetVisible
+            ExcelDnaUtil.Application.AutoCorrect.AutoFillFormulasInLists = previousAutoFillFormulasInLists
+            UserMsg("Unexpected error in DBSheet Creation: " + ex.Message + ", aborting further DBSheet finishing.", "DBSheet Creation Error", MsgBoxStyle.Critical)
             Exit Sub
         End Try
         ' remove auto-filter...

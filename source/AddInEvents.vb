@@ -6,7 +6,6 @@ Imports Microsoft.Office.Core
 Imports Microsoft.Vbe.Interop ' also need to add reference to Microsoft.Vbe.Interop.Forms, otherwise commandbuttons (collection colCommandButtons) don't work
 Imports System.Runtime.InteropServices
 Imports System.Collections.Generic
-Imports System.Xml.Linq
 
 
 ''' <summary>AddIn Connection class, also handling Events from Excel (Open, Close, Activate)</summary>

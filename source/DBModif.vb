@@ -566,6 +566,7 @@ Public Class DBMapper : Inherits DBModif
         Dim theProgressForm = createProgressForm()
         theProgressForm.Show()
         Try
+            Dim previousAutoExpandListRange As Boolean = ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange
             ' Ctrl Shift - pressed: set delete flag and visual marker in selection
             If deleteFlag Then
                 Dim countRow As Integer = 1
@@ -578,7 +579,7 @@ Public Class DBMapper : Inherits DBModif
                     theProgressForm.ProgressLabel.Text = "Delete mark for row " + countRow.ToString() + "/" + changedRangeRows.ToString()
                     countRow += 1
                 Next
-                ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = True
+                ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = previousAutoExpandListRange
             Else
                 ' All cells in DBMapper are relative to the start of TargetRange (incl a header row), so CUDMarkRow = changedRange.Row - TargetRange.Row + 1 ...
                 Dim CUDMarkRow As Integer = changedRange.Row - TargetRange.Row + 1
@@ -651,7 +652,7 @@ Public Class DBMapper : Inherits DBModif
                         LogWarn("A data range was pasted into an area of the DBSheet that already has CUD Flags set. Please do these modifications first or refresh from database.")
                     End If
                 End If
-                ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = True
+                ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = previousAutoExpandListRange
                 previousCUDLength = TargetRange.Rows.Count
                 previousCUDLengthColl(TargetRange.Parent.Name + paramTargetName) = previousCUDLength
             End If
@@ -773,6 +774,7 @@ exitSub:
                 UserMsg("Worksheet " + TargetRange.Parent.Name + " is content protected, can't reset CUD Flags !")
                 Exit Sub
             End If
+            Dim prevAutoExpandListRange As Boolean = ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange
             ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = False ' to prevent automatic creation of new column
             If Not IsNothing(TargetRange.ListObject) AndAlso Not IsNothing(TargetRange.ListObject.DataBodyRange) Then
                 TargetRange.ListObject.DataBodyRange.Columns(TargetRange.Columns.Count + 1).Clear
@@ -784,7 +786,7 @@ exitSub:
             ' remove automatically created hyperlink formatting (link is removed by refresh, but formats stay)
             TargetRange.Font.ColorIndex = Excel.XlColorIndex.xlColorIndexAutomatic
             TargetRange.Font.Underline = Excel.XlUnderlineStyle.xlUnderlineStyleNone
-            ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = True ' to prevent automatic creation of new column
+            ExcelDnaUtil.Application.AutoCorrect.AutoExpandListRange = prevAutoExpandListRange
         End If
     End Sub
 

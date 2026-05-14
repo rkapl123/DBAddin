@@ -1433,11 +1433,11 @@ err:    LogWarn(errMsg + ", caller: " + callID)
                 conn = New OdbcConnection(ConnString)
             End If
         Catch ex As Exception
-            UserMsg("Error creating new connection: " + ex.Message + " for connection string: " + ConnString)
+            LogError("Error creating new connection: " + ex.Message + " for connection string: " + ConnString)
             GoTo err
         End Try
         Try : conn.Open() : Catch ex As Exception
-            UserMsg("Error opening connection: " + ex.Message + " for connection string: " + ConnString)
+            LogError("Error opening connection: " + ex.Message + " for connection string: " + ConnString)
             GoTo err
         End Try
         Dim sqlCommand As System.Data.Common.DbCommand
@@ -1450,14 +1450,14 @@ err:    LogWarn(errMsg + ", caller: " + callID)
                 sqlCommand = New OdbcCommand(ConfigDocQuery, conn)
             End If
         Catch ex As Exception
-            UserMsg("Error creating new sqlCommand: " + ex.Message + " for ConfigDocQuery: " + vbCrLf + ConfigDocQuery)
+            LogError("Error creating new sqlCommand: " + ex.Message + " for ConfigDocQuery: " + vbCrLf + ConfigDocQuery)
             GoTo err
         End Try
         Dim recordset As System.Data.Common.DbDataReader
         Try
             recordset = sqlCommand.ExecuteReader()
         Catch ex As Exception
-            UserMsg("Error executing sqlCommand: " + ex.Message + " for ConfigDocQuery: " + vbCrLf + ConfigDocQuery)
+            LogError("Error executing sqlCommand: " + ex.Message + " for ConfigDocQuery: " + vbCrLf + ConfigDocQuery)
             GoTo err
         End Try
 
@@ -1482,7 +1482,7 @@ err:    LogWarn(errMsg + ", caller: " + callID)
                 DBName = If(recordset.IsDBNull(0), "", recordset.GetValue(0))
                 Documentation = If(recordset.IsDBNull(2), "", recordset.GetValue(2))
                 If recordset.IsDBNull(1) Then
-                    UserMsg("Error in filling ConfigDoc: got empty table/view object name, query: " + vbCrLf + ConfigDocQuery)
+                    LogError("Error in filling ConfigDoc: got empty table/view object name, query: " + vbCrLf + ConfigDocQuery)
                     GoTo err
                 Else
                     ObjectName = recordset.GetValue(1)
@@ -1496,7 +1496,7 @@ err:    LogWarn(errMsg + ", caller: " + callID)
                         ' afterwards (object name change)
                         getConfigDocCollection.Add(charBeforeDBnameConfigDoc + currDBName + "\" + currObjectName + ".xcl", ConfigDoc)
                         If DBName = "" Then
-                            UserMsg("Error in filling ConfigDoc: got empty database name for new table/view/proc/function object '" + ObjectName + "', query: " + vbCrLf + ConfigDocQuery)
+                            LogError("Error in filling ConfigDoc: got empty database name for new table/view/proc/function object '" + ObjectName + "', query: " + vbCrLf + ConfigDocQuery)
                             GoTo err
                         Else
                             currDBName = DBName
@@ -1510,7 +1510,7 @@ err:    LogWarn(errMsg + ", caller: " + callID)
             End While
             getConfigDocCollection.Add(charBeforeDBnameConfigDoc + currDBName + "\" + currObjectName + ".xcl", ConfigDoc)
         Catch ex As Exception
-            UserMsg("Error in filling ConfigDoc: " + ex.Message + ", query: " + vbCrLf + ConfigDocQuery)
+            LogError("Error in filling ConfigDoc: " + ex.Message + ", query: " + vbCrLf + ConfigDocQuery)
             GoTo err
         End Try
 err:
