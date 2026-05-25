@@ -5,7 +5,6 @@ Imports System.Collections.Specialized
 Imports System.Collections.Generic
 Imports System.Runtime.InteropServices
 
-
 ''' <summary>handles all Menu related aspects (context menu for building/refreshing, "DBAddin"/"Load Config" tree menu for retrieving stored configuration files, etc.)</summary>
 <ComVisible(True)>
 Public Class MenuHandler

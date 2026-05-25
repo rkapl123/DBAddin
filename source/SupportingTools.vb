@@ -6,6 +6,7 @@ Imports System.Collections.Generic
 Public Module SupportingTools
 
     ''' <summary>"repairs" legacy functions from old VB6-COM Addin by removing "DBAddin.Functions." before function name</summary>
+    ''' <param name="actWB">the active Workbook where legacy functions should be repaired</param>
     ''' <param name="showResponse">in case this is called interactively, provide a response in case of no legacy functions there</param>
     Public Sub repairLegacyFunctions(actWB As Excel.Workbook, Optional showResponse As Boolean = False)
         Dim foundLegacyFunc As Boolean = False
@@ -223,7 +224,7 @@ Public Module SupportingTools
     End Sub
 
     ''' <summary>fix orphaned DB Functions by replacing function names with themselves, triggering recalculation</summary>
-    ''' <param name="actWB"></param>
+    ''' <param name="actWB">the active Workbook where orphaned FB Functions should be repaired</param>
     Sub fixOrphanedDBFunctions(actWB As Excel.Workbook)
         Dim xlcalcmode As Long = ExcelDnaUtil.Application.Calculation
 

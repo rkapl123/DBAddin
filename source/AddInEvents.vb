@@ -7,7 +7,6 @@ Imports Microsoft.Vbe.Interop ' also need to add reference to Microsoft.Vbe.Inte
 Imports System.Runtime.InteropServices
 Imports System.Collections.Generic
 
-
 ''' <summary>AddIn Connection class, also handling Events from Excel (Open, Close, Activate)</summary>
 <ComVisible(True)>
 Public Class AddInEvents
@@ -477,13 +476,20 @@ done:
     Private Sub InitializeQueryHandlers(wb As Workbook)
         Dim qryRH As QueryRefreshHandler
         colQueries = New Collection
-
-        For Each ws As Worksheet In wb.Worksheets
-            For Each lo As ListObject In ws.ListObjects
-                qryRH = New QueryRefreshHandler With {.qry = lo.QueryTable}
-                colQueries.Add(qryRH)
+        Try
+            For Each ws As Worksheet In wb.Worksheets
+                For Each lo As ListObject In ws.ListObjects
+                    Dim qt As QueryTable = Nothing
+                    Try : qt = lo.QueryTable : Catch ex As Exception : End Try
+                    If Not IsNothing(qt) Then
+                        qryRH = New QueryRefreshHandler With {.qry = lo.QueryTable}
+                        colQueries.Add(qryRH)
+                    End If
+                Next
             Next
-        Next
+        Catch ex As Exception
+            LogWarn("InitializeQueryHandlers exception occurred: " + ex.Message)
+        End Try
     End Sub
 End Class
 

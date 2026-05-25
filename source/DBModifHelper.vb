@@ -37,6 +37,8 @@ Public Module DBModifHelper
 
     ''' <summary>cast .NET data type to ADO.NET DbType</summary>
     ''' <param name="t">given .NET data type</param>
+    ''' <param name="columnName">the column name used to look up the type in schemaDataTypeCollection</param>
+    ''' <param name="schemaDataTypeCollection">collection of data types from database for the current table</param>
     ''' <returns>ADO.NET DbType</returns>
     Public Function TypeToDbType(t As Type, columnName As String, schemaDataTypeCollection As Collection) As DbType
         ' use the provider specific type information if it exists

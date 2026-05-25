@@ -4,7 +4,6 @@ Imports Microsoft.Vbe.Interop
 Imports System.Windows.Forms
 Imports System.Collections.Generic
 
-
 ''' <summary>Dialog for creating DB Modifier configurations</summary>
 Public Class DBModifCreate
     ''' <summary>on loading of Form catch Data Errors produced when filling DBSeqenceDataGrid here</summary>

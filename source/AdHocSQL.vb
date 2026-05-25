@@ -5,7 +5,6 @@ Imports System.Threading
 Imports System.Threading.Tasks
 Imports System.Windows.Forms
 
-
 ''' <summary>User-form for ad-hoc SQL execution</summary>
 Public Class AdHocSQL
     ''' <summary>common connection settings factored in helper class</summary>

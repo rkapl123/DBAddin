@@ -13,7 +13,6 @@ Imports System.Linq
 Imports System.Text
 Imports System.Windows.Forms
 
-
 #Region "DBModifs"
 ''' <summary>Abstraction of a DB Modification Object (concrete classes DBMapper, DBAction or DBSeqnce)</summary>
 Public MustInherit Class DBModif

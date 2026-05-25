@@ -1,11 +1,14 @@
-Imports ExcelDna.Integration
+Imports System.Collections.Generic ' ConfigDocCollection (Dictionary)
+Imports System.Data.Odbc ' needed in getConfigDocCollection
+Imports System.Data.OleDb ' needed in getConfigDocCollection
+Imports System.Data.SqlClient ' needed in getConfigDocCollection
 Imports System.IO ' for getting config files for menu
 Imports System.Linq ' to enhance arrays with useful methods (count, orderby)
-Imports System.Xml.Linq ' XNamespace and XElement for constructing the ConfigMenuXML
-Imports System.Collections.Generic 'ConfigDocCollection
 Imports System.Windows.Forms
+Imports System.Xml.Linq ' XNamespace and XElement for constructing the ConfigMenuXML
+Imports ExcelDna.Integration
 
-'''<summary>procedures used for loading config files (containing DBFunctions and general sheet content) and building the config menu</summary>
+'''<summary>procedures used for loading config files (containing DBFunctions and general sheet content) and building the config menu, including the optional database documentation provided by ConfigDocQuery</summary>
 Public Module ConfigFiles
 
     ''' <summary>the folder used to store predefined DB item definitions</summary>
@@ -460,4 +463,115 @@ Public Module ConfigFiles
             stringParts = LTrim$(Replace(Replace(stringParts, "   ", " "), "  ", " "))
         End If
     End Function
+
+    ''' <summary>gets the documentation dictionary for the config dropdown (used by ConfigFiles.createConfigTreeMenu()). This is the basis for the documentation provided when clicking the config entries with Ctrl or Shift</summary>
+    ''' <param name="ConfigDocQuery">query against current active environment for retrieving the data for the documentation. This query needs to return three fields for each table/view/field object: 1. database of the object (only really needed for tables/views), 2. table/view name (for fields this is the parent table/view) and 3. the documentation for the object. All this has to be ordered by table/view name, with the table/view object being first</param>
+    ''' <returns>a dictionary of table/view keys and their associated collected documentation of the table/view and its fields. This is being collected by assuming the ordered way the query returns the data (see above)</returns>
+    Public Function getConfigDocCollection(ConfigDocQuery As String) As Dictionary(Of String, String)
+        getConfigDocCollection = New Dictionary(Of String, String)
+
+        ' first get the connection as usual
+        Dim ConnString As String = fetchSetting("ConstConnString" + env(), "")
+        Try
+            If Left(ConnString.ToUpper, 5) = "ODBC;" Then
+                ' change to ODBC driver setting, if SQLOLEDB
+                ConnString = Replace(ConnString, fetchSetting("ConnStringSearch" + env(), "provider=SQLOLEDB"), fetchSetting("ConnStringReplace" + env(), "driver=SQL SERVER"))
+                ' remove "ODBC;"
+                ConnString = Right(ConnString, ConnString.Length - 5)
+                conn = New OdbcConnection(ConnString)
+            ElseIf InStr(ConnString.ToLower, "provider=sqloledb") Or InStr(ConnString.ToLower, "driver=sql server") Then
+                ' remove provider=SQLOLEDB; (or whatever is in ConnStringSearch<>) for sql server as this is not allowed for ado.net (e.g. from a connection string for MS Query/Office)
+                ConnString = Replace(ConnString, fetchSetting("ConnStringSearch" + env(), "provider=SQLOLEDB") + ";", "")
+                conn = New SqlConnection(ConnString)
+            ElseIf InStr(ConnString.ToLower, "oledb") Then
+                conn = New OleDbConnection(ConnString)
+            Else
+                ' try with odbc
+                conn = New OdbcConnection(ConnString)
+            End If
+        Catch ex As Exception
+            LogError("Error creating new connection: " + ex.Message + " for connection string: " + ConnString)
+            GoTo err
+        End Try
+        Try : conn.Open() : Catch ex As Exception
+            LogError("Error opening connection: " + ex.Message + " for connection string: " + ConnString)
+            GoTo err
+        End Try
+        Dim sqlCommand As System.Data.Common.DbCommand
+        Try
+            If TypeName(conn) = "SqlConnection" Then
+                sqlCommand = New SqlCommand(ConfigDocQuery, conn)
+            ElseIf TypeName(conn) = "OleDbConnection" Then
+                sqlCommand = New OleDbCommand(ConfigDocQuery, conn)
+            Else
+                sqlCommand = New OdbcCommand(ConfigDocQuery, conn)
+            End If
+        Catch ex As Exception
+            LogError("Error creating new sqlCommand: " + ex.Message + " for ConfigDocQuery: " + vbCrLf + ConfigDocQuery)
+            GoTo err
+        End Try
+        Dim recordset As System.Data.Common.DbDataReader
+        Try
+            recordset = sqlCommand.ExecuteReader()
+        Catch ex As Exception
+            LogError("Error executing sqlCommand: " + ex.Message + " for ConfigDocQuery: " + vbCrLf + ConfigDocQuery)
+            GoTo err
+        End Try
+
+        ' character before DBname, Path of config files is assumed to be folder\sub-folder\sub-folder-etc\<charBeforeDBnameConfigDoc><DBName>\<Tablename>.xcl
+        Dim charBeforeDBnameConfigDoc As String = fetchSetting("charBeforeDBnameConfigDoc", ".")
+
+        ' then collect the documentation from the ConfigDocQuery into getConfigDocCollection
+        Try
+            Dim DBName As String = ""
+            Dim ObjectName As String = ""
+            Dim Documentation As String = ""
+            Dim currDBName As String = ""
+            Dim currObjectName As String = ""
+            Dim ConfigDoc As String = ""
+            While recordset.Read()
+                'DBname1	ObjName1	DescDBname1ObjName1 (no fields)
+                'DBname2	ObjName1	DescDBname2ObjName1
+                'NULL       ObjName2	DescDBname2ObjName1Field1
+                'DBname3	ObjName3	DescObjName3
+                'NULL       ObjName3	DescObjName3Field1
+                '...
+                DBName = If(recordset.IsDBNull(0), "", recordset.GetValue(0))
+                Documentation = If(recordset.IsDBNull(2), "", recordset.GetValue(2))
+                If recordset.IsDBNull(1) Then
+                    LogError("Error in filling ConfigDoc: got empty table/view object name, query: " + vbCrLf + ConfigDocQuery)
+                    GoTo err
+                Else
+                    ObjectName = recordset.GetValue(1)
+                End If
+                ' check for table/view/proc/function object change, also regard DBname change
+                If currObjectName <> ObjectName Or (currDBName <> DBName And DBName <> "") Then
+                    ' first Object: only fill DBName
+                    If currObjectName = "" Then
+                        currDBName = DBName
+                    Else
+                        ' afterwards (object name change)
+                        getConfigDocCollection.Add(charBeforeDBnameConfigDoc + currDBName + "\" + currObjectName + ".xcl", ConfigDoc)
+                        If DBName = "" Then
+                            LogError("Error in filling ConfigDoc: got empty database name for new table/view/proc/function object '" + ObjectName + "', query: " + vbCrLf + ConfigDocQuery)
+                            GoTo err
+                        Else
+                            currDBName = DBName
+                        End If
+                    End If
+                    currObjectName = ObjectName
+                    ConfigDoc = Documentation
+                Else
+                    ConfigDoc += Documentation
+                End If
+            End While
+            getConfigDocCollection.Add(charBeforeDBnameConfigDoc + currDBName + "\" + currObjectName + ".xcl", ConfigDoc)
+        Catch ex As Exception
+            LogError("Error in filling ConfigDoc: " + ex.Message + ", query: " + vbCrLf + ConfigDocQuery)
+            GoTo err
+        End Try
+err:
+        conn.Close()
+    End Function
+
 End Module
