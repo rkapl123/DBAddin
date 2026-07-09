@@ -9,7 +9,6 @@ Imports System.Data.OleDb
 Imports System.Data.SqlClient
 Imports System.Windows.Forms
 
-
 ''' <summary>global helper functions for DBModifiers</summary>
 Public Module DBModifHelper
     ''' <summary>DBModif definition collections of DBmodif types (key of top level dictionary) with values being collections of DBModifierNames (key of contained dictionaries) and DBModifiers (value of contained dictionaries))</summary>
@@ -18,7 +17,7 @@ Public Module DBModifHelper
     Public previousCUDLengthColl As Dictionary(Of String, Integer)
     ''' <summary>main db connection for DB modifiers</summary>
     Public idbcnn As System.Data.IDbConnection
-    ''' <summary>avoid entering Application.SheetChange Event handler during listfetch/setquery</summary>
+    ''' <summary>avoid entering Application.SheetChange or Application.WorkbookActivate Event handler during listfetch/setquery</summary>
     Public preventChangeWhileFetching As Boolean = False
     ''' <summary>indicates an error in execution of DBModifiers, used for commit/rollback and for non-interactive message return</summary>
     Public hadError As Boolean

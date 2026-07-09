@@ -157,11 +157,13 @@ Public Module SupportingTools
         Else
             Dim NamesList As Excel.Names = actWbNames
             Dim collectedErrors As String = ""
+            Dim collectedWarnings As String = ""
             For Each DBname As Excel.Name In NamesList
-                Dim checkExists As Excel.Name = Nothing
+                Dim checkExists As Excel.Name
                 If DBname.Name Like "*DBFtarget*" Then
                     Dim replaceName = "DBFtarget"
                     If DBname.Name Like "*DBFtargetF*" Then replaceName = "DBFtargetF"
+                    checkExists = Nothing
                     Try : checkExists = NamesList.Item(Replace(DBname.Name, replaceName, "DBFsource")) : Catch ex As Exception : End Try
                     If IsNothing(checkExists) Then
                         NamesWithErrors.Add(DBname)
@@ -185,11 +187,14 @@ Public Module SupportingTools
                         End If
                     End Try
                     If DBname.Visible Then
-                        collectedErrors += DBname.Name + "' is visible" + vbCrLf
+                        collectedWarnings += DBname.Name + "' is visible, refresh data (Ctrl-Sh-R) should hide it again" + vbCrLf
                     End If
                 End If
                 If DBname.Name Like "*DBFsource*" Then
+                    checkExists = Nothing
                     Try : checkExists = NamesList.Item(Replace(DBname.Name, "DBFsource", "DBFtarget")) : Catch ex As Exception : End Try
+                    Dim checkExistsF As Excel.Name = Nothing
+                    Try : checkExistsF = NamesList.Item(Replace(DBname.Name, "DBFsource", "DBFtargetF")) : Catch ex As Exception : End Try
                     If IsNothing(checkExists) Then
                         NamesWithErrors.Add(DBname)
                         collectedErrors += DBname.Name + "' doesn't have a corresponding DBFtarget name" + vbCrLf
@@ -202,19 +207,32 @@ Public Module SupportingTools
                         NamesWithErrors.Add(DBname)
                         collectedErrors += DBname.Name + "' is empty" + vbCrLf
                     End If
+                    Dim checkDBFunction As String = ""
+                    Try : checkDBFunction = DBname.RefersToRange.Formula.ToUpper : Catch ex As Exception : End Try
+                    If Not (checkDBFunction.Contains("DBLISTFETCH") Or checkDBFunction.Contains("DBROWFETCH") Or checkDBFunction.Contains("DBSETQUERY")) Then
+                        NamesWithErrors.Add(DBname)
+                        ' also remove DBFTarget and DBFTargetF 
+                        If Not IsNothing(checkExists) Then NamesWithErrors.Add(checkExists)
+                        If Not IsNothing(checkExistsF) Then NamesWithErrors.Add(checkExistsF)
+                        collectedErrors += DBname.Name + "' doesn't contain a DB Function anymore" + vbCrLf
+                    End If
                     If DBname.Visible Then
-                        collectedErrors += DBname.Name + "' is visible" + vbCrLf
+                        collectedWarnings += DBname.Name + "' is visible, refresh data (Ctrl-Sh-R) should hide it again" + vbCrLf
                     End If
                 End If
             Next
-            If collectedErrors = "" Then
-                UserMsg("No DBfunction name problems detected.", "DBfunction check Error", MsgBoxStyle.Information)
-            Else
-                If QuestionMsg(collectedErrors + vbCrLf + "Should names containing #REF! errors, DBFsource names being empty or all names not having a corresponding source/target name be removed?",, "DBfunction check Error") = MsgBoxResult.Ok Then
+            If collectedWarnings <> "" Then
+                UserMsg("Warnings: " + vbCrLf + collectedWarnings, "DBfunction names check Warning", MsgBoxStyle.Exclamation)
+            End If
+            If collectedErrors <> "" Then
+                If QuestionMsg(collectedErrors + vbCrLf + "Should the DBfunction names above be removed?",, "DBfunction names check Error") = MsgBoxResult.Ok Then
                     For Each DBname As Excel.Name In NamesWithErrors
                         Try : DBname.Delete() : Catch ex As Exception : End Try
                     Next
                 End If
+            End If
+            If collectedErrors = "" And collectedWarnings = "" Then
+                UserMsg("No DBfunction name problems detected.", "DBfunction names check Error", MsgBoxStyle.Information)
             End If
             ' also provide possibility to fix orphaned DBFunctions
             fixOrphanedDBFunctions(ExcelDnaUtil.Application.ActiveWorkbook)
@@ -238,7 +256,7 @@ Public Module SupportingTools
 
             Dim timeEstInSec As Double = cellcount / 3500000
             Dim retval As MsgBoxResult
-            retval = QuestionMsg("Try to fix possibly orphaned DBAddin functions (Save workbook afterwards to persist)? Estimated time for fix: " + timeEstInSec.ToString("0.0") + " sec.", MsgBoxStyle.OkCancel, "Orphaned DBAddin functions fix")
+            retval = QuestionMsg("Try to fix DBAddin functions that have lost their DBfunction names? Estimated time for fix: " + timeEstInSec.ToString("0.0") + " sec.", MsgBoxStyle.OkCancel, "Orphaned DBAddin functions fix")
             If retval = MsgBoxResult.Ok Then
                 Dim replaceSheets As String = ""
                 ExcelDnaUtil.Application.Calculation = Excel.XlCalculation.xlCalculationManual ' avoid recalculations during replace action
@@ -265,7 +283,7 @@ Public Module SupportingTools
                 ExcelDnaUtil.Application.DisplayAlerts = True
                 ExcelDnaUtil.Application.StatusBar = False
                 If replaceSheets.Length > 0 Then
-                    UserMsg("Fixed possibly orphaned DB functions in active workbook from sheets: " + Left(replaceSheets, replaceSheets.Length - 1), "Orphaned DBAddin functions fix", MsgBoxStyle.Exclamation)
+                    UserMsg("Fixed possibly orphaned DB functions in active workbook from sheets: " + Left(replaceSheets, replaceSheets.Length - 1), "Orphaned DBAddin functions fix", MsgBoxStyle.Information)
                 End If
             End If
         Catch ex As Exception

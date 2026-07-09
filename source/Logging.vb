@@ -1,4 +1,5 @@
 ﻿Imports System.Diagnostics
+Imports System.Linq
 
 ''' <summary>Logging variables and functions for DB Addin</summary>
 Public Module Logging
@@ -85,10 +86,16 @@ Public Module Logging
         Try : caller = theMethod.ReflectedType.FullName + "." + theMethod.Name : Catch ex As Exception : caller = theMethod.Name : End Try
         WriteToLog(LogMessage, If(msgboxIcon = MsgBoxStyle.Critical Or msgboxIcon = MsgBoxStyle.Exclamation, TraceEventType.Warning, TraceEventType.Information), caller) ' to avoid popup of trace log in nonInteractive mode...
         If Not nonInteractive Then
+            Dim countLines As Integer = LogMessage.Split(vbCrLf).Length - 1
+            If countLines > 70 Then
+                LogMessage = LogMessage.Replace(vbLf, "")
+                LogMessage = String.Join(" ", LogMessage.Split(vbCr))
+                If LogMessage.Length > 22000 Then LogMessage = LogMessage.Substring(0, 22000) + " ..."
+            End If
             MsgBox(LogMessage, msgboxIcon + MsgBoxStyle.OkOnly, errTitle)
             ' avoid activation of ribbon in AutoOpen as this throws an exception (ribbon is not assigned until AutoOpen has finished)
             If theRibbon IsNot Nothing Then theRibbon.ActivateTab("DBaddinTab")
-        End If
+            End If
     End Sub
 
     ''' <summary>ask User (default OKCancel) and log as warning if Critical Or Exclamation (logged errors would pop up the trace information window)</summary> 
@@ -110,6 +117,12 @@ Public Module Logging
         End If
         ' tab is not activated BEFORE Msgbox as Excel first has to get into the interaction thread outside this one..
         If theRibbon IsNot Nothing Then theRibbon.ActivateTab("DBaddinTab")
+        Dim countLines As Integer = theMessage.Split(vbCrLf).Length - 1
+        If countLines > 70 Then
+            theMessage = theMessage.Replace(vbLf, "")
+            theMessage = String.Join(" ", theMessage.Split(vbCr))
+            If theMessage.Length > 22000 Then theMessage = theMessage.Substring(0, 22000) + " ..."
+        End If
         Return MsgBox(theMessage, msgboxIcon + questionType, questionTitle)
     End Function
 

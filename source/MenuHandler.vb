@@ -924,11 +924,39 @@ Public Module MenuHandlerGlobals
     Public theRibbon As CustomUI.IRibbonUI
     ''' <summary>This needs to be public accessible for click handler (contextMenuClickEventHandler in ConfigFiles) to pass results into SQLText control and DBDocumentation to pass escape key propagatedFromDoc</summary> 
     Public theAdHocSQLDlg As AdHocSQL
+    ''' <summary>Timer needed for waiting on finished refresh</summary>
+    Dim theTimer As System.Timers.Timer
+    ''' <summary>Name of macro to be invoked when refreshing has finished</summary>
+    Dim theMacroName As String
+    ''' <summary>Flag for waitForRefresh</summary>
+    Public refreshDone As Boolean
 
+    ''' <summary>asynchronously call passed macro if refresh has been done</summary>
+    '''<param name="macroName">name of public macro in calling workbook</param>
+    <ExcelCommand(Name:="waitForRefresh")>
+    Public Sub waitForRefresh(macroName As String)
+        theMacroName = macroName
+        theTimer = New Timers.Timer(500)
+        AddHandler theTimer.Elapsed, AddressOf awaitRefreshDone
+        theTimer.Enabled = True
+        theTimer.Start()
+    End Sub
+
+    ''' <summary>asynchronously call passed macro if refresh has been done</summary>
+    ''' <param name="source"></param>
+    ''' <param name="e"></param>
+    Private Sub awaitRefreshDone(source As Object, e As EventArgs)
+        If refreshDone Then
+            theTimer.Stop()
+            theTimer.Dispose()
+            ExcelAsyncUtil.QueueMacro(theMacroName)
+        End If
+    End Sub
 
     ''' <summary>refresh DB Functions (and - if called from outside any db function area - all other external data ranges)</summary>
     <ExcelCommand(Name:="refreshData")>
     Public Sub refreshData()
+        refreshDone = False
         initSettings()
         ' enable events in case there were some problems in procedure with EnableEvents = false, this fails if a cell dropdown is open.
         Try
@@ -1031,6 +1059,7 @@ Public Module MenuHandlerGlobals
         Catch ex As Exception
             UserMsg("Exception: " + ex.Message, "refresh Data", "DB-Addin Refresh")
         End Try
+        refreshDone = True
     End Sub
 
     ''' <summary>jumps between DB Function and target area</summary>

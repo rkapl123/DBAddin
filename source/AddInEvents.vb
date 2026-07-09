@@ -15,7 +15,7 @@ Public Class AddInEvents
     ''' <summary>collection of query refresh handlers for query objects inside list objects</summary>
     Public colQueries As Collection
     ''' <summary>collection of command button handlers for assigned DB modifiers, needs to be shared because DBModifCreate.CreateCB_Click accesses it</summary>
-    Public Shared colCommandButtons As New Collection
+    Public Shared colCommandButtons As Collection
 
     ''' <summary>the application object needed for excel event handling (most of this class is dedicated to that)</summary>
     WithEvents Application As Excel.Application
@@ -256,7 +256,8 @@ done:
         If Not Wb.IsAddin Then
             LogInfo("repair legacy functions for workbook on opening: " + Wb.Name)
             repairLegacyFunctions(Wb)
-            Functions.preventRefreshFlag = False
+            Functions.preventRefreshFlag = False ' global prevent Refresh flag set by user (function or ribbon) always resetted on wb open
+            MenuHandlerGlobals.refreshDone = False
             ' when opening, force recalculation of DB functions in workbook.
             ' this is required as there is no recalculation as no dependencies have changed (usually when opening workbooks) and all db functions have been realized as non-volatile.
             ' still, the most important dependency for DB functions is the database data, nevertheless, there is an exception:
@@ -266,6 +267,15 @@ done:
                 LogInfo("refreshing DB functions for workbook: " + Wb.Name)
                 refreshDBFunctions(Wb, False, True)
             End If
+            MenuHandlerGlobals.refreshDone = True
+        End If
+    End Sub
+
+    ''' <summary>gets defined named ranges for DBMapper invocation in the current workbook after activation and updates Ribbon with it</summary>
+    ''' <param name="Wb"></param>
+    Private Sub Application_WorkbookActivate(Wb As Excel.Workbook) Handles Application.WorkbookActivate
+        ' avoid when being activated by DBFuncsAction
+        If Not DBModifHelper.preventChangeWhileFetching And Not Wb.IsAddin Then
             InitializeQueryHandlers(Wb)
             ' in case AutoOpen hasn't been triggered (e.g. when Excel was started via Internet Explorer)...
             If DBModifDefColl Is Nothing Then
@@ -276,23 +286,10 @@ done:
         End If
     End Sub
 
-    ''' <summary>gets defined named ranges for DBMapper invocation in the current workbook after activation and updates Ribbon with it</summary>
-    ''' <param name="Wb"></param>
-    Private Sub Application_WorkbookActivate(Wb As Excel.Workbook) Handles Application.WorkbookActivate
-        ' avoid when being activated by DBFuncsAction
-        If Not DBModifHelper.preventChangeWhileFetching And Not Wb.IsAddin Then
-            ' in case AutoOpen hasn't been triggered (e.g. when Excel was started via Internet Explorer)...
-            If DBModifDefColl Is Nothing Then
-                DBModifDefColl = New Dictionary(Of String, Dictionary(Of String, DBModif))
-            End If
-            getDBModifDefinitions(Wb) ' this also invalidates the ribbon to reflect any DB Modifier changes there
-        End If
-    End Sub
-
     ''' <summary>Flag for sharing closing state between Application_WorkbookBeforeClose and Application_WorkbookDeactivate (true for actually closed workbooks)</summary>
     Private WbIsClosing As Boolean = False
 
-    ''' <summary>Clean up after closing workbook, only set flag here, the actual cleanup is only done if workbook is really closed (in WB_Deactivate event)</summary>
+    ''' <summary>Clean up after closing workbook, only set flag here, the actual cleanup is only done if workbook is really closed (in WB_Deactivate event) as the user still might cancel closing after this event</summary>
     ''' <param name="Wb"></param>
     ''' <param name="Cancel"></param>
     Private Sub Application_WorkbookBeforeClose(Wb As Workbook, ByRef Cancel As Boolean) Handles Application.WorkbookBeforeClose
@@ -413,16 +410,6 @@ done:
     ''' <summary>used for releasing com objects</summary>
     Protected Overrides Sub Finalize()
         MyBase.Finalize()
-        If colQueries IsNot Nothing Then
-            For Each qryRH As QueryRefreshHandler In colQueries
-                Try : Marshal.ReleaseComObject(qryRH.qry) : Catch ex As Exception : End Try
-            Next
-        End If
-        If colCommandButtons IsNot Nothing Then
-            For Each cbCH As CommandbuttonClickHandler In colCommandButtons
-                Try : Marshal.ReleaseComObject(cbCH.cb) : Catch ex As Exception : End Try
-            Next
-        End If
         For Each aKey As String In Functions.StatusCollection.Keys
             If Functions.StatusCollection(aKey) IsNot Nothing Then
                 Try
@@ -449,6 +436,14 @@ done:
     ''' <summary>assign click handlers to command buttons in passed workbook Wb</summary>
     ''' <param name="wb">Workbook where command buttons are located</param>
     Public Sub InitializeCBHandlers(wb As Object)
+        If colCommandButtons IsNot Nothing Then
+            For Each cbCH As CommandbuttonClickHandler In colCommandButtons
+                Try : Marshal.ReleaseComObject(cbCH.cb) : Catch ex As Exception : End Try
+                cbCH.cb = Nothing
+            Next
+            colCommandButtons.Clear()
+        End If
+        colCommandButtons = New Collection
         If Not IsNothing(DBModifDefColl) AndAlso DBModifDefColl.Count > 0 Then
             Try
                 For Each ws As Worksheet In wb.Worksheets
@@ -475,6 +470,13 @@ done:
     ''' <param name="wb"></param>
     Private Sub InitializeQueryHandlers(wb As Workbook)
         Dim qryRH As QueryRefreshHandler
+        If colQueries IsNot Nothing Then
+            For Each qryRH In colQueries
+                Try : Marshal.ReleaseComObject(qryRH.qry) : Catch ex As Exception : End Try
+                qryRH.qry = Nothing
+            Next
+            colQueries.Clear()
+        End If
         colQueries = New Collection
         Try
             For Each ws As Worksheet In wb.Worksheets

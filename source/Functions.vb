@@ -535,7 +535,7 @@ Public Module Functions
                 GoTo err
             End If
         Catch ex As Exception
-            errMsg = ex.Message + " in query: " + Query
+            errMsg = ex.Message + " in query: " + vbCrLf + Query
             GoTo err
         End Try
         DBModifHelper.preventChangeWhileFetching = False
@@ -543,7 +543,7 @@ Public Module Functions
         Exit Sub
 err:
         setCalcModeBack(calcMode)
-        LogWarn(errMsg + " caller: " + callID)
+        LogWarn(errMsg + vbCrLf + ", caller: " + callID)
         If StatusCollection.ContainsKey(callID) Then StatusCollection(callID).statusMsg = errMsg
         DBModifHelper.preventChangeWhileFetching = False
         ' trigger recalculation to return error message to calling function
@@ -618,7 +618,7 @@ err:
             Next
             StatusCollection(callID).statusMsg = "set and refreshed " + queryName
         Catch ex As Exception
-            errMsg = ex.Message + " in query: " + Query
+            errMsg = ex.Message + " in query: " + vbCrLf + Query
             GoTo err
         End Try
         setCalcModeBack(calcMode)
@@ -675,15 +675,17 @@ err:
     Private Sub setCalcModeBack(calcMode As Excel.XlCalculation)
         Try : ExcelDnaUtil.Application.Calculation = calcMode
         Catch ex As Exception
-            UserMsg("Error when setting back calculation mode to " + IIf(calcMode = -4135, "manual", IIf(calcMode = -4105, "automatic", IIf(calcMode = 2, "semiautomatic", "unknown: " + calcMode.ToString()))) + " (calculation property errors can occur for workbooks being opened as 'hidden' or through MS-office hyper-links), it is recommended to refresh the DB function to get valid results!",, MsgBoxStyle.Exclamation)
+            UserMsg("Exception " + ex.Message + vbCrLf + "when setting back calculation mode to " + IIf(calcMode = -4135, "manual", IIf(calcMode = -4105, "automatic", IIf(calcMode = 2, "semiautomatic", "unknown: " + calcMode.ToString()))) + " (calculation property errors can occur for workbooks being opened as 'hidden' or through MS-office hyper-links), it is recommended to refresh the DB function to get valid results!",, MsgBoxStyle.Exclamation)
         End Try
     End Sub
 
     ''' <summary>check the preventRefreshFlag, either global or workbook level</summary>
     ''' <returns>true if set, workbook has precedence</returns>
     Public Function checkPreventRefreshFlag() As Boolean
-        If preventRefreshFlagColl.ContainsKey(ExcelDnaUtil.Application.ActiveWorkbook.Name) Then
-            Return preventRefreshFlagColl(ExcelDnaUtil.Application.ActiveWorkbook.Name)
+        Dim actWBName As String = ""
+        Try : actWBName = ExcelDnaUtil.Application.ActiveWorkbook.Name : Catch ex As Exception : End Try
+        If preventRefreshFlagColl.ContainsKey(actWBName) Then
+            Return preventRefreshFlagColl(actWBName)
         Else
             Return preventRefreshFlag
         End If
@@ -939,13 +941,13 @@ err:
                     ' provide additional encryption information to connection string if required
                     .Connection = ConnString + IIf(InStr(ConnString.ToLower(), "encrypt=yes") > 0, ";Use Encryption for Data=True", "")
                 Catch ex As Exception
-                    errMsg = IIf(targetQueryTableExist, "Probably the connection was deleted for the query table (you can reset this by removing the query definition of the external data range): ", "Error in setting connection string for QueryTable: ") + ex.Message + " in query: " + Query
+                    errMsg = IIf(targetQueryTableExist, "Probably the connection was deleted for the query table (you can reset this by removing the query definition of the external data range): ", "Error in setting connection string for QueryTable: ") + ex.Message + " in query: " + vbCrLf + Query
                     GoTo err
                 End Try
                 Try
                     .CommandText = Query
                 Catch ex As Exception
-                    errMsg = "Error in setting query for query table: " + ex.Message + ", query: " + Query
+                    errMsg = "Error in setting query for query table: " + ex.Message + ", query: " + vbCrLf + Query
                     GoTo err
                 End Try
                 Dim rowNumberHeader As String = "" ' only store row number header if row numbers are already in place (otherwise we would get the false header before the extension)
@@ -966,7 +968,7 @@ err:
                         warning += "row count of returned data exceeds max row of excel: start row:" + targetRange.Row.ToString() + " + row count:" + .Recordset.Count.ToString() + " > max row+1:" + (targetRange.EntireColumn.Rows.Count + 1).ToString()
                     End If
                 Catch ex As Exception
-                    errMsg = "Error in refreshing query table: " + ex.Message + ", query: " + Query
+                    errMsg = "Error in refreshing query table: " + ex.Message + ", query: " + vbCrLf + Query
                     GoTo err
                 End Try
                 Try
@@ -1150,7 +1152,7 @@ err:
                 GoTo err
             End Try
         Catch ex As Exception
-            errMsg = "General Error in DBListFetchAction: " + ex.Message + ", query: " + Query
+            errMsg = "General Error in DBListFetchAction: " + ex.Message + ", query: " + vbCrLf + Query
             GoTo err
         End Try
         finishAction(calcMode, callID)
@@ -1161,7 +1163,7 @@ err:
         End If
         Exit Sub
 
-err:    LogWarn(errMsg + ", caller: " + callID)
+err:    LogWarn(errMsg + vbCrLf + ", caller: " + callID)
         If StatusCollection.ContainsKey(callID) Then StatusCollection(callID).statusMsg = errMsg
         finishAction(calcMode, callID, "Error")
         ' recalculate to trigger return of error messages to calling function
@@ -1275,7 +1277,7 @@ err:    LogWarn(errMsg + ", caller: " + callID)
         Dim srcExtent As String = "", targetExtent As String = ""
         errMsg = setExtents(caller, srcExtent, targetExtent)
         If errMsg <> "" Then
-            errMsg += " in query: " + Query
+            errMsg += " in query: " + vbCrLf + Query
             GoTo err
         End If
         ' remove old data in case we changed the target range array
@@ -1316,7 +1318,7 @@ err:    LogWarn(errMsg + ", caller: " + callID)
                 sqlCommand = New OdbcCommand(Query, conn)
             End If
         Catch ex As Exception
-            errMsg = "Error creating new sqlCommand: " + ex.Message + " for Query: " + Query
+            errMsg = "Error creating new sqlCommand: " + ex.Message + " for Query: " + vbCrLf + Query
             GoTo err
         End Try
         Dim recordset As System.Data.Common.DbDataReader : Dim recordsetHasRows As Boolean : Dim returnedRows As Long = 0
@@ -1325,7 +1327,7 @@ err:    LogWarn(errMsg + ", caller: " + callID)
             recordsetHasRows = recordset.Read()
             If recordsetHasRows Then returnedRows = 1
         Catch ex As Exception
-            errMsg = "Error executing sqlCommand: " + ex.Message + " for Query: " + Query
+            errMsg = "Error executing sqlCommand: " + ex.Message + " for Query: " + vbCrLf + Query
             GoTo err
         End Try
 
@@ -1392,7 +1394,7 @@ err:    LogWarn(errMsg + ", caller: " + callID)
             refCollector.Name = targetExtent
             refCollector.Parent.Parent.Names(targetExtent).Visible = False
         Catch ex As Exception
-            errMsg = "Error in filling target range: " + ex.Message + ", query: " + Query
+            errMsg = "Error in filling target range: " + ex.Message + ", query: " + vbCrLf + Query
             GoTo err
         End Try
 
@@ -1400,7 +1402,7 @@ err:    LogWarn(errMsg + ", caller: " + callID)
         finishAction(calcMode, callID)
         Exit Sub
 
-err:    LogWarn(errMsg + ", caller: " + callID)
+err:    LogWarn(errMsg + vbCrLf + ", caller: " + callID)
         If StatusCollection.ContainsKey(callID) Then StatusCollection(callID).statusMsg = errMsg
         finishAction(calcMode, callID, "Error")
         ' recalculate to trigger return of error messages to calling function
