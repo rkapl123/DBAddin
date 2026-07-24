@@ -121,7 +121,7 @@ Public Module DBModifHelper
             Exit Function
         End Try
 
-        Dim theProgressForm = New ProgressForm
+        Dim theProgressForm = createProgressForm()
         theProgressForm.Show()
         LogInfo("open connection with " + theConnString)
         theProgressForm.ProgressLabel.Text = "Trying " + CnnTimeout.ToString() + " sec. with connection string: " + theConnString
@@ -310,7 +310,7 @@ Public Module DBModifHelper
                     End If
                 Next
 
-                Dim theProgressForm = New ProgressForm
+                Dim theProgressForm = createProgressForm()
                 theProgressForm.Show()
                 ' then add DBRefresh items for allowing refreshing DBFunctions (DBListFetch and DBSetQuery) during a Sequence
                 Dim searchCell As Excel.Range

@@ -175,6 +175,8 @@ Public Module DBSheetConfig
             If Not existsSheet("DBSheetLookups", ExcelDnaUtil.Application.ActiveWorkbook) Then
                 lookupWS = ExcelDnaUtil.Application.ActiveWorkbook.Worksheets.Add()
                 lookupWS.Name = "DBSheetLookups"
+            Else
+                lookupWS = ExcelDnaUtil.Application.ActiveWorkbook.Worksheets("DBSheetLookups")
             End If
             ' add lookup Queries in separate sheet
             Dim lookupCol As Integer = 1
@@ -183,9 +185,16 @@ Public Module DBSheetConfig
                 Dim LookupQuery As String = Replace(getEntry("lookup", LookupDef, 1), tblPlaceHolder, "LT")
                 Dim lookupName As String = Replace(getEntry("name", LookupDef, 1), specialNonNullableChar, "")
                 Dim lookupRangeName As String = tableName + lookupName + "Lookup"
+                Dim lookupRangeNameAddress As String = ""
                 If existsName(lookupRangeName) Then
                     ' get existing lookup column and overwrite it
-                    lookupCol = lookupWS.Range(lookupRangeName).Column
+                    Try
+                        Dim lookupRange As Excel.Range = ExcelDnaUtil.Application.ActiveWorkbook.Names(lookupRangeName).RefersToRange
+                        lookupCol = lookupRange.Column
+                        lookupRangeNameAddress = lookupRange.Address
+                    Catch ex As Exception
+                        LogWarn("Exception " + ex.Message + " occurred when trying to get lookup in " + lookupRangeName + " !")
+                    End Try
                 Else
                     ' step one to the right of the last lookup
                     If Not IsNothing(lookupWS.Cells(1, lookupCol).Value) Then
@@ -206,7 +215,7 @@ Public Module DBSheetConfig
                         ' then create the DBListFetch with the lookup query
                         createFunctionsInCells(lookupWS.Cells(1, lookupCol), {"RC", "=DBListFetch(RC[1],""""," + lookupRangeName + ")"})
                     Else
-                        LogWarn("DB Sheet Lookup " + lookupRangeName + " already exists in " + lookupWS.Range(lookupRangeName).Address + ", check if this is really the correct one !")
+                        LogWarn("DB Sheet Lookup " + lookupRangeName + " already exists in " + lookupRangeNameAddress + ", check if this is really the correct one !")
                     End If
                 Else
                     'simple value lookup (one column), no need to resolve to an ID
@@ -223,7 +232,7 @@ Public Module DBSheetConfig
                             ' fixed value lookups have only one column
                             lookupWS.Range(lookupWS.Cells(2, lookupCol), lookupWS.Cells(2 + lrow - 1, lookupCol)).Name = lookupRangeName
                         Else
-                            LogWarn("DB Sheet Lookup " + lookupRangeName + " already exists in " + lookupWS.Range(lookupRangeName).Address + ", check if this is really the correct one !")
+                            LogWarn("DB Sheet Lookup " + lookupRangeName + " already exists in " + lookupRangeNameAddress + ", check if this is really the correct one !")
                         End If
                     Else ' single column DB lookup
                         lookupWS.Cells(1, lookupCol + 1).Value = LookupQuery
@@ -233,7 +242,7 @@ Public Module DBSheetConfig
                             lookupWS.Cells(2, lookupCol).Name = lookupRangeName
                             createFunctionsInCells(lookupWS.Cells(1, lookupCol), {"RC", "=DBListFetch(RC[1],""""," + lookupRangeName + ")"})
                         Else
-                            LogWarn("DB Sheet Lookup " + lookupRangeName + " already exists in " + lookupWS.Range(lookupRangeName).Address + ", check if this is really the correct one !")
+                            LogWarn("DB Sheet Lookup " + lookupRangeName + " already exists in " + lookupRangeNameAddress + ", check if this is really the correct one !")
                         End If
                     End If
                 End If
