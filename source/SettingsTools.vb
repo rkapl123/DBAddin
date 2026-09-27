@@ -3,6 +3,8 @@ Imports System.Configuration
 
 ''' <summary>Global variables/functions for settings access</summary>
 Public Module SettingsTools
+    ''' <summary>current excel version for diagnostic purpose</summary>
+    Public ExcelVersion As String
     ''' <summary>currently selected environment for DB Functions, zero based (env -1) !!</summary>
     Public selectedEnvironment As Integer
     ''' <summary>environment definitions</summary>

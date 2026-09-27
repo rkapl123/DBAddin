@@ -1,11 +1,12 @@
-﻿Imports ExcelDna.Integration
+﻿Imports System.Collections.Generic
+Imports System.Diagnostics
+Imports System.Runtime.InteropServices
+Imports ExcelDna.Integration
 Imports ExcelDna.Registration
+Imports Microsoft.Office.Core
 Imports Microsoft.Office.Interop
 Imports Microsoft.Office.Interop.Excel ' for event procedures...
-Imports Microsoft.Office.Core
 Imports Microsoft.Vbe.Interop ' also need to add reference to Microsoft.Vbe.Interop.Forms, otherwise commandbuttons (collection colCommandButtons) don't work
-Imports System.Runtime.InteropServices
-Imports System.Collections.Generic
 
 ''' <summary>AddIn Connection class, also handling Events from Excel (Open, Close, Activate)</summary>
 <ComVisible(True)>
@@ -49,6 +50,7 @@ Public Class AddInEvents
         Functions.StatusCollection = New Dictionary(Of String, ContainedStatusMsg)
         DBModifDefColl = New Dictionary(Of String, Dictionary(Of String, DBModif))
         previousCUDLengthColl = New Dictionary(Of String, Integer)
+        Try : ExcelVersion = FileVersionInfo.GetVersionInfo(Process.GetCurrentProcess().MainModule.FileName).ProductVersion : Catch ex As Exception : End Try
 
         ' initialize settings and get the default environment
         initSettings()
@@ -410,14 +412,16 @@ done:
     ''' <summary>used for releasing com objects</summary>
     Protected Overrides Sub Finalize()
         MyBase.Finalize()
-        For Each aKey As String In Functions.StatusCollection.Keys
-            If Functions.StatusCollection(aKey) IsNot Nothing Then
-                Try
-                    Dim clearRange As Excel.Range = Functions.StatusCollection(aKey).formulaRange
-                    If Not IsNothing(clearRange) Then Marshal.ReleaseComObject(clearRange)
-                Catch ex As Exception : End Try
-            End If
-        Next
+        If Not IsNothing(Functions.StatusCollection) Then
+            For Each aKey As String In Functions.StatusCollection.Keys
+                If Functions.StatusCollection(aKey) IsNot Nothing Then
+                    Try
+                        Dim clearRange As Excel.Range = Functions.StatusCollection(aKey).formulaRange
+                        If Not IsNothing(clearRange) Then Marshal.ReleaseComObject(clearRange)
+                    Catch ex As Exception : End Try
+                End If
+            Next
+        End If
         If DBModifDefColl IsNot Nothing Then
             For Each DBmodifType As String In DBModifDefColl.Keys
                 For Each dbmapdefkey As String In DBModifDefColl(DBmodifType).Keys

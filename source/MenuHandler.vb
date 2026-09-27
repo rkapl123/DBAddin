@@ -215,7 +215,6 @@ Public Class MenuHandler
     ''' <param name="control"></param>
     Public Sub showDBAdHocSQL(control As CustomUI.IRibbonControl, selectedSQLText As String)
         Dim queryString As String = ""
-
         theAdHocSQLDlg = New AdHocSQL(selectedSQLText, AdHocSQLStrings.IndexOf(selectedSQLText))
         Dim dialogResult As System.Windows.Forms.DialogResult = theAdHocSQLDlg.ShowDialog()
         ' reflect potential change in environment...
@@ -224,7 +223,7 @@ Public Class MenuHandler
             ' "Transfer" was clicked: place SQL String into currently selected Cell/DBFunction and add to combo-box
             queryString = theAdHocSQLDlg.SQLText.Text
             If theAdHocSQLDlg.TransferType.Text = "Cell" Then
-                Dim targetFormula As String = ExcelDnaUtil.Application.ActiveCell.Formula
+                Dim targetFormula As String = ExcelDnaUtil.Application.ActiveCell.FormulaR1C1
                 Dim srchdFunc As String = ""
                 ' check whether there is any existing db function other than DBListFetch inside active cell
                 For Each srchdFunc In {"DBSETQUERY", "DBROWFETCH", "DBLISTFETCH"}
@@ -253,8 +252,13 @@ Public Class MenuHandler
                         formulaParams = Left(formulaParams, Len(formulaParams) - 1)
                         Dim tempFormula As String = replaceDelimsWithSpecialSep(formulaParams, ",", """", "(", ")", vbTab)
                         Dim restFormula As String = Mid$(tempFormula, InStr(tempFormula, vbTab))
-                        ' ..and put into active cell
-                        ExcelDnaUtil.Application.ActiveCell.Formula = "=" + srchdFunc + "(""" + queryString + """" + Replace(restFormula, vbTab, ",") + ")"
+                        ' ..and put into active cell, if queryString is more than 255 chars (excel limit), put into cell to the right and add reference
+                        If queryString.Length > 255 Then
+                            ExcelDnaUtil.Application.ActiveCell.Offset(0, 1) = queryString
+                            ExcelDnaUtil.Application.ActiveCell.FormulaR1C1 = "=" + srchdFunc + "(RC[1]" + Replace(restFormula, vbTab, ",") + ")"
+                        Else
+                            ExcelDnaUtil.Application.ActiveCell.FormulaR1C1 = "=" + srchdFunc + "(""" + queryString + """" + Replace(restFormula, vbTab, ",") + ")"
+                        End If
                     End If
                 End If
             ElseIf theAdHocSQLDlg.TransferType.Text = "Pivot" Then
@@ -262,23 +266,43 @@ Public Class MenuHandler
                     If QuestionMsg("Non-empty Cell selected, should content be replaced?") = MsgBoxResult.Cancel Then Exit Sub
                 End If
                 createPivotTable(ExcelDnaUtil.Application.ActiveCell)
-                createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBSetQuery(""" + queryString + ""","""",R[1]C)"})
+                If queryString.Length > 255 Then
+                    ExcelDnaUtil.Application.ActiveCell.Offset(0, 1) = queryString
+                    createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBSetQuery(RC[1],"""",R[1]C)"})
+                Else
+                    createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBSetQuery(""" + queryString + ""","""",R[1]C)"})
+                End If
             ElseIf theAdHocSQLDlg.TransferType.Text = "ListObject" Then
                 If ExcelDnaUtil.Application.ActiveCell.Formula <> "" Then
                     If QuestionMsg("Non-empty Cell selected, should content be replaced?") = MsgBoxResult.Cancel Then Exit Sub
                 End If
                 createListObject(ExcelDnaUtil.Application.ActiveCell)
-                createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBSetQuery(""" + queryString + ""","""",RC[1])"})
+                If queryString.Length > 255 Then
+                    ExcelDnaUtil.Application.ActiveCell.Offset(1, 0) = queryString
+                    createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBSetQuery(R[1]C,"""",RC[1])"})
+                Else
+                    createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBSetQuery(""" + queryString + ""","""",RC[1])"})
+                End If
             ElseIf theAdHocSQLDlg.TransferType.Text = "RowFetch" Then
                 If ExcelDnaUtil.Application.ActiveCell.Formula <> "" Then
                     If QuestionMsg("Non-empty Cell selected, should content be replaced?") = MsgBoxResult.Cancel Then Exit Sub
                 End If
-                createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBRowFetch(""" + queryString + ""","""",TRUE,R[1]C:R[1]C[10])"})
+                If queryString.Length > 255 Then
+                    ExcelDnaUtil.Application.ActiveCell.Offset(0, 1) = queryString
+                    createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBRowFetch(RC[1],"""",TRUE,R[1]C:R[1]C[10])"})
+                Else
+                    createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBRowFetch(""" + queryString + ""","""",TRUE,R[1]C:R[1]C[10])"})
+                End If
             ElseIf theAdHocSQLDlg.TransferType.Text = "ListFetch" Then
                 If ExcelDnaUtil.Application.ActiveCell.Formula <> "" Then
                     If QuestionMsg("Non-empty Cell selected, should content be replaced?") = MsgBoxResult.Cancel Then Exit Sub
                 End If
-                createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBListFetch(""" + queryString + ""","""",R[1]C,,,TRUE,TRUE,TRUE)"})
+                If queryString.Length > 255 Then
+                    ExcelDnaUtil.Application.ActiveCell.Offset(0, 1) = queryString
+                    createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBListFetch(RC[1],"""",R[1]C,,,TRUE,TRUE,TRUE)"})
+                Else
+                    createFunctionsInCells(ExcelDnaUtil.Application.ActiveCell, {"RC", "=DBListFetch(""" + queryString + ""","""",R[1]C,,,TRUE,TRUE,TRUE)"})
+                End If
             End If
         ElseIf dialogResult = System.Windows.Forms.DialogResult.Cancel Then 'Cancel is set when "close" is clicked
             ' "Close" was clicked: only add SQL String to combo-box
@@ -524,7 +548,7 @@ Public Class MenuHandler
         If cbrs IsNot Nothing AndAlso cbrs.GetEnabledMso("DesignMode") Then
             cbrs.ExecuteMso("DesignMode")
         Else
-            UserMsg("Couldn't toggle design mode, because Design mode command-bar button is not available (no button?)", "DBAddin toggle Design mode", MsgBoxStyle.Exclamation)
+            UserMsg("Couldn't toggle design mode, because Design mode command-bar button is not available (disable Active-X security)", "DBAddin toggle Design mode", MsgBoxStyle.Exclamation)
         End If
         ' update state of design mode in screen-tip
         theRibbon.InvalidateControl(control.Id)
@@ -656,6 +680,9 @@ Public Class MenuHandler
     ''' <summary>on demand, refresh the DB Config tree</summary>
     ''' <param name="control"></param>
     Public Sub refreshDBConfigTree(control As CustomUI.IRibbonControl)
+        ' prevent excel crash in this version when calling createConfigTreeMenu a second time
+        If SettingsTools.ExcelVersion = "16.0.17932.20574" And ConfigFiles.ConfigMenuXML <> "" Then Exit Sub
+
         initSettings()
         ConfigFiles.createConfigTreeMenu()
         UserMsg("refreshed DB Config Tree Menu", "DBAddin: refresh Config tree...", MsgBoxStyle.Information)

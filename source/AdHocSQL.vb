@@ -4,6 +4,7 @@ Imports System.Data.Common
 Imports System.Threading
 Imports System.Threading.Tasks
 Imports System.Windows.Forms
+Imports System.Xml.Linq
 
 ''' <summary>User-form for ad-hoc SQL execution</summary>
 Public Class AdHocSQL
@@ -25,6 +26,8 @@ Public Class AdHocSQL
     Private rowsCount As Integer
     ''' <summary></summary>
     Private batchSize As Integer = 1000
+    ''' <summary>Context menu for AdHocSQL Form</summary>
+    Private ConfigContextMenu As ContextMenuStrip
 
     ''' <summary>create new AdHocSQL dialog</summary>
     ''' <param name="SQLString">SQL string passed from combo-box</param>
@@ -32,7 +35,20 @@ Public Class AdHocSQL
     Public Sub New(SQLString As String, AdHocSQLStringsIndex As Integer)
         ' This call is required by the designer.
         InitializeComponent()
-        createConfigTreeMenu()
+        ' read context menu (ToolStripMenu) for AdHocSQL Form (same as ribbon config tree)
+        Dim currentStrip As New ToolStripMenuItem ' for context menu in AdHocSQL/SQLText
+        ConfigContextMenu = New ContextMenuStrip
+        ' get the ribbon XML definition for the config tree menu
+        If ConfigMenuXML = vbNullString Then createConfigTreeMenu()
+        Dim currentBar As XElement = XElement.Parse(ConfigMenuXML)
+        readCBarTreeIntoToolStrip(currentBar, currentStrip)
+        ' add all collected ToolStripMenuItem of currentStrip to top-level menu, copying needed because AddRange removes items from original collection
+        Dim addedContextMenu As ToolStripMenuItem()
+        ReDim addedContextMenu(currentStrip.DropDownItems.Count - 1)
+        currentStrip.DropDownItems.CopyTo(addedContextMenu, 0)
+        ConfigContextMenu.Items.AddRange(addedContextMenu)
+
+        ' initialize dialog elements SQLText (if called from dropdown), TransferType and EnvSwitch
         Me.SQLText.Text = SQLString
         Me.TransferType.Items.Clear()
         For Each TransType As String In {"Cell", "ListFetch", "RowFetch", "ListObject", "Pivot"}
@@ -44,10 +60,11 @@ Public Class AdHocSQL
         For Each env As String In environdefs
             Me.EnvSwitch.Items.Add(env)
         Next
+        ' for every added adhoc sql command, a different environment might be given. To set this back after closing the dialog, get it here and reset the selected environment after closing
         Dim userSetEnv As String = fetchSetting("AdHocSQLcmdEnv" + AdHocSQLStringsIndex.ToString(), env(baseZero:=True))
         ' get settings for connection
         myDBConnHelper = New DBConnHelper((Integer.Parse(userSetEnv) + 1).ToString())
-        ' issue warning if current selected environment not same as that stored for command (prod/test !)
+        ' warning if current selected environment is not the same as that stored for command (prod/test !)
         If userSetEnv <> env(baseZero:=True) Then
             If QuestionMsg("Current selected environment different from the environment stored for AdHocSQLcmd, change to this environment?",, "AdHoc SQL Command", MsgBoxStyle.Question + MsgBoxStyle.DefaultButton2) = MsgBoxResult.Ok Then
                 storedUserSetEnv = userSetEnv
@@ -55,10 +72,42 @@ Public Class AdHocSQL
                 myDBConnHelper = New DBConnHelper(env())
             End If
         End If
+        ' for every added adhoc sql command, a different database might be given. To set this back, get it here and reset the selected database after closing
         userSetDB = fetchSetting("AdHocSQLcmdDB" + AdHocSQLStringsIndex.ToString(), fetchSubstr(myDBConnHelper.dbsheetConnString, myDBConnHelper.dbidentifier, ";"))
         fillDatabasesAndSetDropDown()
         Me.EnvSwitch.SelectedIndex = Integer.Parse(userSetEnv)
         Me.Database.SelectedIndex = Me.Database.Items.IndexOf(userSetDB)
+    End Sub
+
+    ''' <summary>reads information from ribbon based tree into ToolStrip</summary>
+    ''' <param name="currentBar"></param>
+    ''' <param name="currentStrip"></param>
+    Private Sub readCBarTreeIntoToolStrip(ByRef currentBar As XElement, ByRef currentStrip As System.Windows.Forms.ToolStripMenuItem)
+        Try
+            Dim newStrip As System.Windows.Forms.ToolStripMenuItem
+
+            ' recursively build ToolStripMenuItem structure from direct descendants of current node
+            For Each childNode As XElement In currentBar.Elements
+                ' menu node, only for collecting elements below
+                If Strings.Right(childNode.Name.ToString(), 4) = "menu" Then
+                    ' add context menu strip element (no event handler needed here)
+                    newStrip = New System.Windows.Forms.ToolStripMenuItem(text:=childNode.Attribute("label"))
+                    currentStrip.DropDownItems.Add(newStrip)
+                    ' recursively descend into menu node
+                    readCBarTreeIntoToolStrip(childNode, newStrip)
+                ElseIf Not IsNothing(childNode.Attribute("tag")) Then
+                    ' add context menu strip leaf element (including event handler for select insertion/ helping documentation)
+                    Dim eventHandler As New System.EventHandler(AddressOf contextMenuClickEventHandler)
+                    newStrip = New System.Windows.Forms.ToolStripMenuItem(text:=childNode.Attribute("label"), image:=Nothing, onClick:=eventHandler) With {
+                        .Tag = CStr(childNode.Attribute("tag")),
+                        .ToolTipText = "click to insert configured select statement for " + CStr(childNode.Attribute("label")) + ". Ctrl or Shift + click to display documentation for config if existing."
+                    }
+                    currentStrip.DropDownItems.Add(newStrip)
+                End If
+            Next
+        Catch ex As Exception
+            UserMsg("Error (" + ex.Message + ") in AdHocSql.readCBarTreeIntoToolStrip")
+        End Try
     End Sub
 
     ''' <summary>execution of the selected ribbon dropdown command right after dialog has been set up, otherwise GUI elements are not available</summary>
@@ -326,7 +375,6 @@ Public Class AdHocSQL
         End If
     End Sub
 
-
     ''' <summary>"Transfer": close dialog with OK result</summary>
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
@@ -406,8 +454,8 @@ Public Class AdHocSQL
     ''' <param name="sender"></param>
     ''' <param name="e"></param>
     Private Sub SQLText_MouseDown(sender As Object, e As MouseEventArgs) Handles SQLText.MouseDown
-        If e.Button = Windows.Forms.MouseButtons.Right Then
-            Me.ConfigMenuStrip = ConfigFiles.ConfigContextMenu
+        If e.Button = Windows.Forms.MouseButtons.Right And Not IsNothing(ConfigContextMenu) Then
+            Me.ConfigMenuStrip = ConfigContextMenu
             Me.ConfigMenuStrip.Show(DirectCast(sender, RichTextBox).PointToScreen(e.Location))
         End If
     End Sub

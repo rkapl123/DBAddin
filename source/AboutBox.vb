@@ -33,7 +33,7 @@ Public NotInheritable Class AboutBox
         Me.LabelVersion.Text = String.Format("Version {0} Build-time {1}", My.Application.Info.Version.ToString(), sModuleInfo)
         Me.LabelCopyright.Text = My.Application.Info.Copyright
         Me.LabelCompanyName.Text = "Information: " + My.Application.Info.CompanyName
-        Me.TextBoxDescription.Text = My.Application.Info.Description
+        Me.TextBoxDescription.Text = My.Application.Info.Description + " (Excel ProductVersion: " + SettingsTools.ExcelVersion + ")"
         dontChangeEventLevels = True
         Dim theEventTypeFilter As EventTypeFilter = theLogDisplaySource.Listeners(0).Filter
         Me.EventLevels.SelectedItem = theEventTypeFilter.EventType.ToString()
@@ -207,7 +207,7 @@ Public NotInheritable Class AboutBox
         Try
             Process.Start(My.Application.Info.CompanyName)
         Catch ex As Exception
-            LogWarn(ex.Message)
+            UserMsg(ex.Message)
         End Try
     End Sub
 
@@ -218,7 +218,7 @@ Public NotInheritable Class AboutBox
         Try
             Process.Start(fetchSetting("LocalHelp", ""))
         Catch ex As Exception
-            LogWarn(ex.Message)
+            UserMsg(ex.Message + ", local help expected in " + fetchSetting("LocalHelp", ""))
         End Try
     End Sub
 
