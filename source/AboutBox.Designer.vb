@@ -41,12 +41,12 @@ Partial Class AboutBox
         Me.LabelCompanyName = New System.Windows.Forms.Label()
         Me.TextBoxDescription = New System.Windows.Forms.TextBox()
         Me.OKButton = New System.Windows.Forms.Button()
-        Me.EventLevels = New System.Windows.Forms.ComboBox()
         Me.CheckForUpdates = New System.Windows.Forms.Button()
         Me.fixLegacyFunc = New System.Windows.Forms.Button()
+        Me.EventLevels = New System.Windows.Forms.ComboBox()
+        Me.FilterLabel = New System.Windows.Forms.Label()
         Me.ToolTip1 = New System.Windows.Forms.ToolTip(Me.components)
         Me.BackgroundWorker1 = New System.ComponentModel.BackgroundWorker()
-        Me.FilterLabel = New System.Windows.Forms.Label()
         Me.TableLayoutPanel.SuspendLayout()
         CType(Me.LogoPictureBox, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
@@ -178,18 +178,6 @@ Partial Class AboutBox
         Me.OKButton.TabIndex = 4
         Me.OKButton.Text = "OK"
         '
-        'EventLevels
-        '
-        Me.EventLevels.FormattingEnabled = True
-        Me.EventLevels.Items.AddRange(New Object() {"Off", "Critical", "Error", "Warning", "Information", "Verbose", "All"})
-        Me.EventLevels.Location = New System.Drawing.Point(351, 225)
-        Me.EventLevels.Name = "EventLevels"
-        Me.EventLevels.Size = New System.Drawing.Size(92, 21)
-        Me.EventLevels.TabIndex = 3
-        Me.ToolTip1.SetToolTip(Me.EventLevels, "Enter the maximumLog Level to be displayed from now on (existing log entries will" &
-        " still be displayed). Attention: for getting Information level messages, also se" &
-        "t DebugAddin to true!")
-        '
         'CheckForUpdates
         '
         Me.CheckForUpdates.Location = New System.Drawing.Point(137, 225)
@@ -210,8 +198,17 @@ Partial Class AboutBox
         Me.ToolTip1.SetToolTip(Me.fixLegacyFunc, "click to fix legacy functions from old VB6 DBAddin")
         Me.fixLegacyFunc.UseVisualStyleBackColor = True
         '
-        'BackgroundWorker1
+        'EventLevels
         '
+        Me.EventLevels.FormattingEnabled = True
+        Me.EventLevels.Items.AddRange(New Object() {"Off", "Critical", "Error", "Warning", "Information", "Verbose", "All"})
+        Me.EventLevels.Location = New System.Drawing.Point(351, 225)
+        Me.EventLevels.Name = "EventLevels"
+        Me.EventLevels.Size = New System.Drawing.Size(92, 21)
+        Me.EventLevels.TabIndex = 3
+        Me.ToolTip1.SetToolTip(Me.EventLevels, "Enter the maximumLog Level to be displayed from now on (existing log entries will" &
+        " still be displayed). Attention: for getting Information level messages, also se" &
+        "t DebugAddin to true!")
         '
         'FilterLabel
         '
@@ -223,6 +220,9 @@ Partial Class AboutBox
         Me.FilterLabel.TabIndex = 0
         Me.FilterLabel.Text = "Log:"
         Me.ToolTip1.SetToolTip(Me.FilterLabel, "Attention: for getting Information level messages, also set DebugAddin to true!")
+        '
+        'BackgroundWorker1
+        '
         '
         'AboutBox
         '

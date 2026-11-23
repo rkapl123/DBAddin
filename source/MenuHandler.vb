@@ -680,9 +680,6 @@ Public Class MenuHandler
     ''' <summary>on demand, refresh the DB Config tree</summary>
     ''' <param name="control"></param>
     Public Sub refreshDBConfigTree(control As CustomUI.IRibbonControl)
-        ' prevent excel crash in this version when calling createConfigTreeMenu a second time
-        If SettingsTools.ExcelVersion = "16.0.17932.20574" And ConfigFiles.ConfigMenuXML <> "" Then Exit Sub
-
         initSettings()
         ConfigFiles.createConfigTreeMenu()
         UserMsg("refreshed DB Config Tree Menu", "DBAddin: refresh Config tree...", MsgBoxStyle.Information)

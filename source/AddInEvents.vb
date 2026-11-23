@@ -1,5 +1,4 @@
 ﻿Imports System.Collections.Generic
-Imports System.Diagnostics
 Imports System.Runtime.InteropServices
 Imports ExcelDna.Integration
 Imports ExcelDna.Registration
@@ -50,8 +49,13 @@ Public Class AddInEvents
         Functions.StatusCollection = New Dictionary(Of String, ContainedStatusMsg)
         DBModifDefColl = New Dictionary(Of String, Dictionary(Of String, DBModif))
         previousCUDLengthColl = New Dictionary(Of String, Integer)
-        Try : ExcelVersion = FileVersionInfo.GetVersionInfo(Process.GetCurrentProcess().MainModule.FileName).ProductVersion : Catch ex As Exception : End Try
 
+        ' collect version information from Excel
+        Try : ExcelVersion = vbCrLf + "Excel: " + System.Diagnostics.FileVersionInfo.GetVersionInfo(System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName).ProductVersion : Catch ex As Exception : End Try
+        ' and .NET runtime
+        Try : ExcelVersion += vbCrLf + RuntimeInformation.FrameworkDescription : Catch ex As Exception : End Try
+        ' exceldna hardcoded here (too complicated)
+        ExcelVersion += vbCrLf + "ExcelDNA: 1.6.0"
         ' initialize settings and get the default environment
         initSettings()
         If environdefs.Length = 0 Then

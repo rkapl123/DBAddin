@@ -41,6 +41,7 @@ Public Module DBSheetConfig
 
     ''' <summary>create a DBSheet by creating lookups (with dblistfetch) and a dbsetquery that acts as a list-object for a CUD DBMapper. Called by clickAssignDBSheet (Ribbon) and assignDBSheet_Click (DBSheetCreateForm)</summary>
     Public Sub createDBSheet(Optional dbsheetDefPath As String = "")
+        Dim overwriteExisting As Boolean = False
         If ExcelDnaUtil.Application.ActiveWorkbook.Windows(1).WindowState = Excel.XlWindowState.xlMinimized Then
             UserMsg("No assignment possible when active workbook is minimized!", "DBSheet Creation Error")
             Exit Sub
@@ -51,12 +52,17 @@ Public Module DBSheetConfig
         If InStr(1, existingName, "DBMapper") > 0 OrElse (UCase(Left(curCell.Formula, 11)) = "=DBSETQUERY" And InStr(1, getDBModifNameFromRange(curCell.Offset(0, 1)), "DBMapper") > 0) Then
             Dim answer As MsgBoxResult = QuestionMsg("Existing DBSheet detected in selected area, shall this be overwritten (Cancel aborts DBSheet creation)?", MsgBoxStyle.OkCancel)
             If answer = MsgBoxResult.Cancel Then Exit Sub
+            overwriteExisting = True
             If UCase(Left(curCell.Formula, 11)) <> "=DBSETQUERY" Then
-                ' either dbsetquery (needed for curCell) is to the cell to the left
-                curCell = ExcelDnaUtil.Application.Range(existingName).Cells(1, 1).Offset(0, -1)
+                ' either get curCell with dbsetquery in it from the DBFsource
+                Dim underlyingName As String = getUnderlyingDBNameFromRange(curCell)
+                underlyingName = Replace(underlyingName, "DBFtarget", "DBFsource", 1, , vbTextCompare)
+                curCell = ExcelDnaUtil.Application.Range(underlyingName)
             Else
-                ' or the db-mapper area (needed for existingName for removing definitions and db-mapper name) is to the right
-                existingName = getDBModifNameFromRange(curCell.Offset(0, 1))
+                ' or get the existingName (db-mapper area) for removing definitions and db-mapper name from the DBFtarget
+                Dim underlyingName As String = getUnderlyingDBNameFromRange(curCell)
+                underlyingName = Replace(underlyingName, "DBFsource", "DBFtarget", 1, , vbTextCompare)
+                existingName = getDBModifNameFromRange(ExcelDnaUtil.Application.Range(underlyingName))
             End If
         End If
         Dim openFileDialog1 As OpenFileDialog = Nothing
@@ -214,8 +220,8 @@ Public Module DBSheetConfig
                         lookupWS.Cells(2, lookupCol).Name = lookupRangeName
                         ' then create the DBListFetch with the lookup query
                         createFunctionsInCells(lookupWS.Cells(1, lookupCol), {"RC", "=DBListFetch(RC[1],""""," + lookupRangeName + ")"})
-                    Else
-                        LogWarn("DB Sheet Lookup " + lookupRangeName + " already exists in " + lookupRangeNameAddress + ", check if this is really the correct one !")
+                    ElseIf Not overwriteExisting Then
+                        UserMsg("DB Sheet Lookup " + lookupRangeName + " already exists in " + lookupRangeNameAddress + ", check if this is really the correct one !", "DBSheet Creation Error")
                     End If
                 Else
                     'simple value lookup (one column), no need to resolve to an ID
@@ -228,11 +234,11 @@ Public Module DBSheetConfig
                         ' add the name, so there is something in the top row (for moving to right...
                         lookupWS.Cells(1, lookupCol).Value = lookupRangeName
                         ' only create name and dblistfetch if lookup doesn't already exist!
-                        If Not existsName(lookupRangeName) Then
+                        If Not existsName(lookupRangeName) Or overwriteExisting Then
                             ' fixed value lookups have only one column
                             lookupWS.Range(lookupWS.Cells(2, lookupCol), lookupWS.Cells(2 + lrow - 1, lookupCol)).Name = lookupRangeName
                         Else
-                            LogWarn("DB Sheet Lookup " + lookupRangeName + " already exists in " + lookupRangeNameAddress + ", check if this is really the correct one !")
+                            UserMsg("DB Sheet Lookup " + lookupRangeName + " already exists in " + lookupRangeNameAddress + ", check if this is really the correct one !", "DBSheet Creation Error")
                         End If
                     Else ' single column DB lookup
                         lookupWS.Cells(1, lookupCol + 1).Value = LookupQuery
@@ -241,8 +247,8 @@ Public Module DBSheetConfig
                         If Not existsName(lookupRangeName) Then
                             lookupWS.Cells(2, lookupCol).Name = lookupRangeName
                             createFunctionsInCells(lookupWS.Cells(1, lookupCol), {"RC", "=DBListFetch(RC[1],""""," + lookupRangeName + ")"})
-                        Else
-                            LogWarn("DB Sheet Lookup " + lookupRangeName + " already exists in " + lookupRangeNameAddress + ", check if this is really the correct one !")
+                        ElseIf Not overwriteExisting Then
+                            UserMsg("DB Sheet Lookup " + lookupRangeName + " already exists in " + lookupRangeNameAddress + ", check if this is really the correct one !", "DBSheet Creation Error")
                         End If
                     End If
                 End If

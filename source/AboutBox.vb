@@ -1,8 +1,9 @@
-﻿Imports ExcelDna.Integration
-Imports Microsoft.Office.Interop
-Imports System.ComponentModel
+﻿Imports System.ComponentModel
 Imports System.Diagnostics
 Imports System.IO
+Imports System.Runtime.InteropServices
+Imports ExcelDna.Integration
+Imports Microsoft.Office.Interop
 
 ''' <summary>About box: used to provide information about version/build-time and links for local help and project homepage</summary>
 Public NotInheritable Class AboutBox
@@ -33,7 +34,7 @@ Public NotInheritable Class AboutBox
         Me.LabelVersion.Text = String.Format("Version {0} Build-time {1}", My.Application.Info.Version.ToString(), sModuleInfo)
         Me.LabelCopyright.Text = My.Application.Info.Copyright
         Me.LabelCompanyName.Text = "Information: " + My.Application.Info.CompanyName
-        Me.TextBoxDescription.Text = My.Application.Info.Description + " (Excel ProductVersion: " + SettingsTools.ExcelVersion + ")"
+        Me.TextBoxDescription.Text = My.Application.Info.Description + SettingsTools.ExcelVersion
         dontChangeEventLevels = True
         Dim theEventTypeFilter As EventTypeFilter = theLogDisplaySource.Listeners(0).Filter
         Me.EventLevels.SelectedItem = theEventTypeFilter.EventType.ToString()
